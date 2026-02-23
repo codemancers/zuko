@@ -1,0 +1,157 @@
+# flyctl launch added from .beads/.gitignore
+# SQLite databases
+.beads/**/*.db
+.beads/**/*.db?*
+.beads/**/*.db-journal
+.beads/**/*.db-wal
+.beads/**/*.db-shm
+
+# Daemon runtime files
+.beads/**/daemon.lock
+.beads/**/daemon.log
+.beads/**/daemon.pid
+.beads/**/bd.sock
+.beads/**/sync-state.json
+.beads/**/last-touched
+
+# Local version tracking (prevents upgrade notification spam after git ops)
+.beads/**/.local_version
+
+# Legacy database files
+.beads/**/db.sqlite
+.beads/**/bd.db
+
+# Worktree redirect file (contains relative path to main repo's .beads/)
+# Must not be committed as paths would be wrong in other clones
+.beads/**/redirect
+
+# Merge artifacts (temporary files from 3-way merge)
+.beads/**/beads.base.jsonl
+.beads/**/beads.base.meta.json
+.beads/**/beads.left.jsonl
+.beads/**/beads.left.meta.json
+.beads/**/beads.right.jsonl
+.beads/**/beads.right.meta.json
+
+# Sync state (local-only, per-machine)
+# These files are machine-specific and should not be shared across clones
+.beads/**/.sync.lock
+.beads/**/sync_base.jsonl
+
+# NOTE: Do NOT add negation patterns (e.g., !issues.jsonl) here.
+# They would override fork protection in .git/info/exclude, allowing
+# contributors to accidentally commit upstream issue databases.
+# The JSONL files (issues.jsonl, interactions.jsonl) and config files
+# are tracked by git by default since no pattern above ignores them.
+
+# flyctl launch added from .git/beads-worktrees/beads-sync/.beads/.gitignore
+# SQLite databases
+.git/beads-worktrees/beads-sync/.beads/**/*.db
+.git/beads-worktrees/beads-sync/.beads/**/*.db?*
+.git/beads-worktrees/beads-sync/.beads/**/*.db-journal
+.git/beads-worktrees/beads-sync/.beads/**/*.db-wal
+.git/beads-worktrees/beads-sync/.beads/**/*.db-shm
+
+# Daemon runtime files
+.git/beads-worktrees/beads-sync/.beads/**/daemon.lock
+.git/beads-worktrees/beads-sync/.beads/**/daemon.log
+.git/beads-worktrees/beads-sync/.beads/**/daemon.pid
+.git/beads-worktrees/beads-sync/.beads/**/bd.sock
+.git/beads-worktrees/beads-sync/.beads/**/sync-state.json
+
+# Local version tracking (prevents upgrade notification spam after git ops)
+.git/beads-worktrees/beads-sync/.beads/**/.local_version
+
+# Legacy database files
+.git/beads-worktrees/beads-sync/.beads/**/db.sqlite
+.git/beads-worktrees/beads-sync/.beads/**/bd.db
+
+# Merge artifacts (temporary files from 3-way merge)
+.git/beads-worktrees/beads-sync/.beads/**/beads.base.jsonl
+.git/beads-worktrees/beads-sync/.beads/**/beads.base.meta.json
+.git/beads-worktrees/beads-sync/.beads/**/beads.left.jsonl
+.git/beads-worktrees/beads-sync/.beads/**/beads.left.meta.json
+.git/beads-worktrees/beads-sync/.beads/**/beads.right.jsonl
+.git/beads-worktrees/beads-sync/.beads/**/beads.right.meta.json
+
+# Keep JSONL exports and config (source of truth for git)
+!.git/beads-worktrees/beads-sync/.beads/**/issues.jsonl
+!.git/beads-worktrees/beads-sync/.beads/**/interactions.jsonl
+!.git/beads-worktrees/beads-sync/.beads/**/metadata.json
+!.git/beads-worktrees/beads-sync/.beads/**/config.json
+
+# flyctl launch added from .gitignore
+# See https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files for more about ignoring files.
+
+# compiled output
+**/dist
+!apps/slack/dist
+!apps/backend/dist
+**/tmp
+**/out-tsc
+**/*.tsbuildinfo
+
+# dependencies - exclude workspace node_modules but keep standalone production deps
+**/node_modules
+!apps/web/.next/standalone/node_modules
+
+# IDEs and editors
+.idea
+**/.project
+**/.classpath
+**/.c9
+**/*.launch
+**/.settings
+**/*.sublime-workspace
+
+# IDE - VSCode
+**/.vscode/*
+!**/.vscode/settings.json
+!**/.vscode/tasks.json
+!**/.vscode/launch.json
+!**/.vscode/extensions.json
+
+# misc
+.sass-cache
+connect.lock
+coverage
+libpeerconnection.log
+**/npm-debug.log
+**/yarn-error.log
+**/testem.log
+typings
+
+# System Files
+**/.DS_Store
+**/Thumbs.db
+
+**/.nx/cache
+**/.nx/workspace-data
+
+**/test-output
+
+**/.env
+**/.env.local
+**/.env.test
+**/.env.test.local
+prisma
+
+# START Ruler Generated Files
+.codex/config.toml
+.codex/config.toml.bak
+AGENTS.md
+AGENTS.md.bak
+# END Ruler Generated Files
+
+# Environment files with secrets
+
+# TypeScript build info
+**/*.tsbuildinfo
+
+# Next.js - exclude cache but keep standalone & static for deployment
+**/.next/cache
+**/out
+
+**/vite.config.*.timestamp*
+**/vitest.config.*.timestamp*
+fly.toml

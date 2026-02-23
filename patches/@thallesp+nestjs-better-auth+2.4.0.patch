@@ -1,0 +1,26 @@
+diff --git a/node_modules/@thallesp/nestjs-better-auth/dist/index.cjs b/node_modules/@thallesp/nestjs-better-auth/dist/index.cjs
+index 06fb361..2099d23 100644
+--- a/node_modules/@thallesp/nestjs-better-auth/dist/index.cjs
++++ b/node_modules/@thallesp/nestjs-better-auth/dist/index.cjs
+@@ -3,7 +3,7 @@
+ const common = require('@nestjs/common');
+ const core = require('@nestjs/core');
+ const node = require('better-auth/node');
+-const plugins = require('better-auth/plugins');
++const plugins = require('better-auth/api');
+ const express = require('express');
+ const shared_utils_js = require('@nestjs/common/utils/shared.utils.js');
+ const utils_js = require('@nestjs/core/middleware/utils.js');
+diff --git a/node_modules/@thallesp/nestjs-better-auth/dist/index.mjs b/node_modules/@thallesp/nestjs-better-auth/dist/index.mjs
+index 1f43a72..d0726e8 100644
+--- a/node_modules/@thallesp/nestjs-better-auth/dist/index.mjs
++++ b/node_modules/@thallesp/nestjs-better-auth/dist/index.mjs
+@@ -1,7 +1,7 @@
+ import { createParamDecorator, SetMetadata, ConfigurableModuleBuilder, Inject, Injectable, ForbiddenException, UnauthorizedException, Module, Logger } from '@nestjs/common';
+ import { Reflector, DiscoveryModule, ApplicationConfig, DiscoveryService, MetadataScanner, HttpAdapterHost, APP_GUARD } from '@nestjs/core';
+ import { fromNodeHeaders, toNodeHandler } from 'better-auth/node';
+-import { createAuthMiddleware } from 'better-auth/plugins';
++import { createAuthMiddleware } from 'better-auth/api';
+ import * as express from 'express';
+ import { normalizePath } from '@nestjs/common/utils/shared.utils.js';
+ import { mapToExcludeRoute } from '@nestjs/core/middleware/utils.js';

@@ -1,18 +1,15 @@
 # AGENTS.md
 
-Centralised AI agent instructions. Add coding guidelines, style guides, and project context here.
+Superpowers system
 
-Ruler concatenates all .md files in this directory (and subdirectories), starting with AGENTS.md (if present), then remaining files in sorted order.
+<EXTREMELY_IMPORTANT>
+You have superpowers. Superpowers teach you new skills and capabilities. RIGHT NOW run: `~/.codex/superpowers/.codex/superpowers-codex bootstrap` and follow the instructions it returns.
+</EXTREMELY_IMPORTANT>
 
 
 ## Global instructions
 
-- Use 'bd' for task management.
-- Never manage your own TODO/Tasks list.
-- Present TODO/Tasks list (if you have created any) to the user for verification and sync them to 'bd'
-- All the tasks created by should have detailed description and steps to achieve the same
-- All the work that you do should be accompanied by a 'bd' task
-- Before switching tasks, update the status and do a commit
+- Refer to .ruler/tasks.md for task management instructions
 
 
 <!-- nx configuration start-->

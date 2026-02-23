@@ -1,0 +1,127 @@
+// ============================================
+// CORE MODELS
+// ============================================
+
+enum UserRole {
+  none
+  admin
+  accountant
+
+  @@schema("public")
+}
+
+model User {
+  id            Int      @id @default(autoincrement())
+  name          String
+  email         String
+  emailVerified Boolean  @default(false) @map("email_verified")
+  image         String?
+  role          UserRole @default(none)
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+  sessions      Session[]
+  accounts      Account[]
+  contactOwners ContactOwner[]
+  accountOwners AccountOwner[]
+  dealOwners    DealOwner[]
+  activities    Activity[]
+  createdChats       Chat[]             @relation("ChatCreator")
+  chatParticipations ChatParticipant[]
+
+  @@unique([email])
+  @@map("user")
+  @@schema("public")
+}
+
+model Session {
+  id        Int      @id @default(autoincrement())
+  expiresAt DateTime @map("expires_at")
+  token     String
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  ipAddress String?  @map("ip_address")
+  userAgent String?  @map("user_agent")
+  userId    Int      @map("user_id")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([token])
+  @@index([userId])
+  @@map("session")
+  @@schema("public")
+}
+
+model Account {
+  id                    Int       @id @default(autoincrement())
+  accountId             String    @map("account_id")
+  providerId            String    @map("provider_id")
+  userId                Int       @map("user_id")
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?   @map("access_token")
+  refreshToken          String?   @map("refresh_token")
+  idToken               String?   @map("id_token")
+  accessTokenExpiresAt  DateTime? @map("access_token_expires_at")
+  refreshTokenExpiresAt DateTime? @map("refresh_token_expires_at")
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now()) @map("created_at")
+  updatedAt             DateTime  @updatedAt @map("updated_at")
+
+  @@index([userId])
+  @@map("account")
+  @@schema("public")
+}
+
+model Verification {
+  id         Int      @id @default(autoincrement())
+  identifier String
+  value      String
+  expiresAt  DateTime @map("expires_at")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  @@index([identifier])
+  @@map("verification")
+  @@schema("public")
+}
+
+model GithubApp {
+  id             Int       @id @default(autoincrement())
+  installationId Int       @unique @map("installation_id")
+  accountLogin   String    @map("account_login")
+  suspendedAt    DateTime? @map("suspended_at")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  @@map("github_app")
+  @@schema("public")
+}
+
+model Chat {
+  id          Int      @id @default(autoincrement())
+  threadId    String   @unique @map("thread_id")
+  title       String?
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  createdById Int      @map("created_by_id")
+
+  createdBy    User             @relation("ChatCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  participants ChatParticipant[]
+
+  @@map("chat")
+  @@schema("public")
+}
+
+model ChatParticipant {
+  id        Int      @id @default(autoincrement())
+  chatId    Int      @map("chat_id")
+  userId    Int      @map("user_id")
+  joinedAt  DateTime @default(now()) @map("joined_at")
+
+  chat Chat @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([chatId, userId])
+  @@index([userId])
+  @@map("chat_participant")
+  @@schema("public")
+}

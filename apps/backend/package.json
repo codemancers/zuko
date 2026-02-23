@@ -1,0 +1,144 @@
+{
+  "name": "@zuko/backend",
+  "version": "0.0.1",
+  "private": true,
+  "nx": {
+    "targets": {
+      "build": {
+        "executor": "nx:run-commands",
+        "options": {
+          "command": "webpack-cli build",
+          "args": [
+            "--node-env=production"
+          ],
+          "cwd": "apps/backend"
+        },
+        "configurations": {
+          "development": {
+            "args": [
+              "--node-env=development"
+            ]
+          }
+        }
+      },
+      "prune-lockfile": {
+        "dependsOn": [
+          "build",
+          "copy-workspace-modules"
+        ],
+        "cache": true,
+        "executor": "@nx/js:prune-lockfile",
+        "outputs": [
+          "{workspaceRoot}/apps/backend/dist/package.json",
+          "{workspaceRoot}/apps/backend/dist/package-lock.json"
+        ],
+        "options": {
+          "buildTarget": "build"
+        }
+      },
+      "copy-workspace-modules": {
+        "dependsOn": [
+          "build"
+        ],
+        "cache": true,
+        "outputs": [
+          "{workspaceRoot}/apps/backend/dist/workspace_modules"
+        ],
+        "executor": "@nx/js:copy-workspace-modules",
+        "options": {
+          "buildTarget": "build"
+        }
+      },
+      "fix-lockfile-symlinks": {
+        "dependsOn": [
+          "prune-lockfile"
+        ],
+        "executor": "nx:run-commands",
+        "options": {
+          "command": "LIBS=(agents core models sales); for lib in \"${LIBS[@]}\"; do sed -i '' \"s|\\\"resolved\\\": \\\"libs/${lib}\\\"|\\\"resolved\\\": \\\"workspace_modules/@zuko/${lib}\\\"|g\" dist/package-lock.json; sed -i '' \"s|\\\"libs/${lib}\\\":|\\\"workspace_modules/@zuko/${lib}\\\":|g\" dist/package-lock.json; done",
+          "cwd": "apps/backend"
+        }
+      },
+      "prune": {
+        "dependsOn": [
+          "prune-lockfile",
+          "copy-workspace-modules",
+          "fix-lockfile-symlinks"
+        ],
+        "executor": "nx:noop"
+      },
+      "serve": {
+        "continuous": true,
+        "executor": "@nx/js:node",
+        "defaultConfiguration": "development",
+        "dependsOn": [
+          "build"
+        ],
+        "options": {
+          "buildTarget": "@zuko/backend:build",
+          "runBuildTargetDependencies": false
+        },
+        "configurations": {
+          "development": {
+            "buildTarget": "@zuko/backend:build:development"
+          },
+          "production": {
+            "buildTarget": "@zuko/backend:build:production"
+          }
+        }
+      },
+      "test": {
+        "options": {
+          "passWithNoTests": true
+        }
+      },
+      "docker:build": {
+        "executor": "nx:run-commands",
+        "dependsOn": [
+          "build",
+          "prune",
+          "fix-lockfile-symlinks"
+        ],
+        "options": {
+          "command": "export FLY_APP=$(grep '^app = ' apps/backend/fly.toml | cut -d \"'\" -f 2) && export GIT_SHA=$(git rev-parse --short HEAD) && docker build --platform linux/amd64 -f apps/backend/Dockerfile -t registry.fly.io/$FLY_APP:$GIT_SHA ."
+        }
+      },
+      "deploy": {
+        "executor": "nx:run-commands",
+        "dependsOn": [
+          "docker:build"
+        ],
+        "options": {
+          "command": "export FLY_APP=$(grep '^app = ' apps/backend/fly.toml | cut -d \"'\" -f 2) && export GIT_SHA=$(git rev-parse --short HEAD) && flyctl auth docker && docker push registry.fly.io/$FLY_APP:$GIT_SHA && fly deploy --image registry.fly.io/$FLY_APP:$GIT_SHA -c apps/backend/fly.toml"
+        }
+      }
+    }
+  },
+  "dependencies": {
+    "@ai-sdk/langchain": "^2.0.75",
+    "@nestjs/common": "^11.0.0",
+    "@nestjs/config": "^4.0.0",
+    "@nestjs/core": "^11.0.0",
+    "@nestjs/platform-express": "^11.0.0",
+    "@prisma/adapter-pg": "^7.2.0",
+    "@prisma/client": "^7.2.0",
+    "@thallesp/nestjs-better-auth": "^2.4.0",
+    "@zuko/agents": "^0.0.1",
+    "@zuko/models": "^0.0.1",
+    "@zuko/sales": "^0.0.1",
+    "ai": "^6.0.70",
+    "better-auth": "1.5.0-beta.15",
+    "dotenv": "^16.4.5",
+    "graphql": "^16.12.0",
+    "joi": "^17.13.3",
+    "pg": "^8.16.3",
+    "prisma": "^7.2.0",
+    "reflect-metadata": "^0.1.13",
+    "rxjs": "^7.8.0",
+    "tslib": "^2.3.0"
+  },
+  "_comment_graphql": "graphql is a peer dependency of @thallesp/nestjs-better-auth, installed here to avoid runtime errors",
+  "devDependencies": {
+    "@nestjs/testing": "^11.0.0"
+  }
+}

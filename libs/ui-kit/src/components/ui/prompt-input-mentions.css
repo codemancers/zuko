@@ -1,0 +1,73 @@
+/**
+ * WORKAROUND: Styles for react-mentions integration
+ * TODO: Remove when https://github.com/vercel/ai-elements/issues/179 is resolved
+ */
+
+/* Override react-mentions default styles to match our design system */
+.mentions-input__control {
+  font-family: inherit;
+  color: hsl(var(--foreground));
+  width: 100%;
+  display: block;
+}
+
+.mentions-input__highlighter {
+  color: hsl(var(--foreground));
+  width: 100%;
+  box-sizing: border-box;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+.mentions-input__input {
+  color: hsl(var(--foreground)) !important;
+  caret-color: hsl(var(--foreground));
+  width: 100%;
+  box-sizing: border-box;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+.mentions-input__input::placeholder {
+  color: hsl(var(--muted-foreground));
+  opacity: 1;
+}
+
+.mentions-input__suggestions__list {
+  background-color: hsl(var(--popover)) !important;
+  border: 1px solid hsl(var(--border)) !important;
+  border-radius: calc(var(--radius) - 2px) !important;
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1) !important;
+  z-index: 50;
+}
+
+.mentions-input__suggestions__item {
+  background-color: transparent !important;
+  color: hsl(var(--foreground)) !important;
+  border-bottom: 1px solid hsl(var(--border)) !important;
+  padding: 0.5rem 0.75rem !important;
+}
+
+.mentions-input__suggestions__item:last-child {
+  border-bottom: none !important;
+}
+
+.mentions-input__suggestions__item--focused {
+  background-color: hsl(var(--accent)) !important;
+}
+
+/* Mention highlighting in the input */
+.mentions-input__mention {
+  color: hsl(var(--primary));
+  background-color: hsl(var(--primary) / 0.1);
+  border-radius: 0.25rem;
+  padding: 0.125rem 0.25rem;
+  font-weight: 500;
+}
+
+/* Dark mode adjustments */
+@media (prefers-color-scheme: dark) {
+  .mentions-input__mention {
+    background-color: hsl(var(--primary) / 0.2);
+  }
+}

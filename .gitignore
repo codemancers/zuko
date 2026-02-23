@@ -4,6 +4,7 @@
 dist
 tmp
 out-tsc
+*.tsbuildinfo
 
 # dependencies
 node_modules
@@ -43,10 +44,47 @@ Thumbs.db
 
 test-output
 
+.env
+.env.local
+.env.test
+.env.production
+.env.test.local
+/prisma/
 
 # START Ruler Generated Files
 /.codex/config.toml
 /.codex/config.toml.bak
 /AGENTS.md
 /AGENTS.md.bak
+/CLAUDE.md
+/CLAUDE.md.bak
+.claude
 # END Ruler Generated Files
+
+# Environment files with secrets
+
+# TypeScript build info
+*.tsbuildinfo
+
+# Next.js
+.next
+out
+next-env.d.ts
+
+vite.config.*.timestamp*
+vitest.config.*.timestamp*
+.env.test.local
+
+# Development screenshots (don't commit to repo)
+/*.png
+/after-*
+/before-*
+/current-*
+/dialog-*
+/menu-*
+/logged-*
+/chat-*
+/contacts-*
+/mentions-*
+/with-*
+/[0-9]*-*

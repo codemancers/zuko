@@ -1,0 +1,52 @@
+// ============================================
+// AGENTS MODELS
+// ============================================
+
+model CheckpointMigration {
+  v Int @id
+
+  @@map("checkpoint_migrations")
+  @@schema("agents")
+}
+
+model Checkpoint {
+  threadId           String  @map("thread_id")
+  checkpointNs       String  @default("") @map("checkpoint_ns")
+  checkpointId       String  @map("checkpoint_id")
+  parentCheckpointId String? @map("parent_checkpoint_id")
+  type               String?
+  checkpoint         Json
+  metadata           Json    @default("{}")
+
+  @@id([threadId, checkpointNs, checkpointId])
+  @@map("checkpoints")
+  @@schema("agents")
+}
+
+model CheckpointBlob {
+  threadId     String @map("thread_id")
+  checkpointNs String @default("") @map("checkpoint_ns")
+  channel      String
+  version      String
+  type         String
+  blob         Bytes?
+
+  @@id([threadId, checkpointNs, channel, version])
+  @@map("checkpoint_blobs")
+  @@schema("agents")
+}
+
+model CheckpointWrite {
+  threadId     String @map("thread_id")
+  checkpointNs String @default("") @map("checkpoint_ns")
+  checkpointId String @map("checkpoint_id")
+  taskId       String @map("task_id")
+  idx          Int
+  channel      String
+  type         String?
+  blob         Bytes
+
+  @@id([threadId, checkpointNs, checkpointId, taskId, idx])
+  @@map("checkpoint_writes")
+  @@schema("agents")
+}

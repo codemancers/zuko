@@ -1,0 +1,205 @@
+// ============================================
+// SALES MODELS
+// ============================================
+
+model Contact {
+  id         Int      @id @default(autoincrement())
+  name       String
+  email      String?
+  phone      String?  // E.164 format (e.g., +14155552671)
+  linkedinId String?  @map("linkedin_id")
+  notes      String?  @db.Text
+  isHidden   Boolean  @default(false) @map("is_hidden")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  owners         ContactOwner[]
+  accountHistory AccountContact[]
+  deals          DealContact[]
+
+  @@index([isHidden])
+  @@index([email])
+  @@index([phone])
+  @@index([linkedinId])
+  @@map("contact")
+  @@schema("sales")
+}
+
+model ContactOwner {
+  id         Int      @id @default(autoincrement())
+  contactId  Int      @map("contact_id")
+  userId     Int      @map("user_id")
+  isPrimary  Boolean  @default(false) @map("is_primary")
+  assignedAt DateTime @default(now()) @map("assigned_at")
+
+  contact Contact @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([contactId, userId])
+  @@index([userId])
+  @@index([contactId])
+  @@map("contact_owner")
+  @@schema("sales")
+}
+
+model Activity {
+  id           Int      @id @default(autoincrement())
+  activityType String   @map("activity_type") // 'comment' | 'field_update' | 'status_change' | 'assignment' | etc.
+  entityType   String   @map("entity_type")   // 'contact' | 'account' | 'deal'
+  entityId     Int      @map("entity_id")     // ID of the contact/account/deal
+  actorId      Int?     @map("actor_id")      // null for system events
+  actor        User?    @relation(fields: [actorId], references: [id], onDelete: SetNull)
+  content      String?  @db.Text              // For comments
+  metadata     Json?                           // Flexible data for different activity types
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@index([entityType, entityId, createdAt])
+  @@index([actorId])
+  @@index([activityType])
+  @@map("activity")
+  @@schema("sales")
+}
+
+model SalesAccount {
+  id          Int      @id @default(autoincrement())
+  companyName String   @map("company_name")
+  website     String?
+  linkedinUrl String?  @map("linkedin_url")
+  summary     String?  @db.Text
+  isHidden    Boolean  @default(false) @map("is_hidden")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  contacts AccountContact[]
+  owners   AccountOwner[]
+  deals    DealAccount[]
+
+  @@index([isHidden])
+  @@index([companyName])
+  @@map("account")
+  @@schema("sales")
+}
+
+model AccountContact {
+  id        Int       @id @default(autoincrement())
+  accountId Int       @map("account_id")
+  contactId Int       @map("contact_id")
+  joinedAt  DateTime  @default(now()) @map("joined_at")
+  leftAt    DateTime? @map("left_at")
+  role      String?   // e.g., "employee", "contractor", "advisor"
+  isPrimary Boolean   @default(false) @map("is_primary") // primary employer
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+
+  account SalesAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  contact Contact      @relation(fields: [contactId], references: [id], onDelete: Cascade)
+
+  @@index([accountId])
+  @@index([contactId])
+  @@index([leftAt])
+  @@map("account_contact")
+  @@schema("sales")
+}
+
+model AccountOwner {
+  id         Int      @id @default(autoincrement())
+  accountId  Int      @map("account_id")
+  userId     Int      @map("user_id")
+  isPrimary  Boolean  @default(false) @map("is_primary")
+  assignedAt DateTime @default(now()) @map("assigned_at")
+
+  account SalesAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  user    User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([accountId, userId])
+  @@index([userId])
+  @@index([accountId])
+  @@map("account_owner")
+  @@schema("sales")
+}
+
+model Deal {
+  id                Int       @id @default(autoincrement())
+  title             String
+  value             Decimal?  @db.Decimal(15, 2)
+  currency          String?   @default("USD")
+  probability       Int?      @default(50)
+  stage             String    @default("prospecting")
+  summary           String?   @db.Text
+  expectedCloseDate DateTime? @map("expected_close_date")
+  actualCloseDate   DateTime? @map("actual_close_date")
+  lostReason        String?   @map("lost_reason")
+  source            String?
+  priority          Int?      @default(2)
+  isHidden          Boolean   @default(false) @map("is_hidden")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+
+  accounts DealAccount[]
+  contacts DealContact[]
+  owners   DealOwner[]
+
+  @@index([isHidden])
+  @@index([stage])
+  @@index([expectedCloseDate])
+  @@index([actualCloseDate])
+  @@index([createdAt])
+  @@map("deal")
+  @@schema("sales")
+}
+
+model DealAccount {
+  id        Int      @id @default(autoincrement())
+  dealId    Int      @map("deal_id")
+  accountId Int      @map("account_id")
+  isPrimary Boolean  @default(false) @map("is_primary")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  deal    Deal         @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  account SalesAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@unique([dealId, accountId])
+  @@index([dealId])
+  @@index([accountId])
+  @@map("deal_account")
+  @@schema("sales")
+}
+
+model DealContact {
+  id        Int      @id @default(autoincrement())
+  dealId    Int      @map("deal_id")
+  contactId Int      @map("contact_id")
+  role      String?
+  isPrimary Boolean  @default(false) @map("is_primary")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  deal    Deal    @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  contact Contact @relation(fields: [contactId], references: [id], onDelete: Cascade)
+
+  @@unique([dealId, contactId])
+  @@index([dealId])
+  @@index([contactId])
+  @@index([role])
+  @@map("deal_contact")
+  @@schema("sales")
+}
+
+model DealOwner {
+  id         Int      @id @default(autoincrement())
+  dealId     Int      @map("deal_id")
+  userId     Int      @map("user_id")
+  isPrimary  Boolean  @default(false) @map("is_primary")
+  assignedAt DateTime @default(now()) @map("assigned_at")
+
+  deal Deal @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([dealId, userId])
+  @@index([userId])
+  @@index([dealId])
+  @@map("deal_owner")
+  @@schema("sales")
+}

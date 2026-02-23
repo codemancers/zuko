@@ -1,4 +1,10 @@
-# Agents
+# Zuko
+
+
+## Migrations
+
+Run this command `npx nx prisma:migrate slack -- --name init` to apply changes
+
 
 <a alt="Nx logo" href="https://nx.dev" target="_blank" rel="noreferrer"><img src="https://raw.githubusercontent.com/nrwl/nx/master/images/nx-logo.png" width="45"></a>
 
@@ -16,19 +22,19 @@
 To run the dev server for your app, use:
 
 ```sh
-npx nx serve agents
+npx nx serve zuko
 ```
 
 To create a production bundle:
 
 ```sh
-npx nx build agents
+npx nx build zuko
 ```
 
 To see all available targets to run for a project, run:
 
 ```sh
-npx nx show project agents
+npx nx show project zuko
 ```
 
 These targets are either [inferred automatically](https://nx.dev/concepts/inferred-tasks?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) or defined in the `project.json` or `package.json` files.

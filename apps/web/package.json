@@ -1,0 +1,42 @@
+{
+  "name": "@zuko/web",
+  "version": "0.0.1",
+  "private": true,
+  "dependencies": {
+    "@ai-sdk/react": "^3.0.72",
+    "@zuko/ui-kit": "0.0.1",
+    "ai": "^6.0.70",
+    "better-auth": "1.5.0-beta.15",
+    "next": "~16.0.1",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "nx": {
+    "targets": {
+      "dev": {
+        "dependsOn": [
+          "@zuko/backend:serve"
+        ],
+        "continuous": true
+      },
+      "docker:build": {
+        "executor": "nx:run-commands",
+        "dependsOn": [
+          "build"
+        ],
+        "options": {
+          "command": "export FLY_APP=$(grep '^app = ' apps/web/fly.toml | cut -d \"'\" -f 2) && export GIT_SHA=$(git rev-parse --short HEAD) && docker build --platform linux/amd64 -f apps/web/Dockerfile -t registry.fly.io/$FLY_APP:$GIT_SHA ."
+        }
+      },
+      "deploy": {
+        "executor": "nx:run-commands",
+        "dependsOn": [
+          "docker:build"
+        ],
+        "options": {
+          "command": "export FLY_APP=$(grep '^app = ' apps/web/fly.toml | cut -d \"'\" -f 2) && export GIT_SHA=$(git rev-parse --short HEAD) && flyctl auth docker && docker push registry.fly.io/$FLY_APP:$GIT_SHA && fly deploy --image registry.fly.io/$FLY_APP:$GIT_SHA -c apps/web/fly.toml"
+        }
+      }
+    }
+  }
+}

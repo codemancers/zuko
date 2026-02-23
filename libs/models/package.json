@@ -1,0 +1,64 @@
+{
+  "name": "@zuko/models",
+  "version": "0.0.1",
+  "private": true,
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    "./package.json": "./package.json",
+    ".": {
+      "@zuko/source": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "dependencies": {
+    "tslib": "^2.3.0"
+  },
+  "nx": {
+    "targets": {
+      "build": {
+        "dependsOn": [
+          "prisma:generate"
+        ]
+      },
+      "prisma:generate": {
+        "executor": "nx:run-commands",
+        "options": {
+          "command": "npx prisma generate",
+          "cwd": "libs/models"
+        }
+      },
+      "prisma:migrate": {
+        "executor": "nx:run-commands",
+        "options": {
+          "command": "npx prisma migrate dev",
+          "cwd": "libs/models"
+        }
+      },
+      "prisma:reset": {
+        "executor": "nx:run-commands",
+        "options": {
+          "command": "npx prisma migrate reset",
+          "cwd": "libs/models"
+        }
+      },
+      "prisma:resolve": {
+        "executor": "nx:run-commands",
+        "options": {
+          "command": "npx prisma migrate resolve",
+          "cwd": "libs/models"
+        }
+      },
+      "prisma:studio": {
+        "executor": "nx:run-commands",
+        "options": {
+          "command": "npx prisma studio",
+          "cwd": "libs/models"
+        }
+      }
+    }
+  }
+}

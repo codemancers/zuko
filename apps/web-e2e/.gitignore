@@ -1,0 +1,11 @@
+# Playwright
+test-output/
+playwright-report/
+playwright/.cache/
+
+# Authentication state (contains sensitive session data)
+.auth/
+
+# Test results
+results.json
+results.xml
