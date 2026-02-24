@@ -1,40 +1,54 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { dealsApi, type Deal, type CreateDealDto, type UpdateDealDto } from "@/lib/api/deals";
-import { Button, Input, Field, Label, Textarea, Description, ErrorMessage, Select } from "@zuko/ui-kit";
-import { useRouter } from "next/navigation";
+import { useState } from 'react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import {
+  dealsApi,
+  type Deal,
+  type CreateDealDto,
+  type UpdateDealDto,
+} from '@/lib/api/deals';
+import {
+  Button,
+  Input,
+  Field,
+  Label,
+  Textarea,
+  Description,
+  ErrorMessage,
+  Select,
+} from '@zuko/ui-kit';
+import { useRouter } from 'next/navigation';
 
 interface DealFormProps {
   deal?: Deal;
-  mode: "create" | "edit";
+  mode: 'create' | 'edit';
   currentUserId: number;
 }
 
 const DEAL_STAGES = [
-  { value: "prospecting", label: "Prospecting" },
-  { value: "qualification", label: "Qualification" },
-  { value: "proposal", label: "Proposal" },
-  { value: "negotiation", label: "Negotiation" },
-  { value: "closed_won", label: "Closed Won" },
-  { value: "closed_lost", label: "Closed Lost" },
+  { value: 'prospecting', label: 'Prospecting' },
+  { value: 'qualification', label: 'Qualification' },
+  { value: 'proposal', label: 'Proposal' },
+  { value: 'negotiation', label: 'Negotiation' },
+  { value: 'closed_won', label: 'Closed Won' },
+  { value: 'closed_lost', label: 'Closed Lost' },
 ];
 
 const CURRENCIES = [
-  { value: "USD", label: "USD ($)" },
-  { value: "EUR", label: "EUR (€)" },
-  { value: "GBP", label: "GBP (£)" },
-  { value: "JPY", label: "JPY (¥)" },
-  { value: "INR", label: "INR (₹)" },
+  { value: 'USD', label: 'USD ($)' },
+  { value: 'EUR', label: 'EUR (€)' },
+  { value: 'GBP', label: 'GBP (£)' },
+  { value: 'JPY', label: 'JPY (¥)' },
+  { value: 'INR', label: 'INR (₹)' },
 ];
 
 const PRIORITIES = [
-  { value: 0, label: "P0 - Critical" },
-  { value: 1, label: "P1 - High" },
-  { value: 2, label: "P2 - Medium" },
-  { value: 3, label: "P3 - Low" },
-  { value: 4, label: "P4 - Backlog" },
+  { value: 0, label: 'P0 - Critical' },
+  { value: 1, label: 'P1 - High' },
+  { value: 2, label: 'P2 - Medium' },
+  { value: 3, label: 'P3 - Low' },
+  { value: 4, label: 'P4 - Backlog' },
 ];
 
 export default function DealForm({ deal, mode, currentUserId }: DealFormProps) {
@@ -42,17 +56,17 @@ export default function DealForm({ deal, mode, currentUserId }: DealFormProps) {
   const queryClient = useQueryClient();
 
   const [formData, setFormData] = useState({
-    title: deal?.title || "",
-    value: deal?.value?.toString() || "",
-    currency: deal?.currency || "USD",
-    probability: deal?.probability?.toString() || "50",
-    stage: deal?.stage || "prospecting",
-    summary: deal?.summary || "",
+    title: deal?.title || '',
+    value: deal?.value?.toString() || '',
+    currency: deal?.currency || 'USD',
+    probability: deal?.probability?.toString() || '50',
+    stage: deal?.stage || 'prospecting',
+    summary: deal?.summary || '',
     expectedCloseDate: deal?.expectedCloseDate
       ? new Date(deal.expectedCloseDate).toISOString().split('T')[0]
-      : "",
-    source: deal?.source || "",
-    priority: deal?.priority?.toString() || "2",
+      : '',
+    source: deal?.source || '',
+    priority: deal?.priority?.toString() || '2',
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -60,23 +74,23 @@ export default function DealForm({ deal, mode, currentUserId }: DealFormProps) {
   const createMutation = useMutation({
     mutationFn: (data: CreateDealDto) => dealsApi.createDeal(data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["deals"] });
-      router.push("/deals");
+      queryClient.invalidateQueries({ queryKey: ['deals'] });
+      router.push('/deals');
     },
     onError: (error: any) => {
-      setErrors({ submit: error.message || "Failed to create deal" });
+      setErrors({ submit: error.message || 'Failed to create deal' });
     },
   });
 
   const updateMutation = useMutation({
     mutationFn: (data: UpdateDealDto) => dealsApi.updateDeal(deal!.id, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["deals"] });
-      queryClient.invalidateQueries({ queryKey: ["deal", deal!.id] });
+      queryClient.invalidateQueries({ queryKey: ['deals'] });
+      queryClient.invalidateQueries({ queryKey: ['deal', deal!.id] });
       router.push(`/deals/${deal!.id}`);
     },
     onError: (error: any) => {
-      setErrors({ submit: error.message || "Failed to update deal" });
+      setErrors({ submit: error.message || 'Failed to update deal' });
     },
   });
 
@@ -84,27 +98,27 @@ export default function DealForm({ deal, mode, currentUserId }: DealFormProps) {
     const newErrors: Record<string, string> = {};
 
     if (!formData.title.trim()) {
-      newErrors.title = "Deal title is required";
+      newErrors.title = 'Deal title is required';
     }
 
     if (formData.value) {
       const value = parseFloat(formData.value);
       if (isNaN(value) || value < 0) {
-        newErrors.value = "Value must be a positive number";
+        newErrors.value = 'Value must be a positive number';
       }
     }
 
     if (formData.probability) {
       const probability = parseInt(formData.probability);
       if (isNaN(probability) || probability < 0 || probability > 100) {
-        newErrors.probability = "Probability must be between 0 and 100";
+        newErrors.probability = 'Probability must be between 0 and 100';
       }
     }
 
     if (formData.priority) {
       const priority = parseInt(formData.priority);
       if (isNaN(priority) || priority < 0 || priority > 4) {
-        newErrors.priority = "Priority must be between 0 and 4";
+        newErrors.priority = 'Priority must be between 0 and 4';
       }
     }
 
@@ -123,7 +137,9 @@ export default function DealForm({ deal, mode, currentUserId }: DealFormProps) {
       title: formData.title,
       value: formData.value ? parseFloat(formData.value) : undefined,
       currency: formData.currency || undefined,
-      probability: formData.probability ? parseInt(formData.probability) : undefined,
+      probability: formData.probability
+        ? parseInt(formData.probability)
+        : undefined,
       stage: formData.stage,
       summary: formData.summary || undefined,
       expectedCloseDate: formData.expectedCloseDate || undefined,
@@ -131,7 +147,7 @@ export default function DealForm({ deal, mode, currentUserId }: DealFormProps) {
       priority: formData.priority ? parseInt(formData.priority) : undefined,
     };
 
-    if (mode === "create") {
+    if (mode === 'create') {
       createMutation.mutate({
         ...baseData,
         ownerIds: [currentUserId],
@@ -143,10 +159,10 @@ export default function DealForm({ deal, mode, currentUserId }: DealFormProps) {
   };
 
   const handleCancel = () => {
-    if (mode === "edit" && deal) {
+    if (mode === 'edit' && deal) {
       router.push(`/deals/${deal.id}`);
     } else {
-      router.push("/deals");
+      router.push('/deals');
     }
   };
 
@@ -176,7 +192,9 @@ export default function DealForm({ deal, mode, currentUserId }: DealFormProps) {
             type="number"
             step="0.01"
             value={formData.value}
-            onChange={(e) => setFormData({ ...formData, value: e.target.value })}
+            onChange={(e) =>
+              setFormData({ ...formData, value: e.target.value })
+            }
             placeholder="100000"
             invalid={!!errors.value}
             disabled={isLoading}
@@ -189,7 +207,9 @@ export default function DealForm({ deal, mode, currentUserId }: DealFormProps) {
           <Label>Currency</Label>
           <Select
             value={formData.currency}
-            onChange={(e) => setFormData({ ...formData, currency: e.target.value })}
+            onChange={(e) =>
+              setFormData({ ...formData, currency: e.target.value })
+            }
             disabled={isLoading}
           >
             {CURRENCIES.map((currency) => (
@@ -207,7 +227,9 @@ export default function DealForm({ deal, mode, currentUserId }: DealFormProps) {
           <Label>Stage *</Label>
           <Select
             value={formData.stage}
-            onChange={(e) => setFormData({ ...formData, stage: e.target.value })}
+            onChange={(e) =>
+              setFormData({ ...formData, stage: e.target.value })
+            }
             disabled={isLoading}
           >
             {DEAL_STAGES.map((stage) => (
@@ -225,13 +247,17 @@ export default function DealForm({ deal, mode, currentUserId }: DealFormProps) {
             min="0"
             max="100"
             value={formData.probability}
-            onChange={(e) => setFormData({ ...formData, probability: e.target.value })}
+            onChange={(e) =>
+              setFormData({ ...formData, probability: e.target.value })
+            }
             placeholder="50"
             invalid={!!errors.probability}
             disabled={isLoading}
           />
           <Description>0-100%</Description>
-          {errors.probability && <ErrorMessage>{errors.probability}</ErrorMessage>}
+          {errors.probability && (
+            <ErrorMessage>{errors.probability}</ErrorMessage>
+          )}
         </Field>
       </div>
 
@@ -242,7 +268,9 @@ export default function DealForm({ deal, mode, currentUserId }: DealFormProps) {
           <Input
             type="date"
             value={formData.expectedCloseDate}
-            onChange={(e) => setFormData({ ...formData, expectedCloseDate: e.target.value })}
+            onChange={(e) =>
+              setFormData({ ...formData, expectedCloseDate: e.target.value })
+            }
             disabled={isLoading}
           />
           <Description>When you expect to close this deal</Description>
@@ -252,7 +280,9 @@ export default function DealForm({ deal, mode, currentUserId }: DealFormProps) {
           <Label>Priority</Label>
           <Select
             value={formData.priority}
-            onChange={(e) => setFormData({ ...formData, priority: e.target.value })}
+            onChange={(e) =>
+              setFormData({ ...formData, priority: e.target.value })
+            }
             disabled={isLoading}
           >
             {PRIORITIES.map((priority) => (
@@ -282,7 +312,9 @@ export default function DealForm({ deal, mode, currentUserId }: DealFormProps) {
         <Label>Summary</Label>
         <Textarea
           value={formData.summary}
-          onChange={(e) => setFormData({ ...formData, summary: e.target.value })}
+          onChange={(e) =>
+            setFormData({ ...formData, summary: e.target.value })
+          }
           placeholder="Add notes about this deal..."
           rows={6}
           disabled={isLoading}
@@ -293,14 +325,20 @@ export default function DealForm({ deal, mode, currentUserId }: DealFormProps) {
       {/* Submit Error */}
       {errors.submit && (
         <div className="rounded-md bg-red-50 p-3 dark:bg-red-900/20">
-          <p className="text-sm text-red-800 dark:text-red-200">{errors.submit}</p>
+          <p className="text-sm text-red-800 dark:text-red-200">
+            {errors.submit}
+          </p>
         </div>
       )}
 
       {/* Actions */}
       <div className="flex gap-3">
         <Button type="submit" disabled={isLoading}>
-          {isLoading ? "Saving..." : mode === "create" ? "Create Deal" : "Save Changes"}
+          {isLoading
+            ? 'Saving...'
+            : mode === 'create'
+            ? 'Create Deal'
+            : 'Save Changes'}
         </Button>
         <Button type="button" plain onClick={handleCancel} disabled={isLoading}>
           Cancel

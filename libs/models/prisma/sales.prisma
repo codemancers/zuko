@@ -6,7 +6,7 @@ model Contact {
   id         Int      @id @default(autoincrement())
   name       String
   email      String?
-  phone      String?  // E.164 format (e.g., +14155552671)
+  phone      String? // E.164 format (e.g., +14155552671)
   linkedinId String?  @map("linkedin_id")
   notes      String?  @db.Text
   isHidden   Boolean  @default(false) @map("is_hidden")
@@ -14,7 +14,7 @@ model Contact {
   updatedAt  DateTime @updatedAt @map("updated_at")
 
   owners         ContactOwner[]
-  accountHistory AccountContact[]
+  companyHistory CompanyContact[]
   deals          DealContact[]
 
   @@index([isHidden])
@@ -45,12 +45,12 @@ model ContactOwner {
 model Activity {
   id           Int      @id @default(autoincrement())
   activityType String   @map("activity_type") // 'comment' | 'field_update' | 'status_change' | 'assignment' | etc.
-  entityType   String   @map("entity_type")   // 'contact' | 'account' | 'deal'
-  entityId     Int      @map("entity_id")     // ID of the contact/account/deal
-  actorId      Int?     @map("actor_id")      // null for system events
+  entityType   String   @map("entity_type") // 'contact' | 'company' | 'deal'
+  entityId     Int      @map("entity_id") // ID of the contact/company/deal
+  actorId      Int?     @map("actor_id") // null for system events
   actor        User?    @relation(fields: [actorId], references: [id], onDelete: SetNull)
-  content      String?  @db.Text              // For comments
-  metadata     Json?                           // Flexible data for different activity types
+  content      String?  @db.Text // For comments
+  metadata     Json? // Flexible data for different activity types
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
 
@@ -61,7 +61,7 @@ model Activity {
   @@schema("sales")
 }
 
-model SalesAccount {
+model SalesCompany {
   id          Int      @id @default(autoincrement())
   companyName String   @map("company_name")
   website     String?
@@ -71,51 +71,51 @@ model SalesAccount {
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
-  contacts AccountContact[]
-  owners   AccountOwner[]
-  deals    DealAccount[]
+  contacts CompanyContact[]
+  owners   CompanyOwner[]
+  deals    DealCompany[]
 
   @@index([isHidden])
   @@index([companyName])
-  @@map("account")
+  @@map("company")
   @@schema("sales")
 }
 
-model AccountContact {
+model CompanyContact {
   id        Int       @id @default(autoincrement())
-  accountId Int       @map("account_id")
+  companyId Int       @map("company_id")
   contactId Int       @map("contact_id")
   joinedAt  DateTime  @default(now()) @map("joined_at")
   leftAt    DateTime? @map("left_at")
-  role      String?   // e.g., "employee", "contractor", "advisor"
+  role      String? // e.g., "employee", "contractor", "advisor"
   isPrimary Boolean   @default(false) @map("is_primary") // primary employer
   createdAt DateTime  @default(now()) @map("created_at")
   updatedAt DateTime  @updatedAt @map("updated_at")
 
-  account SalesAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  company SalesCompany @relation(fields: [companyId], references: [id], onDelete: Cascade)
   contact Contact      @relation(fields: [contactId], references: [id], onDelete: Cascade)
 
-  @@index([accountId])
+  @@index([companyId])
   @@index([contactId])
   @@index([leftAt])
-  @@map("account_contact")
+  @@map("company_contact")
   @@schema("sales")
 }
 
-model AccountOwner {
+model CompanyOwner {
   id         Int      @id @default(autoincrement())
-  accountId  Int      @map("account_id")
+  companyId  Int      @map("company_id")
   userId     Int      @map("user_id")
   isPrimary  Boolean  @default(false) @map("is_primary")
   assignedAt DateTime @default(now()) @map("assigned_at")
 
-  account SalesAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  company SalesCompany @relation(fields: [companyId], references: [id], onDelete: Cascade)
   user    User         @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@unique([accountId, userId])
+  @@unique([companyId, userId])
   @@index([userId])
-  @@index([accountId])
-  @@map("account_owner")
+  @@index([companyId])
+  @@map("company_owner")
   @@schema("sales")
 }
 
@@ -136,9 +136,9 @@ model Deal {
   createdAt         DateTime  @default(now()) @map("created_at")
   updatedAt         DateTime  @updatedAt @map("updated_at")
 
-  accounts DealAccount[]
-  contacts DealContact[]
-  owners   DealOwner[]
+  companies DealCompany[]
+  contacts  DealContact[]
+  owners    DealOwner[]
 
   @@index([isHidden])
   @@index([stage])
@@ -149,21 +149,21 @@ model Deal {
   @@schema("sales")
 }
 
-model DealAccount {
+model DealCompany {
   id        Int      @id @default(autoincrement())
   dealId    Int      @map("deal_id")
-  accountId Int      @map("account_id")
+  companyId Int      @map("company_id")
   isPrimary Boolean  @default(false) @map("is_primary")
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
   deal    Deal         @relation(fields: [dealId], references: [id], onDelete: Cascade)
-  account SalesAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  company SalesCompany @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
-  @@unique([dealId, accountId])
+  @@unique([dealId, companyId])
   @@index([dealId])
-  @@index([accountId])
-  @@map("deal_account")
+  @@index([companyId])
+  @@map("deal_company")
   @@schema("sales")
 }
 

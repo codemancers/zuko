@@ -5,7 +5,10 @@ import { ChatOpenAI } from '@langchain/openai';
 import { PostgresSaver } from '@langchain/langgraph-checkpoint-postgres';
 import { randomUUID } from 'node:crypto';
 import type { AgentRequest, AgentResponse } from '../types/agents.types';
-import type { BaseMessageLike, ContextEntityReference } from '../types/chat.types';
+import type {
+  BaseMessageLike,
+  ContextEntityReference,
+} from '../types/chat.types';
 import type { GraphStreamMode } from '../types/graph.types';
 import { AdminService } from './admin.service';
 // PrismaService should be provided by the consuming application
@@ -14,14 +17,18 @@ import type { PrismaService } from '../modules/prisma.types';
 import {
   createGetContactDetailsTool,
   createGetContactOwnerTool,
-  createGetAccountDetailsTool,
+  createGetCompanyDetailsTool,
   createLeaveCommentTool,
   createQueryContactsTool,
-  createQueryAccountsTool,
+  createQueryCompaniesTool,
   createQueryActivitiesTool,
 } from '../tools';
 // Import services from @zuko/sales
-import type { ContactsService, AccountsService, ActivityService } from '@zuko/sales';
+import type {
+  ContactsService,
+  CompaniesService,
+  ActivityService,
+} from '@zuko/sales';
 // Import persistent context middleware
 import { createPersistentContextMiddleware } from '../middleware/persistent-context.middleware';
 
@@ -95,7 +102,7 @@ export class OrchestratorService {
     private readonly adminService: AdminService,
     private readonly prisma: PrismaService,
     private readonly contactsService: ContactsService,
-    private readonly accountsService: AccountsService,
+    private readonly companiesService: CompaniesService,
     private readonly activityService: ActivityService
   ) {}
 
@@ -110,7 +117,9 @@ export class OrchestratorService {
 
     const secretaryDisabled = process.env.AGENTS_DISABLE_SECRETARY === 'true';
     if (secretaryDisabled) {
-      this.logger.warn('AGENTS_DISABLE_SECRETARY=true; skipping secretary agent initialization.');
+      this.logger.warn(
+        'AGENTS_DISABLE_SECRETARY=true; skipping secretary agent initialization.'
+      );
     }
 
     const systemPrompt =
@@ -121,30 +130,34 @@ export class OrchestratorService {
         '',
         'Context available in state:',
         '- userId: The authenticated user ID (use this when calling leave_comment)',
-        '- contextEntities: Array of entity references (contacts, accounts, deals) added to conversation',
+        '- contextEntities: Array of entity references (contacts, companies, deals) added to conversation',
         '',
         'Tools available:',
         '- get_contact_details: Retrieve full contact information by ID',
         '- get_contact_owner: Get the owner(s) of a contact',
-        '- get_account_details: Retrieve account/company information by ID',
-        '- leave_comment: Add a comment to a contact, account, or deal (MUST pass userId from state)',
+        '- get_company_details: Retrieve company information by ID',
+        '- leave_comment: Add a comment to a contact, company, or deal (MUST pass userId from state)',
         '',
         'Query tools for analytical questions:',
         '- query_contacts: Filter and aggregate contacts with flexible criteria',
-        '- query_accounts: Filter and aggregate accounts/companies',
+        '- query_companies: Filter and aggregate companies',
         '- query_activities: Search activity timeline (comments, updates, etc.)',
         '',
         'Delegation:',
         '- Delegate requests about bringing medicines, coffee, or breakfast to the admin agent.',
         ...(secretaryDisabled
           ? []
-          : ['- Delegate requests about booking meetings, scheduling, or calendar events to the secretary agent.']),
+          : [
+              '- Delegate requests about booking meetings, scheduling, or calendar events to the secretary agent.',
+            ]),
         '',
         'For all other questions, use the available tools or respond directly and concisely.',
       ].join('\n');
 
     if (!process.env.OPENAI_API_KEY) {
-      this.logger.warn('OPENAI_API_KEY is not configured; DeepAgent may fail to respond.');
+      this.logger.warn(
+        'OPENAI_API_KEY is not configured; DeepAgent may fail to respond.'
+      );
     }
 
     const model = new ChatOpenAI({
@@ -157,7 +170,8 @@ export class OrchestratorService {
 
       const adminSubagent: CompiledSubAgent = {
         name: 'admin-agent',
-        description: 'Handles requests to bring medicines, coffee, or breakfast.',
+        description:
+          'Handles requests to bring medicines, coffee, or breakfast.',
         runnable: this.adminService.getAgent(),
       };
 
@@ -168,14 +182,14 @@ export class OrchestratorService {
       const tier1Tools = [
         createGetContactDetailsTool(this.contactsService),
         createGetContactOwnerTool(this.contactsService),
-        createGetAccountDetailsTool(this.accountsService),
+        createGetCompanyDetailsTool(this.companiesService),
         createLeaveCommentTool(this.activityService),
       ];
 
       // Create Tier 2 tools
       const tier2Tools = [
         createQueryContactsTool(this.contactsService),
-        createQueryAccountsTool(this.accountsService),
+        createQueryCompaniesTool(this.companiesService),
         createQueryActivitiesTool(this.activityService),
       ];
 
@@ -186,7 +200,9 @@ export class OrchestratorService {
         model,
         systemPrompt,
         tools: allTools,
-        subagents: secretarySubagent ? [adminSubagent, secretarySubagent] : [adminSubagent],
+        subagents: secretarySubagent
+          ? [adminSubagent, secretarySubagent]
+          : [adminSubagent],
         checkpointer,
         middleware: [createPersistentContextMiddleware()],
       });
@@ -242,7 +258,9 @@ export class OrchestratorService {
     const prompt = request.text?.trim() || 'Respond to the latest event.';
     const threadId = request.threadTs;
 
-    const config = threadId ? { configurable: { thread_id: threadId } } : undefined;
+    const config = threadId
+      ? { configurable: { thread_id: threadId } }
+      : undefined;
 
     const result = await agent.invoke(
       { messages: [{ role: 'user', content: prompt }] },
@@ -262,9 +280,14 @@ export class OrchestratorService {
     };
   }
 
-  async generateReply(messages: BaseMessageLike[], threadId: string): Promise<string> {
+  async generateReply(
+    messages: BaseMessageLike[],
+    threadId: string
+  ): Promise<string> {
     const agent = await this.ensureAgent();
-    const config = threadId ? { configurable: { thread_id: threadId } } : undefined;
+    const config = threadId
+      ? { configurable: { thread_id: threadId } }
+      : undefined;
     const result = await agent.invoke({ messages }, config);
     const lastMessage = result.messages[result.messages.length - 1];
     return typeof lastMessage?.content === 'string'
@@ -272,7 +295,10 @@ export class OrchestratorService {
       : JSON.stringify(lastMessage?.content ?? '');
   }
 
-  async *streamReply(messages: BaseMessageLike[], threadId: string): AsyncGenerator<string> {
+  async *streamReply(
+    messages: BaseMessageLike[],
+    threadId: string
+  ): AsyncGenerator<string> {
     const agent = await this.ensureAgent();
     const config = threadId
       ? { streamMode: 'messages', configurable: { thread_id: threadId } }
@@ -286,7 +312,9 @@ export class OrchestratorService {
         if (!currentText) {
           continue;
         }
-        const delta = currentText.startsWith(lastText) ? currentText.slice(lastText.length) : currentText;
+        const delta = currentText.startsWith(lastText)
+          ? currentText.slice(lastText.length)
+          : currentText;
         if (!delta) {
           continue;
         }
@@ -300,7 +328,9 @@ export class OrchestratorService {
         if (!currentText) {
           continue;
         }
-        const delta = currentText.startsWith(lastText) ? currentText.slice(lastText.length) : currentText;
+        const delta = currentText.startsWith(lastText)
+          ? currentText.slice(lastText.length)
+          : currentText;
         if (!delta) {
           continue;
         }
@@ -320,7 +350,10 @@ export class OrchestratorService {
     if (typeof streamMode !== 'undefined') {
       options.streamMode = streamMode;
     }
-    const stream = await agent.stream(input as unknown, options as Record<string, unknown>);
+    const stream = await agent.stream(
+      input as unknown,
+      options as Record<string, unknown>
+    );
     for await (const chunk of stream as AsyncIterable<unknown>) {
       yield chunk;
     }
@@ -355,8 +388,16 @@ export class OrchestratorService {
       // Convert to simple message format
       const formattedMessages = messages
         .map((msg: any) => ({
-          role: msg.type === 'human' ? 'user' : msg.type === 'ai' ? 'assistant' : msg.type,
-          content: typeof msg.content === 'string' ? msg.content : extractTextFromMessage(msg),
+          role:
+            msg.type === 'human'
+              ? 'user'
+              : msg.type === 'ai'
+              ? 'assistant'
+              : msg.type,
+          content:
+            typeof msg.content === 'string'
+              ? msg.content
+              : extractTextFromMessage(msg),
         }))
         .filter((msg) => msg.content && msg.content.trim().length > 0);
 
@@ -366,17 +407,23 @@ export class OrchestratorService {
           try {
             if (entity.type === 'contact' && this.contactsService) {
               const contact = await this.contactsService.findOne(entity.id);
-              return { ...entity, name: `${contact.firstName} ${contact.lastName}`.trim() };
-            } else if (entity.type === 'account' && this.accountsService) {
-              const account = await this.accountsService.findOne(entity.id);
-              return { ...entity, name: account.name };
+              return {
+                ...entity,
+                name: `${contact.firstName} ${contact.lastName}`.trim(),
+              };
+            } else if (entity.type === 'company' && this.companiesService) {
+              const company = await this.companiesService.findById(entity.id);
+              return { ...entity, name: company.companyName };
             } else if (entity.type === 'deal') {
               // TODO: Add deal service when available
               return { ...entity, name: `Deal #${entity.id}` };
             }
             return { ...entity, name: `${entity.type} #${entity.id}` };
           } catch (error) {
-            this.logger.warn(`Failed to hydrate ${entity.type} ${entity.id}:`, error);
+            this.logger.warn(
+              `Failed to hydrate ${entity.type} ${entity.id}:`,
+              error
+            );
             return { ...entity, name: `${entity.type} #${entity.id}` };
           }
         })
@@ -387,7 +434,10 @@ export class OrchestratorService {
         contextEntities: hydratedEntities,
       };
     } catch (error) {
-      this.logger.error(`Failed to get messages for thread ${threadId}:`, error);
+      this.logger.error(
+        `Failed to get messages for thread ${threadId}:`,
+        error
+      );
       return { messages: [], contextEntities: [] };
     }
   }

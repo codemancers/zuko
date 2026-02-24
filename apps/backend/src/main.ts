@@ -31,14 +31,12 @@ async function bootstrap() {
   app.setGlobalPrefix(globalPrefix, { exclude: ['auth'] });
 
   const basePort = process.env.PORT || 3000;
-  const port = parseInt(basePort) + 1;
+  const port = parseInt(basePort as string) + 1;
   await app.listen(port);
   Logger.log(
     `🚀 Application is running on: http://localhost:${port}/${globalPrefix}`
   );
-  Logger.log(
-    `🔐 Auth endpoints available at: http://localhost:${port}/auth`
-  );
+  Logger.log(`🔐 Auth endpoints available at: http://localhost:${port}/auth`);
 }
 
 bootstrap();

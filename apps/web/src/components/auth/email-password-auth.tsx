@@ -9,7 +9,8 @@ interface EmailPasswordAuthProps {
   mode?: 'signin' | 'signup';
 }
 
-const includeEmailAuth = process.env.NEXT_PUBLIC_BETTER_AUTH_INCLUDE_EMAILS_AUTH === 'true';
+const includeEmailAuth =
+  process.env.NEXT_PUBLIC_BETTER_AUTH_INCLUDE_EMAILS_AUTH === 'true';
 
 export function EmailPasswordAuth({ mode = 'signin' }: EmailPasswordAuthProps) {
   const router = useRouter();
@@ -37,7 +38,10 @@ export function EmailPasswordAuth({ mode = 'signin' }: EmailPasswordAuthProps) {
         });
 
         if (result.error) {
-          setError(result.error.message || 'Failed to create account. Please try again.');
+          setError(
+            result.error.message ||
+              'Failed to create account. Please try again.'
+          );
         } else {
           router.push('/chat');
         }
@@ -48,7 +52,10 @@ export function EmailPasswordAuth({ mode = 'signin' }: EmailPasswordAuthProps) {
         });
 
         if (result.error) {
-          setError(result.error.message || 'Failed to sign in. Please check your credentials.');
+          setError(
+            result.error.message ||
+              'Failed to sign in. Please check your credentials.'
+          );
         } else {
           router.push('/chat');
         }
@@ -156,8 +163,8 @@ export function EmailPasswordAuth({ mode = 'signin' }: EmailPasswordAuthProps) {
                     ? 'Creating account...'
                     : 'Signing in...'
                   : isSignup
-                    ? 'Create account'
-                    : 'Sign in'}
+                  ? 'Create account'
+                  : 'Sign in'}
               </Button>
             </form>
 

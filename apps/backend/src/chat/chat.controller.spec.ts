@@ -14,18 +14,19 @@ describe('ChatController - contextEntities extraction', () => {
           metadata: {
             contextEntities: [
               { type: 'contact', id: 1 },
-              { type: 'account', id: 2 },
+              { type: 'company', id: 2 },
             ],
           },
         },
       ];
 
       const lastMessage = messages[messages.length - 1];
-      const contextEntities = (lastMessage?.metadata as any)?.contextEntities || [];
+      const contextEntities =
+        (lastMessage?.metadata as any)?.contextEntities || [];
 
       expect(contextEntities).toEqual([
         { type: 'contact', id: 1 },
-        { type: 'account', id: 2 },
+        { type: 'company', id: 2 },
       ]);
     });
 
@@ -35,11 +36,13 @@ describe('ChatController - contextEntities extraction', () => {
           role: 'user',
           content: 'hello',
           parts: [{ type: 'text', text: 'hello' }],
+          metadata: {},
         },
       ];
 
       const lastMessage = messages[messages.length - 1];
-      const contextEntities = (lastMessage?.metadata as any)?.contextEntities || [];
+      const contextEntities =
+        (lastMessage?.metadata as any)?.contextEntities || [];
 
       expect(contextEntities).toEqual([]);
     });
@@ -57,7 +60,8 @@ describe('ChatController - contextEntities extraction', () => {
       ];
 
       const lastMessage = messages[messages.length - 1];
-      const contextEntities = (lastMessage?.metadata as any)?.contextEntities || [];
+      const contextEntities =
+        (lastMessage?.metadata as any)?.contextEntities || [];
 
       expect(contextEntities).toEqual([]);
     });
@@ -82,15 +86,16 @@ describe('ChatController - contextEntities extraction', () => {
           content: 'second',
           parts: [{ type: 'text', text: 'second' }],
           metadata: {
-            contextEntities: [{ type: 'account', id: 123 }],
+            contextEntities: [{ type: 'company', id: 123 }],
           },
         },
       ];
 
       const lastMessage = messages[messages.length - 1];
-      const contextEntities = (lastMessage?.metadata as any)?.contextEntities || [];
+      const contextEntities =
+        (lastMessage?.metadata as any)?.contextEntities || [];
 
-      expect(contextEntities).toEqual([{ type: 'account', id: 123 }]);
+      expect(contextEntities).toEqual([{ type: 'company', id: 123 }]);
     });
 
     it('should handle assistant messages with no metadata', () => {
@@ -111,7 +116,8 @@ describe('ChatController - contextEntities extraction', () => {
       ];
 
       const lastMessage = messages[messages.length - 1];
-      const contextEntities = (lastMessage?.metadata as any)?.contextEntities || [];
+      const contextEntities =
+        (lastMessage?.metadata as any)?.contextEntities || [];
 
       expect(contextEntities).toEqual([]);
     });

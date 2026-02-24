@@ -1,6 +1,6 @@
-"use server";
+'use server';
 
-import { githubApi } from "@/lib/api/github";
+import { githubApi } from '@/lib/api/github';
 
 export async function getGitHubInstallationUrl() {
   return await githubApi.getInstallationUrl();

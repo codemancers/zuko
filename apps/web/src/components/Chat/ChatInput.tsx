@@ -2,7 +2,7 @@
  * Unified Chat Input Component
  *
  * Reusable chat input that supports:
- * - @mentions (contacts and accounts)
+ * - @mentions (contacts and companies)
  * - Shift+Enter submission
  * - Voice input
  * - File attachments
@@ -27,11 +27,18 @@ import {
   usePromptInputReferencedSources,
 } from '@zuko/ui-kit';
 import { ImageIcon, GlobeIcon, MicIcon } from 'lucide-react';
-import { ChatContextDisplay, type ChatEntity } from '@/components/Chat/ChatContextManager';
+import {
+  ChatContextDisplay,
+  type ChatEntity,
+} from '@/components/Chat/ChatContextManager';
 import { ChatContextProvider } from '@/components/Chat/ChatContextWrapper';
 import { ChatContextMenuItems } from '@/components/Chat/ChatContextMenuItems';
 import { ChatContextDialog } from '@/components/Chat/ChatContextDialog';
-import { ChatInputWithMentions, stripMentionMarkup, type ChatMention } from '@/components/Chat/ChatInputWithMentions';
+import {
+  ChatInputWithMentions,
+  stripMentionMarkup,
+  type ChatMention,
+} from '@/components/Chat/ChatInputWithMentions';
 import { useState, useCallback, useRef, useEffect } from 'react';
 
 // ============================================================================
@@ -114,14 +121,23 @@ const ChatInputInner = ({
   useEffect(() => {
     // Create sets for efficient comparison
     const currentMentionIds = new Set(mentions.map((m) => `${m.type}-${m.id}`));
-    const prevMentionIds = new Set(prevMentionsRef.current.map((m) => `${m.type}-${m.id}`));
+    const prevMentionIds = new Set(
+      prevMentionsRef.current.map((m) => `${m.type}-${m.id}`)
+    );
 
     // Add new mentions (those in current but not in previous)
     mentions.forEach((mention) => {
       const sourceId = `${mention.type}-${mention.id}`;
 
-      if (!prevMentionIds.has(sourceId) && !mentionSourceIdsRef.current.has(sourceId)) {
-        console.log('[ChatInput] Adding mention to context:', sourceId, mention.name);
+      if (
+        !prevMentionIds.has(sourceId) &&
+        !mentionSourceIdsRef.current.has(sourceId)
+      ) {
+        console.log(
+          '[ChatInput] Adding mention to context:',
+          sourceId,
+          mention.name
+        );
         add({
           type: 'source-document',
           sourceId,
@@ -151,7 +167,10 @@ const ChatInputInner = ({
   }, [mentions, add, remove]); // Removed 'sources' from deps to prevent infinite loop
 
   return (
-    <ChatContextProvider onContextChange={handleContextChange} initialContext={initialContext}>
+    <ChatContextProvider
+      onContextChange={handleContextChange}
+      initialContext={initialContext}
+    >
       <ChatInputWithMentions
         placeholder={placeholder}
         ref={textareaRef as any}
@@ -184,7 +203,11 @@ const ChatInputInner = ({
           <ChatContextDisplay />
 
           {/* Web search button */}
-          <PromptInputButton tooltip="Search the web" onClick={handleWebSearch} size="sm">
+          <PromptInputButton
+            tooltip="Search the web"
+            onClick={handleWebSearch}
+            size="sm"
+          >
             <GlobeIcon className="mr-1.5 size-4" />
             Search
           </PromptInputButton>
@@ -197,7 +220,9 @@ const ChatInputInner = ({
             onClick={handleVoiceInput}
             variant={isRecording ? 'default' : 'ghost'}
           >
-            <MicIcon className={`size-4 ${isRecording ? 'text-red-500' : ''}`} />
+            <MicIcon
+              className={`size-4 ${isRecording ? 'text-red-500' : ''}`}
+            />
           </PromptInputButton>
 
           {/* Submit button */}
@@ -283,7 +308,9 @@ export const ChatInput = ({
 
   const handleVoiceInput = useCallback(() => {
     if (!recognitionRef.current) {
-      alert('Speech recognition is not supported in your browser. Please use Chrome.');
+      alert(
+        'Speech recognition is not supported in your browser. Please use Chrome.'
+      );
       return;
     }
 
@@ -320,9 +347,10 @@ export const ChatInput = ({
       await onSubmit({
         text: stripMentionMarkup(msg.text),
         files: msg.files,
-        ...(contextEntities.length > 0 && {
-          metadata: { contextEntities },
-        } as any),
+        ...(contextEntities.length > 0 &&
+          ({
+            metadata: { contextEntities },
+          } as any)),
       });
 
       // Clear input and mentions on successful submit

@@ -13,7 +13,7 @@ export type ChatCompletionRequest = {
  * Stores minimal identifier to be persisted in LangGraph checkpoints
  */
 export interface ContextEntityReference {
-  type: 'contact' | 'account' | 'deal';
+  type: 'contact' | 'company' | 'deal';
   id: number;
 }
 

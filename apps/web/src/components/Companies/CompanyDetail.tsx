@@ -1,61 +1,72 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { BuildingOfficeIcon, PencilIcon, EyeSlashIcon, XMarkIcon, CheckIcon } from "@heroicons/react/24/outline";
+import { useState } from 'react';
 import {
-  Badge,
-  Divider,
-  Heading,
-  Button,
-} from "@zuko/ui-kit";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getAccount, getDealsByAccount } from "@/server/query-options";
-import { accountsApi } from "@/lib/api/accounts";
-import dayjs from "dayjs";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
-import ActivityTimeline from "@/components/Activity/ActivityTimeline";
-import AddContactDialog from "./AddContactDialog";
+  BuildingOfficeIcon,
+  PencilIcon,
+  EyeSlashIcon,
+  XMarkIcon,
+  CheckIcon,
+} from '@heroicons/react/24/outline';
+import { Badge, Divider, Heading, Button } from '@zuko/ui-kit';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { getCompany, getDealsByCompany } from '@/server/query-options';
+import { companiesApi } from '@/lib/api/companies';
+import dayjs from 'dayjs';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import ActivityTimeline from '@/components/Activity/ActivityTimeline';
+import AddContactDialog from './AddContactDialog';
 
-interface AccountDetailProps {
-  accountId: number;
+interface CompanyDetailProps {
+  companyId: number;
   currentUserId: number | null;
 }
 
-export default function AccountDetail({ accountId, currentUserId }: AccountDetailProps) {
+export default function CompanyDetail({
+  companyId,
+  currentUserId,
+}: CompanyDetailProps) {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const { data: account, isLoading } = useQuery(getAccount(accountId));
-  const { data: dealsData } = useQuery(getDealsByAccount(accountId));
+  const { data: company, isLoading } = useQuery(getCompany(companyId));
+  const { data: dealsData } = useQuery(getDealsByCompany(companyId));
 
   // State for inline editing contact associations
   const [editingContactId, setEditingContactId] = useState<number | null>(null);
-  const [editedRole, setEditedRole] = useState("");
+  const [editedRole, setEditedRole] = useState('');
   const [editedIsPrimary, setEditedIsPrimary] = useState(false);
 
   const hideMutation = useMutation({
-    mutationFn: () => accountsApi.hideAccount(accountId),
+    mutationFn: () => companiesApi.hideCompany(companyId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["accounts"] });
-      router.push("/accounts");
+      queryClient.invalidateQueries({ queryKey: ['companies'] });
+      router.push('/companies');
     },
   });
 
   const removeContactMutation = useMutation({
-    mutationFn: (contactId: number) => accountsApi.removeContact(accountId, contactId),
+    mutationFn: (contactId: number) =>
+      companiesApi.removeContact(companyId, contactId),
     onSuccess: async () => {
-      // Use refetchQueries to immediately refetch instead of just invalidating
-      await queryClient.refetchQueries({ queryKey: ["account", accountId] });
-      await queryClient.invalidateQueries({ queryKey: ["accounts"] });
+      await queryClient.refetchQueries({ queryKey: ['company', companyId] });
+      await queryClient.invalidateQueries({ queryKey: ['companies'] });
     },
   });
 
   const updateContactMutation = useMutation({
-    mutationFn: ({ contactId, role, isPrimary }: { contactId: number; role?: string; isPrimary?: boolean }) =>
-      accountsApi.updateContact(accountId, contactId, { role, isPrimary }),
+    mutationFn: ({
+      contactId,
+      role,
+      isPrimary,
+    }: {
+      contactId: number;
+      role?: string;
+      isPrimary?: boolean;
+    }) => companiesApi.updateContact(companyId, contactId, { role, isPrimary }),
     onSuccess: async () => {
-      await queryClient.refetchQueries({ queryKey: ["account", accountId] });
-      await queryClient.invalidateQueries({ queryKey: ["accounts"] });
+      await queryClient.refetchQueries({ queryKey: ['company', companyId] });
+      await queryClient.invalidateQueries({ queryKey: ['companies'] });
       setEditingContactId(null);
     },
   });
@@ -63,38 +74,50 @@ export default function AccountDetail({ accountId, currentUserId }: AccountDetai
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <div className="text-sm text-zinc-600 dark:text-zinc-400">Loading account...</div>
+        <div className="text-sm text-zinc-600 dark:text-zinc-400">
+          Loading company...
+        </div>
       </div>
     );
   }
 
-  if (!account) {
+  if (!company) {
     return (
       <div className="flex items-center justify-center py-12">
-        <div className="text-sm text-zinc-600 dark:text-zinc-400">Account not found</div>
+        <div className="text-sm text-zinc-600 dark:text-zinc-400">
+          Company not found
+        </div>
       </div>
     );
   }
 
   const handleEdit = () => {
-    router.push(`/accounts/${accountId}/edit`);
+    router.push(`/companies/${companyId}/edit`);
   };
 
   const handleHide = () => {
-    if (confirm("Are you sure you want to hide this account?")) {
+    if (confirm('Are you sure you want to hide this company?')) {
       hideMutation.mutate();
     }
   };
 
   const handleRemoveContact = (contactId: number, contactName: string) => {
-    if (confirm(`Are you sure you want to remove ${contactName} from this account?`)) {
+    if (
+      confirm(
+        `Are you sure you want to remove ${contactName} from this company?`
+      )
+    ) {
       removeContactMutation.mutate(contactId);
     }
   };
 
-  const handleEditContact = (contactId: number, currentRole: string | undefined, currentIsPrimary: boolean) => {
+  const handleEditContact = (
+    contactId: number,
+    currentRole: string | undefined,
+    currentIsPrimary: boolean
+  ) => {
     setEditingContactId(contactId);
-    setEditedRole(currentRole || "");
+    setEditedRole(currentRole || '');
     setEditedIsPrimary(currentIsPrimary);
   };
 
@@ -108,13 +131,13 @@ export default function AccountDetail({ accountId, currentUserId }: AccountDetai
 
   const handleCancelEdit = () => {
     setEditingContactId(null);
-    setEditedRole("");
+    setEditedRole('');
     setEditedIsPrimary(false);
   };
 
   const formatCurrency = (value?: number, currency?: string) => {
-    if (value === undefined || value === null) return "-";
-    const curr = currency || "USD";
+    if (value === undefined || value === null) return '-';
+    const curr = currency || 'USD';
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: curr,
@@ -123,22 +146,27 @@ export default function AccountDetail({ accountId, currentUserId }: AccountDetai
     }).format(value);
   };
 
-  const getStageColor = (stage: string): "zinc" | "blue" | "yellow" | "green" | "red" => {
-    const stageColors: Record<string, "zinc" | "blue" | "yellow" | "green" | "red"> = {
-      prospecting: "zinc",
-      qualification: "blue",
-      proposal: "yellow",
-      negotiation: "yellow",
-      closed_won: "green",
-      closed_lost: "red",
+  const getStageColor = (
+    stage: string
+  ): 'zinc' | 'blue' | 'yellow' | 'green' | 'red' => {
+    const stageColors: Record<
+      string,
+      'zinc' | 'blue' | 'yellow' | 'green' | 'red'
+    > = {
+      prospecting: 'zinc',
+      qualification: 'blue',
+      proposal: 'yellow',
+      negotiation: 'yellow',
+      closed_won: 'green',
+      closed_lost: 'red',
     };
-    return stageColors[stage] || "zinc";
+    return stageColors[stage] || 'zinc';
   };
 
   const formatStage = (stage: string) => {
     return stage
       .split('_')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
       .join(' ');
   };
 
@@ -150,9 +178,9 @@ export default function AccountDetail({ accountId, currentUserId }: AccountDetai
             <BuildingOfficeIcon className="h-8 w-8 text-zinc-600 dark:text-zinc-400" />
           </div>
           <div>
-            <Heading>{account.companyName}</Heading>
+            <Heading>{company.companyName}</Heading>
             <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
-              Created {dayjs(account.createdAt).format("MMMM D, YYYY")}
+              Created {dayjs(company.createdAt).format('MMMM D, YYYY')}
             </p>
           </div>
         </div>
@@ -163,45 +191,49 @@ export default function AccountDetail({ accountId, currentUserId }: AccountDetai
           </Button>
           <Button plain onClick={handleHide} disabled={hideMutation.isPending}>
             <EyeSlashIcon className="h-4 w-4" />
-            {hideMutation.isPending ? "Hiding..." : "Hide"}
+            {hideMutation.isPending ? 'Hiding...' : 'Hide'}
           </Button>
         </div>
       </div>
 
       <Divider className="mt-6" />
 
-      {/* Account Information */}
+      {/* Company Information */}
       <div className="mt-8">
         <h2 className="text-base font-semibold text-zinc-950 dark:text-white">
-          Account Information
+          Company Information
         </h2>
         <dl className="mt-4 space-y-4">
-          {account.website && (
+          {company.website && (
             <div className="grid grid-cols-3">
-              <dt className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Website</dt>
+              <dt className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
+                Website
+              </dt>
               <dd className="col-span-2 text-sm text-zinc-950 dark:text-white">
                 <a
-                  href={account.website}
+                  href={company.website}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-blue-600 hover:underline dark:text-blue-400"
                 >
-                  {account.website}
+                  {company.website}
                 </a>
               </dd>
             </div>
           )}
-          {account.linkedinUrl && (
+          {company.linkedinUrl && (
             <div className="grid grid-cols-3">
-              <dt className="text-sm font-medium text-zinc-600 dark:text-zinc-400">LinkedIn</dt>
+              <dt className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
+                LinkedIn
+              </dt>
               <dd className="col-span-2 text-sm text-zinc-950 dark:text-white">
                 <a
-                  href={account.linkedinUrl}
+                  href={company.linkedinUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-blue-600 hover:underline dark:text-blue-400"
                 >
-                  {account.linkedinUrl}
+                  {company.linkedinUrl}
                 </a>
               </dd>
             </div>
@@ -211,12 +243,18 @@ export default function AccountDetail({ accountId, currentUserId }: AccountDetai
 
       {/* Ownership */}
       <div className="mt-8">
-        <h2 className="text-base font-semibold text-zinc-950 dark:text-white">Owners</h2>
+        <h2 className="text-base font-semibold text-zinc-950 dark:text-white">
+          Owners
+        </h2>
         <div className="mt-4 space-y-2">
-          {account.owners.map((owner) => (
+          {company.owners.map((owner) => (
             <div key={owner.id} className="flex items-center gap-3">
-              <div className="text-sm text-zinc-950 dark:text-white">{owner.user.name}</div>
-              <div className="text-sm text-zinc-600 dark:text-zinc-400">{owner.user.email}</div>
+              <div className="text-sm text-zinc-950 dark:text-white">
+                {owner.user.name}
+              </div>
+              <div className="text-sm text-zinc-600 dark:text-zinc-400">
+                {owner.user.email}
+              </div>
               {owner.isPrimary && (
                 <Badge color="lime" className="text-xs">
                   Primary
@@ -228,11 +266,13 @@ export default function AccountDetail({ accountId, currentUserId }: AccountDetai
       </div>
 
       {/* Summary */}
-      {account.summary && (
+      {company.summary && (
         <div className="mt-8">
-          <h2 className="text-base font-semibold text-zinc-950 dark:text-white">Summary</h2>
+          <h2 className="text-base font-semibold text-zinc-950 dark:text-white">
+            Summary
+          </h2>
           <div className="mt-4 whitespace-pre-wrap rounded-lg bg-zinc-50 p-4 text-sm text-zinc-950 dark:bg-zinc-900 dark:text-white">
-            {account.summary}
+            {company.summary}
           </div>
         </div>
       )}
@@ -244,13 +284,15 @@ export default function AccountDetail({ accountId, currentUserId }: AccountDetai
             Associated Contacts
           </h2>
           <AddContactDialog
-            accountId={accountId}
-            existingContactIds={account.contacts?.map((ac) => ac.contactId) || []}
+            companyId={companyId}
+            existingContactIds={
+              company.contacts?.map((ac) => ac.contactId) || []
+            }
           />
         </div>
-        {account.contacts && account.contacts.length > 0 ? (
+        {company.contacts && company.contacts.length > 0 ? (
           <div className="mt-4 space-y-3">
-            {account.contacts.map((ac) => (
+            {company.contacts.map((ac) => (
               <div key={ac.id} className="flex items-center gap-3">
                 <div className="text-sm min-w-[150px]">
                   <Link
@@ -278,10 +320,12 @@ export default function AccountDetail({ accountId, currentUserId }: AccountDetai
                         onChange={(e) => setEditedIsPrimary(e.target.checked)}
                         className="h-3.5 w-3.5 rounded border-zinc-300 text-blue-600 focus:ring-blue-500 dark:border-zinc-700"
                       />
-                      <span className="text-xs text-zinc-600 dark:text-zinc-400">Primary</span>
+                      <span className="text-xs text-zinc-600 dark:text-zinc-400">
+                        Primary
+                      </span>
                     </label>
                     <div className="text-xs text-zinc-600 dark:text-zinc-400">
-                      Joined {dayjs(ac.joinedAt).format("MMM D, YYYY")}
+                      Joined {dayjs(ac.joinedAt).format('MMM D, YYYY')}
                     </div>
                     <div className="ml-auto flex gap-2">
                       <button
@@ -316,20 +360,30 @@ export default function AccountDetail({ accountId, currentUserId }: AccountDetai
                       </Badge>
                     )}
                     <div className="text-xs text-zinc-600 dark:text-zinc-400">
-                      Joined {dayjs(ac.joinedAt).format("MMM D, YYYY")}
+                      Joined {dayjs(ac.joinedAt).format('MMM D, YYYY')}
                     </div>
                     <div className="ml-auto flex gap-2">
                       <button
-                        onClick={() => handleEditContact(ac.contactId, ac.role, ac.isPrimary)}
-                        disabled={updateContactMutation.isPending || removeContactMutation.isPending}
+                        onClick={() =>
+                          handleEditContact(ac.contactId, ac.role, ac.isPrimary)
+                        }
+                        disabled={
+                          updateContactMutation.isPending ||
+                          removeContactMutation.isPending
+                        }
                         className="text-zinc-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                         title="Edit association"
                       >
                         <PencilIcon className="h-4 w-4" />
                       </button>
                       <button
-                        onClick={() => handleRemoveContact(ac.contactId, ac.contact.name)}
-                        disabled={updateContactMutation.isPending || removeContactMutation.isPending}
+                        onClick={() =>
+                          handleRemoveContact(ac.contactId, ac.contact.name)
+                        }
+                        disabled={
+                          updateContactMutation.isPending ||
+                          removeContactMutation.isPending
+                        }
                         className="text-zinc-400 hover:text-red-600 dark:hover:text-red-400 transition-colors"
                         title="Remove contact"
                       >
@@ -356,7 +410,9 @@ export default function AccountDetail({ accountId, currentUserId }: AccountDetai
           </h2>
           <div className="mt-4 space-y-3">
             {dealsData.deals.map((deal: any) => {
-              const dealAccount = deal.accounts?.find((da: any) => da.accountId === accountId);
+              const dealCompany = deal.companies?.find(
+                (da: any) => da.companyId === companyId
+              );
               return (
                 <div key={deal.id} className="flex items-center gap-3">
                   <div className="text-sm min-w-[200px]">
@@ -367,7 +423,7 @@ export default function AccountDetail({ accountId, currentUserId }: AccountDetai
                       {deal.title}
                     </Link>
                   </div>
-                  {dealAccount?.isPrimary && (
+                  {dealCompany?.isPrimary && (
                     <Badge color="lime" className="text-xs">
                       Primary
                     </Badge>
@@ -387,18 +443,24 @@ export default function AccountDetail({ accountId, currentUserId }: AccountDetai
 
       {/* Metadata */}
       <div className="mt-8">
-        <h2 className="text-base font-semibold text-zinc-950 dark:text-white">Details</h2>
+        <h2 className="text-base font-semibold text-zinc-950 dark:text-white">
+          Details
+        </h2>
         <dl className="mt-4 space-y-4">
           <div className="grid grid-cols-3">
-            <dt className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Created</dt>
+            <dt className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
+              Created
+            </dt>
             <dd className="col-span-2 text-sm text-zinc-950 dark:text-white">
-              {dayjs(account.createdAt).format("MMMM D, YYYY [at] h:mm A")}
+              {dayjs(company.createdAt).format('MMMM D, YYYY [at] h:mm A')}
             </dd>
           </div>
           <div className="grid grid-cols-3">
-            <dt className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Last Updated</dt>
+            <dt className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
+              Last Updated
+            </dt>
             <dd className="col-span-2 text-sm text-zinc-950 dark:text-white">
-              {dayjs(account.updatedAt).format("MMMM D, YYYY [at] h:mm A")}
+              {dayjs(company.updatedAt).format('MMMM D, YYYY [at] h:mm A')}
             </dd>
           </div>
         </dl>
@@ -406,11 +468,13 @@ export default function AccountDetail({ accountId, currentUserId }: AccountDetai
 
       {/* Activity Timeline */}
       <div className="mt-8">
-        <h2 className="text-base font-semibold text-zinc-950 dark:text-white">Activity</h2>
+        <h2 className="text-base font-semibold text-zinc-950 dark:text-white">
+          Activity
+        </h2>
         <div className="mt-4">
           <ActivityTimeline
-            entityType="account"
-            entityId={accountId}
+            entityType="company"
+            entityId={companyId}
             currentUserId={currentUserId ?? undefined}
           />
         </div>

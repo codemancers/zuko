@@ -40,7 +40,11 @@ import { authClient } from '@/lib/auth-client';
 import { useEffect, useState } from 'react';
 import { useChats } from '@/hooks/use-chats';
 
-function AccountDropdownMenu({ anchor }: { anchor: 'top start' | 'bottom end' }) {
+function AccountDropdownMenu({
+  anchor,
+}: {
+  anchor: 'top start' | 'bottom end';
+}) {
   const handleSignOut = async () => {
     await authClient.signOut();
     window.location.href = '/sign-in';
@@ -63,7 +67,11 @@ function AccountDropdownMenu({ anchor }: { anchor: 'top start' | 'bottom end' })
 
 export function ApplicationLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const [user, setUser] = useState<{ name?: string; email?: string; image?: string | null } | null>(null);
+  const [user, setUser] = useState<{
+    name?: string;
+    email?: string;
+    image?: string | null;
+  } | null>(null);
   const [loading, setLoading] = useState(true);
   const { data: chats = [] } = useChats();
   const recentChats = chats.slice(0, 5);
@@ -94,7 +102,9 @@ export function ApplicationLayout({ children }: { children: React.ReactNode }) {
   if (loading) {
     return (
       <div className="flex h-screen items-center justify-center">
-        <div className="text-sm text-zinc-600 dark:text-zinc-400">Loading...</div>
+        <div className="text-sm text-zinc-600 dark:text-zinc-400">
+          Loading...
+        </div>
       </div>
     );
   }
@@ -122,11 +132,7 @@ export function ApplicationLayout({ children }: { children: React.ReactNode }) {
         <Sidebar>
           <SidebarHeader>
             <div className="flex items-center gap-3 px-2 py-2.5">
-              <Avatar
-                src="/logo.svg"
-                initials="Z"
-                className="size-10"
-              />
+              <Avatar src="/logo.svg" initials="Z" className="size-10" />
               <div className="flex flex-col">
                 <span className="text-sm/5 font-semibold text-zinc-950 dark:text-white">
                   Zuko
@@ -144,19 +150,31 @@ export function ApplicationLayout({ children }: { children: React.ReactNode }) {
                 <ChatBubbleLeftRightIcon />
                 <SidebarLabel>New chat</SidebarLabel>
               </SidebarItem>
-              <SidebarItem href="/contacts" current={pathname.startsWith('/contacts')}>
+              <SidebarItem
+                href="/contacts"
+                current={pathname.startsWith('/contacts')}
+              >
                 <UserGroupIcon />
                 <SidebarLabel>Contacts</SidebarLabel>
               </SidebarItem>
-              <SidebarItem href="/accounts" current={pathname.startsWith('/accounts')}>
+              <SidebarItem
+                href="/companies"
+                current={pathname.startsWith('/companies')}
+              >
                 <BuildingOfficeIcon />
-                <SidebarLabel>Accounts</SidebarLabel>
+                <SidebarLabel>Companies</SidebarLabel>
               </SidebarItem>
-              <SidebarItem href="/deals" current={pathname.startsWith('/deals')}>
+              <SidebarItem
+                href="/deals"
+                current={pathname.startsWith('/deals')}
+              >
                 <BriefcaseIcon />
                 <SidebarLabel>Deals</SidebarLabel>
               </SidebarItem>
-              <SidebarItem href="/settings" current={pathname.startsWith('/settings')}>
+              <SidebarItem
+                href="/settings"
+                current={pathname.startsWith('/settings')}
+              >
                 <Cog6ToothIcon />
                 <SidebarLabel>Settings</SidebarLabel>
               </SidebarItem>

@@ -31,7 +31,8 @@ import { AdminModule } from './admin/admin.module';
       imports: [PrismaModule],
       useFactory: (prismaService: PrismaService) => {
         // Check if email/password auth should be enabled (for testing purposes)
-        const includeEmailAuth = process.env.BETTER_AUTH_INCLUDE_EMAILS_AUTH === 'true';
+        const includeEmailAuth =
+          process.env.BETTER_AUTH_INCLUDE_EMAILS_AUTH === 'true';
 
         return {
           auth: betterAuth({
@@ -41,9 +42,10 @@ import { AdminModule } from './admin/admin.module';
             // baseURL: full URL where auth endpoints are publicly accessible
             // In prod: use frontend URL (OAuth callbacks go through proxy)
             // In dev: use backend URL directly
-            baseURL: process.env.NODE_ENV === 'production'
-              ? (process.env.FRONTEND_URL || 'https://zuko-webv-5725.fly.dev')
-              : (process.env.BACKEND_URL || 'http://localhost:3001'),
+            baseURL:
+              process.env.NODE_ENV === 'production'
+                ? process.env.FRONTEND_URL || 'https://zuko-webv-5725.fly.dev'
+                : process.env.BACKEND_URL || 'http://localhost:3001',
             // Explicitly set secret to ensure consistency between tests and runtime
             secret: process.env.BETTER_AUTH_SECRET || process.env.AUTH_SECRET,
             trustedOrigins: process.env.TRUSTED_ORIGINS?.split(',') ?? [
@@ -91,11 +93,11 @@ import { AdminModule } from './admin/admin.module';
                 process.env.NODE_ENV === 'production'
                   ? {
                       sameSite: 'none', // Allow cross-origin requests
-                      secure: true,     // HTTPS only
+                      secure: true, // HTTPS only
                     }
                   : {
-                      sameSite: 'lax',  // Standard for same-origin
-                      secure: false,    // Allow HTTP in development
+                      sameSite: 'lax', // Standard for same-origin
+                      secure: false, // Allow HTTP in development
                     },
             },
           }),

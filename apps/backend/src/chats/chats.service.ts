@@ -228,9 +228,10 @@ export class ChatsService {
    */
   async autoGenerateTitle(chatId: number, firstMessage: string) {
     // Take first 25 chars for concise sidebar display
-    const title = firstMessage.length > 25
-      ? firstMessage.substring(0, 22) + '...'
-      : firstMessage;
+    const title =
+      firstMessage.length > 25
+        ? firstMessage.substring(0, 22) + '...'
+        : firstMessage;
 
     return this.updateTitle(chatId, title);
   }

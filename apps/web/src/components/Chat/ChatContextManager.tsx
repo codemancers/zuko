@@ -1,21 +1,21 @@
-"use client";
+'use client';
 
-import { useState, useCallback, useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { UserIcon, BuildingIcon } from "lucide-react";
+import { useState, useCallback, useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { UserIcon, BuildingIcon } from 'lucide-react';
 import {
   ContextChip,
   EntityItem,
   usePromptInputReferencedSources,
-} from "@zuko/ui-kit";
-import { contactsApi, type Contact } from "@/lib/api/contacts";
-import { accountsApi, type SalesAccount } from "@/lib/api/accounts";
+} from '@zuko/ui-kit';
+import { contactsApi, type Contact } from '@/lib/api/contacts';
+import { companiesApi, type SalesCompany } from '@/lib/api/companies';
 
 // ============================================================================
 // Types
 // ============================================================================
 
-export type ChatEntityType = "contact" | "account";
+export type ChatEntityType = 'contact' | 'company';
 
 export interface ChatEntity {
   type: ChatEntityType;
@@ -35,7 +35,7 @@ function contactToEntityItem(contact: Contact): EntityItem {
     description: contact.email || contact.phone,
     icon: <UserIcon className="size-4" />,
     metadata: {
-      type: "contact",
+      type: 'contact',
       entityId: contact.id,
       email: contact.email,
       phone: contact.phone,
@@ -45,22 +45,23 @@ function contactToEntityItem(contact: Contact): EntityItem {
   };
 }
 
-function accountToEntityItem(account: SalesAccount): EntityItem {
-  const contactCount = account._count?.contacts || 0;
+function companyToEntityItem(company: SalesCompany): EntityItem {
+  const contactCount = company._count?.contacts || 0;
   const description =
-    account.website || `${contactCount} contact${contactCount !== 1 ? "s" : ""}`;
+    company.website ||
+    `${contactCount} contact${contactCount !== 1 ? 's' : ''}`;
 
   return {
-    id: `account-${account.id}`,
-    label: account.companyName,
+    id: `company-${company.id}`,
+    label: company.companyName,
     description,
     icon: <BuildingIcon className="size-4" />,
     metadata: {
-      type: "account",
-      entityId: account.id,
-      website: account.website,
-      linkedinUrl: account.linkedinUrl,
-      summary: account.summary,
+      type: 'company',
+      entityId: company.id,
+      website: company.website,
+      linkedinUrl: company.linkedinUrl,
+      summary: company.summary,
     },
   };
 }
@@ -89,7 +90,7 @@ export const ChatContextManager = ({
   onContextChange,
 }: ChatContextManagerProps) => {
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [dialogType, setDialogType] = useState<"contact" | "account" | null>(
+  const [dialogType, setDialogType] = useState<'contact' | 'company' | null>(
     null
   );
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -98,15 +99,15 @@ export const ChatContextManager = ({
   const referencedSources = usePromptInputReferencedSources();
   const { sources, add, remove } = referencedSources;
 
-  // Fetch contacts and accounts
+  // Fetch contacts and companies
   const { data: contactsData, isLoading: contactsLoading } = useQuery({
-    queryKey: ["contacts", { limit: 100 }],
+    queryKey: ['contacts', { limit: 100 }],
     queryFn: () => contactsApi.getContacts({ limit: 100 }),
   });
 
-  const { data: accountsData, isLoading: accountsLoading } = useQuery({
-    queryKey: ["accounts", { limit: 100 }],
-    queryFn: () => accountsApi.getAccounts({ limit: 100 }),
+  const { data: companiesData, isLoading: companiesLoading } = useQuery({
+    queryKey: ['companies', { limit: 100 }],
+    queryFn: () => companiesApi.getCompanies({ limit: 100 }),
   });
 
   // Convert to generic EntityItem[]
@@ -115,9 +116,9 @@ export const ChatContextManager = ({
     [contactsData]
   );
 
-  const accountItems = useMemo(
-    () => accountsData?.accounts.map(accountToEntityItem) || [],
-    [accountsData]
+  const companyItems = useMemo(
+    () => companiesData?.companies.map(companyToEntityItem) || [],
+    [companiesData]
   );
 
   // Get current entities from sources
@@ -126,12 +127,12 @@ export const ChatContextManager = ({
       id: source.id,
       type: (source as any).metadata?.type as ChatEntityType,
       entityId: (source as any).metadata?.entityId as number,
-      label: (source as any).title || "",
+      label: (source as any).title || '',
     }));
   }, [sources]);
 
   // Handle dialog open
-  const handleOpenDialog = useCallback((type: "contact" | "account") => {
+  const handleOpenDialog = useCallback((type: 'contact' | 'company') => {
     setDialogType(type);
     setSelectedIds([]);
     setDialogOpen(true);
@@ -148,7 +149,7 @@ export const ChatContextManager = ({
         .map((s) =>
           entityItemToChatEntity({
             id: s.id,
-            label: (s as any).title || "",
+            label: (s as any).title || '',
             metadata: (s as any).metadata,
           })
         );
@@ -163,9 +164,9 @@ export const ChatContextManager = ({
       // Convert to SourceDocumentUIPart format and add
       selectedItems.forEach((item) => {
         add({
-          type: "source-document",
+          type: 'source-document',
           sourceId: item.id,
-          mediaType: "application/json",
+          mediaType: 'application/json',
           title: item.label,
           ...(item.metadata && { metadata: item.metadata }),
         });
@@ -177,7 +178,8 @@ export const ChatContextManager = ({
           entityItemToChatEntity({
             id: `${e.type}-${e.entityId}`,
             label: e.label,
-            metadata: (sources.find((s) => s.id === e.id) as any)?.metadata || {},
+            metadata:
+              (sources.find((s) => s.id === e.id) as any)?.metadata || {},
           })
         ),
         ...selectedItems.map(entityItemToChatEntity),
@@ -193,14 +195,14 @@ export const ChatContextManager = ({
 
   // Get dialog items based on type
   const dialogItems =
-    dialogType === "contact"
+    dialogType === 'contact'
       ? contactItems
-      : dialogType === "account"
-        ? accountItems
-        : [];
+      : dialogType === 'company'
+      ? companyItems
+      : [];
 
   const isDialogLoading =
-    dialogType === "contact" ? contactsLoading : accountsLoading;
+    dialogType === 'contact' ? contactsLoading : companiesLoading;
 
   return {
     currentEntities,
@@ -232,9 +234,9 @@ export const ChatContextDisplay = () => {
     <div className="flex flex-wrap gap-2">
       {sources.map((source) => {
         const type = (source as any).metadata?.type as ChatEntityType;
-        const color = type === "contact" ? "blue" : "purple";
+        const color = type === 'contact' ? 'blue' : 'purple';
         const icon =
-          type === "contact" ? (
+          type === 'contact' ? (
             <UserIcon className="size-3.5" />
           ) : (
             <BuildingIcon className="size-3.5" />
@@ -244,7 +246,7 @@ export const ChatContextDisplay = () => {
           <ContextChip
             key={source.id}
             id={source.id}
-            label={(source as any).title || ""}
+            label={(source as any).title || ''}
             icon={icon}
             color={color}
             onRemove={(id) => remove(id)}
@@ -260,7 +262,7 @@ export const ChatContextDisplay = () => {
 // ============================================================================
 
 export interface EntitySelectorTriggerProps {
-  onSelectType: (type: "contact" | "account") => void;
+  onSelectType: (type: 'contact' | 'company') => void;
 }
 
 export const EntitySelectorTrigger = ({
@@ -270,7 +272,7 @@ export const EntitySelectorTrigger = ({
     <>
       <button
         type="button"
-        onClick={() => onSelectType("contact")}
+        onClick={() => onSelectType('contact')}
         className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-md transition-colors"
       >
         <UserIcon className="size-4" />
@@ -278,11 +280,11 @@ export const EntitySelectorTrigger = ({
       </button>
       <button
         type="button"
-        onClick={() => onSelectType("account")}
+        onClick={() => onSelectType('company')}
         className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-md transition-colors"
       >
         <BuildingIcon className="size-4" />
-        Add account
+        Add company
       </button>
     </>
   );

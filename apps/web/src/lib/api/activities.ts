@@ -54,7 +54,9 @@ export const activitiesApi = {
   /**
    * Get all activities with optional filters
    */
-  async getActivities(filters?: ActivityFilters): Promise<ActivitiesListResponse> {
+  async getActivities(
+    filters?: ActivityFilters
+  ): Promise<ActivitiesListResponse> {
     const params = new URLSearchParams();
 
     if (filters) {
@@ -90,10 +92,12 @@ export const activitiesApi = {
     }
 
     const queryString = params.toString();
-    // Pluralize entityType (contact -> contacts, account -> accounts)
+    // Pluralize entityType (contact -> contacts, company -> companies)
     const pluralEntity = `${entityType}s`;
     return apiClient.get(
-      `/${pluralEntity}/${entityId}/activities${queryString ? `?${queryString}` : ''}`
+      `/${pluralEntity}/${entityId}/activities${
+        queryString ? `?${queryString}` : ''
+      }`
     );
   },
 
@@ -105,9 +109,12 @@ export const activitiesApi = {
     entityId: number,
     data: CreateCommentDto
   ): Promise<Activity> {
-    // Pluralize entityType (contact -> contacts, account -> accounts)
+    // Pluralize entityType (contact -> contacts, company -> companies)
     const pluralEntity = `${entityType}s`;
-    return apiClient.post(`/${pluralEntity}/${entityId}/activities/comments`, data);
+    return apiClient.post(
+      `/${pluralEntity}/${entityId}/activities/comments`,
+      data
+    );
   },
 
   /**

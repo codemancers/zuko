@@ -8,10 +8,10 @@ import {
 } from '@zuko/agents';
 import {
   ContactsService,
-  AccountsService,
+  CompaniesService,
   ActivityService,
   ContactsRepository,
-  AccountsRepository,
+  CompaniesRepository,
   ActivityRepository,
 } from '@zuko/sales';
 
@@ -40,18 +40,18 @@ import {
       inject: [ContactsRepository],
     },
     {
-      provide: AccountsRepository,
+      provide: CompaniesRepository,
       useFactory: (prismaService: PrismaService) => {
-        return new AccountsRepository(prismaService);
+        return new CompaniesRepository(prismaService);
       },
       inject: [PrismaService],
     },
     {
-      provide: AccountsService,
-      useFactory: (accountsRepository: AccountsRepository) => {
-        return new AccountsService(accountsRepository);
+      provide: CompaniesService,
+      useFactory: (companiesRepository: CompaniesRepository) => {
+        return new CompaniesService(companiesRepository);
       },
-      inject: [AccountsRepository],
+      inject: [CompaniesRepository],
     },
     {
       provide: ActivityRepository,
@@ -74,18 +74,18 @@ import {
         adminService: AdminService,
         prismaService: PrismaService,
         contactsService: ContactsService,
-        accountsService: AccountsService,
+        companiesService: CompaniesService,
         activityService: ActivityService
       ) => {
         return new OrchestratorService(
           adminService,
           prismaService,
           contactsService,
-          accountsService,
+          companiesService,
           activityService
         );
       },
-      inject: [AdminService, PrismaService, ContactsService, AccountsService, ActivityService],
+      inject: [AdminService, PrismaService, ContactsService, CompaniesService, ActivityService],
     },
   ],
   exports: [

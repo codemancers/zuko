@@ -2,9 +2,9 @@ import { Page, Locator } from '@playwright/test';
 import { BasePage } from './BasePage';
 
 /**
- * Page Object Model for Account Detail page
+ * Page Object Model for Company Detail page
  */
-export class AccountDetailPage extends BasePage {
+export class CompanyDetailPage extends BasePage {
   readonly editButton: Locator;
   readonly hideButton: Locator;
   readonly addContactButton: Locator;
@@ -20,10 +20,11 @@ export class AccountDetailPage extends BasePage {
   }
 
   /**
-   * Navigate to a specific account detail page
+   * Navigate to a specific company detail page
    */
-  async goto(accountId: number) {
-    await super.goto(`/accounts/${accountId}`);
+  // @ts-expect-error: intentionally overloading goto with a numeric id
+  async goto(companyId: number) {
+    await super.goto(`/companies/${companyId}`);
     await this.page.waitForLoadState('networkidle');
   }
 
@@ -35,18 +36,21 @@ export class AccountDetailPage extends BasePage {
   }
 
   /**
-   * Add a contact to the account
+   * Add a contact to the company
    */
   async addContact(contactName: string, role?: string, isPrimary = false) {
     // Click Add Contact button
     await this.addContactButton.click();
 
     // Wait for dialog to open
-    await this.page.waitForSelector('text=Add Contact to Account');
+    await this.page.waitForSelector('text=Add Contact to Company');
 
     // Select contact from dropdown
     const selectContact = this.page.locator('select').first();
-    await selectContact.selectOption({ label: new RegExp(contactName, 'i') });
+    const options = await selectContact.locator('option').all();
+    const optionTexts = await Promise.all(options.map(o => o.textContent()));
+    const match = optionTexts.find(t => t?.toLowerCase().includes(contactName.toLowerCase()));
+    if (match) await selectContact.selectOption({ label: match.trim() });
 
     // Fill role if provided
     if (role) {
@@ -56,7 +60,7 @@ export class AccountDetailPage extends BasePage {
 
     // Check primary if requested
     if (isPrimary) {
-      const primaryCheckbox = this.page.getByText(/Primary contact for this account/i).locator('xpath=preceding-sibling::input[@type="checkbox"]');
+      const primaryCheckbox = this.page.getByText(/Primary contact for this company/i).locator('xpath=preceding-sibling::input[@type="checkbox"]');
       await primaryCheckbox.check();
     }
 
@@ -64,11 +68,11 @@ export class AccountDetailPage extends BasePage {
     await this.page.getByRole('button', { name: /Add Contact/i }).click();
 
     // Wait for dialog to close and data to refresh
-    await this.page.waitForSelector('text=Add Contact to Account', { state: 'hidden', timeout: 3000 });
+    await this.page.waitForSelector('text=Add Contact to Company', { state: 'hidden', timeout: 3000 });
   }
 
   /**
-   * Remove a contact from the account
+   * Remove a contact from the company
    */
   async removeContact(contactName: string) {
     // Find the contact row
@@ -189,7 +193,7 @@ export class AccountDetailPage extends BasePage {
     // Wait for textarea to be cleared (indicating successful post)
     await textarea.waitFor({ state: 'visible', timeout: 3000 });
     await this.page.waitForFunction(
-      (el) => (el as HTMLTextAreaElement).value === '',
+      (el) => (el as unknown as HTMLTextAreaElement).value === '',
       textarea
     );
   }

@@ -1,13 +1,17 @@
 import { Module } from '@nestjs/common';
 import { ContactsController } from './contacts.controller';
-import { AccountsController } from './accounts.controller';
+import { CompaniesController } from './companies.controller';
 import { DealsController } from './deals.controller';
-import { ActivitiesController, ContactActivitiesController, AccountActivitiesController } from './activities.controller';
+import {
+  ActivitiesController,
+  ContactActivitiesController,
+  CompanyActivitiesController,
+} from './activities.controller';
 import {
   ContactsRepository,
   ContactsService,
-  AccountsRepository,
-  AccountsService,
+  CompaniesRepository,
+  CompaniesService,
   DealsRepository,
   DealsService,
   ActivityRepository,
@@ -18,7 +22,14 @@ import { PrismaService } from '../../prisma/prisma.service';
 
 @Module({
   imports: [PrismaModule],
-  controllers: [ContactsController, AccountsController, DealsController, ActivitiesController, ContactActivitiesController, AccountActivitiesController],
+  controllers: [
+    ContactsController,
+    CompaniesController,
+    DealsController,
+    ActivitiesController,
+    ContactActivitiesController,
+    CompanyActivitiesController,
+  ],
   providers: [
     {
       provide: ContactsRepository,
@@ -35,18 +46,18 @@ import { PrismaService } from '../../prisma/prisma.service';
       inject: [ContactsRepository],
     },
     {
-      provide: AccountsRepository,
+      provide: CompaniesRepository,
       useFactory: (prismaService: PrismaService) => {
-        return new AccountsRepository(prismaService);
+        return new CompaniesRepository(prismaService);
       },
       inject: [PrismaService],
     },
     {
-      provide: AccountsService,
-      useFactory: (accountsRepository: AccountsRepository) => {
-        return new AccountsService(accountsRepository);
+      provide: CompaniesService,
+      useFactory: (companiesRepository: CompaniesRepository) => {
+        return new CompaniesService(companiesRepository);
       },
-      inject: [AccountsRepository],
+      inject: [CompaniesRepository],
     },
     {
       provide: ActivityRepository,

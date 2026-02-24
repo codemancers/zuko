@@ -1,0 +1,63 @@
+import { Page, Locator } from '@playwright/test';
+import { BasePage } from './BasePage';
+
+/**
+ * Page Object Model for Companies page
+ */
+export class CompaniesPage extends BasePage {
+  readonly newCompanyButton: Locator;
+  readonly companiesList: Locator;
+  readonly searchInput: Locator;
+
+  constructor(page: Page) {
+    super(page);
+    this.newCompanyButton = page.getByRole('button', { name: 'New Company' });
+    this.companiesList = page.locator('table').or(page.locator('main'));
+    this.searchInput = page.getByPlaceholder(/Search companies/i);
+  }
+
+  /**
+   * Navigate to the companies page
+   */
+  async goto() {
+    await super.goto('/companies');
+    await this.page.waitForLoadState('networkidle');
+  }
+
+  /**
+   * Click the new company button
+   */
+  async clickNewCompany() {
+    await this.newCompanyButton.click();
+  }
+
+  /**
+   * Search for a company by name
+   */
+  async searchCompany(name: string) {
+    await this.searchInput.fill(name);
+  }
+
+  /**
+   * Get all company items from the table
+   */
+  async getCompanyItems() {
+    return this.page.locator('tbody tr').all();
+  }
+
+  /**
+   * Click on a company by name
+   */
+  async clickCompany(companyName: string) {
+    await this.page.getByText(companyName, { exact: false }).click();
+  }
+
+  /**
+   * Wait for companies to load
+   */
+  async waitForCompaniesToLoad() {
+    await this.page.waitForSelector('tbody tr, text=No companies found', { timeout: 5000 }).catch(() => {
+      // If neither appears, table might be empty which is also valid
+    });
+  }
+}

@@ -2,7 +2,6 @@ import {
   Controller,
   Get,
   Post,
-  Put,
   Patch,
   Delete,
   Body,
@@ -19,14 +18,14 @@ import {
   DealsService,
   CreateDealInput,
   UpdateDealInput,
-  AddAccountToDealInput,
+  AddCompanyToDealInput,
   AddContactToDealInput,
   UpdateContactDealInput,
 } from '@zuko/sales';
 
 // DTOs for API requests
 export class CreateDealDto implements CreateDealInput {
-  title: string;
+  title!: string;
   value?: number;
   currency?: string;
   probability?: number;
@@ -35,7 +34,7 @@ export class CreateDealDto implements CreateDealInput {
   expectedCloseDate?: Date;
   source?: string;
   priority?: number;
-  ownerIds: number[];
+  ownerIds!: number[];
   primaryOwnerId?: number;
 }
 
@@ -58,7 +57,7 @@ export class DealListQueryDto {
   limit?: number;
   search?: string;
   ownerIds?: string; // comma-separated list
-  accountIds?: string; // comma-separated list
+  companyIds?: string; // comma-separated list
   contactIds?: string; // comma-separated list
   stages?: string; // comma-separated list
   minValue?: number;
@@ -69,21 +68,21 @@ export class DealListQueryDto {
 }
 
 export class AddOwnerDto {
-  userId: number;
+  userId!: number;
   isPrimary?: boolean;
 }
 
-export class AddAccountDto implements AddAccountToDealInput {
-  accountId: number;
+export class AddCompanyDto implements AddCompanyToDealInput {
+  companyId!: number;
   isPrimary?: boolean;
 }
 
-export class UpdateAccountDto {
-  isPrimary: boolean;
+export class UpdateCompanyDto {
+  isPrimary!: boolean;
 }
 
 export class AddContactDto implements AddContactToDealInput {
-  contactId: number;
+  contactId!: number;
   role?: string;
   isPrimary?: boolean;
 }
@@ -118,19 +117,19 @@ export class DealsController {
       // Transform expectedCloseDate string to Date object if provided
       const input: CreateDealInput = {
         ...dto,
-        expectedCloseDate: dto.expectedCloseDate ? new Date(dto.expectedCloseDate) : undefined,
+        expectedCloseDate: dto.expectedCloseDate
+          ? new Date(dto.expectedCloseDate)
+          : undefined,
       };
 
       const result = await this.dealsService.create(input);
       this.logger.log(`[CREATE_DEAL] Success - Deal ID: ${result.id}`);
       return result;
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       const errorStack = error instanceof Error ? error.stack : undefined;
-      this.logger.error(
-        `[CREATE_DEAL] Failed: ${errorMessage}`,
-        errorStack
-      );
+      this.logger.error(`[CREATE_DEAL] Failed: ${errorMessage}`, errorStack);
       throw error;
     }
   }
@@ -140,14 +139,24 @@ export class DealsController {
     const filters = {
       search: query.search,
       isHidden: query.isHidden === 'true',
-      ownerIds: query.ownerIds ? query.ownerIds.split(',').map(Number) : undefined,
-      accountIds: query.accountIds ? query.accountIds.split(',').map(Number) : undefined,
-      contactIds: query.contactIds ? query.contactIds.split(',').map(Number) : undefined,
+      ownerIds: query.ownerIds
+        ? query.ownerIds.split(',').map(Number)
+        : undefined,
+      companyIds: query.companyIds
+        ? query.companyIds.split(',').map(Number)
+        : undefined,
+      contactIds: query.contactIds
+        ? query.contactIds.split(',').map(Number)
+        : undefined,
       stages: query.stages ? query.stages.split(',') : undefined,
       minValue: query.minValue ? Number(query.minValue) : undefined,
       maxValue: query.maxValue ? Number(query.maxValue) : undefined,
-      expectedCloseFrom: query.expectedCloseFrom ? new Date(query.expectedCloseFrom) : undefined,
-      expectedCloseTo: query.expectedCloseTo ? new Date(query.expectedCloseTo) : undefined,
+      expectedCloseFrom: query.expectedCloseFrom
+        ? new Date(query.expectedCloseFrom)
+        : undefined,
+      expectedCloseTo: query.expectedCloseTo
+        ? new Date(query.expectedCloseTo)
+        : undefined,
     };
 
     const pagination = {
@@ -171,8 +180,12 @@ export class DealsController {
     // Transform date strings to Date objects if provided
     const input: UpdateDealInput = {
       ...dto,
-      expectedCloseDate: dto.expectedCloseDate ? new Date(dto.expectedCloseDate) : undefined,
-      actualCloseDate: dto.actualCloseDate ? new Date(dto.actualCloseDate) : undefined,
+      expectedCloseDate: dto.expectedCloseDate
+        ? new Date(dto.expectedCloseDate)
+        : undefined,
+      actualCloseDate: dto.actualCloseDate
+        ? new Date(dto.actualCloseDate)
+        : undefined,
     };
 
     return this.dealsService.update(id, input);
@@ -228,52 +241,55 @@ export class DealsController {
     return this.dealsService.getDealsByUser(userId, pagination);
   }
 
-  @Post(':id/accounts')
+  @Post(':id/companies')
   @HttpCode(HttpStatus.CREATED)
-  async addAccount(
+  async addCompany(
     @Param('id', ParseIntPipe) id: number,
-    @Body() dto: AddAccountDto
+    @Body() dto: AddCompanyDto
   ) {
-    this.logger.log(`[ADD_ACCOUNT_TO_DEAL] Deal: ${id}, Account: ${dto.accountId}`);
+    this.logger.log(
+      `[ADD_COMPANY_TO_DEAL] Deal: ${id}, Company: ${dto.companyId}`
+    );
 
     try {
-      const result = await this.dealsService.addAccount(id, dto);
+      const result = await this.dealsService.addCompany(id, dto);
       this.logger.log(
-        `[ADD_ACCOUNT_TO_DEAL] Success - Account ${dto.accountId} added to Deal ${id}`
+        `[ADD_COMPANY_TO_DEAL] Success - Company ${dto.companyId} added to Deal ${id}`
       );
       return result;
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       const errorStack = error instanceof Error ? error.stack : undefined;
       this.logger.error(
-        `[ADD_ACCOUNT_TO_DEAL] Failed: ${errorMessage}`,
+        `[ADD_COMPANY_TO_DEAL] Failed: ${errorMessage}`,
         errorStack
       );
       throw error;
     }
   }
 
-  @Patch(':id/accounts/:accountId')
-  async updateAccount(
+  @Patch(':id/companies/:companyId')
+  async updateCompany(
     @Param('id', ParseIntPipe) id: number,
-    @Param('accountId', ParseIntPipe) accountId: number,
-    @Body() dto: UpdateAccountDto
+    @Param('companyId', ParseIntPipe) companyId: number,
+    @Body() dto: UpdateCompanyDto
   ) {
-    return this.dealsService.updateAccount(id, accountId, dto.isPrimary);
+    return this.dealsService.updateCompany(id, companyId, dto.isPrimary);
   }
 
-  @Delete(':id/accounts/:accountId')
+  @Delete(':id/companies/:companyId')
   @HttpCode(HttpStatus.NO_CONTENT)
-  async removeAccount(
+  async removeCompany(
     @Param('id', ParseIntPipe) id: number,
-    @Param('accountId', ParseIntPipe) accountId: number
+    @Param('companyId', ParseIntPipe) companyId: number
   ) {
-    await this.dealsService.removeAccount(id, accountId);
+    await this.dealsService.removeCompany(id, companyId);
   }
 
-  @Get(':id/accounts')
-  async getAccounts(@Param('id', ParseIntPipe) id: number) {
-    return this.dealsService.getAccounts(id);
+  @Get(':id/companies')
+  async getCompanies(@Param('id', ParseIntPipe) id: number) {
+    return this.dealsService.getCompanies(id);
   }
 
   @Post(':id/contacts')
@@ -282,7 +298,9 @@ export class DealsController {
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: AddContactDto
   ) {
-    this.logger.log(`[ADD_CONTACT_TO_DEAL] Deal: ${id}, Contact: ${dto.contactId}`);
+    this.logger.log(
+      `[ADD_CONTACT_TO_DEAL] Deal: ${id}, Contact: ${dto.contactId}`
+    );
 
     try {
       const result = await this.dealsService.addContact(id, dto);
@@ -291,7 +309,8 @@ export class DealsController {
       );
       return result;
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       const errorStack = error instanceof Error ? error.stack : undefined;
       this.logger.error(
         `[ADD_CONTACT_TO_DEAL] Failed: ${errorMessage}`,
@@ -324,9 +343,9 @@ export class DealsController {
     return this.dealsService.getContacts(id);
   }
 
-  @Get('account/:accountId')
-  async getDealsByAccount(
-    @Param('accountId', ParseIntPipe) accountId: number,
+  @Get('company/:companyId')
+  async getDealsByCompany(
+    @Param('companyId', ParseIntPipe) companyId: number,
     @Query() query: DealListQueryDto
   ) {
     const pagination = {
@@ -334,7 +353,7 @@ export class DealsController {
       limit: query.limit ? Number(query.limit) : 50,
     };
 
-    return this.dealsService.getDealsByAccount(accountId, pagination);
+    return this.dealsService.getDealsByCompany(companyId, pagination);
   }
 
   @Get('contact/:contactId')

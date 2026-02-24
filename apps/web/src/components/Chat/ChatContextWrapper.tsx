@@ -1,11 +1,13 @@
-"use client";
+'use client';
 
-import { createContext, useContext, ReactNode, useEffect, useRef } from "react";
-import { ChatContextManager, type ChatEntity } from "./ChatContextManager";
-import { usePromptInputReferencedSources } from "@zuko/ui-kit";
+import { createContext, useContext, ReactNode, useEffect, useRef } from 'react';
+import { ChatContextManager, type ChatEntity } from './ChatContextManager';
+import { usePromptInputReferencedSources } from '@zuko/ui-kit';
 
 // Create a context to share the context manager
-const ChatContextManagerContext = createContext<ReturnType<typeof ChatContextManager> | null>(null);
+const ChatContextManagerContext = createContext<ReturnType<
+  typeof ChatContextManager
+> | null>(null);
 
 interface ChatContextProviderProps {
   children: ReactNode;
@@ -28,7 +30,7 @@ interface ChatContextProviderProps {
 export const ChatContextProvider = ({
   children,
   onContextChange,
-  initialContext = []
+  initialContext = [],
 }: ChatContextProviderProps) => {
   // This is safe because ChatContextProvider MUST be used inside PromptInput
   // ChatContextManager calls usePromptInputReferencedSources() internally
@@ -42,13 +44,20 @@ export const ChatContextProvider = ({
   useEffect(() => {
     // Only inject once, even if initialContext changes or component re-mounts
     if (initialContext.length > 0 && !hasInjectedRef.current) {
-      console.log('[ChatContextProvider] Injecting initial context:', initialContext);
+      console.log(
+        '[ChatContextProvider] Injecting initial context:',
+        initialContext
+      );
       hasInjectedRef.current = true;
 
       // Convert ChatEntity to SourceDocumentUIPart format and add to PromptInput
       initialContext.forEach((entity) => {
         const sourceId = `${entity.type}-${entity.id}`;
-        console.log('[ChatContextProvider] Adding entity:', sourceId, entity.name);
+        console.log(
+          '[ChatContextProvider] Adding entity:',
+          sourceId,
+          entity.name
+        );
         add({
           type: 'source-document',
           sourceId,
@@ -77,7 +86,7 @@ export const useChatContextManager = () => {
   const context = useContext(ChatContextManagerContext);
   if (!context) {
     throw new Error(
-      "useChatContextManager must be used within ChatContextProvider"
+      'useChatContextManager must be used within ChatContextProvider'
     );
   }
   return context;
