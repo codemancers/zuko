@@ -171,6 +171,8 @@ const ChatInputInner = ({
       onContextChange={handleContextChange}
       initialContext={initialContext}
     >
+      {/* PromptInput reads form text from FormData key "message"; MentionsInput is not a form field, so we sync value here */}
+      <input type="hidden" name="message" value={inputValue} />
       <ChatInputWithMentions
         placeholder={placeholder}
         ref={textareaRef as any}
