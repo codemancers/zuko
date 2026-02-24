@@ -3,8 +3,8 @@ import {
   SignInPage,
   ContactsPage,
   ContactDetailPage,
-  AccountsPage,
-  AccountDetailPage,
+  CompaniesPage,
+  CompanyDetailPage,
   DealsPage,
   DealDetailPage,
   SettingsPage,
@@ -16,8 +16,8 @@ type TestFixtures = {
   signInPage: SignInPage;
   contactsPage: ContactsPage;
   contactDetailPage: ContactDetailPage;
-  accountsPage: AccountsPage;
-  accountDetailPage: AccountDetailPage;
+  companiesPage: CompaniesPage;
+  companyDetailPage: CompanyDetailPage;
   dealsPage: DealsPage;
   dealDetailPage: DealDetailPage;
   settingsPage: SettingsPage;
@@ -49,11 +49,11 @@ export const test = base.extend<TestFixtures>({
   contactDetailPage: async ({ page }, use) => {
     await use(new ContactDetailPage(page));
   },
-  accountsPage: async ({ page }, use) => {
-    await use(new AccountsPage(page));
+  companiesPage: async ({ page }, use) => {
+    await use(new CompaniesPage(page));
   },
-  accountDetailPage: async ({ page }, use) => {
-    await use(new AccountDetailPage(page));
+  companyDetailPage: async ({ page }, use) => {
+    await use(new CompanyDetailPage(page));
   },
   dealsPage: async ({ page }, use) => {
     await use(new DealsPage(page));
@@ -72,7 +72,7 @@ export const test = base.extend<TestFixtures>({
   auth: async ({ page }, use) => {
     const { user, cookies, cleanup } = await createUserWithSession();
 
-    // Inject properly-signed session cookies into this test's page context
+    // Inject properly-signed session cookies into this page context
     await page.context().addCookies(cookies);
 
     await use(user);

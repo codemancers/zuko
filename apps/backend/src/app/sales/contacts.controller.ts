@@ -2,7 +2,6 @@ import {
   Controller,
   Get,
   Post,
-  Put,
   Patch,
   Delete,
   Body,
@@ -15,16 +14,20 @@ import {
   Logger,
 } from '@nestjs/common';
 import { AuthGuard } from '@thallesp/nestjs-better-auth';
-import { ContactsService, CreateContactInput, UpdateContactInput } from '@zuko/sales';
+import {
+  ContactsService,
+  CreateContactInput,
+  UpdateContactInput,
+} from '@zuko/sales';
 
 // DTOs for API requests
 export class CreateContactDto implements CreateContactInput {
-  name: string;
+  name!: string;
   email?: string;
   phone?: string;
   linkedinId?: string;
   notes?: string;
-  ownerIds: number[];
+  ownerIds!: number[];
   primaryOwnerId?: number;
 }
 
@@ -45,7 +48,7 @@ export class ContactListQueryDto {
 }
 
 export class AddOwnerDto {
-  userId: number;
+  userId!: number;
   isPrimary?: boolean;
 }
 
@@ -77,12 +80,10 @@ export class ContactsController {
       this.logger.log(`[CREATE_CONTACT] Success - Contact ID: ${result.id}`);
       return result;
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       const errorStack = error instanceof Error ? error.stack : undefined;
-      this.logger.error(
-        `[CREATE_CONTACT] Failed: ${errorMessage}`,
-        errorStack
-      );
+      this.logger.error(`[CREATE_CONTACT] Failed: ${errorMessage}`, errorStack);
       throw error;
     }
   }
@@ -92,7 +93,9 @@ export class ContactsController {
     const filters = {
       search: query.search,
       isHidden: query.isHidden === 'true',
-      ownerIds: query.ownerIds ? query.ownerIds.split(',').map(Number) : undefined,
+      ownerIds: query.ownerIds
+        ? query.ownerIds.split(',').map(Number)
+        : undefined,
     };
 
     const pagination = {

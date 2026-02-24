@@ -1,21 +1,21 @@
 'use client';
 
-import AccountForm from "@/components/Accounts/AccountForm";
+import CompanyForm from "@/components/Companies/CompanyForm";
 import { Heading, Divider } from "@zuko/ui-kit";
 import { useQuery } from "@tanstack/react-query";
-import { getAccount } from "@/server/query-options";
+import { getCompany } from "@/server/query-options";
 import { authClient } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
 import { use, useEffect } from "react";
 
-interface EditAccountPageProps {
+interface EditCompanyPageProps {
   params: Promise<{ id: string }>;
 }
 
-const EditAccountPage = ({ params }: EditAccountPageProps) => {
+const EditCompanyPage = ({ params }: EditCompanyPageProps) => {
   const router = useRouter();
   const { id } = use(params);
-  const accountId = parseInt(id, 10);
+  const companyId = parseInt(id, 10);
   const session = authClient.useSession();
 
   useEffect(() => {
@@ -24,12 +24,12 @@ const EditAccountPage = ({ params }: EditAccountPageProps) => {
     }
   }, [session.isPending, session.data, router]);
 
-  const { data: account, isLoading: accountLoading } = useQuery({
-    ...getAccount(accountId),
+  const { data: company, isLoading: companyLoading } = useQuery({
+    ...getCompany(companyId),
     enabled: !!session.data,
   });
 
-  if (session.isPending || !session.data || accountLoading) {
+  if (session.isPending || !session.data || companyLoading) {
     return (
       <div className="flex items-center justify-center py-12">
         <div className="text-sm text-zinc-600 dark:text-zinc-400">Loading...</div>
@@ -37,10 +37,10 @@ const EditAccountPage = ({ params }: EditAccountPageProps) => {
     );
   }
 
-  if (!account) {
+  if (!company) {
     return (
       <div className="flex items-center justify-center py-12">
-        <div className="text-sm text-zinc-600 dark:text-zinc-400">Account not found</div>
+        <div className="text-sm text-zinc-600 dark:text-zinc-400">Company not found</div>
       </div>
     );
   }
@@ -49,13 +49,13 @@ const EditAccountPage = ({ params }: EditAccountPageProps) => {
 
   return (
     <>
-      <Heading>Edit Account</Heading>
+      <Heading>Edit Company</Heading>
       <Divider className="mt-6" />
       <div className="mt-8 max-w-2xl">
-        <AccountForm account={account} mode="edit" currentUserId={userId} />
+        <CompanyForm company={company} mode="edit" currentUserId={userId} />
       </div>
     </>
   );
 };
 
-export default EditAccountPage;
+export default EditCompanyPage;

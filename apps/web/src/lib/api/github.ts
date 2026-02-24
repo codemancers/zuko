@@ -3,7 +3,7 @@
  * Type-safe methods for GitHub app integration
  */
 
-import { apiClient } from "../api-client";
+import { apiClient } from '../api-client';
 
 export interface GitHubInstallation {
   accountLogin: string;
@@ -25,13 +25,13 @@ export const githubApi = {
    * Get GitHub App installation status for current user
    */
   async getInstallationStatus(): Promise<GitHubInstallationStatus> {
-    return apiClient.get("/github/installation/status");
+    return apiClient.get('/github/installation/status');
   },
 
   /**
    * Get GitHub App installation URL
    */
   async getInstallationUrl(): Promise<GitHubInstallationUrl> {
-    return apiClient.get("/github/installation/url");
+    return apiClient.get('/github/installation/url');
   },
 };

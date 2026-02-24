@@ -1,8 +1,23 @@
-import { BadRequestException, Body, Controller, Logger, Post, Res } from '@nestjs/common';
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Logger,
+  Post,
+  Res,
+} from '@nestjs/common';
 import type { Response } from 'express';
-import { OrchestratorService, GraphStreamRequest, GraphStreamMode } from '@zuko/agents';
+import {
+  OrchestratorService,
+  type GraphStreamRequest,
+  GraphStreamMode,
+} from '@zuko/agents';
 
-const DEFAULT_STREAM_MODES: GraphStreamMode[] = ['updates', 'messages', 'custom'];
+const DEFAULT_STREAM_MODES: GraphStreamMode[] = [
+  'updates',
+  'messages',
+  'custom',
+];
 const ALLOWED_STREAM_MODES = new Set<GraphStreamMode>(DEFAULT_STREAM_MODES);
 
 const normalizeStreamMode = (
@@ -14,12 +29,16 @@ const normalizeStreamMode = (
   if (Array.isArray(value)) {
     const filtered = value.filter((mode) => ALLOWED_STREAM_MODES.has(mode));
     if (filtered.length === 0) {
-      throw new BadRequestException('stream_mode must include updates, messages, or custom');
+      throw new BadRequestException(
+        'stream_mode must include updates, messages, or custom'
+      );
     }
     return filtered;
   }
   if (!ALLOWED_STREAM_MODES.has(value)) {
-    throw new BadRequestException('stream_mode must be updates, messages, or custom');
+    throw new BadRequestException(
+      'stream_mode must be updates, messages, or custom'
+    );
   }
   return value;
 };

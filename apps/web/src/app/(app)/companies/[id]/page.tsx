@@ -1,40 +1,40 @@
-import AccountDetail from "@/components/Accounts/AccountDetail";
+import CompanyDetail from "@/components/Companies/CompanyDetail";
 import { getQueryClient } from "@/lib/react-query/get-query-client";
-import { getAccount } from "@/server/query-options";
+import { getCompany } from "@/server/query-options";
 import { authClient } from "@/lib/auth-client";
 import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 import { headers } from "next/headers";
 
 export const dynamic = "force-dynamic";
 
-interface AccountPageProps {
+interface CompanyPageProps {
   params: Promise<{ id: string }>;
 }
 
-export async function generateMetadata({ params }: AccountPageProps) {
+export async function generateMetadata({ params }: CompanyPageProps) {
   const { id } = await params;
-  const accountId = parseInt(id, 10);
+  const companyId = parseInt(id, 10);
 
   try {
     const queryClient = getQueryClient();
-    const account = await queryClient.fetchQuery(getAccount(accountId));
+    const company = await queryClient.fetchQuery(getCompany(companyId));
 
     return {
-      title: account.companyName || 'Account',
+      title: company.companyName || 'Company',
     };
   } catch (error) {
     return {
-      title: 'Account',
+      title: 'Company',
     };
   }
 }
 
-const AccountPage = async ({ params }: AccountPageProps) => {
+const CompanyPage = async ({ params }: CompanyPageProps) => {
   const { id } = await params;
-  const accountId = parseInt(id, 10);
+  const companyId = parseInt(id, 10);
 
   const queryClient = getQueryClient();
-  await queryClient.prefetchQuery(getAccount(accountId));
+  await queryClient.prefetchQuery(getCompany(companyId));
 
   const session = await authClient.getSession({
     fetchOptions: { headers: Object.fromEntries((await headers()).entries()) },
@@ -45,9 +45,9 @@ const AccountPage = async ({ params }: AccountPageProps) => {
 
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
-      <AccountDetail accountId={accountId} currentUserId={currentUserId} />
+      <CompanyDetail companyId={companyId} currentUserId={currentUserId} />
     </HydrationBoundary>
   );
 };
 
-export default AccountPage;
+export default CompanyPage;

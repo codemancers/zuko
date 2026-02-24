@@ -14,7 +14,10 @@ describe('RolesGuard', () => {
     guard = new RolesGuard(reflector);
   });
 
-  const createMockExecutionContext = (user: any, requiredRoles?: UserRole[]): ExecutionContext => {
+  const createMockExecutionContext = (
+    user: any,
+    requiredRoles?: UserRole[]
+  ): ExecutionContext => {
     const mockContext = {
       switchToHttp: jest.fn().mockReturnValue({
         getRequest: jest.fn().mockReturnValue({ user }),
@@ -53,13 +56,19 @@ describe('RolesGuard', () => {
 
     it('should allow access when user has one of multiple required roles', () => {
       const user = { id: 1, email: 'accountant@test.com', role: 'accountant' };
-      const context = createMockExecutionContext(user, [UserRole.ADMIN, UserRole.ACCOUNTANT]);
+      const context = createMockExecutionContext(user, [
+        UserRole.ADMIN,
+        UserRole.ACCOUNTANT,
+      ]);
       expect(guard.canActivate(context)).toBe(true);
     });
 
     it('should deny access when user has none of the required roles', () => {
       const user = { id: 1, email: 'user@test.com', role: 'none' };
-      const context = createMockExecutionContext(user, [UserRole.ADMIN, UserRole.ACCOUNTANT]);
+      const context = createMockExecutionContext(user, [
+        UserRole.ADMIN,
+        UserRole.ACCOUNTANT,
+      ]);
       expect(guard.canActivate(context)).toBe(false);
     });
 

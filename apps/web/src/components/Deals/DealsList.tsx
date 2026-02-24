@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import { BriefcaseIcon, PlusIcon } from "@heroicons/react/24/outline";
+import { BriefcaseIcon, PlusIcon } from '@heroicons/react/24/outline';
 import {
   Badge,
   Divider,
@@ -14,29 +14,31 @@ import {
   TableRow,
   Button,
   Input,
-} from "@zuko/ui-kit";
-import { useQuery } from "@tanstack/react-query";
-import { getDeals } from "@/server/query-options";
-import dayjs from "dayjs";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import type { Deal } from "@/lib/api/deals";
+} from '@zuko/ui-kit';
+import { useQuery } from '@tanstack/react-query';
+import { getDeals } from '@/server/query-options';
+import dayjs from 'dayjs';
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import type { Deal } from '@/lib/api/deals';
 
 const DealsList = () => {
   const router = useRouter();
-  const [searchTerm, setSearchTerm] = useState("");
-  const { data, isLoading } = useQuery(getDeals({ search: searchTerm || undefined }));
+  const [searchTerm, setSearchTerm] = useState('');
+  const { data, isLoading } = useQuery(
+    getDeals({ search: searchTerm || undefined })
+  );
 
   const deals = data?.deals || [];
 
   // Define stage priority (lower number = higher priority)
   const stagePriority: Record<string, number> = {
-    'negotiation': 1,
-    'proposal': 2,
-    'qualification': 3,
-    'prospecting': 4,
-    'closed_won': 5,
-    'closed_lost': 6,
+    negotiation: 1,
+    proposal: 2,
+    qualification: 3,
+    prospecting: 4,
+    closed_won: 5,
+    closed_lost: 6,
   };
 
   // Sort by: 1) Stage priority, 2) Probability (desc), 3) Expected close date (asc)
@@ -57,7 +59,10 @@ const DealsList = () => {
 
     // If probabilities are equal, sort by expected close date (earlier dates first)
     if (a.expectedCloseDate && b.expectedCloseDate) {
-      return new Date(a.expectedCloseDate).getTime() - new Date(b.expectedCloseDate).getTime();
+      return (
+        new Date(a.expectedCloseDate).getTime() -
+        new Date(b.expectedCloseDate).getTime()
+      );
     }
     if (a.expectedCloseDate) return -1;
     if (b.expectedCloseDate) return 1;
@@ -73,19 +78,19 @@ const DealsList = () => {
   };
 
   const getPrimaryOwner = (deal: Deal) => {
-    const primaryOwner = deal.owners.find(o => o.isPrimary);
-    return primaryOwner?.user.name || deal.owners[0]?.user.name || "-";
+    const primaryOwner = deal.owners.find((o) => o.isPrimary);
+    return primaryOwner?.user.name || deal.owners[0]?.user.name || '-';
   };
 
-  const getPrimaryAccount = (deal: Deal) => {
-    if (!deal.accounts || deal.accounts.length === 0) return null;
-    const primaryAccount = deal.accounts.find(a => a.isPrimary);
-    return primaryAccount || deal.accounts[0] || null;
+  const getPrimaryCompany = (deal: Deal) => {
+    if (!deal.companies || deal.companies.length === 0) return null;
+    const primaryCompany = deal.companies.find((a) => a.isPrimary);
+    return primaryCompany || deal.companies[0] || null;
   };
 
   const formatCurrency = (value?: number, currency?: string) => {
-    if (value === undefined || value === null) return "-";
-    const curr = currency || "USD";
+    if (value === undefined || value === null) return '-';
+    const curr = currency || 'USD';
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: curr,
@@ -94,22 +99,27 @@ const DealsList = () => {
     }).format(value);
   };
 
-  const getStageColor = (stage: string): "zinc" | "blue" | "yellow" | "green" | "red" => {
-    const stageColors: Record<string, "zinc" | "blue" | "yellow" | "green" | "red"> = {
-      prospecting: "zinc",
-      qualification: "blue",
-      proposal: "yellow",
-      negotiation: "yellow",
-      closed_won: "green",
-      closed_lost: "red",
+  const getStageColor = (
+    stage: string
+  ): 'zinc' | 'blue' | 'yellow' | 'green' | 'red' => {
+    const stageColors: Record<
+      string,
+      'zinc' | 'blue' | 'yellow' | 'green' | 'red'
+    > = {
+      prospecting: 'zinc',
+      qualification: 'blue',
+      proposal: 'yellow',
+      negotiation: 'yellow',
+      closed_won: 'green',
+      closed_lost: 'red',
     };
-    return stageColors[stage] || "zinc";
+    return stageColors[stage] || 'zinc';
   };
 
   const formatStage = (stage: string) => {
     return stage
       .split('_')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
       .join(' ');
   };
 
@@ -143,7 +153,9 @@ const DealsList = () => {
 
       {isLoading && (
         <div className="mt-8 flex items-center justify-center">
-          <div className="text-sm text-zinc-600 dark:text-zinc-400">Loading deals...</div>
+          <div className="text-sm text-zinc-600 dark:text-zinc-400">
+            Loading deals...
+          </div>
         </div>
       )}
 
@@ -166,7 +178,7 @@ const DealsList = () => {
                 </TableHead>
                 <TableBody>
                   {sortedDeals.map((deal: Deal) => {
-                    const account = getPrimaryAccount(deal);
+                    const company = getPrimaryCompany(deal);
                     return (
                       <TableRow
                         key={deal.id}
@@ -180,12 +192,12 @@ const DealsList = () => {
                             </div>
                             <div>
                               <div className="font-medium">{deal.title}</div>
-                              {account && (
+                              {company && (
                                 <Link
-                                  href={`/accounts/${account.accountId}`}
+                                  href={`/companies/${company.companyId}`}
                                   className="text-xs text-zinc-500 hover:text-zinc-700 dark:text-zinc-500 dark:hover:text-zinc-300 hover:underline"
                                 >
-                                  {account.account.companyName}
+                                  {company.company.companyName}
                                 </Link>
                               )}
                             </div>
@@ -195,20 +207,28 @@ const DealsList = () => {
                           {formatCurrency(deal.value, deal.currency)}
                         </TableCell>
                         <TableCell className="align-top">
-                          <Badge color={getStageColor(deal.stage)} className="text-xs">
+                          <Badge
+                            color={getStageColor(deal.stage)}
+                            className="text-xs"
+                          >
                             {formatStage(deal.stage)}
                           </Badge>
                         </TableCell>
                         <TableCell className="align-top text-sm text-zinc-600 dark:text-zinc-400">
-                          {deal.probability !== undefined && deal.probability !== null ? `${deal.probability}%` : "-"}
+                          {deal.probability !== undefined &&
+                          deal.probability !== null
+                            ? `${deal.probability}%`
+                            : '-'}
                         </TableCell>
                         <TableCell className="align-top text-sm text-zinc-600 dark:text-zinc-400">
                           {getPrimaryOwner(deal)}
                         </TableCell>
                         <TableCell className="align-top text-sm text-zinc-600 dark:text-zinc-400">
                           {deal.expectedCloseDate
-                            ? dayjs(deal.expectedCloseDate).format("MMM D, YYYY")
-                            : "-"}
+                            ? dayjs(deal.expectedCloseDate).format(
+                                'MMM D, YYYY'
+                              )
+                            : '-'}
                         </TableCell>
                       </TableRow>
                     );

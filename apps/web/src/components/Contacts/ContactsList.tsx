@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import { UserIcon, PlusIcon } from "@heroicons/react/24/outline";
+import { UserIcon, PlusIcon } from '@heroicons/react/24/outline';
 import {
   Badge,
   Divider,
@@ -13,18 +13,20 @@ import {
   TableRow,
   Button,
   Input,
-} from "@zuko/ui-kit";
-import { useQuery } from "@tanstack/react-query";
-import { getContacts } from "@/server/query-options";
-import dayjs from "dayjs";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import type { Contact } from "@/lib/api/contacts";
+} from '@zuko/ui-kit';
+import { useQuery } from '@tanstack/react-query';
+import { getContacts } from '@/server/query-options';
+import dayjs from 'dayjs';
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import type { Contact } from '@/lib/api/contacts';
 
 const ContactsList = () => {
   const router = useRouter();
-  const [searchTerm, setSearchTerm] = useState("");
-  const { data, isLoading } = useQuery(getContacts({ search: searchTerm || undefined }));
+  const [searchTerm, setSearchTerm] = useState('');
+  const { data, isLoading } = useQuery(
+    getContacts({ search: searchTerm || undefined })
+  );
 
   const contacts = data?.contacts || [];
 
@@ -37,15 +39,15 @@ const ContactsList = () => {
   };
 
   const getPrimaryOwner = (contact: Contact) => {
-    const primaryOwner = contact.owners.find(o => o.isPrimary);
-    return primaryOwner?.user.name || contact.owners[0]?.user.name || "-";
+    const primaryOwner = contact.owners.find((o) => o.isPrimary);
+    return primaryOwner?.user.name || contact.owners[0]?.user.name || '-';
   };
 
   const getContactMethod = (contact: Contact) => {
     if (contact.email) return contact.email;
     if (contact.phone) return contact.phone;
     if (contact.linkedinId) return `LinkedIn: ${contact.linkedinId}`;
-    return "-";
+    return '-';
   };
 
   return (
@@ -78,7 +80,9 @@ const ContactsList = () => {
 
       {isLoading && (
         <div className="mt-8 flex items-center justify-center">
-          <div className="text-sm text-zinc-600 dark:text-zinc-400">Loading contacts...</div>
+          <div className="text-sm text-zinc-600 dark:text-zinc-400">
+            Loading contacts...
+          </div>
         </div>
       )}
 
@@ -127,7 +131,7 @@ const ContactsList = () => {
                         )}
                       </TableCell>
                       <TableCell className="align-top text-sm text-zinc-600 dark:text-zinc-400">
-                        {dayjs(contact.createdAt).format("MMM D, YYYY")}
+                        {dayjs(contact.createdAt).format('MMM D, YYYY')}
                       </TableCell>
                     </TableRow>
                   ))}

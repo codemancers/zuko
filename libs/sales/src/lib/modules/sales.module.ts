@@ -1,8 +1,8 @@
 import { Module } from '@nestjs/common';
 import { ContactsRepository } from '../repositories/contacts.repository';
 import { ContactsService } from '../services/contacts.service';
-import { AccountsRepository } from '../repositories/accounts.repository';
-import { AccountsService } from '../services/accounts.service';
+import { CompaniesRepository } from '../repositories/companies.repository';
+import { CompaniesService } from '../services/companies.service';
 import { DealsRepository } from '../repositories/deals.repository';
 import { DealsService } from '../services/deals.service';
 import { ActivityRepository } from '../repositories/activity.repository';
@@ -12,8 +12,8 @@ import { ActivityService } from '../services/activity.service';
   providers: [
     ContactsRepository,
     ContactsService,
-    AccountsRepository,
-    AccountsService,
+    CompaniesRepository,
+    CompaniesService,
     DealsRepository,
     DealsService,
     ActivityRepository,
@@ -22,8 +22,8 @@ import { ActivityService } from '../services/activity.service';
   exports: [
     ContactsRepository,
     ContactsService,
-    AccountsRepository,
-    AccountsService,
+    CompaniesRepository,
+    CompaniesService,
     DealsRepository,
     DealsService,
     ActivityRepository,

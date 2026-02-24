@@ -1,24 +1,24 @@
-import AccountsList from "@/components/Accounts/AccountsList";
+import CompaniesList from "@/components/Companies/CompaniesList";
 import { getQueryClient } from "@/lib/react-query/get-query-client";
-import { getAccounts } from "@/server/query-options";
+import { getCompanies } from "@/server/query-options";
 import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 
 export const metadata = {
-  title: 'Accounts',
+  title: 'Companies',
 };
 
 export const dynamic = "force-dynamic";
 
-const AccountsPage = async () => {
+const CompaniesPage = async () => {
   const queryClient = getQueryClient();
   // Prefetch with undefined filters to match client's initial state
-  await queryClient.prefetchQuery(getAccounts({ search: undefined }));
+  await queryClient.prefetchQuery(getCompanies({ search: undefined }));
 
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
-      <AccountsList />
+      <CompaniesList />
     </HydrationBoundary>
   );
 };
 
-export default AccountsPage;
+export default CompaniesPage;

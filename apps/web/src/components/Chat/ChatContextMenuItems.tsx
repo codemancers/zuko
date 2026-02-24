@@ -1,11 +1,11 @@
-"use client";
+'use client';
 
-import { PromptInputActionMenuItem } from "@zuko/ui-kit";
-import { UserIcon, BuildingIcon } from "lucide-react";
-import { useChatContextManager } from "./ChatContextWrapper";
+import { PromptInputActionMenuItem } from '@zuko/ui-kit';
+import { UserIcon, BuildingIcon } from 'lucide-react';
+import { useChatContextManager } from './ChatContextWrapper';
 
 /**
- * Menu items for adding contacts/accounts as context
+ * Menu items for adding contacts/companies as context
  * Must be used inside ChatContextProvider
  */
 export const ChatContextMenuItems = () => {
@@ -14,16 +14,16 @@ export const ChatContextMenuItems = () => {
   return (
     <>
       <PromptInputActionMenuItem
-        onSelect={() => contextManager.handleOpenDialog("contact")}
+        onSelect={() => contextManager.handleOpenDialog('contact')}
       >
         <UserIcon className="mr-2 size-4" />
         Add contact
       </PromptInputActionMenuItem>
       <PromptInputActionMenuItem
-        onSelect={() => contextManager.handleOpenDialog("account")}
+        onSelect={() => contextManager.handleOpenDialog('company')}
       >
         <BuildingIcon className="mr-2 size-4" />
-        Add account
+        Add company
       </PromptInputActionMenuItem>
     </>
   );

@@ -1,12 +1,12 @@
 'use client';
 
-import AccountForm from "@/components/Accounts/AccountForm";
+import CompanyForm from "@/components/Companies/CompanyForm";
 import { Heading, Divider } from "@zuko/ui-kit";
 import { authClient } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 
-const NewAccountPage = () => {
+const NewCompanyPage = () => {
   const router = useRouter();
   const session = authClient.useSession();
 
@@ -28,13 +28,13 @@ const NewAccountPage = () => {
 
   return (
     <>
-      <Heading>New Account</Heading>
+      <Heading>New Company</Heading>
       <Divider className="mt-6" />
       <div className="mt-8 max-w-2xl">
-        <AccountForm mode="create" currentUserId={userId} />
+        <CompanyForm mode="create" currentUserId={userId} />
       </div>
     </>
   );
 };
 
-export default NewAccountPage;
+export default NewCompanyPage;

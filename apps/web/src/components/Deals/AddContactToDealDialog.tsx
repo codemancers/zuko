@@ -1,9 +1,9 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { dealsApi } from "@/lib/api/deals";
-import { getContacts } from "@/server/query-options";
+import { useState } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { dealsApi } from '@/lib/api/deals';
+import { getContacts } from '@/server/query-options';
 import {
   Button,
   Dialog,
@@ -15,18 +15,23 @@ import {
   Label,
   Description,
   ErrorMessage,
-} from "@zuko/ui-kit";
-import { PlusIcon } from "@heroicons/react/24/outline";
+} from '@zuko/ui-kit';
+import { PlusIcon } from '@heroicons/react/24/outline';
 
 interface AddContactToDealDialogProps {
   dealId: number;
   existingContactIds: number[];
 }
 
-export default function AddContactToDealDialog({ dealId, existingContactIds }: AddContactToDealDialogProps) {
+export default function AddContactToDealDialog({
+  dealId,
+  existingContactIds,
+}: AddContactToDealDialogProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [selectedContactId, setSelectedContactId] = useState<number | null>(null);
-  const [role, setRole] = useState("");
+  const [selectedContactId, setSelectedContactId] = useState<number | null>(
+    null
+  );
+  const [role, setRole] = useState('');
   const [isPrimary, setIsPrimary] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -34,14 +39,15 @@ export default function AddContactToDealDialog({ dealId, existingContactIds }: A
   const { data: contactsData } = useQuery(getContacts({}));
 
   // Filter out contacts that are already associated with this deal
-  const availableContacts = contactsData?.contacts.filter(
-    (contact) => !existingContactIds.includes(contact.id)
-  ) || [];
+  const availableContacts =
+    contactsData?.contacts.filter(
+      (contact) => !existingContactIds.includes(contact.id)
+    ) || [];
 
   const addContactMutation = useMutation({
     mutationFn: () => {
       if (!selectedContactId) {
-        throw new Error("No contact selected");
+        throw new Error('No contact selected');
       }
       return dealsApi.addContact(dealId, {
         contactId: selectedContactId,
@@ -50,19 +56,19 @@ export default function AddContactToDealDialog({ dealId, existingContactIds }: A
       });
     },
     onSuccess: async () => {
-      await queryClient.refetchQueries({ queryKey: ["deal", dealId] });
-      await queryClient.invalidateQueries({ queryKey: ["deals"] });
+      await queryClient.refetchQueries({ queryKey: ['deal', dealId] });
+      await queryClient.invalidateQueries({ queryKey: ['deals'] });
       setIsOpen(false);
       resetForm();
     },
     onError: (error: any) => {
-      setErrors({ submit: error.message || "Failed to add contact to deal" });
+      setErrors({ submit: error.message || 'Failed to add contact to deal' });
     },
   });
 
   const resetForm = () => {
     setSelectedContactId(null);
-    setRole("");
+    setRole('');
     setIsPrimary(false);
     setErrors({});
   };
@@ -72,7 +78,7 @@ export default function AddContactToDealDialog({ dealId, existingContactIds }: A
 
     const newErrors: Record<string, string> = {};
     if (!selectedContactId) {
-      newErrors.contact = "Please select a contact";
+      newErrors.contact = 'Please select a contact';
     }
 
     if (Object.keys(newErrors).length > 0) {
@@ -90,7 +96,13 @@ export default function AddContactToDealDialog({ dealId, existingContactIds }: A
         Add Contact
       </Button>
 
-      <Dialog open={isOpen} onClose={() => { setIsOpen(false); resetForm(); }}>
+      <Dialog
+        open={isOpen}
+        onClose={() => {
+          setIsOpen(false);
+          resetForm();
+        }}
+      >
         <DialogTitle>Add Contact to Deal</DialogTitle>
         <DialogDescription>
           Associate a contact person with this deal.
@@ -103,7 +115,7 @@ export default function AddContactToDealDialog({ dealId, existingContactIds }: A
               <Field>
                 <Label>Contact *</Label>
                 <select
-                  value={selectedContactId || ""}
+                  value={selectedContactId || ''}
                   onChange={(e) => setSelectedContactId(Number(e.target.value))}
                   className="mt-1 block w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-white"
                   disabled={addContactMutation.isPending}
@@ -120,7 +132,9 @@ export default function AddContactToDealDialog({ dealId, existingContactIds }: A
                     All contacts are already associated with this deal.
                   </Description>
                 )}
-                {errors.contact && <ErrorMessage>{errors.contact}</ErrorMessage>}
+                {errors.contact && (
+                  <ErrorMessage>{errors.contact}</ErrorMessage>
+                )}
               </Field>
 
               {/* Role */}
@@ -134,7 +148,9 @@ export default function AddContactToDealDialog({ dealId, existingContactIds }: A
                   className="mt-1 block w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-white"
                   disabled={addContactMutation.isPending}
                 />
-                <Description>Optional - e.g., Decision Maker, Influencer, Champion</Description>
+                <Description>
+                  Optional - e.g., Decision Maker, Influencer, Champion
+                </Description>
               </Field>
 
               {/* Primary Flag */}
@@ -151,27 +167,39 @@ export default function AddContactToDealDialog({ dealId, existingContactIds }: A
                     Primary contact for this deal
                   </span>
                 </label>
-                <Description>Mark as the main contact person for this deal</Description>
+                <Description>
+                  Mark as the main contact person for this deal
+                </Description>
               </Field>
 
               {/* Submit Error */}
               {errors.submit && (
                 <div className="rounded-md bg-red-50 p-3 dark:bg-red-900/20">
-                  <p className="text-sm text-red-800 dark:text-red-200">{errors.submit}</p>
+                  <p className="text-sm text-red-800 dark:text-red-200">
+                    {errors.submit}
+                  </p>
                 </div>
               )}
             </div>
           </DialogBody>
 
           <DialogActions>
-            <Button plain onClick={() => { setIsOpen(false); resetForm(); }}>
+            <Button
+              plain
+              onClick={() => {
+                setIsOpen(false);
+                resetForm();
+              }}
+            >
               Cancel
             </Button>
             <Button
               type="submit"
-              disabled={addContactMutation.isPending || availableContacts.length === 0}
+              disabled={
+                addContactMutation.isPending || availableContacts.length === 0
+              }
             >
-              {addContactMutation.isPending ? "Adding..." : "Add Contact"}
+              {addContactMutation.isPending ? 'Adding...' : 'Add Contact'}
             </Button>
           </DialogActions>
         </form>

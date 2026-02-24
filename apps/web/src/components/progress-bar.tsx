@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import { ProgressProvider } from '@bprogress/next/app';
 

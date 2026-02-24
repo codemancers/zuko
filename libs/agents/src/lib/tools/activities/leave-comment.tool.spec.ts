@@ -50,7 +50,7 @@ describe('createLeaveCommentTool', () => {
     );
 
     const result = await tool.invoke({
-      entityType: 'account',
+      entityType: 'company',
       entityId: 123,
       content: 'Test comment',
       userId: 456,

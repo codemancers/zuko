@@ -2,7 +2,6 @@ import {
   Controller,
   Get,
   Post,
-  Put,
   Patch,
   Delete,
   Body,
@@ -16,31 +15,31 @@ import {
 } from '@nestjs/common';
 import { AuthGuard } from '@thallesp/nestjs-better-auth';
 import {
-  AccountsService,
-  CreateAccountInput,
-  UpdateAccountInput,
-  AddContactToAccountInput,
-  UpdateContactAccountInput,
+  CompaniesService,
+  CreateCompanyInput,
+  UpdateCompanyInput,
+  AddContactToCompanyInput,
+  UpdateContactCompanyInput,
 } from '@zuko/sales';
 
-// DTOs for API requests
-export class CreateAccountDto implements CreateAccountInput {
-  companyName: string;
+// DTOs for API requests (properties set by Nest from request body)
+export class CreateCompanyDto implements CreateCompanyInput {
+  companyName!: string;
   website?: string;
   linkedinUrl?: string;
   summary?: string;
-  ownerIds: number[];
+  ownerIds!: number[];
   primaryOwnerId?: number;
 }
 
-export class UpdateAccountDto implements Partial<UpdateAccountInput> {
+export class UpdateCompanyDto implements Partial<UpdateCompanyInput> {
   companyName?: string;
   website?: string;
   linkedinUrl?: string;
   summary?: string;
 }
 
-export class AccountListQueryDto {
+export class CompanyListQueryDto {
   page?: number;
   limit?: number;
   search?: string;
@@ -49,35 +48,35 @@ export class AccountListQueryDto {
 }
 
 export class AddOwnerDto {
-  userId: number;
+  userId!: number;
   isPrimary?: boolean;
 }
 
-export class AddContactDto implements AddContactToAccountInput {
-  contactId: number;
+export class AddContactDto implements AddContactToCompanyInput {
+  contactId!: number;
   role?: string;
   isPrimary?: boolean;
   joinedAt?: Date;
 }
 
-export class UpdateContactDto implements UpdateContactAccountInput {
+export class UpdateContactDto implements UpdateContactCompanyInput {
   role?: string;
   isPrimary?: boolean;
 }
 
-@Controller('accounts')
+@Controller('companies')
 @UseGuards(AuthGuard)
-export class AccountsController {
-  private readonly logger = new Logger(AccountsController.name);
+export class CompaniesController {
+  private readonly logger = new Logger(CompaniesController.name);
 
-  constructor(private readonly accountsService: AccountsService) {}
+  constructor(private readonly companiesService: CompaniesService) {}
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  async create(@Body() dto: CreateAccountDto) {
-    this.logger.log('[CREATE_ACCOUNT] Request received');
+  async create(@Body() dto: CreateCompanyDto) {
+    this.logger.log('[CREATE_COMPANY] Request received');
     this.logger.debug(
-      `[CREATE_ACCOUNT] Payload: ${JSON.stringify({
+      `[CREATE_COMPANY] Payload: ${JSON.stringify({
         companyName: dto.companyName,
         website: dto.website,
         linkedinUrl: dto.linkedinUrl,
@@ -87,26 +86,26 @@ export class AccountsController {
     );
 
     try {
-      const result = await this.accountsService.create(dto);
-      this.logger.log(`[CREATE_ACCOUNT] Success - Account ID: ${result.id}`);
+      const result = await this.companiesService.create(dto);
+      this.logger.log(`[CREATE_COMPANY] Success - Company ID: ${result.id}`);
       return result;
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       const errorStack = error instanceof Error ? error.stack : undefined;
-      this.logger.error(
-        `[CREATE_ACCOUNT] Failed: ${errorMessage}`,
-        errorStack
-      );
+      this.logger.error(`[CREATE_COMPANY] Failed: ${errorMessage}`, errorStack);
       throw error;
     }
   }
 
   @Get()
-  async list(@Query() query: AccountListQueryDto) {
+  async list(@Query() query: CompanyListQueryDto) {
     const filters = {
       search: query.search,
       isHidden: query.isHidden === 'true',
-      ownerIds: query.ownerIds ? query.ownerIds.split(',').map(Number) : undefined,
+      ownerIds: query.ownerIds
+        ? query.ownerIds.split(',').map(Number)
+        : undefined,
     };
 
     const pagination = {
@@ -114,31 +113,31 @@ export class AccountsController {
       limit: query.limit ? Number(query.limit) : 50,
     };
 
-    return this.accountsService.findAll(filters, pagination);
+    return this.companiesService.findAll(filters, pagination);
   }
 
   @Get(':id')
   async findOne(@Param('id', ParseIntPipe) id: number) {
-    return this.accountsService.findById(id);
+    return this.companiesService.findById(id);
   }
 
   @Patch(':id')
   async update(
     @Param('id', ParseIntPipe) id: number,
-    @Body() dto: UpdateAccountDto
+    @Body() dto: UpdateCompanyDto
   ) {
-    return this.accountsService.update(id, dto);
+    return this.companiesService.update(id, dto);
   }
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
   async hide(@Param('id', ParseIntPipe) id: number) {
-    await this.accountsService.hide(id);
+    await this.companiesService.hide(id);
   }
 
   @Post(':id/unhide')
   async unhide(@Param('id', ParseIntPipe) id: number) {
-    return this.accountsService.unhide(id);
+    return this.companiesService.unhide(id);
   }
 
   @Post(':id/owners')
@@ -146,7 +145,7 @@ export class AccountsController {
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: AddOwnerDto
   ) {
-    return this.accountsService.addOwner(id, dto.userId, dto.isPrimary);
+    return this.companiesService.addOwner(id, dto.userId, dto.isPrimary);
   }
 
   @Delete(':id/owners/:userId')
@@ -155,7 +154,7 @@ export class AccountsController {
     @Param('id', ParseIntPipe) id: number,
     @Param('userId', ParseIntPipe) userId: number
   ) {
-    await this.accountsService.removeOwner(id, userId);
+    await this.companiesService.removeOwner(id, userId);
   }
 
   @Post(':id/owners/:userId/set-primary')
@@ -163,21 +162,21 @@ export class AccountsController {
     @Param('id', ParseIntPipe) id: number,
     @Param('userId', ParseIntPipe) userId: number
   ) {
-    await this.accountsService.setPrimaryOwner(id, userId);
+    await this.companiesService.setPrimaryOwner(id, userId);
     return { success: true };
   }
 
   @Get('user/:userId')
-  async getAccountsByUser(
+  async getCompaniesByUser(
     @Param('userId', ParseIntPipe) userId: number,
-    @Query() query: AccountListQueryDto
+    @Query() query: CompanyListQueryDto
   ) {
     const pagination = {
       page: query.page ? Number(query.page) : 1,
       limit: query.limit ? Number(query.limit) : 50,
     };
 
-    return this.accountsService.getAccountsByUser(userId, pagination);
+    return this.companiesService.getCompaniesByUser(userId, pagination);
   }
 
   @Post(':id/contacts')
@@ -186,19 +185,22 @@ export class AccountsController {
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: AddContactDto
   ) {
-    this.logger.log(`[ADD_CONTACT_TO_ACCOUNT] Account: ${id}, Contact: ${dto.contactId}`);
+    this.logger.log(
+      `[ADD_CONTACT_TO_COMPANY] Company: ${id}, Contact: ${dto.contactId}`
+    );
 
     try {
-      const result = await this.accountsService.addContact(id, dto);
+      const result = await this.companiesService.addContact(id, dto);
       this.logger.log(
-        `[ADD_CONTACT_TO_ACCOUNT] Success - Contact ${dto.contactId} added to Account ${id}`
+        `[ADD_CONTACT_TO_COMPANY] Success - Contact ${dto.contactId} added to Company ${id}`
       );
       return result;
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       const errorStack = error instanceof Error ? error.stack : undefined;
       this.logger.error(
-        `[ADD_CONTACT_TO_ACCOUNT] Failed: ${errorMessage}`,
+        `[ADD_CONTACT_TO_COMPANY] Failed: ${errorMessage}`,
         errorStack
       );
       throw error;
@@ -211,7 +213,7 @@ export class AccountsController {
     @Param('contactId', ParseIntPipe) contactId: number,
     @Body() dto: UpdateContactDto
   ) {
-    return this.accountsService.updateContactAccount(id, contactId, dto);
+    return this.companiesService.updateContactCompany(id, contactId, dto);
   }
 
   @Delete(':id/contacts/:contactId')
@@ -220,16 +222,16 @@ export class AccountsController {
     @Param('id', ParseIntPipe) id: number,
     @Param('contactId', ParseIntPipe) contactId: number
   ) {
-    await this.accountsService.removeContact(id, contactId);
+    await this.companiesService.removeContact(id, contactId);
   }
 
   @Get(':id/contacts')
   async getActiveContacts(@Param('id', ParseIntPipe) id: number) {
-    return this.accountsService.getActiveContacts(id);
+    return this.companiesService.getActiveContacts(id);
   }
 
   @Get(':id/contacts/history')
   async getContactHistory(@Param('id', ParseIntPipe) id: number) {
-    return this.accountsService.getContactHistory(id);
+    return this.companiesService.getContactHistory(id);
   }
 }

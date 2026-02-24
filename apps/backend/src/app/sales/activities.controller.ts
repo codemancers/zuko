@@ -17,13 +17,18 @@ import {
 import { AuthGuard } from '@thallesp/nestjs-better-auth';
 import { ActivityService } from '@zuko/sales';
 
+/** Request with authenticated user (set by AuthGuard) */
+interface RequestWithUser {
+  user: { id: string };
+}
+
 // DTOs for API requests
 export class CreateCommentDto {
-  content: string;
+  content!: string;
 }
 
 export class UpdateCommentDto {
-  content: string;
+  content!: string;
 }
 
 export class ActivityQueryDto {
@@ -68,22 +73,26 @@ export class ActivitiesController {
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
   async delete(
-    @Req() req,
+    @Req() req: RequestWithUser,
     @Param('id', ParseIntPipe) id: number
   ) {
     const userId = parseInt(req.user.id, 10);
-    this.logger.log(`[DELETE_ACTIVITY] Request for ID: ${id} by user: ${userId}`);
+    this.logger.log(
+      `[DELETE_ACTIVITY] Request for ID: ${id} by user: ${userId}`
+    );
     await this.activityService.delete(id, userId);
   }
 
   @Patch(':id')
   async update(
-    @Req() req,
+    @Req() req: RequestWithUser,
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateCommentDto
   ) {
     const userId = parseInt(req.user.id, 10);
-    this.logger.log(`[UPDATE_ACTIVITY] Request for ID: ${id} by user: ${userId}`);
+    this.logger.log(
+      `[UPDATE_ACTIVITY] Request for ID: ${id} by user: ${userId}`
+    );
     return this.activityService.update(id, userId, dto.content);
   }
 }
@@ -109,12 +118,14 @@ export class ContactActivitiesController {
   @Post('comments')
   @HttpCode(HttpStatus.CREATED)
   async createComment(
-    @Req() req,
+    @Req() req: RequestWithUser,
     @Param('contactId', ParseIntPipe) contactId: number,
     @Body() dto: CreateCommentDto
   ) {
     const userId = parseInt(req.user.id, 10);
-    this.logger.log(`[CREATE_COMMENT] Contact ID: ${contactId}, User: ${userId}`);
+    this.logger.log(
+      `[CREATE_COMMENT] Contact ID: ${contactId}, User: ${userId}`
+    );
 
     try {
       const result = await this.activityService.createComment(
@@ -126,61 +137,59 @@ export class ContactActivitiesController {
       this.logger.log(`[CREATE_COMMENT] Success - Activity ID: ${result.id}`);
       return result;
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       const errorStack = error instanceof Error ? error.stack : undefined;
-      this.logger.error(
-        `[CREATE_COMMENT] Failed: ${errorMessage}`,
-        errorStack
-      );
+      this.logger.error(`[CREATE_COMMENT] Failed: ${errorMessage}`, errorStack);
       throw error;
     }
   }
 }
 
-// Account activities routes
-@Controller('accounts/:accountId/activities')
+// Company activities (entityType 'company': contact | company | deal).
+@Controller('companies/:companyId/activities')
 @UseGuards(AuthGuard)
-export class AccountActivitiesController {
-  private readonly logger = new Logger(AccountActivitiesController.name);
+export class CompanyActivitiesController {
+  private readonly logger = new Logger(CompanyActivitiesController.name);
 
   constructor(private readonly activityService: ActivityService) {}
 
   @Get()
   async getTimeline(
-    @Param('accountId', ParseIntPipe) accountId: number,
+    @Param('companyId', ParseIntPipe) companyId: number,
     @Query('limit') limitStr?: string
   ) {
-    this.logger.log(`[GET_ACCOUNT_TIMELINE] Account ID: ${accountId}`);
+    this.logger.log(`[GET_COMPANY_TIMELINE] Company ID: ${companyId}`);
     const limit = limitStr ? parseInt(limitStr, 10) : undefined;
-    return this.activityService.getTimeline('account', accountId, limit);
+    return this.activityService.getTimeline('company', companyId, limit);
   }
 
   @Post('comments')
   @HttpCode(HttpStatus.CREATED)
   async createComment(
-    @Req() req,
-    @Param('accountId', ParseIntPipe) accountId: number,
+    @Req() req: RequestWithUser,
+    @Param('companyId', ParseIntPipe) companyId: number,
     @Body() dto: CreateCommentDto
   ) {
     const userId = parseInt(req.user.id, 10);
-    this.logger.log(`[CREATE_COMMENT] Account ID: ${accountId}, User: ${userId}`);
+    this.logger.log(
+      `[CREATE_COMMENT] Company ID: ${companyId}, User: ${userId}`
+    );
 
     try {
       const result = await this.activityService.createComment(
-        'account',
-        accountId,
+        'company',
+        companyId,
         userId,
         dto.content
       );
       this.logger.log(`[CREATE_COMMENT] Success - Activity ID: ${result.id}`);
       return result;
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       const errorStack = error instanceof Error ? error.stack : undefined;
-      this.logger.error(
-        `[CREATE_COMMENT] Failed: ${errorMessage}`,
-        errorStack
-      );
+      this.logger.error(`[CREATE_COMMENT] Failed: ${errorMessage}`, errorStack);
       throw error;
     }
   }

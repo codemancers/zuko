@@ -16,12 +16,14 @@ class PrismaService {
 
 // Mock services needed for tests
 const mockContactsService = {
-  findOne: jest.fn().mockResolvedValue({ id: 1, firstName: 'John', lastName: 'Doe' }),
+  findOne: jest
+    .fn()
+    .mockResolvedValue({ id: 1, firstName: 'John', lastName: 'Doe' }),
   findOwner: jest.fn().mockResolvedValue({ id: 1, name: 'Owner' }),
 } as any;
 
-const mockAccountsService = {
-  findOne: jest.fn().mockResolvedValue({ id: 1, name: 'Acme Corp' }),
+const mockCompaniesService = {
+  findById: jest.fn().mockResolvedValue({ id: 1, companyName: 'Acme Corp' }),
 } as any;
 
 const mockActivityService = {
@@ -64,7 +66,7 @@ describe('PersistentContextMiddleware - State Persistence', () => {
       mockSecretaryService,
       prisma as any,
       mockContactsService,
-      mockAccountsService,
+      mockCompaniesService,
       mockActivityService
     );
   });
@@ -79,7 +81,7 @@ describe('PersistentContextMiddleware - State Persistence', () => {
       const userId = 123;
       const contextEntities: ContextEntityReference[] = [
         { type: 'contact', id: 1 },
-        { type: 'account', id: 2 },
+        { type: 'company', id: 2 },
       ];
 
       // Send message with contextEntities
@@ -115,16 +117,23 @@ describe('PersistentContextMiddleware - State Persistence', () => {
       });
 
       // Verify contact entity
-      const contact = result.contextEntities.find((e: any) => e.type === 'contact');
+      const contact = result.contextEntities.find(
+        (e: any) => e.type === 'contact'
+      );
       expect(contact).toBeDefined();
       expect(contact.name).toContain('John'); // Mock returns John Doe
 
-      // Verify account entity
-      const account = result.contextEntities.find((e: any) => e.type === 'account');
-      expect(account).toBeDefined();
-      expect(account.name).toContain('Acme'); // Mock returns Acme Corp
+      // Verify company entity
+      const company = result.contextEntities.find(
+        (e: any) => e.type === 'company'
+      );
+      expect(company).toBeDefined();
+      expect(company.name).toContain('Acme'); // Mock returns Acme Corp
 
-      console.log(`✓ Entities hydrated with names:`, result.contextEntities.map((e: any) => e.name));
+      console.log(
+        `✓ Entities hydrated with names:`,
+        result.contextEntities.map((e: any) => e.name)
+      );
     }, 30000);
 
     it('should persist contextEntities to checkpoint state', async () => {
@@ -132,7 +141,7 @@ describe('PersistentContextMiddleware - State Persistence', () => {
       const userId = 123;
       const contextEntities: ContextEntityReference[] = [
         { type: 'contact', id: 1 },
-        { type: 'account', id: 2 },
+        { type: 'company', id: 2 },
       ];
 
       // Get the agent and stream with contextEntities
@@ -173,11 +182,13 @@ describe('PersistentContextMiddleware - State Persistence', () => {
       expect(result.contextEntities[0].type).toBe('contact');
       expect(result.contextEntities[0].id).toBe(1);
       expect(result.contextEntities[0].name).toBeDefined();
-      expect(result.contextEntities[1].type).toBe('account');
+      expect(result.contextEntities[1].type).toBe('company');
       expect(result.contextEntities[1].id).toBe(2);
       expect(result.contextEntities[1].name).toBeDefined();
 
-      console.log(`✓ contextEntities persisted: ${JSON.stringify(result.contextEntities)}`);
+      console.log(
+        `✓ contextEntities persisted: ${JSON.stringify(result.contextEntities)}`
+      );
       console.log(`✓ Checkpoint saved to database for thread ${threadId}`);
     }, 30000);
 
@@ -228,7 +239,11 @@ describe('PersistentContextMiddleware - State Persistence', () => {
       expect(result.contextEntities[1].id).toBe(20);
       expect(result.contextEntities[1].name).toBeDefined();
 
-      console.log(`✓ getMessages returned contextEntities: ${JSON.stringify(result.contextEntities)}`);
+      console.log(
+        `✓ getMessages returned contextEntities: ${JSON.stringify(
+          result.contextEntities
+        )}`
+      );
       console.log(`✓ Retrieved ${result.messages.length} messages`);
     }, 30000);
 
@@ -237,7 +252,9 @@ describe('PersistentContextMiddleware - State Persistence', () => {
       const userId = 789;
 
       // First turn: send with initial contextEntities
-      const initialEntities: ContextEntityReference[] = [{ type: 'contact', id: 1 }];
+      const initialEntities: ContextEntityReference[] = [
+        { type: 'contact', id: 1 },
+      ];
 
       const agent = await (service as any).ensureAgent();
       const config = {
@@ -268,7 +285,7 @@ describe('PersistentContextMiddleware - State Persistence', () => {
       // Second turn: update contextEntities
       const updatedEntities: ContextEntityReference[] = [
         { type: 'contact', id: 1 },
-        { type: 'account', id: 2 },
+        { type: 'company', id: 2 },
       ];
 
       const stream2 = await agent.stream(
@@ -293,11 +310,13 @@ describe('PersistentContextMiddleware - State Persistence', () => {
       expect(result.contextEntities[0].type).toBe('contact');
       expect(result.contextEntities[0].id).toBe(1);
       expect(result.contextEntities[0].name).toBeDefined();
-      expect(result.contextEntities[1].type).toBe('account');
+      expect(result.contextEntities[1].type).toBe('company');
       expect(result.contextEntities[1].id).toBe(2);
       expect(result.contextEntities[1].name).toBeDefined();
 
-      console.log(`✓ Updated contextEntities from 1 to ${result.contextEntities?.length} entities`);
+      console.log(
+        `✓ Updated contextEntities from 1 to ${result.contextEntities?.length} entities`
+      );
     }, 30000);
 
     it('should maintain empty contextEntities array when none provided', async () => {
@@ -331,11 +350,11 @@ describe('PersistentContextMiddleware - State Persistence', () => {
       console.log('✓ Empty contextEntities array persisted correctly');
     }, 30000);
 
-    it('should handle different entity types (contact, account, deal)', async () => {
+    it('should handle different entity types (contact, company, deal)', async () => {
       const threadId = `test-entity-types-${randomUUID()}`;
       const contextEntities: ContextEntityReference[] = [
         { type: 'contact', id: 100 },
-        { type: 'account', id: 200 },
+        { type: 'company', id: 200 },
       ];
 
       const agent = await (service as any).ensureAgent();
@@ -365,7 +384,7 @@ describe('PersistentContextMiddleware - State Persistence', () => {
       // Verify entity types and names
       const types = result.contextEntities?.map((e) => e.type) || [];
       expect(types).toContain('contact');
-      expect(types).toContain('account');
+      expect(types).toContain('company');
 
       // Verify all have names
       result.contextEntities.forEach((e: any) => {
@@ -423,7 +442,7 @@ describe('PersistentContextMiddleware - State Persistence', () => {
       const thread2 = `test-isolation-2-${randomUUID()}`;
 
       const entities1: ContextEntityReference[] = [{ type: 'contact', id: 1 }];
-      const entities2: ContextEntityReference[] = [{ type: 'account', id: 99 }];
+      const entities2: ContextEntityReference[] = [{ type: 'company', id: 99 }];
 
       const agent = await (service as any).ensureAgent();
 
@@ -434,7 +453,10 @@ describe('PersistentContextMiddleware - State Persistence', () => {
           contextEntities: entities1,
           userId: 100,
         },
-        { streamMode: ['values'] as const, configurable: { thread_id: thread1 } }
+        {
+          streamMode: ['values'] as const,
+          configurable: { thread_id: thread1 },
+        }
       );
       for await (const _chunk of stream1) {
         // Consume
@@ -447,7 +469,10 @@ describe('PersistentContextMiddleware - State Persistence', () => {
           contextEntities: entities2,
           userId: 200,
         },
-        { streamMode: ['values'] as const, configurable: { thread_id: thread2 } }
+        {
+          streamMode: ['values'] as const,
+          configurable: { thread_id: thread2 },
+        }
       );
       for await (const _chunk of stream2) {
         // Consume
@@ -463,11 +488,13 @@ describe('PersistentContextMiddleware - State Persistence', () => {
       expect(result1.contextEntities[0].name).toBeDefined();
 
       expect(result2.contextEntities.length).toBe(1);
-      expect(result2.contextEntities[0].type).toBe('account');
+      expect(result2.contextEntities[0].type).toBe('company');
       expect(result2.contextEntities[0].id).toBe(99);
       expect(result2.contextEntities[0].name).toBeDefined();
 
-      expect(result1.contextEntities[0].type).not.toEqual(result2.contextEntities[0].type);
+      expect(result1.contextEntities[0].type).not.toEqual(
+        result2.contextEntities[0].type
+      );
 
       console.log('✓ Thread isolation verified for contextEntities');
     }, 30000);

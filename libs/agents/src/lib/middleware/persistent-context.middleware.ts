@@ -32,7 +32,7 @@ const PersistentContextStateSchema = z.object({
   contextEntities: z
     .array(
       z.object({
-        type: z.enum(['contact', 'account', 'deal']),
+        type: z.enum(['contact', 'company', 'deal']),
         id: z.number(),
       })
     )
@@ -43,19 +43,22 @@ const PersistentContextStateSchema = z.object({
         schema: z
           .array(
             z.object({
-              type: z.enum(['contact', 'account', 'deal']),
+              type: z.enum(['contact', 'company', 'deal']),
               id: z.number(),
             })
           )
           .optional(),
       },
     }),
-  userId: z.number().optional().meta({
-    reducer: {
-      fn: userIdReducer,
-      schema: z.number().optional(),
-    },
-  }),
+  userId: z
+    .number()
+    .optional()
+    .meta({
+      reducer: {
+        fn: userIdReducer,
+        schema: z.number().optional(),
+      },
+    }),
 });
 
 /**

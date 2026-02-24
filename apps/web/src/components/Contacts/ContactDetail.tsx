@@ -1,26 +1,28 @@
-"use client";
+'use client';
 
-import { UserIcon, PencilIcon, EyeSlashIcon } from "@heroicons/react/24/outline";
 import {
-  Badge,
-  Divider,
-  Heading,
-  Button,
-} from "@zuko/ui-kit";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getContact, getDealsByContact } from "@/server/query-options";
-import { contactsApi } from "@/lib/api/contacts";
-import dayjs from "dayjs";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
-import ActivityTimeline from "@/components/Activity/ActivityTimeline";
+  UserIcon,
+  PencilIcon,
+  EyeSlashIcon,
+} from '@heroicons/react/24/outline';
+import { Badge, Divider, Heading, Button } from '@zuko/ui-kit';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { getContact, getDealsByContact } from '@/server/query-options';
+import { contactsApi } from '@/lib/api/contacts';
+import dayjs from 'dayjs';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import ActivityTimeline from '@/components/Activity/ActivityTimeline';
 
 interface ContactDetailProps {
   contactId: number;
   currentUserId: number | null;
 }
 
-export default function ContactDetail({ contactId, currentUserId }: ContactDetailProps) {
+export default function ContactDetail({
+  contactId,
+  currentUserId,
+}: ContactDetailProps) {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { data: contact, isLoading } = useQuery(getContact(contactId));
@@ -29,15 +31,17 @@ export default function ContactDetail({ contactId, currentUserId }: ContactDetai
   const hideMutation = useMutation({
     mutationFn: () => contactsApi.hideContact(contactId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["contacts"] });
-      router.push("/contacts");
+      queryClient.invalidateQueries({ queryKey: ['contacts'] });
+      router.push('/contacts');
     },
   });
 
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <div className="text-sm text-zinc-600 dark:text-zinc-400">Loading contact...</div>
+        <div className="text-sm text-zinc-600 dark:text-zinc-400">
+          Loading contact...
+        </div>
       </div>
     );
   }
@@ -45,7 +49,9 @@ export default function ContactDetail({ contactId, currentUserId }: ContactDetai
   if (!contact) {
     return (
       <div className="flex items-center justify-center py-12">
-        <div className="text-sm text-zinc-600 dark:text-zinc-400">Contact not found</div>
+        <div className="text-sm text-zinc-600 dark:text-zinc-400">
+          Contact not found
+        </div>
       </div>
     );
   }
@@ -55,14 +61,14 @@ export default function ContactDetail({ contactId, currentUserId }: ContactDetai
   };
 
   const handleHide = () => {
-    if (confirm("Are you sure you want to hide this contact?")) {
+    if (confirm('Are you sure you want to hide this contact?')) {
       hideMutation.mutate();
     }
   };
 
   const formatCurrency = (value?: number, currency?: string) => {
-    if (value === undefined || value === null) return "-";
-    const curr = currency || "USD";
+    if (value === undefined || value === null) return '-';
+    const curr = currency || 'USD';
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: curr,
@@ -71,22 +77,27 @@ export default function ContactDetail({ contactId, currentUserId }: ContactDetai
     }).format(value);
   };
 
-  const getStageColor = (stage: string): "zinc" | "blue" | "yellow" | "green" | "red" => {
-    const stageColors: Record<string, "zinc" | "blue" | "yellow" | "green" | "red"> = {
-      prospecting: "zinc",
-      qualification: "blue",
-      proposal: "yellow",
-      negotiation: "yellow",
-      closed_won: "green",
-      closed_lost: "red",
+  const getStageColor = (
+    stage: string
+  ): 'zinc' | 'blue' | 'yellow' | 'green' | 'red' => {
+    const stageColors: Record<
+      string,
+      'zinc' | 'blue' | 'yellow' | 'green' | 'red'
+    > = {
+      prospecting: 'zinc',
+      qualification: 'blue',
+      proposal: 'yellow',
+      negotiation: 'yellow',
+      closed_won: 'green',
+      closed_lost: 'red',
     };
-    return stageColors[stage] || "zinc";
+    return stageColors[stage] || 'zinc';
   };
 
   const formatStage = (stage: string) => {
     return stage
       .split('_')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
       .join(' ');
   };
 
@@ -100,7 +111,7 @@ export default function ContactDetail({ contactId, currentUserId }: ContactDetai
           <div>
             <Heading>{contact.name}</Heading>
             <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
-              Created {dayjs(contact.createdAt).format("MMMM D, YYYY")}
+              Created {dayjs(contact.createdAt).format('MMMM D, YYYY')}
             </p>
           </div>
         </div>
@@ -111,7 +122,7 @@ export default function ContactDetail({ contactId, currentUserId }: ContactDetai
           </Button>
           <Button plain onClick={handleHide} disabled={hideMutation.isPending}>
             <EyeSlashIcon className="h-4 w-4" />
-            {hideMutation.isPending ? "Hiding..." : "Hide"}
+            {hideMutation.isPending ? 'Hiding...' : 'Hide'}
           </Button>
         </div>
       </div>
@@ -126,7 +137,9 @@ export default function ContactDetail({ contactId, currentUserId }: ContactDetai
         <dl className="mt-4 space-y-4">
           {contact.email && (
             <div className="grid grid-cols-3">
-              <dt className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Email</dt>
+              <dt className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
+                Email
+              </dt>
               <dd className="col-span-2 text-sm text-zinc-950 dark:text-white">
                 <a
                   href={`mailto:${contact.email}`}
@@ -139,7 +152,9 @@ export default function ContactDetail({ contactId, currentUserId }: ContactDetai
           )}
           {contact.phone && (
             <div className="grid grid-cols-3">
-              <dt className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Phone</dt>
+              <dt className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
+                Phone
+              </dt>
               <dd className="col-span-2 text-sm text-zinc-950 dark:text-white">
                 <a
                   href={`tel:${contact.phone}`}
@@ -152,8 +167,12 @@ export default function ContactDetail({ contactId, currentUserId }: ContactDetai
           )}
           {contact.linkedinId && (
             <div className="grid grid-cols-3">
-              <dt className="text-sm font-medium text-zinc-600 dark:text-zinc-400">LinkedIn</dt>
-              <dd className="col-span-2 text-sm text-zinc-950 dark:text-white">{contact.linkedinId}</dd>
+              <dt className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
+                LinkedIn
+              </dt>
+              <dd className="col-span-2 text-sm text-zinc-950 dark:text-white">
+                {contact.linkedinId}
+              </dd>
             </div>
           )}
         </dl>
@@ -161,12 +180,18 @@ export default function ContactDetail({ contactId, currentUserId }: ContactDetai
 
       {/* Ownership */}
       <div className="mt-8">
-        <h2 className="text-base font-semibold text-zinc-950 dark:text-white">Owners</h2>
+        <h2 className="text-base font-semibold text-zinc-950 dark:text-white">
+          Owners
+        </h2>
         <div className="mt-4 space-y-2">
           {contact.owners.map((owner) => (
             <div key={owner.id} className="flex items-center gap-3">
-              <div className="text-sm text-zinc-950 dark:text-white">{owner.user.name}</div>
-              <div className="text-sm text-zinc-600 dark:text-zinc-400">{owner.user.email}</div>
+              <div className="text-sm text-zinc-950 dark:text-white">
+                {owner.user.name}
+              </div>
+              <div className="text-sm text-zinc-600 dark:text-zinc-400">
+                {owner.user.email}
+              </div>
               {owner.isPrimary && (
                 <Badge color="lime" className="text-xs">
                   Primary
@@ -180,7 +205,9 @@ export default function ContactDetail({ contactId, currentUserId }: ContactDetai
       {/* Notes */}
       {contact.notes && (
         <div className="mt-8">
-          <h2 className="text-base font-semibold text-zinc-950 dark:text-white">Notes</h2>
+          <h2 className="text-base font-semibold text-zinc-950 dark:text-white">
+            Notes
+          </h2>
           <div className="mt-4 whitespace-pre-wrap rounded-lg bg-zinc-50 p-4 text-sm text-zinc-950 dark:bg-zinc-900 dark:text-white">
             {contact.notes}
           </div>
@@ -195,7 +222,9 @@ export default function ContactDetail({ contactId, currentUserId }: ContactDetai
           </h2>
           <div className="mt-4 space-y-3">
             {dealsData.deals.map((deal: any) => {
-              const dealContact = deal.contacts?.find((dc: any) => dc.contactId === contactId);
+              const dealContact = deal.contacts?.find(
+                (dc: any) => dc.contactId === contactId
+              );
               return (
                 <div key={deal.id} className="flex items-center gap-3">
                   <div className="text-sm min-w-[200px]">
@@ -231,18 +260,24 @@ export default function ContactDetail({ contactId, currentUserId }: ContactDetai
 
       {/* Metadata */}
       <div className="mt-8">
-        <h2 className="text-base font-semibold text-zinc-950 dark:text-white">Details</h2>
+        <h2 className="text-base font-semibold text-zinc-950 dark:text-white">
+          Details
+        </h2>
         <dl className="mt-4 space-y-4">
           <div className="grid grid-cols-3">
-            <dt className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Created</dt>
+            <dt className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
+              Created
+            </dt>
             <dd className="col-span-2 text-sm text-zinc-950 dark:text-white">
-              {dayjs(contact.createdAt).format("MMMM D, YYYY [at] h:mm A")}
+              {dayjs(contact.createdAt).format('MMMM D, YYYY [at] h:mm A')}
             </dd>
           </div>
           <div className="grid grid-cols-3">
-            <dt className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Last Updated</dt>
+            <dt className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
+              Last Updated
+            </dt>
             <dd className="col-span-2 text-sm text-zinc-950 dark:text-white">
-              {dayjs(contact.updatedAt).format("MMMM D, YYYY [at] h:mm A")}
+              {dayjs(contact.updatedAt).format('MMMM D, YYYY [at] h:mm A')}
             </dd>
           </div>
         </dl>
@@ -250,7 +285,9 @@ export default function ContactDetail({ contactId, currentUserId }: ContactDetai
 
       {/* Activity Timeline */}
       <div className="mt-8">
-        <h2 className="text-base font-semibold text-zinc-950 dark:text-white">Activity</h2>
+        <h2 className="text-base font-semibold text-zinc-950 dark:text-white">
+          Activity
+        </h2>
         <div className="mt-4">
           <ActivityTimeline
             entityType="contact"

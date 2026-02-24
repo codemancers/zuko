@@ -1,10 +1,10 @@
-"use client";
+'use client';
 
-import { EntitySelectorDialog } from "@zuko/ui-kit";
-import { useChatContextManager } from "./ChatContextWrapper";
+import { EntitySelectorDialog } from '@zuko/ui-kit';
+import { useChatContextManager } from './ChatContextWrapper';
 
 /**
- * Dialog for selecting contacts/accounts to add as context
+ * Dialog for selecting contacts/companies to add as context
  * Must be used inside ChatContextProvider
  */
 export const ChatContextDialog = () => {
@@ -15,14 +15,14 @@ export const ChatContextDialog = () => {
       open={contextManager.dialogConfig.open}
       onOpenChange={contextManager.dialogConfig.onOpenChange}
       title={
-        contextManager.dialogConfig.type === "contact"
-          ? "Add Contacts"
-          : "Add Accounts"
+        contextManager.dialogConfig.type === 'contact'
+          ? 'Add Contacts'
+          : 'Add Companies'
       }
       description={
-        contextManager.dialogConfig.type === "contact"
-          ? "Select contacts to add as context"
-          : "Select accounts to add as context"
+        contextManager.dialogConfig.type === 'contact'
+          ? 'Select contacts to add as context'
+          : 'Select companies to add as context'
       }
       searchPlaceholder={`Search ${contextManager.dialogConfig.type}s...`}
       items={contextManager.dialogConfig.items}

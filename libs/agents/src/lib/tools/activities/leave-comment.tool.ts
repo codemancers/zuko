@@ -4,7 +4,7 @@ import type { ActivityService } from '@zuko/sales';
 
 /**
  * LangChain tool for leaving comments on entities
- * Used by AI agents to add comments to contacts, accounts, or deals
+ * Used by AI agents to add comments to contacts, companies, or deals
  */
 export function createLeaveCommentTool(activityService: ActivityService) {
   return tool(
@@ -37,7 +37,7 @@ export function createLeaveCommentTool(activityService: ActivityService) {
     },
     {
       name: 'leave_comment',
-      description: `Leave a comment on a contact, account, or deal. The comment will be visible in the entity's activity timeline.
+      description: `Leave a comment on a contact, company, or deal. The comment will be visible in the entity's activity timeline.
 
 Use this when asked to:
 - "Leave a note"
@@ -53,11 +53,15 @@ Examples:
 IMPORTANT: You must pass the userId from the conversation state to properly attribute the comment to the user.`,
       schema: z.object({
         entityType: z
-          .enum(['contact', 'account', 'deal'])
+          .enum(['contact', 'company', 'deal'])
           .describe('The type of entity to comment on'),
         entityId: z.number().describe('The ID of the entity'),
         content: z.string().describe('The comment text to add'),
-        userId: z.number().describe('The ID of the user creating the comment (from conversation state)'),
+        userId: z
+          .number()
+          .describe(
+            'The ID of the user creating the comment (from conversation state)'
+          ),
       }),
     }
   );

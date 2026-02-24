@@ -11,21 +11,21 @@ enum UserRole {
 }
 
 model User {
-  id            Int      @id @default(autoincrement())
-  name          String
-  email         String
-  emailVerified Boolean  @default(false) @map("email_verified")
-  image         String?
-  role          UserRole @default(none)
-  createdAt     DateTime @default(now()) @map("created_at")
-  updatedAt     DateTime @updatedAt @map("updated_at")
-  sessions      Session[]
-  accounts      Account[]
-  contactOwners ContactOwner[]
-  accountOwners AccountOwner[]
-  dealOwners    DealOwner[]
-  activities    Activity[]
-  createdChats       Chat[]             @relation("ChatCreator")
+  id                 Int               @id @default(autoincrement())
+  name               String
+  email              String
+  emailVerified      Boolean           @default(false) @map("email_verified")
+  image              String?
+  role               UserRole          @default(none)
+  createdAt          DateTime          @default(now()) @map("created_at")
+  updatedAt          DateTime          @updatedAt @map("updated_at")
+  sessions           Session[]
+  accounts           Account[]
+  contactOwners      ContactOwner[]
+  companyOwners      CompanyOwner[]
+  dealOwners         DealOwner[]
+  activities         Activity[]
+  createdChats       Chat[]            @relation("ChatCreator")
   chatParticipations ChatParticipant[]
 
   @@unique([email])
@@ -104,7 +104,7 @@ model Chat {
   updatedAt   DateTime @updatedAt @map("updated_at")
   createdById Int      @map("created_by_id")
 
-  createdBy    User             @relation("ChatCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  createdBy    User              @relation("ChatCreator", fields: [createdById], references: [id], onDelete: Cascade)
   participants ChatParticipant[]
 
   @@map("chat")
@@ -112,10 +112,10 @@ model Chat {
 }
 
 model ChatParticipant {
-  id        Int      @id @default(autoincrement())
-  chatId    Int      @map("chat_id")
-  userId    Int      @map("user_id")
-  joinedAt  DateTime @default(now()) @map("joined_at")
+  id       Int      @id @default(autoincrement())
+  chatId   Int      @map("chat_id")
+  userId   Int      @map("user_id")
+  joinedAt DateTime @default(now()) @map("joined_at")
 
   chat Chat @relation(fields: [chatId], references: [id], onDelete: Cascade)
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)

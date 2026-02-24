@@ -20,7 +20,10 @@ class ApiClient {
       this.baseUrl = config.baseUrl || '/api/proxy';
     } else {
       // Server: use backend directly
-      this.baseUrl = config.baseUrl || process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3001";
+      this.baseUrl =
+        config.baseUrl ||
+        process.env.NEXT_PUBLIC_BACKEND_URL ||
+        'http://localhost:3001';
     }
     this.defaultHeaders = config.headers || {};
   }
@@ -42,15 +45,15 @@ class ApiClient {
     options: RequestInit = {}
   ): Promise<T> {
     const headers: Record<string, string> = {
-      "Content-Type": "application/json",
-      ...this.defaultHeaders as Record<string, string>,
-      ...options.headers as Record<string, string>,
+      'Content-Type': 'application/json',
+      ...(this.defaultHeaders as Record<string, string>),
+      ...(options.headers as Record<string, string>),
     };
 
     // On server side, get cookies and pass them explicitly
     if (this.isServer()) {
       try {
-        const { cookies } = await import("next/headers");
+        const { cookies } = await import('next/headers');
         const cookieStore = await cookies();
         headers['Cookie'] = cookieStore.toString();
       } catch (error) {
@@ -62,9 +65,9 @@ class ApiClient {
     const config: RequestInit = {
       ...options,
       headers,
-      credentials: "include",
+      credentials: 'include',
       // Don't cache API responses by default
-      cache: options.cache || "no-store",
+      cache: options.cache || 'no-store',
     };
 
     const url = `${this.baseUrl}/api${endpoint}`;
@@ -77,7 +80,7 @@ class ApiClient {
           message: response.statusText,
         }));
         throw new ApiError(
-          error.message || "API request failed",
+          error.message || 'API request failed',
           response.status,
           error
         );
@@ -94,7 +97,7 @@ class ApiClient {
         throw error;
       }
       throw new ApiError(
-        error instanceof Error ? error.message : "Unknown error",
+        error instanceof Error ? error.message : 'Unknown error',
         500,
         error
       );
@@ -102,37 +105,53 @@ class ApiClient {
   }
 
   async get<T>(endpoint: string, options?: RequestInit): Promise<T> {
-    return this.request<T>(endpoint, { ...options, method: "GET" });
+    return this.request<T>(endpoint, { ...options, method: 'GET' });
   }
 
-  async post<T>(endpoint: string, data?: any, options?: RequestInit): Promise<T> {
+  async post<T>(
+    endpoint: string,
+    data?: any,
+    options?: RequestInit
+  ): Promise<T> {
     return this.request<T>(endpoint, {
       ...options,
-      method: "POST",
+      method: 'POST',
       body: data ? JSON.stringify(data) : undefined,
     });
   }
 
-  async patch<T>(endpoint: string, data?: any, options?: RequestInit): Promise<T> {
+  async patch<T>(
+    endpoint: string,
+    data?: any,
+    options?: RequestInit
+  ): Promise<T> {
     return this.request<T>(endpoint, {
       ...options,
-      method: "PATCH",
+      method: 'PATCH',
       body: data ? JSON.stringify(data) : undefined,
     });
   }
 
-  async put<T>(endpoint: string, data?: any, options?: RequestInit): Promise<T> {
+  async put<T>(
+    endpoint: string,
+    data?: any,
+    options?: RequestInit
+  ): Promise<T> {
     return this.request<T>(endpoint, {
       ...options,
-      method: "PUT",
+      method: 'PUT',
       body: data ? JSON.stringify(data) : undefined,
     });
   }
 
-  async delete<T>(endpoint: string, data?: any, options?: RequestInit): Promise<T> {
+  async delete<T>(
+    endpoint: string,
+    data?: any,
+    options?: RequestInit
+  ): Promise<T> {
     return this.request<T>(endpoint, {
       ...options,
-      method: "DELETE",
+      method: 'DELETE',
       body: data ? JSON.stringify(data) : undefined,
     });
   }
@@ -142,13 +161,9 @@ class ApiClient {
  * Custom error class for API errors
  */
 export class ApiError extends Error {
-  constructor(
-    message: string,
-    public status: number,
-    public details?: any
-  ) {
+  constructor(message: string, public status: number, public details?: any) {
     super(message);
-    this.name = "ApiError";
+    this.name = 'ApiError';
   }
 }
 

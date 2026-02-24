@@ -6,7 +6,6 @@ import { AuthGuard } from '@thallesp/nestjs-better-auth';
 
 describe('DealsController', () => {
   let controller: DealsController;
-  let dealsService: DealsService;
 
   const mockDealsService = {
     create: jest.fn(),
@@ -19,15 +18,15 @@ describe('DealsController', () => {
     removeOwner: jest.fn(),
     setPrimaryOwner: jest.fn(),
     getDealsByUser: jest.fn(),
-    addAccount: jest.fn(),
-    removeAccount: jest.fn(),
-    updateAccount: jest.fn(),
-    getAccounts: jest.fn(),
+    addCompany: jest.fn(),
+    removeCompany: jest.fn(),
+    updateCompany: jest.fn(),
+    getCompanies: jest.fn(),
     addContact: jest.fn(),
     removeContact: jest.fn(),
     updateContact: jest.fn(),
     getContacts: jest.fn(),
-    getDealsByAccount: jest.fn(),
+    getDealsByCompany: jest.fn(),
     getDealsByContact: jest.fn(),
   };
 
@@ -46,7 +45,6 @@ describe('DealsController', () => {
       .compile();
 
     controller = module.get<DealsController>(DealsController);
-    dealsService = module.get<DealsService>(DealsService);
 
     // Reset all mocks before each test
     jest.clearAllMocks();
@@ -64,7 +62,7 @@ describe('DealsController', () => {
         currency: 'USD',
         probability: 50,
         stage: 'prospecting',
-        expectedCloseDate: '2026-02-25' as any, // This is how it comes from JSON
+        expectedCloseDate: '2026-02-25' as unknown as Date, // JSON sends string; controller converts to Date
         priority: 2,
         ownerIds: [1],
       };
@@ -76,21 +74,27 @@ describe('DealsController', () => {
         createdAt: new Date(),
         updatedAt: new Date(),
         owners: [],
-        accounts: [],
+        companies: [],
         contacts: [],
       };
 
-      mockDealsService.create.mockResolvedValue(mockCreatedDeal);
+      (mockDealsService.create as jest.Mock).mockResolvedValue(
+        mockCreatedDeal as never
+      );
 
       await controller.create(dto);
 
       // Check that the service was called with a Date object, not a string
       expect(mockDealsService.create).toHaveBeenCalledTimes(1);
-      const callArg = mockDealsService.create.mock.calls[0][0];
+      const callArg = mockDealsService.create.mock.calls[0][0] as {
+        expectedCloseDate?: Date;
+      };
 
       // This is the bug: expectedCloseDate should be a Date object
       expect(callArg.expectedCloseDate).toBeInstanceOf(Date);
-      expect(callArg.expectedCloseDate.toISOString()).toContain('2026-02-25');
+      expect((callArg.expectedCloseDate as Date).toISOString()).toContain(
+        '2026-02-25'
+      );
     });
 
     it('should handle undefined expectedCloseDate', async () => {
@@ -110,16 +114,20 @@ describe('DealsController', () => {
         createdAt: new Date(),
         updatedAt: new Date(),
         owners: [],
-        accounts: [],
+        companies: [],
         contacts: [],
       };
 
-      mockDealsService.create.mockResolvedValue(mockCreatedDeal);
+      (mockDealsService.create as jest.Mock).mockResolvedValue(
+        mockCreatedDeal as never
+      );
 
       await controller.create(dto);
 
       expect(mockDealsService.create).toHaveBeenCalledTimes(1);
-      const callArg = mockDealsService.create.mock.calls[0][0];
+      const callArg = mockDealsService.create.mock.calls[0][0] as {
+        expectedCloseDate?: Date;
+      };
       expect(callArg.expectedCloseDate).toBeUndefined();
     });
   });
@@ -128,8 +136,8 @@ describe('DealsController', () => {
     it('should convert date strings to Date objects before passing to service', async () => {
       const dealId = 1;
       const dto = {
-        expectedCloseDate: '2026-03-15' as any,
-        actualCloseDate: '2026-03-10' as any,
+        expectedCloseDate: '2026-03-15' as unknown as Date,
+        actualCloseDate: '2026-03-10' as unknown as Date,
         stage: 'closed_won',
       };
 
@@ -142,18 +150,27 @@ describe('DealsController', () => {
         owners: [],
       };
 
-      mockDealsService.update.mockResolvedValue(mockUpdatedDeal);
+      (mockDealsService.update as jest.Mock).mockResolvedValue(
+        mockUpdatedDeal as never
+      );
 
       await controller.update(dealId, dto);
 
       expect(mockDealsService.update).toHaveBeenCalledTimes(1);
-      const [id, callArg] = mockDealsService.update.mock.calls[0];
+      const [id, callArg] = mockDealsService.update.mock.calls[0] as [
+        number,
+        { expectedCloseDate?: Date; actualCloseDate?: Date }
+      ];
 
       expect(id).toBe(dealId);
       expect(callArg.expectedCloseDate).toBeInstanceOf(Date);
       expect(callArg.actualCloseDate).toBeInstanceOf(Date);
-      expect(callArg.expectedCloseDate.toISOString()).toContain('2026-03-15');
-      expect(callArg.actualCloseDate.toISOString()).toContain('2026-03-10');
+      expect((callArg.expectedCloseDate as Date).toISOString()).toContain(
+        '2026-03-15'
+      );
+      expect((callArg.actualCloseDate as Date).toISOString()).toContain(
+        '2026-03-10'
+      );
     });
 
     it('should handle undefined date fields', async () => {
@@ -169,12 +186,17 @@ describe('DealsController', () => {
         owners: [],
       };
 
-      mockDealsService.update.mockResolvedValue(mockUpdatedDeal);
+      (mockDealsService.update as jest.Mock).mockResolvedValue(
+        mockUpdatedDeal as never
+      );
 
       await controller.update(dealId, dto);
 
       expect(mockDealsService.update).toHaveBeenCalledTimes(1);
-      const [, callArg] = mockDealsService.update.mock.calls[0];
+      const [, callArg] = mockDealsService.update.mock.calls[0] as [
+        number,
+        { expectedCloseDate?: Date; actualCloseDate?: Date }
+      ];
 
       expect(callArg.expectedCloseDate).toBeUndefined();
       expect(callArg.actualCloseDate).toBeUndefined();

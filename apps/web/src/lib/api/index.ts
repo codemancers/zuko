@@ -3,6 +3,6 @@
  * Centralized access to all API endpoints
  */
 
-export { apiClient, ApiError } from "../api-client";
-export * from "./github";
-export * from "./contacts";
+export { apiClient, ApiError } from '../api-client';
+export * from './github';
+export * from './contacts';

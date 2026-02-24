@@ -3,7 +3,7 @@ import { Prisma } from '@prisma/client';
 import type { PrismaService } from '../modules/prisma.types';
 import type { PaginationOptions } from './types';
 
-export interface CreateAccountInput {
+export interface CreateCompanyInput {
   companyName: string;
   website?: string;
   linkedinUrl?: string;
@@ -12,7 +12,7 @@ export interface CreateAccountInput {
   primaryOwnerId?: number;
 }
 
-export interface UpdateAccountInput {
+export interface UpdateCompanyInput {
   companyName?: string;
   website?: string;
   linkedinUrl?: string;
@@ -20,38 +20,40 @@ export interface UpdateAccountInput {
   isHidden?: boolean;
 }
 
-export interface AccountFilters {
+export interface CompanyFilters {
   isHidden?: boolean;
   ownerIds?: number[];
   search?: string;
 }
 
-export interface AddContactToAccountInput {
+export interface AddContactToCompanyInput {
   contactId: number;
   role?: string;
   isPrimary?: boolean;
   joinedAt?: Date;
 }
 
-export interface UpdateContactAccountInput {
+export interface UpdateContactCompanyInput {
   role?: string;
   isPrimary?: boolean;
 }
 
 @Injectable()
-export class AccountsRepository {
+export class CompaniesRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  async create(input: CreateAccountInput) {
-    const { ownerIds, primaryOwnerId, ...accountData } = input;
+  async create(input: CreateCompanyInput) {
+    const { ownerIds, primaryOwnerId, ...companyData } = input;
 
-    return this.prisma.salesAccount.create({
+    return this.prisma.salesCompany.create({
       data: {
-        ...accountData,
+        ...companyData,
         owners: {
           create: ownerIds.map((userId) => ({
             userId,
-            isPrimary: primaryOwnerId ? userId === primaryOwnerId : userId === ownerIds[0],
+            isPrimary: primaryOwnerId
+              ? userId === primaryOwnerId
+              : userId === ownerIds[0],
           })),
         },
       },
@@ -72,7 +74,7 @@ export class AccountsRepository {
   }
 
   async findById(id: number) {
-    return this.prisma.salesAccount.findUnique({
+    return this.prisma.salesCompany.findUnique({
       where: { id },
       include: {
         owners: {
@@ -115,8 +117,8 @@ export class AccountsRepository {
     });
   }
 
-  async update(id: number, input: UpdateAccountInput) {
-    return this.prisma.salesAccount.update({
+  async update(id: number, input: UpdateCompanyInput) {
+    return this.prisma.salesCompany.update({
       where: { id },
       data: input,
       include: {
@@ -143,12 +145,15 @@ export class AccountsRepository {
     return this.update(id, { isHidden: false });
   }
 
-  async findAll(filters: AccountFilters = {}, pagination: PaginationOptions = {}) {
+  async findAll(
+    filters: CompanyFilters = {},
+    pagination: PaginationOptions = {}
+  ) {
     const { isHidden = false, ownerIds, search } = filters;
     const { page = 1, limit = 50 } = pagination;
     const skip = (page - 1) * limit;
 
-    const where: Prisma.SalesAccountWhereInput = {
+    const where: Prisma.SalesCompanyWhereInput = {
       isHidden,
       ...(ownerIds && ownerIds.length > 0
         ? {
@@ -172,8 +177,8 @@ export class AccountsRepository {
         : {}),
     };
 
-    const [accounts, total] = await Promise.all([
-      this.prisma.salesAccount.findMany({
+    const [companies, total] = await Promise.all([
+      this.prisma.salesCompany.findMany({
         where,
         skip,
         take: limit,
@@ -201,11 +206,11 @@ export class AccountsRepository {
           },
         },
       }),
-      this.prisma.salesAccount.count({ where }),
+      this.prisma.salesCompany.count({ where }),
     ]);
 
     return {
-      accounts,
+      companies,
       pagination: {
         page,
         limit,
@@ -215,39 +220,39 @@ export class AccountsRepository {
     };
   }
 
-  async addOwner(accountId: number, userId: number, isPrimary = false) {
-    return this.prisma.accountOwner.create({
+  async addOwner(companyId: number, userId: number, isPrimary = false) {
+    return this.prisma.companyOwner.create({
       data: {
-        accountId,
+        companyId,
         userId,
         isPrimary,
       },
     });
   }
 
-  async removeOwner(accountId: number, userId: number) {
-    return this.prisma.accountOwner.delete({
+  async removeOwner(companyId: number, userId: number) {
+    return this.prisma.companyOwner.delete({
       where: {
-        accountId_userId: {
-          accountId,
+        companyId_userId: {
+          companyId,
           userId,
         },
       },
     });
   }
 
-  async setPrimaryOwner(accountId: number, userId: number) {
+  async setPrimaryOwner(companyId: number, userId: number) {
     await this.prisma.$transaction([
       // Remove primary flag from all owners
-      this.prisma.accountOwner.updateMany({
-        where: { accountId },
+      this.prisma.companyOwner.updateMany({
+        where: { companyId },
         data: { isPrimary: false },
       }),
       // Set the new primary owner
-      this.prisma.accountOwner.update({
+      this.prisma.companyOwner.update({
         where: {
-          accountId_userId: {
-            accountId,
+          companyId_userId: {
+            companyId,
             userId,
           },
         },
@@ -256,16 +261,16 @@ export class AccountsRepository {
     ]);
   }
 
-  async getAccountsByUser(userId: number, pagination: PaginationOptions = {}) {
+  async getCompaniesByUser(userId: number, pagination: PaginationOptions = {}) {
     return this.findAll({ ownerIds: [userId] }, pagination);
   }
 
-  async addContact(accountId: number, input: AddContactToAccountInput) {
+  async addContact(companyId: number, input: AddContactToCompanyInput) {
     // If setting as primary, remove primary flag from other contacts
     if (input.isPrimary) {
-      await this.prisma.accountContact.updateMany({
+      await this.prisma.companyContact.updateMany({
         where: {
-          accountId,
+          companyId,
           leftAt: null,
         },
         data: {
@@ -274,9 +279,9 @@ export class AccountsRepository {
       });
     }
 
-    return this.prisma.accountContact.create({
+    return this.prisma.companyContact.create({
       data: {
-        accountId,
+        companyId,
         contactId: input.contactId,
         role: input.role,
         isPrimary: input.isPrimary ?? false,
@@ -302,11 +307,11 @@ export class AccountsRepository {
     });
   }
 
-  async removeContact(accountId: number, contactId: number) {
+  async removeContact(companyId: number, contactId: number) {
     // Set leftAt to mark the contact as no longer associated
-    return this.prisma.accountContact.updateMany({
+    return this.prisma.companyContact.updateMany({
       where: {
-        accountId,
+        companyId,
         contactId,
         leftAt: null, // Only update active associations
       },
@@ -316,12 +321,16 @@ export class AccountsRepository {
     });
   }
 
-  async updateContactAccount(accountId: number, contactId: number, input: UpdateContactAccountInput) {
+  async updateContactCompany(
+    companyId: number,
+    contactId: number,
+    input: UpdateContactCompanyInput
+  ) {
     // If setting as primary, remove primary flag from other contacts
     if (input.isPrimary) {
-      await this.prisma.accountContact.updateMany({
+      await this.prisma.companyContact.updateMany({
         where: {
-          accountId,
+          companyId,
           leftAt: null,
           NOT: {
             contactId,
@@ -333,9 +342,9 @@ export class AccountsRepository {
       });
     }
 
-    return this.prisma.accountContact.updateMany({
+    return this.prisma.companyContact.updateMany({
       where: {
-        accountId,
+        companyId,
         contactId,
         leftAt: null,
       },
@@ -343,10 +352,10 @@ export class AccountsRepository {
     });
   }
 
-  async getActiveContacts(accountId: number) {
-    return this.prisma.accountContact.findMany({
+  async getActiveContacts(companyId: number) {
+    return this.prisma.companyContact.findMany({
       where: {
-        accountId,
+        companyId,
         leftAt: null,
       },
       include: {
@@ -372,10 +381,10 @@ export class AccountsRepository {
     });
   }
 
-  async getContactHistory(accountId: number) {
-    return this.prisma.accountContact.findMany({
+  async getContactHistory(companyId: number) {
+    return this.prisma.companyContact.findMany({
       where: {
-        accountId,
+        companyId,
       },
       include: {
         contact: {
@@ -400,14 +409,14 @@ export class AccountsRepository {
     });
   }
 
-  async getAccountsForContact(contactId: number, includeHistory = false) {
-    return this.prisma.accountContact.findMany({
+  async getCompaniesForContact(contactId: number, includeHistory = false) {
+    return this.prisma.companyContact.findMany({
       where: {
         contactId,
         ...(includeHistory ? {} : { leftAt: null }),
       },
       include: {
-        account: {
+        company: {
           include: {
             owners: {
               include: {

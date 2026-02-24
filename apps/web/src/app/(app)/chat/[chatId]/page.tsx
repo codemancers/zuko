@@ -58,7 +58,7 @@ export default function ChatPage() {
       // Set context entities for UI chips
       if (contextEntities.length > 0) {
         const entities: ChatEntity[] = contextEntities.map(ref => ({
-          type: ref.type as 'contact' | 'account',
+          type: ref.type as 'contact' | 'company',
           id: ref.id,
           name: `${ref.type}-${ref.id}`, // Placeholder name
           metadata: { type: ref.type, entityId: ref.id },
@@ -118,7 +118,7 @@ export default function ChatPage() {
 
         // Hydrate context entities from backend response (includes names)
         const hydratedEntities: ChatEntity[] = contextRefs.map((ref: { type: string; id: number; name: string }) => ({
-          type: ref.type as 'contact' | 'account',
+          type: ref.type as 'contact' | 'company',
           id: ref.id,
           name: ref.name, // Use actual name from backend
           metadata: { type: ref.type, entityId: ref.id },

@@ -8,7 +8,14 @@ import type { ActivityService } from '@zuko/sales';
  */
 export function createQueryActivitiesTool(activityService: ActivityService) {
   return tool(
-    async ({ entityType, entityId, activityType, actorId, createdAfter, limit = 50 }) => {
+    async ({
+      entityType,
+      entityId,
+      activityType,
+      actorId,
+      createdAfter,
+      limit = 50,
+    }) => {
       try {
         const filters: any = {};
 
@@ -31,28 +38,35 @@ export function createQueryActivitiesTool(activityService: ActivityService) {
         const paginationOptions = { limit: Math.min(limit, 500) }; // Cap at 500
 
         // Fetch activities
-        const result = await activityService.findAll(filters, paginationOptions);
+        const result = await activityService.findAll(
+          filters,
+          paginationOptions
+        );
         let activities = result.activities;
 
         // Apply date filter post-fetch
         if (createdAfter) {
           const afterDate = new Date(createdAfter);
-          activities = activities.filter(a => new Date(a.createdAt) >= afterDate);
+          activities = activities.filter(
+            (a) => new Date(a.createdAt) >= afterDate
+          );
         }
 
         // Format activities for response
         return {
-          activities: activities.map(a => ({
+          activities: activities.map((a) => ({
             id: a.id,
             activityType: a.activityType,
             entityType: a.entityType,
             entityId: a.entityId,
             content: a.content,
-            actor: a.actor ? {
-              id: a.actor.id,
-              name: a.actor.name,
-              email: a.actor.email,
-            } : null,
+            actor: a.actor
+              ? {
+                  id: a.actor.id,
+                  name: a.actor.name,
+                  email: a.actor.email,
+                }
+              : null,
             createdAt: a.createdAt.toISOString(),
           })),
           count: activities.length,
@@ -79,7 +93,7 @@ export function createQueryActivitiesTool(activityService: ActivityService) {
 
 Use this for questions like:
 - "What activities happened on this contact this week?"
-- "Show me recent comments on this account"
+- "Show me recent comments on this company"
 - "What did Alice do recently?"
 - "List all activities for contact 123"
 
@@ -89,15 +103,23 @@ Supports:
 - Limit results (default 50, max 500)`,
       schema: z.object({
         entityType: z
-          .enum(['contact', 'account', 'deal'])
+          .enum(['contact', 'company', 'deal'])
           .optional()
           .describe('Filter by entity type'),
-        entityId: z.number().optional().describe('Filter by specific entity ID'),
+        entityId: z
+          .number()
+          .optional()
+          .describe('Filter by specific entity ID'),
         activityType: z
           .string()
           .optional()
-          .describe('Filter by activity type (e.g., "comment", "field_update")'),
-        actorId: z.number().optional().describe('Filter by user who performed the activity'),
+          .describe(
+            'Filter by activity type (e.g., "comment", "field_update")'
+          ),
+        actorId: z
+          .number()
+          .optional()
+          .describe('Filter by user who performed the activity'),
         createdAfter: z
           .string()
           .optional()

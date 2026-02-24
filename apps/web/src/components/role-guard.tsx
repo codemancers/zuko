@@ -37,7 +37,12 @@ interface RoleGuardProps {
  * </RoleGuard>
  * ```
  */
-export function RoleGuard({ role, children, fallback = null, loading: loadingContent = null }: RoleGuardProps) {
+export function RoleGuard({
+  role,
+  children,
+  fallback = null,
+  loading: loadingContent = null,
+}: RoleGuardProps) {
   const { role: userRole, loading } = useUserRole();
 
   if (loading) {

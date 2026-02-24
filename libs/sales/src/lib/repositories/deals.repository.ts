@@ -35,7 +35,7 @@ export interface UpdateDealInput {
 export interface DealFilters {
   isHidden?: boolean;
   ownerIds?: number[];
-  accountIds?: number[];
+  companyIds?: number[];
   contactIds?: number[];
   stages?: string[];
   search?: string;
@@ -45,8 +45,8 @@ export interface DealFilters {
   expectedCloseTo?: Date;
 }
 
-export interface AddAccountToDealInput {
-  accountId: number;
+export interface AddCompanyToDealInput {
+  companyId: number;
   isPrimary?: boolean;
 }
 
@@ -74,7 +74,9 @@ export class DealsRepository {
         owners: {
           create: ownerIds.map((userId) => ({
             userId,
-            isPrimary: primaryOwnerId ? userId === primaryOwnerId : userId === ownerIds[0],
+            isPrimary: primaryOwnerId
+              ? userId === primaryOwnerId
+              : userId === ownerIds[0],
           })),
         },
       },
@@ -90,9 +92,9 @@ export class DealsRepository {
             },
           },
         },
-        accounts: {
+        companies: {
           include: {
-            account: {
+            company: {
               select: {
                 id: true,
                 companyName: true,
@@ -131,9 +133,9 @@ export class DealsRepository {
             },
           },
         },
-        accounts: {
+        companies: {
           include: {
-            account: {
+            company: {
               include: {
                 owners: {
                   include: {
@@ -205,7 +207,7 @@ export class DealsRepository {
     const {
       isHidden = false,
       ownerIds,
-      accountIds,
+      companyIds,
       contactIds,
       stages,
       search,
@@ -230,12 +232,12 @@ export class DealsRepository {
             },
           }
         : {}),
-      ...(accountIds && accountIds.length > 0
+      ...(companyIds && companyIds.length > 0
         ? {
-            accounts: {
+            companies: {
               some: {
-                accountId: {
-                  in: accountIds,
+                companyId: {
+                  in: companyIds,
                 },
               },
             },
@@ -304,9 +306,9 @@ export class DealsRepository {
               },
             },
           },
-          accounts: {
+          companies: {
             include: {
-              account: {
+              company: {
                 select: {
                   id: true,
                   companyName: true,
@@ -317,7 +319,7 @@ export class DealsRepository {
           },
           _count: {
             select: {
-              accounts: true,
+              companies: true,
               contacts: true,
             },
           },
@@ -382,10 +384,10 @@ export class DealsRepository {
     return this.findAll({ ownerIds: [userId] }, pagination);
   }
 
-  async addAccount(dealId: number, input: AddAccountToDealInput) {
-    // If setting as primary, remove primary flag from other accounts
+  async addCompany(dealId: number, input: AddCompanyToDealInput) {
+    // If setting as primary, remove primary flag from other companies
     if (input.isPrimary) {
-      await this.prisma.dealAccount.updateMany({
+      await this.prisma.dealCompany.updateMany({
         where: {
           dealId,
         },
@@ -395,14 +397,14 @@ export class DealsRepository {
       });
     }
 
-    return this.prisma.dealAccount.create({
+    return this.prisma.dealCompany.create({
       data: {
         dealId,
-        accountId: input.accountId,
+        companyId: input.companyId,
         isPrimary: input.isPrimary ?? false,
       },
       include: {
-        account: {
+        company: {
           include: {
             owners: {
               include: {
@@ -421,23 +423,23 @@ export class DealsRepository {
     });
   }
 
-  async removeAccount(dealId: number, accountId: number) {
-    return this.prisma.dealAccount.deleteMany({
+  async removeCompany(dealId: number, companyId: number) {
+    return this.prisma.dealCompany.deleteMany({
       where: {
         dealId,
-        accountId,
+        companyId: companyId,
       },
     });
   }
 
-  async updateAccount(dealId: number, accountId: number, isPrimary: boolean) {
-    // If setting as primary, remove primary flag from other accounts
+  async updateCompany(dealId: number, companyId: number, isPrimary: boolean) {
+    // If setting as primary, remove primary flag from other companies
     if (isPrimary) {
-      await this.prisma.dealAccount.updateMany({
+      await this.prisma.dealCompany.updateMany({
         where: {
           dealId,
           NOT: {
-            accountId,
+            companyId: companyId,
           },
         },
         data: {
@@ -446,22 +448,22 @@ export class DealsRepository {
       });
     }
 
-    return this.prisma.dealAccount.updateMany({
+    return this.prisma.dealCompany.updateMany({
       where: {
         dealId,
-        accountId,
+        companyId: companyId,
       },
       data: { isPrimary },
     });
   }
 
-  async getAccounts(dealId: number) {
-    return this.prisma.dealAccount.findMany({
+  async getCompanies(dealId: number) {
+    return this.prisma.dealCompany.findMany({
       where: {
         dealId,
       },
       include: {
-        account: {
+        company: {
           include: {
             owners: {
               include: {
@@ -532,7 +534,11 @@ export class DealsRepository {
     });
   }
 
-  async updateContact(dealId: number, contactId: number, input: UpdateContactDealInput) {
+  async updateContact(
+    dealId: number,
+    contactId: number,
+    input: UpdateContactDealInput
+  ) {
     // If setting as primary, remove primary flag from other contacts
     if (input.isPrimary) {
       await this.prisma.dealContact.updateMany({
@@ -585,11 +591,17 @@ export class DealsRepository {
     });
   }
 
-  async getDealsByAccount(accountId: number, pagination: PaginationOptions = {}) {
-    return this.findAll({ accountIds: [accountId] }, pagination);
+  async getDealsByCompany(
+    companyId: number,
+    pagination: PaginationOptions = {}
+  ) {
+    return this.findAll({ companyIds: [companyId] }, pagination);
   }
 
-  async getDealsByContact(contactId: number, pagination: PaginationOptions = {}) {
+  async getDealsByContact(
+    contactId: number,
+    pagination: PaginationOptions = {}
+  ) {
     return this.findAll({ contactIds: [contactId] }, pagination);
   }
 }

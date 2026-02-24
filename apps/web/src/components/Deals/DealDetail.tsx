@@ -1,22 +1,23 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { BriefcaseIcon, PencilIcon, EyeSlashIcon, XMarkIcon, CheckIcon } from "@heroicons/react/24/outline";
+import { useState } from 'react';
 import {
-  Badge,
-  Divider,
-  Heading,
-  Button,
-} from "@zuko/ui-kit";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getDeal } from "@/server/query-options";
-import { dealsApi } from "@/lib/api/deals";
-import dayjs from "dayjs";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
-import ActivityTimeline from "@/components/Activity/ActivityTimeline";
-import AddAccountToDealDialog from "./AddAccountToDealDialog";
-import AddContactToDealDialog from "./AddContactToDealDialog";
+  BriefcaseIcon,
+  PencilIcon,
+  EyeSlashIcon,
+  XMarkIcon,
+  CheckIcon,
+} from '@heroicons/react/24/outline';
+import { Badge, Divider, Heading, Button } from '@zuko/ui-kit';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { getDeal } from '@/server/query-options';
+import { dealsApi } from '@/lib/api/deals';
+import dayjs from 'dayjs';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import ActivityTimeline from '@/components/Activity/ActivityTimeline';
+import AddCompanyToDealDialog from './AddCompanyToDealDialog';
+import AddContactToDealDialog from './AddContactToDealDialog';
 
 interface DealDetailProps {
   dealId: number;
@@ -28,55 +29,69 @@ export default function DealDetail({ dealId, currentUserId }: DealDetailProps) {
   const queryClient = useQueryClient();
   const { data: deal, isLoading } = useQuery(getDeal(dealId));
 
-  // State for inline editing account associations
-  const [editingAccountId, setEditingAccountId] = useState<number | null>(null);
-  const [editedAccountIsPrimary, setEditedAccountIsPrimary] = useState(false);
+  // State for inline editing company associations
+  const [editingCompanyId, setEditingCompanyId] = useState<number | null>(null);
+  const [editedCompanyIsPrimary, setEditedCompanyIsPrimary] = useState(false);
 
   // State for inline editing contact associations
   const [editingContactId, setEditingContactId] = useState<number | null>(null);
-  const [editedRole, setEditedRole] = useState("");
+  const [editedRole, setEditedRole] = useState('');
   const [editedContactIsPrimary, setEditedContactIsPrimary] = useState(false);
 
   const hideMutation = useMutation({
     mutationFn: () => dealsApi.hideDeal(dealId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["deals"] });
-      router.push("/deals");
+      queryClient.invalidateQueries({ queryKey: ['deals'] });
+      router.push('/deals');
     },
   });
 
-  const removeAccountMutation = useMutation({
-    mutationFn: (accountId: number) => dealsApi.removeAccount(dealId, accountId),
+  const removeCompanyMutation = useMutation({
+    mutationFn: (companyId: number) =>
+      dealsApi.removeCompany(dealId, companyId),
     onSuccess: async () => {
-      await queryClient.refetchQueries({ queryKey: ["deal", dealId] });
-      await queryClient.invalidateQueries({ queryKey: ["deals"] });
+      await queryClient.refetchQueries({ queryKey: ['deal', dealId] });
+      await queryClient.invalidateQueries({ queryKey: ['deals'] });
     },
   });
 
-  const updateAccountMutation = useMutation({
-    mutationFn: ({ accountId, isPrimary }: { accountId: number; isPrimary: boolean }) =>
-      dealsApi.updateAccount(dealId, accountId, { isPrimary }),
+  const updateCompanyMutation = useMutation({
+    mutationFn: ({
+      companyId,
+      isPrimary,
+    }: {
+      companyId: number;
+      isPrimary: boolean;
+    }) => dealsApi.updateCompany(dealId, companyId, { isPrimary }),
     onSuccess: async () => {
-      await queryClient.refetchQueries({ queryKey: ["deal", dealId] });
-      await queryClient.invalidateQueries({ queryKey: ["deals"] });
-      setEditingAccountId(null);
+      await queryClient.refetchQueries({ queryKey: ['deal', dealId] });
+      await queryClient.invalidateQueries({ queryKey: ['deals'] });
+      setEditingCompanyId(null);
     },
   });
 
   const removeContactMutation = useMutation({
-    mutationFn: (contactId: number) => dealsApi.removeContact(dealId, contactId),
+    mutationFn: (contactId: number) =>
+      dealsApi.removeContact(dealId, contactId),
     onSuccess: async () => {
-      await queryClient.refetchQueries({ queryKey: ["deal", dealId] });
-      await queryClient.invalidateQueries({ queryKey: ["deals"] });
+      await queryClient.refetchQueries({ queryKey: ['deal', dealId] });
+      await queryClient.invalidateQueries({ queryKey: ['deals'] });
     },
   });
 
   const updateContactMutation = useMutation({
-    mutationFn: ({ contactId, role, isPrimary }: { contactId: number; role?: string; isPrimary?: boolean }) =>
-      dealsApi.updateContact(dealId, contactId, { role, isPrimary }),
+    mutationFn: ({
+      contactId,
+      role,
+      isPrimary,
+    }: {
+      contactId: number;
+      role?: string;
+      isPrimary?: boolean;
+    }) => dealsApi.updateContact(dealId, contactId, { role, isPrimary }),
     onSuccess: async () => {
-      await queryClient.refetchQueries({ queryKey: ["deal", dealId] });
-      await queryClient.invalidateQueries({ queryKey: ["deals"] });
+      await queryClient.refetchQueries({ queryKey: ['deal', dealId] });
+      await queryClient.invalidateQueries({ queryKey: ['deals'] });
       setEditingContactId(null);
     },
   });
@@ -84,7 +99,9 @@ export default function DealDetail({ dealId, currentUserId }: DealDetailProps) {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <div className="text-sm text-zinc-600 dark:text-zinc-400">Loading deal...</div>
+        <div className="text-sm text-zinc-600 dark:text-zinc-400">
+          Loading deal...
+        </div>
       </div>
     );
   }
@@ -92,7 +109,9 @@ export default function DealDetail({ dealId, currentUserId }: DealDetailProps) {
   if (!deal) {
     return (
       <div className="flex items-center justify-center py-12">
-        <div className="text-sm text-zinc-600 dark:text-zinc-400">Deal not found</div>
+        <div className="text-sm text-zinc-600 dark:text-zinc-400">
+          Deal not found
+        </div>
       </div>
     );
   }
@@ -102,43 +121,51 @@ export default function DealDetail({ dealId, currentUserId }: DealDetailProps) {
   };
 
   const handleHide = () => {
-    if (confirm("Are you sure you want to hide this deal?")) {
+    if (confirm('Are you sure you want to hide this deal?')) {
       hideMutation.mutate();
     }
   };
 
-  const handleRemoveAccount = (accountId: number, companyName: string) => {
-    if (confirm(`Are you sure you want to remove ${companyName} from this deal?`)) {
-      removeAccountMutation.mutate(accountId);
+  const handleRemoveCompany = (companyId: number, companyName: string) => {
+    if (
+      confirm(`Are you sure you want to remove ${companyName} from this deal?`)
+    ) {
+      removeCompanyMutation.mutate(companyId);
     }
   };
 
-  const handleEditAccount = (accountId: number, currentIsPrimary: boolean) => {
-    setEditingAccountId(accountId);
-    setEditedAccountIsPrimary(currentIsPrimary);
+  const handleEditCompany = (companyId: number, currentIsPrimary: boolean) => {
+    setEditingCompanyId(companyId);
+    setEditedCompanyIsPrimary(currentIsPrimary);
   };
 
-  const handleSaveAccount = (accountId: number) => {
-    updateAccountMutation.mutate({
-      accountId,
-      isPrimary: editedAccountIsPrimary,
+  const handleSaveCompany = (companyId: number) => {
+    updateCompanyMutation.mutate({
+      companyId,
+      isPrimary: editedCompanyIsPrimary,
     });
   };
 
   const handleCancelEdit = () => {
-    setEditingAccountId(null);
-    setEditedAccountIsPrimary(false);
+    setEditingCompanyId(null);
+    setEditedCompanyIsPrimary(false);
   };
 
   const handleRemoveContact = (contactId: number, contactName: string) => {
-    if (confirm(`Are you sure you want to remove ${contactName} from this deal?`)) {
+    if (
+      confirm(`Are you sure you want to remove ${contactName} from this deal?`)
+    ) {
       removeContactMutation.mutate(contactId);
     }
   };
 
-  const handleEditContact = (contactId: number, currentRole: string | undefined, currentIsPrimary: boolean) => {
+  const handleEditContact = (
+    contactId: number,
+    currentRole: string | undefined,
+    currentIsPrimary: boolean
+  ) => {
     setEditingContactId(contactId);
-    setEditedRole(currentRole || "");
+    setEditedRole(currentRole || '');
     setEditedContactIsPrimary(currentIsPrimary);
   };
 
@@ -152,13 +179,13 @@ export default function DealDetail({ dealId, currentUserId }: DealDetailProps) {
 
   const handleCancelContactEdit = () => {
     setEditingContactId(null);
-    setEditedRole("");
+    setEditedRole('');
     setEditedContactIsPrimary(false);
   };
 
   const formatCurrency = (value?: number, currency?: string) => {
-    if (value === undefined || value === null) return "-";
-    const curr = currency || "USD";
+    if (value === undefined || value === null) return '-';
+    const curr = currency || 'USD';
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: curr,
@@ -167,34 +194,39 @@ export default function DealDetail({ dealId, currentUserId }: DealDetailProps) {
     }).format(value);
   };
 
-  const getStageColor = (stage: string): "zinc" | "blue" | "yellow" | "green" | "red" => {
-    const stageColors: Record<string, "zinc" | "blue" | "yellow" | "green" | "red"> = {
-      prospecting: "zinc",
-      qualification: "blue",
-      proposal: "yellow",
-      negotiation: "yellow",
-      closed_won: "green",
-      closed_lost: "red",
+  const getStageColor = (
+    stage: string
+  ): 'zinc' | 'blue' | 'yellow' | 'green' | 'red' => {
+    const stageColors: Record<
+      string,
+      'zinc' | 'blue' | 'yellow' | 'green' | 'red'
+    > = {
+      prospecting: 'zinc',
+      qualification: 'blue',
+      proposal: 'yellow',
+      negotiation: 'yellow',
+      closed_won: 'green',
+      closed_lost: 'red',
     };
-    return stageColors[stage] || "zinc";
+    return stageColors[stage] || 'zinc';
   };
 
   const formatStage = (stage: string) => {
     return stage
       .split('_')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
       .join(' ');
   };
 
   const getPriorityLabel = (priority?: number) => {
     const labels: Record<number, string> = {
-      0: "P0 - Critical",
-      1: "P1 - High",
-      2: "P2 - Medium",
-      3: "P3 - Low",
-      4: "P4 - Backlog",
+      0: 'P0 - Critical',
+      1: 'P1 - High',
+      2: 'P2 - Medium',
+      3: 'P3 - Low',
+      4: 'P4 - Backlog',
     };
-    return labels[priority ?? 2] || "P2 - Medium";
+    return labels[priority ?? 2] || 'P2 - Medium';
   };
 
   return (
@@ -223,7 +255,7 @@ export default function DealDetail({ dealId, currentUserId }: DealDetailProps) {
           </Button>
           <Button plain onClick={handleHide} disabled={hideMutation.isPending}>
             <EyeSlashIcon className="h-4 w-4" />
-            {hideMutation.isPending ? "Hiding..." : "Hide"}
+            {hideMutation.isPending ? 'Hiding...' : 'Hide'}
           </Button>
         </div>
       </div>
@@ -237,13 +269,17 @@ export default function DealDetail({ dealId, currentUserId }: DealDetailProps) {
         </h2>
         <dl className="mt-4 space-y-4">
           <div className="grid grid-cols-3">
-            <dt className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Value</dt>
+            <dt className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
+              Value
+            </dt>
             <dd className="col-span-2 text-sm text-zinc-950 dark:text-white">
               {formatCurrency(deal.value, deal.currency)}
             </dd>
           </div>
           <div className="grid grid-cols-3">
-            <dt className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Stage</dt>
+            <dt className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
+              Stage
+            </dt>
             <dd className="col-span-2 text-sm">
               <Badge color={getStageColor(deal.stage)} className="text-xs">
                 {formatStage(deal.stage)}
@@ -252,7 +288,9 @@ export default function DealDetail({ dealId, currentUserId }: DealDetailProps) {
           </div>
           {deal.probability !== undefined && (
             <div className="grid grid-cols-3">
-              <dt className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Win Probability</dt>
+              <dt className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
+                Win Probability
+              </dt>
               <dd className="col-span-2 text-sm text-zinc-950 dark:text-white">
                 {deal.probability}%
               </dd>
@@ -260,37 +298,47 @@ export default function DealDetail({ dealId, currentUserId }: DealDetailProps) {
           )}
           {deal.expectedCloseDate && (
             <div className="grid grid-cols-3">
-              <dt className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Expected Close Date</dt>
+              <dt className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
+                Expected Close Date
+              </dt>
               <dd className="col-span-2 text-sm text-zinc-950 dark:text-white">
-                {dayjs(deal.expectedCloseDate).format("MMMM D, YYYY")}
+                {dayjs(deal.expectedCloseDate).format('MMMM D, YYYY')}
               </dd>
             </div>
           )}
           {deal.actualCloseDate && (
             <div className="grid grid-cols-3">
-              <dt className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Actual Close Date</dt>
+              <dt className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
+                Actual Close Date
+              </dt>
               <dd className="col-span-2 text-sm text-zinc-950 dark:text-white">
-                {dayjs(deal.actualCloseDate).format("MMMM D, YYYY")}
+                {dayjs(deal.actualCloseDate).format('MMMM D, YYYY')}
               </dd>
             </div>
           )}
           {deal.source && (
             <div className="grid grid-cols-3">
-              <dt className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Source</dt>
+              <dt className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
+                Source
+              </dt>
               <dd className="col-span-2 text-sm text-zinc-950 dark:text-white">
                 {deal.source}
               </dd>
             </div>
           )}
           <div className="grid grid-cols-3">
-            <dt className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Priority</dt>
+            <dt className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
+              Priority
+            </dt>
             <dd className="col-span-2 text-sm text-zinc-950 dark:text-white">
               {getPriorityLabel(deal.priority)}
             </dd>
           </div>
           {deal.lostReason && (
             <div className="grid grid-cols-3">
-              <dt className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Lost Reason</dt>
+              <dt className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
+                Lost Reason
+              </dt>
               <dd className="col-span-2 text-sm text-zinc-950 dark:text-white">
                 {deal.lostReason}
               </dd>
@@ -301,12 +349,18 @@ export default function DealDetail({ dealId, currentUserId }: DealDetailProps) {
 
       {/* Ownership */}
       <div className="mt-8">
-        <h2 className="text-base font-semibold text-zinc-950 dark:text-white">Owners</h2>
+        <h2 className="text-base font-semibold text-zinc-950 dark:text-white">
+          Owners
+        </h2>
         <div className="mt-4 space-y-2">
           {deal.owners.map((owner) => (
             <div key={owner.id} className="flex items-center gap-3">
-              <div className="text-sm text-zinc-950 dark:text-white">{owner.user.name}</div>
-              <div className="text-sm text-zinc-600 dark:text-zinc-400">{owner.user.email}</div>
+              <div className="text-sm text-zinc-950 dark:text-white">
+                {owner.user.name}
+              </div>
+              <div className="text-sm text-zinc-600 dark:text-zinc-400">
+                {owner.user.email}
+              </div>
               {owner.isPrimary && (
                 <Badge color="lime" className="text-xs">
                   Primary
@@ -320,53 +374,59 @@ export default function DealDetail({ dealId, currentUserId }: DealDetailProps) {
       {/* Summary */}
       {deal.summary && (
         <div className="mt-8">
-          <h2 className="text-base font-semibold text-zinc-950 dark:text-white">Summary</h2>
+          <h2 className="text-base font-semibold text-zinc-950 dark:text-white">
+            Summary
+          </h2>
           <div className="mt-4 whitespace-pre-wrap rounded-lg bg-zinc-50 p-4 text-sm text-zinc-950 dark:bg-zinc-900 dark:text-white">
             {deal.summary}
           </div>
         </div>
       )}
 
-      {/* Associated Accounts */}
+      {/* Associated Companies */}
       <div className="mt-8">
         <div className="flex items-center justify-between">
           <h2 className="text-base font-semibold text-zinc-950 dark:text-white">
-            Associated Accounts
+            Associated Companies
           </h2>
-          <AddAccountToDealDialog
+          <AddCompanyToDealDialog
             dealId={dealId}
-            existingAccountIds={deal.accounts?.map((da) => da.accountId) || []}
+            existingCompanyIds={deal.companies?.map((da) => da.companyId) || []}
           />
         </div>
-        {deal.accounts && deal.accounts.length > 0 ? (
+        {deal.companies && deal.companies.length > 0 ? (
           <div className="mt-4 space-y-3">
-            {deal.accounts.map((da) => (
+            {deal.companies.map((da) => (
               <div key={da.id} className="flex items-center gap-3">
-                <div className="text-sm min-w-[200px]">
+                <div className="text-sm min-w-50">
                   <Link
-                    href={`/accounts/${da.account.id}`}
+                    href={`/companies/${da.company.id}`}
                     className="text-blue-600 hover:underline dark:text-blue-400"
                   >
-                    {da.account.companyName}
+                    {da.company.companyName}
                   </Link>
                 </div>
 
-                {editingAccountId === da.accountId ? (
+                {editingCompanyId === da.companyId ? (
                   // Edit mode
                   <>
                     <label className="flex items-center gap-1.5">
                       <input
                         type="checkbox"
-                        checked={editedAccountIsPrimary}
-                        onChange={(e) => setEditedAccountIsPrimary(e.target.checked)}
+                        checked={editedCompanyIsPrimary}
+                        onChange={(e) =>
+                          setEditedCompanyIsPrimary(e.target.checked)
+                        }
                         className="h-3.5 w-3.5 rounded border-zinc-300 text-blue-600 focus:ring-blue-500 dark:border-zinc-700"
                       />
-                      <span className="text-xs text-zinc-600 dark:text-zinc-400">Primary</span>
+                      <span className="text-xs text-zinc-600 dark:text-zinc-400">
+                        Primary
+                      </span>
                     </label>
                     <div className="ml-auto flex gap-2">
                       <button
-                        onClick={() => handleSaveAccount(da.accountId)}
-                        disabled={updateAccountMutation.isPending}
+                        onClick={() => handleSaveCompany(da.companyId)}
+                        disabled={updateCompanyMutation.isPending}
                         className="text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300 transition-colors"
                         title="Save changes"
                       >
@@ -374,7 +434,7 @@ export default function DealDetail({ dealId, currentUserId }: DealDetailProps) {
                       </button>
                       <button
                         onClick={handleCancelEdit}
-                        disabled={updateAccountMutation.isPending}
+                        disabled={updateCompanyMutation.isPending}
                         className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors"
                         title="Cancel"
                       >
@@ -392,18 +452,31 @@ export default function DealDetail({ dealId, currentUserId }: DealDetailProps) {
                     )}
                     <div className="ml-auto flex gap-2">
                       <button
-                        onClick={() => handleEditAccount(da.accountId, da.isPrimary)}
-                        disabled={updateAccountMutation.isPending || removeAccountMutation.isPending}
+                        onClick={() =>
+                          handleEditCompany(da.companyId, da.isPrimary)
+                        }
+                        disabled={
+                          updateCompanyMutation.isPending ||
+                          removeCompanyMutation.isPending
+                        }
                         className="text-zinc-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                         title="Edit association"
                       >
                         <PencilIcon className="h-4 w-4" />
                       </button>
                       <button
-                        onClick={() => handleRemoveAccount(da.accountId, da.account.companyName)}
-                        disabled={updateAccountMutation.isPending || removeAccountMutation.isPending}
+                        onClick={() =>
+                          handleRemoveCompany(
+                            da.companyId,
+                            da.company.companyName
+                          )
+                        }
+                        disabled={
+                          updateCompanyMutation.isPending ||
+                          removeCompanyMutation.isPending
+                        }
                         className="text-zinc-400 hover:text-red-600 dark:hover:text-red-400 transition-colors"
-                        title="Remove account"
+                        title="Remove company"
                       >
                         <XMarkIcon className="h-4 w-4" />
                       </button>
@@ -415,7 +488,7 @@ export default function DealDetail({ dealId, currentUserId }: DealDetailProps) {
           </div>
         ) : (
           <div className="mt-4 text-center py-8 text-sm text-zinc-600 dark:text-zinc-400">
-            No accounts associated yet
+            No companies associated yet
           </div>
         )}
       </div>
@@ -435,7 +508,7 @@ export default function DealDetail({ dealId, currentUserId }: DealDetailProps) {
           <div className="mt-4 space-y-3">
             {deal.contacts.map((dc) => (
               <div key={dc.id} className="flex items-center gap-3">
-                <div className="text-sm min-w-[150px]">
+                <div className="text-sm min-w-37.5">
                   <Link
                     href={`/contacts/${dc.contact.id}`}
                     className="text-blue-600 hover:underline dark:text-blue-400"
@@ -458,10 +531,14 @@ export default function DealDetail({ dealId, currentUserId }: DealDetailProps) {
                       <input
                         type="checkbox"
                         checked={editedContactIsPrimary}
-                        onChange={(e) => setEditedContactIsPrimary(e.target.checked)}
+                        onChange={(e) =>
+                          setEditedContactIsPrimary(e.target.checked)
+                        }
                         className="h-3.5 w-3.5 rounded border-zinc-300 text-blue-600 focus:ring-blue-500 dark:border-zinc-700"
                       />
-                      <span className="text-xs text-zinc-600 dark:text-zinc-400">Primary</span>
+                      <span className="text-xs text-zinc-600 dark:text-zinc-400">
+                        Primary
+                      </span>
                     </label>
                     <div className="ml-auto flex gap-2">
                       <button
@@ -497,16 +574,26 @@ export default function DealDetail({ dealId, currentUserId }: DealDetailProps) {
                     )}
                     <div className="ml-auto flex gap-2">
                       <button
-                        onClick={() => handleEditContact(dc.contactId, dc.role, dc.isPrimary)}
-                        disabled={updateContactMutation.isPending || removeContactMutation.isPending}
+                        onClick={() =>
+                          handleEditContact(dc.contactId, dc.role, dc.isPrimary)
+                        }
+                        disabled={
+                          updateContactMutation.isPending ||
+                          removeContactMutation.isPending
+                        }
                         className="text-zinc-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                         title="Edit association"
                       >
                         <PencilIcon className="h-4 w-4" />
                       </button>
                       <button
-                        onClick={() => handleRemoveContact(dc.contactId, dc.contact.name)}
-                        disabled={updateContactMutation.isPending || removeContactMutation.isPending}
+                        onClick={() =>
+                          handleRemoveContact(dc.contactId, dc.contact.name)
+                        }
+                        disabled={
+                          updateContactMutation.isPending ||
+                          removeContactMutation.isPending
+                        }
                         className="text-zinc-400 hover:text-red-600 dark:hover:text-red-400 transition-colors"
                         title="Remove contact"
                       >
@@ -527,18 +614,24 @@ export default function DealDetail({ dealId, currentUserId }: DealDetailProps) {
 
       {/* Metadata */}
       <div className="mt-8">
-        <h2 className="text-base font-semibold text-zinc-950 dark:text-white">Details</h2>
+        <h2 className="text-base font-semibold text-zinc-950 dark:text-white">
+          Details
+        </h2>
         <dl className="mt-4 space-y-4">
           <div className="grid grid-cols-3">
-            <dt className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Created</dt>
+            <dt className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
+              Created
+            </dt>
             <dd className="col-span-2 text-sm text-zinc-950 dark:text-white">
-              {dayjs(deal.createdAt).format("MMMM D, YYYY [at] h:mm A")}
+              {dayjs(deal.createdAt).format('MMMM D, YYYY [at] h:mm A')}
             </dd>
           </div>
           <div className="grid grid-cols-3">
-            <dt className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Last Updated</dt>
+            <dt className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
+              Last Updated
+            </dt>
             <dd className="col-span-2 text-sm text-zinc-950 dark:text-white">
-              {dayjs(deal.updatedAt).format("MMMM D, YYYY [at] h:mm A")}
+              {dayjs(deal.updatedAt).format('MMMM D, YYYY [at] h:mm A')}
             </dd>
           </div>
         </dl>
@@ -546,7 +639,9 @@ export default function DealDetail({ dealId, currentUserId }: DealDetailProps) {
 
       {/* Activity Timeline */}
       <div className="mt-8">
-        <h2 className="text-base font-semibold text-zinc-950 dark:text-white">Activity</h2>
+        <h2 className="text-base font-semibold text-zinc-950 dark:text-white">
+          Activity
+        </h2>
         <div className="mt-4">
           <ActivityTimeline
             entityType="deal"

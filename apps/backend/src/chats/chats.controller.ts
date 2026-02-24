@@ -27,10 +27,7 @@ export class ChatsController {
    * POST /api/chats
    */
   @Post()
-  async create(
-    @Req() req,
-    @Body() body: { participantIds?: number[] }
-  ) {
+  async create(@Req() req, @Body() body: { participantIds?: number[] }) {
     const userId = parseInt(req.user.id, 10);
     const chat = await this.chatsService.create(userId, body.participantIds);
 
@@ -39,7 +36,7 @@ export class ChatsController {
       threadId: chat.threadId,
       title: chat.title,
       createdAt: chat.createdAt,
-      participants: chat.participants.map(p => ({
+      participants: chat.participants.map((p) => ({
         userId: p.user.id,
         name: p.user.name,
         email: p.user.email,
@@ -59,14 +56,14 @@ export class ChatsController {
     const chats = await this.chatsService.findAllByUser(userId);
 
     return {
-      chats: chats.map(chat => ({
+      chats: chats.map((chat) => ({
         id: chat.id,
         threadId: chat.threadId,
         title: chat.title,
         createdAt: chat.createdAt,
         updatedAt: chat.updatedAt,
         createdBy: chat.createdBy,
-        participants: chat.participants.map(p => ({
+        participants: chat.participants.map((p) => ({
           userId: p.user.id,
           name: p.user.name,
           email: p.user.email,
@@ -100,7 +97,7 @@ export class ChatsController {
       createdAt: chat.createdAt,
       updatedAt: chat.updatedAt,
       createdBy: chat.createdBy,
-      participants: chat.participants.map(p => ({
+      participants: chat.participants.map((p) => ({
         userId: p.user.id,
         name: p.user.name,
         email: p.user.email,
@@ -129,7 +126,8 @@ export class ChatsController {
     const chat = await this.chatsService.findOne(chatId);
 
     // Fetch messages and contextEntities from LangGraph checkpoints
-    const { messages, contextEntities } = await this.orchestratorService.getMessages(chat.threadId);
+    const { messages, contextEntities } =
+      await this.orchestratorService.getMessages(chat.threadId);
 
     return { messages, contextEntities };
   }
@@ -196,12 +194,18 @@ export class ChatsController {
     const chatId = parseInt(id, 10);
 
     // Verify current user is a participant
-    const isParticipant = await this.chatsService.isParticipant(chatId, currentUserId);
+    const isParticipant = await this.chatsService.isParticipant(
+      chatId,
+      currentUserId
+    );
     if (!isParticipant) {
       throw new ForbiddenException('Not a participant in this chat');
     }
 
-    const participant = await this.chatsService.addParticipant(chatId, body.userId);
+    const participant = await this.chatsService.addParticipant(
+      chatId,
+      body.userId
+    );
 
     return {
       userId: participant.user.id,
@@ -227,7 +231,10 @@ export class ChatsController {
     const targetUserId = parseInt(userIdParam, 10);
 
     // Verify current user is a participant
-    const isParticipant = await this.chatsService.isParticipant(chatId, currentUserId);
+    const isParticipant = await this.chatsService.isParticipant(
+      chatId,
+      currentUserId
+    );
     if (!isParticipant) {
       throw new ForbiddenException('Not a participant in this chat');
     }
