@@ -401,30 +401,32 @@ export class OrchestratorService {
         }))
         .filter((msg) => msg.content && msg.content.trim().length > 0);
 
-      // Hydrate contextEntities with names from database
+      // Hydrate contextEntities with names from database (Contact model has .name, not firstName/lastName)
       const hydratedEntities = await Promise.all(
         contextEntities.map(async (entity) => {
           try {
             if (entity.type === 'contact' && this.contactsService) {
-              const contact = await this.contactsService.findOne(entity.id);
-              return {
-                ...entity,
-                name: `${contact.firstName} ${contact.lastName}`.trim(),
-              };
-            } else if (entity.type === 'company' && this.companiesService) {
+              const contact = await this.contactsService.findById(entity.id);
+              const name = (contact as any).name ?? 'Contact';
+              return { ...entity, name };
+            }
+            if (entity.type === 'company' && this.companiesService) {
               const company = await this.companiesService.findById(entity.id);
-              return { ...entity, name: company.companyName };
-            } else if (entity.type === 'deal') {
-              // TODO: Add deal service when available
+              return { ...entity, name: (company as any).companyName ?? 'Company' };
+            }
+            if (entity.type === 'deal') {
               return { ...entity, name: `Deal #${entity.id}` };
             }
-            return { ...entity, name: `${entity.type} #${entity.id}` };
+            return { ...entity, name: 'Contact' };
           } catch (error) {
             this.logger.warn(
               `Failed to hydrate ${entity.type} ${entity.id}:`,
               error
             );
-            return { ...entity, name: `${entity.type} #${entity.id}` };
+            return {
+              ...entity,
+              name: entity.type === 'contact' ? 'Contact' : entity.type === 'company' ? 'Company' : 'Deal',
+            };
           }
         })
       );
