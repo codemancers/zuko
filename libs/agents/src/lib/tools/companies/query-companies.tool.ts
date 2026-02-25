@@ -21,6 +21,10 @@ export function createQueryCompaniesTool(companiesService: CompaniesService) {
           companyFilters.ownerIds = [filters.ownerId];
         }
 
+        if (filters.companyIds?.length) {
+          companyFilters.companyIds = filters.companyIds;
+        }
+
         // Fetch companies
         const result = await companiesService.findAll(
           companyFilters,
@@ -94,19 +98,24 @@ export function createQueryCompaniesTool(companiesService: CompaniesService) {
       name: 'query_companies',
       description: `Query companies with flexible filters and aggregations.
 
-Use this for analytical questions like:
-- "How many companies have websites?"
-- "Show me companies with more than 5 contacts"
-- "List companies created this quarter"
-- "Find companies owned by Bob"
+Use this for:
+- Multiple companies from context: pass filters.companyIds with the list of IDs (e.g. [1, 2]) to fetch several companies in one call.
+- Analytical questions: "How many companies have websites?", "Show companies with more than 5 contacts", "List companies created this quarter", "Find companies owned by Bob", etc.
 
 Supports:
-- Filtering by owner, website presence, contact count, date range
+- filters.companyIds: array of company IDs (use when context has multiple companies)
+- Filtering by owner, website presence, contact count, date range, search
 - Aggregation: count or list
 - Limit results (default 100, max 1000)`,
       schema: z.object({
         filters: z
           .object({
+            companyIds: z
+              .array(z.number())
+              .optional()
+              .describe(
+                'Fetch only these company IDs (e.g. when context has multiple companies)'
+              ),
             ownerId: z.number().optional().describe('Filter by owner user ID'),
             hasWebsite: z
               .boolean()

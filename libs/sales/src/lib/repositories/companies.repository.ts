@@ -24,6 +24,7 @@ export interface CompanyFilters {
   isHidden?: boolean;
   ownerIds?: number[];
   search?: string;
+  companyIds?: number[];
 }
 
 export interface AddContactToCompanyInput {
@@ -149,12 +150,13 @@ export class CompaniesRepository {
     filters: CompanyFilters = {},
     pagination: PaginationOptions = {}
   ) {
-    const { isHidden = false, ownerIds, search } = filters;
+    const { isHidden = false, ownerIds, search, companyIds } = filters;
     const { page = 1, limit = 50 } = pagination;
     const skip = (page - 1) * limit;
 
     const where: Prisma.SalesCompanyWhereInput = {
       isHidden,
+      ...(companyIds && companyIds.length > 0 ? { id: { in: companyIds } } : {}),
       ...(ownerIds && ownerIds.length > 0
         ? {
             owners: {
