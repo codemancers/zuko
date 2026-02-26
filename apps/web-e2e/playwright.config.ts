@@ -1,8 +1,14 @@
+import * as path from 'path';
+import * as dotenv from 'dotenv';
+
+// Load web-e2e .env so webServer and auth fixture use same DATABASE_URL / BETTER_AUTH_SECRET
+dotenv.config({ path: path.join(__dirname, '.env.local') });
+dotenv.config({ path: path.join(__dirname, '.env') });
+
 import { defineConfig, devices } from '@playwright/test';
 import { nxE2EPreset } from '@nx/playwright/preset';
 import { workspaceRoot } from '@nx/devkit';
 
-// For CI, you may want to set BASE_URL to the deployed application.
 const baseURL = process.env['BASE_URL'] || 'http://localhost:3000';
 
 /**
@@ -13,6 +19,7 @@ export default defineConfig({
   /* Shared settings for all the projects below. */
   use: {
     baseURL,
+    headless: !!process.env.CI, // Open browser locally; headless in CI
     trace: 'retain-on-failure', // Keep trace for all failures, not just retries
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
@@ -34,18 +41,87 @@ export default defineConfig({
     ['junit', { outputFile: 'test-output/playwright/results.xml' }],
     ['list'],
   ],
-  /* Start the Next.js dev server before running tests */
-  webServer: {
-    command: 'npx nx run @zuko/web:dev',
-    url: 'http://localhost:3000',
-    reuseExistingServer: true,
-    cwd: workspaceRoot,
-    timeout: 120000,
-  },
+  /* Run your local dev server before starting the tests */
+  webServer: [
+    // Backend server - must start first
+    {
+      command: 'nx serve @zuko/backend',
+      url: 'http://localhost:3001/api',
+      name: 'Backend',
+      reuseExistingServer: !process.env.CI, // Don't reuse in CI to ensure clean state
+      cwd: workspaceRoot,
+      timeout: 1000 * 60 * 10, // 10 minutes timeout for backend startup
+      stdout: 'pipe', // Show backend logs in console for debugging
+      stderr: 'pipe',
+      env: {
+        ...process.env,
+        PORT: process.env.PORT ?? '3001',
+        DATABASE_URL: process.env.DATABASE_URL ?? '',
+        BETTER_AUTH_SECRET: process.env.BETTER_AUTH_SECRET ?? '',
+        OPENAI_API_KEY: process.env.OPENAI_API_KEY ?? '',
+        GITHUB_CLIENT_ID: process.env.GITHUB_CLIENT_ID ?? '',
+        GITHUB_CLIENT_SECRET: process.env.GITHUB_CLIENT_SECRET ?? '',
+        BETTER_AUTH_INCLUDE_EMAILS_AUTH: 'true',
+      },
+    },
+    // Frontend server. When reusing (local), auth redirect test needs the running app
+    // to have NEXT_PUBLIC_USE_AUTH_PROXY=true (set in apps/web/.env) so get-session
+    // goes to 3000/auth and cookies are sent. In CI we don't reuse so env is applied.
+    {
+      command: 'nx dev @zuko/web',
+      url: 'http://localhost:3000/sign-in',
+      name: 'Frontend',
+      reuseExistingServer: !process.env.CI,
+      cwd: workspaceRoot,
+      timeout: 1000 * 60 * 60, // 60 minutes timeout for frontend startup
+      stdout: 'pipe', // Show frontend logs in console for debugging
+      stderr: 'pipe',
+      env: {
+        ...process.env,
+        BACKEND_URL: process.env.BACKEND_URL ?? 'http://localhost:3001',
+        NEXT_PUBLIC_USE_AUTH_PROXY:
+          process.env.NEXT_PUBLIC_USE_AUTH_PROXY ?? 'true',
+        NEXT_PUBLIC_BETTER_AUTH_INCLUDE_EMAILS_AUTH: 'true',
+        NEXT_PUBLIC_APP_URL: 'http://localhost:3000',
+        NEXT_PUBLIC_BACKEND_URL: 'http://localhost:3001',
+      },
+    },
+  ],
   projects: [
+    // 1. Auth setup (Gather-style): real sign-up, save storage state to .auth/user.json
+    {
+      name: 'auth setup',
+      use: { ...devices['Desktop Chrome'] },
+      testMatch: '**/auth.setup.spec.ts',
+    },
+    // 2. Auth specs: use saved storage state so cookies are sent (no cookie injection)
+    {
+      name: 'auth',
+      use: {
+        ...devices['Desktop Chrome'],
+        storageState: '.auth/user.json',
+      },
+      testMatch: [
+        '**/auth.spec.ts',
+        '**/auth-whitelist.spec.ts',
+        '**/auth-redirect.spec.ts',
+      ],
+      dependencies: ['auth setup'],
+    },
+    // 3. All other tests run after auth (use saved session so chat etc. are authenticated)
     {
       name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
+      use: {
+        ...devices['Desktop Chrome'],
+        storageState: '.auth/user.json',
+      },
+      testIgnore: [
+        '**/auth.spec.ts',
+        '**/auth-whitelist.spec.ts',
+        '**/auth-redirect.spec.ts',
+        '**/auth.setup.spec.ts',
+      ],
+      dependencies: ['auth'],
     },
   ],
 });
