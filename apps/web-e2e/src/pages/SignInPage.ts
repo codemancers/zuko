@@ -12,7 +12,9 @@ export class SignInPage extends BasePage {
   constructor(page: Page) {
     super(page);
     this.heading = page.locator('h1');
-    this.githubSignInButton = page.getByRole('button', { name: /continue with github/i });
+    this.githubSignInButton = page.getByRole('button', {
+      name: /continue with github/i,
+    });
   }
 
   /**

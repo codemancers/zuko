@@ -32,7 +32,7 @@ describe('createLeaveCommentTool', () => {
       'contact',
       456,
       789, // userId should be passed through
-      'Test comment'
+      'Test comment',
     );
 
     expect(result).toEqual({
@@ -46,7 +46,7 @@ describe('createLeaveCommentTool', () => {
 
   it('should handle errors gracefully', async () => {
     mockActivityService.createComment.mockRejectedValue(
-      new Error('Database error')
+      new Error('Database error'),
     );
 
     const result = await tool.invoke({
@@ -82,7 +82,7 @@ describe('createLeaveCommentTool', () => {
       'deal',
       111,
       222,
-      'Deal comment'
+      'Deal comment',
     );
   });
 

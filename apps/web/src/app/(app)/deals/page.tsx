@@ -1,13 +1,13 @@
-import DealsList from "@/components/Deals/DealsList";
-import { getQueryClient } from "@/lib/react-query/get-query-client";
-import { getDeals } from "@/server/query-options";
-import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
+import DealsList from '@/components/Deals/DealsList';
+import { getQueryClient } from '@/lib/react-query/get-query-client';
+import { getDeals } from '@/server/query-options';
+import { dehydrate, HydrationBoundary } from '@tanstack/react-query';
 
 export const metadata = {
   title: 'Deals',
 };
 
-export const dynamic = "force-dynamic";
+export const dynamic = 'force-dynamic';
 
 const DealsPage = async () => {
   const queryClient = getQueryClient();

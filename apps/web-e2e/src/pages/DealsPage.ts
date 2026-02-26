@@ -34,8 +34,12 @@ export class DealsPage extends BasePage {
   async waitForDealsToLoad() {
     // Wait for either deals table or empty state
     await Promise.race([
-      this.page.waitForSelector('table tbody tr', { timeout: 5000 }).catch(() => null),
-      this.page.waitForSelector('text=No Deals', { timeout: 5000 }).catch(() => null),
+      this.page
+        .waitForSelector('table tbody tr', { timeout: 5000 })
+        .catch(() => null),
+      this.page
+        .waitForSelector('text=No Deals', { timeout: 5000 })
+        .catch(() => null),
     ]);
   }
 }

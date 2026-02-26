@@ -16,7 +16,7 @@ describe('RolesGuard', () => {
 
   const createMockExecutionContext = (
     user: any,
-    requiredRoles?: UserRole[]
+    requiredRoles?: UserRole[],
   ): ExecutionContext => {
     const mockContext = {
       switchToHttp: jest.fn().mockReturnValue({

@@ -226,8 +226,8 @@ export default function CompanyForm({
           {isLoading
             ? 'Saving...'
             : mode === 'create'
-            ? 'Create Company'
-            : 'Save Changes'}
+              ? 'Create Company'
+              : 'Save Changes'}
         </Button>
         <Button type="button" plain onClick={handleCancel} disabled={isLoading}>
           Cancel

@@ -78,7 +78,7 @@ export default function ContactDetail({
   };
 
   const getStageColor = (
-    stage: string
+    stage: string,
   ): 'zinc' | 'blue' | 'yellow' | 'green' | 'red' => {
     const stageColors: Record<
       string,
@@ -223,7 +223,7 @@ export default function ContactDetail({
           <div className="mt-4 space-y-3">
             {dealsData.deals.map((deal: any) => {
               const dealContact = deal.contacts?.find(
-                (dc: any) => dc.contactId === contactId
+                (dc: any) => dc.contactId === contactId,
               );
               return (
                 <div key={deal.id} className="flex items-center gap-3">

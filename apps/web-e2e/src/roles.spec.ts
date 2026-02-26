@@ -19,7 +19,9 @@ test.describe('RBAC - Unauthenticated Access', () => {
   // Use a fresh context without authentication
   test.use({ storageState: { cookies: [], origins: [] } });
 
-  test('should redirect to sign-in when accessing admin page without auth', async ({ page }) => {
+  test('should redirect to sign-in when accessing admin page without auth', async ({
+    page,
+  }) => {
     await page.goto('/admin');
 
     // Should redirect to sign-in
@@ -28,7 +30,9 @@ test.describe('RBAC - Unauthenticated Access', () => {
     await expect(page.locator('h1')).toContainText('Sign in to Zuko');
   });
 
-  test('should not show admin navigation items when unauthenticated', async ({ page }) => {
+  test('should not show admin navigation items when unauthenticated', async ({
+    page,
+  }) => {
     await page.goto('/sign-in');
 
     // Admin-related navigation should not be visible on sign-in page
@@ -58,7 +62,9 @@ test.describe('RBAC - User with "none" Role', () => {
     await expect(page.getByText(/admin privileges/i)).toBeVisible();
 
     // Should NOT show admin content
-    const adminContent = page.getByText(/admin dashboard|user management|system settings/i);
+    const adminContent = page.getByText(
+      /admin dashboard|user management|system settings/i,
+    );
     const hasAdminContent = await adminContent.isVisible().catch(() => false);
     expect(hasAdminContent).toBe(false);
   });
@@ -101,7 +107,9 @@ test.describe('RBAC - User with "admin" Role', () => {
     await page.goto('/admin');
 
     // Should show admin dashboard heading
-    await expect(page.getByRole('heading', { name: /admin dashboard/i })).toBeVisible();
+    await expect(
+      page.getByRole('heading', { name: /admin dashboard/i }),
+    ).toBeVisible();
 
     // Should show admin content sections
     await expect(page.getByText(/user management/i)).toBeVisible();
@@ -134,7 +142,9 @@ test.describe('RBAC - User with "admin" Role', () => {
 
     // Should navigate to admin page
     await expect(page).toHaveURL(/.*admin/);
-    await expect(page.getByRole('heading', { name: /admin dashboard/i })).toBeVisible();
+    await expect(
+      page.getByRole('heading', { name: /admin dashboard/i }),
+    ).toBeVisible();
   });
 
   test.skip('can access all admin features', async ({ page }) => {
@@ -166,7 +176,9 @@ test.describe('RBAC - User with "accountant" Role', () => {
     await expect(page.getByText(/access denied/i)).toBeVisible();
 
     // Should NOT show admin dashboard
-    const adminDashboard = page.getByRole('heading', { name: /admin dashboard/i });
+    const adminDashboard = page.getByRole('heading', {
+      name: /admin dashboard/i,
+    });
     const hasAccess = await adminDashboard.isVisible().catch(() => false);
     expect(hasAccess).toBe(false);
   });
@@ -242,10 +254,12 @@ test.describe('RBAC - API Integration', () => {
     // (Implementation depends on your error handling)
   });
 
-  test.skip('shows loading state while checking permissions', async ({ page }) => {
+  test.skip('shows loading state while checking permissions', async ({
+    page,
+  }) => {
     // Slow down API response to test loading state
     await page.route('**/api/admin/**', async (route) => {
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise((resolve) => setTimeout(resolve, 1000));
       route.continue();
     });
 

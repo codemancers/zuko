@@ -110,7 +110,7 @@ export class DealsController {
         stage: dto.stage,
         ownerIds: dto.ownerIds,
         primaryOwnerId: dto.primaryOwnerId,
-      })}`
+      })}`,
     );
 
     try {
@@ -175,7 +175,7 @@ export class DealsController {
   @Patch(':id')
   async update(
     @Param('id', ParseIntPipe) id: number,
-    @Body() dto: UpdateDealDto
+    @Body() dto: UpdateDealDto,
   ) {
     // Transform date strings to Date objects if provided
     const input: UpdateDealInput = {
@@ -205,7 +205,7 @@ export class DealsController {
   @Post(':id/owners')
   async addOwner(
     @Param('id', ParseIntPipe) id: number,
-    @Body() dto: AddOwnerDto
+    @Body() dto: AddOwnerDto,
   ) {
     return this.dealsService.addOwner(id, dto.userId, dto.isPrimary);
   }
@@ -214,7 +214,7 @@ export class DealsController {
   @HttpCode(HttpStatus.NO_CONTENT)
   async removeOwner(
     @Param('id', ParseIntPipe) id: number,
-    @Param('userId', ParseIntPipe) userId: number
+    @Param('userId', ParseIntPipe) userId: number,
   ) {
     await this.dealsService.removeOwner(id, userId);
   }
@@ -222,7 +222,7 @@ export class DealsController {
   @Post(':id/owners/:userId/set-primary')
   async setPrimaryOwner(
     @Param('id', ParseIntPipe) id: number,
-    @Param('userId', ParseIntPipe) userId: number
+    @Param('userId', ParseIntPipe) userId: number,
   ) {
     await this.dealsService.setPrimaryOwner(id, userId);
     return { success: true };
@@ -231,7 +231,7 @@ export class DealsController {
   @Get('user/:userId')
   async getDealsByUser(
     @Param('userId', ParseIntPipe) userId: number,
-    @Query() query: DealListQueryDto
+    @Query() query: DealListQueryDto,
   ) {
     const pagination = {
       page: query.page ? Number(query.page) : 1,
@@ -245,16 +245,16 @@ export class DealsController {
   @HttpCode(HttpStatus.CREATED)
   async addCompany(
     @Param('id', ParseIntPipe) id: number,
-    @Body() dto: AddCompanyDto
+    @Body() dto: AddCompanyDto,
   ) {
     this.logger.log(
-      `[ADD_COMPANY_TO_DEAL] Deal: ${id}, Company: ${dto.companyId}`
+      `[ADD_COMPANY_TO_DEAL] Deal: ${id}, Company: ${dto.companyId}`,
     );
 
     try {
       const result = await this.dealsService.addCompany(id, dto);
       this.logger.log(
-        `[ADD_COMPANY_TO_DEAL] Success - Company ${dto.companyId} added to Deal ${id}`
+        `[ADD_COMPANY_TO_DEAL] Success - Company ${dto.companyId} added to Deal ${id}`,
       );
       return result;
     } catch (error: unknown) {
@@ -263,7 +263,7 @@ export class DealsController {
       const errorStack = error instanceof Error ? error.stack : undefined;
       this.logger.error(
         `[ADD_COMPANY_TO_DEAL] Failed: ${errorMessage}`,
-        errorStack
+        errorStack,
       );
       throw error;
     }
@@ -273,7 +273,7 @@ export class DealsController {
   async updateCompany(
     @Param('id', ParseIntPipe) id: number,
     @Param('companyId', ParseIntPipe) companyId: number,
-    @Body() dto: UpdateCompanyDto
+    @Body() dto: UpdateCompanyDto,
   ) {
     return this.dealsService.updateCompany(id, companyId, dto.isPrimary);
   }
@@ -282,7 +282,7 @@ export class DealsController {
   @HttpCode(HttpStatus.NO_CONTENT)
   async removeCompany(
     @Param('id', ParseIntPipe) id: number,
-    @Param('companyId', ParseIntPipe) companyId: number
+    @Param('companyId', ParseIntPipe) companyId: number,
   ) {
     await this.dealsService.removeCompany(id, companyId);
   }
@@ -296,16 +296,16 @@ export class DealsController {
   @HttpCode(HttpStatus.CREATED)
   async addContact(
     @Param('id', ParseIntPipe) id: number,
-    @Body() dto: AddContactDto
+    @Body() dto: AddContactDto,
   ) {
     this.logger.log(
-      `[ADD_CONTACT_TO_DEAL] Deal: ${id}, Contact: ${dto.contactId}`
+      `[ADD_CONTACT_TO_DEAL] Deal: ${id}, Contact: ${dto.contactId}`,
     );
 
     try {
       const result = await this.dealsService.addContact(id, dto);
       this.logger.log(
-        `[ADD_CONTACT_TO_DEAL] Success - Contact ${dto.contactId} added to Deal ${id}`
+        `[ADD_CONTACT_TO_DEAL] Success - Contact ${dto.contactId} added to Deal ${id}`,
       );
       return result;
     } catch (error: unknown) {
@@ -314,7 +314,7 @@ export class DealsController {
       const errorStack = error instanceof Error ? error.stack : undefined;
       this.logger.error(
         `[ADD_CONTACT_TO_DEAL] Failed: ${errorMessage}`,
-        errorStack
+        errorStack,
       );
       throw error;
     }
@@ -324,7 +324,7 @@ export class DealsController {
   async updateContact(
     @Param('id', ParseIntPipe) id: number,
     @Param('contactId', ParseIntPipe) contactId: number,
-    @Body() dto: UpdateContactDto
+    @Body() dto: UpdateContactDto,
   ) {
     return this.dealsService.updateContact(id, contactId, dto);
   }
@@ -333,7 +333,7 @@ export class DealsController {
   @HttpCode(HttpStatus.NO_CONTENT)
   async removeContact(
     @Param('id', ParseIntPipe) id: number,
-    @Param('contactId', ParseIntPipe) contactId: number
+    @Param('contactId', ParseIntPipe) contactId: number,
   ) {
     await this.dealsService.removeContact(id, contactId);
   }
@@ -346,7 +346,7 @@ export class DealsController {
   @Get('company/:companyId')
   async getDealsByCompany(
     @Param('companyId', ParseIntPipe) companyId: number,
-    @Query() query: DealListQueryDto
+    @Query() query: DealListQueryDto,
   ) {
     const pagination = {
       page: query.page ? Number(query.page) : 1,
@@ -359,7 +359,7 @@ export class DealsController {
   @Get('contact/:contactId')
   async getDealsByContact(
     @Param('contactId', ParseIntPipe) contactId: number,
-    @Query() query: DealListQueryDto
+    @Query() query: DealListQueryDto,
   ) {
     const pagination = {
       page: query.page ? Number(query.page) : 1,

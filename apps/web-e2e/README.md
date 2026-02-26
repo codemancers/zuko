@@ -8,7 +8,7 @@ The test suite follows Nx best practices and implements the Page Object Model pa
 
 ## Project Structure
 
-```
+````
 apps/web-e2e/
 ├── src/
 │   ├── fixtures/          # Test fixtures and utilities
@@ -34,19 +34,22 @@ apps/web-e2e/
 ### Run all tests
 ```bash
 npx nx e2e web-e2e
-```
+````
 
 ### Run tests in UI mode (watch mode)
+
 ```bash
 npx nx e2e web-e2e --ui
 ```
 
 ### Run specific test file
+
 ```bash
 npx nx e2e web-e2e -- src/auth.spec.ts
 ```
 
 ### Run tests in a specific browser
+
 ```bash
 # Chromium (default)
 npx nx e2e web-e2e -- --project=chromium
@@ -59,16 +62,19 @@ npx nx e2e web-e2e -- --project=webkit
 ```
 
 ### Run tests in headed mode (see browser)
+
 ```bash
 npx nx e2e web-e2e -- --headed
 ```
 
 ### Debug tests
+
 ```bash
 npx nx e2e web-e2e -- --debug
 ```
 
 ### Run tests in CI mode
+
 ```bash
 npx nx e2e-ci web-e2e
 ```
@@ -76,11 +82,13 @@ npx nx e2e-ci web-e2e
 ## Test Reports
 
 After running tests, reports are generated in:
+
 - HTML Report: `apps/web-e2e/test-output/playwright/report/index.html`
 - JSON Report: `apps/web-e2e/test-output/playwright/results.json`
 - JUnit Report: `apps/web-e2e/test-output/playwright/results.xml`
 
 Open HTML report:
+
 ```bash
 npx playwright show-report apps/web-e2e/test-output/playwright/report
 ```
@@ -275,6 +283,7 @@ CI=true npx nx e2e web-e2e
 ```
 
 CI mode enables:
+
 - 2 retries per test
 - Serial execution (1 worker)
 - Strict mode (no test.only)
@@ -283,21 +292,25 @@ CI mode enables:
 ## Troubleshooting
 
 ### Tests are slow
+
 - Run with `--workers=N` to use multiple workers
 - Use `--project=chromium` to run on single browser
 - Check if dev server is slow to start
 
 ### Tests are flaky
+
 - Increase timeouts in `playwright.config.ts`
 - Add proper wait conditions
 - Check for race conditions
 
 ### Can't find elements
+
 - Use Playwright Inspector: `npx nx e2e web-e2e -- --debug`
 - Check selectors in page objects
 - Verify element is visible before interaction
 
 ### Authentication issues
+
 - Implement proper authentication setup
 - Use `storageState` for persistent sessions
 - Mock OAuth flow in tests

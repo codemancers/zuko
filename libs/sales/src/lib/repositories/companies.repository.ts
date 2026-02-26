@@ -148,7 +148,7 @@ export class CompaniesRepository {
 
   async findAll(
     filters: CompanyFilters = {},
-    pagination: PaginationOptions = {}
+    pagination: PaginationOptions = {},
   ) {
     const { isHidden = false, ownerIds, search, companyIds } = filters;
     const { page = 1, limit = 50 } = pagination;
@@ -326,7 +326,7 @@ export class CompaniesRepository {
   async updateContactCompany(
     companyId: number,
     contactId: number,
-    input: UpdateContactCompanyInput
+    input: UpdateContactCompanyInput,
   ) {
     // If setting as primary, remove primary flag from other contacts
     if (input.isPrimary) {

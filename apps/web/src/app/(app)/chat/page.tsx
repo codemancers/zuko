@@ -15,7 +15,11 @@ export default function NewChatPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [_chatContext, setChatContext] = useState<ChatEntity[]>([]);
 
-  const handleSubmitMessage = async (msg: { text: string; files?: any[]; metadata?: any }) => {
+  const handleSubmitMessage = async (msg: {
+    text: string;
+    files?: any[];
+    metadata?: any;
+  }) => {
     if (!msg.text.trim() || isSubmitting) {
       return;
     }
@@ -44,7 +48,10 @@ export default function NewChatPage() {
         text: msg.text,
         contextEntities: msg.metadata?.contextEntities || [],
       };
-      localStorage.setItem(`chat-${chatId}-firstMessage`, JSON.stringify(firstMessageData));
+      localStorage.setItem(
+        `chat-${chatId}-firstMessage`,
+        JSON.stringify(firstMessageData),
+      );
 
       // Step 3: Redirect to the new chat
       router.replace(`/chat/${chatId}`);

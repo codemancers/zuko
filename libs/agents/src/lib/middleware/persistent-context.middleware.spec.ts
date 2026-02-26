@@ -67,7 +67,7 @@ describe('PersistentContextMiddleware - State Persistence', () => {
       prisma as any,
       mockContactsService,
       mockCompaniesService,
-      mockActivityService
+      mockActivityService,
     );
   });
 
@@ -97,7 +97,7 @@ describe('PersistentContextMiddleware - State Persistence', () => {
           contextEntities,
           userId,
         },
-        config
+        config,
       );
 
       for await (const _chunk of stream) {
@@ -118,21 +118,21 @@ describe('PersistentContextMiddleware - State Persistence', () => {
 
       // Verify contact entity
       const contact = result.contextEntities.find(
-        (e: any) => e.type === 'contact'
+        (e: any) => e.type === 'contact',
       );
       expect(contact).toBeDefined();
       expect(contact.name).toContain('John'); // Mock returns John Doe
 
       // Verify company entity
       const company = result.contextEntities.find(
-        (e: any) => e.type === 'company'
+        (e: any) => e.type === 'company',
       );
       expect(company).toBeDefined();
       expect(company.name).toContain('Acme'); // Mock returns Acme Corp
 
       console.log(
         `✓ Entities hydrated with names:`,
-        result.contextEntities.map((e: any) => e.name)
+        result.contextEntities.map((e: any) => e.name),
       );
     }, 30000);
 
@@ -158,7 +158,7 @@ describe('PersistentContextMiddleware - State Persistence', () => {
           contextEntities,
           userId,
         },
-        config
+        config,
       );
 
       // Consume the stream
@@ -169,7 +169,7 @@ describe('PersistentContextMiddleware - State Persistence', () => {
       // Verify checkpoint was saved to database
       const checkpointsResult = await globalPool.query(
         'SELECT checkpoint FROM agents.checkpoints WHERE thread_id = $1 ORDER BY checkpoint_id DESC LIMIT 1',
-        [threadId]
+        [threadId],
       );
       expect(checkpointsResult.rows.length).toBe(1);
 
@@ -187,7 +187,7 @@ describe('PersistentContextMiddleware - State Persistence', () => {
       expect(result.contextEntities[1].name).toBeDefined();
 
       console.log(
-        `✓ contextEntities persisted: ${JSON.stringify(result.contextEntities)}`
+        `✓ contextEntities persisted: ${JSON.stringify(result.contextEntities)}`,
       );
       console.log(`✓ Checkpoint saved to database for thread ${threadId}`);
     }, 30000);
@@ -213,7 +213,7 @@ describe('PersistentContextMiddleware - State Persistence', () => {
           contextEntities,
           userId,
         },
-        config
+        config,
       );
 
       // Consume stream
@@ -240,9 +240,7 @@ describe('PersistentContextMiddleware - State Persistence', () => {
       expect(result.contextEntities[1].name).toBeDefined();
 
       console.log(
-        `✓ getMessages returned contextEntities: ${JSON.stringify(
-          result.contextEntities
-        )}`
+        `✓ getMessages returned contextEntities: ${JSON.stringify(result.contextEntities)}`,
       );
       console.log(`✓ Retrieved ${result.messages.length} messages`);
     }, 30000);
@@ -269,7 +267,7 @@ describe('PersistentContextMiddleware - State Persistence', () => {
           contextEntities: initialEntities,
           userId,
         },
-        config
+        config,
       );
       for await (const _chunk of stream1) {
         // Consume
@@ -298,7 +296,7 @@ describe('PersistentContextMiddleware - State Persistence', () => {
           contextEntities: updatedEntities,
           userId,
         },
-        config
+        config,
       );
       for await (const _chunk of stream2) {
         // Consume
@@ -315,7 +313,7 @@ describe('PersistentContextMiddleware - State Persistence', () => {
       expect(result.contextEntities[1].name).toBeDefined();
 
       console.log(
-        `✓ Updated contextEntities from 1 to ${result.contextEntities?.length} entities`
+        `✓ Updated contextEntities from 1 to ${result.contextEntities?.length} entities`,
       );
     }, 30000);
 
@@ -334,7 +332,7 @@ describe('PersistentContextMiddleware - State Persistence', () => {
           messages: [{ role: 'user', content: 'Hello' }],
           // No contextEntities provided
         },
-        config
+        config,
       );
 
       for await (const _chunk of stream) {
@@ -369,7 +367,7 @@ describe('PersistentContextMiddleware - State Persistence', () => {
           contextEntities,
           userId: 999,
         },
-        config
+        config,
       );
 
       for await (const _chunk of stream) {
@@ -413,7 +411,7 @@ describe('PersistentContextMiddleware - State Persistence', () => {
           userId,
           // No contextEntities
         },
-        config
+        config,
       );
 
       for await (const _chunk of stream) {
@@ -423,7 +421,7 @@ describe('PersistentContextMiddleware - State Persistence', () => {
       // Verify checkpoint was created
       const checkpointsResult = await globalPool.query(
         'SELECT checkpoint FROM agents.checkpoints WHERE thread_id = $1 ORDER BY checkpoint_id DESC LIMIT 1',
-        [threadId]
+        [threadId],
       );
       expect(checkpointsResult.rows.length).toBe(1);
 
@@ -456,7 +454,7 @@ describe('PersistentContextMiddleware - State Persistence', () => {
         {
           streamMode: ['values'] as const,
           configurable: { thread_id: thread1 },
-        }
+        },
       );
       for await (const _chunk of stream1) {
         // Consume
@@ -472,7 +470,7 @@ describe('PersistentContextMiddleware - State Persistence', () => {
         {
           streamMode: ['values'] as const,
           configurable: { thread_id: thread2 },
-        }
+        },
       );
       for await (const _chunk of stream2) {
         // Consume
@@ -493,7 +491,7 @@ describe('PersistentContextMiddleware - State Persistence', () => {
       expect(result2.contextEntities[0].name).toBeDefined();
 
       expect(result1.contextEntities[0].type).not.toEqual(
-        result2.contextEntities[0].type
+        result2.contextEntities[0].type,
       );
 
       console.log('✓ Thread isolation verified for contextEntities');

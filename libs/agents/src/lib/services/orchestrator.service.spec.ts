@@ -46,7 +46,7 @@ describe('OrchestratorService - Persistence', () => {
     service = new OrchestratorService(
       adminService,
       mockSecretaryService,
-      prisma as any
+      prisma as any,
     );
   });
 
@@ -90,7 +90,7 @@ describe('OrchestratorService - Persistence', () => {
       // Verify checkpoint was saved to database after first message
       const checkpointsAfterFirst = await globalPool.query(
         'SELECT * FROM agents.checkpoints WHERE thread_id = $1',
-        [threadId]
+        [threadId],
       );
       expect(checkpointsAfterFirst.rows.length).toBeGreaterThan(0);
 
@@ -102,9 +102,11 @@ describe('OrchestratorService - Persistence', () => {
       // Verify additional checkpoints were saved
       const checkpointsAfterSecond = await globalPool.query(
         'SELECT * FROM agents.checkpoints WHERE thread_id = $1',
-        [threadId]
+        [threadId],
       );
-      expect(checkpointsAfterSecond.rows.length).toBeGreaterThan(checkpointsAfterFirst.rows.length);
+      expect(checkpointsAfterSecond.rows.length).toBeGreaterThan(
+        checkpointsAfterFirst.rows.length,
+      );
 
       // Retrieve conversation history from checkpoint
       const messages = await service.getMessages(threadId);
@@ -119,8 +121,12 @@ describe('OrchestratorService - Persistence', () => {
       expect(userMessages.length).toBeGreaterThan(0);
       expect(assistantMessages.length).toBeGreaterThan(0);
 
-      console.log(`✓ Persisted ${messages.length} messages for thread ${threadId}`);
-      console.log(`✓ Database has ${checkpointsAfterSecond.rows.length} checkpoints for thread`);
+      console.log(
+        `✓ Persisted ${messages.length} messages for thread ${threadId}`,
+      );
+      console.log(
+        `✓ Database has ${checkpointsAfterSecond.rows.length} checkpoints for thread`,
+      );
     }, 30000); // 30s timeout for API calls
 
     it('should retrieve conversation history from database', async () => {
@@ -129,13 +135,13 @@ describe('OrchestratorService - Persistence', () => {
       // Send a message to create checkpoint
       await service.generateReply(
         [{ role: 'user' as const, content: 'Hello, this is a test' }],
-        threadId
+        threadId,
       );
 
       // Verify checkpoint exists in database
       const dbCheckpoints = await globalPool.query(
         'SELECT checkpoint FROM agents.checkpoints WHERE thread_id = $1 ORDER BY checkpoint_id DESC LIMIT 1',
-        [threadId]
+        [threadId],
       );
       expect(dbCheckpoints.rows.length).toBe(1);
       expect(dbCheckpoints.rows[0].checkpoint).toBeDefined();
@@ -177,21 +183,21 @@ describe('OrchestratorService - Persistence', () => {
       // Send different messages to different threads
       await service.generateReply(
         [{ role: 'user' as const, content: 'Thread 1 message' }],
-        thread1
+        thread1,
       );
       await service.generateReply(
         [{ role: 'user' as const, content: 'Thread 2 message' }],
-        thread2
+        thread2,
       );
 
       // Verify separate checkpoints in database
       const thread1Checkpoints = await globalPool.query(
         'SELECT * FROM agents.checkpoints WHERE thread_id = $1',
-        [thread1]
+        [thread1],
       );
       const thread2Checkpoints = await globalPool.query(
         'SELECT * FROM agents.checkpoints WHERE thread_id = $1',
-        [thread2]
+        [thread2],
       );
       expect(thread1Checkpoints.rows.length).toBeGreaterThan(0);
       expect(thread2Checkpoints.rows.length).toBeGreaterThan(0);
@@ -214,8 +220,12 @@ describe('OrchestratorService - Persistence', () => {
       expect(thread1Content).not.toContain('Thread 2');
       expect(thread2Content).not.toContain('Thread 1');
 
-      console.log(`✓ Thread isolation verified: ${messages1.length} vs ${messages2.length} messages`);
-      console.log(`✓ Database: thread1 has ${thread1Checkpoints.rows.length}, thread2 has ${thread2Checkpoints.rows.length} checkpoints`);
+      console.log(
+        `✓ Thread isolation verified: ${messages1.length} vs ${messages2.length} messages`,
+      );
+      console.log(
+        `✓ Database: thread1 has ${thread1Checkpoints.rows.length}, thread2 has ${thread2Checkpoints.rows.length} checkpoints`,
+      );
     }, 30000);
   });
 
@@ -230,7 +240,7 @@ describe('OrchestratorService - Persistence', () => {
       // Verify checkpoint exists in database
       const dbCheckpoints = await globalPool.query(
         'SELECT * FROM agents.checkpoints WHERE thread_id = $1',
-        [result.threadId]
+        [result.threadId],
       );
       expect(dbCheckpoints.rows.length).toBeGreaterThan(0);
 
@@ -239,7 +249,9 @@ describe('OrchestratorService - Persistence', () => {
       expect(messages).toBeDefined();
       expect(Array.isArray(messages)).toBe(true);
 
-      console.log(`✓ Initialized thread ${result.threadId} with ${dbCheckpoints.rows.length} checkpoint(s)`);
+      console.log(
+        `✓ Initialized thread ${result.threadId} with ${dbCheckpoints.rows.length} checkpoint(s)`,
+      );
     }, 30000);
 
     it('should use provided threadId when initializing', async () => {
@@ -251,11 +263,13 @@ describe('OrchestratorService - Persistence', () => {
       // Verify checkpoint exists in database for custom thread
       const dbCheckpoints = await globalPool.query(
         'SELECT * FROM agents.checkpoints WHERE thread_id = $1',
-        [customThreadId]
+        [customThreadId],
       );
       expect(dbCheckpoints.rows.length).toBeGreaterThan(0);
 
-      console.log(`✓ Custom thread ${customThreadId} initialized with ${dbCheckpoints.rows.length} checkpoint(s)`);
+      console.log(
+        `✓ Custom thread ${customThreadId} initialized with ${dbCheckpoints.rows.length} checkpoint(s)`,
+      );
     }, 30000);
   });
 });

@@ -28,40 +28,40 @@ export function createQueryCompaniesTool(companiesService: CompaniesService) {
         // Fetch companies
         const result = await companiesService.findAll(
           companyFilters,
-          paginationOptions
+          paginationOptions,
         );
         let companies = result.companies;
 
         // Apply post-fetch filters
         if (filters.hasWebsite !== undefined) {
           companies = companies.filter((a) =>
-            filters.hasWebsite ? !!a.website : !a.website
+            filters.hasWebsite ? !!a.website : !a.website,
           );
         }
 
         if (filters.createdAfter) {
           const afterDate = new Date(filters.createdAfter);
           companies = companies.filter(
-            (a) => new Date(a.createdAt) >= afterDate
+            (a) => new Date(a.createdAt) >= afterDate,
           );
         }
 
         if (filters.createdBefore) {
           const beforeDate = new Date(filters.createdBefore);
           companies = companies.filter(
-            (a) => new Date(a.createdAt) <= beforeDate
+            (a) => new Date(a.createdAt) <= beforeDate,
           );
         }
 
         if (filters.contactCountMin !== undefined) {
           companies = companies.filter(
-            (a) => (a._count?.contacts || 0) >= filters.contactCountMin!
+            (a) => (a._count?.contacts || 0) >= filters.contactCountMin!,
           );
         }
 
         if (filters.contactCountMax !== undefined) {
           companies = companies.filter(
-            (a) => (a._count?.contacts || 0) <= filters.contactCountMax!
+            (a) => (a._count?.contacts || 0) <= filters.contactCountMax!,
           );
         }
 
@@ -146,7 +146,7 @@ Supports:
           .optional()
           .default('list')
           .describe(
-            'Type of result: count returns just the number, list returns company details'
+            'Type of result: count returns just the number, list returns company details',
           ),
         limit: z
           .number()
@@ -154,6 +154,6 @@ Supports:
           .default(100)
           .describe('Maximum number of results to return (max 1000)'),
       }),
-    }
+    },
   );
 }

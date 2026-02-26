@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import { CheckIcon, SearchIcon } from "lucide-react";
+import * as React from 'react';
+import { CheckIcon, SearchIcon } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -9,9 +9,9 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "./dialog";
-import { Button } from "./button";
-import { cn } from "../../lib/utils";
+} from './dialog';
+import { Button } from './button';
+import { cn } from '../../lib/utils';
 
 export interface EntityItem {
   id: string;
@@ -42,8 +42,8 @@ export const EntitySelectorDialog = ({
   onOpenChange,
   title,
   description,
-  searchPlaceholder = "Search...",
-  emptyMessage = "No items found.",
+  searchPlaceholder = 'Search...',
+  emptyMessage = 'No items found.',
   items,
   selectedIds,
   onSelectionChange,
@@ -52,7 +52,7 @@ export const EntitySelectorDialog = ({
   multiSelect = true,
   className,
 }: EntitySelectorDialogProps) => {
-  const [searchQuery, setSearchQuery] = React.useState("");
+  const [searchQuery, setSearchQuery] = React.useState('');
 
   const filteredItems = React.useMemo(() => {
     if (!searchQuery) return items;
@@ -60,7 +60,7 @@ export const EntitySelectorDialog = ({
     return items.filter(
       (item) =>
         item.label.toLowerCase().includes(query) ||
-        item.description?.toLowerCase().includes(query)
+        item.description?.toLowerCase().includes(query),
     );
   }, [items, searchQuery]);
 
@@ -76,16 +76,14 @@ export const EntitySelectorDialog = ({
   };
 
   const handleConfirm = () => {
-    const selectedItems = items.filter((item) =>
-      selectedIds.includes(item.id)
-    );
+    const selectedItems = items.filter((item) => selectedIds.includes(item.id));
     onConfirm(selectedItems);
     onOpenChange(false);
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className={cn("sm:max-w-[500px]", className)}>
+      <DialogContent className={cn('sm:max-w-[500px]', className)}>
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
           {description && <DialogDescription>{description}</DialogDescription>}
@@ -124,15 +122,13 @@ export const EntitySelectorDialog = ({
                       type="button"
                       onClick={() => handleToggleItem(item.id)}
                       className={cn(
-                        "flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-zinc-50 dark:hover:bg-zinc-800/50",
+                        'flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-zinc-50 dark:hover:bg-zinc-800/50',
                         isSelected &&
-                          "bg-blue-50 dark:bg-blue-950/20 hover:bg-blue-100 dark:hover:bg-blue-950/30"
+                          'bg-blue-50 dark:bg-blue-950/20 hover:bg-blue-100 dark:hover:bg-blue-950/30',
                       )}
                     >
                       {/* Icon */}
-                      {item.icon && (
-                        <div className="shrink-0">{item.icon}</div>
-                      )}
+                      {item.icon && <div className="shrink-0">{item.icon}</div>}
 
                       {/* Content */}
                       <div className="min-w-0 flex-1">

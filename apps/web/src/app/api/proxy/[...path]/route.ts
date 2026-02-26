@@ -8,11 +8,12 @@
 import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001';
+const BACKEND_URL =
+  process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ path: string[] }> }
+  { params }: { params: Promise<{ path: string[] }> },
 ) {
   const resolvedParams = await params;
   return proxyRequest(request, resolvedParams.path, 'GET');
@@ -20,7 +21,7 @@ export async function GET(
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: Promise<{ path: string[] }> }
+  { params }: { params: Promise<{ path: string[] }> },
 ) {
   const resolvedParams = await params;
   return proxyRequest(request, resolvedParams.path, 'POST');
@@ -28,7 +29,7 @@ export async function POST(
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: Promise<{ path: string[] }> }
+  { params }: { params: Promise<{ path: string[] }> },
 ) {
   const resolvedParams = await params;
   return proxyRequest(request, resolvedParams.path, 'PATCH');
@@ -36,7 +37,7 @@ export async function PATCH(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: Promise<{ path: string[] }> }
+  { params }: { params: Promise<{ path: string[] }> },
 ) {
   const resolvedParams = await params;
   return proxyRequest(request, resolvedParams.path, 'DELETE');
@@ -44,7 +45,7 @@ export async function DELETE(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: Promise<{ path: string[] }> }
+  { params }: { params: Promise<{ path: string[] }> },
 ) {
   const resolvedParams = await params;
   return proxyRequest(request, resolvedParams.path, 'PUT');
@@ -53,7 +54,7 @@ export async function PUT(
 async function proxyRequest(
   request: NextRequest,
   pathSegments: string[],
-  method: string
+  method: string,
 ) {
   const path = pathSegments.join('/');
   const searchParams = request.nextUrl.searchParams.toString();
@@ -67,7 +68,7 @@ async function proxyRequest(
   // Prepare headers
   const headers: HeadersInit = {
     'Content-Type': 'application/json',
-    'Cookie': cookieHeader,
+    Cookie: cookieHeader,
   };
 
   // Copy relevant headers from original request
@@ -128,7 +129,7 @@ async function proxyRequest(
         message: 'Proxy request failed',
         error: error instanceof Error ? error.message : 'Unknown error',
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

@@ -40,7 +40,7 @@ export function createQueryActivitiesTool(activityService: ActivityService) {
         // Fetch activities
         const result = await activityService.findAll(
           filters,
-          paginationOptions
+          paginationOptions,
         );
         let activities = result.activities;
 
@@ -48,7 +48,7 @@ export function createQueryActivitiesTool(activityService: ActivityService) {
         if (createdAfter) {
           const afterDate = new Date(createdAfter);
           activities = activities.filter(
-            (a) => new Date(a.createdAt) >= afterDate
+            (a) => new Date(a.createdAt) >= afterDate,
           );
         }
 
@@ -114,7 +114,7 @@ Supports:
           .string()
           .optional()
           .describe(
-            'Filter by activity type (e.g., "comment", "field_update")'
+            'Filter by activity type (e.g., "comment", "field_update")',
           ),
         actorId: z
           .number()
@@ -130,6 +130,6 @@ Supports:
           .default(50)
           .describe('Maximum number of results to return (max 500)'),
       }),
-    }
+    },
   );
 }

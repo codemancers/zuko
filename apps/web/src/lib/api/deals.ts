@@ -160,7 +160,7 @@ export const dealsApi = {
 
     const queryString = params.toString();
     return apiClient.get<DealsListResponse>(
-      `/deals${queryString ? `?${queryString}` : ''}`
+      `/deals${queryString ? `?${queryString}` : ''}`,
     );
   },
 
@@ -205,7 +205,7 @@ export const dealsApi = {
   async addOwner(
     dealId: number,
     userId: number,
-    isPrimary = false
+    isPrimary = false,
   ): Promise<DealOwner> {
     return apiClient.post(`/deals/${dealId}/owners`, { userId, isPrimary });
   },
@@ -222,7 +222,7 @@ export const dealsApi = {
    */
   async setPrimaryOwner(
     dealId: number,
-    userId: number
+    userId: number,
   ): Promise<{ success: boolean }> {
     return apiClient.post(`/deals/${dealId}/owners/${userId}/set-primary`);
   },
@@ -232,7 +232,7 @@ export const dealsApi = {
    */
   async getDealsByUser(
     userId: number,
-    filters?: DealFilters
+    filters?: DealFilters,
   ): Promise<DealsListResponse> {
     const params = new URLSearchParams();
 
@@ -246,7 +246,7 @@ export const dealsApi = {
 
     const queryString = params.toString();
     return apiClient.get(
-      `/deals/user/${userId}${queryString ? `?${queryString}` : ''}`
+      `/deals/user/${userId}${queryString ? `?${queryString}` : ''}`,
     );
   },
 
@@ -255,7 +255,7 @@ export const dealsApi = {
    */
   async addCompany(
     dealId: number,
-    data: AddCompanyToDealDto
+    data: AddCompanyToDealDto,
   ): Promise<DealCompanyAssociation> {
     return apiClient.post(`/deals/${dealId}/companies`, data);
   },
@@ -266,7 +266,7 @@ export const dealsApi = {
   async updateCompany(
     dealId: number,
     companyId: number,
-    data: UpdateDealCompanyDto
+    data: UpdateDealCompanyDto,
   ): Promise<void> {
     return apiClient.patch(`/deals/${dealId}/companies/${companyId}`, data);
   },
@@ -283,7 +283,7 @@ export const dealsApi = {
    */
   async getCompanies(dealId: number): Promise<DealCompanyAssociation[]> {
     const list = await apiClient.get<DealCompanyAssociation[]>(
-      `/deals/${dealId}/companies`
+      `/deals/${dealId}/companies`,
     );
     return Array.isArray(list) ? list : [];
   },
@@ -293,7 +293,7 @@ export const dealsApi = {
    */
   async addContact(
     dealId: number,
-    data: AddContactToDealDto
+    data: AddContactToDealDto,
   ): Promise<DealContactAssociation> {
     return apiClient.post(`/deals/${dealId}/contacts`, data);
   },
@@ -304,7 +304,7 @@ export const dealsApi = {
   async updateContact(
     dealId: number,
     contactId: number,
-    data: UpdateDealContactDto
+    data: UpdateDealContactDto,
   ): Promise<void> {
     return apiClient.patch(`/deals/${dealId}/contacts/${contactId}`, data);
   },
@@ -328,7 +328,7 @@ export const dealsApi = {
    */
   async getDealsByCompany(
     companyId: number,
-    filters?: DealFilters
+    filters?: DealFilters,
   ): Promise<DealsListResponse> {
     const params = new URLSearchParams();
 
@@ -342,7 +342,7 @@ export const dealsApi = {
 
     const queryString = params.toString();
     return apiClient.get(
-      `/deals/company/${companyId}${queryString ? `?${queryString}` : ''}`
+      `/deals/company/${companyId}${queryString ? `?${queryString}` : ''}`,
     );
   },
 
@@ -351,7 +351,7 @@ export const dealsApi = {
    */
   async getDealsByContact(
     contactId: number,
-    filters?: DealFilters
+    filters?: DealFilters,
   ): Promise<DealsListResponse> {
     const params = new URLSearchParams();
 
@@ -365,7 +365,7 @@ export const dealsApi = {
 
     const queryString = params.toString();
     return apiClient.get(
-      `/deals/contact/${contactId}${queryString ? `?${queryString}` : ''}`
+      `/deals/contact/${contactId}${queryString ? `?${queryString}` : ''}`,
     );
   },
 };

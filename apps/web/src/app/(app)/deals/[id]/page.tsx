@@ -1,11 +1,11 @@
-import DealDetail from "@/components/Deals/DealDetail";
-import { getQueryClient } from "@/lib/react-query/get-query-client";
-import { getDeal } from "@/server/query-options";
-import { authClient } from "@/lib/auth-client";
-import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
-import { headers } from "next/headers";
+import DealDetail from '@/components/Deals/DealDetail';
+import { getQueryClient } from '@/lib/react-query/get-query-client';
+import { getDeal } from '@/server/query-options';
+import { authClient } from '@/lib/auth-client';
+import { dehydrate, HydrationBoundary } from '@tanstack/react-query';
+import { headers } from 'next/headers';
 
-export const dynamic = "force-dynamic";
+export const dynamic = 'force-dynamic';
 
 interface DealPageProps {
   params: Promise<{ id: string }>;

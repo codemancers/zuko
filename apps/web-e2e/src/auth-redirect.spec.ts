@@ -6,7 +6,10 @@ import { test, expect } from './fixtures';
  * Uses better-auth test-utils helpers for authentication via the auth fixture
  */
 test.describe('Auth Redirect - Using Test Utils', () => {
-  test('authenticated user should be redirected to /chat from homepage', async ({ page, auth }) => {
+  test('authenticated user should be redirected to /chat from homepage', async ({
+    page,
+    auth,
+  }) => {
     // auth fixture has already injected signed session cookies into the page context
     await page.goto('http://localhost:3000');
 
@@ -17,10 +20,14 @@ test.describe('Auth Redirect - Using Test Utils', () => {
     expect(page.url()).toContain('/chat');
 
     // Verify chat UI is visible (chat page has a textarea for input)
-    await expect(page.getByRole('textbox', { name: /ask anything/i })).toBeVisible();
+    await expect(
+      page.getByRole('textbox', { name: /ask anything/i }),
+    ).toBeVisible();
   });
 
-  test('unauthenticated user should NOT be redirected to /chat', async ({ page }) => {
+  test('unauthenticated user should NOT be redirected to /chat', async ({
+    page,
+  }) => {
     // Navigate to homepage without authentication
     await page.goto('http://localhost:3000');
 

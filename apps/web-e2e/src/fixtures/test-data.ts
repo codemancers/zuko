@@ -65,7 +65,7 @@ export const TEST_SETTINGS = {
  * Generate unique test data with timestamp
  */
 export function generateUniqueTestData<T extends Record<string, unknown>>(
-  baseData: T
+  baseData: T,
 ): T {
   const timestamp = Date.now();
   const result = { ...baseData };
@@ -73,7 +73,10 @@ export function generateUniqueTestData<T extends Record<string, unknown>>(
   // Add timestamp to string fields
   Object.keys(result).forEach((key) => {
     if (typeof result[key] === 'string') {
-      result[key] = `${result[key]}_${timestamp}` as T[Extract<keyof T, string>];
+      result[key] = `${result[key]}_${timestamp}` as T[Extract<
+        keyof T,
+        string
+      >];
     }
   });
 

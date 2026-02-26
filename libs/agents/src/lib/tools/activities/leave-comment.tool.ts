@@ -15,7 +15,7 @@ export function createLeaveCommentTool(activityService: ActivityService) {
           entityType,
           entityId,
           userId, // userId from conversation state
-          content
+          content,
         );
 
         return {
@@ -60,9 +60,9 @@ IMPORTANT: You must pass the userId from the conversation state to properly attr
         userId: z
           .number()
           .describe(
-            'The ID of the user creating the comment (from conversation state)'
+            'The ID of the user creating the comment (from conversation state)',
           ),
       }),
-    }
+    },
   );
 }

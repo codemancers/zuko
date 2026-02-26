@@ -1,11 +1,24 @@
 {
   "name": "@zuko/source",
   "version": "0.0.0",
-  "license": "MIT",
-  "scripts": {
-    "postinstall": "patch-package"
-  },
   "private": true,
+  "license": "MIT",
+  "workspaces": [
+    "apps/backend",
+    "apps/web",
+    "libs/agents",
+    "libs/core",
+    "libs/ui-kit",
+    "libs/models",
+    "libs/beads",
+    "libs/sales"
+  ],
+  "scripts": {
+    "postinstall": "patch-package",
+    "lint:ox": "oxlint",
+    "fmt": "oxfmt .",
+    "fmt:check": "oxfmt --check ."
+  },
   "dependencies": {
     "@bprogress/next": "^3.2.12",
     "@heroicons/react": "^2.2.0",
@@ -89,9 +102,9 @@
     "jsdom": "~22.1.0",
     "jsonc-eslint-parser": "^2.1.0",
     "nx": "22.4.3",
+    "oxfmt": "^0.35.0",
     "patch-package": "^8.0.1",
     "postcss": "^8.5.6",
-    "prettier": "^2.6.2",
     "prisma": "^7.2.0",
     "tailwindcss": "^4.1.18",
     "ts-jest": "^29.4.0",
@@ -103,15 +116,5 @@
     "vite-plugin-dts": "~4.5.0",
     "vitest": "^4.0.0",
     "webpack-cli": "^5.1.4"
-  },
-  "workspaces": [
-    "apps/backend",
-    "apps/web",
-    "libs/agents",
-    "libs/core",
-    "libs/ui-kit",
-    "libs/models",
-    "libs/beads",
-    "libs/sales"
-  ]
+  }
 }

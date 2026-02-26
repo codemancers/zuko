@@ -8,8 +8,8 @@
   "exports": {
     "./package.json": "./package.json",
     ".": {
-      "@zuko/source": "./src/index.ts",
       "types": "./dist/index.d.ts",
+      "@zuko/source": "./src/index.ts",
       "import": "./dist/index.js",
       "default": "./dist/index.js"
     }

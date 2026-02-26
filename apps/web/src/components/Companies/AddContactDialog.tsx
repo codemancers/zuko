@@ -29,7 +29,7 @@ export default function AddContactDialog({
 }: AddContactDialogProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedContactId, setSelectedContactId] = useState<number | null>(
-    null
+    null,
   );
   const [role, setRole] = useState('');
   const [isPrimary, setIsPrimary] = useState(false);
@@ -41,7 +41,7 @@ export default function AddContactDialog({
   // Filter out contacts that are already associated with this company
   const availableContacts =
     contactsData?.contacts.filter(
-      (contact) => !existingContactIds.includes(contact.id)
+      (contact) => !existingContactIds.includes(contact.id),
     ) || [];
 
   const addContactMutation = useMutation({

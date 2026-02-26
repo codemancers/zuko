@@ -162,7 +162,7 @@ export default function DealDetail({ dealId, currentUserId }: DealDetailProps) {
   const handleEditContact = (
     contactId: number,
     currentRole: string | undefined,
-    currentIsPrimary: boolean
+    currentIsPrimary: boolean,
   ) => {
     setEditingContactId(contactId);
     setEditedRole(currentRole || '');
@@ -195,7 +195,7 @@ export default function DealDetail({ dealId, currentUserId }: DealDetailProps) {
   };
 
   const getStageColor = (
-    stage: string
+    stage: string,
   ): 'zinc' | 'blue' | 'yellow' | 'green' | 'red' => {
     const stageColors: Record<
       string,
@@ -468,7 +468,7 @@ export default function DealDetail({ dealId, currentUserId }: DealDetailProps) {
                         onClick={() =>
                           handleRemoveCompany(
                             da.companyId,
-                            da.company.companyName
+                            da.company.companyName,
                           )
                         }
                         disabled={

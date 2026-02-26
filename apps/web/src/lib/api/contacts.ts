@@ -131,7 +131,7 @@ export const contactsApi = {
   async addOwner(
     contactId: number,
     userId: number,
-    isPrimary = false
+    isPrimary = false,
   ): Promise<ContactOwner> {
     return apiClient.post(`/contacts/${contactId}/owners`, {
       userId,
@@ -151,10 +151,10 @@ export const contactsApi = {
    */
   async setPrimaryOwner(
     contactId: number,
-    userId: number
+    userId: number,
   ): Promise<{ success: boolean }> {
     return apiClient.post(
-      `/contacts/${contactId}/owners/${userId}/set-primary`
+      `/contacts/${contactId}/owners/${userId}/set-primary`,
     );
   },
 
@@ -163,7 +163,7 @@ export const contactsApi = {
    */
   async getContactsByUser(
     userId: number,
-    filters?: ContactFilters
+    filters?: ContactFilters,
   ): Promise<ContactsListResponse> {
     const params = new URLSearchParams();
 
@@ -177,7 +177,7 @@ export const contactsApi = {
 
     const queryString = params.toString();
     return apiClient.get(
-      `/contacts/user/${userId}${queryString ? `?${queryString}` : ''}`
+      `/contacts/user/${userId}${queryString ? `?${queryString}` : ''}`,
     );
   },
 };

@@ -42,7 +42,7 @@ class ApiClient {
    */
   private async request<T>(
     endpoint: string,
-    options: RequestInit = {}
+    options: RequestInit = {},
   ): Promise<T> {
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
@@ -82,7 +82,7 @@ class ApiClient {
         throw new ApiError(
           error.message || 'API request failed',
           response.status,
-          error
+          error,
         );
       }
 
@@ -99,7 +99,7 @@ class ApiClient {
       throw new ApiError(
         error instanceof Error ? error.message : 'Unknown error',
         500,
-        error
+        error,
       );
     }
   }
@@ -111,7 +111,7 @@ class ApiClient {
   async post<T>(
     endpoint: string,
     data?: any,
-    options?: RequestInit
+    options?: RequestInit,
   ): Promise<T> {
     return this.request<T>(endpoint, {
       ...options,
@@ -123,7 +123,7 @@ class ApiClient {
   async patch<T>(
     endpoint: string,
     data?: any,
-    options?: RequestInit
+    options?: RequestInit,
   ): Promise<T> {
     return this.request<T>(endpoint, {
       ...options,
@@ -135,7 +135,7 @@ class ApiClient {
   async put<T>(
     endpoint: string,
     data?: any,
-    options?: RequestInit
+    options?: RequestInit,
   ): Promise<T> {
     return this.request<T>(endpoint, {
       ...options,
@@ -147,7 +147,7 @@ class ApiClient {
   async delete<T>(
     endpoint: string,
     data?: any,
-    options?: RequestInit
+    options?: RequestInit,
   ): Promise<T> {
     return this.request<T>(endpoint, {
       ...options,
@@ -161,7 +161,11 @@ class ApiClient {
  * Custom error class for API errors
  */
 export class ApiError extends Error {
-  constructor(message: string, public status: number, public details?: any) {
+  constructor(
+    message: string,
+    public status: number,
+    public details?: any,
+  ) {
     super(message);
     this.name = 'ApiError';
   }

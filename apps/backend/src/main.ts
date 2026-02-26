@@ -34,7 +34,7 @@ async function bootstrap() {
   const port = parseInt(basePort as string) + 1;
   await app.listen(port);
   Logger.log(
-    `🚀 Application is running on: http://localhost:${port}/${globalPrefix}`
+    `🚀 Application is running on: http://localhost:${port}/${globalPrefix}`,
   );
   Logger.log(`🔐 Auth endpoints available at: http://localhost:${port}/auth`);
 }

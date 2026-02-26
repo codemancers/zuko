@@ -65,6 +65,6 @@ Returns: primaryOwner (user object), allOwners (array of users), ownerCount`,
       schema: z.object({
         contactId: z.number().describe('The contact ID to get owners for'),
       }),
-    }
+    },
   );
 }

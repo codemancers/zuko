@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import { useChat } from '@ai-sdk/react';
+import { useChat } from "@ai-sdk/react";
 import {
   Conversation,
   ConversationContent,
@@ -8,14 +8,14 @@ import {
   MessageContent,
   MessageResponse,
   TooltipProvider,
-} from '@zuko/ui-kit';
-import { type ChatEntity } from '@/components/Chat/ChatContextManager';
-import { ChatInput } from '@/components/Chat/ChatInput';
-import { useState, useCallback, useEffect } from 'react';
-import { useParams } from 'next/navigation';
-import { useInvalidateChats } from '@/hooks/use-chats';
-import { contactsApi } from '@/lib/api/contacts';
-import { companiesApi } from '@/lib/api/companies';
+} from "@zuko/ui-kit";
+import { type ChatEntity } from "@/components/Chat/ChatContextManager";
+import { ChatInput } from "@/components/Chat/ChatInput";
+import { useState, useCallback, useEffect } from "react";
+import { useParams } from "next/navigation";
+import { useInvalidateChats } from "@/hooks/use-chats";
+import { contactsApi } from "@/lib/api/contacts";
+import { companiesApi } from "@/lib/api/companies";
 
 export default function ChatPage() {
   const params = useParams();
@@ -40,7 +40,7 @@ export default function ChatPage() {
   const handleFirstMessage = useCallback(
     async (data: string) => {
       console.log(
-        '[ChatPage] New chat detected, sending first message immediately'
+        "[ChatPage] New chat detected, sending first message immediately",
       );
 
       localStorage.removeItem(`chat-${chatId}-firstMessage`);
@@ -61,35 +61,38 @@ export default function ChatPage() {
           // Hydrate names so chips show "Vikram Joshi" not "Contact" when we inject
           const hydrated: ChatEntity[] = await Promise.all(
             contextEntities.map(
-              async (ref: { type: string; id: number }): Promise<ChatEntity> => {
-                const type = ref.type as 'contact' | 'company';
+              async (ref: {
+                type: string;
+                id: number;
+              }): Promise<ChatEntity> => {
+                const type = ref.type as "contact" | "company";
                 try {
-                  if (type === 'contact') {
+                  if (type === "contact") {
                     const c = await contactsApi.getContact(ref.id);
                     return {
-                      type: 'contact',
+                      type: "contact",
                       id: ref.id,
                       name: c.name,
-                      metadata: { type: 'contact', entityId: ref.id },
+                      metadata: { type: "contact", entityId: ref.id },
                     };
                   }
                   const c = await companiesApi.getCompany(ref.id);
                   return {
-                    type: 'company',
+                    type: "company",
                     id: ref.id,
                     name: c.companyName,
-                    metadata: { type: 'company', entityId: ref.id },
+                    metadata: { type: "company", entityId: ref.id },
                   };
                 } catch {
                   return {
                     type,
                     id: ref.id,
-                    name: type === 'contact' ? 'Contact' : 'Company',
+                    name: type === "contact" ? "Contact" : "Company",
                     metadata: { type, entityId: ref.id },
                   };
                 }
-              }
-            )
+              },
+            ),
           );
           setInitialContext(hydrated);
         }
@@ -104,20 +107,20 @@ export default function ChatPage() {
         setMessagesLoaded(true);
         setTimeout(() => invalidateChats(), 2000);
       } catch (error) {
-        console.error('[ChatPage] Error parsing first message data:', error);
+        console.error("[ChatPage] Error parsing first message data:", error);
         setMessagesLoaded(true);
       }
     },
-    [chatId, sendMessage, invalidateChats]
+    [chatId, sendMessage, invalidateChats],
   );
 
   // Helper: Load message history from backend (existing chat)
   const loadMessageHistory = useCallback(async () => {
-    console.log('[ChatPage] Loading message history for existing chat');
+    console.log("[ChatPage] Loading message history for existing chat");
 
     try {
       const response = await fetch(`/api/proxy/api/chats/${chatId}/messages`, {
-        credentials: 'include',
+        credentials: "include",
       });
 
       if (response.ok) {
@@ -132,11 +135,11 @@ export default function ChatPage() {
             role: msg.role,
             parts: [
               {
-                type: 'text',
+                type: "text",
                 text: msg.content,
               },
             ],
-          })
+          }),
         );
 
         if (formattedMessages.length > 0) {
@@ -146,11 +149,11 @@ export default function ChatPage() {
         // Hydrate context entities from backend response (includes names)
         const hydratedEntities: ChatEntity[] = contextRefs.map(
           (ref: { type: string; id: number; name: string }) => ({
-            type: ref.type as 'contact' | 'company',
+            type: ref.type as "contact" | "company",
             id: ref.id,
             name: ref.name, // Use actual name from backend
             metadata: { type: ref.type, entityId: ref.id },
-          })
+          }),
         );
 
         if (hydratedEntities.length > 0) {
@@ -158,7 +161,7 @@ export default function ChatPage() {
         }
       }
     } catch (error) {
-      console.error('[ChatPage] Error loading messages:', error);
+      console.error("[ChatPage] Error loading messages:", error);
     } finally {
       setMessagesLoaded(true);
     }
@@ -170,7 +173,7 @@ export default function ChatPage() {
     if (!messagesLoaded && !firstMessageSent && chatId) {
       // Step 1: Check if this is a new chat (has first message in localStorage)
       const firstMessageData = localStorage.getItem(
-        `chat-${chatId}-firstMessage`
+        `chat-${chatId}-firstMessage`,
       );
 
       if (firstMessageData) {
@@ -199,7 +202,7 @@ export default function ChatPage() {
     }
 
     try {
-      console.log('[ChatPage] handleSubmitMessage called with:', msg);
+      console.log("[ChatPage] handleSubmitMessage called with:", msg);
 
       const isFirstMessage = messages.length === 0;
       await sendMessage({
@@ -220,7 +223,7 @@ export default function ChatPage() {
         }, 2000); // 2 second delay for title generation
       }
     } catch (error) {
-      console.error('[ChatPage] Error in handleSubmitMessage:', error);
+      console.error("[ChatPage] Error in handleSubmitMessage:", error);
       throw error; // Re-throw so PromptInput doesn't clear the input on error
     }
   };
@@ -238,9 +241,9 @@ export default function ChatPage() {
                     // Extract text from parts array (AI SDK v6 format)
                     const content =
                       message.parts
-                        ?.filter((part: any) => part.type === 'text')
+                        ?.filter((part: any) => part.type === "text")
                         .map((part: any) => part.text)
-                        .join('') || '';
+                        .join("") || "";
 
                     return (
                       <Message key={message.id} from={message.role}>

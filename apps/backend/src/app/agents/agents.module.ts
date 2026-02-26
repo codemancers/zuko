@@ -75,23 +75,25 @@ import {
         prismaService: PrismaService,
         contactsService: ContactsService,
         companiesService: CompaniesService,
-        activityService: ActivityService
+        activityService: ActivityService,
       ) => {
         return new OrchestratorService(
           adminService,
           prismaService,
           contactsService,
           companiesService,
-          activityService
+          activityService,
         );
       },
-      inject: [AdminService, PrismaService, ContactsService, CompaniesService, ActivityService],
+      inject: [
+        AdminService,
+        PrismaService,
+        ContactsService,
+        CompaniesService,
+        ActivityService,
+      ],
     },
   ],
-  exports: [
-    OrchestratorService,
-    AdminService,
-    ConnectionsRepository,
-  ],
+  exports: [OrchestratorService, AdminService, ConnectionsRepository],
 })
 export class AgentsWrapperModule {}

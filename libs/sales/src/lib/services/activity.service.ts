@@ -43,7 +43,10 @@ export class ActivityService {
     return activity;
   }
 
-  async findAll(filters?: ActivityFilters, pagination?: ActivityPaginationOptions) {
+  async findAll(
+    filters?: ActivityFilters,
+    pagination?: ActivityPaginationOptions,
+  ) {
     return this.activityRepository.findAll(filters, pagination);
   }
 
@@ -55,7 +58,7 @@ export class ActivityService {
     entityType: string,
     entityId: number,
     actorId: number,
-    content: string
+    content: string,
   ) {
     if (!content || content.trim().length === 0) {
       throw new BadRequestException('Comment content cannot be empty');
@@ -65,7 +68,7 @@ export class ActivityService {
       entityType,
       entityId,
       actorId,
-      content.trim()
+      content.trim(),
     );
   }
 
@@ -75,9 +78,7 @@ export class ActivityService {
 
     // Only the author can delete their own activity
     if (activity.actorId !== userId) {
-      throw new ForbiddenException(
-        'You can only delete your own activities'
-      );
+      throw new ForbiddenException('You can only delete your own activities');
     }
 
     return this.activityRepository.delete(id);
@@ -94,9 +95,7 @@ export class ActivityService {
 
     // Only the author can edit their own activity
     if (activity.actorId !== userId) {
-      throw new ForbiddenException(
-        'You can only edit your own activities'
-      );
+      throw new ForbiddenException('You can only edit your own activities');
     }
 
     // Only comments can be edited

@@ -26,7 +26,7 @@ const DealsList = () => {
   const router = useRouter();
   const [searchTerm, setSearchTerm] = useState('');
   const { data, isLoading } = useQuery(
-    getDeals({ search: searchTerm || undefined })
+    getDeals({ search: searchTerm || undefined }),
   );
 
   const deals = data?.deals || [];
@@ -100,7 +100,7 @@ const DealsList = () => {
   };
 
   const getStageColor = (
-    stage: string
+    stage: string,
   ): 'zinc' | 'blue' | 'yellow' | 'green' | 'red' => {
     const stageColors: Record<
       string,
@@ -226,7 +226,7 @@ const DealsList = () => {
                         <TableCell className="align-top text-sm text-zinc-600 dark:text-zinc-400">
                           {deal.expectedCloseDate
                             ? dayjs(deal.expectedCloseDate).format(
-                                'MMM D, YYYY'
+                                'MMM D, YYYY',
                               )
                             : '-'}
                         </TableCell>

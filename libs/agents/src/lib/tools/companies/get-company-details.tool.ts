@@ -25,7 +25,7 @@ function getContextEntities(
  * a single company in context is used so the model does not need to guess the ID.
  */
 export function createGetCompanyDetailsTool(
-  companiesService: CompaniesService
+  companiesService: CompaniesService,
 ) {
   return tool(
     async (input, config?: unknown) => {
@@ -89,6 +89,6 @@ Returns: Company object with id, companyName, website, linkedinUrl, summary, con
       schema: z.object({
         companyId: z.number().describe('The company ID to retrieve').optional(),
       }),
-    }
+    },
   );
 }

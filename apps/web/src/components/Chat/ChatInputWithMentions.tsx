@@ -32,8 +32,10 @@ export interface ChatMention {
   name: string;
 }
 
-export interface ChatInputWithMentionsProps
-  extends Omit<PromptInputMentionsProps, 'mentionTriggers'> {
+export interface ChatInputWithMentionsProps extends Omit<
+  PromptInputMentionsProps,
+  'mentionTriggers'
+> {
   onMentionsExtract?: (mentions: ChatMention[]) => void;
 }
 
@@ -95,7 +97,7 @@ export const ChatInputWithMentions = React.forwardRef<
       _search: string,
       _highlightedDisplay: React.ReactNode,
       _index: number,
-      _focused: boolean
+      _focused: boolean,
     ) => {
       const isContact = String(suggestion.id).startsWith('contact-');
       const Icon = isContact ? UserIcon : BuildingIcon;
@@ -116,7 +118,7 @@ export const ChatInputWithMentions = React.forwardRef<
         </div>
       );
     },
-    []
+    [],
   );
 
   // Mention triggers configuration
@@ -126,7 +128,7 @@ export const ChatInputWithMentions = React.forwardRef<
         trigger: '@',
         data: (
           search: string,
-          callback: (data: MentionSuggestion[]) => void
+          callback: (data: MentionSuggestion[]) => void,
         ) => {
           const searchLower = search.toLowerCase();
 
@@ -151,7 +153,7 @@ export const ChatInputWithMentions = React.forwardRef<
           const filtered = allSuggestions.filter(
             (s) =>
               s.display.toLowerCase().includes(searchLower) ||
-              s.description?.toLowerCase().includes(searchLower)
+              s.description?.toLowerCase().includes(searchLower),
           );
 
           callback(filtered);
@@ -159,7 +161,7 @@ export const ChatInputWithMentions = React.forwardRef<
         renderSuggestion,
       },
     ],
-    [contactsData, companiesData, renderSuggestion]
+    [contactsData, companiesData, renderSuggestion],
   );
 
   // Handle change and extract mentions
@@ -173,7 +175,7 @@ export const ChatInputWithMentions = React.forwardRef<
         onMentionsExtract(mentions);
       }
     },
-    [onChange, onMentionsExtract]
+    [onChange, onMentionsExtract],
   );
 
   return (

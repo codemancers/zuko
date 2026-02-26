@@ -74,11 +74,11 @@ export class ActivitiesController {
   @HttpCode(HttpStatus.NO_CONTENT)
   async delete(
     @Req() req: RequestWithUser,
-    @Param('id', ParseIntPipe) id: number
+    @Param('id', ParseIntPipe) id: number,
   ) {
     const userId = parseInt(req.user.id, 10);
     this.logger.log(
-      `[DELETE_ACTIVITY] Request for ID: ${id} by user: ${userId}`
+      `[DELETE_ACTIVITY] Request for ID: ${id} by user: ${userId}`,
     );
     await this.activityService.delete(id, userId);
   }
@@ -87,11 +87,11 @@ export class ActivitiesController {
   async update(
     @Req() req: RequestWithUser,
     @Param('id', ParseIntPipe) id: number,
-    @Body() dto: UpdateCommentDto
+    @Body() dto: UpdateCommentDto,
   ) {
     const userId = parseInt(req.user.id, 10);
     this.logger.log(
-      `[UPDATE_ACTIVITY] Request for ID: ${id} by user: ${userId}`
+      `[UPDATE_ACTIVITY] Request for ID: ${id} by user: ${userId}`,
     );
     return this.activityService.update(id, userId, dto.content);
   }
@@ -108,7 +108,7 @@ export class ContactActivitiesController {
   @Get()
   async getTimeline(
     @Param('contactId', ParseIntPipe) contactId: number,
-    @Query('limit') limitStr?: string
+    @Query('limit') limitStr?: string,
   ) {
     this.logger.log(`[GET_CONTACT_TIMELINE] Contact ID: ${contactId}`);
     const limit = limitStr ? parseInt(limitStr, 10) : undefined;
@@ -120,11 +120,11 @@ export class ContactActivitiesController {
   async createComment(
     @Req() req: RequestWithUser,
     @Param('contactId', ParseIntPipe) contactId: number,
-    @Body() dto: CreateCommentDto
+    @Body() dto: CreateCommentDto,
   ) {
     const userId = parseInt(req.user.id, 10);
     this.logger.log(
-      `[CREATE_COMMENT] Contact ID: ${contactId}, User: ${userId}`
+      `[CREATE_COMMENT] Contact ID: ${contactId}, User: ${userId}`,
     );
 
     try {
@@ -132,7 +132,7 @@ export class ContactActivitiesController {
         'contact',
         contactId,
         userId,
-        dto.content
+        dto.content,
       );
       this.logger.log(`[CREATE_COMMENT] Success - Activity ID: ${result.id}`);
       return result;
@@ -157,7 +157,7 @@ export class CompanyActivitiesController {
   @Get()
   async getTimeline(
     @Param('companyId', ParseIntPipe) companyId: number,
-    @Query('limit') limitStr?: string
+    @Query('limit') limitStr?: string,
   ) {
     this.logger.log(`[GET_COMPANY_TIMELINE] Company ID: ${companyId}`);
     const limit = limitStr ? parseInt(limitStr, 10) : undefined;
@@ -169,11 +169,11 @@ export class CompanyActivitiesController {
   async createComment(
     @Req() req: RequestWithUser,
     @Param('companyId', ParseIntPipe) companyId: number,
-    @Body() dto: CreateCommentDto
+    @Body() dto: CreateCommentDto,
   ) {
     const userId = parseInt(req.user.id, 10);
     this.logger.log(
-      `[CREATE_COMMENT] Company ID: ${companyId}, User: ${userId}`
+      `[CREATE_COMMENT] Company ID: ${companyId}, User: ${userId}`,
     );
 
     try {
@@ -181,7 +181,7 @@ export class CompanyActivitiesController {
         'company',
         companyId,
         userId,
-        dto.content
+        dto.content,
       );
       this.logger.log(`[CREATE_COMMENT] Success - Activity ID: ${result.id}`);
       return result;

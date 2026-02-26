@@ -40,7 +40,7 @@ export function EmailPasswordAuth({ mode = 'signin' }: EmailPasswordAuthProps) {
         if (result.error) {
           setError(
             result.error.message ||
-              'Failed to create account. Please try again.'
+              'Failed to create account. Please try again.',
           );
         } else {
           router.push('/chat');
@@ -54,7 +54,7 @@ export function EmailPasswordAuth({ mode = 'signin' }: EmailPasswordAuthProps) {
         if (result.error) {
           setError(
             result.error.message ||
-              'Failed to sign in. Please check your credentials.'
+              'Failed to sign in. Please check your credentials.',
           );
         } else {
           router.push('/chat');
@@ -163,8 +163,8 @@ export function EmailPasswordAuth({ mode = 'signin' }: EmailPasswordAuthProps) {
                     ? 'Creating account...'
                     : 'Signing in...'
                   : isSignup
-                  ? 'Create account'
-                  : 'Sign in'}
+                    ? 'Create account'
+                    : 'Sign in'}
               </Button>
             </form>
 

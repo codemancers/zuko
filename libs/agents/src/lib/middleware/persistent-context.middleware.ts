@@ -8,7 +8,7 @@ import type { ContextEntityReference } from '../types/chat.types';
  */
 const contextEntitiesReducer = (
   current: ContextEntityReference[] | undefined,
-  update: ContextEntityReference[] | undefined
+  update: ContextEntityReference[] | undefined,
 ): ContextEntityReference[] => {
   return update ?? current ?? [];
 };
@@ -19,7 +19,7 @@ const contextEntitiesReducer = (
  */
 const userIdReducer = (
   current: number | undefined,
-  update: number | undefined
+  update: number | undefined,
 ): number | undefined => {
   return update ?? current;
 };
@@ -34,7 +34,7 @@ const PersistentContextStateSchema = z.object({
       z.object({
         type: z.enum(['contact', 'company', 'deal']),
         id: z.number(),
-      })
+      }),
     )
     .default([])
     .meta({
@@ -45,7 +45,7 @@ const PersistentContextStateSchema = z.object({
             z.object({
               type: z.enum(['contact', 'company', 'deal']),
               id: z.number(),
-            })
+            }),
           )
           .optional(),
       },

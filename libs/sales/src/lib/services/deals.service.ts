@@ -52,23 +52,23 @@ export class DealsService {
 
     // Validate at least one owner
     this.logger.debug(
-      `[SERVICE] Validating owners: ${JSON.stringify(input.ownerIds)}`
+      `[SERVICE] Validating owners: ${JSON.stringify(input.ownerIds)}`,
     );
     if (!input.ownerIds || input.ownerIds.length === 0) {
       this.logger.warn('[SERVICE] No owners provided');
       throw new BadRequestException('At least one owner must be assigned');
     }
     this.logger.debug(
-      `[SERVICE] Owner validation passed - ${input.ownerIds.length} owner(s)`
+      `[SERVICE] Owner validation passed - ${input.ownerIds.length} owner(s)`,
     );
 
     this.logger.log(
-      '[SERVICE] All validations passed, creating deal in database'
+      '[SERVICE] All validations passed, creating deal in database',
     );
     try {
       const result = await this.dealsRepository.create(input);
       this.logger.log(
-        `[SERVICE] Deal created successfully with ID: ${result.id}`
+        `[SERVICE] Deal created successfully with ID: ${result.id}`,
       );
       return result;
     } catch (error: unknown) {
@@ -77,7 +77,7 @@ export class DealsService {
       const errorStack = error instanceof Error ? error.stack : undefined;
       this.logger.error(
         `[SERVICE] Database creation failed: ${errorMessage}`,
-        errorStack
+        errorStack,
       );
       throw error;
     }
@@ -127,7 +127,7 @@ export class DealsService {
     if (input.actualCloseDate && input.expectedCloseDate) {
       if (input.actualCloseDate < input.expectedCloseDate) {
         this.logger.warn(
-          '[SERVICE] Actual close date is before expected close date'
+          '[SERVICE] Actual close date is before expected close date',
         );
       }
     }
@@ -170,7 +170,7 @@ export class DealsService {
 
   async addCompany(dealId: number, input: AddCompanyToDealInput) {
     this.logger.log(
-      `[SERVICE] Adding company ${input.companyId} to deal ${dealId}`
+      `[SERVICE] Adding company ${input.companyId} to deal ${dealId}`,
     );
 
     await this.findById(dealId);
@@ -178,19 +178,19 @@ export class DealsService {
     // Check if company is already associated with this deal
     const existingCompanies = await this.dealsRepository.getCompanies(dealId);
     const alreadyAssociated = existingCompanies.find(
-      (da) => da.companyId === input.companyId
+      (da) => da.companyId === input.companyId,
     );
 
     if (alreadyAssociated) {
       throw new BadRequestException(
-        `Company ${input.companyId} is already associated with this deal`
+        `Company ${input.companyId} is already associated with this deal`,
       );
     }
 
     try {
       const result = await this.dealsRepository.addCompany(dealId, input);
       this.logger.log(
-        `[SERVICE] Company ${input.companyId} added to deal ${dealId} successfully`
+        `[SERVICE] Company ${input.companyId} added to deal ${dealId} successfully`,
       );
       return result;
     } catch (error: unknown) {
@@ -199,7 +199,7 @@ export class DealsService {
       const errorStack = error instanceof Error ? error.stack : undefined;
       this.logger.error(
         `[SERVICE] Failed to add company to deal: ${errorMessage}`,
-        errorStack
+        errorStack,
       );
       throw error;
     }
@@ -207,7 +207,7 @@ export class DealsService {
 
   async removeCompany(dealId: number, companyId: number) {
     this.logger.log(
-      `[SERVICE] Removing company ${companyId} from deal ${dealId}`
+      `[SERVICE] Removing company ${companyId} from deal ${dealId}`,
     );
 
     await this.findById(dealId);
@@ -215,10 +215,10 @@ export class DealsService {
     try {
       const result = await this.dealsRepository.removeCompany(
         dealId,
-        companyId
+        companyId,
       );
       this.logger.log(
-        `[SERVICE] Company ${companyId} removed from deal ${dealId} successfully`
+        `[SERVICE] Company ${companyId} removed from deal ${dealId} successfully`,
       );
       return result;
     } catch (error: unknown) {
@@ -227,7 +227,7 @@ export class DealsService {
       const errorStack = error instanceof Error ? error.stack : undefined;
       this.logger.error(
         `[SERVICE] Failed to remove company from deal: ${errorMessage}`,
-        errorStack
+        errorStack,
       );
       throw error;
     }
@@ -245,7 +245,7 @@ export class DealsService {
 
   async addContact(dealId: number, input: AddContactToDealInput) {
     this.logger.log(
-      `[SERVICE] Adding contact ${input.contactId} to deal ${dealId}`
+      `[SERVICE] Adding contact ${input.contactId} to deal ${dealId}`,
     );
 
     await this.findById(dealId);
@@ -253,19 +253,19 @@ export class DealsService {
     // Check if contact is already associated with this deal
     const existingContacts = await this.dealsRepository.getContacts(dealId);
     const alreadyAssociated = existingContacts.find(
-      (dc) => dc.contactId === input.contactId
+      (dc) => dc.contactId === input.contactId,
     );
 
     if (alreadyAssociated) {
       throw new BadRequestException(
-        `Contact ${input.contactId} is already associated with this deal`
+        `Contact ${input.contactId} is already associated with this deal`,
       );
     }
 
     try {
       const result = await this.dealsRepository.addContact(dealId, input);
       this.logger.log(
-        `[SERVICE] Contact ${input.contactId} added to deal ${dealId} successfully`
+        `[SERVICE] Contact ${input.contactId} added to deal ${dealId} successfully`,
       );
       return result;
     } catch (error: unknown) {
@@ -274,7 +274,7 @@ export class DealsService {
       const errorStack = error instanceof Error ? error.stack : undefined;
       this.logger.error(
         `[SERVICE] Failed to add contact to deal: ${errorMessage}`,
-        errorStack
+        errorStack,
       );
       throw error;
     }
@@ -282,7 +282,7 @@ export class DealsService {
 
   async removeContact(dealId: number, contactId: number) {
     this.logger.log(
-      `[SERVICE] Removing contact ${contactId} from deal ${dealId}`
+      `[SERVICE] Removing contact ${contactId} from deal ${dealId}`,
     );
 
     await this.findById(dealId);
@@ -290,10 +290,10 @@ export class DealsService {
     try {
       const result = await this.dealsRepository.removeContact(
         dealId,
-        contactId
+        contactId,
       );
       this.logger.log(
-        `[SERVICE] Contact ${contactId} removed from deal ${dealId} successfully`
+        `[SERVICE] Contact ${contactId} removed from deal ${dealId} successfully`,
       );
       return result;
     } catch (error: unknown) {
@@ -302,7 +302,7 @@ export class DealsService {
       const errorStack = error instanceof Error ? error.stack : undefined;
       this.logger.error(
         `[SERVICE] Failed to remove contact from deal: ${errorMessage}`,
-        errorStack
+        errorStack,
       );
       throw error;
     }
@@ -311,7 +311,7 @@ export class DealsService {
   async updateContact(
     dealId: number,
     contactId: number,
-    input: UpdateContactDealInput
+    input: UpdateContactDealInput,
   ) {
     await this.findById(dealId);
     return this.dealsRepository.updateContact(dealId, contactId, input);

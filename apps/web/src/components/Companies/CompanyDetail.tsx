@@ -104,7 +104,7 @@ export default function CompanyDetail({
   const handleRemoveContact = (contactId: number, contactName: string) => {
     if (
       confirm(
-        `Are you sure you want to remove ${contactName} from this company?`
+        `Are you sure you want to remove ${contactName} from this company?`,
       )
     ) {
       removeContactMutation.mutate(contactId);
@@ -114,7 +114,7 @@ export default function CompanyDetail({
   const handleEditContact = (
     contactId: number,
     currentRole: string | undefined,
-    currentIsPrimary: boolean
+    currentIsPrimary: boolean,
   ) => {
     setEditingContactId(contactId);
     setEditedRole(currentRole || '');
@@ -147,7 +147,7 @@ export default function CompanyDetail({
   };
 
   const getStageColor = (
-    stage: string
+    stage: string,
   ): 'zinc' | 'blue' | 'yellow' | 'green' | 'red' => {
     const stageColors: Record<
       string,
@@ -411,7 +411,7 @@ export default function CompanyDetail({
           <div className="mt-4 space-y-3">
             {dealsData.deals.map((deal: any) => {
               const dealCompany = deal.companies?.find(
-                (da: any) => da.companyId === companyId
+                (da: any) => da.companyId === companyId,
               );
               return (
                 <div key={deal.id} className="flex items-center gap-3">

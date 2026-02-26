@@ -11,7 +11,10 @@ async function getSession() {
     const headersList = await headers();
     // Use backend URL from environment, fallback to localhost for development
     // Use NEXT_PUBLIC_BACKEND_URL for client-side consistency
-    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.BACKEND_URL || 'http://localhost:3001';
+    const backendUrl =
+      process.env.NEXT_PUBLIC_BACKEND_URL ||
+      process.env.BACKEND_URL ||
+      'http://localhost:3001';
     const response = await fetch(`${backendUrl}/auth/get-session`, {
       headers: Object.fromEntries(headersList.entries()),
       cache: 'no-store',

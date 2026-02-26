@@ -74,6 +74,6 @@ Returns: Contact object with id, name, email, phone, linkedinId, notes, createdA
       schema: z.object({
         contactId: z.number().describe('The contact ID to retrieve'),
       }),
-    }
+    },
   );
 }

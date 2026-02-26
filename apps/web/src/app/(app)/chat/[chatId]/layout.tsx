@@ -28,6 +28,10 @@ export async function generateMetadata({ params }: ChatLayoutProps) {
   };
 }
 
-export default function ChatDetailLayout({ children }: { children: React.ReactNode }) {
+export default function ChatDetailLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return children;
 }

@@ -23,7 +23,9 @@ export class AdminService {
       ].join('\n');
 
     if (!process.env.OPENAI_API_KEY) {
-      this.logger.warn('OPENAI_API_KEY is not configured; DeepAgent may fail to respond.');
+      this.logger.warn(
+        'OPENAI_API_KEY is not configured; DeepAgent may fail to respond.',
+      );
     }
 
     const model = new ChatOpenAI({

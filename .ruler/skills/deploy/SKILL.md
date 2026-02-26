@@ -11,10 +11,12 @@ You are a deployment specialist for the Zuko monorepo. This skill handles all Fl
 ## Context
 
 **Monorepo Structure:**
+
 - **apps/agents** - NestJS backend service (has existing Dockerfile)
 - **apps/web** - Next.js frontend (configured with standalone output)
 
 **Tech Stack:**
+
 - Nx monorepo with workspaces
 - Prisma for database
 - Docker for containerization
@@ -27,6 +29,7 @@ The user can request any of these operations:
 ### 1. Deploy
 
 **Supported commands:**
+
 - "deploy agents" / "deploy the agents app"
 - "deploy web" / "deploy the web app"
 - "deploy all" / "deploy everything"
@@ -36,6 +39,7 @@ The user can request any of these operations:
 **Deployment Process:**
 
 1. **Pre-flight Checks**
+
    ```bash
    # Check if fly.toml exists for this app
    if [ ! -f "apps/<app>/fly.toml" ]; then
@@ -54,23 +58,27 @@ The user can request any of these operations:
 2. **Deploy**
 
    **Check if app has a deploy target:**
+
    ```bash
    # Check if deploy target exists
    npx nx show project @zuko/<app> --json | jq -e '.targets.deploy' > /dev/null
    ```
 
    **If deploy target exists:**
+
    ```bash
    npx nx deploy @zuko/<app>
    ```
 
    **Otherwise, use direct flyctl deployment:**
+
    ```bash
    cd apps/<app>
    flyctl deploy
    ```
 
 3. **Post-Deploy Verification**
+
    ```bash
    # Extract app name from fly.toml
    APP_NAME=$(grep "^app = " apps/<app>/fly.toml | cut -d "'" -f 2)
@@ -86,6 +94,7 @@ The user can request any of these operations:
    ```
 
 **Important Notes:**
+
 - **CRITICAL:** Check if fly.toml exists before deploying
 - **If fly.toml doesn't exist:** Stop and instruct user to run `flyctl launch` manually in the app directory first
   - Example: "Please cd to apps/agents and run 'flyctl launch' to configure your Fly.io app"
@@ -97,11 +106,13 @@ The user can request any of these operations:
 ### 2. Logs
 
 **Supported commands:**
+
 - "show logs for agents"
 - "tail web logs"
 - "show recent errors in agents"
 
 **Log Operations:**
+
 ```bash
 # Tail real-time logs
 flyctl logs --app <app-name>
@@ -123,12 +134,14 @@ flyctl logs --app <app-name> | grep -i "status 500"
 ### 3. Metrics & Status
 
 **Supported commands:**
+
 - "show agents status"
 - "check web metrics"
 - "show all app statuses"
 - "how many instances are running?"
 
 **Status Operations:**
+
 ```bash
 # App status
 flyctl status --app <app-name>
@@ -152,10 +165,12 @@ flyctl releases --app <app-name>
 ### 4. Scaling
 
 **Supported commands:**
+
 - "scale agents to 2 instances"
 - "increase web memory to 512MB"
 
 **Scaling Operations:**
+
 ```bash
 # Scale instance count
 flyctl scale count 2 --app <app-name>
@@ -173,10 +188,12 @@ flyctl scale show --app <app-name>
 ### 5. Environment & Secrets
 
 **Supported commands:**
+
 - "set DATABASE_URL for agents"
 - "list secrets for web"
 
 **Secret Operations:**
+
 ```bash
 # Set secret (triggers redeploy)
 flyctl secrets set KEY=value --app <app-name>
@@ -197,11 +214,13 @@ flyctl secrets import --app <app-name> < .env.production
 ### 6. Rollback & Recovery
 
 **Supported commands:**
+
 - "rollback agents to previous version"
 - "show recent releases"
 - "restart web app"
 
 **Rollback Operations:**
+
 ```bash
 # List releases
 flyctl releases --app <app-name>
@@ -222,11 +241,13 @@ flyctl machine restart <machine-id> --app <app-name>
 ### 7. Database Operations
 
 **Supported commands:**
+
 - "connect to agents database"
 - "show database status"
 - "run migrations on production"
 
 **Database Operations:**
+
 ```bash
 # If using Fly Postgres
 flyctl postgres list
@@ -249,10 +270,12 @@ npx prisma migrate deploy
 ### 8. Troubleshooting
 
 **Supported commands:**
+
 - "ssh into agents"
 - "debug web deployment"
 
 **Debug Operations:**
+
 ```bash
 # SSH into running instance
 flyctl ssh console --app <app-name>
@@ -275,10 +298,12 @@ flyctl ssh console --app <app-name>
 When user says "agents", "web", determine the Fly.io app name:
 
 **First deployment:** App names are set during `flyctl launch`
+
 - Typical pattern: `zuko-agents`, `zuko-web`
 - Or user may choose custom names
 
 **To find existing apps:**
+
 ```bash
 flyctl apps list
 ```
@@ -312,6 +337,7 @@ done
 **Staging vs Production:**
 
 If user mentions environment, use appropriate fly.toml:
+
 - `fly.staging.toml` for staging
 - `fly.production.toml` (or `fly.toml`) for production
 
@@ -389,6 +415,7 @@ When performing operations:
 **User:** "Deploy agents to production"
 
 **Response flow:**
+
 1. Check git status
 2. Run `nx build @zuko/agents && nx run @zuko/agents:prune`
 3. Navigate to apps/agents
@@ -400,6 +427,7 @@ When performing operations:
 **User:** "Show me web logs"
 
 **Response flow:**
+
 1. Identify app name from `flyctl apps list`
 2. Run `flyctl logs --app zuko-web`
 3. Display logs
@@ -408,6 +436,7 @@ When performing operations:
 **User:** "What's the status of all apps?"
 
 **Response flow:**
+
 1. Run `flyctl apps list`
 2. For each app, run `flyctl status`
 3. Summarize: instances, regions, health status

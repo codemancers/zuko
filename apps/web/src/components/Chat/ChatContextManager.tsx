@@ -91,7 +91,7 @@ export const ChatContextManager = ({
 }: ChatContextManagerProps) => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [dialogType, setDialogType] = useState<'contact' | 'company' | null>(
-    null
+    null,
   );
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
@@ -113,12 +113,12 @@ export const ChatContextManager = ({
   // Convert to generic EntityItem[]
   const contactItems = useMemo(
     () => contactsData?.contacts.map(contactToEntityItem) || [],
-    [contactsData]
+    [contactsData],
   );
 
   const companyItems = useMemo(
     () => companiesData?.companies.map(companyToEntityItem) || [],
-    [companiesData]
+    [companiesData],
   );
 
   // Get current entities from sources
@@ -151,11 +151,11 @@ export const ChatContextManager = ({
             id: s.id,
             label: (s as any).title || '',
             metadata: (s as any).metadata,
-          })
+          }),
         );
       onContextChange?.(updated);
     },
-    [remove, sources, onContextChange]
+    [remove, sources, onContextChange],
   );
 
   // Handle dialog confirm
@@ -180,7 +180,7 @@ export const ChatContextManager = ({
             label: e.label,
             metadata:
               (sources.find((s) => s.id === e.id) as any)?.metadata || {},
-          })
+          }),
         ),
         ...selectedItems.map(entityItemToChatEntity),
       ];
@@ -190,7 +190,7 @@ export const ChatContextManager = ({
       setDialogType(null);
       setSelectedIds([]);
     },
-    [add, currentEntities, sources, onContextChange]
+    [add, currentEntities, sources, onContextChange],
   );
 
   // Get dialog items based on type
@@ -198,8 +198,8 @@ export const ChatContextManager = ({
     dialogType === 'contact'
       ? contactItems
       : dialogType === 'company'
-      ? companyItems
-      : [];
+        ? companyItems
+        : [];
 
   const isDialogLoading =
     dialogType === 'contact' ? contactsLoading : companiesLoading;

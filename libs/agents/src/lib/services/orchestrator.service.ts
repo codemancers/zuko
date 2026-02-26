@@ -103,7 +103,7 @@ export class OrchestratorService {
     private readonly prisma: PrismaService,
     private readonly contactsService: ContactsService,
     private readonly companiesService: CompaniesService,
-    private readonly activityService: ActivityService
+    private readonly activityService: ActivityService,
   ) {}
 
   private async ensureAgent(): Promise<DeepAgent> {
@@ -118,7 +118,7 @@ export class OrchestratorService {
     const secretaryDisabled = process.env.AGENTS_DISABLE_SECRETARY === 'true';
     if (secretaryDisabled) {
       this.logger.warn(
-        'AGENTS_DISABLE_SECRETARY=true; skipping secretary agent initialization.'
+        'AGENTS_DISABLE_SECRETARY=true; skipping secretary agent initialization.',
       );
     }
 
@@ -161,7 +161,7 @@ export class OrchestratorService {
 
     if (!process.env.OPENAI_API_KEY) {
       this.logger.warn(
-        'OPENAI_API_KEY is not configured; DeepAgent may fail to respond.'
+        'OPENAI_API_KEY is not configured; DeepAgent may fail to respond.',
       );
     }
 
@@ -247,7 +247,7 @@ export class OrchestratorService {
 
     await agent.invoke(
       { messages: [{ role: 'user', content: 'Initialize thread.' }] },
-      config
+      config,
     );
 
     let checkpointId: string | undefined;
@@ -269,7 +269,7 @@ export class OrchestratorService {
 
     const result = await agent.invoke(
       { messages: [{ role: 'user', content: prompt }] },
-      config
+      config,
     );
 
     const lastMessage = result.messages[result.messages.length - 1];
@@ -287,7 +287,7 @@ export class OrchestratorService {
 
   async generateReply(
     messages: BaseMessageLike[],
-    threadId: string
+    threadId: string,
   ): Promise<string> {
     const agent = await this.ensureAgent();
     const config = threadId
@@ -302,7 +302,7 @@ export class OrchestratorService {
 
   async *streamReply(
     messages: BaseMessageLike[],
-    threadId: string
+    threadId: string,
   ): AsyncGenerator<string> {
     const agent = await this.ensureAgent();
     const config = threadId
@@ -348,7 +348,7 @@ export class OrchestratorService {
   async *streamGraph(
     input: unknown,
     config?: Record<string, unknown>,
-    streamMode?: GraphStreamMode | GraphStreamMode[]
+    streamMode?: GraphStreamMode | GraphStreamMode[],
   ): AsyncGenerator<unknown> {
     const agent = await this.ensureAgent();
     const options: Record<string, unknown> = { ...(config ?? {}) };
@@ -357,7 +357,7 @@ export class OrchestratorService {
     }
     const stream = await agent.stream(
       input as unknown,
-      options as Record<string, unknown>
+      options as Record<string, unknown>,
     );
     for await (const chunk of stream as AsyncIterable<unknown>) {
       yield chunk;
@@ -397,8 +397,8 @@ export class OrchestratorService {
             msg.type === 'human'
               ? 'user'
               : msg.type === 'ai'
-              ? 'assistant'
-              : msg.type,
+                ? 'assistant'
+                : msg.type,
           content:
             typeof msg.content === 'string'
               ? msg.content
@@ -426,14 +426,14 @@ export class OrchestratorService {
           } catch (error) {
             this.logger.warn(
               `Failed to hydrate ${entity.type} ${entity.id}:`,
-              error
+              error,
             );
             return {
               ...entity,
               name: entity.type === 'contact' ? 'Contact' : entity.type === 'company' ? 'Company' : 'Deal',
             };
           }
-        })
+        }),
       );
 
       return {
@@ -443,7 +443,7 @@ export class OrchestratorService {
     } catch (error) {
       this.logger.error(
         `Failed to get messages for thread ${threadId}:`,
-        error
+        error,
       );
       return { messages: [], contextEntities: [] };
     }

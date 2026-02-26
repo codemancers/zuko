@@ -21,7 +21,7 @@ const DEFAULT_STREAM_MODES: GraphStreamMode[] = [
 const ALLOWED_STREAM_MODES = new Set<GraphStreamMode>(DEFAULT_STREAM_MODES);
 
 const normalizeStreamMode = (
-  value: GraphStreamMode | GraphStreamMode[] | undefined
+  value: GraphStreamMode | GraphStreamMode[] | undefined,
 ): GraphStreamMode | GraphStreamMode[] => {
   if (!value) {
     return DEFAULT_STREAM_MODES;
@@ -30,14 +30,14 @@ const normalizeStreamMode = (
     const filtered = value.filter((mode) => ALLOWED_STREAM_MODES.has(mode));
     if (filtered.length === 0) {
       throw new BadRequestException(
-        'stream_mode must include updates, messages, or custom'
+        'stream_mode must include updates, messages, or custom',
       );
     }
     return filtered;
   }
   if (!ALLOWED_STREAM_MODES.has(value)) {
     throw new BadRequestException(
-      'stream_mode must be updates, messages, or custom'
+      'stream_mode must be updates, messages, or custom',
     );
   }
   return value;
@@ -52,7 +52,7 @@ export class GraphController {
   @Post('stream')
   async stream(
     @Body() body: GraphStreamRequest,
-    @Res({ passthrough: true }) response?: Response
+    @Res({ passthrough: true }) response?: Response,
   ): Promise<void> {
     const input = body?.input;
     if (typeof input === 'undefined') {
@@ -69,7 +69,7 @@ export class GraphController {
       for await (const chunk of this.agentsService.streamGraph(
         input,
         body?.config,
-        streamMode
+        streamMode,
       )) {
         response?.write(`data: ${JSON.stringify(chunk)}\n\n`);
       }

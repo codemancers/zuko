@@ -13,7 +13,12 @@ export class DealDetailPage extends BasePage {
     this.editButton = page.getByRole('button', { name: /^Edit$/i });
     this.hideButton = page.getByRole('button', { name: /Hide/i });
     this.dealTitle = page.locator('h1');
-    this.dealStage = page.locator('span').filter({ hasText: /Prospecting|Qualification|Proposal|Negotiation|Closed/i }).first();
+    this.dealStage = page
+      .locator('span')
+      .filter({
+        hasText: /Prospecting|Qualification|Proposal|Negotiation|Closed/i,
+      })
+      .first();
     this.dealValue = page.getByText(/\$/);
   }
 
@@ -30,11 +35,11 @@ export class DealDetailPage extends BasePage {
   }
 
   async getDealValue(): Promise<string> {
-    return await this.dealValue.textContent() || '';
+    return (await this.dealValue.textContent()) || '';
   }
 
   async getDealStage(): Promise<string> {
-    return await this.dealStage.textContent() || '';
+    return (await this.dealStage.textContent()) || '';
   }
 
   async getActivityItems() {
@@ -45,11 +50,17 @@ export class DealDetailPage extends BasePage {
 
   async postComment(comment: string) {
     // Find comment input (textarea or input for comments)
-    const commentInput = this.page.locator('textarea[placeholder*="comment" i], input[placeholder*="comment" i]').first();
+    const commentInput = this.page
+      .locator(
+        'textarea[placeholder*="comment" i], input[placeholder*="comment" i]',
+      )
+      .first();
     await commentInput.fill(comment);
 
     // Find and click post/submit button
-    const postButton = this.page.getByRole('button', { name: /Post|Submit|Send/i });
+    const postButton = this.page.getByRole('button', {
+      name: /Post|Submit|Send/i,
+    });
     await postButton.click();
   }
 }

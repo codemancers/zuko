@@ -537,7 +537,7 @@ export class DealsRepository {
   async updateContact(
     dealId: number,
     contactId: number,
-    input: UpdateContactDealInput
+    input: UpdateContactDealInput,
   ) {
     // If setting as primary, remove primary flag from other contacts
     if (input.isPrimary) {
@@ -593,14 +593,14 @@ export class DealsRepository {
 
   async getDealsByCompany(
     companyId: number,
-    pagination: PaginationOptions = {}
+    pagination: PaginationOptions = {},
   ) {
     return this.findAll({ companyIds: [companyId] }, pagination);
   }
 
   async getDealsByContact(
     contactId: number,
-    pagination: PaginationOptions = {}
+    pagination: PaginationOptions = {},
   ) {
     return this.findAll({ contactIds: [contactId] }, pagination);
   }

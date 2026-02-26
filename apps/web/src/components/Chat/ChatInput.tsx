@@ -114,7 +114,7 @@ const ChatInputInner = ({
       setChatContext(entities);
       onContextChange?.(entities);
     },
-    [onContextChange]
+    [onContextChange],
   );
 
   // Sync mentions to referenced sources (so they appear as visual chips)
@@ -122,7 +122,7 @@ const ChatInputInner = ({
     // Create sets for efficient comparison
     const currentMentionIds = new Set(mentions.map((m) => `${m.type}-${m.id}`));
     const prevMentionIds = new Set(
-      prevMentionsRef.current.map((m) => `${m.type}-${m.id}`)
+      prevMentionsRef.current.map((m) => `${m.type}-${m.id}`),
     );
 
     // Add new mentions (those in current but not in previous)
@@ -136,7 +136,7 @@ const ChatInputInner = ({
         console.log(
           '[ChatInput] Adding mention to context:',
           sourceId,
-          mention.name
+          mention.name,
         );
         add({
           type: 'source-document',
@@ -268,7 +268,7 @@ export const ChatInput = ({
       setCurrentContext(entities);
       onContextChange?.(entities);
     },
-    [onContextChange]
+    [onContextChange],
   );
 
   // Initialize Web Speech API
@@ -289,7 +289,7 @@ export const ChatInput = ({
           // Trigger input event to update PromptInput state
           const nativeInputValueSetter = Object.getOwnPropertyDescriptor(
             window.HTMLTextAreaElement.prototype,
-            'value'
+            'value',
           )?.set;
           nativeInputValueSetter?.call(textareaRef.current, transcript);
           const event = new Event('input', { bubbles: true });
@@ -311,7 +311,7 @@ export const ChatInput = ({
   const handleVoiceInput = useCallback(() => {
     if (!recognitionRef.current) {
       alert(
-        'Speech recognition is not supported in your browser. Please use Chrome.'
+        'Speech recognition is not supported in your browser. Please use Chrome.',
       );
       return;
     }

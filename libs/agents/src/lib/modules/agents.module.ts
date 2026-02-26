@@ -6,15 +6,7 @@ import { SalesModule } from '@zuko/sales';
 
 @Module({
   imports: [SalesModule],
-  providers: [
-    AdminService,
-    OrchestratorService,
-    ConnectionsRepository,
-  ],
-  exports: [
-    AdminService,
-    OrchestratorService,
-    ConnectionsRepository,
-  ],
+  providers: [AdminService, OrchestratorService, ConnectionsRepository],
+  exports: [AdminService, OrchestratorService, ConnectionsRepository],
 })
 export class AgentsModule {}

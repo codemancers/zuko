@@ -8,7 +8,9 @@ test.describe('Authentication', () => {
     await expect(page.locator('h1')).toContainText('Sign in to Zuko');
 
     // Verify GitHub sign-in button is present
-    const githubButton = page.getByRole('button', { name: /continue with github/i });
+    const githubButton = page.getByRole('button', {
+      name: /continue with github/i,
+    });
     await expect(githubButton).toBeVisible();
 
     // Verify button has GitHub icon
@@ -16,14 +18,21 @@ test.describe('Authentication', () => {
     await expect(svg).toBeVisible();
   });
 
-  test('clicking GitHub sign-in button initiates OAuth flow', async ({ page, context }) => {
+  test('clicking GitHub sign-in button initiates OAuth flow', async ({
+    page,
+    context,
+  }) => {
     await page.goto('/sign-in');
 
     // Listen for navigation events
-    const navigationPromise = page.waitForNavigation({ timeout: 5000 }).catch(() => null);
+    const navigationPromise = page
+      .waitForNavigation({ timeout: 5000 })
+      .catch(() => null);
 
     // Click the GitHub sign-in button
-    const githubButton = page.getByRole('button', { name: /continue with github/i });
+    const githubButton = page.getByRole('button', {
+      name: /continue with github/i,
+    });
     await githubButton.click();
 
     // Wait for navigation to complete or timeout
@@ -35,7 +44,9 @@ test.describe('Authentication', () => {
     expect(url).not.toBe('about:blank');
   });
 
-  test('unauthenticated users cannot access protected routes', async ({ page }) => {
+  test('unauthenticated users cannot access protected routes', async ({
+    page,
+  }) => {
     // Try to access protected route directly
     await page.goto('/chat');
 
@@ -63,7 +74,9 @@ test.describe('Authentication', () => {
     await expect(page.locator('h1')).toContainText('Sign in to Zuko');
   });
 
-  test('unauthenticated users cannot access specific chat', async ({ page }) => {
+  test('unauthenticated users cannot access specific chat', async ({
+    page,
+  }) => {
     // Try to access a specific chat directly
     await page.goto('/chat/123');
 

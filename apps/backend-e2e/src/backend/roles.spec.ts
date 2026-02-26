@@ -21,7 +21,10 @@ describe('Role-Based Access Control', () => {
       data: { role: 'admin' },
     });
 
-    accountantUser = await createTestUser('accountant-test@example.com', 'Accountant User');
+    accountantUser = await createTestUser(
+      'accountant-test@example.com',
+      'Accountant User',
+    );
     await prisma.user.update({
       where: { id: accountantUser.id },
       data: { role: 'accountant' },

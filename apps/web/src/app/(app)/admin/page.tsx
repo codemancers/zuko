@@ -18,7 +18,8 @@ export default function AdminPage() {
     >
       <Heading>Admin Dashboard</Heading>
       <Text className="mt-2 text-zinc-600 dark:text-zinc-400">
-        Welcome to the admin area. Only users with the 'admin' role can see this.
+        Welcome to the admin area. Only users with the 'admin' role can see
+        this.
       </Text>
 
       <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">

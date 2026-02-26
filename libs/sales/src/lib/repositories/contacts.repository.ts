@@ -1,7 +1,7 @@
-import { Injectable } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
-import type { PrismaService } from '../modules/prisma.types';
-import type { PaginationOptions } from './types';
+import { Injectable } from "@nestjs/common";
+import { Prisma } from "@prisma/client";
+import type { PrismaService } from "../modules/prisma.types";
+import type { PaginationOptions } from "./types";
 
 export interface CreateContactInput {
   name: string;
@@ -42,7 +42,9 @@ export class ContactsRepository {
         owners: {
           create: ownerIds.map((userId) => ({
             userId,
-            isPrimary: primaryOwnerId ? userId === primaryOwnerId : userId === ownerIds[0],
+            isPrimary: primaryOwnerId
+              ? userId === primaryOwnerId
+              : userId === ownerIds[0],
           })),
         },
       },
@@ -109,14 +111,19 @@ export class ContactsRepository {
     return this.update(id, { isHidden: false });
   }
 
-  async findAll(filters: ContactFilters = {}, pagination: PaginationOptions = {}) {
+  async findAll(
+    filters: ContactFilters = {},
+    pagination: PaginationOptions = {},
+  ) {
     const { isHidden = false, ownerIds, search, contactIds } = filters;
     const { page = 1, limit = 50 } = pagination;
     const skip = (page - 1) * limit;
 
     const where: Prisma.ContactWhereInput = {
       isHidden,
-      ...(contactIds && contactIds.length > 0 ? { id: { in: contactIds } } : {}),
+      ...(contactIds && contactIds.length > 0
+        ? { id: { in: contactIds } }
+        : {}),
       ...(ownerIds && ownerIds.length > 0
         ? {
             owners: {
@@ -131,10 +138,10 @@ export class ContactsRepository {
       ...(search
         ? {
             OR: [
-              { name: { contains: search, mode: 'insensitive' } },
-              { email: { contains: search, mode: 'insensitive' } },
-              { phone: { contains: search, mode: 'insensitive' } },
-              { linkedinId: { contains: search, mode: 'insensitive' } },
+              { name: { contains: search, mode: "insensitive" } },
+              { email: { contains: search, mode: "insensitive" } },
+              { phone: { contains: search, mode: "insensitive" } },
+              { linkedinId: { contains: search, mode: "insensitive" } },
             ],
           }
         : {}),
@@ -145,7 +152,7 @@ export class ContactsRepository {
         where,
         skip,
         take: limit,
-        orderBy: { createdAt: 'desc' },
+        orderBy: { createdAt: "desc" },
         include: {
           owners: {
             include: {

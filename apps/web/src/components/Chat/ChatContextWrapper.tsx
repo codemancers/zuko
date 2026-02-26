@@ -46,7 +46,7 @@ export const ChatContextProvider = ({
     if (initialContext.length > 0 && !hasInjectedRef.current) {
       console.log(
         '[ChatContextProvider] Injecting initial context:',
-        initialContext
+        initialContext,
       );
       hasInjectedRef.current = true;
 
@@ -56,7 +56,7 @@ export const ChatContextProvider = ({
         console.log(
           '[ChatContextProvider] Adding entity:',
           sourceId,
-          entity.name
+          entity.name,
         );
         add({
           type: 'source-document',
@@ -87,7 +87,7 @@ export const useChatContextManager = () => {
   const context = useContext(ChatContextManagerContext);
   if (!context) {
     throw new Error(
-      'useChatContextManager must be used within ChatContextProvider'
+      'useChatContextManager must be used within ChatContextProvider',
     );
   }
   return context;
