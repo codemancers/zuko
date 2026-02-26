@@ -114,11 +114,22 @@ export default defineConfig({
       testIgnore: [
         '**/auth.setup.spec.ts',
         '**/contacts.spec.ts',
+        '**/companies.spec.ts',
         '**/contact-activities.spec.ts',
       ],
       dependencies: ['auth setup'],
     },
-    // 4. Contact activity timeline: runs after contacts (uses contact created there)
+    // 4. Companies: runs after contacts
+    {
+      name: 'companies',
+      use: {
+        ...devices['Desktop Chrome'],
+        storageState: '.auth/user.json',
+      },
+      testMatch: '**/companies.spec.ts',
+      dependencies: ['contacts'],
+    },
+    // 5. Contact activity timeline: runs after contacts
     {
       name: 'contact-activities',
       use: {
