@@ -88,40 +88,21 @@ export default defineConfig({
     },
   ],
   projects: [
-    // 1. Auth setup (Gather-style): real sign-up, save storage state to .auth/user.json
+    // 1. Auth setup: sign up once, save .auth/user.json
     {
       name: 'auth setup',
       use: { ...devices['Desktop Chrome'] },
       testMatch: '**/auth.setup.spec.ts',
     },
-    // 2. Auth specs: use saved storage state so cookies are sent (no cookie injection)
+    // 2. All other tests: use saved session (auth, chat, companies, etc. use test.use() when they need unauthenticated)
     {
-      name: 'auth',
+      name: 'e2e',
       use: {
         ...devices['Desktop Chrome'],
         storageState: '.auth/user.json',
       },
-      testMatch: [
-        '**/auth.spec.ts',
-        '**/auth-whitelist.spec.ts',
-        '**/auth-redirect.spec.ts',
-      ],
+      testIgnore: '**/auth.setup.spec.ts',
       dependencies: ['auth setup'],
-    },
-    // 3. All other tests run after auth (use saved session so chat etc. are authenticated)
-    {
-      name: 'chromium',
-      use: {
-        ...devices['Desktop Chrome'],
-        storageState: '.auth/user.json',
-      },
-      testIgnore: [
-        '**/auth.spec.ts',
-        '**/auth-whitelist.spec.ts',
-        '**/auth-redirect.spec.ts',
-        '**/auth.setup.spec.ts',
-      ],
-      dependencies: ['auth'],
     },
   ],
 });
