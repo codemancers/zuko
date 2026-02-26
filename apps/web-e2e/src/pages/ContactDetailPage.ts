@@ -29,10 +29,16 @@ export class ContactDetailPage extends BasePage {
   }
 
   /**
-   * Navigate to a contact detail page
+   * Navigate to a contact detail page.
+   * Skips navigation if already on this contact to avoid "interrupted by about:blank" when the page is reused.
    */
   async goto(contactId: number | string) {
-    await super.goto(`/contacts/${contactId}`);
+    const path = `/contacts/${contactId}`;
+    if (this.page.url().includes(path)) {
+      await this.page.waitForLoadState('networkidle').catch(() => {});
+      return;
+    }
+    await this.page.goto(path, { waitUntil: 'domcontentloaded' });
     await this.page.waitForLoadState('networkidle');
   }
 

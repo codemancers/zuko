@@ -94,15 +94,39 @@ export default defineConfig({
       use: { ...devices['Desktop Chrome'] },
       testMatch: '**/auth.setup.spec.ts',
     },
-    // 2. All other tests: use saved session (auth, chat, companies, etc. use test.use() when they need unauthenticated)
+    // 2. Contacts: runs after auth, uses saved session; creates contact for contact-activities
+    {
+      name: 'contacts',
+      use: {
+        ...devices['Desktop Chrome'],
+        storageState: '.auth/user.json',
+      },
+      testMatch: '**/contacts.spec.ts',
+      dependencies: ['auth setup'],
+    },
+    // 3. All other tests (excluding auth, contacts, contact-activities)
     {
       name: 'e2e',
       use: {
         ...devices['Desktop Chrome'],
         storageState: '.auth/user.json',
       },
-      testIgnore: '**/auth.setup.spec.ts',
+      testIgnore: [
+        '**/auth.setup.spec.ts',
+        '**/contacts.spec.ts',
+        '**/contact-activities.spec.ts',
+      ],
       dependencies: ['auth setup'],
+    },
+    // 4. Contact activity timeline: runs after contacts (uses contact created there)
+    {
+      name: 'contact-activities',
+      use: {
+        ...devices['Desktop Chrome'],
+        storageState: '.auth/user.json',
+      },
+      testMatch: '**/contact-activities.spec.ts',
+      dependencies: ['contacts'],
     },
   ],
 });
