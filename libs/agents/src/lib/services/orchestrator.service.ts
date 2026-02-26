@@ -417,7 +417,10 @@ export class OrchestratorService {
             }
             if (entity.type === 'company' && this.companiesService) {
               const company = await this.companiesService.findById(entity.id);
-              return { ...entity, name: (company as any).companyName ?? 'Company' };
+              return {
+                ...entity,
+                name: (company as any).companyName ?? 'Company',
+              };
             }
             if (entity.type === 'deal') {
               return { ...entity, name: `Deal #${entity.id}` };
@@ -430,7 +433,12 @@ export class OrchestratorService {
             );
             return {
               ...entity,
-              name: entity.type === 'contact' ? 'Contact' : entity.type === 'company' ? 'Company' : 'Deal',
+              name:
+                entity.type === 'contact'
+                  ? 'Contact'
+                  : entity.type === 'company'
+                    ? 'Company'
+                    : 'Deal',
             };
           }
         }),

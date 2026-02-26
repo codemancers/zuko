@@ -134,7 +134,12 @@ Supports:
       schema: z.object({
         filters: z
           .object({
-            contactIds: z.array(z.number()).optional().describe('Fetch only these contact IDs (e.g. when context has multiple contacts)'),
+            contactIds: z
+              .array(z.number())
+              .optional()
+              .describe(
+                'Fetch only these contact IDs (e.g. when context has multiple contacts)',
+              ),
             ownerId: z.number().optional().describe('Filter by owner user ID'),
             createdAfter: z
               .string()

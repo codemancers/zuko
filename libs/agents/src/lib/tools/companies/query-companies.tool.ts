@@ -114,7 +114,7 @@ Supports:
               .array(z.number())
               .optional()
               .describe(
-                'Fetch only these company IDs (e.g. when context has multiple companies)'
+                'Fetch only these company IDs (e.g. when context has multiple companies)',
               ),
             ownerId: z.number().optional().describe('Filter by owner user ID'),
             hasWebsite: z

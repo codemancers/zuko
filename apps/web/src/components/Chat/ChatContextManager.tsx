@@ -243,7 +243,9 @@ export const ChatContextDisplay = () => {
           );
         const rawLabel = (source as any).title ?? '';
         const label =
-          typeof rawLabel === 'string' && rawLabel && !rawLabel.includes('undefined')
+          typeof rawLabel === 'string' &&
+          rawLabel &&
+          !rawLabel.includes('undefined')
             ? rawLabel
             : type === 'contact'
               ? 'Contact'

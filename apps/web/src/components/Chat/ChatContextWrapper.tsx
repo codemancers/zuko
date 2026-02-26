@@ -62,7 +62,8 @@ export const ChatContextProvider = ({
           type: 'source-document',
           sourceId,
           mediaType: 'application/json',
-          title: entity.name ?? (entity.type === 'contact' ? 'Contact' : 'Company'),
+          title:
+            entity.name ?? (entity.type === 'contact' ? 'Contact' : 'Company'),
           metadata: { type: entity.type, entityId: entity.id },
         } as any);
       });

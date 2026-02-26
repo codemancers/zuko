@@ -13,7 +13,7 @@ type ToolRunConfig = {
 };
 
 function getContextEntities(
-  config: unknown
+  config: unknown,
 ): ContextEntityReference[] | undefined {
   const c = config as ToolRunConfig | undefined;
   return c?.state?.contextEntities ?? c?.configurable?.contextEntities;
@@ -40,7 +40,7 @@ export function createGetCompanyDetailsTool(
           message: `Multiple companies in context (${
             contextCompanies.length
           }). Use query_companies with filters.companyIds: [${ids.join(
-            ', '
+            ', ',
           )}] to fetch all in one call, or get_company_details with companyId for each.`,
           companyIds: ids,
         };

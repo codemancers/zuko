@@ -13,7 +13,7 @@ type ToolRunConfig = {
 };
 
 function getContextEntities(
-  config: unknown
+  config: unknown,
 ): ContextEntityReference[] | undefined {
   const c = config as ToolRunConfig | undefined;
   return c?.state?.contextEntities ?? c?.configurable?.contextEntities;
@@ -28,7 +28,8 @@ export function createGetContactDetailsTool(contactsService: ContactsService) {
   return tool(
     async (input, config?: unknown) => {
       const contextEntities = getContextEntities(config);
-      const contextContacts = contextEntities?.filter((e) => e.type === 'contact') ?? [];
+      const contextContacts =
+        contextEntities?.filter((e) => e.type === 'contact') ?? [];
 
       if (contextContacts.length > 1) {
         const ids = contextContacts.map((c) => c.id);
@@ -39,8 +40,10 @@ export function createGetContactDetailsTool(contactsService: ContactsService) {
         };
       }
 
-      const contactFromContext = contextContacts.length === 1 ? contextContacts[0] : undefined;
-      const contactId = contactFromContext != null ? contactFromContext.id : input.contactId;
+      const contactFromContext =
+        contextContacts.length === 1 ? contextContacts[0] : undefined;
+      const contactId =
+        contactFromContext != null ? contactFromContext.id : input.contactId;
 
       try {
         const contact = await contactsService.findById(contactId);

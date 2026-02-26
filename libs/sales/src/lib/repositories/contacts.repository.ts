@@ -1,7 +1,7 @@
-import { Injectable } from "@nestjs/common";
-import { Prisma } from "@prisma/client";
-import type { PrismaService } from "../modules/prisma.types";
-import type { PaginationOptions } from "./types";
+import { Injectable } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
+import type { PrismaService } from '../modules/prisma.types';
+import type { PaginationOptions } from './types';
 
 export interface CreateContactInput {
   name: string;
@@ -138,10 +138,10 @@ export class ContactsRepository {
       ...(search
         ? {
             OR: [
-              { name: { contains: search, mode: "insensitive" } },
-              { email: { contains: search, mode: "insensitive" } },
-              { phone: { contains: search, mode: "insensitive" } },
-              { linkedinId: { contains: search, mode: "insensitive" } },
+              { name: { contains: search, mode: 'insensitive' } },
+              { email: { contains: search, mode: 'insensitive' } },
+              { phone: { contains: search, mode: 'insensitive' } },
+              { linkedinId: { contains: search, mode: 'insensitive' } },
             ],
           }
         : {}),
@@ -152,7 +152,7 @@ export class ContactsRepository {
         where,
         skip,
         take: limit,
-        orderBy: { createdAt: "desc" },
+        orderBy: { createdAt: 'desc' },
         include: {
           owners: {
             include: {

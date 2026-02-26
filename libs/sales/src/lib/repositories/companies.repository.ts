@@ -156,7 +156,9 @@ export class CompaniesRepository {
 
     const where: Prisma.SalesCompanyWhereInput = {
       isHidden,
-      ...(companyIds && companyIds.length > 0 ? { id: { in: companyIds } } : {}),
+      ...(companyIds && companyIds.length > 0
+        ? { id: { in: companyIds } }
+        : {}),
       ...(ownerIds && ownerIds.length > 0
         ? {
             owners: {
