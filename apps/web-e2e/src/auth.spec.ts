@@ -1,5 +1,12 @@
 import { test, expect } from '@playwright/test';
 
+/**
+ * These tests require an unauthenticated context (sign-in page and protected
+ * route redirects). The auth project loads storageState; override with empty
+ * state so we see behavior as a logged-out user.
+ */
+test.use({ storageState: { cookies: [], origins: [] } });
+
 test.describe('Authentication', () => {
   test('sign-in page displays correctly', async ({ page }) => {
     await page.goto('/sign-in');
