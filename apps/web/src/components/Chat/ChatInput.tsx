@@ -171,6 +171,8 @@ const ChatInputInner = ({
       onContextChange={handleContextChange}
       initialContext={initialContext}
     >
+      {/* PromptInput reads form text from FormData key "message"; MentionsInput is not a form field, so we sync value here */}
+      <input type="hidden" name="message" value={inputValue} />
       <ChatInputWithMentions
         placeholder={placeholder}
         ref={textareaRef as any}
@@ -337,11 +339,13 @@ export const ChatInput = ({
     }
 
     try {
-      // currentContext already includes mentions (they're added as chips via useEffect in ChatInputInner)
-      const contextEntities = currentContext.map((entity) => ({
-        type: entity.type,
-        id: entity.id,
-      }));
+      // Include both dialog-added context and @mentions (mentions are not in currentContext, so merge at submit)
+      const fromContext = currentContext.map((e) => ({ type: e.type, id: e.id }));
+      const fromMentions = mentions.map((m) => ({ type: m.type, id: m.id }));
+      const seen = new Set<string>();
+      const contextEntities = [...fromContext, ...fromMentions].filter(
+        (e) => (seen.has(`${e.type}-${e.id}`) ? false : seen.add(`${e.type}-${e.id}`))
+      );
 
       // Call parent's onSubmit with cleaned text and context
       await onSubmit({

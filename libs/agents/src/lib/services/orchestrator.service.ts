@@ -130,18 +130,23 @@ export class OrchestratorService {
         '',
         'Context available in state:',
         '- userId: The authenticated user ID (use this when calling leave_comment)',
-        '- contextEntities: Array of entity references (contacts, companies, deals) added to conversation',
+        '- contextEntities: Array of entity references (contacts, companies, deals) the user added to the conversation (e.g. via the + button)',
+        '',
+        'IMPORTANT - When the user asks for company or contact details:',
+        '- If contextEntities contains companies or contacts, ALWAYS call get_company_details, get_contact_details, query_companies, or query_contacts. Do NOT ask the user for an ID.',
+        '- One entity in context: use get_company_details or get_contact_details (you can omit the ID; the tool uses context).',
+        '- Multiple entities in context: use query_companies with filters.companyIds or query_contacts with filters.contactIds.',
         '',
         'Tools available:',
-        '- get_contact_details: Retrieve full contact information by ID',
+        '- get_contact_details: Full contact info by ID (or from context if one contact)',
         '- get_contact_owner: Get the owner(s) of a contact',
-        '- get_company_details: Retrieve company information by ID',
-        '- leave_comment: Add a comment to a contact, company, or deal (MUST pass userId from state)',
+        '- get_company_details: Company info by ID (or from context if one company)',
+        '- leave_comment: Add a comment (MUST pass userId from state)',
         '',
-        'Query tools for analytical questions:',
-        '- query_contacts: Filter and aggregate contacts with flexible criteria',
-        '- query_companies: Filter and aggregate companies',
-        '- query_activities: Search activity timeline (comments, updates, etc.)',
+        'Query tools:',
+        '- query_contacts: Filter/aggregate contacts; use filters.contactIds for multiple IDs from context',
+        '- query_companies: Filter/aggregate companies; use filters.companyIds for multiple IDs from context',
+        '- query_activities: Search activity timeline',
         '',
         'Delegation:',
         '- Delegate requests about bringing medicines, coffee, or breakfast to the admin agent.',
@@ -401,30 +406,32 @@ export class OrchestratorService {
         }))
         .filter((msg) => msg.content && msg.content.trim().length > 0);
 
-      // Hydrate contextEntities with names from database
+      // Hydrate contextEntities with names from database (Contact model has .name, not firstName/lastName)
       const hydratedEntities = await Promise.all(
         contextEntities.map(async (entity) => {
           try {
             if (entity.type === 'contact' && this.contactsService) {
-              const contact = await this.contactsService.findOne(entity.id);
-              return {
-                ...entity,
-                name: `${contact.firstName} ${contact.lastName}`.trim(),
-              };
-            } else if (entity.type === 'company' && this.companiesService) {
+              const contact = await this.contactsService.findById(entity.id);
+              const name = (contact as any).name ?? 'Contact';
+              return { ...entity, name };
+            }
+            if (entity.type === 'company' && this.companiesService) {
               const company = await this.companiesService.findById(entity.id);
-              return { ...entity, name: company.companyName };
-            } else if (entity.type === 'deal') {
-              // TODO: Add deal service when available
+              return { ...entity, name: (company as any).companyName ?? 'Company' };
+            }
+            if (entity.type === 'deal') {
               return { ...entity, name: `Deal #${entity.id}` };
             }
-            return { ...entity, name: `${entity.type} #${entity.id}` };
+            return { ...entity, name: 'Contact' };
           } catch (error) {
             this.logger.warn(
               `Failed to hydrate ${entity.type} ${entity.id}:`,
               error
             );
-            return { ...entity, name: `${entity.type} #${entity.id}` };
+            return {
+              ...entity,
+              name: entity.type === 'contact' ? 'Contact' : entity.type === 'company' ? 'Company' : 'Deal',
+            };
           }
         })
       );

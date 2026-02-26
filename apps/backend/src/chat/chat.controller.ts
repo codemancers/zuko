@@ -84,7 +84,12 @@ export class ChatController {
   @Post('chat')
   @UseGuards(AuthGuard)
   async chat(
-    @Body() body: { messages: UIMessage[]; chatId: string | number },
+    @Body()
+    body: {
+      messages: UIMessage[];
+      chatId: string | number;
+      contextEntities?: ContextEntityReference[];
+    },
     @Req() req,
     @Res({ passthrough: true }) response: Response
   ) {
@@ -93,11 +98,13 @@ export class ChatController {
       JSON.stringify(body, null, 2)
     );
 
-    // Extract contextEntities from last message metadata (AI SDK standard pattern)
     const { messages, chatId: rawChatId } = body;
     const lastMessage = messages[messages.length - 1];
+    // Prefer last message metadata; fallback to top-level body (AI SDK useChat may send body.contextEntities)
     const contextEntities =
-      (lastMessage?.metadata as any)?.contextEntities || [];
+      (lastMessage?.metadata as any)?.contextEntities ??
+      body.contextEntities ??
+      [];
 
     const chatId =
       typeof rawChatId === 'string' ? parseInt(rawChatId, 10) : rawChatId;
@@ -173,7 +180,11 @@ export class ChatController {
     const agent = await (this.agentsService as any).ensureAgent();
     const config = {
       streamMode: ['values', 'messages'] as const,
-      configurable: { thread_id: threadId },
+      configurable: {
+        thread_id: threadId,
+        // So tools can read context (e.g. get_contact_details uses it when there is one contact in context)
+        contextEntities,
+      },
     };
 
     // Stream from the LangGraph agent

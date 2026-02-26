@@ -241,12 +241,19 @@ export const ChatContextDisplay = () => {
           ) : (
             <BuildingIcon className="size-3.5" />
           );
+        const rawLabel = (source as any).title ?? '';
+        const label =
+          typeof rawLabel === 'string' && rawLabel && !rawLabel.includes('undefined')
+            ? rawLabel
+            : type === 'contact'
+              ? 'Contact'
+              : 'Company';
 
         return (
           <ContextChip
             key={source.id}
             id={source.id}
-            label={(source as any).title || ''}
+            label={label}
             icon={icon}
             color={color}
             onRemove={(id) => remove(id)}

@@ -26,6 +26,7 @@ export interface ContactFilters {
   isHidden?: boolean;
   ownerIds?: number[];
   search?: string;
+  contactIds?: number[];
 }
 
 @Injectable()
@@ -109,12 +110,13 @@ export class ContactsRepository {
   }
 
   async findAll(filters: ContactFilters = {}, pagination: PaginationOptions = {}) {
-    const { isHidden = false, ownerIds, search } = filters;
+    const { isHidden = false, ownerIds, search, contactIds } = filters;
     const { page = 1, limit = 50 } = pagination;
     const skip = (page - 1) * limit;
 
     const where: Prisma.ContactWhereInput = {
       isHidden,
+      ...(contactIds && contactIds.length > 0 ? { id: { in: contactIds } } : {}),
       ...(ownerIds && ownerIds.length > 0
         ? {
             owners: {

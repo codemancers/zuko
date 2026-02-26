@@ -27,6 +27,10 @@ export function createQueryContactsTool(contactsService: ContactsService) {
           contactFilters.search = filters.search;
         }
 
+        if (filters.contactIds?.length) {
+          contactFilters.contactIds = filters.contactIds;
+        }
+
         // Fetch contacts
         const result = await contactsService.findAll(contactFilters, paginationOptions);
         let contacts = result.contacts;
@@ -110,20 +114,20 @@ export function createQueryContactsTool(contactsService: ContactsService) {
       name: 'query_contacts',
       description: `Query contacts with flexible filters and aggregations.
 
-Use this for analytical questions like:
-- "How many contacts were created last month?"
-- "Show me contacts owned by Alice"
-- "List contacts created this year"
-- "How many contacts have email addresses?"
+Use this for:
+- Multiple contacts from context: pass filters.contactIds with the list of IDs (e.g. [6, 9]) to fetch several contacts in one call.
+- Analytical questions: "How many contacts?", "Contacts owned by X", "List contacts created this year", etc.
 
 Supports:
-- Filtering by owner, date range, email presence
+- filters.contactIds: array of contact IDs (use when context has multiple contacts)
+- Filtering by owner, date range, email presence, search
 - Aggregation: count or list
 - Group by: owner
 - Limit results (default 100, max 1000)`,
       schema: z.object({
         filters: z
           .object({
+            contactIds: z.array(z.number()).optional().describe('Fetch only these contact IDs (e.g. when context has multiple contacts)'),
             ownerId: z.number().optional().describe('Filter by owner user ID'),
             createdAfter: z.string().optional().describe('Filter by creation date (ISO 8601 format, e.g., "2026-01-01")'),
             createdBefore: z.string().optional().describe('Filter by creation date (ISO 8601 format)'),
