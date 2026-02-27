@@ -32,7 +32,7 @@ export default defineConfig({
   /* No retries — each test creates isolated state, failures should be real */
   retries: process.env.CI ? 1 : 0,
   /* Run tests sequentially: each test creates its own user via testUtils */
-  workers: 1,
+  workers: 2,
   reporter: [
     ["html", { outputFolder: "test-output/playwright/report" }],
     ["json", { outputFile: "test-output/playwright/results.json" }],
