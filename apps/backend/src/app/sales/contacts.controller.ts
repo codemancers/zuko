@@ -72,7 +72,7 @@ export class ContactsController {
         ownerIds: dto.ownerIds,
         primaryOwnerId: dto.primaryOwnerId,
         hasNotes: !!dto.notes,
-      })}`
+      })}`,
     );
 
     try {
@@ -114,7 +114,7 @@ export class ContactsController {
   @Patch(':id')
   async update(
     @Param('id', ParseIntPipe) id: number,
-    @Body() dto: UpdateContactDto
+    @Body() dto: UpdateContactDto,
   ) {
     return this.contactsService.update(id, dto);
   }
@@ -133,7 +133,7 @@ export class ContactsController {
   @Post(':id/owners')
   async addOwner(
     @Param('id', ParseIntPipe) id: number,
-    @Body() dto: AddOwnerDto
+    @Body() dto: AddOwnerDto,
   ) {
     return this.contactsService.addOwner(id, dto.userId, dto.isPrimary);
   }
@@ -142,7 +142,7 @@ export class ContactsController {
   @HttpCode(HttpStatus.NO_CONTENT)
   async removeOwner(
     @Param('id', ParseIntPipe) id: number,
-    @Param('userId', ParseIntPipe) userId: number
+    @Param('userId', ParseIntPipe) userId: number,
   ) {
     await this.contactsService.removeOwner(id, userId);
   }
@@ -150,7 +150,7 @@ export class ContactsController {
   @Post(':id/owners/:userId/set-primary')
   async setPrimaryOwner(
     @Param('id', ParseIntPipe) id: number,
-    @Param('userId', ParseIntPipe) userId: number
+    @Param('userId', ParseIntPipe) userId: number,
   ) {
     await this.contactsService.setPrimaryOwner(id, userId);
     return { success: true };
@@ -159,7 +159,7 @@ export class ContactsController {
   @Get('user/:userId')
   async getContactsByUser(
     @Param('userId', ParseIntPipe) userId: number,
-    @Query() query: ContactListQueryDto
+    @Query() query: ContactListQueryDto,
   ) {
     const pagination = {
       page: query.page ? Number(query.page) : 1,

@@ -13,7 +13,7 @@ type ToolRunConfig = {
 };
 
 function getContextEntities(
-  config: unknown
+  config: unknown,
 ): ContextEntityReference[] | undefined {
   const c = config as ToolRunConfig | undefined;
   return c?.state?.contextEntities ?? c?.configurable?.contextEntities;
@@ -25,7 +25,7 @@ function getContextEntities(
  * a single company in context is used so the model does not need to guess the ID.
  */
 export function createGetCompanyDetailsTool(
-  companiesService: CompaniesService
+  companiesService: CompaniesService,
 ) {
   return tool(
     async (input, config?: unknown) => {
@@ -40,7 +40,7 @@ export function createGetCompanyDetailsTool(
           message: `Multiple companies in context (${
             contextCompanies.length
           }). Use query_companies with filters.companyIds: [${ids.join(
-            ', '
+            ', ',
           )}] to fetch all in one call, or get_company_details with companyId for each.`,
           companyIds: ids,
         };
@@ -89,6 +89,6 @@ Returns: Company object with id, companyName, website, linkedinUrl, summary, con
       schema: z.object({
         companyId: z.number().describe('The company ID to retrieve').optional(),
       }),
-    }
+    },
   );
 }

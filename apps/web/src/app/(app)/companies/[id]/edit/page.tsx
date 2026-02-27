@@ -1,12 +1,12 @@
 'use client';
 
-import CompanyForm from "@/components/Companies/CompanyForm";
-import { Heading, Divider } from "@zuko/ui-kit";
-import { useQuery } from "@tanstack/react-query";
-import { getCompany } from "@/server/query-options";
-import { authClient } from "@/lib/auth-client";
-import { useRouter } from "next/navigation";
-import { use, useEffect } from "react";
+import CompanyForm from '@/components/Companies/CompanyForm';
+import { Heading, Divider } from '@zuko/ui-kit';
+import { useQuery } from '@tanstack/react-query';
+import { getCompany } from '@/server/query-options';
+import { authClient } from '@/lib/auth-client';
+import { useRouter } from 'next/navigation';
+import { use, useEffect } from 'react';
 
 interface EditCompanyPageProps {
   params: Promise<{ id: string }>;
@@ -20,7 +20,7 @@ const EditCompanyPage = ({ params }: EditCompanyPageProps) => {
 
   useEffect(() => {
     if (!session.isPending && !session.data) {
-      router.push("/sign-in");
+      router.push('/sign-in');
     }
   }, [session.isPending, session.data, router]);
 
@@ -32,7 +32,9 @@ const EditCompanyPage = ({ params }: EditCompanyPageProps) => {
   if (session.isPending || !session.data || companyLoading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <div className="text-sm text-zinc-600 dark:text-zinc-400">Loading...</div>
+        <div className="text-sm text-zinc-600 dark:text-zinc-400">
+          Loading...
+        </div>
       </div>
     );
   }
@@ -40,7 +42,9 @@ const EditCompanyPage = ({ params }: EditCompanyPageProps) => {
   if (!company) {
     return (
       <div className="flex items-center justify-center py-12">
-        <div className="text-sm text-zinc-600 dark:text-zinc-400">Company not found</div>
+        <div className="text-sm text-zinc-600 dark:text-zinc-400">
+          Company not found
+        </div>
       </div>
     );
   }

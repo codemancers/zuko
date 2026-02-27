@@ -24,7 +24,10 @@ export class BasePage {
   /**
    * Wait for a specific URL pattern
    */
-  async waitForUrl(urlPattern: string | RegExp, options?: { timeout?: number }) {
+  async waitForUrl(
+    urlPattern: string | RegExp,
+    options?: { timeout?: number },
+  ) {
     await this.page.waitForURL(urlPattern, options);
   }
 

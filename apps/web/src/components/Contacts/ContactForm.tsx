@@ -220,8 +220,8 @@ export default function ContactForm({
           {isLoading
             ? 'Saving...'
             : mode === 'create'
-            ? 'Create Contact'
-            : 'Save Changes'}
+              ? 'Create Contact'
+              : 'Save Changes'}
         </Button>
         <Button type="button" plain onClick={handleCancel} disabled={isLoading}>
           Cancel

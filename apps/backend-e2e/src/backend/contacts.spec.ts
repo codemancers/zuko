@@ -144,7 +144,7 @@ describe('Contacts API', () => {
       } catch (error: any) {
         expect(error.response.status).toBe(400);
         expect(error.response.data.message).toContain(
-          'At least one of email, phone, or linkedinId must be provided'
+          'At least one of email, phone, or linkedinId must be provided',
         );
       }
     });
@@ -166,7 +166,7 @@ describe('Contacts API', () => {
       } catch (error: any) {
         expect(error.response.status).toBe(400);
         expect(error.response.data.message).toContain(
-          'Phone number must be in E.164 format'
+          'Phone number must be in E.164 format',
         );
       }
     });
@@ -188,7 +188,7 @@ describe('Contacts API', () => {
       } catch (error: any) {
         expect(error.response.status).toBe(400);
         expect(error.response.data.message).toContain(
-          'At least one owner must be assigned'
+          'At least one owner must be assigned',
         );
       }
     });
@@ -218,7 +218,7 @@ describe('Contacts API', () => {
       } catch (error: any) {
         expect(error.response.status).toBe(400);
         expect(error.response.data.message).toContain(
-          'A contact with email duplicate@example.com already exists'
+          'A contact with email duplicate@example.com already exists',
         );
       }
     });
@@ -263,8 +263,8 @@ describe('Contacts API', () => {
             headers: {
               Cookie: authCookie,
             },
-          })
-        )
+          }),
+        ),
       );
 
       results.forEach((res, index) => {
@@ -298,10 +298,13 @@ describe('Contacts API', () => {
       });
 
       expect(res.status).toBe(200);
-      expect(res.data.contacts.every((c: any) =>
-        c.name.toLowerCase().includes('john') ||
-        c.email?.toLowerCase().includes('john')
-      )).toBe(true);
+      expect(
+        res.data.contacts.every(
+          (c: any) =>
+            c.name.toLowerCase().includes('john') ||
+            c.email?.toLowerCase().includes('john'),
+        ),
+      ).toBe(true);
     });
 
     it('should paginate contacts', async () => {
@@ -332,7 +335,7 @@ describe('Contacts API', () => {
           headers: {
             Cookie: authCookie,
           },
-        }
+        },
       );
 
       const contactId = createRes.data.id;
@@ -376,7 +379,7 @@ describe('Contacts API', () => {
           headers: {
             Cookie: authCookie,
           },
-        }
+        },
       );
 
       const contactId = createRes.data.id;
@@ -391,7 +394,7 @@ describe('Contacts API', () => {
           headers: {
             Cookie: authCookie,
           },
-        }
+        },
       );
 
       expect(res.status).toBe(200);
@@ -415,7 +418,7 @@ describe('Contacts API', () => {
           headers: {
             Cookie: authCookie,
           },
-        }
+        },
       );
 
       const contactId = createRes.data.id;

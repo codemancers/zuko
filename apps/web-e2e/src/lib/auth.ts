@@ -60,7 +60,9 @@ export async function getAuthContext() {
  * Create a fresh test user and return the user + Playwright-compatible cookies.
  * Cookies are already signed with the same secret as the backend.
  */
-export async function createUserWithSession(overrides: Partial<AuthUser> = {}): Promise<{
+export async function createUserWithSession(
+  overrides: Partial<AuthUser> = {},
+): Promise<{
   user: AuthUser;
   cookies: Array<{
     name: string;
@@ -82,7 +84,9 @@ export async function createUserWithSession(overrides: Partial<AuthUser> = {}): 
   const userObj = ctx.test.createUser({ email, name });
   const savedUser = await ctx.test.saveUser(userObj);
 
-  const { cookies: rawCookies } = await ctx.test.login({ userId: savedUser.id });
+  const { cookies: rawCookies } = await ctx.test.login({
+    userId: savedUser.id,
+  });
 
   const cookies = rawCookies.map((c: any) => ({
     ...c,

@@ -11,7 +11,9 @@ export class SettingsPage extends BasePage {
   constructor(page: Page) {
     super(page);
     // These selectors might need adjustment based on actual implementation
-    this.connectGitHubButton = page.getByRole('button', { name: /connect|github/i });
+    this.connectGitHubButton = page.getByRole('button', {
+      name: /connect|github/i,
+    });
     this.settingsForm = page.locator('form').or(page.locator('main'));
   }
 

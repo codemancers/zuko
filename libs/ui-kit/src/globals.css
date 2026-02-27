@@ -1,6 +1,6 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 @source '../**/*.{js,ts,jsx,tsx}';
-@import "tw-animate-css";
+@import 'tw-animate-css';
 
 @theme inline {
   --radius-lg: var(--radius);

@@ -1,4 +1,9 @@
-import { Injectable, BadRequestException, NotFoundException, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  BadRequestException,
+  NotFoundException,
+  Logger,
+} from '@nestjs/common';
 import type { PaginationOptions } from '../repositories/types';
 import {
   ContactsRepository,
@@ -23,11 +28,11 @@ function isValidE164Phone(phone: string): boolean {
 function validateContactMethods(
   email?: string,
   phone?: string,
-  linkedinId?: string
+  linkedinId?: string,
 ): void {
   if (!email && !phone && !linkedinId) {
     throw new BadRequestException(
-      'At least one of email, phone, or linkedinId must be provided'
+      'At least one of email, phone, or linkedinId must be provided',
     );
   }
 }
@@ -47,8 +52,11 @@ export class ContactsService {
       validateContactMethods(input.email, input.phone, input.linkedinId);
       this.logger.debug('[SERVICE] Contact methods validation passed');
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      this.logger.warn(`[SERVICE] Contact methods validation failed: ${errorMessage}`);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      this.logger.warn(
+        `[SERVICE] Contact methods validation failed: ${errorMessage}`,
+      );
       throw error;
     }
 
@@ -58,44 +66,58 @@ export class ContactsService {
       if (!isValidE164Phone(input.phone)) {
         this.logger.warn(`[SERVICE] Invalid phone format: ${input.phone}`);
         throw new BadRequestException(
-          'Phone number must be in E.164 format (e.g., +14155552671)'
+          'Phone number must be in E.164 format (e.g., +14155552671)',
         );
       }
       this.logger.debug('[SERVICE] Phone format validation passed');
     }
 
     // Validate at least one owner
-    this.logger.debug(`[SERVICE] Validating owners: ${JSON.stringify(input.ownerIds)}`);
+    this.logger.debug(
+      `[SERVICE] Validating owners: ${JSON.stringify(input.ownerIds)}`,
+    );
     if (!input.ownerIds || input.ownerIds.length === 0) {
       this.logger.warn('[SERVICE] No owners provided');
       throw new BadRequestException('At least one owner must be assigned');
     }
-    this.logger.debug(`[SERVICE] Owner validation passed - ${input.ownerIds.length} owner(s)`);
+    this.logger.debug(
+      `[SERVICE] Owner validation passed - ${input.ownerIds.length} owner(s)`,
+    );
 
     // Check for duplicate email
     if (input.email) {
-      this.logger.debug(`[SERVICE] Checking for duplicate email: ${input.email}`);
+      this.logger.debug(
+        `[SERVICE] Checking for duplicate email: ${input.email}`,
+      );
       const duplicate = await this.findByEmail(input.email);
       if (duplicate) {
         this.logger.warn(
-          `[SERVICE] Duplicate email found: ${input.email} (existing ID: ${duplicate.id})`
+          `[SERVICE] Duplicate email found: ${input.email} (existing ID: ${duplicate.id})`,
         );
         throw new BadRequestException(
-          `A contact with email ${input.email} already exists (ID: ${duplicate.id})`
+          `A contact with email ${input.email} already exists (ID: ${duplicate.id})`,
         );
       }
       this.logger.debug('[SERVICE] No duplicate email found');
     }
 
-    this.logger.log('[SERVICE] All validations passed, creating contact in database');
+    this.logger.log(
+      '[SERVICE] All validations passed, creating contact in database',
+    );
     try {
       const result = await this.contactsRepository.create(input);
-      this.logger.log(`[SERVICE] Contact created successfully with ID: ${result.id}`);
+      this.logger.log(
+        `[SERVICE] Contact created successfully with ID: ${result.id}`,
+      );
       return result;
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       const errorStack = error instanceof Error ? error.stack : undefined;
-      this.logger.error(`[SERVICE] Database creation failed: ${errorMessage}`, errorStack);
+      this.logger.error(
+        `[SERVICE] Database creation failed: ${errorMessage}`,
+        errorStack,
+      );
       throw error;
     }
   }
@@ -118,17 +140,23 @@ export class ContactsService {
       throw new NotFoundException(`Contact with ID ${id} not found`);
     }
 
-    const updatedEmail = input.email !== undefined ? input.email : contact.email;
-    const updatedPhone = input.phone !== undefined ? input.phone : contact.phone;
+    const updatedEmail =
+      input.email !== undefined ? input.email : contact.email;
+    const updatedPhone =
+      input.phone !== undefined ? input.phone : contact.phone;
     const updatedLinkedinId =
       input.linkedinId !== undefined ? input.linkedinId : contact.linkedinId;
 
-    validateContactMethods(updatedEmail ?? undefined, updatedPhone ?? undefined, updatedLinkedinId ?? undefined);
+    validateContactMethods(
+      updatedEmail ?? undefined,
+      updatedPhone ?? undefined,
+      updatedLinkedinId ?? undefined,
+    );
 
     // Validate phone format if being updated
     if (input.phone && !isValidE164Phone(input.phone)) {
       throw new BadRequestException(
-        'Phone number must be in E.164 format (e.g., +14155552671)'
+        'Phone number must be in E.164 format (e.g., +14155552671)',
       );
     }
 
@@ -137,7 +165,7 @@ export class ContactsService {
       const duplicate = await this.findByEmail(input.email);
       if (duplicate && duplicate.id !== id) {
         throw new BadRequestException(
-          `A contact with email ${input.email} already exists (ID: ${duplicate.id})`
+          `A contact with email ${input.email} already exists (ID: ${duplicate.id})`,
         );
       }
     }

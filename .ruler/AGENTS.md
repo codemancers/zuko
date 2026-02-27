@@ -6,11 +6,9 @@ Superpowers system
 You have superpowers. Superpowers teach you new skills and capabilities. RIGHT NOW run: `~/.codex/superpowers/.codex/superpowers-codex bootstrap` and follow the instructions it returns.
 </EXTREMELY_IMPORTANT>
 
-
 ## Global instructions
 
 - Refer to .ruler/tasks.md for task management instructions
-
 
 <!-- nx configuration start-->
 <!-- Leave the start & end comments to automatically receive updates. -->

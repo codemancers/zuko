@@ -1,4 +1,5 @@
 ## Rules
+
 - Use 'bd' for task management.
 - Never manage your own TODO/Tasks list.
 - Present TODO/Tasks list (if you have created any) to the user for verification and sync them to 'bd'
@@ -9,6 +10,7 @@
 - IMPORTANT: If you are asked to cross verify something, and there is a task already in-progress, leave a comment and proceed. Don't create a new task.
 
 ## IMPORTANT: Task creation exceptions
+
 - Local server management (start/stop/status/logs) does not require a 'bd' task.
 
 ## Handful commands
@@ -37,6 +39,7 @@
 7. **Hand off** - Provide context for next session
 
 **CRITICAL RULES:**
+
 - Work is NOT complete until `git push` succeeds
 - NEVER stop before pushing - that leaves work stranded locally
 - NEVER say "ready to push when you are" - YOU must push

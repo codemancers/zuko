@@ -61,7 +61,7 @@ export class ActivityRepository {
 
   async findAll(
     filters: ActivityFilters = {},
-    pagination: ActivityPaginationOptions = {}
+    pagination: ActivityPaginationOptions = {},
   ) {
     const { entityType, entityId, activityType, actorId } = filters;
     const { limit = 50, offset = 0 } = pagination;
@@ -111,7 +111,7 @@ export class ActivityRepository {
     entityType: string,
     entityId: number,
     actorId: number,
-    content: string
+    content: string,
   ) {
     return this.create({
       activityType: 'comment',

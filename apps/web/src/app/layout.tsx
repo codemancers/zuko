@@ -26,9 +26,7 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <ProgressBar>
-            <QueryProvider>
-              {children}
-            </QueryProvider>
+            <QueryProvider>{children}</QueryProvider>
           </ProgressBar>
         </ThemeProvider>
       </body>

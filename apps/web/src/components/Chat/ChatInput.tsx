@@ -114,7 +114,7 @@ const ChatInputInner = ({
       setChatContext(entities);
       onContextChange?.(entities);
     },
-    [onContextChange]
+    [onContextChange],
   );
 
   // Sync mentions to referenced sources (so they appear as visual chips)
@@ -122,7 +122,7 @@ const ChatInputInner = ({
     // Create sets for efficient comparison
     const currentMentionIds = new Set(mentions.map((m) => `${m.type}-${m.id}`));
     const prevMentionIds = new Set(
-      prevMentionsRef.current.map((m) => `${m.type}-${m.id}`)
+      prevMentionsRef.current.map((m) => `${m.type}-${m.id}`),
     );
 
     // Add new mentions (those in current but not in previous)
@@ -136,7 +136,7 @@ const ChatInputInner = ({
         console.log(
           '[ChatInput] Adding mention to context:',
           sourceId,
-          mention.name
+          mention.name,
         );
         add({
           type: 'source-document',
@@ -268,7 +268,7 @@ export const ChatInput = ({
       setCurrentContext(entities);
       onContextChange?.(entities);
     },
-    [onContextChange]
+    [onContextChange],
   );
 
   // Initialize Web Speech API
@@ -289,7 +289,7 @@ export const ChatInput = ({
           // Trigger input event to update PromptInput state
           const nativeInputValueSetter = Object.getOwnPropertyDescriptor(
             window.HTMLTextAreaElement.prototype,
-            'value'
+            'value',
           )?.set;
           nativeInputValueSetter?.call(textareaRef.current, transcript);
           const event = new Event('input', { bubbles: true });
@@ -311,7 +311,7 @@ export const ChatInput = ({
   const handleVoiceInput = useCallback(() => {
     if (!recognitionRef.current) {
       alert(
-        'Speech recognition is not supported in your browser. Please use Chrome.'
+        'Speech recognition is not supported in your browser. Please use Chrome.',
       );
       return;
     }
@@ -340,11 +340,14 @@ export const ChatInput = ({
 
     try {
       // Include both dialog-added context and @mentions (mentions are not in currentContext, so merge at submit)
-      const fromContext = currentContext.map((e) => ({ type: e.type, id: e.id }));
+      const fromContext = currentContext.map((e) => ({
+        type: e.type,
+        id: e.id,
+      }));
       const fromMentions = mentions.map((m) => ({ type: m.type, id: m.id }));
       const seen = new Set<string>();
-      const contextEntities = [...fromContext, ...fromMentions].filter(
-        (e) => (seen.has(`${e.type}-${e.id}`) ? false : seen.add(`${e.type}-${e.id}`))
+      const contextEntities = [...fromContext, ...fromMentions].filter((e) =>
+        seen.has(`${e.type}-${e.id}`) ? false : seen.add(`${e.type}-${e.id}`),
       );
 
       // Call parent's onSubmit with cleaned text and context

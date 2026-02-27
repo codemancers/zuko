@@ -27,7 +27,11 @@ test.describe('Contacts - Authenticated', () => {
     await contactsPage.page.waitForTimeout(500);
   });
 
-  test('can click on a contact to view details', async ({ contactsPage, page, auth }) => {
+  test('can click on a contact to view details', async ({
+    contactsPage,
+    page,
+    auth,
+  }) => {
     await contactsPage.goto();
     const contacts = await contactsPage.getContactItems();
     if (contacts.length > 0) {

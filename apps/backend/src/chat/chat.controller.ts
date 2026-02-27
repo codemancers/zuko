@@ -27,14 +27,14 @@ const LOCAL_MODEL_ID = process.env.AGENTS_LLM_MODEL ?? 'gpt-4o';
 export class ChatController {
   constructor(
     private readonly agentsService: OrchestratorService,
-    private readonly chatsService: ChatsService
+    private readonly chatsService: ChatsService,
   ) {}
 
   @Post('chat/completions')
   async openwebuiChat(
     @Body() body: ChatCompletionRequest,
     @Headers('accept') accept?: string,
-    @Res({ passthrough: true }) response?: Response
+    @Res({ passthrough: true }) response?: Response,
   ) {
     const incomingMessages = Array.isArray(body?.messages) ? body.messages : [];
     const messages: BaseMessageLike[] = [...incomingMessages];
@@ -55,7 +55,7 @@ export class ChatController {
 
       for await (const chunk of this.agentsService.streamReply(
         messages,
-        threadId
+        threadId,
       )) {
         response?.write(`data: ${chunk}\n\n`);
       }
@@ -91,11 +91,11 @@ export class ChatController {
       contextEntities?: ContextEntityReference[];
     },
     @Req() req,
-    @Res({ passthrough: true }) response: Response
+    @Res({ passthrough: true }) response: Response,
   ) {
     console.log(
       '[ChatController] Received body:',
-      JSON.stringify(body, null, 2)
+      JSON.stringify(body, null, 2),
     );
 
     const { messages, chatId: rawChatId } = body;
@@ -112,11 +112,11 @@ export class ChatController {
     console.log('[ChatController] Extracted messages count:', messages?.length);
     console.log(
       '[ChatController] Context entities from message metadata:',
-      JSON.stringify(contextEntities, null, 2)
+      JSON.stringify(contextEntities, null, 2),
     );
     console.log(
       '[ChatController] Last message metadata:',
-      JSON.stringify(lastMessage?.metadata, null, 2)
+      JSON.stringify(lastMessage?.metadata, null, 2),
     );
     const userId = parseInt(req.user.id, 10);
 
@@ -145,7 +145,7 @@ export class ChatController {
           '[ChatController] Auto-generating title for chat:',
           chatId,
           'from text:',
-          text.substring(0, 50)
+          text.substring(0, 50),
         );
         // Don't await - let it run in background
         this.chatsService
@@ -153,7 +153,7 @@ export class ChatController {
           .catch((err) => {
             console.error(
               '[ChatController] Failed to auto-generate title:',
-              err
+              err,
             );
           });
       }
@@ -163,14 +163,14 @@ export class ChatController {
     // Filter out messages with unsupported roles (e.g., 'tool') that cause conversion errors
     const supportedRoles = new Set(['user', 'assistant', 'system']);
     const filteredMessages = messages.filter((msg) =>
-      supportedRoles.has(msg.role)
+      supportedRoles.has(msg.role),
     );
 
     if (filteredMessages.length !== messages.length) {
       console.log(
         `[ChatController] Filtered out ${
           messages.length - filteredMessages.length
-        } messages with unsupported roles`
+        } messages with unsupported roles`,
       );
     }
 
@@ -195,7 +195,7 @@ export class ChatController {
         contextEntities,
         userId,
       },
-      config
+      config,
     );
 
     // Set SSE headers

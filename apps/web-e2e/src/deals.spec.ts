@@ -149,7 +149,7 @@ test.describe('Deal Creation', () => {
 
     // Should show validation error
     await expect(
-      page.getByText(/Value must be a positive number/i)
+      page.getByText(/Value must be a positive number/i),
     ).toBeVisible();
   });
 
@@ -165,7 +165,7 @@ test.describe('Deal Creation', () => {
     await page.getByLabel(/Win Probability/i).fill('150');
     await page.getByRole('button', { name: /Create Deal/i }).click();
     await expect(
-      page.getByText(/Probability must be between 0 and 100/i)
+      page.getByText(/Probability must be between 0 and 100/i),
     ).toBeVisible();
   });
 
@@ -220,7 +220,7 @@ test.describe('Deal Detail', () => {
 
     // Check for Deal Information section
     await expect(
-      page.getByRole('heading', { name: /Deal Information/i })
+      page.getByRole('heading', { name: /Deal Information/i }),
     ).toBeVisible();
   });
 
@@ -269,7 +269,7 @@ test.describe('Deal Detail', () => {
 
     // Check for Activity section
     await expect(
-      page.getByRole('heading', { name: /Activity/i })
+      page.getByRole('heading', { name: /Activity/i }),
     ).toBeVisible();
   });
 
@@ -314,7 +314,7 @@ test.describe('Deal Edit', () => {
     await page.goto('/deals/1/edit');
 
     await expect(
-      page.getByRole('button', { name: /Save Changes/i })
+      page.getByRole('button', { name: /Save Changes/i }),
     ).toBeVisible();
     await expect(page.getByRole('button', { name: /Cancel/i })).toBeVisible();
   });
@@ -376,7 +376,7 @@ test.describe('Deal Associations - Companies', () => {
 
     // Check for Associated Companies section
     await expect(
-      page.getByRole('heading', { name: /Associated Companies/i })
+      page.getByRole('heading', { name: /Associated Companies/i }),
     ).toBeVisible();
   });
 
@@ -385,7 +385,7 @@ test.describe('Deal Associations - Companies', () => {
 
     // Check for Add Company button
     await expect(
-      page.getByRole('button', { name: /Add Company/i })
+      page.getByRole('button', { name: /Add Company/i }),
     ).toBeVisible();
   });
 
@@ -401,10 +401,10 @@ test.describe('Deal Associations - Companies', () => {
 
     // Dialog should open
     await expect(
-      page.getByRole('heading', { name: /Add Company to Deal/i })
+      page.getByRole('heading', { name: /Add Company to Deal/i }),
     ).toBeVisible();
     await expect(
-      page.getByText(/Associate a company with this deal/i)
+      page.getByText(/Associate a company with this deal/i),
     ).toBeVisible();
   });
 
@@ -421,7 +421,7 @@ test.describe('Deal Associations - Companies', () => {
     const companySelect = page.locator('select').first();
     await expect(companySelect).toBeVisible();
     await expect(
-      page.getByText(/Primary company for this deal/i)
+      page.getByText(/Primary company for this deal/i),
     ).toBeVisible();
 
     // Verify the select has company options
@@ -443,7 +443,7 @@ test.describe('Deal Associations - Companies', () => {
 
     // Dialog should close
     await expect(
-      page.getByRole('heading', { name: /Add Company to Deal/i })
+      page.getByRole('heading', { name: /Add Company to Deal/i }),
     ).toBeHidden();
   });
 
@@ -540,7 +540,7 @@ test.describe('Deal Associations - Contacts', () => {
 
     // Check for Associated Contacts section
     await expect(
-      page.getByRole('heading', { name: /Associated Contacts/i })
+      page.getByRole('heading', { name: /Associated Contacts/i }),
     ).toBeVisible();
   });
 
@@ -549,7 +549,7 @@ test.describe('Deal Associations - Contacts', () => {
 
     // Check for Add Contact button
     await expect(
-      page.getByRole('button', { name: /Add Contact/i })
+      page.getByRole('button', { name: /Add Contact/i }),
     ).toBeVisible();
   });
 
@@ -565,10 +565,10 @@ test.describe('Deal Associations - Contacts', () => {
 
     // Dialog should open
     await expect(
-      page.getByRole('heading', { name: /Add Contact to Deal/i })
+      page.getByRole('heading', { name: /Add Contact to Deal/i }),
     ).toBeVisible();
     await expect(
-      page.getByText(/Associate a contact person with this deal/i)
+      page.getByText(/Associate a contact person with this deal/i),
     ).toBeVisible();
   });
 
@@ -590,7 +590,7 @@ test.describe('Deal Associations - Contacts', () => {
     await expect(roleInput).toBeVisible();
 
     await expect(
-      page.getByText(/Primary contact for this deal/i)
+      page.getByText(/Primary contact for this deal/i),
     ).toBeVisible();
 
     // Verify the select has contact options
@@ -612,7 +612,7 @@ test.describe('Deal Associations - Contacts', () => {
 
     // Dialog should close
     await expect(
-      page.getByRole('heading', { name: /Add Contact to Deal/i })
+      page.getByRole('heading', { name: /Add Contact to Deal/i }),
     ).toBeHidden();
   });
 
@@ -743,7 +743,7 @@ test.describe('Deal Activity Timeline - Comments', () => {
     const postButton = page.getByRole('button', { name: /Post Comment/i });
     const responsePromise = page.waitForResponse(
       (resp) => resp.url().includes('/api/activities') && resp.ok(),
-      { timeout: 10000 }
+      { timeout: 10000 },
     );
     await postButton.click();
     await responsePromise;

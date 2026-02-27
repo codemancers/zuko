@@ -86,7 +86,9 @@ describe('DateInput', () => {
   });
 
   it('should accept custom format', () => {
-    render(<DateInput value="2026-12-20" onChange={() => {}} format="MM/DD/YYYY" />);
+    render(
+      <DateInput value="2026-12-20" onChange={() => {}} format="MM/DD/YYYY" />,
+    );
     const input = screen.getByRole('textbox') as HTMLInputElement;
     expect(input.value).toBe('12/20/2026');
   });
@@ -107,7 +109,9 @@ describe('DateInput', () => {
   });
 
   it('should support invalid prop for styling', () => {
-    const { container } = render(<DateInput value="" onChange={() => {}} invalid />);
+    const { container } = render(
+      <DateInput value="" onChange={() => {}} invalid />,
+    );
     const input = container.querySelector('input');
     expect(input).toHaveAttribute('data-invalid');
   });

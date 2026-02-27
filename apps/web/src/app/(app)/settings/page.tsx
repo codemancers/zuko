@@ -25,13 +25,16 @@ const getConnectionStatus = (accounts: Set<string>, provider: ConnectionId) => {
 };
 
 export default function SettingsPage() {
-  const [connectedProviders, setConnectedProviders] = useState<Set<string>>(new Set());
+  const [connectedProviders, setConnectedProviders] = useState<Set<string>>(
+    new Set(),
+  );
 
   useEffect(() => {
     const loadData = async () => {
       try {
         // Fetch connected accounts from backend
-        const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001';
+        const backendUrl =
+          process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001';
         const response = await fetch(`${backendUrl}/api/auth/accounts`, {
           credentials: 'include',
         });
@@ -39,7 +42,7 @@ export default function SettingsPage() {
         if (response.ok) {
           const accountsData = await response.json();
           const connectedSet = new Set<string>(
-            accountsData.accounts.map((account: any) => account.providerId)
+            accountsData.accounts.map((account: any) => account.providerId),
           );
           setConnectedProviders(connectedSet);
         }
@@ -87,12 +90,15 @@ export default function SettingsPage() {
           {connections.map((connection) => {
             const status = getConnectionStatus(
               connectedProviders,
-              connection.id
+              connection.id,
             );
             const isConnected = status === 'connected';
 
             return (
-              <div key={connection.id} className="flex items-center justify-between rounded-2xl border border-zinc-200/70 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-zinc-900">
+              <div
+                key={connection.id}
+                className="flex items-center justify-between rounded-2xl border border-zinc-200/70 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-zinc-900"
+              >
                 <div className="flex gap-6">
                   <div className="space-y-1.5">
                     <div className="text-base/6 font-semibold">

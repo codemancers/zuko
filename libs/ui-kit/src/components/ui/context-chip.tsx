@@ -1,38 +1,38 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import { XIcon } from "lucide-react";
-import { cn } from "../../lib/utils";
+import * as React from 'react';
+import { XIcon } from 'lucide-react';
+import { cn } from '../../lib/utils';
 
 export interface ContextChipProps {
   id: string;
   label: string;
   icon?: React.ReactNode;
-  color?: "blue" | "purple" | "green" | "orange" | "zinc";
+  color?: 'blue' | 'purple' | 'green' | 'orange' | 'zinc';
   onRemove?: (id: string) => void;
   className?: string;
 }
 
 const colorClasses = {
-  blue: "bg-blue-500/15 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400 hover:bg-blue-500/20 dark:hover:bg-blue-500/15",
+  blue: 'bg-blue-500/15 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400 hover:bg-blue-500/20 dark:hover:bg-blue-500/15',
   purple:
-    "bg-purple-500/15 text-purple-700 dark:bg-purple-500/10 dark:text-purple-400 hover:bg-purple-500/20 dark:hover:bg-purple-500/15",
+    'bg-purple-500/15 text-purple-700 dark:bg-purple-500/10 dark:text-purple-400 hover:bg-purple-500/20 dark:hover:bg-purple-500/15',
   green:
-    "bg-green-500/15 text-green-700 dark:bg-green-500/10 dark:text-green-400 hover:bg-green-500/20 dark:hover:bg-green-500/15",
+    'bg-green-500/15 text-green-700 dark:bg-green-500/10 dark:text-green-400 hover:bg-green-500/20 dark:hover:bg-green-500/15',
   orange:
-    "bg-orange-500/15 text-orange-700 dark:bg-orange-500/10 dark:text-orange-400 hover:bg-orange-500/20 dark:hover:bg-orange-500/15",
-  zinc: "bg-zinc-500/15 text-zinc-700 dark:bg-zinc-500/10 dark:text-zinc-400 hover:bg-zinc-500/20 dark:hover:bg-zinc-500/15",
+    'bg-orange-500/15 text-orange-700 dark:bg-orange-500/10 dark:text-orange-400 hover:bg-orange-500/20 dark:hover:bg-orange-500/15',
+  zinc: 'bg-zinc-500/15 text-zinc-700 dark:bg-zinc-500/10 dark:text-zinc-400 hover:bg-zinc-500/20 dark:hover:bg-zinc-500/15',
 };
 
 export const ContextChip = React.forwardRef<HTMLDivElement, ContextChipProps>(
-  ({ id, label, icon, color = "blue", onRemove, className }, ref) => {
+  ({ id, label, icon, color = 'blue', onRemove, className }, ref) => {
     return (
       <div
         ref={ref}
         className={cn(
-          "inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-sm transition-colors",
+          'inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-sm transition-colors',
           colorClasses[color],
-          className
+          className,
         )}
       >
         {icon && <span className="shrink-0">{icon}</span>}
@@ -49,7 +49,7 @@ export const ContextChip = React.forwardRef<HTMLDivElement, ContextChipProps>(
         )}
       </div>
     );
-  }
+  },
 );
 
-ContextChip.displayName = "ContextChip";
+ContextChip.displayName = 'ContextChip';

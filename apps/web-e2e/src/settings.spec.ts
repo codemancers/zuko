@@ -1,7 +1,10 @@
 import { test, expect } from './fixtures';
 
 test.describe('Settings Page', () => {
-  test('redirects to sign-in when not authenticated', async ({ settingsPage, page }) => {
+  test('redirects to sign-in when not authenticated', async ({
+    settingsPage,
+    page,
+  }) => {
     await settingsPage.goto();
 
     // Should redirect to sign-in if not authenticated
@@ -24,7 +27,11 @@ test.describe('Settings Page', () => {
 });
 
 test.describe('Settings - Authenticated', () => {
-  test('displays settings page when authenticated', async ({ settingsPage, page, auth }) => {
+  test('displays settings page when authenticated', async ({
+    settingsPage,
+    page,
+    auth,
+  }) => {
     await settingsPage.goto();
 
     // Verify we're on settings page
@@ -47,11 +54,17 @@ test.describe('Settings - Authenticated', () => {
   });
 
   // Skipped: clicking "Connect GitHub" initiates OAuth redirect and disrupts test flow
-  test.skip('can connect GitHub account', async ({ settingsPage, page, auth }) => {
+  test.skip('can connect GitHub account', async ({
+    settingsPage,
+    page,
+    auth,
+  }) => {
     await settingsPage.goto();
 
     // Look for connect button
-    const connectButton = page.getByRole('button', { name: /connect.*github/i });
+    const connectButton = page.getByRole('button', {
+      name: /connect.*github/i,
+    });
     const isVisible = await connectButton.isVisible().catch(() => false);
 
     if (isVisible) {
@@ -167,7 +180,10 @@ test.describe('Settings - Navigation', () => {
     }
   });
 
-  test('settings link is accessible from navigation', async ({ page, auth }) => {
+  test('settings link is accessible from navigation', async ({
+    page,
+    auth,
+  }) => {
     await page.goto('/');
 
     // Wait for redirect to complete (authenticated users land on /chat)

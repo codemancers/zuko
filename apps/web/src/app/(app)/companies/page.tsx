@@ -1,13 +1,13 @@
-import CompaniesList from "@/components/Companies/CompaniesList";
-import { getQueryClient } from "@/lib/react-query/get-query-client";
-import { getCompanies } from "@/server/query-options";
-import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
+import CompaniesList from '@/components/Companies/CompaniesList';
+import { getQueryClient } from '@/lib/react-query/get-query-client';
+import { getCompanies } from '@/server/query-options';
+import { dehydrate, HydrationBoundary } from '@tanstack/react-query';
 
 export const metadata = {
   title: 'Companies',
 };
 
-export const dynamic = "force-dynamic";
+export const dynamic = 'force-dynamic';
 
 const CompaniesPage = async () => {
   const queryClient = getQueryClient();

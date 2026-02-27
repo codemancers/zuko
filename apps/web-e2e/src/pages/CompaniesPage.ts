@@ -56,8 +56,10 @@ export class CompaniesPage extends BasePage {
    * Wait for companies to load
    */
   async waitForCompaniesToLoad() {
-    await this.page.waitForSelector('tbody tr, text=No companies found', { timeout: 5000 }).catch(() => {
-      // If neither appears, table might be empty which is also valid
-    });
+    await this.page
+      .waitForSelector('tbody tr, text=No companies found', { timeout: 5000 })
+      .catch(() => {
+        // If neither appears, table might be empty which is also valid
+      });
   }
 }

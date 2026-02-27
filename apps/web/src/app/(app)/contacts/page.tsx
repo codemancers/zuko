@@ -1,13 +1,13 @@
-import ContactsList from "@/components/Contacts/ContactsList";
-import { getQueryClient } from "@/lib/react-query/get-query-client";
-import { getContacts } from "@/server/query-options";
-import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
+import ContactsList from '@/components/Contacts/ContactsList';
+import { getQueryClient } from '@/lib/react-query/get-query-client';
+import { getContacts } from '@/server/query-options';
+import { dehydrate, HydrationBoundary } from '@tanstack/react-query';
 
 export const metadata = {
   title: 'Contacts',
 };
 
-export const dynamic = "force-dynamic";
+export const dynamic = 'force-dynamic';
 
 const ContactsPage = async () => {
   const queryClient = getQueryClient();

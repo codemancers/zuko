@@ -68,14 +68,14 @@ describe('/api/chat POST', () => {
         method: 'POST',
         headers: expect.objectContaining({
           'Content-Type': 'application/json',
-          'Cookie': 'mock-session-cookie=value',
-          'Accept': 'text/event-stream',
+          Cookie: 'mock-session-cookie=value',
+          Accept: 'text/event-stream',
         }),
         body: JSON.stringify({
           ...mockRequestBody,
           chatId: 'test-chat-123',
         }),
-      })
+      }),
     );
 
     expect(response.status).toBe(200);
@@ -199,9 +199,7 @@ describe('/api/chat POST', () => {
       messages: [],
     };
 
-    (global.fetch as jest.Mock).mockRejectedValue(
-      new Error('Network error')
-    );
+    (global.fetch as jest.Mock).mockRejectedValue(new Error('Network error'));
 
     const request = new NextRequest('http://localhost:3000/api/chat', {
       method: 'POST',
@@ -239,11 +237,11 @@ describe('/api/chat POST', () => {
       expect.objectContaining({
         headers: expect.objectContaining({
           'Content-Type': 'application/json',
-          'Cookie': 'mock-session-cookie=value',
-          'Accept': 'text/event-stream',
+          Cookie: 'mock-session-cookie=value',
+          Accept: 'text/event-stream',
         }),
         credentials: 'include',
-      })
+      }),
     );
   });
 

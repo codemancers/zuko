@@ -19,9 +19,13 @@ export class ContactDetailPage extends BasePage {
     this.activitySection = page.locator('h2:has-text("Activity")').first();
     this.activityItems = page.locator('[data-testid="activity-item"]');
     this.commentInput = page.getByPlaceholder('Add a comment...');
-    this.postCommentButton = page.getByRole('button', { name: /Post Comment/i });
+    this.postCommentButton = page.getByRole('button', {
+      name: /Post Comment/i,
+    });
     this.activityAvatars = page.locator('[data-testid="activity-avatar"]');
-    this.connectingLines = page.locator('[data-testid="activity-connecting-line"]');
+    this.connectingLines = page.locator(
+      '[data-testid="activity-connecting-line"]',
+    );
   }
 
   /**
@@ -85,8 +89,9 @@ export class ContactDetailPage extends BasePage {
     await this.commentInput.fill(text);
     await this.postCommentButton.click();
     // Wait for comment to be posted
-    await this.page.waitForResponse(resp =>
-      resp.url().includes('/activities/comments') && resp.status() === 201
+    await this.page.waitForResponse(
+      (resp) =>
+        resp.url().includes('/activities/comments') && resp.status() === 201,
     );
   }
 
@@ -111,9 +116,9 @@ export class ContactDetailPage extends BasePage {
     const items = await this.activityItems.all();
     if (items[index]) {
       // Click edit button
-      const editButton = items[index].getByRole('button', { name: /edit/i }).or(
-        items[index].locator('button[title="Edit comment"]')
-      );
+      const editButton = items[index]
+        .getByRole('button', { name: /edit/i })
+        .or(items[index].locator('button[title="Edit comment"]'));
       await editButton.click();
 
       // Wait for textarea to appear
@@ -139,7 +144,9 @@ export class ContactDetailPage extends BasePage {
     const items = await this.activityItems.all();
     if (items[index]) {
       // Click cancel button
-      const cancelButton = items[index].getByRole('button', { name: /cancel/i });
+      const cancelButton = items[index].getByRole('button', {
+        name: /cancel/i,
+      });
       await cancelButton.click();
 
       // Wait for edit mode to close (textarea should disappear)
@@ -154,9 +161,9 @@ export class ContactDetailPage extends BasePage {
   async hasEditButton(index: number): Promise<boolean> {
     const items = await this.activityItems.all();
     if (items[index]) {
-      const editButton = items[index].getByRole('button', { name: /edit/i }).or(
-        items[index].locator('button[title="Edit comment"]')
-      );
+      const editButton = items[index]
+        .getByRole('button', { name: /edit/i })
+        .or(items[index].locator('button[title="Edit comment"]'));
       return editButton.isVisible().catch(() => false);
     }
     return false;
@@ -188,7 +195,9 @@ export class ContactDetailPage extends BasePage {
   async getAvatar(index: number): Promise<Locator | null> {
     const items = await this.activityItems.all();
     if (items[index]) {
-      const avatar = items[index].locator('[data-testid="activity-avatar"]').first();
+      const avatar = items[index]
+        .locator('[data-testid="activity-avatar"]')
+        .first();
       return avatar;
     }
     return null;
@@ -214,10 +223,13 @@ export class ContactDetailPage extends BasePage {
    */
   async waitForNewActivity(previousCount: number, timeout = 5000) {
     // Use web-first assertion instead of waitForFunction with timeout fallback
-    await this.page.locator('[data-testid="activity-item"]').nth(previousCount).waitFor({
-      state: 'visible',
-      timeout
-    });
+    await this.page
+      .locator('[data-testid="activity-item"]')
+      .nth(previousCount)
+      .waitFor({
+        state: 'visible',
+        timeout,
+      });
   }
 
   /**

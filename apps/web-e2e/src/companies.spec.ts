@@ -9,13 +9,21 @@ test.describe('Companies Page - Unauthenticated', () => {
 });
 
 test.describe('Companies - Authenticated', () => {
-  test('displays companies page when authenticated', async ({ companiesPage, page, auth }) => {
+  test('displays companies page when authenticated', async ({
+    companiesPage,
+    page,
+    auth,
+  }) => {
     await companiesPage.goto();
     expect(page.url()).toContain('/companies');
     await companiesPage.waitForCompaniesToLoad();
   });
 
-  test('can navigate to create new company', async ({ companiesPage, page, auth }) => {
+  test('can navigate to create new company', async ({
+    companiesPage,
+    page,
+    auth,
+  }) => {
     await companiesPage.goto();
     await companiesPage.clickNewCompany();
     await page.waitForURL('**/companies/new');
@@ -34,7 +42,11 @@ test.describe('Companies - Authenticated', () => {
     await page.waitForTimeout(500);
   });
 
-  test('can click on a company to view details', async ({ companiesPage, page, auth }) => {
+  test('can click on a company to view details', async ({
+    companiesPage,
+    page,
+    auth,
+  }) => {
     await companiesPage.goto();
     const companies = await companiesPage.getCompanyItems();
     if (companies.length > 0) {
@@ -48,13 +60,21 @@ test.describe('Companies - Authenticated', () => {
 });
 
 test.describe('Company Detail - Contact Management', () => {
-  test('displays company detail page with associated contacts section', async ({ page, companyDetailPage, auth }) => {
+  test('displays company detail page with associated contacts section', async ({
+    page,
+    companyDetailPage,
+    auth,
+  }) => {
     await companyDetailPage.goto(1);
     await expect(companyDetailPage.associatedContactsSection).toBeVisible();
     await expect(companyDetailPage.addContactButton).toBeVisible();
   });
 
-  test('can add a contact to a company', async ({ companyDetailPage, page, auth }) => {
+  test('can add a contact to a company', async ({
+    companyDetailPage,
+    page,
+    auth,
+  }) => {
     await companyDetailPage.goto(1);
     const initialContacts = await companyDetailPage.getAssociatedContacts();
     try {
@@ -67,7 +87,11 @@ test.describe('Company Detail - Contact Management', () => {
     }
   });
 
-  test('can remove a contact from a company', async ({ companyDetailPage, page, auth }) => {
+  test('can remove a contact from a company', async ({
+    companyDetailPage,
+    page,
+    auth,
+  }) => {
     await companyDetailPage.goto(1);
     const contacts = await companyDetailPage.getAssociatedContacts();
     if (contacts.length === 0) {
@@ -78,19 +102,29 @@ test.describe('Company Detail - Contact Management', () => {
     const contactName = contactText?.split(' ')[0] || 'Unknown';
     await companyDetailPage.removeContact(contactName);
     await page.waitForTimeout(500);
-    const isStillVisible = await companyDetailPage.isContactAssociated(contactName);
+    const isStillVisible =
+      await companyDetailPage.isContactAssociated(contactName);
     expect(isStillVisible).toBe(false);
   });
 
-  test('can post a comment on company activity timeline', async ({ companyDetailPage, page, auth }) => {
+  test('can post a comment on company activity timeline', async ({
+    companyDetailPage,
+    page,
+    auth,
+  }) => {
     await companyDetailPage.goto(1);
-    await page.getByRole('heading', { name: 'Activity' }).scrollIntoViewIfNeeded();
+    await page
+      .getByRole('heading', { name: 'Activity' })
+      .scrollIntoViewIfNeeded();
     const testComment = `Test comment at ${new Date().toISOString()}`;
     await companyDetailPage.postComment(testComment);
     await expect(page.getByText(testComment)).toBeVisible({ timeout: 5000 });
   });
 
-  test('displays activity timeline section', async ({ companyDetailPage, auth }) => {
+  test('displays activity timeline section', async ({
+    companyDetailPage,
+    auth,
+  }) => {
     await companyDetailPage.goto(1);
     const activities = await companyDetailPage.getActivityItems();
     expect(activities.length).toBeGreaterThanOrEqual(0);
@@ -98,7 +132,11 @@ test.describe('Company Detail - Contact Management', () => {
 });
 
 test.describe('Company Edit', () => {
-  test('can navigate to edit page', async ({ companyDetailPage, page, auth }) => {
+  test('can navigate to edit page', async ({
+    companyDetailPage,
+    page,
+    auth,
+  }) => {
     await companyDetailPage.goto(1);
     await companyDetailPage.clickEdit();
     await page.waitForURL('**/companies/**/edit');
@@ -110,17 +148,24 @@ test.describe('Company Edit', () => {
     await expect(page.getByLabel(/Company Name/i)).toBeVisible();
     await expect(page.getByLabel(/Website/i)).toBeVisible();
     await expect(page.getByLabel(/LinkedIn URL/i)).toBeVisible();
-    await expect(page.getByPlaceholder(/Add a summary about this company/i)).toBeVisible();
+    await expect(
+      page.getByPlaceholder(/Add a summary about this company/i),
+    ).toBeVisible();
   });
 });
 
 test.describe('Company Creation', () => {
-  test('new company form displays all required fields', async ({ page, auth }) => {
+  test('new company form displays all required fields', async ({
+    page,
+    auth,
+  }) => {
     await page.goto('/companies/new');
     await expect(page.getByLabel(/Company Name/i)).toBeVisible();
     await expect(page.getByLabel(/Website/i)).toBeVisible();
     await expect(page.getByLabel(/LinkedIn URL/i)).toBeVisible();
-    await expect(page.getByPlaceholder(/Add a summary about this company/i)).toBeVisible();
+    await expect(
+      page.getByPlaceholder(/Add a summary about this company/i),
+    ).toBeVisible();
   });
 
   test('validates required fields', async ({ page, auth }) => {
@@ -131,14 +176,26 @@ test.describe('Company Creation', () => {
 });
 
 test.describe('Contact Association Constraints', () => {
-  test('shows warning about one-company-per-contact constraint', async ({ companyDetailPage, page, auth }) => {
+  test('shows warning about one-company-per-contact constraint', async ({
+    companyDetailPage,
+    page,
+    auth,
+  }) => {
     await companyDetailPage.goto(1);
     await companyDetailPage.addContactButton.click();
     await page.waitForSelector('text=Add Contact to Company');
-    await expect(page.getByText(/A contact can only be associated with one company at a time/i)).toBeVisible();
+    await expect(
+      page.getByText(
+        /A contact can only be associated with one company at a time/i,
+      ),
+    ).toBeVisible();
   });
 
-  test('filters out already associated contacts from dropdown', async ({ companyDetailPage, page, auth }) => {
+  test('filters out already associated contacts from dropdown', async ({
+    companyDetailPage,
+    page,
+    auth,
+  }) => {
     await companyDetailPage.goto(1);
     const associatedContacts = await companyDetailPage.getAssociatedContacts();
     if (associatedContacts.length === 0) {
@@ -150,7 +207,9 @@ test.describe('Contact Association Constraints', () => {
     const options = await select.locator('option').allTextContents();
     const firstContactText = await associatedContacts[0].textContent();
     const firstContactName = firstContactText?.split(' ')[0];
-    const isInDropdown = options.some(opt => opt.includes(firstContactName || ''));
+    const isInDropdown = options.some((opt) =>
+      opt.includes(firstContactName || ''),
+    );
     expect(isInDropdown).toBe(false);
   });
 });

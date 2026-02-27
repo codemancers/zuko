@@ -1,11 +1,11 @@
-import CompanyDetail from "@/components/Companies/CompanyDetail";
-import { getQueryClient } from "@/lib/react-query/get-query-client";
-import { getCompany } from "@/server/query-options";
-import { authClient } from "@/lib/auth-client";
-import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
-import { headers } from "next/headers";
+import CompanyDetail from '@/components/Companies/CompanyDetail';
+import { getQueryClient } from '@/lib/react-query/get-query-client';
+import { getCompany } from '@/server/query-options';
+import { authClient } from '@/lib/auth-client';
+import { dehydrate, HydrationBoundary } from '@tanstack/react-query';
+import { headers } from 'next/headers';
 
-export const dynamic = "force-dynamic";
+export const dynamic = 'force-dynamic';
 
 interface CompanyPageProps {
   params: Promise<{ id: string }>;

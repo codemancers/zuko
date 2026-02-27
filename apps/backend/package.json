@@ -2,6 +2,32 @@
   "name": "@zuko/backend",
   "version": "0.0.1",
   "private": true,
+  "dependencies": {
+    "@ai-sdk/langchain": "^2.0.75",
+    "@nestjs/common": "^11.0.0",
+    "@nestjs/config": "^4.0.0",
+    "@nestjs/core": "^11.0.0",
+    "@nestjs/platform-express": "^11.0.0",
+    "@prisma/adapter-pg": "^7.2.0",
+    "@prisma/client": "^7.2.0",
+    "@thallesp/nestjs-better-auth": "^2.4.0",
+    "@zuko/agents": "^0.0.1",
+    "@zuko/models": "^0.0.1",
+    "@zuko/sales": "^0.0.1",
+    "ai": "^6.0.70",
+    "better-auth": "1.5.0-beta.15",
+    "dotenv": "^16.4.5",
+    "graphql": "^16.12.0",
+    "joi": "^17.13.3",
+    "pg": "^8.16.3",
+    "prisma": "^7.2.0",
+    "reflect-metadata": "^0.1.13",
+    "rxjs": "^7.8.0",
+    "tslib": "^2.3.0"
+  },
+  "devDependencies": {
+    "@nestjs/testing": "^11.0.0"
+  },
   "nx": {
     "targets": {
       "build": {
@@ -114,31 +140,5 @@
       }
     }
   },
-  "dependencies": {
-    "@ai-sdk/langchain": "^2.0.75",
-    "@nestjs/common": "^11.0.0",
-    "@nestjs/config": "^4.0.0",
-    "@nestjs/core": "^11.0.0",
-    "@nestjs/platform-express": "^11.0.0",
-    "@prisma/adapter-pg": "^7.2.0",
-    "@prisma/client": "^7.2.0",
-    "@thallesp/nestjs-better-auth": "^2.4.0",
-    "@zuko/agents": "^0.0.1",
-    "@zuko/models": "^0.0.1",
-    "@zuko/sales": "^0.0.1",
-    "ai": "^6.0.70",
-    "better-auth": "1.5.0-beta.15",
-    "dotenv": "^16.4.5",
-    "graphql": "^16.12.0",
-    "joi": "^17.13.3",
-    "pg": "^8.16.3",
-    "prisma": "^7.2.0",
-    "reflect-metadata": "^0.1.13",
-    "rxjs": "^7.8.0",
-    "tslib": "^2.3.0"
-  },
-  "_comment_graphql": "graphql is a peer dependency of @thallesp/nestjs-better-auth, installed here to avoid runtime errors",
-  "devDependencies": {
-    "@nestjs/testing": "^11.0.0"
-  }
+  "_comment_graphql": "graphql is a peer dependency of @thallesp/nestjs-better-auth, installed here to avoid runtime errors"
 }

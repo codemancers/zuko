@@ -25,7 +25,7 @@ const CompaniesList = () => {
   const router = useRouter();
   const [searchTerm, setSearchTerm] = useState('');
   const { data, isLoading } = useQuery(
-    getCompanies({ search: searchTerm || undefined })
+    getCompanies({ search: searchTerm || undefined }),
   );
 
   const companies = data?.companies || [];

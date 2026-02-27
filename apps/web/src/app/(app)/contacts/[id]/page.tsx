@@ -1,11 +1,11 @@
-import ContactDetail from "@/components/Contacts/ContactDetail";
-import { getQueryClient } from "@/lib/react-query/get-query-client";
-import { getContact } from "@/server/query-options";
-import { authClient } from "@/lib/auth-client";
-import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
-import { headers } from "next/headers";
+import ContactDetail from '@/components/Contacts/ContactDetail';
+import { getQueryClient } from '@/lib/react-query/get-query-client';
+import { getContact } from '@/server/query-options';
+import { authClient } from '@/lib/auth-client';
+import { dehydrate, HydrationBoundary } from '@tanstack/react-query';
+import { headers } from 'next/headers';
 
-export const dynamic = "force-dynamic";
+export const dynamic = 'force-dynamic';
 
 interface ContactPageProps {
   params: Promise<{ id: string }>;

@@ -136,7 +136,7 @@ export const companiesApi = {
    */
   async updateCompany(
     id: number,
-    data: UpdateCompanyDto
+    data: UpdateCompanyDto,
   ): Promise<SalesCompany> {
     return apiClient.patch(`/companies/${id}`, data);
   },
@@ -161,7 +161,7 @@ export const companiesApi = {
   async addOwner(
     companyId: number,
     userId: number,
-    isPrimary = false
+    isPrimary = false,
   ): Promise<CompanyOwner> {
     return apiClient.post(`/companies/${companyId}/owners`, {
       userId,
@@ -181,10 +181,10 @@ export const companiesApi = {
    */
   async setPrimaryOwner(
     companyId: number,
-    userId: number
+    userId: number,
   ): Promise<{ success: boolean }> {
     return apiClient.post(
-      `/companies/${companyId}/owners/${userId}/set-primary`
+      `/companies/${companyId}/owners/${userId}/set-primary`,
     );
   },
 
@@ -193,7 +193,7 @@ export const companiesApi = {
    */
   async getCompaniesByUser(
     userId: number,
-    filters?: CompanyFilters
+    filters?: CompanyFilters,
   ): Promise<CompaniesListResponse> {
     const params = new URLSearchParams();
 
@@ -207,7 +207,7 @@ export const companiesApi = {
 
     const queryString = params.toString();
     return apiClient.get(
-      `/companies/user/${userId}${queryString ? `?${queryString}` : ''}`
+      `/companies/user/${userId}${queryString ? `?${queryString}` : ''}`,
     );
   },
 
@@ -216,7 +216,7 @@ export const companiesApi = {
    */
   async addContact(
     companyId: number,
-    data: AddContactToCompanyDto
+    data: AddContactToCompanyDto,
   ): Promise<CompanyContactAssociation> {
     return apiClient.post(`/companies/${companyId}/contacts`, data);
   },
@@ -227,11 +227,11 @@ export const companiesApi = {
   async updateContact(
     companyId: number,
     contactId: number,
-    data: UpdateContactCompanyDto
+    data: UpdateContactCompanyDto,
   ): Promise<void> {
     return apiClient.patch(
       `/companies/${companyId}/contacts/${contactId}`,
-      data
+      data,
     );
   },
 
@@ -246,7 +246,7 @@ export const companiesApi = {
    * Get active contacts for a company
    */
   async getActiveContacts(
-    companyId: number
+    companyId: number,
   ): Promise<CompanyContactAssociation[]> {
     return apiClient.get(`/companies/${companyId}/contacts`);
   },
@@ -255,7 +255,7 @@ export const companiesApi = {
    * Get all contacts for a company including history
    */
   async getContactHistory(
-    companyId: number
+    companyId: number,
   ): Promise<CompanyContactAssociation[]> {
     return apiClient.get(`/companies/${companyId}/contacts/history`);
   },

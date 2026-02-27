@@ -29,7 +29,7 @@ export default function AddCompanyToDealDialog({
 }: AddCompanyToDealDialogProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedCompanyId, setSelectedCompanyId] = useState<number | null>(
-    null
+    null,
   );
   const [isPrimary, setIsPrimary] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -40,7 +40,7 @@ export default function AddCompanyToDealDialog({
   // Filter out companies that are already associated with this deal
   const availableCompanies =
     companiesData?.companies.filter(
-      (company) => !existingCompanyIds.includes(company.id)
+      (company) => !existingCompanyIds.includes(company.id),
     ) || [];
 
   const addCompanyMutation = useMutation({

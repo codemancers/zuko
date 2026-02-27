@@ -38,8 +38,10 @@ test.describe('Email Whitelist', () => {
     // Submit the form and wait for API response
     const submitButton = page.getByRole('button', { name: /create account/i });
     const responsePromise = page.waitForResponse(
-      (resp) => resp.url().includes('/sign-up') || resp.url().includes('/api/auth/sign-up'),
-      { timeout: 10000 }
+      (resp) =>
+        resp.url().includes('/sign-up') ||
+        resp.url().includes('/api/auth/sign-up'),
+      { timeout: 10000 },
     );
     await submitButton.click();
     await responsePromise;
@@ -52,7 +54,9 @@ test.describe('Email Whitelist', () => {
     await expect(errorMessage).toContainText('Allowed emails');
   });
 
-  test('should accept signup for whitelisted email vinu.r22@gmail.com', async ({ page }) => {
+  test('should accept signup for whitelisted email vinu.r22@gmail.com', async ({
+    page,
+  }) => {
     const emailInput = page.locator('input[type="email"]');
 
     // Skip test if email auth is not enabled
@@ -69,8 +73,10 @@ test.describe('Email Whitelist', () => {
     // Submit the form and wait for API response
     const submitButton = page.getByRole('button', { name: /create account/i });
     const responsePromise = page.waitForResponse(
-      (resp) => resp.url().includes('/sign-up') || resp.url().includes('/api/auth/sign-up'),
-      { timeout: 10000 }
+      (resp) =>
+        resp.url().includes('/sign-up') ||
+        resp.url().includes('/api/auth/sign-up'),
+      { timeout: 10000 },
     );
     await submitButton.click();
     await responsePromise;
@@ -83,11 +89,15 @@ test.describe('Email Whitelist', () => {
     await expect(async () => {
       const url = page.url();
       // Either successfully redirected OR not showing whitelist error
-      expect(url.includes('/chat') || !(await restrictedError.isVisible())).toBeTruthy();
+      expect(
+        url.includes('/chat') || !(await restrictedError.isVisible()),
+      ).toBeTruthy();
     }).toPass({ timeout: 5000 });
   });
 
-  test('should accept signup for whitelisted email yuva@codemancers.com', async ({ page }) => {
+  test('should accept signup for whitelisted email yuva@codemancers.com', async ({
+    page,
+  }) => {
     const emailInput = page.locator('input[type="email"]');
 
     // Skip test if email auth is not enabled
@@ -104,8 +114,10 @@ test.describe('Email Whitelist', () => {
     // Submit the form and wait for API response
     const submitButton = page.getByRole('button', { name: /create account/i });
     const responsePromise = page.waitForResponse(
-      (resp) => resp.url().includes('/sign-up') || resp.url().includes('/api/auth/sign-up'),
-      { timeout: 10000 }
+      (resp) =>
+        resp.url().includes('/sign-up') ||
+        resp.url().includes('/api/auth/sign-up'),
+      { timeout: 10000 },
     );
     await submitButton.click();
     await responsePromise;
@@ -118,11 +130,15 @@ test.describe('Email Whitelist', () => {
     await expect(async () => {
       const url = page.url();
       // Either successfully redirected OR not showing whitelist error
-      expect(url.includes('/chat') || !(await restrictedError.isVisible())).toBeTruthy();
+      expect(
+        url.includes('/chat') || !(await restrictedError.isVisible()),
+      ).toBeTruthy();
     }).toPass({ timeout: 5000 });
   });
 
-  test('should reject signup with case variations of non-whitelisted email', async ({ page }) => {
+  test('should reject signup with case variations of non-whitelisted email', async ({
+    page,
+  }) => {
     const emailInput = page.locator('input[type="email"]');
 
     // Skip test if email auth is not enabled
@@ -139,8 +155,10 @@ test.describe('Email Whitelist', () => {
     // Submit the form and wait for API response
     const submitButton = page.getByRole('button', { name: /create account/i });
     const responsePromise = page.waitForResponse(
-      (resp) => resp.url().includes('/sign-up') || resp.url().includes('/api/auth/sign-up'),
-      { timeout: 10000 }
+      (resp) =>
+        resp.url().includes('/sign-up') ||
+        resp.url().includes('/api/auth/sign-up'),
+      { timeout: 10000 },
     );
     await submitButton.click();
     await responsePromise;
@@ -150,7 +168,9 @@ test.describe('Email Whitelist', () => {
     await expect(errorMessage).toBeVisible({ timeout: 5000 });
   });
 
-  test('should accept signup with case variations of whitelisted email', async ({ page }) => {
+  test('should accept signup with case variations of whitelisted email', async ({
+    page,
+  }) => {
     const emailInput = page.locator('input[type="email"]');
 
     // Skip test if email auth is not enabled
@@ -167,8 +187,10 @@ test.describe('Email Whitelist', () => {
     // Submit the form and wait for API response
     const submitButton = page.getByRole('button', { name: /create account/i });
     const responsePromise = page.waitForResponse(
-      (resp) => resp.url().includes('/sign-up') || resp.url().includes('/api/auth/sign-up'),
-      { timeout: 10000 }
+      (resp) =>
+        resp.url().includes('/sign-up') ||
+        resp.url().includes('/api/auth/sign-up'),
+      { timeout: 10000 },
     );
     await submitButton.click();
     await responsePromise;
@@ -178,7 +200,9 @@ test.describe('Email Whitelist', () => {
     await expect(restrictedError).not.toBeVisible({ timeout: 3000 });
   });
 
-  test('should reject multiple different non-whitelisted emails', async ({ page }) => {
+  test('should reject multiple different non-whitelisted emails', async ({
+    page,
+  }) => {
     const emailInput = page.locator('input[type="email"]');
 
     // Skip test if email auth is not enabled
@@ -202,10 +226,14 @@ test.describe('Email Whitelist', () => {
       await page.locator('input[name="name"]').fill('Test User');
 
       // Submit the form and wait for API response
-      const submitButton = page.getByRole('button', { name: /create account/i });
+      const submitButton = page.getByRole('button', {
+        name: /create account/i,
+      });
       const responsePromise = page.waitForResponse(
-        (resp) => resp.url().includes('/sign-up') || resp.url().includes('/api/auth/sign-up'),
-        { timeout: 10000 }
+        (resp) =>
+          resp.url().includes('/sign-up') ||
+          resp.url().includes('/api/auth/sign-up'),
+        { timeout: 10000 },
       );
       await submitButton.click();
       await responsePromise;

@@ -1,12 +1,12 @@
 'use client';
 
-import DealForm from "@/components/Deals/DealForm";
-import { Heading, Divider } from "@zuko/ui-kit";
-import { useQuery } from "@tanstack/react-query";
-import { getDeal } from "@/server/query-options";
-import { authClient } from "@/lib/auth-client";
-import { useRouter } from "next/navigation";
-import { use, useEffect } from "react";
+import DealForm from '@/components/Deals/DealForm';
+import { Heading, Divider } from '@zuko/ui-kit';
+import { useQuery } from '@tanstack/react-query';
+import { getDeal } from '@/server/query-options';
+import { authClient } from '@/lib/auth-client';
+import { useRouter } from 'next/navigation';
+import { use, useEffect } from 'react';
 
 interface EditDealPageProps {
   params: Promise<{ id: string }>;
@@ -20,7 +20,7 @@ const EditDealPage = ({ params }: EditDealPageProps) => {
 
   useEffect(() => {
     if (!session.isPending && !session.data) {
-      router.push("/sign-in");
+      router.push('/sign-in');
     }
   }, [session.isPending, session.data, router]);
 
@@ -32,7 +32,9 @@ const EditDealPage = ({ params }: EditDealPageProps) => {
   if (session.isPending || !session.data || dealLoading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <div className="text-sm text-zinc-600 dark:text-zinc-400">Loading...</div>
+        <div className="text-sm text-zinc-600 dark:text-zinc-400">
+          Loading...
+        </div>
       </div>
     );
   }
@@ -40,7 +42,9 @@ const EditDealPage = ({ params }: EditDealPageProps) => {
   if (!deal) {
     return (
       <div className="flex items-center justify-center py-12">
-        <div className="text-sm text-zinc-600 dark:text-zinc-400">Deal not found</div>
+        <div className="text-sm text-zinc-600 dark:text-zinc-400">
+          Deal not found
+        </div>
       </div>
     );
   }

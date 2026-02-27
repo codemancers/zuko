@@ -337,8 +337,8 @@ export default function DealForm({ deal, mode, currentUserId }: DealFormProps) {
           {isLoading
             ? 'Saving...'
             : mode === 'create'
-            ? 'Create Deal'
-            : 'Save Changes'}
+              ? 'Create Deal'
+              : 'Save Changes'}
         </Button>
         <Button type="button" plain onClick={handleCancel} disabled={isLoading}>
           Cancel

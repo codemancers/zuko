@@ -79,7 +79,7 @@ describe('DealsController', () => {
       };
 
       (mockDealsService.create as jest.Mock).mockResolvedValue(
-        mockCreatedDeal as never
+        mockCreatedDeal as never,
       );
 
       await controller.create(dto);
@@ -93,7 +93,7 @@ describe('DealsController', () => {
       // This is the bug: expectedCloseDate should be a Date object
       expect(callArg.expectedCloseDate).toBeInstanceOf(Date);
       expect((callArg.expectedCloseDate as Date).toISOString()).toContain(
-        '2026-02-25'
+        '2026-02-25',
       );
     });
 
@@ -119,7 +119,7 @@ describe('DealsController', () => {
       };
 
       (mockDealsService.create as jest.Mock).mockResolvedValue(
-        mockCreatedDeal as never
+        mockCreatedDeal as never,
       );
 
       await controller.create(dto);
@@ -151,7 +151,7 @@ describe('DealsController', () => {
       };
 
       (mockDealsService.update as jest.Mock).mockResolvedValue(
-        mockUpdatedDeal as never
+        mockUpdatedDeal as never,
       );
 
       await controller.update(dealId, dto);
@@ -159,17 +159,17 @@ describe('DealsController', () => {
       expect(mockDealsService.update).toHaveBeenCalledTimes(1);
       const [id, callArg] = mockDealsService.update.mock.calls[0] as [
         number,
-        { expectedCloseDate?: Date; actualCloseDate?: Date }
+        { expectedCloseDate?: Date; actualCloseDate?: Date },
       ];
 
       expect(id).toBe(dealId);
       expect(callArg.expectedCloseDate).toBeInstanceOf(Date);
       expect(callArg.actualCloseDate).toBeInstanceOf(Date);
       expect((callArg.expectedCloseDate as Date).toISOString()).toContain(
-        '2026-03-15'
+        '2026-03-15',
       );
       expect((callArg.actualCloseDate as Date).toISOString()).toContain(
-        '2026-03-10'
+        '2026-03-10',
       );
     });
 
@@ -187,7 +187,7 @@ describe('DealsController', () => {
       };
 
       (mockDealsService.update as jest.Mock).mockResolvedValue(
-        mockUpdatedDeal as never
+        mockUpdatedDeal as never,
       );
 
       await controller.update(dealId, dto);
@@ -195,7 +195,7 @@ describe('DealsController', () => {
       expect(mockDealsService.update).toHaveBeenCalledTimes(1);
       const [, callArg] = mockDealsService.update.mock.calls[0] as [
         number,
-        { expectedCloseDate?: Date; actualCloseDate?: Date }
+        { expectedCloseDate?: Date; actualCloseDate?: Date },
       ];
 
       expect(callArg.expectedCloseDate).toBeUndefined();

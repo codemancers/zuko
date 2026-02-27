@@ -13,10 +13,12 @@ export class ChatPage extends BasePage {
     super(page);
     // These selectors might need adjustment based on actual implementation
     this.chatInput = page.getByRole('textbox').or(page.locator('textarea'));
-    this.sendButton = page.getByRole('button', { name: /send/i }).or(
-      page.locator('button[type="submit"]')
-    );
-    this.messagesContainer = page.locator('[data-testid="messages"]').or(page.locator('main'));
+    this.sendButton = page
+      .getByRole('button', { name: /send/i })
+      .or(page.locator('button[type="submit"]'));
+    this.messagesContainer = page
+      .locator('[data-testid="messages"]')
+      .or(page.locator('main'));
   }
 
   /**
@@ -39,9 +41,12 @@ export class ChatPage extends BasePage {
    */
   async getMessages() {
     // Adjust selector based on actual implementation
-    return this.page.locator('[data-testid="message"]').or(
-      this.page.locator('.message').or(this.page.locator('[role="article"]'))
-    ).all();
+    return this.page
+      .locator('[data-testid="message"]')
+      .or(
+        this.page.locator('.message').or(this.page.locator('[role="article"]')),
+      )
+      .all();
   }
 
   /**

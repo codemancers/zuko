@@ -32,22 +32,29 @@ export function createQueryContactsTool(contactsService: ContactsService) {
         }
 
         // Fetch contacts
-        const result = await contactsService.findAll(contactFilters, paginationOptions);
+        const result = await contactsService.findAll(
+          contactFilters,
+          paginationOptions,
+        );
         let contacts = result.contacts;
 
         // Apply post-fetch filters
         if (filters.createdAfter) {
           const afterDate = new Date(filters.createdAfter);
-          contacts = contacts.filter(c => new Date(c.createdAt) >= afterDate);
+          contacts = contacts.filter((c) => new Date(c.createdAt) >= afterDate);
         }
 
         if (filters.createdBefore) {
           const beforeDate = new Date(filters.createdBefore);
-          contacts = contacts.filter(c => new Date(c.createdAt) <= beforeDate);
+          contacts = contacts.filter(
+            (c) => new Date(c.createdAt) <= beforeDate,
+          );
         }
 
         if (filters.hasEmail !== undefined) {
-          contacts = contacts.filter(c => filters.hasEmail ? !!c.email : !c.email);
+          contacts = contacts.filter((c) =>
+            filters.hasEmail ? !!c.email : !c.email,
+          );
         }
 
         // Handle aggregation
@@ -90,7 +97,7 @@ export function createQueryContactsTool(contactsService: ContactsService) {
 
         // Default: return list of contacts
         return {
-          contacts: contacts.slice(0, limit).map(c => ({
+          contacts: contacts.slice(0, limit).map((c) => ({
             id: c.id,
             name: c.name,
             email: c.email,
@@ -127,12 +134,33 @@ Supports:
       schema: z.object({
         filters: z
           .object({
-            contactIds: z.array(z.number()).optional().describe('Fetch only these contact IDs (e.g. when context has multiple contacts)'),
+            contactIds: z
+              .array(z.number())
+              .optional()
+              .describe(
+                'Fetch only these contact IDs (e.g. when context has multiple contacts)',
+              ),
             ownerId: z.number().optional().describe('Filter by owner user ID'),
-            createdAfter: z.string().optional().describe('Filter by creation date (ISO 8601 format, e.g., "2026-01-01")'),
-            createdBefore: z.string().optional().describe('Filter by creation date (ISO 8601 format)'),
-            hasEmail: z.boolean().optional().describe('Filter by email presence (true = has email, false = no email)'),
-            search: z.string().optional().describe('Search in name, email, phone, linkedinId'),
+            createdAfter: z
+              .string()
+              .optional()
+              .describe(
+                'Filter by creation date (ISO 8601 format, e.g., "2026-01-01")',
+              ),
+            createdBefore: z
+              .string()
+              .optional()
+              .describe('Filter by creation date (ISO 8601 format)'),
+            hasEmail: z
+              .boolean()
+              .optional()
+              .describe(
+                'Filter by email presence (true = has email, false = no email)',
+              ),
+            search: z
+              .string()
+              .optional()
+              .describe('Search in name, email, phone, linkedinId'),
           })
           .optional()
           .describe('Filter criteria'),
@@ -140,7 +168,9 @@ Supports:
           .enum(['count', 'list'])
           .optional()
           .default('list')
-          .describe('Type of result: count returns just the number, list returns contact details'),
+          .describe(
+            'Type of result: count returns just the number, list returns contact details',
+          ),
         groupBy: z
           .enum(['ownerId'])
           .optional()
@@ -151,6 +181,6 @@ Supports:
           .default(100)
           .describe('Maximum number of results to return (max 1000)'),
       }),
-    }
+    },
   );
 }

@@ -16,7 +16,9 @@ export class CompanyDetailPage extends BasePage {
     this.editButton = page.getByRole('button', { name: 'Edit', exact: true });
     this.hideButton = page.getByRole('button', { name: /Hide/i });
     this.addContactButton = page.getByRole('button', { name: 'Add Contact' });
-    this.associatedContactsSection = page.locator('text=Associated Contacts').locator('..');
+    this.associatedContactsSection = page
+      .locator('text=Associated Contacts')
+      .locator('..');
   }
 
   /**
@@ -48,19 +50,25 @@ export class CompanyDetailPage extends BasePage {
     // Select contact from dropdown
     const selectContact = this.page.locator('select').first();
     const options = await selectContact.locator('option').all();
-    const optionTexts = await Promise.all(options.map(o => o.textContent()));
-    const match = optionTexts.find(t => t?.toLowerCase().includes(contactName.toLowerCase()));
+    const optionTexts = await Promise.all(options.map((o) => o.textContent()));
+    const match = optionTexts.find((t) =>
+      t?.toLowerCase().includes(contactName.toLowerCase()),
+    );
     if (match) await selectContact.selectOption({ label: match.trim() });
 
     // Fill role if provided
     if (role) {
-      const roleInput = this.page.getByPlaceholder(/e.g., Employee, Contractor/i);
+      const roleInput = this.page.getByPlaceholder(
+        /e.g., Employee, Contractor/i,
+      );
       await roleInput.fill(role);
     }
 
     // Check primary if requested
     if (isPrimary) {
-      const primaryCheckbox = this.page.getByText(/Primary contact for this company/i).locator('xpath=preceding-sibling::input[@type="checkbox"]');
+      const primaryCheckbox = this.page
+        .getByText(/Primary contact for this company/i)
+        .locator('xpath=preceding-sibling::input[@type="checkbox"]');
       await primaryCheckbox.check();
     }
 
@@ -68,7 +76,10 @@ export class CompanyDetailPage extends BasePage {
     await this.page.getByRole('button', { name: /Add Contact/i }).click();
 
     // Wait for dialog to close and data to refresh
-    await this.page.waitForSelector('text=Add Contact to Company', { state: 'hidden', timeout: 3000 });
+    await this.page.waitForSelector('text=Add Contact to Company', {
+      state: 'hidden',
+      timeout: 3000,
+    });
   }
 
   /**
@@ -76,16 +87,20 @@ export class CompanyDetailPage extends BasePage {
    */
   async removeContact(contactName: string) {
     // Find the contact row
-    const contactRow = this.page.locator(`text=${contactName}`).locator('xpath=ancestor::div[contains(@class, "flex")]');
+    const contactRow = this.page
+      .locator(`text=${contactName}`)
+      .locator('xpath=ancestor::div[contains(@class, "flex")]');
 
     // Click the remove (X) button
     const removeButton = contactRow.getByTitle('Remove contact');
 
     // Set up dialog handler and wait for API response
-    this.page.once('dialog', dialog => dialog.accept());
+    this.page.once('dialog', (dialog) => dialog.accept());
     const responsePromise = this.page.waitForResponse(
-      (resp) => resp.url().includes('/api/') && (resp.status() === 200 || resp.status() === 204),
-      { timeout: 5000 }
+      (resp) =>
+        resp.url().includes('/api/') &&
+        (resp.status() === 200 || resp.status() === 204),
+      { timeout: 5000 },
     );
 
     await removeButton.click();
@@ -98,9 +113,15 @@ export class CompanyDetailPage extends BasePage {
   /**
    * Edit a contact association inline
    */
-  async editContactAssociation(contactName: string, newRole?: string, setPrimary?: boolean) {
+  async editContactAssociation(
+    contactName: string,
+    newRole?: string,
+    setPrimary?: boolean,
+  ) {
     // Find the contact row
-    const contactRow = this.page.locator(`text=${contactName}`).locator('xpath=ancestor::div[contains(@class, "flex")]');
+    const contactRow = this.page
+      .locator(`text=${contactName}`)
+      .locator('xpath=ancestor::div[contains(@class, "flex")]');
 
     // Click the edit (pencil) button
     const editButton = contactRow.getByTitle('Edit association');
@@ -129,7 +150,7 @@ export class CompanyDetailPage extends BasePage {
     const saveButton = contactRow.getByTitle('Save changes');
     const responsePromise = this.page.waitForResponse(
       (resp) => resp.url().includes('/api/') && resp.ok(),
-      { timeout: 5000 }
+      { timeout: 5000 },
     );
     await saveButton.click();
     await responsePromise;
@@ -142,7 +163,8 @@ export class CompanyDetailPage extends BasePage {
    * Get list of associated contacts
    */
   async getAssociatedContacts() {
-    const contacts = await this.page.locator('text=Associated Contacts')
+    const contacts = await this.page
+      .locator('text=Associated Contacts')
       .locator('..')
       .locator('div.space-y-3 > div')
       .all();
@@ -161,7 +183,9 @@ export class CompanyDetailPage extends BasePage {
    * Get the role badge text for a contact
    */
   async getContactRole(contactName: string): Promise<string | null> {
-    const contactRow = this.page.locator(`text=${contactName}`).locator('xpath=ancestor::div[contains(@class, "flex")]');
+    const contactRow = this.page
+      .locator(`text=${contactName}`)
+      .locator('xpath=ancestor::div[contains(@class, "flex")]');
     const roleBadge = contactRow.locator('[class*="Badge"]').first();
     return await roleBadge.textContent().catch(() => null);
   }
@@ -170,7 +194,9 @@ export class CompanyDetailPage extends BasePage {
    * Check if contact is marked as primary
    */
   async isContactPrimary(contactName: string): Promise<boolean> {
-    const contactRow = this.page.locator(`text=${contactName}`).locator('xpath=ancestor::div[contains(@class, "flex")]');
+    const contactRow = this.page
+      .locator(`text=${contactName}`)
+      .locator('xpath=ancestor::div[contains(@class, "flex")]');
     const primaryBadge = contactRow.locator('text=Primary');
     return await primaryBadge.isVisible().catch(() => false);
   }
@@ -185,7 +211,7 @@ export class CompanyDetailPage extends BasePage {
     // Wait for API response when posting comment
     const responsePromise = this.page.waitForResponse(
       (resp) => resp.url().includes('/api/activities') && resp.ok(),
-      { timeout: 10000 }
+      { timeout: 10000 },
     );
     await this.page.getByRole('button', { name: 'Post Comment' }).click();
     await responsePromise;
@@ -194,7 +220,7 @@ export class CompanyDetailPage extends BasePage {
     await textarea.waitFor({ state: 'visible', timeout: 3000 });
     await this.page.waitForFunction(
       (el) => (el as unknown as HTMLTextAreaElement).value === '',
-      textarea
+      textarea,
     );
   }
 

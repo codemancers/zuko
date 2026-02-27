@@ -82,7 +82,7 @@ export class CompaniesController {
         linkedinUrl: dto.linkedinUrl,
         ownerIds: dto.ownerIds,
         primaryOwnerId: dto.primaryOwnerId,
-      })}`
+      })}`,
     );
 
     try {
@@ -124,7 +124,7 @@ export class CompaniesController {
   @Patch(':id')
   async update(
     @Param('id', ParseIntPipe) id: number,
-    @Body() dto: UpdateCompanyDto
+    @Body() dto: UpdateCompanyDto,
   ) {
     return this.companiesService.update(id, dto);
   }
@@ -143,7 +143,7 @@ export class CompaniesController {
   @Post(':id/owners')
   async addOwner(
     @Param('id', ParseIntPipe) id: number,
-    @Body() dto: AddOwnerDto
+    @Body() dto: AddOwnerDto,
   ) {
     return this.companiesService.addOwner(id, dto.userId, dto.isPrimary);
   }
@@ -152,7 +152,7 @@ export class CompaniesController {
   @HttpCode(HttpStatus.NO_CONTENT)
   async removeOwner(
     @Param('id', ParseIntPipe) id: number,
-    @Param('userId', ParseIntPipe) userId: number
+    @Param('userId', ParseIntPipe) userId: number,
   ) {
     await this.companiesService.removeOwner(id, userId);
   }
@@ -160,7 +160,7 @@ export class CompaniesController {
   @Post(':id/owners/:userId/set-primary')
   async setPrimaryOwner(
     @Param('id', ParseIntPipe) id: number,
-    @Param('userId', ParseIntPipe) userId: number
+    @Param('userId', ParseIntPipe) userId: number,
   ) {
     await this.companiesService.setPrimaryOwner(id, userId);
     return { success: true };
@@ -169,7 +169,7 @@ export class CompaniesController {
   @Get('user/:userId')
   async getCompaniesByUser(
     @Param('userId', ParseIntPipe) userId: number,
-    @Query() query: CompanyListQueryDto
+    @Query() query: CompanyListQueryDto,
   ) {
     const pagination = {
       page: query.page ? Number(query.page) : 1,
@@ -183,16 +183,16 @@ export class CompaniesController {
   @HttpCode(HttpStatus.CREATED)
   async addContact(
     @Param('id', ParseIntPipe) id: number,
-    @Body() dto: AddContactDto
+    @Body() dto: AddContactDto,
   ) {
     this.logger.log(
-      `[ADD_CONTACT_TO_COMPANY] Company: ${id}, Contact: ${dto.contactId}`
+      `[ADD_CONTACT_TO_COMPANY] Company: ${id}, Contact: ${dto.contactId}`,
     );
 
     try {
       const result = await this.companiesService.addContact(id, dto);
       this.logger.log(
-        `[ADD_CONTACT_TO_COMPANY] Success - Contact ${dto.contactId} added to Company ${id}`
+        `[ADD_CONTACT_TO_COMPANY] Success - Contact ${dto.contactId} added to Company ${id}`,
       );
       return result;
     } catch (error: unknown) {
@@ -201,7 +201,7 @@ export class CompaniesController {
       const errorStack = error instanceof Error ? error.stack : undefined;
       this.logger.error(
         `[ADD_CONTACT_TO_COMPANY] Failed: ${errorMessage}`,
-        errorStack
+        errorStack,
       );
       throw error;
     }
@@ -211,7 +211,7 @@ export class CompaniesController {
   async updateContact(
     @Param('id', ParseIntPipe) id: number,
     @Param('contactId', ParseIntPipe) contactId: number,
-    @Body() dto: UpdateContactDto
+    @Body() dto: UpdateContactDto,
   ) {
     return this.companiesService.updateContactCompany(id, contactId, dto);
   }
@@ -220,7 +220,7 @@ export class CompaniesController {
   @HttpCode(HttpStatus.NO_CONTENT)
   async removeContact(
     @Param('id', ParseIntPipe) id: number,
-    @Param('contactId', ParseIntPipe) contactId: number
+    @Param('contactId', ParseIntPipe) contactId: number,
   ) {
     await this.companiesService.removeContact(id, contactId);
   }

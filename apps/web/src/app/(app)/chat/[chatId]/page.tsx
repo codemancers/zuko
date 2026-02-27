@@ -40,7 +40,7 @@ export default function ChatPage() {
   const handleFirstMessage = useCallback(
     async (data: string) => {
       console.log(
-        '[ChatPage] New chat detected, sending first message immediately'
+        '[ChatPage] New chat detected, sending first message immediately',
       );
 
       localStorage.removeItem(`chat-${chatId}-firstMessage`);
@@ -61,7 +61,10 @@ export default function ChatPage() {
           // Hydrate names so chips show "Vikram Joshi" not "Contact" when we inject
           const hydrated: ChatEntity[] = await Promise.all(
             contextEntities.map(
-              async (ref: { type: string; id: number }): Promise<ChatEntity> => {
+              async (ref: {
+                type: string;
+                id: number;
+              }): Promise<ChatEntity> => {
                 const type = ref.type as 'contact' | 'company';
                 try {
                   if (type === 'contact') {
@@ -88,8 +91,8 @@ export default function ChatPage() {
                     metadata: { type, entityId: ref.id },
                   };
                 }
-              }
-            )
+              },
+            ),
           );
           setInitialContext(hydrated);
         }
@@ -108,7 +111,7 @@ export default function ChatPage() {
         setMessagesLoaded(true);
       }
     },
-    [chatId, sendMessage, invalidateChats]
+    [chatId, sendMessage, invalidateChats],
   );
 
   // Helper: Load message history from backend (existing chat)
@@ -136,7 +139,7 @@ export default function ChatPage() {
                 text: msg.content,
               },
             ],
-          })
+          }),
         );
 
         if (formattedMessages.length > 0) {
@@ -150,7 +153,7 @@ export default function ChatPage() {
             id: ref.id,
             name: ref.name, // Use actual name from backend
             metadata: { type: ref.type, entityId: ref.id },
-          })
+          }),
         );
 
         if (hydratedEntities.length > 0) {
@@ -170,7 +173,7 @@ export default function ChatPage() {
     if (!messagesLoaded && !firstMessageSent && chatId) {
       // Step 1: Check if this is a new chat (has first message in localStorage)
       const firstMessageData = localStorage.getItem(
-        `chat-${chatId}-firstMessage`
+        `chat-${chatId}-firstMessage`,
       );
 
       if (firstMessageData) {

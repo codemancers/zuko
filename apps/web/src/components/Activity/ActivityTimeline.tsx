@@ -27,12 +27,12 @@ export default function ActivityTimeline({
   const [comment, setComment] = useState('');
   const queryClient = useQueryClient();
   const [editingActivityId, setEditingActivityId] = useState<number | null>(
-    null
+    null,
   );
   const [editedContent, setEditedContent] = useState('');
 
   const { data: activities, isLoading } = useQuery(
-    getTimeline(entityType, entityId, limit)
+    getTimeline(entityType, entityId, limit),
   );
 
   const createCommentMutation = useMutation({

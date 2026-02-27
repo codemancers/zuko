@@ -7,7 +7,10 @@ import customParseFormat from 'dayjs/plugin/customParseFormat';
 
 dayjs.extend(customParseFormat);
 
-export interface DateInputProps extends Omit<React.ComponentPropsWithoutRef<'input'>, 'type' | 'value' | 'onChange'> {
+export interface DateInputProps extends Omit<
+  React.ComponentPropsWithoutRef<'input'>,
+  'type' | 'value' | 'onChange'
+> {
   value?: string;
   onChange?: (value: string) => void;
   format?: string;
@@ -31,7 +34,7 @@ export const DateInput = forwardRef<HTMLInputElement, DateInputProps>(
       disabled,
       ...props
     },
-    ref
+    ref,
   ) {
     // Display value (formatted for user)
     const [displayValue, setDisplayValue] = useState('');
@@ -135,5 +138,5 @@ export const DateInput = forwardRef<HTMLInputElement, DateInputProps>(
         {...props}
       />
     );
-  }
+  },
 );

@@ -76,7 +76,7 @@ export const getDealsByCompany = (companyId: number) =>
 export const getTimeline = (
   entityType: string,
   entityId: number,
-  limit?: number
+  limit?: number,
 ) =>
   queryOptions({
     queryKey: ['timeline', entityType, entityId, limit],
@@ -84,7 +84,7 @@ export const getTimeline = (
       const response = await activitiesApi.getTimeline(
         entityType,
         entityId,
-        limit
+        limit,
       );
       return response.activities;
     },

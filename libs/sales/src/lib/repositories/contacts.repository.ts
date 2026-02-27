@@ -42,7 +42,9 @@ export class ContactsRepository {
         owners: {
           create: ownerIds.map((userId) => ({
             userId,
-            isPrimary: primaryOwnerId ? userId === primaryOwnerId : userId === ownerIds[0],
+            isPrimary: primaryOwnerId
+              ? userId === primaryOwnerId
+              : userId === ownerIds[0],
           })),
         },
       },
@@ -109,14 +111,19 @@ export class ContactsRepository {
     return this.update(id, { isHidden: false });
   }
 
-  async findAll(filters: ContactFilters = {}, pagination: PaginationOptions = {}) {
+  async findAll(
+    filters: ContactFilters = {},
+    pagination: PaginationOptions = {},
+  ) {
     const { isHidden = false, ownerIds, search, contactIds } = filters;
     const { page = 1, limit = 50 } = pagination;
     const skip = (page - 1) * limit;
 
     const where: Prisma.ContactWhereInput = {
       isHidden,
-      ...(contactIds && contactIds.length > 0 ? { id: { in: contactIds } } : {}),
+      ...(contactIds && contactIds.length > 0
+        ? { id: { in: contactIds } }
+        : {}),
       ...(ownerIds && ownerIds.length > 0
         ? {
             owners: {

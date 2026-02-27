@@ -6,14 +6,18 @@
 import { cookies } from 'next/headers';
 import { NextRequest } from 'next/server';
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001';
+const BACKEND_URL =
+  process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001';
 
 export async function POST(request: NextRequest) {
   try {
     // Get the request body
     const body = await request.json();
 
-    console.log('[/api/chat route.ts] Received body:', JSON.stringify(body, null, 2));
+    console.log(
+      '[/api/chat route.ts] Received body:',
+      JSON.stringify(body, null, 2),
+    );
 
     // Extract chatId from the Referer header
     // Browser sends: http://localhost:3000/chat/{chatId}
@@ -29,7 +33,10 @@ export async function POST(request: NextRequest) {
       chatId,
     };
 
-    console.log('[/api/chat route.ts] Body with chatId:', JSON.stringify(bodyWithChatId, null, 2));
+    console.log(
+      '[/api/chat route.ts] Body with chatId:',
+      JSON.stringify(bodyWithChatId, null, 2),
+    );
 
     // Get cookies to forward session
     const cookieStore = await cookies();
@@ -41,8 +48,8 @@ export async function POST(request: NextRequest) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Cookie': cookieHeader,
-        'Accept': 'text/event-stream',
+        Cookie: cookieHeader,
+        Accept: 'text/event-stream',
       },
       body: JSON.stringify(bodyWithChatId),
       credentials: 'include',
@@ -58,7 +65,7 @@ export async function POST(request: NextRequest) {
       headers: {
         'Content-Type': 'text/event-stream',
         'Cache-Control': 'no-cache',
-        'Connection': 'keep-alive',
+        Connection: 'keep-alive',
       },
     });
   } catch (error) {
@@ -70,7 +77,7 @@ export async function POST(request: NextRequest) {
       {
         status: 500,
         headers: { 'Content-Type': 'application/json' },
-      }
+      },
     );
   }
 }

@@ -148,7 +148,7 @@ export class CompaniesRepository {
 
   async findAll(
     filters: CompanyFilters = {},
-    pagination: PaginationOptions = {}
+    pagination: PaginationOptions = {},
   ) {
     const { isHidden = false, ownerIds, search, companyIds } = filters;
     const { page = 1, limit = 50 } = pagination;
@@ -156,7 +156,9 @@ export class CompaniesRepository {
 
     const where: Prisma.SalesCompanyWhereInput = {
       isHidden,
-      ...(companyIds && companyIds.length > 0 ? { id: { in: companyIds } } : {}),
+      ...(companyIds && companyIds.length > 0
+        ? { id: { in: companyIds } }
+        : {}),
       ...(ownerIds && ownerIds.length > 0
         ? {
             owners: {
@@ -326,7 +328,7 @@ export class CompaniesRepository {
   async updateContactCompany(
     companyId: number,
     contactId: number,
-    input: UpdateContactCompanyInput
+    input: UpdateContactCompanyInput,
   ) {
     // If setting as primary, remove primary flag from other contacts
     if (input.isPrimary) {

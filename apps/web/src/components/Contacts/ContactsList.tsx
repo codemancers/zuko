@@ -25,7 +25,7 @@ const ContactsList = () => {
   const router = useRouter();
   const [searchTerm, setSearchTerm] = useState('');
   const { data, isLoading } = useQuery(
-    getContacts({ search: searchTerm || undefined })
+    getContacts({ search: searchTerm || undefined }),
   );
 
   const contacts = data?.contacts || [];

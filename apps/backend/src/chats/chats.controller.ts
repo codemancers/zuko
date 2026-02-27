@@ -19,7 +19,7 @@ import { OrchestratorService } from '@zuko/agents';
 export class ChatsController {
   constructor(
     private chatsService: ChatsService,
-    private orchestratorService: OrchestratorService
+    private orchestratorService: OrchestratorService,
   ) {}
 
   /**
@@ -140,7 +140,7 @@ export class ChatsController {
   async update(
     @Req() req,
     @Param('id') id: string,
-    @Body() body: { title: string }
+    @Body() body: { title: string },
   ) {
     const userId = parseInt(req.user.id, 10);
     const chatId = parseInt(id, 10);
@@ -188,7 +188,7 @@ export class ChatsController {
   async addParticipant(
     @Req() req,
     @Param('id') id: string,
-    @Body() body: { userId: number }
+    @Body() body: { userId: number },
   ) {
     const currentUserId = parseInt(req.user.id, 10);
     const chatId = parseInt(id, 10);
@@ -196,7 +196,7 @@ export class ChatsController {
     // Verify current user is a participant
     const isParticipant = await this.chatsService.isParticipant(
       chatId,
-      currentUserId
+      currentUserId,
     );
     if (!isParticipant) {
       throw new ForbiddenException('Not a participant in this chat');
@@ -204,7 +204,7 @@ export class ChatsController {
 
     const participant = await this.chatsService.addParticipant(
       chatId,
-      body.userId
+      body.userId,
     );
 
     return {
@@ -224,7 +224,7 @@ export class ChatsController {
   async removeParticipant(
     @Req() req,
     @Param('id') id: string,
-    @Param('userId') userIdParam: string
+    @Param('userId') userIdParam: string,
   ) {
     const currentUserId = parseInt(req.user.id, 10);
     const chatId = parseInt(id, 10);
@@ -233,7 +233,7 @@ export class ChatsController {
     // Verify current user is a participant
     const isParticipant = await this.chatsService.isParticipant(
       chatId,
-      currentUserId
+      currentUserId,
     );
     if (!isParticipant) {
       throw new ForbiddenException('Not a participant in this chat');

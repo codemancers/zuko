@@ -77,6 +77,6 @@ export {
   Tooltip,
   TooltipTrigger,
   TooltipContent,
-  TooltipProvider
+  TooltipProvider,
 } from './components/ui/tooltip';
 export { AuthLayout } from './layouts/auth-layout';
