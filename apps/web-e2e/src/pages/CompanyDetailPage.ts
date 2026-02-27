@@ -104,9 +104,6 @@ export class CompanyDetailPage extends BasePage {
       const primaryCheckbox = this.page
         .getByText(/Primary contact for this company/i)
         .locator('xpath=preceding-sibling::input[@type="checkbox"]');
-      const primaryCheckbox = this.page
-        .getByText(/Primary contact for this company/i)
-        .locator('xpath=preceding-sibling::input[@type="checkbox"]');
       await primaryCheckbox.check();
     }
 

@@ -223,9 +223,6 @@ test.describe("Contact Activity Timeline - Authenticated", () => {
     const editButton = contactDetailPage.activityItems
       .last()
       .getByRole("button", { name: /edit/i });
-    const editButton = contactDetailPage.activityItems
-      .last()
-      .getByRole("button", { name: /edit/i });
     await expect(editButton).toBeVisible({ timeout: 3000 });
   });
 
@@ -483,8 +480,6 @@ test.describe("Contact Activity Timeline - Authenticated", () => {
     await contactDetailPage.goto(sharedContactId);
 
     const initialCount = await contactDetailPage.getActivityCount();
-    const specialComment =
-      'Test with special chars: <script>alert("xss")</script> & © ™ 😀';
     const specialComment =
       'Test with special chars: <script>alert("xss")</script> & © ™ 😀';
 
