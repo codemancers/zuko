@@ -16,30 +16,6 @@ test.describe("Contacts Page - Unauthenticated", () => {
 });
 
 test.describe("Contacts - Authenticated", () => {
-  test("can create a new contact", async ({ contactsPage, page }) => {
-    await contactsPage.goto();
-    await contactsPage.clickNewContact();
-    await page.waitForURL("**/contacts/new", { timeout: 10000 });
-    expect(page.url()).toContain("/contacts/new");
-
-    await page.getByLabel(/Name/i).fill("Test E2E Contact");
-    await page.getByLabel(/Email/i).fill("test-e2e-contact@example.com");
-    await page.getByLabel(/Phone/i).fill("+14155552671");
-    await page
-      .getByLabel(/LinkedIn ID/i)
-      .fill("https://linkedin.com/in/teste2econtact");
-    await page
-      .getByPlaceholder(/Add notes about this contact.../i)
-      .fill("Test E2E Notes");
-    await page.getByRole("button", { name: /Create Contact/i }).click();
-    await page.waitForURL("**/contacts", { timeout: 10000 });
-    expect(page.url()).toContain("/contacts");
-
-    await expect(page.getByText("Test E2E Contact")).toBeVisible({
-      timeout: 10000,
-    });
-  });
-
   test("can view contact list", async ({ contactsPage }) => {
     await contactsPage.goto();
     const contacts = await contactsPage.getContactItems();

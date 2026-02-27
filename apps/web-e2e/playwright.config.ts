@@ -94,7 +94,17 @@ export default defineConfig({
       use: { ...devices['Desktop Chrome'] },
       testMatch: '**/auth.setup.spec.ts',
     },
-    // 2. Contacts: runs after auth, uses saved session; creates contact for contact-activities
+    // 2. Data: empty state checks + create contact, company, deal (runs after auth)
+    {
+      name: 'data',
+      use: {
+        ...devices['Desktop Chrome'],
+        storageState: '.auth/user.json',
+      },
+      testMatch: '**/data.spec.ts',
+      dependencies: ['auth setup'],
+    },
+    // 3. Contacts, companies, deals, contact-activities: all depend on data
     {
       name: 'contacts',
       use: {
@@ -102,9 +112,36 @@ export default defineConfig({
         storageState: '.auth/user.json',
       },
       testMatch: '**/contacts.spec.ts',
-      dependencies: ['auth setup'],
+      dependencies: ['data'],
     },
-    // 3. All other tests (excluding auth, contacts, contact-activities)
+    {
+      name: 'companies',
+      use: {
+        ...devices['Desktop Chrome'],
+        storageState: '.auth/user.json',
+      },
+      testMatch: '**/companies.spec.ts',
+      dependencies: ['data'],
+    },
+    {
+      name: 'deals',
+      use: {
+        ...devices['Desktop Chrome'],
+        storageState: '.auth/user.json',
+      },
+      testMatch: '**/deals.spec.ts',
+      dependencies: ['data'],
+    },
+    {
+      name: 'contact-activities',
+      use: {
+        ...devices['Desktop Chrome'],
+        storageState: '.auth/user.json',
+      },
+      testMatch: '**/contact-activities.spec.ts',
+      dependencies: ['data'],
+    },
+    // 4. All other tests (chat, settings, roles, auth, etc.)
     {
       name: 'e2e',
       use: {
@@ -113,31 +150,13 @@ export default defineConfig({
       },
       testIgnore: [
         '**/auth.setup.spec.ts',
+        '**/data.spec.ts',
         '**/contacts.spec.ts',
         '**/companies.spec.ts',
+        '**/deals.spec.ts',
         '**/contact-activities.spec.ts',
       ],
-      dependencies: ['auth setup'],
-    },
-    // 4. Companies: runs after contacts
-    {
-      name: 'companies',
-      use: {
-        ...devices['Desktop Chrome'],
-        storageState: '.auth/user.json',
-      },
-      testMatch: '**/companies.spec.ts',
-      dependencies: ['contacts'],
-    },
-    // 5. Contact activity timeline: runs after contacts
-    {
-      name: 'contact-activities',
-      use: {
-        ...devices['Desktop Chrome'],
-        storageState: '.auth/user.json',
-      },
-      testMatch: '**/contact-activities.spec.ts',
-      dependencies: ['contacts'],
+      dependencies: ['data'],
     },
   ],
 });

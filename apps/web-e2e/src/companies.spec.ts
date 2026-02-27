@@ -35,30 +35,6 @@ test.describe("Companies - Authenticated", () => {
     expect(page.url()).toContain("/companies/new");
   });
 
-  test("can create a company", async ({ companiesPage, page }) => {
-    await companiesPage.goto();
-    await companiesPage.clickNewCompany();
-    await page.waitForURL("**/companies/new", { timeout: 10000 });
-    expect(page.url()).toContain("/companies/new");
-
-    await page.getByLabel(/Company Name/i).fill("Test E2E Company");
-    await page.getByLabel(/Website/i).fill("https://teste2ecompany.com");
-    await page
-      .getByLabel(/LinkedIn URL/i)
-      .fill("https://linkedin.com/company/teste2ecompany");
-    await page
-      .getByPlaceholder(/Add a summary about this company/i)
-      .fill("Test summary");
-    await page.getByRole("button", { name: /Create Company/i }).click();
-
-    await page.waitForURL("**/companies", { timeout: 10000 });
-    expect(page.url()).toContain("/companies");
-
-    await expect(page.getByText("Test E2E Company")).toBeVisible({
-      timeout: 10000,
-    });
-  });
-
   test("can view company list", async ({ companiesPage }) => {
     await companiesPage.goto();
     const companies = await companiesPage.getCompanyItems();
