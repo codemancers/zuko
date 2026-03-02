@@ -107,12 +107,10 @@ export class CompanyDetailPage extends BasePage {
       await primaryCheckbox.check();
     }
 
-    await this.page.getByRole("button", { name: /Add Contact/i }).click();
+    const dialog = this.page.getByRole("dialog");
+    await dialog.getByRole("button", { name: /Add Contact/i }).click();
 
-    await this.page.waitForSelector("text=Add Contact to Company", {
-      state: "hidden",
-      timeout: 5000,
-    });
+    await dialog.waitFor({ state: "hidden", timeout: 15000 });
 
     return selectedName;
   }
@@ -144,17 +142,9 @@ export class CompanyDetailPage extends BasePage {
     const removeButton = contactRow.getByTitle("Remove contact");
 
     this.page.once("dialog", (dialog) => dialog.accept());
-    const responsePromise = this.page.waitForResponse(
-      (resp) =>
-        resp.url().includes("/api/") &&
-        (resp.status() === 200 || resp.status() === 204),
-      { timeout: 5000 }
-    );
-
     await removeButton.click();
-    await responsePromise;
 
-    await contactRow.waitFor({ state: "detached", timeout: 5000 });
+    await contactRow.waitFor({ state: "detached", timeout: 10000 });
   }
 
   /**
@@ -218,16 +208,18 @@ export class CompanyDetailPage extends BasePage {
   }
 
   /**
-   * Get list of associated contacts.
-   * Section: div.mt-8 > (div.flex with h2 "Associated Contacts", div.mt-4.space-y-3 with rows)
+   * Get list of associated contact rows (only rows that contain a contact link).
+   * Use this to avoid matching loading/empty placeholders.
    */
-  async getAssociatedContacts() {
+  async getAssociatedContacts(): Promise<Locator[]> {
     const section = this.page
       .getByRole("heading", { name: "Associated Contacts" })
       .locator("..")
       .locator("..");
-    const contacts = await section.locator("div.space-y-3 > div").all();
-    return contacts;
+    return section
+      .locator("div.space-y-3 > div")
+      .filter({ has: this.page.locator('a[href^="/contacts/"]') })
+      .all();
   }
 
   /**

@@ -35,6 +35,25 @@ test.describe("Companies - Authenticated", () => {
     expect(page.url()).toContain("/companies/new");
   });
 
+  test("can create a new company", async ({ companiesPage, page }) => {
+    await companiesPage.goto();
+    await companiesPage.clickNewCompany();
+    await page.waitForURL("**/companies/new", { timeout: 10000 });
+    await page.getByLabel(/Company Name/i).fill("TEST E2E COMPANY");
+    await page.getByLabel(/Website/i).fill("https://example.com");
+    await page
+      .getByLabel(/LinkedIn URL/i)
+      .fill("https://linkedin.com/company/test-e2e-company");
+    await page
+      .getByPlaceholder(/Add a summary about this company/i)
+      .fill("TEST E2E COMPANY SUMMARY");
+    await page.getByRole("button", { name: /Create Company/i }).click();
+    await page.waitForURL("**/companies", { timeout: 10000 });
+    await expect(page.getByText("TEST E2E COMPANY")).toBeVisible({
+      timeout: 10000,
+    });
+  });
+
   test("can view company list", async ({ companiesPage }) => {
     await companiesPage.goto();
     const companies = await companiesPage.getCompanyItems();
@@ -81,17 +100,48 @@ test.describe("Company Detail - Contact Management", () => {
   }) => {
     await companyDetailPage.goto(1);
     const initialContacts = await companyDetailPage.getAssociatedContacts();
-    // Select first contact in dropdown (contacts project creates at least one)
     const selectedName = await companyDetailPage.addContact(
       undefined,
       "Employee",
       false
     );
+    const nameToFind = selectedName.replace(/\s*\([^)]*\)$/, "").trim();
+    const section = page
+      .getByRole("heading", { name: "Associated Contacts" })
+      .locator("..")
+      .locator("..");
+    await expect(section.getByText(nameToFind, { exact: false })).toBeVisible({
+      timeout: 10000,
+    });
     const newContacts = await companyDetailPage.getAssociatedContacts();
     expect(newContacts.length).toBeGreaterThan(initialContacts.length);
-    // Option text may be "Name (email)"; row shows name
-    const nameToFind = selectedName.replace(/\s*\([^)]*\)$/, "").trim();
-    await expect(page.getByText(nameToFind)).toBeVisible({ timeout: 5000 });
+  });
+
+  test("filters out already associated contacts from dropdown", async ({
+    companyDetailPage,
+    page,
+  }) => {
+    await companyDetailPage.goto(1);
+    const associatedContacts = await companyDetailPage.getAssociatedContacts();
+    if (associatedContacts.length === 0) {
+      test.skip();
+    }
+    const firstContactRow = associatedContacts[0];
+    await expect(firstContactRow).toBeVisible({ timeout: 10000 });
+    const firstContactText =
+      (await firstContactRow.textContent({ timeout: 5000 })) ?? "";
+    const firstContactName = firstContactText?.split(/\s+/)[0] ?? "";
+    if (!firstContactName) {
+      test.skip();
+    }
+    await companyDetailPage.addContactButton.click();
+    await expect(page.getByText("Add Contact to Company")).toBeVisible({
+      timeout: 5000,
+    });
+    const select = page.locator("select").first();
+    const options = await select.locator("option").allTextContents();
+    const isInDropdown = options.some((opt) => opt.includes(firstContactName));
+    expect(isInDropdown).toBe(false);
   });
 
   test("can remove a contact from a company", async ({
@@ -99,8 +149,7 @@ test.describe("Company Detail - Contact Management", () => {
     page,
   }) => {
     await companyDetailPage.goto(1);
-    let contacts = await companyDetailPage.getAssociatedContacts();
-    // If none associated yet, add the first from dropdown then remove it
+    const contacts = await companyDetailPage.getAssociatedContacts();
     if (contacts.length === 0) {
       const addedName = await companyDetailPage.addContact(
         undefined,
@@ -207,28 +256,5 @@ test.describe("Contact Association Constraints", () => {
         /A contact can only be associated with one company at a time/i
       )
     ).toBeVisible();
-  });
-
-  test("filters out already associated contacts from dropdown", async ({
-    companyDetailPage,
-    page,
-  }) => {
-    await companyDetailPage.goto(1);
-    const associatedContacts = await companyDetailPage.getAssociatedContacts();
-    if (associatedContacts.length === 0) {
-      test.skip();
-    }
-    await companyDetailPage.addContactButton.click();
-    await expect(page.getByText("Add Contact to Company")).toBeVisible({
-      timeout: 5000,
-    });
-    const select = page.locator("select").first();
-    const options = await select.locator("option").allTextContents();
-    const firstContactText = await associatedContacts[0].textContent();
-    const firstContactName = firstContactText?.split(" ")[0];
-    const isInDropdown = options.some((opt) =>
-      opt.includes(firstContactName || "")
-    );
-    expect(isInDropdown).toBe(false);
   });
 });

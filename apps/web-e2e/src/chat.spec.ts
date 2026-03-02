@@ -228,9 +228,9 @@ test.describe("Chat", () => {
       await textarea.type("Hello, ");
       await textarea.type("@");
 
-      // Wait for the contact from data setup to appear in the mentions list
+      // Wait for the seeded contact (seed: "TEST CONTACT") to appear in the mentions list
       const mentionOption = page.getByRole("option", {
-        name: /Test E2E Contact/i,
+        name: /TEST CONTACT/i,
       });
       await expect(mentionOption).toBeVisible({ timeout: 10000 });
       await mentionOption.click();
@@ -239,7 +239,7 @@ test.describe("Chat", () => {
       await submitButton.click();
 
       const chatLog = page.getByRole("log");
-      await expect(chatLog.getByText(/Hello,.*Test E2E Contact/)).toBeVisible({
+      await expect(chatLog.getByText(/Hello,.*TEST CONTACT/)).toBeVisible({
         timeout: 10000,
       });
     });

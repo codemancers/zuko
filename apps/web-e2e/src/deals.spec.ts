@@ -45,6 +45,27 @@ test.describe("Deals - Authenticated", () => {
     expect(page.url()).toContain("/deals/new");
   });
 
+  test("can create a new deal", async ({ dealsPage, page }) => {
+    await dealsPage.goto();
+    await dealsPage.clickNewDeal();
+    await page.waitForURL("**/deals/new", { timeout: 10000 });
+    await page.getByLabel(/Deal Title/i).fill("TEST E2E DEAL");
+    await page.getByLabel(/Deal Value/i).fill("100000");
+    await page.getByLabel(/Stage/i).selectOption("Prospecting");
+    await page.getByLabel(/Currency/i).selectOption("USD");
+    await page.getByLabel(/Priority/i).selectOption("2"); // value in form; label is "P2 - Medium"
+    await page.getByLabel(/Expected Close Date/i).fill("2026-01-01");
+    await page.getByLabel(/Source/i).fill("Website");
+    await page
+      .getByPlaceholder(/Add notes about this deal/i)
+      .fill("TEST E2E DEAL SUMMARY");
+    await page.getByRole("button", { name: /Create Deal/i }).click();
+    await page.waitForURL("**/deals", { timeout: 10000 });
+    await expect(page.getByText("TEST E2E DEAL")).toBeVisible({
+      timeout: 10000,
+    });
+  });
+
   // ── 3. Check after (list with data) ─────────────────────────────────────
   test("can search for deals", async ({ dealsPage, page }) => {
     await dealsPage.goto();

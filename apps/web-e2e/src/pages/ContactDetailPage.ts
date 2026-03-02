@@ -1,5 +1,5 @@
-import { Page, Locator } from '@playwright/test';
-import { BasePage } from './BasePage';
+import { Page, Locator } from "@playwright/test";
+import { BasePage } from "./BasePage";
 
 /**
  * Page Object Model for Contact Detail page with Activity Timeline
@@ -18,13 +18,13 @@ export class ContactDetailPage extends BasePage {
     // Use a more specific selector for the activity section
     this.activitySection = page.locator('h2:has-text("Activity")').first();
     this.activityItems = page.locator('[data-testid="activity-item"]');
-    this.commentInput = page.getByPlaceholder('Add a comment...');
-    this.postCommentButton = page.getByRole('button', {
+    this.commentInput = page.getByPlaceholder("Add a comment...");
+    this.postCommentButton = page.getByRole("button", {
       name: /Post Comment/i,
     });
     this.activityAvatars = page.locator('[data-testid="activity-avatar"]');
     this.connectingLines = page.locator(
-      '[data-testid="activity-connecting-line"]',
+      '[data-testid="activity-connecting-line"]'
     );
   }
 
@@ -35,11 +35,11 @@ export class ContactDetailPage extends BasePage {
   async goto(contactId: number | string) {
     const path = `/contacts/${contactId}`;
     if (this.page.url().includes(path)) {
-      await this.page.waitForLoadState('networkidle').catch(() => {});
+      await this.page.waitForLoadState("networkidle").catch(() => {});
       return;
     }
-    await this.page.goto(path, { waitUntil: 'domcontentloaded' });
-    await this.page.waitForLoadState('networkidle');
+    await this.page.goto(path, { waitUntil: "domcontentloaded" });
+    await this.page.waitForLoadState("networkidle");
   }
 
   /**
@@ -69,9 +69,9 @@ export class ContactDetailPage extends BasePage {
   async getActivityText(index: number): Promise<string> {
     const items = await this.activityItems.all();
     if (items[index]) {
-      return items[index].textContent() || '';
+      return items[index].textContent() || "";
     }
-    return '';
+    return "";
   }
 
   /**
@@ -83,9 +83,9 @@ export class ContactDetailPage extends BasePage {
       const text = await items[index].textContent();
       // Extract name before timestamp (e.g., "John Doe 2 minutes ago")
       const match = text?.match(/^([^0-9]+)/);
-      return match ? match[1].trim() : '';
+      return match ? match[1].trim() : "";
     }
-    return '';
+    return "";
   }
 
   /**
@@ -97,7 +97,7 @@ export class ContactDetailPage extends BasePage {
     // Wait for comment to be posted
     await this.page.waitForResponse(
       (resp) =>
-        resp.url().includes('/activities/comments') && resp.status() === 201,
+        resp.url().includes("/activities/comments") && resp.status() === 201
     );
   }
 
@@ -123,23 +123,23 @@ export class ContactDetailPage extends BasePage {
     if (items[index]) {
       // Click edit button
       const editButton = items[index]
-        .getByRole('button', { name: /edit/i })
+        .getByRole("button", { name: /edit/i })
         .or(items[index].locator('button[title="Edit comment"]'));
       await editButton.click();
 
       // Wait for textarea to appear
-      const textarea = items[index].locator('textarea');
-      await textarea.waitFor({ state: 'visible' });
+      const textarea = items[index].locator("textarea");
+      await textarea.waitFor({ state: "visible" });
 
       // Clear and type new content
       await textarea.fill(newContent);
 
       // Click save button
-      const saveButton = items[index].getByRole('button', { name: /^Save$/i });
+      const saveButton = items[index].getByRole("button", { name: /^Save$/i });
       await saveButton.click();
 
       // Wait for edit mode to close (textarea should disappear)
-      await textarea.waitFor({ state: 'detached', timeout: 10000 });
+      await textarea.waitFor({ state: "detached", timeout: 10000 });
     }
   }
 
@@ -150,14 +150,14 @@ export class ContactDetailPage extends BasePage {
     const items = await this.activityItems.all();
     if (items[index]) {
       // Click cancel button
-      const cancelButton = items[index].getByRole('button', {
+      const cancelButton = items[index].getByRole("button", {
         name: /cancel/i,
       });
       await cancelButton.click();
 
       // Wait for edit mode to close (textarea should disappear)
-      const textarea = items[index].locator('textarea');
-      await textarea.waitFor({ state: 'detached', timeout: 5000 });
+      const textarea = items[index].locator("textarea");
+      await textarea.waitFor({ state: "detached", timeout: 5000 });
     }
   }
 
@@ -168,7 +168,7 @@ export class ContactDetailPage extends BasePage {
     const items = await this.activityItems.all();
     if (items[index]) {
       const editButton = items[index]
-        .getByRole('button', { name: /edit/i })
+        .getByRole("button", { name: /edit/i })
         .or(items[index].locator('button[title="Edit comment"]'));
       return editButton.isVisible().catch(() => false);
     }
@@ -181,7 +181,7 @@ export class ContactDetailPage extends BasePage {
   async isCommentInEditMode(index: number): Promise<boolean> {
     const items = await this.activityItems.all();
     if (items[index]) {
-      const textarea = items[index].locator('textarea');
+      const textarea = items[index].locator("textarea");
       return textarea.isVisible().catch(() => false);
     }
     return false;
@@ -233,7 +233,7 @@ export class ContactDetailPage extends BasePage {
       .locator('[data-testid="activity-item"]')
       .nth(previousCount)
       .waitFor({
-        state: 'visible',
+        state: "visible",
         timeout,
       });
   }
@@ -242,7 +242,7 @@ export class ContactDetailPage extends BasePage {
    * Check if "No activity yet" message is shown
    */
   async hasNoActivityMessage(): Promise<boolean> {
-    const message = this.page.getByText('No activity yet');
+    const message = this.page.getByText("No activity yet");
     return message.isVisible().catch(() => false);
   }
 }

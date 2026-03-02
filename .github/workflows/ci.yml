@@ -68,8 +68,8 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Install Playwright browsers
-        run: npx playwright install --with-deps
+      - name: Install chromium browser
+        run: npx playwright install chromium --with-deps
 
       - name: Generate Prisma client
         run: npx nx run @zuko/models:prisma:generate
@@ -78,12 +78,15 @@ jobs:
         run: npx prisma migrate deploy
         working-directory: libs/models
 
+      - name: Seed E2E test data
+        run: npx nx run @zuko/models:seed
+
       # Prepend any command with "nx-cloud record --" to record its logs to Nx Cloud
       # - run: npx nx-cloud record -- echo Hello World
       # - run: npx nx run-many -t lint test build typecheck
 
       - name: E2E tests
-        run: npx nx affected -t e2e --parallel=1 --exclude=backend-e2e --nxBail
+        run: npx nx affected -t e2e --exclude=backend-e2e --nxBail
 
       # Nx Cloud recommends fixes for failures to help you get CI green faster. Learn more: https://nx.dev/ci/features/self-healing-ci
       - run: npx nx fix-ci

@@ -58,6 +58,13 @@
           "command": "npx prisma studio",
           "cwd": "libs/models"
         }
+      },
+      "seed": {
+        "executor": "nx:run-commands",
+        "options": {
+          "command": "npx prisma db seed",
+          "cwd": "libs/models"
+        }
       }
     }
   }

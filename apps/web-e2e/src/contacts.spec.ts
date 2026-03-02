@@ -2,7 +2,6 @@ import { test, expect } from "./fixtures";
 
 /**
  * Contacts tests run with project storage state (logged-in user).
- * Unauthenticated describe overrides with empty storage state.
  */
 
 test.describe("Contacts Page - Unauthenticated", () => {
@@ -16,6 +15,26 @@ test.describe("Contacts Page - Unauthenticated", () => {
 });
 
 test.describe("Contacts - Authenticated", () => {
+  test("can create a new contact", async ({ contactsPage, page }) => {
+    await contactsPage.goto();
+    await contactsPage.clickNewContact();
+    await page.waitForURL("**/contacts/new", { timeout: 10000 });
+    await page.getByLabel(/Name/i).fill("TEST E2E CONTACT");
+    await page.getByLabel(/Email/i).fill("test-e2e-contact@example.com");
+    await page.getByLabel(/Phone/i).fill("+14155552671");
+    await page
+      .getByLabel(/LinkedIn ID/i)
+      .fill("https://linkedin.com/in/test-e2e-contact");
+    await page
+      .getByPlaceholder(/Add notes about this contact.../i)
+      .fill("TEST E2E NOTES");
+    await page.getByRole("button", { name: /Create Contact/i }).click();
+    await page.waitForURL("**/contacts", { timeout: 10000 });
+    await expect(page.getByText("TEST E2E CONTACT")).toBeVisible({
+      timeout: 10000,
+    });
+  });
+
   test("can view contact list", async ({ contactsPage }) => {
     await contactsPage.goto();
     const contacts = await contactsPage.getContactItems();
@@ -34,26 +53,15 @@ test.describe("Contacts - Authenticated", () => {
   }) => {
     await contactsPage.goto();
     const contacts = await contactsPage.getContactItems();
-    console.log("contacts", contacts);
-    if (contacts.length > 0) {
-      await contacts[0].click();
-      await page.waitForURL("**/contacts/**", { timeout: 10000 });
-      expect(page.url()).toContain("/contacts/1");
 
-      await expect(
-        page.getByRole("heading", { name: "Test E2E Contact" })
-      ).toBeVisible({ timeout: 10000 });
-      await expect(page.getByText("+14155552671")).toBeVisible({
-        timeout: 10000,
-      });
-      await expect(
-        page.getByText("https://linkedin.com/in/teste2econtact")
-      ).toBeVisible({
-        timeout: 10000,
-      });
-    } else {
-      console.log("no contacts found");
-      test.skip();
-    }
+    await contacts[0].click();
+    await page.waitForURL("**/contacts/**", { timeout: 10000 });
+
+    await expect(
+      page.getByRole("heading", { name: "TEST E2E CONTACT" })
+    ).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText("TEST E2E NOTES")).toBeVisible({
+      timeout: 10000,
+    });
   });
 });

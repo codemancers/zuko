@@ -14,7 +14,9 @@ const baseURL = process.env["BASE_URL"] || "http://localhost:3000";
  */
 export default defineConfig({
   ...nxE2EPreset(__filename, { testDir: "./src" }),
-  /* Shared settings for all the projects below. */
+  /* Files run in parallel (workers); tests within each file run sequentially */
+  fullyParallel: false,
+  workers: 2,
   use: {
     baseURL,
     headless: !!process.env.CI, // Open browser locally; headless in CI
@@ -31,8 +33,6 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   /* No retries — each test creates isolated state, failures should be real */
   retries: process.env.CI ? 1 : 0,
-  /* Run tests sequentially: each test creates its own user via testUtils */
-  workers: 2,
   reporter: [
     ["html", { outputFolder: "test-output/playwright/report" }],
     ["json", { outputFile: "test-output/playwright/results.json" }],
@@ -48,8 +48,9 @@ export default defineConfig({
       reuseExistingServer: !process.env.CI,
       cwd: workspaceRoot,
       timeout: 1000 * 60 * 60, // 60 minutes timeout for frontend startup
-      stdout: "pipe", // Show frontend logs in console for debugging
-      stderr: "pipe",
+      // In CI, ignore dev server output to keep logs readable; locally pipe for debugging
+      stdout: process.env.CI ? "ignore" : "pipe",
+      stderr: process.env.CI ? "ignore" : "pipe",
       env: {
         ...process.env,
         BACKEND_URL: process.env.BACKEND_URL ?? "http://localhost:3001",
@@ -70,69 +71,15 @@ export default defineConfig({
       use: { ...devices["Desktop Chrome"] },
       testMatch: "**/auth.setup.spec.ts",
     },
-    // 2. Data: empty state checks + create contact, company, deal (runs after auth)
-    {
-      name: "data",
-      use: {
-        ...devices["Desktop Chrome"],
-        storageState: ".auth/user.json",
-      },
-      testMatch: "**/data.spec.ts",
-      dependencies: ["auth setup"],
-    },
-    // 3. Contacts, companies, deals, contact-activities: all depend on data
-    {
-      name: "contacts",
-      use: {
-        ...devices["Desktop Chrome"],
-        storageState: ".auth/user.json",
-      },
-      testMatch: "**/contacts.spec.ts",
-      dependencies: ["data"],
-    },
-    {
-      name: "companies",
-      use: {
-        ...devices["Desktop Chrome"],
-        storageState: ".auth/user.json",
-      },
-      testMatch: "**/companies.spec.ts",
-      dependencies: ["data"],
-    },
-    {
-      name: "deals",
-      use: {
-        ...devices["Desktop Chrome"],
-        storageState: ".auth/user.json",
-      },
-      testMatch: "**/deals.spec.ts",
-      dependencies: ["data"],
-    },
-    {
-      name: "contact-activities",
-      use: {
-        ...devices["Desktop Chrome"],
-        storageState: ".auth/user.json",
-      },
-      testMatch: "**/contact-activities.spec.ts",
-      dependencies: ["data"],
-    },
-    // 4. All other tests (chat, settings, roles, auth, etc.)
+    // 2. All e2e specs (each file creates its own data at top)
     {
       name: "e2e",
       use: {
         ...devices["Desktop Chrome"],
         storageState: ".auth/user.json",
       },
-      testIgnore: [
-        "**/auth.setup.spec.ts",
-        "**/data.spec.ts",
-        "**/contacts.spec.ts",
-        "**/companies.spec.ts",
-        "**/deals.spec.ts",
-        "**/contact-activities.spec.ts",
-      ],
-      dependencies: ["data"],
+      testIgnore: ["**/auth.setup.spec.ts"],
+      dependencies: ["auth setup"],
     },
   ],
 });
