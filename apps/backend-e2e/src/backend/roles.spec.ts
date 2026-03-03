@@ -3,15 +3,16 @@ import { PrismaClient } from "@prisma/client";
 import {
   createTestUserWithSession,
   getAuthCookie,
+  type TestUser 
 } from "../support/auth-helper";
 
 describe("Role-Based Access Control", () => {
   const prisma = new PrismaClient();
   const baseUrl = process.env.API_URL || "http://localhost:3001";
 
-  let adminUser: any;
-  let accountantUser: any;
-  let normalUser: any;
+  let adminUser: TestUser;
+  let accountantUser: TestUser;
+  let normalUser: TestUser;
   let adminCookie: string;
   let accountantCookie: string;
   let normalCookie: string;
@@ -34,9 +35,9 @@ describe("Role-Based Access Control", () => {
     // normalUser will have 'none' role by default
 
     // Get auth cookies for each user
-    adminCookie = await getAuthCookie(adminUser.id);
-    accountantCookie = await getAuthCookie(accountantUser.id);
-    normalCookie = await getAuthCookie(normalUser.id);
+    adminCookie = await getAuthCookie(adminUser.sessionToken);
+    accountantCookie = await getAuthCookie(accountantUser.sessionToken);
+    normalCookie = await getAuthCookie(normalUser.sessionToken);
   });
 
   afterAll(async () => {
@@ -67,34 +68,41 @@ describe("Role-Based Access Control", () => {
     });
 
     it("should deny accountant access to admin dashboard", async () => {
-      try {
-        await axios.get(`${baseUrl}/api/admin/dashboard`, {
-          headers: { Cookie: accountantCookie },
-        });
-        fail("Should have thrown an error");
-      } catch (error: any) {
-        expect(error.response.status).toBe(403);
-      }
+      await expect(
+        axios.get(`${baseUrl}/api/admin/dashboard`, {
+          headers: { 
+            Cookie: accountantCookie
+          },
+        })
+      ).rejects.toMatchObject({
+        response: expect.objectContaining({
+          status: 403,
+        }),
+      });
     });
 
     it("should deny normal user access to admin dashboard", async () => {
-      try {
-        await axios.get(`${baseUrl}/api/admin/dashboard`, {
-          headers: { Cookie: normalCookie },
-        });
-        fail("Should have thrown an error");
-      } catch (error: any) {
-        expect(error.response.status).toBe(403);
-      }
+      await expect(
+        axios.get(`${baseUrl}/api/admin/dashboard`, {
+          headers: { 
+            Cookie: normalCookie
+          },
+        })
+      ).rejects.toMatchObject({
+        response: expect.objectContaining({
+          status: 403,
+        }),
+      });
     });
 
     it("should deny unauthenticated access to admin dashboard", async () => {
-      try {
-        await axios.get(`${baseUrl}/api/admin/dashboard`);
-        fail("Should have thrown an error");
-      } catch (error: any) {
-        expect([401, 403]).toContain(error.response.status);
-      }
+      await expect(
+        axios.get(`${baseUrl}/api/admin/dashboard`)
+      ).rejects.toMatchObject({
+        response: expect.objectContaining({
+          status: 401,
+        }),
+      });
     });
   });
 
@@ -120,14 +128,15 @@ describe("Role-Based Access Control", () => {
     });
 
     it("should deny normal user access to reports", async () => {
-      try {
-        await axios.get(`${baseUrl}/api/admin/reports`, {
+      await expect(
+        axios.get(`${baseUrl}/api/admin/reports`, {
           headers: { Cookie: normalCookie },
-        });
-        fail("Should have thrown an error");
-      } catch (error: any) {
-        expect(error.response.status).toBe(403);
-      }
+        })
+      ).rejects.toMatchObject({
+        response: expect.objectContaining({
+          status: 403,
+        }),
+      });
     });
   });
 

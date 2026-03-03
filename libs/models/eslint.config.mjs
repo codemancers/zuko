@@ -8,7 +8,12 @@ export default [
       '@nx/dependency-checks': [
         'error',
         {
-          ignoredFiles: ['{projectRoot}/eslint.config.{js,cjs,mjs,ts,cts,mts}'],
+          ignoredFiles: [
+            '{projectRoot}/eslint.config.{js,cjs,mjs,ts,cts,mts}',
+            '{projectRoot}/prisma.config.ts',
+            '{projectRoot}/prisma/seed.ts',
+            '{projectRoot}/jest.config.{js,cjs,mjs,ts,cts,mts}',
+          ],
         },
       ],
     },

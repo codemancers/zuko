@@ -16,11 +16,8 @@ import {
 } from '@nestjs/common';
 import { AuthGuard } from '@thallesp/nestjs-better-auth';
 import { ActivityService } from '@zuko/sales';
+import type { RequestWithUser } from '@zuko/core';
 
-/** Request with authenticated user (set by AuthGuard) */
-interface RequestWithUser {
-  user: { id: string };
-}
 
 // DTOs for API requests
 export class CreateCommentDto {

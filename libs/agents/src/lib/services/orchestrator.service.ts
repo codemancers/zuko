@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/ban-ts-comment */
 // @ts-nocheck - Pre-existing type incompatibilities with deepagents library that need to be resolved
 import { Injectable, Logger } from "@nestjs/common";
 import { createDeepAgent, type CompiledSubAgent } from "deepagents";

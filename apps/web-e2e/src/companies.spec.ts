@@ -62,8 +62,11 @@ test.describe("Companies - Authenticated", () => {
 
   test("can search for companies", async ({ companiesPage, page }) => {
     await companiesPage.goto();
+    const responsePromise = page.waitForResponse(
+      (resp) => resp.url().includes("/api/companies") && resp.ok()
+    );
     await companiesPage.searchCompany("test");
-    await page.waitForLoadState("networkidle").catch(() => {});
+    await responsePromise;
   });
 
   test("can click on a company to view details", async ({
@@ -168,7 +171,6 @@ test.describe("Company Detail - Contact Management", () => {
     const contactLink = firstContact.locator("a").first();
     const contactName = (await contactLink.textContent())?.trim() || "Unknown";
     await companyDetailPage.removeContact(contactName);
-    await page.waitForLoadState("networkidle").catch(() => {});
     const isStillVisible = await companyDetailPage.isContactAssociated(
       contactName
     );

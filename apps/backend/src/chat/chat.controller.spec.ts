@@ -1,4 +1,5 @@
 import { describe, it, expect } from "@jest/globals";
+import { MessageMetadata } from "@zuko/agents";
 
 /**
  * Tests for contextEntities extraction from AI SDK message metadata
@@ -22,7 +23,7 @@ describe("ChatController - contextEntities extraction", () => {
 
       const lastMessage = messages[messages.length - 1];
       const contextEntities =
-        (lastMessage?.metadata as any)?.contextEntities || [];
+        lastMessage?.metadata?.contextEntities || [];
 
       expect(contextEntities).toEqual([
         { type: "contact", id: 1 },
@@ -42,7 +43,7 @@ describe("ChatController - contextEntities extraction", () => {
 
       const lastMessage = messages[messages.length - 1];
       const contextEntities =
-        (lastMessage?.metadata as any)?.contextEntities || [];
+        (lastMessage?.metadata as MessageMetadata)?.contextEntities || [];
 
       expect(contextEntities).toEqual([]);
     });
@@ -61,7 +62,7 @@ describe("ChatController - contextEntities extraction", () => {
 
       const lastMessage = messages[messages.length - 1];
       const contextEntities =
-        (lastMessage?.metadata as any)?.contextEntities || [];
+        (lastMessage?.metadata as MessageMetadata)?.contextEntities || [];
 
       expect(contextEntities).toEqual([]);
     });
@@ -93,7 +94,7 @@ describe("ChatController - contextEntities extraction", () => {
 
       const lastMessage = messages[messages.length - 1];
       const contextEntities =
-        (lastMessage?.metadata as any)?.contextEntities || [];
+        (lastMessage?.metadata as MessageMetadata)?.contextEntities || [];
 
       expect(contextEntities).toEqual([{ type: "company", id: 123 }]);
     });
@@ -117,7 +118,7 @@ describe("ChatController - contextEntities extraction", () => {
 
       const lastMessage = messages[messages.length - 1];
       const contextEntities =
-        (lastMessage?.metadata as any)?.contextEntities || [];
+        (lastMessage?.metadata as MessageMetadata)?.contextEntities || [];
 
       expect(contextEntities).toEqual([]);
     });

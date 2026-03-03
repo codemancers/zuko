@@ -4,6 +4,12 @@ import { Reflector } from "@nestjs/core";
 import { RolesGuard } from "./roles.guard";
 import { UserRole } from "./roles.enum";
 
+interface MockUser {
+  id?: number | string;
+  role?: UserRole | string;
+  email?: string;
+}
+
 describe("RolesGuard", () => {
   let guard: RolesGuard;
   let reflector: Reflector;
@@ -14,7 +20,7 @@ describe("RolesGuard", () => {
   });
 
   const createMockExecutionContext = (
-    user: any,
+    user: MockUser | null | undefined,
     requiredRoles?: UserRole[],
   ): ExecutionContext => {
     const mockContext = {

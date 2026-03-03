@@ -83,6 +83,10 @@ jobs:
 
       # Prepend any command with "nx-cloud record --" to record its logs to Nx Cloud
 
+      # Lint & Format (parallel)
+      - name: Lint
+        run: npx nx affected -t lint --parallel=3 --nxBail
+
       # typecheck & Build (parallel)
       - name: Typecheck
         run: npx nx affected -t typecheck --parallel=50% --nxBail

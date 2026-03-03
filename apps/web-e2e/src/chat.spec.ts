@@ -45,7 +45,9 @@ test.describe("Chat", () => {
     if (chatId) {
       await page.request
         .delete(`http://localhost:3001/api/chats/${chatId}`)
-        .catch(() => {});
+        .catch(() => {
+          // ignore
+        });
     }
   });
 

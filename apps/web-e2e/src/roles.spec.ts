@@ -73,7 +73,7 @@ test.describe('RBAC - User with "none" Role', () => {
     await page.goto("/chat");
 
     // Wait for page to load
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("domcontentloaded");
 
     // Admin link should not be in navigation
     const adminLink = page.getByRole("link", { name: /admin/i }).first();
@@ -126,7 +126,7 @@ test.describe('RBAC - User with "admin" Role', () => {
     await page.goto("/chat");
 
     // Wait for page to load
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("domcontentloaded");
 
     // Admin link should be visible in navigation
     const adminLink = page.getByRole("link", { name: /admin/i }).first();
@@ -187,7 +187,7 @@ test.describe('RBAC - User with "accountant" Role', () => {
     await page.goto("/chat");
 
     // Wait for page to load
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("domcontentloaded");
 
     // Admin link should not be visible for accountant
     const adminLink = page.getByRole("link", { name: /admin/i }).first();

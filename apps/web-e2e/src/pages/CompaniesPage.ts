@@ -21,7 +21,10 @@ export class CompaniesPage extends BasePage {
    */
   override async goto() {
     await super.goto("/companies");
-    await this.page.waitForLoadState("networkidle");
+    // Wait for page to be fully loaded and interactive
+    await this.page.waitForLoadState('domcontentloaded');
+    // Wait for either the table or the main content to be visible
+    await this.page.waitForSelector('table, main', { state: 'visible' });
   }
 
   /**
