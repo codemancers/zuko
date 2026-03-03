@@ -1,13 +1,13 @@
 /**
  * @jest-environment node
  */
-import { POST } from './route';
-import { NextRequest } from 'next/server';
+import { POST } from "./route";
+import { NextRequest } from "next/server";
 
 // Mock Next.js cookies
-jest.mock('next/headers', () => ({
+jest.mock("next/headers", () => ({
   cookies: jest.fn(() => ({
-    toString: () => 'mock-session-cookie=value',
+    toString: () => "mock-session-cookie=value",
   })),
 }));
 
@@ -15,46 +15,46 @@ jest.mock('next/headers', () => ({
 const mockFetch = jest.fn();
 global.fetch = mockFetch as any;
 
-describe('/api/chat POST', () => {
+describe("/api/chat POST", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     // Suppress console.log in tests
-    jest.spyOn(console, 'log').mockImplementation();
-    jest.spyOn(console, 'error').mockImplementation();
+    jest.spyOn(console, "log").mockImplementation();
+    jest.spyOn(console, "error").mockImplementation();
   });
 
   afterEach(() => {
     jest.restoreAllMocks();
   });
 
-  it('extracts chatId from referer header and forwards to backend', async () => {
+  it("extracts chatId from referer header and forwards to backend", async () => {
     const mockRequestBody = {
-      id: 'test-id',
+      id: "test-id",
       messages: [
         {
-          parts: [{ type: 'text', text: 'Hello' }],
-          id: 'msg-1',
-          role: 'user',
+          parts: [{ type: "text", text: "Hello" }],
+          id: "msg-1",
+          role: "user",
         },
       ],
-      trigger: 'submit-message',
+      trigger: "submit-message",
     };
 
-    const mockBackendResponse = new Response('mock streaming response', {
+    const mockBackendResponse = new Response("mock streaming response", {
       status: 200,
       headers: {
-        'Content-Type': 'text/event-stream',
+        "Content-Type": "text/event-stream",
       },
     });
 
     (global.fetch as jest.Mock).mockResolvedValue(mockBackendResponse);
 
     // Create mock NextRequest with referer header
-    const request = new NextRequest('http://localhost:3000/api/chat', {
-      method: 'POST',
+    const request = new NextRequest("http://localhost:3000/api/chat", {
+      method: "POST",
       headers: {
-        'content-type': 'application/json',
-        referer: 'http://localhost:3000/chat/test-chat-123',
+        "content-type": "application/json",
+        referer: "http://localhost:3000/chat/test-chat-123",
       },
       body: JSON.stringify(mockRequestBody),
     });
@@ -63,47 +63,49 @@ describe('/api/chat POST', () => {
 
     // Verify fetch was called with correct URL and body including chatId
     expect(global.fetch).toHaveBeenCalledWith(
-      'http://localhost:3001/api/v1/chat',
+      "http://localhost:3001/api/v1/chat",
       expect.objectContaining({
-        method: 'POST',
+        method: "POST",
         headers: expect.objectContaining({
-          'Content-Type': 'application/json',
-          Cookie: 'mock-session-cookie=value',
-          Accept: 'text/event-stream',
+          "Content-Type": "application/json",
+          Cookie: "mock-session-cookie=value",
+          Accept: "text/event-stream",
         }),
         body: JSON.stringify({
           ...mockRequestBody,
-          chatId: 'test-chat-123',
+          chatId: "test-chat-123",
         }),
       }),
     );
 
     expect(response.status).toBe(200);
+    await response.text(); // Consume stream to prevent Jest open handles
   });
 
-  it('handles missing referer header gracefully', async () => {
+  it("handles missing referer header gracefully", async () => {
     const mockRequestBody = {
-      id: 'test-id',
+      id: "test-id",
       messages: [],
-      trigger: 'submit-message',
+      trigger: "submit-message",
     };
 
-    const mockBackendResponse = new Response('mock response', {
+    const mockBackendResponse = new Response("mock response", {
       status: 200,
     });
 
     (global.fetch as jest.Mock).mockResolvedValue(mockBackendResponse);
 
     // Create request without referer header
-    const request = new NextRequest('http://localhost:3000/api/chat', {
-      method: 'POST',
+    const request = new NextRequest("http://localhost:3000/api/chat", {
+      method: "POST",
       headers: {
-        'content-type': 'application/json',
+        "content-type": "application/json",
       },
       body: JSON.stringify(mockRequestBody),
     });
 
-    await POST(request);
+    const response = await POST(request);
+    await response.text();
 
     // Verify chatId is null when referer is missing
     const fetchCall = (global.fetch as jest.Mock).mock.calls[0];
@@ -113,49 +115,50 @@ describe('/api/chat POST', () => {
     expect(parsedBody.chatId).toBeNull();
   });
 
-  it('extracts chatId correctly from various URL formats', async () => {
+  it("extracts chatId correctly from various URL formats", async () => {
     const testCases = [
       {
-        referer: 'http://localhost:3000/chat/abc123',
-        expectedChatId: 'abc123',
+        referer: "http://localhost:3000/chat/abc123",
+        expectedChatId: "abc123",
       },
       {
-        referer: 'http://localhost:3000/chat/test-chat-with-dashes',
-        expectedChatId: 'test-chat-with-dashes',
+        referer: "http://localhost:3000/chat/test-chat-with-dashes",
+        expectedChatId: "test-chat-with-dashes",
       },
       {
-        referer: 'http://localhost:3000/chat/chat_123_test',
-        expectedChatId: 'chat_123_test',
+        referer: "http://localhost:3000/chat/chat_123_test",
+        expectedChatId: "chat_123_test",
       },
       {
-        referer: 'http://localhost:3000/chat/abc123?query=param',
-        expectedChatId: 'abc123',
+        referer: "http://localhost:3000/chat/abc123?query=param",
+        expectedChatId: "abc123",
       },
       {
-        referer: 'http://localhost:3000/chat/abc123#hash',
-        expectedChatId: 'abc123',
+        referer: "http://localhost:3000/chat/abc123#hash",
+        expectedChatId: "abc123",
       },
     ];
 
     for (const { referer, expectedChatId } of testCases) {
       jest.clearAllMocks();
 
-      const mockBackendResponse = new Response('mock response', {
+      const mockBackendResponse = new Response("mock response", {
         status: 200,
       });
 
       (global.fetch as jest.Mock).mockResolvedValue(mockBackendResponse);
 
-      const request = new NextRequest('http://localhost:3000/api/chat', {
-        method: 'POST',
+      const request = new NextRequest("http://localhost:3000/api/chat", {
+        method: "POST",
         headers: {
-          'content-type': 'application/json',
+          "content-type": "application/json",
           referer,
         },
         body: JSON.stringify({ messages: [] }),
       });
 
-      await POST(request);
+      const response = await POST(request);
+      await response.text();
 
       const fetchCall = (global.fetch as jest.Mock).mock.calls[0];
       const bodyArg = fetchCall[1].body;
@@ -165,23 +168,23 @@ describe('/api/chat POST', () => {
     }
   });
 
-  it('forwards backend errors to the client', async () => {
+  it("forwards backend errors to the client", async () => {
     const mockRequestBody = {
-      id: 'test-id',
+      id: "test-id",
       messages: [],
     };
 
-    const mockBackendResponse = new Response('Backend error message', {
+    const mockBackendResponse = new Response("Backend error message", {
       status: 403,
     });
 
     (global.fetch as jest.Mock).mockResolvedValue(mockBackendResponse);
 
-    const request = new NextRequest('http://localhost:3000/api/chat', {
-      method: 'POST',
+    const request = new NextRequest("http://localhost:3000/api/chat", {
+      method: "POST",
       headers: {
-        'content-type': 'application/json',
-        referer: 'http://localhost:3000/chat/test-123',
+        "content-type": "application/json",
+        referer: "http://localhost:3000/chat/test-123",
       },
       body: JSON.stringify(mockRequestBody),
     });
@@ -190,22 +193,22 @@ describe('/api/chat POST', () => {
 
     expect(response.status).toBe(403);
     const text = await response.text();
-    expect(text).toBe('Backend error message');
+    expect(text).toBe("Backend error message");
   });
 
-  it('handles backend fetch errors', async () => {
+  it("handles backend fetch errors", async () => {
     const mockRequestBody = {
-      id: 'test-id',
+      id: "test-id",
       messages: [],
     };
 
-    (global.fetch as jest.Mock).mockRejectedValue(new Error('Network error'));
+    (global.fetch as jest.Mock).mockRejectedValue(new Error("Network error"));
 
-    const request = new NextRequest('http://localhost:3000/api/chat', {
-      method: 'POST',
+    const request = new NextRequest("http://localhost:3000/api/chat", {
+      method: "POST",
       headers: {
-        'content-type': 'application/json',
-        referer: 'http://localhost:3000/chat/test-123',
+        "content-type": "application/json",
+        referer: "http://localhost:3000/chat/test-123",
       },
       body: JSON.stringify(mockRequestBody),
     });
@@ -214,53 +217,54 @@ describe('/api/chat POST', () => {
 
     expect(response.status).toBe(500);
     const json = await response.json();
-    expect(json.error).toBe('Network error');
+    expect(json.error).toBe("Network error");
   });
 
-  it('includes correct headers when forwarding to backend', async () => {
-    const mockBackendResponse = new Response('ok', { status: 200 });
+  it("includes correct headers when forwarding to backend", async () => {
+    const mockBackendResponse = new Response("ok", { status: 200 });
     (global.fetch as jest.Mock).mockResolvedValue(mockBackendResponse);
 
-    const request = new NextRequest('http://localhost:3000/api/chat', {
-      method: 'POST',
+    const request = new NextRequest("http://localhost:3000/api/chat", {
+      method: "POST",
       headers: {
-        'content-type': 'application/json',
-        referer: 'http://localhost:3000/chat/test-123',
+        "content-type": "application/json",
+        referer: "http://localhost:3000/chat/test-123",
       },
       body: JSON.stringify({ messages: [] }),
     });
 
-    await POST(request);
+    const response = await POST(request);
+    await response.text();
 
     expect(global.fetch).toHaveBeenCalledWith(
       expect.any(String),
       expect.objectContaining({
         headers: expect.objectContaining({
-          'Content-Type': 'application/json',
-          Cookie: 'mock-session-cookie=value',
-          Accept: 'text/event-stream',
+          "Content-Type": "application/json",
+          Cookie: "mock-session-cookie=value",
+          Accept: "text/event-stream",
         }),
-        credentials: 'include',
+        credentials: "include",
       }),
     );
   });
 
-  it('preserves streaming response from backend', async () => {
+  it("preserves streaming response from backend", async () => {
     const mockStreamBody = 'data: {"content":"test"}\n\n';
     const mockBackendResponse = new Response(mockStreamBody, {
       status: 200,
       headers: {
-        'Content-Type': 'text/event-stream',
+        "Content-Type": "text/event-stream",
       },
     });
 
     (global.fetch as jest.Mock).mockResolvedValue(mockBackendResponse);
 
-    const request = new NextRequest('http://localhost:3000/api/chat', {
-      method: 'POST',
+    const request = new NextRequest("http://localhost:3000/api/chat", {
+      method: "POST",
       headers: {
-        'content-type': 'application/json',
-        referer: 'http://localhost:3000/chat/test-123',
+        "content-type": "application/json",
+        referer: "http://localhost:3000/chat/test-123",
       },
       body: JSON.stringify({ messages: [] }),
     });
@@ -268,8 +272,9 @@ describe('/api/chat POST', () => {
     const response = await POST(request);
 
     // Verify response has SSE headers
-    expect(response.headers.get('Content-Type')).toBe('text/event-stream');
-    expect(response.headers.get('Cache-Control')).toBe('no-cache');
-    expect(response.headers.get('Connection')).toBe('keep-alive');
+    expect(response.headers.get("Content-Type")).toBe("text/event-stream");
+    expect(response.headers.get("Cache-Control")).toBe("no-cache");
+    expect(response.headers.get("Connection")).toBe("keep-alive");
+    await response.text();
   });
 });

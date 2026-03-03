@@ -16,9 +16,7 @@ class PrismaService {
 
 // Mock services needed for tests
 const mockContactsService = {
-  findOne: jest
-    .fn()
-    .mockResolvedValue({ id: 1, firstName: "John", lastName: "Doe" }),
+  findById: jest.fn().mockResolvedValue({ id: 1, name: "John Doe" }),
   findOwner: jest.fn().mockResolvedValue({ id: 1, name: "Owner" }),
 } as any;
 

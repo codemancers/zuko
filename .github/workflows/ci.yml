@@ -90,6 +90,10 @@ jobs:
       - name: Build
         run: npx nx affected -t build --parallel=50% --nxBail
 
+      # Tests (Sequential)
+      - name: Unit tests
+        run: npx nx affected -t test --parallel=1 --nxBail
+
       - name: E2E tests
         run: npx nx affected -t e2e --exclude=backend-e2e --nxBail
 
