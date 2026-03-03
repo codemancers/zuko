@@ -2,7 +2,7 @@
  * WORKAROUND: Chat input with @mentions support using react-mentions
  *
  * This component integrates PromptInputMentions with ChatContextManager to provide
- * mention suggestions for contacts and companies.
+ * mention suggestions for contacts, companies, and deals.
  *
  * TODO: Remove when https://github.com/vercel/ai-elements/issues/179 is resolved
  * @see https://github.com/vercel/ai-elements/issues/179
@@ -20,14 +20,15 @@ import {
 } from '@zuko/ui-kit';
 import { contactsApi } from '@/lib/api/contacts';
 import { companiesApi } from '@/lib/api/companies';
-import { UserIcon, BuildingIcon } from 'lucide-react';
+import { dealsApi } from '@/lib/api/deals';
+import { UserIcon, BuildingIcon, Briefcase } from 'lucide-react';
 
 // ============================================================================
 // Types
 // ============================================================================
 
 export interface ChatMention {
-  type: 'contact' | 'company';
+  type: 'contact' | 'company' | 'deal';
   id: number;
   name: string;
 }
@@ -48,13 +49,13 @@ export interface ChatInputWithMentionsProps extends Omit<
  * Example: "@[John Doe](@contact-123)" => { type: "contact", id: 123, name: "John Doe" }
  */
 export function extractMentions(text: string): ChatMention[] {
-  const mentionRegex = /@\[([^\]]+)\]\(@(contact|company)-(\d+)\)/g;
+  const mentionRegex = /@\[([^\]]+)\]\(@(contact|company|deal)-(\d+)\)/g;
   const mentions: ChatMention[] = [];
   let match;
 
   while ((match = mentionRegex.exec(text)) !== null) {
     mentions.push({
-      type: match[2] as 'contact' | 'company',
+      type: match[2] as 'contact' | 'company' | 'deal',
       id: parseInt(match[3], 10),
       name: match[1],
     });
@@ -68,7 +69,7 @@ export function extractMentions(text: string): ChatMention[] {
  * Example: "@[John Doe](@contact-123)" => "@John Doe"
  */
 export function stripMentionMarkup(text: string): string {
-  return text.replace(/@\[([^\]]+)\]\(@(contact|company)-\d+\)/g, '@$1');
+  return text.replace(/@\[([^\]]+)\]\(@(contact|company|deal)-\d+\)/g, '@$1');
 }
 
 // ============================================================================
@@ -79,7 +80,7 @@ export const ChatInputWithMentions = React.forwardRef<
   HTMLTextAreaElement,
   ChatInputWithMentionsProps
 >(({ onMentionsExtract, onChange, ...props }, ref) => {
-  // Fetch contacts and companies
+  // Fetch contacts, companies, and deals
   const { data: contactsData } = useQuery({
     queryKey: ['contacts', { limit: 100 }],
     queryFn: () => contactsApi.getContacts({ limit: 100 }),
@@ -88,6 +89,11 @@ export const ChatInputWithMentions = React.forwardRef<
   const { data: companiesData } = useQuery({
     queryKey: ['companies', { limit: 100 }],
     queryFn: () => companiesApi.getCompanies({ limit: 100 }),
+  });
+
+  const { data: dealsData } = useQuery({
+    queryKey: ['deals', { limit: 100 }],
+    queryFn: () => dealsApi.getDeals({ limit: 100 }),
   });
 
   // Custom suggestion renderer
@@ -99,8 +105,12 @@ export const ChatInputWithMentions = React.forwardRef<
       _index: number,
       _focused: boolean,
     ) => {
-      const isContact = String(suggestion.id).startsWith('contact-');
-      const Icon = isContact ? UserIcon : BuildingIcon;
+      const idStr = String(suggestion.id);
+      const Icon = idStr.startsWith('contact-')
+        ? UserIcon
+        : idStr.startsWith('company-')
+          ? BuildingIcon
+          : Briefcase;
 
       return (
         <div className="flex items-center gap-2">
@@ -147,7 +157,22 @@ export const ChatInputWithMentions = React.forwardRef<
               description: company.website,
             })) || [];
 
-          const allSuggestions = [...contactSuggestions, ...companySuggestions];
+          const dealSuggestions: MentionSuggestion[] =
+            dealsData?.deals.map((deal) => ({
+              id: `deal-${deal.id}`,
+              display: deal.title,
+              description:
+                deal.stage ||
+                (deal.value != null
+                  ? `${deal.currency || 'USD'} ${deal.value.toLocaleString()}`
+                  : ''),
+            })) || [];
+
+          const allSuggestions = [
+            ...contactSuggestions,
+            ...companySuggestions,
+            ...dealSuggestions,
+          ];
 
           // Filter based on search
           const filtered = allSuggestions.filter(
@@ -161,7 +186,7 @@ export const ChatInputWithMentions = React.forwardRef<
         renderSuggestion,
       },
     ],
-    [contactsData, companiesData, renderSuggestion],
+    [contactsData, companiesData, dealsData, renderSuggestion],
   );
 
   // Handle change and extract mentions

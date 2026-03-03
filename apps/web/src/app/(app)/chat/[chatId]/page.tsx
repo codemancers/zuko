@@ -16,6 +16,7 @@ import { useParams } from 'next/navigation';
 import { useInvalidateChats } from '@/hooks/use-chats';
 import { contactsApi } from '@/lib/api/contacts';
 import { companiesApi } from '@/lib/api/companies';
+import { dealsApi } from '@/lib/api/deals';
 
 export default function ChatPage() {
   const params = useParams();
@@ -65,7 +66,7 @@ export default function ChatPage() {
                 type: string;
                 id: number;
               }): Promise<ChatEntity> => {
-                const type = ref.type as 'contact' | 'company';
+                const type = ref.type as 'contact' | 'company' | 'deal';
                 try {
                   if (type === 'contact') {
                     const c = await contactsApi.getContact(ref.id);
@@ -76,18 +77,32 @@ export default function ChatPage() {
                       metadata: { type: 'contact', entityId: ref.id },
                     };
                   }
-                  const c = await companiesApi.getCompany(ref.id);
+                  if (type === 'company') {
+                    const c = await companiesApi.getCompany(ref.id);
+                    return {
+                      type: 'company',
+                      id: ref.id,
+                      name: c.companyName,
+                      metadata: { type: 'company', entityId: ref.id },
+                    };
+                  }
+                  const d = await dealsApi.getDeal(ref.id);
                   return {
-                    type: 'company',
+                    type: 'deal',
                     id: ref.id,
-                    name: c.companyName,
-                    metadata: { type: 'company', entityId: ref.id },
+                    name: d.title,
+                    metadata: { type: 'deal', entityId: ref.id },
                   };
                 } catch {
                   return {
                     type,
                     id: ref.id,
-                    name: type === 'contact' ? 'Contact' : 'Company',
+                    name:
+                      type === 'contact'
+                        ? 'Contact'
+                        : type === 'company'
+                          ? 'Company'
+                          : 'Deal',
                     metadata: { type, entityId: ref.id },
                   };
                 }
@@ -149,7 +164,7 @@ export default function ChatPage() {
         // Hydrate context entities from backend response (includes names)
         const hydratedEntities: ChatEntity[] = contextRefs.map(
           (ref: { type: string; id: number; name: string }) => ({
-            type: ref.type as 'contact' | 'company',
+            type: ref.type as 'contact' | 'company' | 'deal',
             id: ref.id,
             name: ref.name, // Use actual name from backend
             metadata: { type: ref.type, entityId: ref.id },
