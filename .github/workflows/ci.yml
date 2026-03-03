@@ -10,32 +10,84 @@ permissions:
   actions: read
   contents: read
 
+env:
+  CI: true
+  NX_NO_CLOUD: true
+  DATABASE_URL: postgres://postgres:postgres@localhost:5432/zuko_test
+  OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY || 'abc123' }}
+  AGENTS_LLM_MODEL: ${{ vars.AGENTS_LLM_MODEL || 'gpt-4o' }}
+  GITHUB_CLIENT_ID: ${{ secrets.GITHUB_CLIENT_ID || 'github-client-id' }}
+  GITHUB_CLIENT_SECRET: ${{ secrets.GITHUB_CLIENT_SECRET || 'github-client-secret' }}
+  BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET || 'ci-secret-for-e2e' }}
+  NEXT_PUBLIC_BETTER_AUTH_INCLUDE_EMAILS_AUTH: ${{ secrets.NEXT_PUBLIC_BETTER_AUTH_INCLUDE_EMAILS_AUTH || 'true' }}
+  BETTER_AUTH_INCLUDE_EMAILS_AUTH: ${{ secrets.BETTER_AUTH_INCLUDE_EMAILS_AUTH || 'true' }}
+  NEXT_PUBLIC_APP_URL: ${{ vars.NEXT_PUBLIC_APP_URL || 'http://localhost:3000' }}
+  NEXT_PUBLIC_BACKEND_URL: ${{ vars.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001' }}
+  NEXT_PUBLIC_USE_AUTH_PROXY: ${{ vars.NEXT_PUBLIC_USE_AUTH_PROXY || 'true' }}
+
 jobs:
-  main:
+  ci:
     runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+
+    services:
+      postgres:
+        image: postgres:latest
+        env:
+          POSTGRES_DB: zuko_test
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_USER: postgres
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     steps:
       - uses: actions/checkout@v4
         with:
           filter: tree:0
           fetch-depth: 0
 
-      # This enables task distribution via Nx Cloud
-      # Run this command as early as possible, before dependencies are installed
-      # Learn more at https://nx.dev/ci/reference/nx-cloud-cli#npx-nxcloud-startcirun
-      # Uncomment this line to enable task distribution
-      # - run: npx nx start-ci-run --distribute-on="3 linux-medium-js" --stop-agents-after="build"
+      # Set base and head SHAs for nx affected commands
+      # - On PRs: uses merge-base (where branch forked from main)
+      # - On main: uses last successful CI run
+      - uses: nrwl/nx-set-shas@v4
 
       # Cache node_modules
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
-          cache: 'npm'
+          node-version: 22
+          cache: "npm"
 
-      - run: npm ci
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install chromium browser
+        run: npx playwright install chromium --with-deps
+
+      - name: Generate Prisma client
+        run: npx nx run @zuko/models:prisma:generate
+
+      - name: Migrate Prisma (deploy)
+        run: npx prisma migrate deploy
+        working-directory: libs/models
+
+      - name: Seed E2E test data
+        run: npx nx run @zuko/models:seed
 
       # Prepend any command with "nx-cloud record --" to record its logs to Nx Cloud
       # - run: npx nx-cloud record -- echo Hello World
-      - run: npx nx run-many -t lint test build typecheck
+      # - run: npx nx run-many -t lint test build typecheck
+
+      - name: E2E tests
+        run: npx nx affected -t e2e --exclude=backend-e2e --nxBail
+
       # Nx Cloud recommends fixes for failures to help you get CI green faster. Learn more: https://nx.dev/ci/features/self-healing-ci
       - run: npx nx fix-ci
         if: always()

@@ -1,45 +1,29 @@
-import { test, expect } from './fixtures';
+import { test, expect } from "./fixtures";
 
-test.describe('Settings Page', () => {
-  test('redirects to sign-in when not authenticated', async ({
-    settingsPage,
-    page,
-  }) => {
-    await settingsPage.goto();
+test.describe("Settings - Unauthenticated", () => {
+  test.use({ storageState: { cookies: [], origins: [] } });
 
-    // Should redirect to sign-in if not authenticated
-    const url = page.url();
-    if (url.includes('/sign-in')) {
-      await expect(page.locator('h1')).toContainText('Sign in to Zuko');
-    } else {
-      // If authenticated, verify we're on settings page
-      expect(url).toContain('/settings');
-    }
-  });
-
-  test('can navigate to settings page', async ({ page }) => {
-    await page.goto('/settings');
-
-    // Either on settings page or redirected to sign-in
-    const url = page.url();
-    expect(url).toMatch(/\/(settings|sign-in)/);
+  test("redirects to sign-in when not authenticated", async ({ page }) => {
+    await page.goto("/settings");
+    await page.waitForURL("**/sign-in**", { timeout: 10000 });
+    expect(page.url()).toContain("/sign-in");
+    await expect(page.locator("h1")).toContainText("Sign in to Zuko");
   });
 });
 
-test.describe('Settings - Authenticated', () => {
-  test('displays settings page when authenticated', async ({
-    settingsPage,
-    page,
-    auth,
-  }) => {
-    await settingsPage.goto();
-
-    // Verify we're on settings page
-    expect(page.url()).toContain('/settings');
+test.describe("Settings", () => {
+  test("can navigate to settings page", async ({ page }) => {
+    await page.goto("/settings");
+    expect(page.url()).toContain("/settings");
   });
 
-  test('displays GitHub connection section', async ({ page, auth }) => {
-    await page.goto('/settings');
+  test("displays settings page", async ({ settingsPage, page }) => {
+    await settingsPage.goto();
+    expect(page.url()).toContain("/settings");
+  });
+
+  test("displays GitHub connection section", async ({ page }) => {
+    await page.goto("/settings");
 
     // Look for GitHub-related content
     const githubContent = await page
@@ -54,15 +38,11 @@ test.describe('Settings - Authenticated', () => {
   });
 
   // Skipped: clicking "Connect GitHub" initiates OAuth redirect and disrupts test flow
-  test.skip('can connect GitHub account', async ({
-    settingsPage,
-    page,
-    auth,
-  }) => {
+  test.skip("can connect GitHub account", async ({ settingsPage, page }) => {
     await settingsPage.goto();
 
     // Look for connect button
-    const connectButton = page.getByRole('button', {
+    const connectButton = page.getByRole("button", {
       name: /connect.*github/i,
     });
     const isVisible = await connectButton.isVisible().catch(() => false);
@@ -75,8 +55,8 @@ test.describe('Settings - Authenticated', () => {
     }
   });
 
-  test('displays connected GitHub account info', async ({ page, auth }) => {
-    await page.goto('/settings');
+  test("displays connected GitHub account info", async ({ page }) => {
+    await page.goto("/settings");
 
     // Check if GitHub is already connected
     const connectedStatus = await page
@@ -91,11 +71,11 @@ test.describe('Settings - Authenticated', () => {
   });
 
   // Skipped: clicking "Install App" navigates to GitHub and disrupts test flow
-  test.skip('can install GitHub app', async ({ page, auth }) => {
-    await page.goto('/settings');
+  test.skip("can install GitHub app", async ({ page }) => {
+    await page.goto("/settings");
 
     // Look for install GitHub app button/link
-    const installButton = page.getByRole('button', { name: /install.*app/i });
+    const installButton = page.getByRole("button", { name: /install.*app/i });
     const isVisible = await installButton.isVisible().catch(() => false);
 
     if (isVisible) {
@@ -104,11 +84,11 @@ test.describe('Settings - Authenticated', () => {
     }
   });
 
-  test('can save settings changes', async ({ settingsPage, page, auth }) => {
+  test("can save settings changes", async ({ settingsPage, page }) => {
     await settingsPage.goto();
 
     // Look for save button
-    const saveButton = page.getByRole('button', { name: /save/i });
+    const saveButton = page.getByRole("button", { name: /save/i });
     const isVisible = await saveButton.isVisible().catch(() => false);
 
     if (isVisible) {
@@ -129,15 +109,15 @@ test.describe('Settings - Authenticated', () => {
     }
   });
 
-  test('displays user profile information', async ({ page, auth }) => {
-    await page.goto('/settings');
+  test("displays user profile information", async ({ page }) => {
+    await page.goto("/settings");
 
     // Check for common profile fields
-    const profileFields = ['email', 'name', 'username'];
+    const profileFields = ["email", "name", "username"];
 
     for (const field of profileFields) {
       const fieldVisible = await page
-        .getByLabel(new RegExp(field, 'i'))
+        .getByLabel(new RegExp(field, "i"))
         .isVisible()
         .catch(() => false);
 
@@ -148,11 +128,11 @@ test.describe('Settings - Authenticated', () => {
     }
   });
 
-  test('can disconnect GitHub account', async ({ page, auth }) => {
-    await page.goto('/settings');
+  test("can disconnect GitHub account", async ({ page }) => {
+    await page.goto("/settings");
 
     // Look for disconnect button (only if connected)
-    const disconnectButton = page.getByRole('button', {
+    const disconnectButton = page.getByRole("button", {
       name: /disconnect|remove/i,
     });
     const isVisible = await disconnectButton.isVisible().catch(() => false);
@@ -164,14 +144,14 @@ test.describe('Settings - Authenticated', () => {
   });
 });
 
-test.describe('Settings - Navigation', () => {
-  test('can navigate back from settings', async ({ page, auth }) => {
-    await page.goto('/settings');
+test.describe("Settings - Navigation", () => {
+  test("can navigate back from settings", async ({ page }) => {
+    await page.goto("/settings");
 
     // Look for back button or navigation
     const backButton = page
-      .getByRole('button', { name: /back/i })
-      .or(page.getByRole('link', { name: /back/i }));
+      .getByRole("button", { name: /back/i })
+      .or(page.getByRole("link", { name: /back/i }));
     const isVisible = await backButton.isVisible().catch(() => false);
 
     if (isVisible) {
@@ -180,27 +160,15 @@ test.describe('Settings - Navigation', () => {
     }
   });
 
-  test('settings link is accessible from navigation', async ({
-    page,
-    auth,
-  }) => {
-    await page.goto('/');
+  test("settings link is accessible from navigation", async ({ page }) => {
+    await page.goto("/");
+    await page.waitForLoadState("domcontentloaded");
 
-    // Wait for redirect to complete (authenticated users land on /chat)
-    await page.waitForURL('**/chat', { timeout: 5000 }).catch(() => {});
-
-    // Settings link should be visible in sidebar navigation
-    const settingsLink = page.getByRole('link', { name: /settings/i });
+    const settingsLink = page.getByRole("link", { name: /settings/i });
     await expect(settingsLink).toBeVisible();
 
     await settingsLink.click();
-    await page.waitForURL('**/settings');
-    expect(page.url()).toContain('/settings');
+    await page.waitForURL("**/settings");
+    expect(page.url()).toContain("/settings");
   });
 });
-
-/**
- * Note: To fully implement remaining tests, you need:
- * 1. Mock GitHub OAuth flow or use test credentials
- * 2. Pre-connected GitHub test account state
- */

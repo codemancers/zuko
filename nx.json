@@ -31,6 +31,10 @@
       }
     },
     {
+      "plugin": "nx/plugins/package-json",
+      "exclude": ["dist/**", "**/dist/**"]
+    },
+    {
       "plugin": "@nx/webpack/plugin",
       "options": {
         "buildTargetName": "build",

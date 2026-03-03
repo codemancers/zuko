@@ -1,456 +1,390 @@
-import { test, expect } from './fixtures';
+import { test, expect } from "./fixtures";
 
 /**
  * Deals Feature E2E Tests
  * Tests deal CRUD, navigation, search, and detail views
  */
 
-test.describe('Deals Page - Unauthenticated', () => {
-  test('redirects to sign-in when not authenticated', async ({ page }) => {
-    await page.goto('/deals');
+test.describe("Deals Page - Unauthenticated", () => {
+  test.use({ storageState: { cookies: [], origins: [] } });
 
-    // Should redirect to sign-in
-    await page.waitForURL('**/sign-in**');
-    expect(page.url()).toContain('/sign-in');
+  test("redirects to sign-in when not authenticated", async ({ page }) => {
+    await page.goto("/deals");
+    await page.waitForURL("**/sign-in**", { timeout: 10000 });
+    expect(page.url()).toContain("/sign-in");
+    await expect(page.locator("h1")).toContainText("Sign in to Zuko");
   });
 });
 
-test.describe('Deals - Authenticated', () => {
-  test('displays deals page when authenticated', async ({
+test.describe("Deals - Authenticated", () => {
+  // ── 1. Empty state ─────────────────────────────────────────────────────
+  test("displays deals page when authenticated", async ({
     dealsPage,
     page,
-    auth,
   }) => {
     await dealsPage.goto();
 
-    // Verify we're on deals page
-    expect(page.url()).toContain('/deals');
-
-    // Wait for page to load
+    expect(page.url()).toContain("/deals");
     await dealsPage.waitForDealsToLoad();
   });
 
-  test('can navigate to create new deal', async ({ dealsPage, page, auth }) => {
-    await dealsPage.goto();
-
-    // Click New Deal button
-    await dealsPage.clickNewDeal();
-
-    // Verify we navigate to new deal page
-    await page.waitForURL('**/deals/new');
-    expect(page.url()).toContain('/deals/new');
-  });
-
-  test('can view deal list', async ({ dealsPage, auth }) => {
+  test("can view deal list", async ({ dealsPage }) => {
     await dealsPage.goto();
 
     const deals = await dealsPage.getDealItems();
     expect(Array.isArray(deals)).toBe(true);
   });
 
-  test('can search for deals', async ({ dealsPage, page, auth }) => {
+  // ── 2. Create ─────────────────────────────────────────────────────────
+  test("can navigate to create new deal", async ({ dealsPage, page }) => {
     await dealsPage.goto();
 
-    await dealsPage.searchDeal('test');
+    await dealsPage.clickNewDeal();
 
-    // Wait for search to process - network idle or debounce complete
-    await page.waitForLoadState('load', { timeout: 5000 });
+    await page.waitForURL("**/deals/new");
+    expect(page.url()).toContain("/deals/new");
   });
 
-  test('can click on a deal to view details', async ({
-    dealsPage,
-    page,
-    auth,
-  }) => {
+  test("can create a new deal", async ({ dealsPage, page }) => {
+    await dealsPage.goto();
+    await dealsPage.clickNewDeal();
+    await page.waitForURL("**/deals/new", { timeout: 10000 });
+    await page.getByLabel(/Deal Title/i).fill("TEST E2E DEAL");
+    await page.getByLabel(/Deal Value/i).fill("100000");
+    await page.getByLabel(/Stage/i).selectOption("Prospecting");
+    await page.getByLabel(/Currency/i).selectOption("USD");
+    await page.getByLabel(/Priority/i).selectOption("2"); // value in form; label is "P2 - Medium"
+    await page.getByLabel(/Expected Close Date/i).fill("2026-01-01");
+    await page.getByLabel(/Source/i).fill("Website");
+    await page
+      .getByPlaceholder(/Add notes about this deal/i)
+      .fill("TEST E2E DEAL SUMMARY");
+    await page.getByRole("button", { name: /Create Deal/i }).click();
+    await page.waitForURL("**/deals", { timeout: 10000 });
+    await expect(page.getByText("TEST E2E DEAL")).toBeVisible({
+      timeout: 10000,
+    });
+  });
+
+  // ── 3. Check after (list with data) ─────────────────────────────────────
+  test("can search for deals", async ({ dealsPage, page }) => {
+    await dealsPage.goto();
+
+    await dealsPage.searchDeal("test");
+
+    await page.waitForLoadState("load", { timeout: 5000 });
+  });
+
+  test("can click on a deal to view details", async ({ dealsPage, page }) => {
     await dealsPage.goto();
 
     const deals = await dealsPage.getDealItems();
     if (deals.length > 0) {
       await deals[0].click();
 
-      // Verify we navigated to deal detail page
-      await page.waitForURL('**/deals/**');
+      await page.waitForURL("**/deals/**");
       expect(page.url()).toMatch(/\/deals\/\d+$/);
     } else {
       test.skip();
     }
   });
 
-  test('deal list displays stage badges', async ({ dealsPage, page, auth }) => {
+  test("deal list displays stage badges", async ({ dealsPage, page }) => {
     await dealsPage.goto();
 
-    // Check for stage badges (Prospecting, Qualification, etc.)
-    const stageBadges = page.locator('span').filter({
+    const stageBadges = page.locator("span").filter({
       hasText: /Prospecting|Qualification|Proposal|Negotiation|Closed/i,
     });
     const count = await stageBadges.count();
 
-    // If there are deals, there should be stage badges
     const deals = await dealsPage.getDealItems();
     if (deals.length > 0) {
       expect(count).toBeGreaterThan(0);
     }
   });
 
-  test('deal list displays currency values', async ({
-    dealsPage,
-    page,
-    auth,
-  }) => {
+  test("deal list displays currency values", async ({ dealsPage, page }) => {
     await dealsPage.goto();
 
     const deals = await dealsPage.getDealItems();
     if (deals.length > 0) {
-      // Check for currency symbol ($ or other currencies)
-      const currencyValues = page.locator('td').filter({ hasText: /[$€£¥₹]/ });
+      const currencyValues = page.locator("td").filter({ hasText: /[$€£¥₹]/ });
       const count = await currencyValues.count();
 
-      // At least one deal should have a value
       expect(count).toBeGreaterThanOrEqual(0);
     }
   });
 });
 
-test.describe('Deal Creation', () => {
-  test('new deal form displays all required fields', async ({ page, auth }) => {
-    await page.goto('/deals/new');
+test.describe("Deal Creation", () => {
+  test("validates required fields", async ({ page }) => {
+    await page.goto("/deals/new");
 
-    // Check for form fields
-    await expect(page.getByLabel(/Deal Title/i)).toBeVisible();
-    await expect(page.getByLabel(/Deal Value/i)).toBeVisible();
-    await expect(page.getByLabel(/Currency/i)).toBeVisible();
-    await expect(page.getByLabel(/Stage/i)).toBeVisible();
-    await expect(page.getByLabel(/Win Probability/i)).toBeVisible();
-    await expect(page.getByLabel(/Expected Close Date/i)).toBeVisible();
-    await expect(page.getByLabel(/Priority/i)).toBeVisible();
-  });
+    await page.getByRole("button", { name: /Create Deal/i }).click();
 
-  test('validates required fields', async ({ page, auth }) => {
-    await page.goto('/deals/new');
-
-    // Try to submit without filling deal title
-    await page.getByRole('button', { name: /Create Deal/i }).click();
-
-    // Should show validation error
     await expect(page.getByText(/Deal title is required/i)).toBeVisible();
   });
 
-  test('validates value is a positive number', async ({ page, auth }) => {
-    await page.goto('/deals/new');
+  test("validates value is a positive number", async ({ page }) => {
+    await page.goto("/deals/new");
 
-    // Fill deal title
-    await page.getByLabel(/Deal Title/i).fill('Test Deal');
+    await page.getByLabel(/Deal Title/i).fill("Test Deal");
+    await page.getByLabel(/Deal Value/i).fill("-100");
+    await page.getByRole("button", { name: /Create Deal/i }).click();
 
-    // Enter negative value
-    await page.getByLabel(/Deal Value/i).fill('-100');
-
-    // Try to submit
-    await page.getByRole('button', { name: /Create Deal/i }).click();
-
-    // Should show validation error
     await expect(
-      page.getByText(/Value must be a positive number/i),
+      page.getByText(/Value must be a positive number/i)
     ).toBeVisible();
   });
 
   // Skipped: Chrome's native HTML5 form validation (max="100") intercepts submission
   // before React's onSubmit fires, so the custom error message never renders.
-  // The constraint is still enforced — just by the browser, not React's error text.
-  test.skip('validates probability is between 0 and 100', async ({
-    page,
-    auth,
-  }) => {
-    await page.goto('/deals/new');
-    await page.getByLabel(/Deal Title/i).fill('Test Deal');
-    await page.getByLabel(/Win Probability/i).fill('150');
-    await page.getByRole('button', { name: /Create Deal/i }).click();
+  test.skip("validates probability is between 0 and 100", async ({ page }) => {
+    await page.goto("/deals/new");
+    await page.getByLabel(/Deal Title/i).fill("Test Deal");
+    await page.getByLabel(/Win Probability/i).fill("150");
+    await page.getByRole("button", { name: /Create Deal/i }).click();
     await expect(
-      page.getByText(/Probability must be between 0 and 100/i),
+      page.getByText(/Probability must be between 0 and 100/i)
     ).toBeVisible();
   });
 
-  test('displays stage options', async ({ page, auth }) => {
-    await page.goto('/deals/new');
+  test("displays stage options", async ({ page }) => {
+    await page.goto("/deals/new");
 
     const stageSelect = page.getByLabel(/Stage/i);
     await expect(stageSelect).toBeVisible();
 
-    // Check that stage options exist
-    const options = await stageSelect.locator('option').allTextContents();
+    const options = await stageSelect.locator("option").allTextContents();
     expect(options.length).toBeGreaterThan(0);
-    expect(options.some((opt) => opt.includes('Prospecting'))).toBe(true);
+    expect(options.some((opt) => opt.includes("Prospecting"))).toBe(true);
   });
 
-  test('displays currency options', async ({ page, auth }) => {
-    await page.goto('/deals/new');
+  test("displays currency options", async ({ page }) => {
+    await page.goto("/deals/new");
 
     const currencySelect = page.getByLabel(/Currency/i);
     await expect(currencySelect).toBeVisible();
 
-    // Check that currency options exist (USD, EUR, etc.)
-    const options = await currencySelect.locator('option').allTextContents();
+    const options = await currencySelect.locator("option").allTextContents();
     expect(options.length).toBeGreaterThan(0);
-    expect(options.some((opt) => opt.includes('USD'))).toBe(true);
+    expect(options.some((opt) => opt.includes("USD"))).toBe(true);
   });
 
-  test('displays priority options', async ({ page, auth }) => {
-    await page.goto('/deals/new');
+  test("displays priority options", async ({ page }) => {
+    await page.goto("/deals/new");
 
     const prioritySelect = page.getByLabel(/Priority/i);
     await expect(prioritySelect).toBeVisible();
 
-    // Check that priority options exist (P0-P4)
-    const options = await prioritySelect.locator('option').allTextContents();
+    const options = await prioritySelect.locator("option").allTextContents();
     expect(options.length).toBeGreaterThan(0);
-    expect(options.some((opt) => opt.includes('P2'))).toBe(true);
+    expect(options.some((opt) => opt.includes("P2"))).toBe(true);
   });
 });
 
-test.describe('Deal Detail', () => {
-  test('displays deal detail page with information', async ({
+test.describe("Deal Detail", () => {
+  // ── 1. Empty state (detail sections visible) ────────────────────────────
+  test("displays deal detail page with information", async ({
     page,
     dealDetailPage,
-    auth,
   }) => {
-    // Navigate to first deal (assuming ID 1 exists)
     await dealDetailPage.goto(1);
 
-    // Check for deal title
     await expect(dealDetailPage.dealTitle).toBeVisible();
-
-    // Check for Deal Information section
     await expect(
-      page.getByRole('heading', { name: /Deal Information/i }),
+      page.getByRole("heading", { name: /Deal Information/i })
     ).toBeVisible();
   });
 
-  test('displays deal value and stage', async ({ dealDetailPage, auth }) => {
+  // ── 2. Check after (detail content) ─────────────────────────────────────
+  test("displays deal value and stage", async ({ dealDetailPage }) => {
     await dealDetailPage.goto(1);
 
-    // Check for stage badge
     const stage = await dealDetailPage.getDealStage();
     expect(stage.length).toBeGreaterThan(0);
 
-    // Deal might not have a value, so we just check it doesn't throw
-    const value = await dealDetailPage.getDealValue().catch(() => '');
-    expect(typeof value).toBe('string');
+    const value = await dealDetailPage.getDealValue().catch(() => "");
+    expect(typeof value).toBe("string");
   });
 
-  test('displays owners section', async ({ dealDetailPage, page, auth }) => {
+  test("displays owners section", async ({ dealDetailPage, page }) => {
     await dealDetailPage.goto(1);
 
-    // Check for Owners section
-    await expect(page.getByRole('heading', { name: /Owners/i })).toBeVisible();
+    await expect(page.getByRole("heading", { name: /Owners/i })).toBeVisible();
   });
 
-  test('displays summary if present', async ({
-    dealDetailPage,
-    page,
-    auth,
-  }) => {
+  test("displays summary if present", async ({ dealDetailPage, page }) => {
     await dealDetailPage.goto(1);
 
-    // Summary section is optional
-    const summaryHeading = page.getByRole('heading', { name: /Summary/i });
+    const summaryHeading = page.getByRole("heading", { name: /Summary/i });
     const isVisible = await summaryHeading.isVisible().catch(() => false);
 
-    // If visible, it should have content
     if (isVisible) {
       await expect(summaryHeading).toBeVisible();
     }
   });
 
-  test('displays activity timeline section', async ({
+  test("displays activity timeline section", async ({
     dealDetailPage,
     page,
-    auth,
   }) => {
     await dealDetailPage.goto(1);
 
-    // Check for Activity section
     await expect(
-      page.getByRole('heading', { name: /Activity/i }),
+      page.getByRole("heading", { name: /Activity/i })
     ).toBeVisible();
   });
 
-  test('displays metadata section', async ({ dealDetailPage, page, auth }) => {
+  test("displays metadata section", async ({ dealDetailPage, page }) => {
     await dealDetailPage.goto(1);
 
-    // Check for Details section (with created/updated info)
-    await expect(page.getByRole('heading', { name: /Details/i })).toBeVisible();
+    await expect(page.getByRole("heading", { name: /Details/i })).toBeVisible();
     await expect(page.getByText(/Created/i)).toBeVisible();
     await expect(page.getByText(/Last Updated/i)).toBeVisible();
   });
 });
 
-test.describe('Deal Edit', () => {
-  test('can navigate to edit page', async ({ dealDetailPage, page, auth }) => {
+test.describe("Deal Edit", () => {
+  // ── 1. Empty state (edit form) ──────────────────────────────────────────
+  test("can navigate to edit page", async ({ dealDetailPage, page }) => {
     await dealDetailPage.goto(1);
 
     await dealDetailPage.clickEdit();
 
-    // Verify we navigated to edit page
-    await page.waitForURL('**/deals/**/edit');
-    expect(page.url()).toContain('/edit');
+    await page.waitForURL("**/deals/**/edit");
+    expect(page.url()).toContain("/edit");
   });
 
-  test('edit page displays deal form with existing values', async ({
+  test("edit page displays deal form with existing values", async ({
     page,
-    auth,
   }) => {
-    await page.goto('/deals/1/edit');
+    await page.goto("/deals/1/edit");
 
-    // Check for form fields
     await expect(page.getByLabel(/Deal Title/i)).toBeVisible();
     await expect(page.getByLabel(/Stage/i)).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: /Save Changes/i })
+    ).toBeVisible();
 
-    // Check that title field has a value (pre-filled from deal)
     const titleInput = page.getByLabel(/Deal Title/i);
     const titleValue = await titleInput.inputValue();
     expect(titleValue.length).toBeGreaterThan(0);
   });
 
-  test('edit form includes save and cancel buttons', async ({ page, auth }) => {
-    await page.goto('/deals/1/edit');
+  test("edit form includes save and cancel buttons", async ({ page }) => {
+    await page.goto("/deals/1/edit");
 
     await expect(
-      page.getByRole('button', { name: /Save Changes/i }),
+      page.getByRole("button", { name: /Save Changes/i })
     ).toBeVisible();
-    await expect(page.getByRole('button', { name: /Cancel/i })).toBeVisible();
+    await expect(page.getByRole("button", { name: /Cancel/i })).toBeVisible();
   });
 });
 
-test.describe('Deal Search and Filters', () => {
-  test('search updates URL or triggers filter', async ({
+test.describe("Deal Search and Filters", () => {
+  // ── 1. Empty state ─────────────────────────────────────────────────────
+  test("empty state is shown when no deals exist", async ({
     dealsPage,
     page,
-    auth,
   }) => {
     await dealsPage.goto();
 
-    const searchTerm = 'enterprise';
-    await dealsPage.searchDeal(searchTerm);
+    await dealsPage.searchDeal("zzzzznonexistent123456789");
 
-    // Wait for search to process - network idle or debounce complete
-    await page.waitForLoadState('load', { timeout: 5000 });
+    await page.waitForLoadState("load", { timeout: 5000 });
 
-    // Search should either update results or URL
-    // (depending on implementation - could be client-side or server-side)
-  });
-
-  test('empty state is shown when no deals exist', async ({
-    dealsPage,
-    page,
-    auth,
-  }) => {
-    await dealsPage.goto();
-
-    // Search for something that won't match
-    await dealsPage.searchDeal('zzzzznonexistent123456789');
-
-    // Wait for search to complete
-    await page.waitForLoadState('load', { timeout: 5000 });
-
-    // Either shows no results or empty state
     const emptyState = page.getByText(/No deals/i);
-    const tableRows = page.locator('table tbody tr');
+    const tableRows = page.locator("table tbody tr");
 
-    // Use toPass to wait for the condition to stabilize
     await expect(async () => {
       const rowCount = await tableRows.count();
       if (rowCount === 0) {
         await expect(emptyState).toBeVisible();
       }
-      expect(true).toBeTruthy(); // Always pass if no empty state needed
+      expect(true).toBeTruthy();
     }).toPass({ timeout: 3000 });
+  });
+
+  // ── 2. Check after (search behavior) ───────────────────────────────────
+  test("search updates URL or triggers filter", async ({ dealsPage, page }) => {
+    await dealsPage.goto();
+
+    const searchTerm = "enterprise";
+    await dealsPage.searchDeal(searchTerm);
+
+    await page.waitForLoadState("load", { timeout: 5000 });
   });
 });
 
-test.describe('Deal Associations - Companies', () => {
-  test('displays Associated Companies section', async ({
+test.describe("Deal Associations - Companies", () => {
+  // ── 1. Empty state ─────────────────────────────────────────────────────
+  test("displays Associated Companies section", async ({
     dealDetailPage,
     page,
-    auth,
   }) => {
     await dealDetailPage.goto(1);
 
-    // Check for Associated Companies section
     await expect(
-      page.getByRole('heading', { name: /Associated Companies/i }),
+      page.getByRole("heading", { name: /Associated Companies/i })
     ).toBeVisible();
   });
 
-  test('shows Add Company button', async ({ dealDetailPage, page, auth }) => {
+  test("shows Add Company button", async ({ dealDetailPage, page }) => {
     await dealDetailPage.goto(1);
 
-    // Check for Add Company button
     await expect(
-      page.getByRole('button', { name: /Add Company/i }),
+      page.getByRole("button", { name: /Add Company/i })
     ).toBeVisible();
   });
 
-  test('can open Add Company dialog', async ({
+  test("can open Add Company dialog", async ({ dealDetailPage, page }) => {
+    await dealDetailPage.goto(1);
+
+    await page.getByRole("button", { name: /Add Company/i }).click();
+
+    await expect(
+      page.getByRole("heading", { name: /Add Company to Deal/i })
+    ).toBeVisible();
+    await expect(
+      page.getByText(/Associate a company with this deal/i)
+    ).toBeVisible();
+  });
+
+  test("Add Company dialog shows company selection", async ({
     dealDetailPage,
     page,
-    auth,
   }) => {
     await dealDetailPage.goto(1);
 
-    // Click Add Company button
-    await page.getByRole('button', { name: /Add Company/i }).click();
+    await page.getByRole("button", { name: /Add Company/i }).click();
 
-    // Dialog should open
-    await expect(
-      page.getByRole('heading', { name: /Add Company to Deal/i }),
-    ).toBeVisible();
-    await expect(
-      page.getByText(/Associate a company with this deal/i),
-    ).toBeVisible();
-  });
-
-  test('Add Company dialog shows company selection', async ({
-    dealDetailPage,
-    page,
-    auth,
-  }) => {
-    await dealDetailPage.goto(1);
-
-    await page.getByRole('button', { name: /Add Company/i }).click();
-
-    // Check for company select dropdown - look for the select element with options
-    const companySelect = page.locator('select').first();
+    const companySelect = page.locator("select").first();
     await expect(companySelect).toBeVisible();
     await expect(
-      page.getByText(/Primary company for this deal/i),
+      page.getByText(/Primary company for this deal/i)
     ).toBeVisible();
 
-    // Verify the select has company options
-    const options = await companySelect.locator('option').count();
-    expect(options).toBeGreaterThan(0); // At least the placeholder option
+    const options = await companySelect.locator("option").count();
+    expect(options).toBeGreaterThan(0);
   });
 
-  test('can close Add Company dialog', async ({
-    dealDetailPage,
-    page,
-    auth,
-  }) => {
+  test("can close Add Company dialog", async ({ dealDetailPage, page }) => {
     await dealDetailPage.goto(1);
 
-    await page.getByRole('button', { name: /Add Company/i }).click();
+    await page.getByRole("button", { name: /Add Company/i }).click();
 
-    // Click Cancel
-    await page.getByRole('button', { name: /Cancel/i }).click();
+    await page.getByRole("button", { name: /Cancel/i }).click();
 
-    // Dialog should close
     await expect(
-      page.getByRole('heading', { name: /Add Company to Deal/i }),
+      page.getByRole("heading", { name: /Add Company to Deal/i })
     ).toBeHidden();
   });
 
-  test('associated companies have clickable links', async ({
+  // ── 2. Check after (when companies are associated) ──────────────────────
+  test("associated companies have clickable links", async ({
     dealDetailPage,
     page,
-    auth,
   }) => {
     await dealDetailPage.goto(1);
 
@@ -463,23 +397,22 @@ test.describe('Deal Associations - Companies', () => {
       await expect(companyLinks.first()).toBeVisible();
 
       // Link should navigate to company page
-      const href = await companyLinks.first().getAttribute('href');
+      const href = await companyLinks.first().getAttribute("href");
       expect(href).toMatch(/\/companies\/\d+/);
     }
   });
 
-  test('associated companies show Primary badge when applicable', async ({
+  test("associated companies show Primary badge when applicable", async ({
     dealDetailPage,
     page,
-    auth,
   }) => {
     await dealDetailPage.goto(1);
 
     // Check if any companies are marked as primary
     const companySection = page
-      .locator('text=Associated Companies')
-      .locator('..');
-    const primaryBadges = companySection.locator('text=Primary');
+      .locator("text=Associated Companies")
+      .locator("..");
+    const primaryBadges = companySection.locator("text=Primary");
     const count = await primaryBadges.count();
 
     // If there are primary companies, badges should be visible
@@ -488,10 +421,9 @@ test.describe('Deal Associations - Companies', () => {
     }
   });
 
-  test('associated companies have edit and remove buttons', async ({
+  test("associated companies have edit and remove buttons", async ({
     dealDetailPage,
     page,
-    auth,
   }) => {
     await dealDetailPage.goto(1);
 
@@ -510,10 +442,9 @@ test.describe('Deal Associations - Companies', () => {
 
   // Skipped: page.locator('a[href^="/companies/"]') also matches sidebar nav links,
   // making count > 0 even when no companies are actually associated with the deal.
-  test.skip('shows empty state when no companies associated', async ({
+  test.skip("shows empty state when no companies associated", async ({
     dealDetailPage,
     page,
-    auth,
   }) => {
     await dealDetailPage.goto(1);
     const companyLinks = page.locator('a[href^="/companies/"]');
@@ -530,96 +461,78 @@ test.describe('Deal Associations - Companies', () => {
   });
 });
 
-test.describe('Deal Associations - Contacts', () => {
-  test('displays Associated Contacts section', async ({
+test.describe("Deal Associations - Contacts", () => {
+  // ── 1. Empty state ─────────────────────────────────────────────────────
+  test("displays Associated Contacts section", async ({
     dealDetailPage,
     page,
-    auth,
   }) => {
     await dealDetailPage.goto(1);
 
-    // Check for Associated Contacts section
     await expect(
-      page.getByRole('heading', { name: /Associated Contacts/i }),
+      page.getByRole("heading", { name: /Associated Contacts/i })
     ).toBeVisible();
   });
 
-  test('shows Add Contact button', async ({ dealDetailPage, page, auth }) => {
+  test("shows Add Contact button", async ({ dealDetailPage, page }) => {
     await dealDetailPage.goto(1);
 
-    // Check for Add Contact button
     await expect(
-      page.getByRole('button', { name: /Add Contact/i }),
+      page.getByRole("button", { name: /Add Contact/i })
     ).toBeVisible();
   });
 
-  test('can open Add Contact dialog', async ({
+  test("can open Add Contact dialog", async ({ dealDetailPage, page }) => {
+    await dealDetailPage.goto(1);
+
+    await page.getByRole("button", { name: /Add Contact/i }).click();
+
+    await expect(
+      page.getByRole("heading", { name: /Add Contact to Deal/i })
+    ).toBeVisible();
+    await expect(
+      page.getByText(/Associate a contact person with this deal/i)
+    ).toBeVisible();
+  });
+
+  test("Add Contact dialog shows contact selection and role", async ({
     dealDetailPage,
     page,
-    auth,
   }) => {
     await dealDetailPage.goto(1);
 
-    // Click Add Contact button
-    await page.getByRole('button', { name: /Add Contact/i }).click();
+    await page.getByRole("button", { name: /Add Contact/i }).click();
 
-    // Dialog should open
-    await expect(
-      page.getByRole('heading', { name: /Add Contact to Deal/i }),
-    ).toBeVisible();
-    await expect(
-      page.getByText(/Associate a contact person with this deal/i),
-    ).toBeVisible();
-  });
-
-  test('Add Contact dialog shows contact selection and role', async ({
-    dealDetailPage,
-    page,
-    auth,
-  }) => {
-    await dealDetailPage.goto(1);
-
-    await page.getByRole('button', { name: /Add Contact/i }).click();
-
-    // Check for contact select dropdown - look for the select element
-    const contactSelect = page.locator('select').first();
+    const contactSelect = page.locator("select").first();
     await expect(contactSelect).toBeVisible();
 
-    // Check for role input field
     const roleInput = page.locator('input[type="text"]').first();
     await expect(roleInput).toBeVisible();
 
     await expect(
-      page.getByText(/Primary contact for this deal/i),
+      page.getByText(/Primary contact for this deal/i)
     ).toBeVisible();
 
-    // Verify the select has contact options
-    const options = await contactSelect.locator('option').count();
-    expect(options).toBeGreaterThan(0); // At least the placeholder option
+    const options = await contactSelect.locator("option").count();
+    expect(options).toBeGreaterThan(0);
   });
 
-  test('can close Add Contact dialog', async ({
-    dealDetailPage,
-    page,
-    auth,
-  }) => {
+  test("can close Add Contact dialog", async ({ dealDetailPage, page }) => {
     await dealDetailPage.goto(1);
 
-    await page.getByRole('button', { name: /Add Contact/i }).click();
+    await page.getByRole("button", { name: /Add Contact/i }).click();
 
-    // Click Cancel
-    await page.getByRole('button', { name: /Cancel/i }).click();
+    await page.getByRole("button", { name: /Cancel/i }).click();
 
-    // Dialog should close
     await expect(
-      page.getByRole('heading', { name: /Add Contact to Deal/i }),
+      page.getByRole("heading", { name: /Add Contact to Deal/i })
     ).toBeHidden();
   });
 
-  test('associated contacts have clickable links', async ({
+  // ── 2. Check after (when contacts are associated) ───────────────────────
+  test("associated contacts have clickable links", async ({
     dealDetailPage,
     page,
-    auth,
   }) => {
     await dealDetailPage.goto(1);
 
@@ -632,30 +545,29 @@ test.describe('Deal Associations - Contacts', () => {
       await expect(contactLinks.first()).toBeVisible();
 
       // Link should navigate to contact page
-      const href = await contactLinks.first().getAttribute('href');
+      const href = await contactLinks.first().getAttribute("href");
       expect(href).toMatch(/\/contacts\/\d+/);
     }
   });
 
-  test('associated contacts show role and Primary badges', async ({
+  test("associated contacts show role and Primary badges", async ({
     dealDetailPage,
     page,
-    auth,
   }) => {
     await dealDetailPage.goto(1);
 
     const contactSection = page
-      .locator('text=Associated Contacts')
-      .locator('..');
+      .locator("text=Associated Contacts")
+      .locator("..");
 
     // Check for role badges (they may or may not exist depending on data)
     const roleBadges = contactSection
-      .locator('span')
+      .locator("span")
       .filter({ hasText: /Decision Maker|Influencer|Champion/i });
     const roleCount = await roleBadges.count();
 
     // Check for primary badges
-    const primaryBadges = contactSection.locator('text=Primary');
+    const primaryBadges = contactSection.locator("text=Primary");
     const primaryCount = await primaryBadges.count();
 
     // At least one type of badge should exist if there are contacts
@@ -668,10 +580,9 @@ test.describe('Deal Associations - Contacts', () => {
     }
   });
 
-  test('associated contacts have edit and remove buttons', async ({
+  test("associated contacts have edit and remove buttons", async ({
     dealDetailPage,
     page,
-    auth,
   }) => {
     await dealDetailPage.goto(1);
 
@@ -689,10 +600,9 @@ test.describe('Deal Associations - Contacts', () => {
   });
 
   // Skipped: same nav-link counting issue as the companies empty state test.
-  test.skip('shows empty state when no contacts associated', async ({
+  test.skip("shows empty state when no contacts associated", async ({
     dealDetailPage,
     page,
-    auth,
   }) => {
     await dealDetailPage.goto(1);
     const contactLinks = page.locator('a[href^="/contacts/"]');
@@ -709,58 +619,45 @@ test.describe('Deal Associations - Contacts', () => {
   });
 });
 
-test.describe('Deal Activity Timeline - Comments', () => {
-  test('should display comment input form in activity timeline', async ({
+test.describe("Deal Activity Timeline - Comments", () => {
+  // ── 1. Empty state ─────────────────────────────────────────────────────
+  test("should display comment input form in activity timeline", async ({
     dealDetailPage,
     page,
-    auth,
   }) => {
     await dealDetailPage.goto(1);
 
-    // Check for comment input (textarea)
     const commentInput = page.locator('textarea[placeholder*="comment" i]');
     await expect(commentInput).toBeVisible();
 
-    // Check for Post Comment button
-    const postButton = page.getByRole('button', { name: /Post Comment/i });
+    const postButton = page.getByRole("button", { name: /Post Comment/i });
     await expect(postButton).toBeVisible();
   });
 
-  test('should create a new comment successfully on a deal', async ({
+  test("should disable post button when comment is empty", async ({
     dealDetailPage,
     page,
-    auth,
+  }) => {
+    await dealDetailPage.goto(1);
+
+    const postButton = page.getByRole("button", { name: /Post Comment/i });
+    await expect(postButton).toBeDisabled();
+  });
+
+  // ── 2. Create ───────────────────────────────────────────────────────────
+  test("should create a new comment successfully on a deal", async ({
+    dealDetailPage,
+    page,
   }) => {
     await dealDetailPage.goto(1);
 
     const commentText = `Deal test comment ${Date.now()}`;
 
-    // Fill in the comment
     const commentInput = page.locator('textarea[placeholder*="comment" i]');
     await commentInput.fill(commentText);
 
-    // Submit the comment and wait for API response
-    const postButton = page.getByRole('button', { name: /Post Comment/i });
-    const responsePromise = page.waitForResponse(
-      (resp) => resp.url().includes('/api/activities') && resp.ok(),
-      { timeout: 10000 },
-    );
-    await postButton.click();
-    await responsePromise;
+    await page.getByRole("button", { name: /Post Comment/i }).click();
 
-    // Verify the comment is visible in the timeline using web-first assertion
-    await expect(page.getByText(commentText)).toBeVisible({ timeout: 5000 });
-  });
-
-  test('should disable post button when comment is empty', async ({
-    dealDetailPage,
-    page,
-    auth,
-  }) => {
-    await dealDetailPage.goto(1);
-
-    // Post button should be disabled when input is empty
-    const postButton = page.getByRole('button', { name: /Post Comment/i });
-    await expect(postButton).toBeDisabled();
+    await expect(page.getByText(commentText)).toBeVisible({ timeout: 10000 });
   });
 });

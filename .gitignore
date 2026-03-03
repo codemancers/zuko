@@ -52,13 +52,18 @@ test-output
 /prisma/
 
 # START Ruler Generated Files
+/.agents/skills
+/.claude/skills
 /.codex/config.toml
 /.codex/config.toml.bak
+/.codex/skills
+/.opencode/skill
+/.skillz
+/.vibe/skills
 /AGENTS.md
 /AGENTS.md.bak
 /CLAUDE.md
 /CLAUDE.md.bak
-.claude
 # END Ruler Generated Files
 
 # Environment files with secrets
