@@ -116,10 +116,7 @@ export class ChatController {
       "[ChatController] Context entities from message metadata:",
       JSON.stringify(contextEntities, null, 2),
     );
-    console.log(
-      "[ChatController] Last message metadata:",
-      JSON.stringify(lastMessage?.metadata, null, 2),
-    );
+    
     const userId = parseInt(req.user.id, 10);
 
     // Verify user is a participant in this chat

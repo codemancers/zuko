@@ -26,7 +26,7 @@ function getContextEntities(
  */
 export function createGetContactDetailsTool(contactsService: ContactsService) {
   return tool(
-    async (input, config?: unknown) => {
+    async (input = {}, config?: unknown) => {
       const contextEntities = getContextEntities(config);
       const contextContacts =
         contextEntities?.filter((e) => e.type === 'contact') ?? [];
@@ -43,7 +43,14 @@ export function createGetContactDetailsTool(contactsService: ContactsService) {
       const contactFromContext =
         contextContacts.length === 1 ? contextContacts[0] : undefined;
       const contactId =
-        contactFromContext != null ? contactFromContext.id : input.contactId;
+        (input as { contactId?: number }).contactId ?? contactFromContext?.id;
+
+      if (contactId === undefined) {
+        return {
+          error:
+            'No contact in context and no contactId provided. Add a contact via the + button or provide contactId.',
+        };
+      }
 
       try {
         const contact = await contactsService.findById(contactId);
@@ -69,13 +76,18 @@ export function createGetContactDetailsTool(contactsService: ContactsService) {
     },
     {
       name: 'get_contact_details',
-      description: `Get full details for a single contact by ID. Use when context has exactly one contact.
+      description: `Get full details for a single contact. ID is optional: when omitted, uses the single contact from context (contextEntities). Call this whenever the user asks for contact details.
 
-For multiple contacts in context, use query_contacts with filters.contactIds (list of IDs) instead.
+- One contact in context: call with no arguments.
+- User provided an ID: you may pass contactId.
+- Multiple contacts in context: use query_contacts with filters.contactIds instead.
 
 Returns: Contact object with id, name, email, phone, linkedinId, notes, createdAt, updatedAt`,
       schema: z.object({
-        contactId: z.number().describe('The contact ID to retrieve'),
+        contactId: z
+          .number()
+          .describe('Optional. Contact ID; when omitted, tool uses context.')
+          .optional(),
       }),
     },
   );

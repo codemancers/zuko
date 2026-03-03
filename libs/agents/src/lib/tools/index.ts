@@ -1,3 +1,6 @@
+// Context - See what entities are in the conversation
+export { createGetConversationContextTool } from './context/get-conversation-context.tool';
+
 // Tier 1 Tools - Simple entity operations
 export { createGetContactDetailsTool } from './contacts/get-contact-details.tool';
 export { createGetContactOwnerTool } from './contacts/get-contact-owner.tool';

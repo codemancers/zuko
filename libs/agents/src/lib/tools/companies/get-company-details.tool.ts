@@ -82,12 +82,17 @@ export function createGetCompanyDetailsTool(
     },
     {
       name: 'get_company_details',
-      description: `Get full details for a company. CALL THIS when the user asks for company details and context has companies (do not ask the user for an ID).
-- One company in context: call without companyId (ID is taken from context).
+      description: `Get full details for a company. ID is optional; when omitted, uses the single company from context (contextEntities). Call whenever the user asks for company details.
+
+- One company in context: call with no arguments.
+- User provided an ID: you may pass companyId.
 - Multiple companies in context: use query_companies with filters.companyIds instead.
 Returns: Company object with id, companyName, website, linkedinUrl, summary, contactCount, createdAt, updatedAt`,
       schema: z.object({
-        companyId: z.number().describe('The company ID to retrieve').optional(),
+        companyId: z
+          .number()
+          .describe('Optional. Company ID; when omitted, tool uses context.')
+          .optional(),
       }),
     },
   );

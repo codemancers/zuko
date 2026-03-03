@@ -1,14 +1,40 @@
 import { tool } from '@langchain/core/tools';
 import { z } from 'zod';
 import type { ContactsService } from '@zuko/sales';
+import type { ContextEntityReference } from '../../types/chat.types';
+
+type ToolRunConfig = {
+  configurable?: { contextEntities?: ContextEntityReference[] };
+  state?: { contextEntities?: ContextEntityReference[] };
+};
+
+function getContextEntities(config: unknown): ContextEntityReference[] | undefined {
+  const c = config as ToolRunConfig | undefined;
+  return c?.state?.contextEntities ?? c?.configurable?.contextEntities;
+}
 
 /**
  * LangChain tool for retrieving contact owner(s)
- * Used by AI agents to find who owns a contact
+ * Used by AI agents to find who owns a contact.
+ * contactId is optional; when omitted, uses the single contact from context.
  */
 export function createGetContactOwnerTool(contactsService: ContactsService) {
   return tool(
-    async ({ contactId }) => {
+    async (input, config?: unknown) => {
+      const contextEntities = getContextEntities(config);
+      const contextContacts =
+        contextEntities?.filter((e) => e.type === 'contact') ?? [];
+      const contactFromContext =
+        contextContacts.length === 1 ? contextContacts[0] : undefined;
+      const contactId = input.contactId ?? contactFromContext?.id;
+
+      if (contactId === undefined) {
+        return {
+          error:
+            'No contact in context and no contactId provided. Add a contact via the + button or provide contactId.',
+        };
+      }
+
       try {
         const contact = await contactsService.findById(contactId);
 
@@ -54,16 +80,14 @@ export function createGetContactOwnerTool(contactsService: ContactsService) {
     },
     {
       name: 'get_contact_owner',
-      description: `Get the owner(s) of a contact. Returns primary owner and all assigned owners with their details.
+      description: `Get the owner(s) of a contact. ID is optional; when omitted, uses the single contact from context. Returns primary owner and all assigned owners.
 
-Use this when asked questions like:
-- "Who owns this contact?"
-- "Who is responsible for this contact?"
-- "Who is the contact owner?"
-
-Returns: primaryOwner (user object), allOwners (array of users), ownerCount`,
+Use when the user asks who owns or is responsible for a contact. Returns: primaryOwner, allOwners, ownerCount`,
       schema: z.object({
-        contactId: z.number().describe('The contact ID to get owners for'),
+        contactId: z
+          .number()
+          .describe('Optional. Contact ID; when omitted, tool uses context.')
+          .optional(),
       }),
     },
   );
