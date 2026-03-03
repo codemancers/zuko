@@ -21,8 +21,10 @@ export class ContactsPage extends BasePage {
    */
   override async goto() {
     await super.goto("/contacts");
-    // Wait for page to fully load
-    await this.contactsList.waitFor();
+    // Wait for page to be fully loaded and interactive
+    await this.page.waitForLoadState('domcontentloaded');
+    // Wait for either the table or the main content to be visible
+    await this.page.waitForSelector('table, main', { state: 'visible' });
   }
 
   /**

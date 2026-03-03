@@ -36,11 +36,13 @@ export class ContactDetailPage extends BasePage {
     const path = `/contacts/${contactId}`;
     if (this.page.url().includes(path)) {
       // If already on the page, just ensure the activity section is loaded
-      await this.activitySection.waitFor();
+      await this.page.waitForLoadState('domcontentloaded');
+      await this.activitySection.waitFor({ state: 'visible' });
       return;
     }
     await this.page.goto(path);
-    await this.activitySection.waitFor();
+    await this.page.waitForLoadState('domcontentloaded');
+    await this.activitySection.waitFor({ state: 'visible' });
   }
 
   /**

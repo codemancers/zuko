@@ -11,9 +11,9 @@ export default [
           ignoredFiles: [
             '{projectRoot}/eslint.config.{js,cjs,mjs,ts,cts,mts}',
             '{projectRoot}/prisma.config.ts',
+            '{projectRoot}/prisma/seed.ts',
             '{projectRoot}/jest.config.{js,cjs,mjs,ts,cts,mts}',
           ],
-          ignoredDependencies: ['prisma', 'dotenv'],
         },
       ],
     },
