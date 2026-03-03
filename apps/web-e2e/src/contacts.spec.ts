@@ -43,8 +43,11 @@ test.describe("Contacts - Authenticated", () => {
 
   test("can search for contacts", async ({ contactsPage, page }) => {
     await contactsPage.goto();
+    const responsePromise = page.waitForResponse(
+      (resp) => resp.url().includes("/api/contacts") && resp.ok()
+    );
     await contactsPage.searchContact("test");
-    await page.waitForLoadState("networkidle").catch(() => {});
+    await responsePromise;
   });
 
   test("can click on a contact to view details", async ({
