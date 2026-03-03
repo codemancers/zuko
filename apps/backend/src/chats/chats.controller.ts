@@ -9,12 +9,12 @@ import {
   Req,
   UseGuards,
   ForbiddenException,
-} from '@nestjs/common';
-import { AuthGuard } from '@thallesp/nestjs-better-auth';
-import { ChatsService } from './chats.service';
-import { OrchestratorService } from '@zuko/agents';
+} from "@nestjs/common";
+import { AuthGuard } from "@thallesp/nestjs-better-auth";
+import { ChatsService } from "./chats.service";
+import { OrchestratorService } from "@zuko/agents";
 
-@Controller('chats')
+@Controller("chats")
 @UseGuards(AuthGuard)
 export class ChatsController {
   constructor(
@@ -27,7 +27,7 @@ export class ChatsController {
    * POST /api/chats
    */
   @Post()
-  async create(@Req() req, @Body() body: { participantIds?: number[] }) {
+  async create(@Req() req: any, @Body() body: { participantIds?: number[] }) {
     const userId = parseInt(req.user.id, 10);
     const chat = await this.chatsService.create(userId, body.participantIds);
 
@@ -51,7 +51,7 @@ export class ChatsController {
    * GET /api/chats
    */
   @Get()
-  async findAll(@Req() req) {
+  async findAll(@Req() req: any) {
     const userId = parseInt(req.user.id, 10);
     const chats = await this.chatsService.findAllByUser(userId);
 
@@ -78,8 +78,8 @@ export class ChatsController {
    * Get a specific chat
    * GET /api/chats/:id
    */
-  @Get(':id')
-  async findOne(@Req() req, @Param('id') id: string) {
+  @Get(":id")
+  async findOne(@Req() req: any, @Param("id") id: string) {
     const userId = parseInt(req.user.id, 10);
     const chatId = parseInt(id, 10);
     const chat = await this.chatsService.findOne(chatId);
@@ -87,7 +87,7 @@ export class ChatsController {
     // Verify user is a participant
     const isParticipant = await this.chatsService.isParticipant(chatId, userId);
     if (!isParticipant) {
-      throw new ForbiddenException('Not a participant in this chat');
+      throw new ForbiddenException("Not a participant in this chat");
     }
 
     return {
@@ -111,15 +111,15 @@ export class ChatsController {
    * Get message history and context entities for a chat
    * GET /api/chats/:id/messages
    */
-  @Get(':id/messages')
-  async getMessages(@Req() req, @Param('id') id: string) {
+  @Get(":id/messages")
+  async getMessages(@Req() req: any, @Param("id") id: string) {
     const userId = parseInt(req.user.id, 10);
     const chatId = parseInt(id, 10);
 
     // Verify user is a participant
     const isParticipant = await this.chatsService.isParticipant(chatId, userId);
     if (!isParticipant) {
-      throw new ForbiddenException('Not a participant in this chat');
+      throw new ForbiddenException("Not a participant in this chat");
     }
 
     // Get the chat to extract threadId
@@ -136,10 +136,10 @@ export class ChatsController {
    * Update chat title
    * PATCH /api/chats/:id
    */
-  @Patch(':id')
+  @Patch(":id")
   async update(
-    @Req() req,
-    @Param('id') id: string,
+    @Req() req: any,
+    @Param("id") id: string,
     @Body() body: { title: string },
   ) {
     const userId = parseInt(req.user.id, 10);
@@ -148,7 +148,7 @@ export class ChatsController {
     // Verify user is a participant
     const isParticipant = await this.chatsService.isParticipant(chatId, userId);
     if (!isParticipant) {
-      throw new ForbiddenException('Not a participant in this chat');
+      throw new ForbiddenException("Not a participant in this chat");
     }
 
     const chat = await this.chatsService.updateTitle(chatId, body.title);
@@ -164,15 +164,15 @@ export class ChatsController {
    * Delete a chat
    * DELETE /api/chats/:id
    */
-  @Delete(':id')
-  async delete(@Req() req, @Param('id') id: string) {
+  @Delete(":id")
+  async delete(@Req() req: any, @Param("id") id: string) {
     const userId = parseInt(req.user.id, 10);
     const chatId = parseInt(id, 10);
 
     // Verify user is a participant
     const isParticipant = await this.chatsService.isParticipant(chatId, userId);
     if (!isParticipant) {
-      throw new ForbiddenException('Not a participant in this chat');
+      throw new ForbiddenException("Not a participant in this chat");
     }
 
     await this.chatsService.delete(chatId);
@@ -184,10 +184,10 @@ export class ChatsController {
    * Add a participant to a chat
    * POST /api/chats/:id/participants
    */
-  @Post(':id/participants')
+  @Post(":id/participants")
   async addParticipant(
-    @Req() req,
-    @Param('id') id: string,
+    @Req() req: any,
+    @Param("id") id: string,
     @Body() body: { userId: number },
   ) {
     const currentUserId = parseInt(req.user.id, 10);
@@ -199,7 +199,7 @@ export class ChatsController {
       currentUserId,
     );
     if (!isParticipant) {
-      throw new ForbiddenException('Not a participant in this chat');
+      throw new ForbiddenException("Not a participant in this chat");
     }
 
     const participant = await this.chatsService.addParticipant(
@@ -220,11 +220,11 @@ export class ChatsController {
    * Remove a participant from a chat
    * DELETE /api/chats/:id/participants/:userId
    */
-  @Delete(':id/participants/:userId')
+  @Delete(":id/participants/:userId")
   async removeParticipant(
-    @Req() req,
-    @Param('id') id: string,
-    @Param('userId') userIdParam: string,
+    @Req() req: any,
+    @Param("id") id: string,
+    @Param("userId") userIdParam: string,
   ) {
     const currentUserId = parseInt(req.user.id, 10);
     const chatId = parseInt(id, 10);
@@ -236,7 +236,7 @@ export class ChatsController {
       currentUserId,
     );
     if (!isParticipant) {
-      throw new ForbiddenException('Not a participant in this chat');
+      throw new ForbiddenException("Not a participant in this chat");
     }
 
     await this.chatsService.removeParticipant(chatId, targetUserId);

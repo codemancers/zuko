@@ -1,4 +1,4 @@
-import { test as base, Page } from '@playwright/test';
+import { test as base } from "@playwright/test";
 import {
   SignInPage,
   ContactsPage,
@@ -9,8 +9,8 @@ import {
   DealDetailPage,
   SettingsPage,
   ChatPage,
-} from '../pages';
-import { createUserWithSession, AuthUser } from '../lib/auth';
+} from "../pages";
+import { createUserWithSession, AuthUser } from "../lib/auth";
 
 type TestFixtures = {
   signInPage: SignInPage;
@@ -81,4 +81,4 @@ export const test = base.extend<TestFixtures>({
   },
 });
 
-export { expect } from '@playwright/test';
+export { expect } from "@playwright/test";

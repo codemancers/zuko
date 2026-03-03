@@ -1,13 +1,7 @@
-import axios from 'axios';
-import { PrismaClient } from '@prisma/client';
+import axios from "axios";
+import { PrismaClient } from "@prisma/client";
 
-const prisma = new PrismaClient({
-  datasources: {
-    db: {
-      url: process.env.DATABASE_URL,
-    },
-  },
-});
+const prisma = new PrismaClient();
 
 export interface TestUser {
   id: number;
@@ -22,7 +16,7 @@ export interface TestUser {
  */
 export async function createTestUserWithSession(): Promise<TestUser> {
   const testEmail = `test-${Date.now()}@example.com`;
-  const testName = 'Test User';
+  const testName = "Test User";
 
   // Create user
   const user = await prisma.user.create({
@@ -66,7 +60,7 @@ export async function cleanupTestUsers(): Promise<void> {
   await prisma.user.deleteMany({
     where: {
       email: {
-        startsWith: 'test-',
+        startsWith: "test-",
       },
     },
   });

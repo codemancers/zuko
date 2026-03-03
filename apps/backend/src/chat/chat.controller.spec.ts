@@ -1,20 +1,20 @@
-import { describe, it, expect, beforeEach } from '@jest/globals';
+import { describe, it, expect } from "@jest/globals";
 
 /**
  * Tests for contextEntities extraction from AI SDK message metadata
  */
-describe('ChatController - contextEntities extraction', () => {
-  describe('extracting contextEntities from message metadata', () => {
-    it('should extract contextEntities from last message metadata', () => {
+describe("ChatController - contextEntities extraction", () => {
+  describe("extracting contextEntities from message metadata", () => {
+    it("should extract contextEntities from last message metadata", () => {
       const messages = [
         {
-          role: 'user',
-          content: 'hello',
-          parts: [{ type: 'text', text: 'hello' }],
+          role: "user",
+          content: "hello",
+          parts: [{ type: "text", text: "hello" }],
           metadata: {
             contextEntities: [
-              { type: 'contact', id: 1 },
-              { type: 'company', id: 2 },
+              { type: "contact", id: 1 },
+              { type: "company", id: 2 },
             ],
           },
         },
@@ -25,17 +25,17 @@ describe('ChatController - contextEntities extraction', () => {
         (lastMessage?.metadata as any)?.contextEntities || [];
 
       expect(contextEntities).toEqual([
-        { type: 'contact', id: 1 },
-        { type: 'company', id: 2 },
+        { type: "contact", id: 1 },
+        { type: "company", id: 2 },
       ]);
     });
 
-    it('should return empty array when message has no metadata', () => {
+    it("should return empty array when message has no metadata", () => {
       const messages = [
         {
-          role: 'user',
-          content: 'hello',
-          parts: [{ type: 'text', text: 'hello' }],
+          role: "user",
+          content: "hello",
+          parts: [{ type: "text", text: "hello" }],
           metadata: {},
         },
       ];
@@ -47,14 +47,14 @@ describe('ChatController - contextEntities extraction', () => {
       expect(contextEntities).toEqual([]);
     });
 
-    it('should return empty array when metadata has no contextEntities', () => {
+    it("should return empty array when metadata has no contextEntities", () => {
       const messages = [
         {
-          role: 'user',
-          content: 'hello',
-          parts: [{ type: 'text', text: 'hello' }],
+          role: "user",
+          content: "hello",
+          parts: [{ type: "text", text: "hello" }],
           metadata: {
-            someOtherField: 'value',
+            someOtherField: "value",
           },
         },
       ];
@@ -66,27 +66,27 @@ describe('ChatController - contextEntities extraction', () => {
       expect(contextEntities).toEqual([]);
     });
 
-    it('should extract from last message when multiple messages exist', () => {
+    it("should extract from last message when multiple messages exist", () => {
       const messages = [
         {
-          role: 'user',
-          content: 'first',
-          parts: [{ type: 'text', text: 'first' }],
+          role: "user",
+          content: "first",
+          parts: [{ type: "text", text: "first" }],
           metadata: {
-            contextEntities: [{ type: 'contact', id: 999 }],
+            contextEntities: [{ type: "contact", id: 999 }],
           },
         },
         {
-          role: 'assistant',
-          content: 'response',
-          parts: [{ type: 'text', text: 'response' }],
+          role: "assistant",
+          content: "response",
+          parts: [{ type: "text", text: "response" }],
         },
         {
-          role: 'user',
-          content: 'second',
-          parts: [{ type: 'text', text: 'second' }],
+          role: "user",
+          content: "second",
+          parts: [{ type: "text", text: "second" }],
           metadata: {
-            contextEntities: [{ type: 'company', id: 123 }],
+            contextEntities: [{ type: "company", id: 123 }],
           },
         },
       ];
@@ -95,23 +95,23 @@ describe('ChatController - contextEntities extraction', () => {
       const contextEntities =
         (lastMessage?.metadata as any)?.contextEntities || [];
 
-      expect(contextEntities).toEqual([{ type: 'company', id: 123 }]);
+      expect(contextEntities).toEqual([{ type: "company", id: 123 }]);
     });
 
-    it('should handle assistant messages with no metadata', () => {
+    it("should handle assistant messages with no metadata", () => {
       const messages = [
         {
-          role: 'user',
-          content: 'hello',
-          parts: [{ type: 'text', text: 'hello' }],
+          role: "user",
+          content: "hello",
+          parts: [{ type: "text", text: "hello" }],
           metadata: {
-            contextEntities: [{ type: 'contact', id: 1 }],
+            contextEntities: [{ type: "contact", id: 1 }],
           },
         },
         {
-          role: 'assistant',
-          content: 'hi',
-          parts: [{ type: 'text', text: 'hi' }],
+          role: "assistant",
+          content: "hi",
+          parts: [{ type: "text", text: "hi" }],
         },
       ];
 

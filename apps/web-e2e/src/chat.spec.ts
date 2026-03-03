@@ -33,7 +33,7 @@ test.describe("Chat", () => {
         data: {
           title: "E2E Test Chat",
         },
-      }
+      },
     );
 
     expect(response.ok()).toBeTruthy();
@@ -58,7 +58,7 @@ test.describe("Chat", () => {
     // Verify empty state is shown
     await expect(page.getByText("Start a conversation")).toBeVisible();
     await expect(
-      page.getByText("Ask me anything to get started")
+      page.getByText("Ask me anything to get started"),
     ).toBeVisible();
 
     // Verify input is present
@@ -88,7 +88,7 @@ test.describe("Chat", () => {
     const submitButton = page.locator('button[type="submit"]').last();
     const requestPromise = page.waitForRequest(
       (req) => req.url().includes("/api/chat") && req.method() === "POST",
-      { timeout: 5000 }
+      { timeout: 5000 },
     );
     await submitButton.click();
     await requestPromise;
@@ -102,7 +102,7 @@ test.describe("Chat", () => {
     // AI SDK v6 uses parts array instead of content
     expect(capturedRequestBody.messages[0].parts).toBeDefined();
     expect(capturedRequestBody.messages[0].parts[0].text).toBe(
-      "Hello, this is a test message"
+      "Hello, this is a test message",
     );
   });
 
@@ -195,7 +195,7 @@ test.describe("Chat", () => {
       (resp) => resp.url().includes("/api/chat"),
       {
         timeout: 10000,
-      }
+      },
     );
     await submitButton.click();
     await responsePromise;

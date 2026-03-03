@@ -1,8 +1,8 @@
-import { OrchestratorService } from '../services/orchestrator.service';
-import { AdminService } from '../services/admin.service';
-import { randomUUID } from 'node:crypto';
-import { Pool } from 'pg';
-import type { ContextEntityReference } from '../types/chat.types';
+import { OrchestratorService } from "../services/orchestrator.service";
+import { AdminService } from "../services/admin.service";
+import { randomUUID } from "node:crypto";
+import { Pool } from "pg";
+import type { ContextEntityReference } from "../types/chat.types";
 
 // Global pool for direct database queries
 let globalPool: Pool;
@@ -18,12 +18,12 @@ class PrismaService {
 const mockContactsService = {
   findOne: jest
     .fn()
-    .mockResolvedValue({ id: 1, firstName: 'John', lastName: 'Doe' }),
-  findOwner: jest.fn().mockResolvedValue({ id: 1, name: 'Owner' }),
+    .mockResolvedValue({ id: 1, firstName: "John", lastName: "Doe" }),
+  findOwner: jest.fn().mockResolvedValue({ id: 1, name: "Owner" }),
 } as any;
 
 const mockCompaniesService = {
-  findById: jest.fn().mockResolvedValue({ id: 1, companyName: 'Acme Corp' }),
+  findById: jest.fn().mockResolvedValue({ id: 1, companyName: "Acme Corp" }),
 } as any;
 
 const mockActivityService = {
@@ -31,18 +31,18 @@ const mockActivityService = {
   findMany: jest.fn().mockResolvedValue([]),
 } as any;
 
-describe('PersistentContextMiddleware - State Persistence', () => {
+describe("PersistentContextMiddleware - State Persistence", () => {
   let service: OrchestratorService;
   let prisma: PrismaService;
 
   beforeAll(async () => {
     // Ensure we have necessary environment variables
     if (!process.env.DATABASE_URL) {
-      throw new Error('DATABASE_URL is required for persistence tests');
+      throw new Error("DATABASE_URL is required for persistence tests");
     }
 
     if (!process.env.OPENAI_API_KEY) {
-      console.warn('OPENAI_API_KEY not set - tests may fail');
+      console.warn("OPENAI_API_KEY not set - tests may fail");
     }
 
     // Create pool for database access
@@ -53,17 +53,9 @@ describe('PersistentContextMiddleware - State Persistence', () => {
     // Directly instantiate services without NestJS DI
     prisma = new PrismaService();
     const adminService = new AdminService();
-    const mockSecretaryService = {
-      getAgent: jest.fn().mockResolvedValue({
-        invoke: jest.fn().mockResolvedValue({
-          messages: [{ role: 'assistant', content: 'Mock secretary response' }],
-        }),
-      }),
-    } as any;
 
     service = new OrchestratorService(
       adminService,
-      mockSecretaryService,
       prisma as any,
       mockContactsService,
       mockCompaniesService,
@@ -75,25 +67,25 @@ describe('PersistentContextMiddleware - State Persistence', () => {
     await globalPool.end();
   });
 
-  describe('contextEntities persistence', () => {
-    it('should hydrate contextEntities with names from database', async () => {
+  describe("contextEntities persistence", () => {
+    it("should hydrate contextEntities with names from database", async () => {
       const threadId = `test-hydration-${randomUUID()}`;
       const userId = 123;
       const contextEntities: ContextEntityReference[] = [
-        { type: 'contact', id: 1 },
-        { type: 'company', id: 2 },
+        { type: "contact", id: 1 },
+        { type: "company", id: 2 },
       ];
 
       // Send message with contextEntities
       const agent = await (service as any).ensureAgent();
       const config = {
-        streamMode: ['values'] as const,
+        streamMode: ["values"] as const,
         configurable: { thread_id: threadId },
       };
 
       const stream = await agent.stream(
         {
-          messages: [{ role: 'user', content: 'Test hydration' }],
+          messages: [{ role: "user", content: "Test hydration" }],
           contextEntities,
           userId,
         },
@@ -105,56 +97,53 @@ describe('PersistentContextMiddleware - State Persistence', () => {
       }
 
       // Retrieve and verify hydrated entities
-      const result = await service.getMessages(threadId);
-      expect(result.contextEntities).toBeDefined();
-      expect(result.contextEntities.length).toBe(2);
+      const { contextEntities: fetchedEntities } =
+        await service.getMessages(threadId);
+      expect(fetchedEntities).toBeDefined();
+      expect(fetchedEntities!.length).toBe(2);
 
       // Verify each entity has a name
-      result.contextEntities.forEach((entity: any) => {
+      fetchedEntities!.forEach((entity: any) => {
         expect(entity.name).toBeDefined();
-        expect(typeof entity.name).toBe('string');
+        expect(typeof entity.name).toBe("string");
         expect(entity.name.length).toBeGreaterThan(0);
       });
 
       // Verify contact entity
-      const contact = result.contextEntities.find(
-        (e: any) => e.type === 'contact',
-      );
+      const contact = fetchedEntities!.find((e: any) => e.type === "contact");
       expect(contact).toBeDefined();
-      expect(contact.name).toContain('John'); // Mock returns John Doe
+      expect(contact!.name).toContain("John"); // Mock returns John Doe
 
       // Verify company entity
-      const company = result.contextEntities.find(
-        (e: any) => e.type === 'company',
-      );
+      const company = fetchedEntities!.find((e: any) => e.type === "company");
       expect(company).toBeDefined();
-      expect(company.name).toContain('Acme'); // Mock returns Acme Corp
+      expect(company!.name).toContain("Acme"); // Mock returns Acme Corp
 
       console.log(
         `✓ Entities hydrated with names:`,
-        result.contextEntities.map((e: any) => e.name),
+        fetchedEntities!.map((e: any) => e.name),
       );
     }, 30000);
 
-    it('should persist contextEntities to checkpoint state', async () => {
+    it("should persist contextEntities to checkpoint state", async () => {
       const threadId = `test-context-entities-${randomUUID()}`;
       const userId = 123;
       const contextEntities: ContextEntityReference[] = [
-        { type: 'contact', id: 1 },
-        { type: 'company', id: 2 },
+        { type: "contact", id: 1 },
+        { type: "company", id: 2 },
       ];
 
       // Get the agent and stream with contextEntities
       const agent = await (service as any).ensureAgent();
       const config = {
-        streamMode: ['values'] as const,
+        streamMode: ["values"] as const,
         configurable: { thread_id: threadId },
       };
 
       // Stream with contextEntities and userId in initial state
       const stream = await agent.stream(
         {
-          messages: [{ role: 'user', content: 'What is 1+1?' }],
+          messages: [{ role: "user", content: "What is 1+1?" }],
           contextEntities,
           userId,
         },
@@ -168,48 +157,49 @@ describe('PersistentContextMiddleware - State Persistence', () => {
 
       // Verify checkpoint was saved to database
       const checkpointsResult = await globalPool.query(
-        'SELECT checkpoint FROM agents.checkpoints WHERE thread_id = $1 ORDER BY checkpoint_id DESC LIMIT 1',
+        "SELECT checkpoint FROM agents.checkpoints WHERE thread_id = $1 ORDER BY checkpoint_id DESC LIMIT 1",
         [threadId],
       );
       expect(checkpointsResult.rows.length).toBe(1);
 
       // Retrieve via getMessages API (proves persistence)
-      const result = await service.getMessages(threadId);
-      expect(result.contextEntities).toBeDefined();
-      expect(Array.isArray(result.contextEntities)).toBe(true);
+      const { contextEntities: fetchedEntities } =
+        await service.getMessages(threadId);
+      expect(fetchedEntities).toBeDefined();
+      expect(Array.isArray(fetchedEntities)).toBe(true);
       // Verify entities are persisted (now with names hydrated)
-      expect(result.contextEntities.length).toBe(2);
-      expect(result.contextEntities[0].type).toBe('contact');
-      expect(result.contextEntities[0].id).toBe(1);
-      expect(result.contextEntities[0].name).toBeDefined();
-      expect(result.contextEntities[1].type).toBe('company');
-      expect(result.contextEntities[1].id).toBe(2);
-      expect(result.contextEntities[1].name).toBeDefined();
+      expect(fetchedEntities!.length).toBe(2);
+      expect(fetchedEntities![0].type).toBe("contact");
+      expect(fetchedEntities![0].id).toBe(1);
+      expect(fetchedEntities![0].name).toBeDefined();
+      expect(fetchedEntities![1].type).toBe("company");
+      expect(fetchedEntities![1].id).toBe(2);
+      expect(fetchedEntities![1].name).toBeDefined();
 
       console.log(
-        `✓ contextEntities persisted: ${JSON.stringify(result.contextEntities)}`,
+        `✓ contextEntities persisted: ${JSON.stringify(fetchedEntities)}`,
       );
       console.log(`✓ Checkpoint saved to database for thread ${threadId}`);
     }, 30000);
 
-    it('should retrieve contextEntities from checkpoint via getMessages', async () => {
+    it("should retrieve contextEntities from checkpoint via getMessages", async () => {
       const threadId = `test-get-messages-context-${randomUUID()}`;
       const userId = 456;
       const contextEntities: ContextEntityReference[] = [
-        { type: 'contact', id: 10 },
-        { type: 'deal', id: 20 },
+        { type: "contact", id: 10 },
+        { type: "deal", id: 20 },
       ];
 
       // Send message with contextEntities
       const agent = await (service as any).ensureAgent();
       const config = {
-        streamMode: ['values'] as const,
+        streamMode: ["values"] as const,
         configurable: { thread_id: threadId },
       };
 
       const stream = await agent.stream(
         {
-          messages: [{ role: 'user', content: 'Hello' }],
+          messages: [{ role: "user", content: "Hello" }],
           contextEntities,
           userId,
         },
@@ -222,48 +212,48 @@ describe('PersistentContextMiddleware - State Persistence', () => {
       }
 
       // Retrieve messages via getMessages (simulating page reload)
-      const result = await service.getMessages(threadId);
+      const { messages, contextEntities: fetchedEntities } =
+        await service.getMessages(threadId);
 
-      expect(result).toBeDefined();
-      expect(result.messages).toBeDefined();
-      expect(Array.isArray(result.messages)).toBe(true);
+      expect(messages).toBeDefined();
+      expect(Array.isArray(messages)).toBe(true);
 
       // Verify contextEntities are returned (now with names hydrated)
-      expect(result.contextEntities).toBeDefined();
-      expect(Array.isArray(result.contextEntities)).toBe(true);
-      expect(result.contextEntities.length).toBe(2);
-      expect(result.contextEntities[0].type).toBe('contact');
-      expect(result.contextEntities[0].id).toBe(10);
-      expect(result.contextEntities[0].name).toBeDefined();
-      expect(result.contextEntities[1].type).toBe('deal');
-      expect(result.contextEntities[1].id).toBe(20);
-      expect(result.contextEntities[1].name).toBeDefined();
+      expect(fetchedEntities).toBeDefined();
+      expect(Array.isArray(fetchedEntities)).toBe(true);
+      expect(fetchedEntities!.length).toBe(2);
+      expect(fetchedEntities![0].type).toBe("contact");
+      expect(fetchedEntities![0].id).toBe(10);
+      expect(fetchedEntities![0].name).toBeDefined();
+      expect(fetchedEntities![1].type).toBe("deal");
+      expect(fetchedEntities![1].id).toBe(20);
+      expect(fetchedEntities![1].name).toBeDefined();
 
       console.log(
-        `✓ getMessages returned contextEntities: ${JSON.stringify(result.contextEntities)}`,
+        `✓ getMessages returned contextEntities: ${JSON.stringify(fetchedEntities)}`,
       );
-      console.log(`✓ Retrieved ${result.messages.length} messages`);
+      console.log(`✓ Retrieved ${messages!.length} messages`);
     }, 30000);
 
-    it('should update contextEntities across multiple turns', async () => {
+    it("should update contextEntities across multiple turns", async () => {
       const threadId = `test-update-context-${randomUUID()}`;
       const userId = 789;
 
       // First turn: send with initial contextEntities
       const initialEntities: ContextEntityReference[] = [
-        { type: 'contact', id: 1 },
+        { type: "contact", id: 1 },
       ];
 
       const agent = await (service as any).ensureAgent();
       const config = {
-        streamMode: ['values'] as const,
+        streamMode: ["values"] as const,
         configurable: { thread_id: threadId },
       };
 
       // First stream
       const stream1 = await agent.stream(
         {
-          messages: [{ role: 'user', content: 'First message' }],
+          messages: [{ role: "user", content: "First message" }],
           contextEntities: initialEntities,
           userId,
         },
@@ -274,24 +264,24 @@ describe('PersistentContextMiddleware - State Persistence', () => {
       }
 
       // Verify initial entities are persisted (now with names)
-      let result = await service.getMessages(threadId);
-      expect(result.contextEntities.length).toBe(1);
-      expect(result.contextEntities[0].type).toBe('contact');
-      expect(result.contextEntities[0].id).toBe(1);
-      expect(result.contextEntities[0].name).toBeDefined();
+      let { contextEntities } = await service.getMessages(threadId);
+      expect(contextEntities!.length).toBe(1);
+      expect(contextEntities![0].type).toBe("contact");
+      expect(contextEntities![0].id).toBe(1);
+      expect(contextEntities![0].name).toBeDefined();
 
       // Second turn: update contextEntities
       const updatedEntities: ContextEntityReference[] = [
-        { type: 'contact', id: 1 },
-        { type: 'company', id: 2 },
+        { type: "contact", id: 1 },
+        { type: "company", id: 2 },
       ];
 
       const stream2 = await agent.stream(
         {
           messages: [
-            { role: 'user', content: 'First message' },
-            { role: 'assistant', content: 'Response to first' },
-            { role: 'user', content: 'Second message' },
+            { role: "user", content: "First message" },
+            { role: "assistant", content: "Response to first" },
+            { role: "user", content: "Second message" },
           ],
           contextEntities: updatedEntities,
           userId,
@@ -303,33 +293,34 @@ describe('PersistentContextMiddleware - State Persistence', () => {
       }
 
       // Verify updated entities are persisted (now with names)
-      result = await service.getMessages(threadId);
-      expect(result.contextEntities.length).toBe(2);
-      expect(result.contextEntities[0].type).toBe('contact');
-      expect(result.contextEntities[0].id).toBe(1);
-      expect(result.contextEntities[0].name).toBeDefined();
-      expect(result.contextEntities[1].type).toBe('company');
-      expect(result.contextEntities[1].id).toBe(2);
-      expect(result.contextEntities[1].name).toBeDefined();
+      const updateResult = await service.getMessages(threadId);
+      contextEntities = updateResult.contextEntities;
+      expect(contextEntities!.length).toBe(2);
+      expect(contextEntities![0].type).toBe("contact");
+      expect(contextEntities![0].id).toBe(1);
+      expect(contextEntities![0].name).toBeDefined();
+      expect(contextEntities![1].type).toBe("company");
+      expect(contextEntities![1].id).toBe(2);
+      expect(contextEntities![1].name).toBeDefined();
 
       console.log(
-        `✓ Updated contextEntities from 1 to ${result.contextEntities?.length} entities`,
+        `✓ Updated contextEntities from 1 to ${contextEntities?.length} entities`,
       );
     }, 30000);
 
-    it('should maintain empty contextEntities array when none provided', async () => {
+    it("should maintain empty contextEntities array when none provided", async () => {
       const threadId = `test-empty-context-${randomUUID()}`;
 
       // Send message without contextEntities
       const agent = await (service as any).ensureAgent();
       const config = {
-        streamMode: ['values'] as const,
+        streamMode: ["values"] as const,
         configurable: { thread_id: threadId },
       };
 
       const stream = await agent.stream(
         {
-          messages: [{ role: 'user', content: 'Hello' }],
+          messages: [{ role: "user", content: "Hello" }],
           // No contextEntities provided
         },
         config,
@@ -340,30 +331,30 @@ describe('PersistentContextMiddleware - State Persistence', () => {
       }
 
       // Retrieve and verify empty array
-      const result = await service.getMessages(threadId);
-      expect(result.contextEntities).toBeDefined();
-      expect(Array.isArray(result.contextEntities)).toBe(true);
-      expect(result.contextEntities.length).toBe(0);
+      const { contextEntities } = await service.getMessages(threadId);
+      expect(contextEntities).toBeDefined();
+      expect(Array.isArray(contextEntities)).toBe(true);
+      expect(contextEntities!.length).toBe(0);
 
-      console.log('✓ Empty contextEntities array persisted correctly');
+      console.log("✓ Empty contextEntities array persisted correctly");
     }, 30000);
 
-    it('should handle different entity types (contact, company, deal)', async () => {
+    it("should handle different entity types (contact, company, deal)", async () => {
       const threadId = `test-entity-types-${randomUUID()}`;
       const contextEntities: ContextEntityReference[] = [
-        { type: 'contact', id: 100 },
-        { type: 'company', id: 200 },
+        { type: "contact", id: 100 },
+        { type: "company", id: 200 },
       ];
 
       const agent = await (service as any).ensureAgent();
       const config = {
-        streamMode: ['values'] as const,
+        streamMode: ["values"] as const,
         configurable: { thread_id: threadId },
       };
 
       const stream = await agent.stream(
         {
-          messages: [{ role: 'user', content: 'Test all entity types' }],
+          messages: [{ role: "user", content: "Test all entity types" }],
           contextEntities,
           userId: 999,
         },
@@ -375,39 +366,40 @@ describe('PersistentContextMiddleware - State Persistence', () => {
       }
 
       // Verify all entity types are persisted (now with names)
-      const result = await service.getMessages(threadId);
-      expect(result.contextEntities).toBeDefined();
-      expect(result.contextEntities.length).toBe(2);
+      const { contextEntities: fetchedEntities } =
+        await service.getMessages(threadId);
+      expect(fetchedEntities).toBeDefined();
+      expect(fetchedEntities!.length).toBe(2);
 
       // Verify entity types and names
-      const types = result.contextEntities?.map((e) => e.type) || [];
-      expect(types).toContain('contact');
-      expect(types).toContain('company');
+      const types = fetchedEntities?.map((e) => e.type) || [];
+      expect(types).toContain("contact");
+      expect(types).toContain("company");
 
       // Verify all have names
-      result.contextEntities.forEach((e: any) => {
+      fetchedEntities!.forEach((e: any) => {
         expect(e.name).toBeDefined();
-        expect(typeof e.name).toBe('string');
+        expect(typeof e.name).toBe("string");
       });
 
-      console.log(`✓ All entity types persisted: ${types.join(', ')}`);
+      console.log(`✓ All entity types persisted: ${types.join(", ")}`);
     }, 30000);
   });
 
-  describe('userId persistence', () => {
-    it('should persist userId separately from contextEntities', async () => {
+  describe("userId persistence", () => {
+    it("should persist userId separately from contextEntities", async () => {
       const threadId = `test-userid-only-${randomUUID()}`;
       const userId = 12345;
 
       const agent = await (service as any).ensureAgent();
       const config = {
-        streamMode: ['values'] as const,
+        streamMode: ["values"] as const,
         configurable: { thread_id: threadId },
       };
 
       const stream = await agent.stream(
         {
-          messages: [{ role: 'user', content: 'Test userId' }],
+          messages: [{ role: "user", content: "Test userId" }],
           userId,
           // No contextEntities
         },
@@ -420,39 +412,39 @@ describe('PersistentContextMiddleware - State Persistence', () => {
 
       // Verify checkpoint was created
       const checkpointsResult = await globalPool.query(
-        'SELECT checkpoint FROM agents.checkpoints WHERE thread_id = $1 ORDER BY checkpoint_id DESC LIMIT 1',
+        "SELECT checkpoint FROM agents.checkpoints WHERE thread_id = $1 ORDER BY checkpoint_id DESC LIMIT 1",
         [threadId],
       );
       expect(checkpointsResult.rows.length).toBe(1);
 
       // Verify via getMessages
-      const result = await service.getMessages(threadId);
-      expect(result.contextEntities).toBeDefined();
-      expect(result.contextEntities).toEqual([]);
+      const { contextEntities } = await service.getMessages(threadId);
+      expect(contextEntities).toBeDefined();
+      expect(contextEntities).toEqual([]);
 
       console.log(`✓ userId ${userId} persisted without contextEntities`);
     }, 30000);
   });
 
-  describe('Thread isolation', () => {
-    it('should maintain separate contextEntities per thread', async () => {
+  describe("Thread isolation", () => {
+    it("should maintain separate contextEntities per thread", async () => {
       const thread1 = `test-isolation-1-${randomUUID()}`;
       const thread2 = `test-isolation-2-${randomUUID()}`;
 
-      const entities1: ContextEntityReference[] = [{ type: 'contact', id: 1 }];
-      const entities2: ContextEntityReference[] = [{ type: 'company', id: 99 }];
+      const entities1: ContextEntityReference[] = [{ type: "contact", id: 1 }];
+      const entities2: ContextEntityReference[] = [{ type: "company", id: 99 }];
 
       const agent = await (service as any).ensureAgent();
 
       // Thread 1
       const stream1 = await agent.stream(
         {
-          messages: [{ role: 'user', content: 'Thread 1' }],
+          messages: [{ role: "user", content: "Thread 1" }],
           contextEntities: entities1,
           userId: 100,
         },
         {
-          streamMode: ['values'] as const,
+          streamMode: ["values"] as const,
           configurable: { thread_id: thread1 },
         },
       );
@@ -463,12 +455,12 @@ describe('PersistentContextMiddleware - State Persistence', () => {
       // Thread 2
       const stream2 = await agent.stream(
         {
-          messages: [{ role: 'user', content: 'Thread 2' }],
+          messages: [{ role: "user", content: "Thread 2" }],
           contextEntities: entities2,
           userId: 200,
         },
         {
-          streamMode: ['values'] as const,
+          streamMode: ["values"] as const,
           configurable: { thread_id: thread2 },
         },
       );
@@ -477,24 +469,24 @@ describe('PersistentContextMiddleware - State Persistence', () => {
       }
 
       // Verify isolation (entities now have names)
-      const result1 = await service.getMessages(thread1);
-      const result2 = await service.getMessages(thread2);
+      const { contextEntities: entitiesRes1 } =
+        await service.getMessages(thread1);
+      const { contextEntities: entitiesRes2 } =
+        await service.getMessages(thread2);
 
-      expect(result1.contextEntities.length).toBe(1);
-      expect(result1.contextEntities[0].type).toBe('contact');
-      expect(result1.contextEntities[0].id).toBe(1);
-      expect(result1.contextEntities[0].name).toBeDefined();
+      expect(entitiesRes1!.length).toBe(1);
+      expect(entitiesRes1![0].type).toBe("contact");
+      expect(entitiesRes1![0].id).toBe(1);
+      expect(entitiesRes1![0].name).toBeDefined();
 
-      expect(result2.contextEntities.length).toBe(1);
-      expect(result2.contextEntities[0].type).toBe('company');
-      expect(result2.contextEntities[0].id).toBe(99);
-      expect(result2.contextEntities[0].name).toBeDefined();
+      expect(entitiesRes2!.length).toBe(1);
+      expect(entitiesRes2![0].type).toBe("company");
+      expect(entitiesRes2![0].id).toBe(99);
+      expect(entitiesRes2![0].name).toBeDefined();
 
-      expect(result1.contextEntities[0].type).not.toEqual(
-        result2.contextEntities[0].type,
-      );
+      expect(entitiesRes1![0].type).not.toEqual(entitiesRes2![0].type);
 
-      console.log('✓ Thread isolation verified for contextEntities');
+      console.log("✓ Thread isolation verified for contextEntities");
     }, 30000);
   });
 });

@@ -7,8 +7,10 @@
       "vitest/importMeta",
       "vite/client",
       "node",
-      "vitest"
+      "vitest",
+      "@testing-library/jest-dom"
     ],
+    "lib": ["esnext", "dom", "dom.iterable"],
     "jsx": "react-jsx",
     "module": "esnext",
     "moduleResolution": "bundler"

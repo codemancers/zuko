@@ -1,5 +1,5 @@
-import { Page, Locator } from '@playwright/test';
-import { BasePage } from './BasePage';
+import { Page, Locator } from "@playwright/test";
+import { BasePage } from "./BasePage";
 
 /**
  * Page Object Model for Companies page
@@ -11,17 +11,17 @@ export class CompaniesPage extends BasePage {
 
   constructor(page: Page) {
     super(page);
-    this.newCompanyButton = page.getByRole('button', { name: 'New Company' });
-    this.companiesList = page.locator('table').or(page.locator('main'));
+    this.newCompanyButton = page.getByRole("button", { name: "New Company" });
+    this.companiesList = page.locator("table").or(page.locator("main"));
     this.searchInput = page.getByPlaceholder(/Search companies/i);
   }
 
   /**
    * Navigate to the companies page
    */
-  async goto() {
-    await super.goto('/companies');
-    await this.page.waitForLoadState('networkidle');
+  override async goto() {
+    await super.goto("/companies");
+    await this.page.waitForLoadState("networkidle");
   }
 
   /**
@@ -42,7 +42,7 @@ export class CompaniesPage extends BasePage {
    * Get all company items from the table
    */
   async getCompanyItems() {
-    return this.page.locator('tbody tr').all();
+    return this.page.locator("tbody tr").all();
   }
 
   /**
@@ -57,7 +57,7 @@ export class CompaniesPage extends BasePage {
    */
   async waitForCompaniesToLoad() {
     await this.page
-      .waitForSelector('tbody tr, text=No companies found', { timeout: 5000 })
+      .waitForSelector("tbody tr, text=No companies found", { timeout: 5000 })
       .catch(() => {
         // If neither appears, table might be empty which is also valid
       });

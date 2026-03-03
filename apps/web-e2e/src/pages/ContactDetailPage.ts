@@ -24,7 +24,7 @@ export class ContactDetailPage extends BasePage {
     });
     this.activityAvatars = page.locator('[data-testid="activity-avatar"]');
     this.connectingLines = page.locator(
-      '[data-testid="activity-connecting-line"]'
+      '[data-testid="activity-connecting-line"]',
     );
   }
 
@@ -32,7 +32,7 @@ export class ContactDetailPage extends BasePage {
    * Navigate to a contact detail page.
    * Skips navigation if already on this contact to avoid "interrupted by about:blank" when the page is reused.
    */
-  async goto(contactId: number | string) {
+  override async goto(contactId: number | string) {
     const path = `/contacts/${contactId}`;
     if (this.page.url().includes(path)) {
       await this.page.waitForLoadState("networkidle").catch(() => {});
@@ -69,7 +69,7 @@ export class ContactDetailPage extends BasePage {
   async getActivityText(index: number): Promise<string> {
     const items = await this.activityItems.all();
     if (items[index]) {
-      return items[index].textContent() || "";
+      return (await items[index].textContent()) || "";
     }
     return "";
   }
@@ -97,7 +97,7 @@ export class ContactDetailPage extends BasePage {
     // Wait for comment to be posted
     await this.page.waitForResponse(
       (resp) =>
-        resp.url().includes("/activities/comments") && resp.status() === 201
+        resp.url().includes("/activities/comments") && resp.status() === 201,
     );
   }
 

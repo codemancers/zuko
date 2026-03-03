@@ -98,7 +98,7 @@ test.describe("Contact Activity Timeline - Authenticated", () => {
 
     await expect(contactDetailPage.activityItems.last()).toContainText(
       commentText,
-      { timeout: 10000 }
+      { timeout: 10000 },
     );
   });
 
@@ -157,7 +157,7 @@ test.describe("Contact Activity Timeline - Authenticated", () => {
     await contactDetailPage.createComment(originalComment);
     await expect(contactDetailPage.activityItems.last()).toContainText(
       originalComment,
-      { timeout: 10000 }
+      { timeout: 10000 },
     );
 
     const items = await contactDetailPage.activityItems.all();
@@ -174,10 +174,10 @@ test.describe("Contact Activity Timeline - Authenticated", () => {
 
     await expect(textarea).not.toBeVisible({ timeout: 3000 });
     await expect(contactDetailPage.activityItems.last()).toContainText(
-      originalComment
+      originalComment,
     );
     await expect(contactDetailPage.activityItems.last()).not.toContainText(
-      "This should not be saved"
+      "This should not be saved",
     );
   });
 });
