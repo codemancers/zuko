@@ -57,6 +57,7 @@ test-output
 /.codex/config.toml
 /.codex/config.toml.bak
 /.codex/skills
+/.cursor/commands/
 /.opencode/skill
 /.skillz
 /.vibe/skills
