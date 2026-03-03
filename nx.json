@@ -56,7 +56,13 @@
       "options": {
         "targetName": "test"
       },
-      "exclude": ["apps/backend-e2e/**/*"]
+      "exclude": ["apps/backend-e2e/**/*", "apps/web/**/*"]
+    },
+    {
+      "plugin": "@nx/vitest",
+      "options": {
+        "testTargetName": "test"
+      }
     },
     {
       "plugin": "@nx/docker",

@@ -38,8 +38,15 @@
         }
       },
       "test": {
+        "executor": "@nx/vitest:test",
+        "outputs": ["{workspaceRoot}/apps/web/test-output/vitest/coverage"],
         "options": {
-          "command": "jest --forceExit"
+          "configFile": "apps/web/vitest.config.ts"
+        },
+        "configurations": {
+          "watch": {
+            "watch": true
+          }
         }
       }
     }

@@ -1,30 +1,30 @@
 /**
- * @jest-environment node
+ * @vitest-environment node
  */
+import { beforeEach, afterEach, it, expect, vi } from "vitest";
 import { POST } from "./route";
 import { NextRequest } from "next/server";
 
 // Mock Next.js cookies
-jest.mock("next/headers", () => ({
-  cookies: jest.fn(() => ({
+vi.mock("next/headers", () => ({
+  cookies: vi.fn(() => ({
     toString: () => "mock-session-cookie=value",
   })),
 }));
 
 // Mock global fetch before importing route
-const mockFetch = jest.fn();
-global.fetch = mockFetch as any;
+const mockFetch = vi.fn();
+Object.defineProperty(globalThis, 'fetch', { value: mockFetch, writable: true });
 
 describe("/api/chat POST", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
-    // Suppress console.log in tests
-    jest.spyOn(console, "log").mockImplementation();
-    jest.spyOn(console, "error").mockImplementation();
+    vi.clearAllMocks();
+    vi.spyOn(console, "log").mockImplementation(vi.fn());
+    vi.spyOn(console, "error").mockImplementation(vi.fn());
   });
 
   afterEach(() => {
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
   });
 
   it("extracts chatId from referer header and forwards to backend", async () => {
@@ -47,7 +47,7 @@ describe("/api/chat POST", () => {
       },
     });
 
-    (global.fetch as jest.Mock).mockResolvedValue(mockBackendResponse);
+    (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue(mockBackendResponse);
 
     // Create mock NextRequest with referer header
     const request = new NextRequest("http://localhost:3000/api/chat", {
@@ -79,7 +79,7 @@ describe("/api/chat POST", () => {
     );
 
     expect(response.status).toBe(200);
-    await response.text(); // Consume stream to prevent Jest open handles
+    await response.text(); // Consume stream to prevent open handles
   });
 
   it("handles missing referer header gracefully", async () => {
@@ -93,7 +93,7 @@ describe("/api/chat POST", () => {
       status: 200,
     });
 
-    (global.fetch as jest.Mock).mockResolvedValue(mockBackendResponse);
+    (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue(mockBackendResponse);
 
     // Create request without referer header
     const request = new NextRequest("http://localhost:3000/api/chat", {
@@ -108,7 +108,7 @@ describe("/api/chat POST", () => {
     await response.text();
 
     // Verify chatId is null when referer is missing
-    const fetchCall = (global.fetch as jest.Mock).mock.calls[0];
+    const fetchCall = (global.fetch as ReturnType<typeof vi.fn>).mock.calls[0];
     const bodyArg = fetchCall[1].body;
     const parsedBody = JSON.parse(bodyArg);
 
@@ -140,13 +140,13 @@ describe("/api/chat POST", () => {
     ];
 
     for (const { referer, expectedChatId } of testCases) {
-      jest.clearAllMocks();
+      vi.clearAllMocks();
 
       const mockBackendResponse = new Response("mock response", {
         status: 200,
       });
 
-      (global.fetch as jest.Mock).mockResolvedValue(mockBackendResponse);
+      (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue(mockBackendResponse);
 
       const request = new NextRequest("http://localhost:3000/api/chat", {
         method: "POST",
@@ -160,7 +160,7 @@ describe("/api/chat POST", () => {
       const response = await POST(request);
       await response.text();
 
-      const fetchCall = (global.fetch as jest.Mock).mock.calls[0];
+      const fetchCall = (global.fetch as ReturnType<typeof vi.fn>).mock.calls[0];
       const bodyArg = fetchCall[1].body;
       const parsedBody = JSON.parse(bodyArg);
 
@@ -178,7 +178,7 @@ describe("/api/chat POST", () => {
       status: 403,
     });
 
-    (global.fetch as jest.Mock).mockResolvedValue(mockBackendResponse);
+    (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue(mockBackendResponse);
 
     const request = new NextRequest("http://localhost:3000/api/chat", {
       method: "POST",
@@ -202,7 +202,7 @@ describe("/api/chat POST", () => {
       messages: [],
     };
 
-    (global.fetch as jest.Mock).mockRejectedValue(new Error("Network error"));
+    (global.fetch as ReturnType<typeof vi.fn>).mockRejectedValue(new Error("Network error"));
 
     const request = new NextRequest("http://localhost:3000/api/chat", {
       method: "POST",
@@ -222,7 +222,7 @@ describe("/api/chat POST", () => {
 
   it("includes correct headers when forwarding to backend", async () => {
     const mockBackendResponse = new Response("ok", { status: 200 });
-    (global.fetch as jest.Mock).mockResolvedValue(mockBackendResponse);
+    (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue(mockBackendResponse);
 
     const request = new NextRequest("http://localhost:3000/api/chat", {
       method: "POST",
@@ -258,7 +258,7 @@ describe("/api/chat POST", () => {
       },
     });
 
-    (global.fetch as jest.Mock).mockResolvedValue(mockBackendResponse);
+    (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue(mockBackendResponse);
 
     const request = new NextRequest("http://localhost:3000/api/chat", {
       method: "POST",
