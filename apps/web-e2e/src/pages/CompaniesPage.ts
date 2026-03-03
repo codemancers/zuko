@@ -21,7 +21,7 @@ export class CompaniesPage extends BasePage {
    */
   override async goto() {
     await super.goto("/companies");
-    await this.page.waitForLoadState("networkidle");
+    await this.companiesList.waitFor();
   }
 
   /**

@@ -27,7 +27,7 @@ export class CompanyDetailPage extends BasePage {
   // @ts-expect-error: intentionally overloading goto with a numeric id
   async goto(companyId: number) {
     await super.goto(`/companies/${companyId}`);
-    await this.page.waitForLoadState("networkidle");
+    await this.editButton.waitFor();
   }
 
   /**

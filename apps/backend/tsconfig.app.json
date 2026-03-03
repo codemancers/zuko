@@ -30,6 +30,9 @@
     },
     {
       "path": "../../libs/agents/tsconfig.lib.json"
+    },
+    {
+      "path": "../../libs/core/tsconfig.lib.json"
     }
   ]
 }

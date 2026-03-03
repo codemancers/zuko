@@ -22,7 +22,7 @@ export class ContactsPage extends BasePage {
   override async goto() {
     await super.goto("/contacts");
     // Wait for page to fully load
-    await this.page.waitForLoadState("networkidle");
+    await this.contactsList.waitFor();
   }
 
   /**

@@ -13,6 +13,7 @@ import {
 import { AuthGuard } from "@thallesp/nestjs-better-auth";
 import { ChatsService } from "./chats.service";
 import { OrchestratorService } from "@zuko/agents";
+import type { RequestWithUser } from "@zuko/core";
 
 @Controller("chats")
 @UseGuards(AuthGuard)
@@ -27,7 +28,7 @@ export class ChatsController {
    * POST /api/chats
    */
   @Post()
-  async create(@Req() req: any, @Body() body: { participantIds?: number[] }) {
+  async create(@Req() req: RequestWithUser, @Body() body: { participantIds?: number[] }) {
     const userId = parseInt(req.user.id, 10);
     const chat = await this.chatsService.create(userId, body.participantIds);
 
@@ -51,7 +52,7 @@ export class ChatsController {
    * GET /api/chats
    */
   @Get()
-  async findAll(@Req() req: any) {
+  async findAll(@Req() req: RequestWithUser) {
     const userId = parseInt(req.user.id, 10);
     const chats = await this.chatsService.findAllByUser(userId);
 
@@ -79,7 +80,7 @@ export class ChatsController {
    * GET /api/chats/:id
    */
   @Get(":id")
-  async findOne(@Req() req: any, @Param("id") id: string) {
+  async findOne(@Req() req: RequestWithUser, @Param("id") id: string) {
     const userId = parseInt(req.user.id, 10);
     const chatId = parseInt(id, 10);
     const chat = await this.chatsService.findOne(chatId);
@@ -112,7 +113,7 @@ export class ChatsController {
    * GET /api/chats/:id/messages
    */
   @Get(":id/messages")
-  async getMessages(@Req() req: any, @Param("id") id: string) {
+  async getMessages(@Req() req: RequestWithUser, @Param("id") id: string) {
     const userId = parseInt(req.user.id, 10);
     const chatId = parseInt(id, 10);
 
@@ -138,7 +139,7 @@ export class ChatsController {
    */
   @Patch(":id")
   async update(
-    @Req() req: any,
+    @Req() req: RequestWithUser,
     @Param("id") id: string,
     @Body() body: { title: string },
   ) {
@@ -165,7 +166,7 @@ export class ChatsController {
    * DELETE /api/chats/:id
    */
   @Delete(":id")
-  async delete(@Req() req: any, @Param("id") id: string) {
+  async delete(@Req() req: RequestWithUser, @Param("id") id: string) {
     const userId = parseInt(req.user.id, 10);
     const chatId = parseInt(id, 10);
 
@@ -186,7 +187,7 @@ export class ChatsController {
    */
   @Post(":id/participants")
   async addParticipant(
-    @Req() req: any,
+    @Req() req: RequestWithUser,
     @Param("id") id: string,
     @Body() body: { userId: number },
   ) {
@@ -222,7 +223,7 @@ export class ChatsController {
    */
   @Delete(":id/participants/:userId")
   async removeParticipant(
-    @Req() req: any,
+    @Req() req: RequestWithUser,
     @Param("id") id: string,
     @Param("userId") userIdParam: string,
   ) {

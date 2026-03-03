@@ -35,11 +35,12 @@ export class ContactDetailPage extends BasePage {
   override async goto(contactId: number | string) {
     const path = `/contacts/${contactId}`;
     if (this.page.url().includes(path)) {
-      await this.page.waitForLoadState("networkidle").catch(() => {});
+      // If already on the page, just ensure the activity section is loaded
+      await this.activitySection.waitFor();
       return;
     }
-    await this.page.goto(path, { waitUntil: "domcontentloaded" });
-    await this.page.waitForLoadState("networkidle");
+    await this.page.goto(path);
+    await this.activitySection.waitFor();
   }
 
   /**

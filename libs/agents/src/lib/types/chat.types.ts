@@ -18,6 +18,13 @@ export interface ContextEntityReference {
 }
 
 /**
+ * message metadata
+ */
+export interface MessageMetadata {
+  contextEntities?: ContextEntityReference[];
+}
+
+/**
  * LangGraph agent state schema
  * This is the state that gets persisted in PostgreSQL checkpoints
  */

@@ -16,9 +16,11 @@ import {
   BaseMessageLike,
   type ChatCompletionRequest,
   ContextEntityReference,
+  MessageMetadata,
 } from "@zuko/agents";
 import { toBaseMessages, toUIMessageStream } from "@ai-sdk/langchain";
 import type { UIMessage } from "ai";
+import type { RequestWithUser } from "@zuko/core";
 import { ChatsService } from "../chats/chats.service";
 
 const LOCAL_MODEL_ID = process.env.AGENTS_LLM_MODEL ?? "gpt-4o";
@@ -90,7 +92,7 @@ export class ChatController {
       chatId: string | number;
       contextEntities?: ContextEntityReference[];
     },
-    @Req() req: any,
+    @Req() req: RequestWithUser,
     @Res({ passthrough: true }) response: Response,
   ) {
     console.log(
@@ -102,7 +104,7 @@ export class ChatController {
     const lastMessage = messages[messages.length - 1];
     // Prefer last message metadata; fallback to top-level body (AI SDK useChat may send body.contextEntities)
     const contextEntities =
-      (lastMessage?.metadata as any)?.contextEntities ??
+      (lastMessage?.metadata as MessageMetadata)?.contextEntities ??
       body.contextEntities ??
       [];
 
