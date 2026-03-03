@@ -1,0 +1,22 @@
+{
+  "editor.formatOnSave": true,
+  "editor.defaultFormatter": "oxc.oxc",
+  "[typescript]": {
+    "editor.defaultFormatter": "oxc.oxc"
+  },
+  "[typescriptreact]": {
+    "editor.defaultFormatter": "oxc.oxc"
+  },
+  "[javascript]": {
+    "editor.defaultFormatter": "oxc.oxc"
+  },
+  "[javascriptreact]": {
+    "editor.defaultFormatter": "oxc.oxc"
+  },
+  "[json]": {
+    "editor.defaultFormatter": "oxc.oxc"
+  },
+  "[jsonc]": {
+    "editor.defaultFormatter": "oxc.oxc"
+  }
+}
