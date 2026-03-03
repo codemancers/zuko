@@ -1,18 +1,18 @@
 // @ts-nocheck - Pre-existing type incompatibilities with deepagents library that need to be resolved
-import { Injectable, Logger } from '@nestjs/common';
-import { createDeepAgent, type CompiledSubAgent } from 'deepagents';
-import { ChatOpenAI } from '@langchain/openai';
-import { PostgresSaver } from '@langchain/langgraph-checkpoint-postgres';
-import { randomUUID } from 'node:crypto';
-import type { AgentRequest, AgentResponse } from '../types/agents.types';
+import { Injectable, Logger } from "@nestjs/common";
+import { createDeepAgent, type CompiledSubAgent } from "deepagents";
+import { ChatOpenAI } from "@langchain/openai";
+import { PostgresSaver } from "@langchain/langgraph-checkpoint-postgres";
+import { randomUUID } from "node:crypto";
+import type { AgentRequest, AgentResponse } from "../types/agents.types";
 import type {
   BaseMessageLike,
   ContextEntityReference,
-} from '../types/chat.types';
-import type { GraphStreamMode } from '../types/graph.types';
-import { AdminService } from './admin.service';
+} from "../types/chat.types";
+import type { GraphStreamMode } from "../types/graph.types";
+import { AdminService } from "./admin.service";
 // PrismaService should be provided by the consuming application
-import type { PrismaService } from '../modules/prisma.types';
+import type { PrismaService } from "../modules/prisma.types";
 // Import tool creators
 import {
   createGetContactDetailsTool,
@@ -22,54 +22,54 @@ import {
   createQueryContactsTool,
   createQueryCompaniesTool,
   createQueryActivitiesTool,
-} from '../tools';
+} from "../tools";
 // Import services from @zuko/sales
 import type {
   ContactsService,
   CompaniesService,
   ActivityService,
-} from '@zuko/sales';
+} from "@zuko/sales";
 // Import persistent context middleware
-import { createPersistentContextMiddleware } from '../middleware/persistent-context.middleware';
+import { createPersistentContextMiddleware } from "../middleware/persistent-context.middleware";
 
 type DeepAgent = ReturnType<typeof createDeepAgent>;
 
 const extractTextFromContent = (value: unknown): string => {
-  if (typeof value === 'string') {
+  if (typeof value === "string") {
     return value;
   }
   if (Array.isArray(value)) {
     return value
       .map((item) => {
-        if (typeof item === 'string') {
+        if (typeof item === "string") {
           return item;
         }
-        if (item && typeof item === 'object') {
+        if (item && typeof item === "object") {
           const block = item as { text?: unknown; content?: unknown };
-          if (typeof block.text === 'string') {
+          if (typeof block.text === "string") {
             return block.text;
           }
           if (
             block.text &&
-            typeof block.text === 'object' &&
-            typeof (block.text as { value?: unknown }).value === 'string'
+            typeof block.text === "object" &&
+            typeof (block.text as { value?: unknown }).value === "string"
           ) {
-            return (block.text as { value?: string }).value ?? '';
+            return (block.text as { value?: string }).value ?? "";
           }
-          if (typeof block.content === 'string') {
+          if (typeof block.content === "string") {
             return block.content;
           }
         }
-        return '';
+        return "";
       })
-      .join('');
+      .join("");
   }
-  return '';
+  return "";
 };
 
 const extractTextFromMessage = (value: unknown): string => {
-  if (!value || typeof value !== 'object') {
-    return '';
+  if (!value || typeof value !== "object") {
+    return "";
   }
   const msg = value as {
     content?: unknown;
@@ -115,58 +115,58 @@ export class OrchestratorService {
       return this.agentPromise;
     }
 
-    const secretaryDisabled = process.env.AGENTS_DISABLE_SECRETARY === 'true';
+    const secretaryDisabled = process.env.AGENTS_DISABLE_SECRETARY === "true";
     if (secretaryDisabled) {
       this.logger.warn(
-        'AGENTS_DISABLE_SECRETARY=true; skipping secretary agent initialization.',
+        "AGENTS_DISABLE_SECRETARY=true; skipping secretary agent initialization.",
       );
     }
 
     const systemPrompt =
       process.env.AGENTS_SYSTEM_PROMPT ??
       [
-        'You are an AI assistant orchestrator.',
-        'Decide whether to answer directly or delegate to specialized agents.',
-        '',
-        'Context available in state:',
-        '- userId: The authenticated user ID (use this when calling leave_comment)',
-        '- contextEntities: Array of entity references (contacts, companies, deals) the user added to the conversation (e.g. via the + button)',
-        '',
-        'IMPORTANT - When the user asks for company or contact details:',
-        '- If contextEntities contains companies or contacts, ALWAYS call get_company_details, get_contact_details, query_companies, or query_contacts. Do NOT ask the user for an ID.',
-        '- One entity in context: use get_company_details or get_contact_details (you can omit the ID; the tool uses context).',
-        '- Multiple entities in context: use query_companies with filters.companyIds or query_contacts with filters.contactIds.',
-        '',
-        'Tools available:',
-        '- get_contact_details: Full contact info by ID (or from context if one contact)',
-        '- get_contact_owner: Get the owner(s) of a contact',
-        '- get_company_details: Company info by ID (or from context if one company)',
-        '- leave_comment: Add a comment (MUST pass userId from state)',
-        '',
-        'Query tools:',
-        '- query_contacts: Filter/aggregate contacts; use filters.contactIds for multiple IDs from context',
-        '- query_companies: Filter/aggregate companies; use filters.companyIds for multiple IDs from context',
-        '- query_activities: Search activity timeline',
-        '',
-        'Delegation:',
-        '- Delegate requests about bringing medicines, coffee, or breakfast to the admin agent.',
+        "You are an AI assistant orchestrator.",
+        "Decide whether to answer directly or delegate to specialized agents.",
+        "",
+        "Context available in state:",
+        "- userId: The authenticated user ID (use this when calling leave_comment)",
+        "- contextEntities: Array of entity references (contacts, companies, deals) the user added to the conversation (e.g. via the + button)",
+        "",
+        "IMPORTANT - When the user asks for company or contact details:",
+        "- If contextEntities contains companies or contacts, ALWAYS call get_company_details, get_contact_details, query_companies, or query_contacts. Do NOT ask the user for an ID.",
+        "- One entity in context: use get_company_details or get_contact_details (you can omit the ID; the tool uses context).",
+        "- Multiple entities in context: use query_companies with filters.companyIds or query_contacts with filters.contactIds.",
+        "",
+        "Tools available:",
+        "- get_contact_details: Full contact info by ID (or from context if one contact)",
+        "- get_contact_owner: Get the owner(s) of a contact",
+        "- get_company_details: Company info by ID (or from context if one company)",
+        "- leave_comment: Add a comment (MUST pass userId from state)",
+        "",
+        "Query tools:",
+        "- query_contacts: Filter/aggregate contacts; use filters.contactIds for multiple IDs from context",
+        "- query_companies: Filter/aggregate companies; use filters.companyIds for multiple IDs from context",
+        "- query_activities: Search activity timeline",
+        "",
+        "Delegation:",
+        "- Delegate requests about bringing medicines, coffee, or breakfast to the admin agent.",
         ...(secretaryDisabled
           ? []
           : [
-              '- Delegate requests about booking meetings, scheduling, or calendar events to the secretary agent.',
+              "- Delegate requests about booking meetings, scheduling, or calendar events to the secretary agent.",
             ]),
-        '',
-        'For all other questions, use the available tools or respond directly and concisely.',
-      ].join('\n');
+        "",
+        "For all other questions, use the available tools or respond directly and concisely.",
+      ].join("\n");
 
     if (!process.env.OPENAI_API_KEY) {
       this.logger.warn(
-        'OPENAI_API_KEY is not configured; DeepAgent may fail to respond.',
+        "OPENAI_API_KEY is not configured; DeepAgent may fail to respond.",
       );
     }
 
     const model = new ChatOpenAI({
-      model: process.env.AGENTS_LLM_MODEL ?? 'gpt-4o',
+      model: process.env.AGENTS_LLM_MODEL ?? "gpt-4o",
       temperature: 0.2,
     });
 
@@ -174,9 +174,9 @@ export class OrchestratorService {
       const checkpointer = await this.ensureCheckpointer();
 
       const adminSubagent: CompiledSubAgent = {
-        name: 'admin-agent',
+        name: "admin-agent",
         description:
-          'Handles requests to bring medicines, coffee, or breakfast.',
+          "Handles requests to bring medicines, coffee, or breakfast.",
         runnable: this.adminService.getAgent(),
       };
 
@@ -229,7 +229,7 @@ export class OrchestratorService {
 
     this.checkpointerPromise = (async () => {
       const checkpointer = new PostgresSaver(this.prisma.getPool(), undefined, {
-        schema: 'agents',
+        schema: "agents",
       });
       await checkpointer.setup();
       this.checkpointer = checkpointer;
@@ -246,7 +246,7 @@ export class OrchestratorService {
     const config = { configurable: { thread_id: threadId } };
 
     await agent.invoke(
-      { messages: [{ role: 'user', content: 'Initialize thread.' }] },
+      { messages: [{ role: "user", content: "Initialize thread." }] },
       config,
     );
 
@@ -260,7 +260,7 @@ export class OrchestratorService {
 
   async respond(request: AgentRequest): Promise<AgentResponse> {
     const agent = await this.ensureAgent();
-    const prompt = request.text?.trim() || 'Respond to the latest event.';
+    const prompt = request.text?.trim() || "Respond to the latest event.";
     const threadId = request.threadTs;
 
     const config = threadId
@@ -268,15 +268,15 @@ export class OrchestratorService {
       : undefined;
 
     const result = await agent.invoke(
-      { messages: [{ role: 'user', content: prompt }] },
+      { messages: [{ role: "user", content: prompt }] },
       config,
     );
 
     const lastMessage = result.messages[result.messages.length - 1];
     const content =
-      typeof lastMessage?.content === 'string'
+      typeof lastMessage?.content === "string"
         ? lastMessage.content
-        : JSON.stringify(lastMessage?.content ?? '');
+        : JSON.stringify(lastMessage?.content ?? "");
 
     return {
       text: content,
@@ -295,9 +295,9 @@ export class OrchestratorService {
       : undefined;
     const result = await agent.invoke({ messages }, config);
     const lastMessage = result.messages[result.messages.length - 1];
-    return typeof lastMessage?.content === 'string'
+    return typeof lastMessage?.content === "string"
       ? lastMessage.content
-      : JSON.stringify(lastMessage?.content ?? '');
+      : JSON.stringify(lastMessage?.content ?? "");
   }
 
   async *streamReply(
@@ -306,10 +306,10 @@ export class OrchestratorService {
   ): AsyncGenerator<string> {
     const agent = await this.ensureAgent();
     const config = threadId
-      ? { streamMode: 'messages', configurable: { thread_id: threadId } }
-      : { streamMode: 'messages' };
+      ? { streamMode: "messages", configurable: { thread_id: threadId } }
+      : { streamMode: "messages" };
     const stream = await agent.stream({ messages }, config);
-    let lastText = '';
+    let lastText = "";
     for await (const chunk of stream as AsyncIterable<unknown>) {
       if (Array.isArray(chunk) && chunk.length >= 1) {
         const [message, metadata] = chunk;
@@ -328,7 +328,7 @@ export class OrchestratorService {
         continue;
       }
 
-      if (chunk && typeof chunk === 'object') {
+      if (chunk && typeof chunk === "object") {
         const currentText = extractTextFromMessage(chunk);
         if (!currentText) {
           continue;
@@ -352,7 +352,7 @@ export class OrchestratorService {
   ): AsyncGenerator<unknown> {
     const agent = await this.ensureAgent();
     const options: Record<string, unknown> = { ...(config ?? {}) };
-    if (typeof streamMode !== 'undefined') {
+    if (typeof streamMode !== "undefined") {
       options.streamMode = streamMode;
     }
     const stream = await agent.stream(
@@ -369,7 +369,7 @@ export class OrchestratorService {
    */
   async getMessages(threadId: string): Promise<{
     messages: Array<{ role: string; content: string }>;
-    contextEntities?: Array<ContextEntityReference & { name: string }>;
+    contextEntities: Array<ContextEntityReference & { name: string }>;
   }> {
     const checkpointer = await this.ensureCheckpointer();
     const config = { configurable: { thread_id: threadId } };
@@ -394,13 +394,13 @@ export class OrchestratorService {
       const formattedMessages = messages
         .map((msg: any) => ({
           role:
-            msg.type === 'human'
-              ? 'user'
-              : msg.type === 'ai'
-                ? 'assistant'
+            msg.type === "human"
+              ? "user"
+              : msg.type === "ai"
+                ? "assistant"
                 : msg.type,
           content:
-            typeof msg.content === 'string'
+            typeof msg.content === "string"
               ? msg.content
               : extractTextFromMessage(msg),
         }))
@@ -410,22 +410,22 @@ export class OrchestratorService {
       const hydratedEntities = await Promise.all(
         contextEntities.map(async (entity) => {
           try {
-            if (entity.type === 'contact' && this.contactsService) {
+            if (entity.type === "contact" && this.contactsService) {
               const contact = await this.contactsService.findById(entity.id);
-              const name = (contact as any).name ?? 'Contact';
+              const name = (contact as any).name ?? "Contact";
               return { ...entity, name };
             }
-            if (entity.type === 'company' && this.companiesService) {
+            if (entity.type === "company" && this.companiesService) {
               const company = await this.companiesService.findById(entity.id);
               return {
                 ...entity,
-                name: (company as any).companyName ?? 'Company',
+                name: (company as any).companyName ?? "Company",
               };
             }
-            if (entity.type === 'deal') {
+            if (entity.type === "deal") {
               return { ...entity, name: `Deal #${entity.id}` };
             }
-            return { ...entity, name: 'Contact' };
+            return { ...entity, name: "Contact" };
           } catch (error) {
             this.logger.warn(
               `Failed to hydrate ${entity.type} ${entity.id}:`,
@@ -434,11 +434,11 @@ export class OrchestratorService {
             return {
               ...entity,
               name:
-                entity.type === 'contact'
-                  ? 'Contact'
-                  : entity.type === 'company'
-                    ? 'Company'
-                    : 'Deal',
+                entity.type === "contact"
+                  ? "Contact"
+                  : entity.type === "company"
+                    ? "Company"
+                    : "Deal",
             };
           }
         }),

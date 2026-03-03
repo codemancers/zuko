@@ -1,5 +1,5 @@
-import { Page, Locator } from '@playwright/test';
-import { BasePage } from './BasePage';
+import { Page, Locator } from "@playwright/test";
+import { BasePage } from "./BasePage";
 
 /**
  * Page Object Model for Contacts page
@@ -12,17 +12,17 @@ export class ContactsPage extends BasePage {
   constructor(page: Page) {
     super(page);
     // Selectors based on actual ContactsList component
-    this.newContactButton = page.getByRole('button', { name: 'New Contact' });
-    this.contactsList = page.locator('table').or(page.locator('main'));
+    this.newContactButton = page.getByRole("button", { name: "New Contact" });
+    this.contactsList = page.locator("table").or(page.locator("main"));
   }
 
   /**
    * Navigate to the contacts page
    */
-  async goto() {
-    await super.goto('/contacts');
+  override async goto() {
+    await super.goto("/contacts");
     // Wait for page to fully load
-    await this.page.waitForLoadState('networkidle');
+    await this.page.waitForLoadState("networkidle");
   }
 
   /**
@@ -46,7 +46,7 @@ export class ContactsPage extends BasePage {
    */
   async getContactItems() {
     // Table rows in tbody (excluding header row)
-    return this.page.locator('tbody tr').all();
+    return this.page.locator("tbody tr").all();
   }
 
   /**

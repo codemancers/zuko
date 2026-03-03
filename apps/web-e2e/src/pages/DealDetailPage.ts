@@ -1,5 +1,5 @@
-import { Page, Locator } from '@playwright/test';
-import { BasePage } from './BasePage';
+import { Page, Locator } from "@playwright/test";
+import { BasePage } from "./BasePage";
 
 export class DealDetailPage extends BasePage {
   readonly editButton: Locator;
@@ -9,12 +9,12 @@ export class DealDetailPage extends BasePage {
   readonly dealValue: Locator;
 
   constructor(page: Page, dealId?: number) {
-    super(page, dealId ? `/deals/${dealId}` : '/deals');
-    this.editButton = page.getByRole('button', { name: /^Edit$/i });
-    this.hideButton = page.getByRole('button', { name: /Hide/i });
-    this.dealTitle = page.locator('h1');
+    super(page);
+    this.editButton = page.getByRole("button", { name: /^Edit$/i });
+    this.hideButton = page.getByRole("button", { name: /Hide/i });
+    this.dealTitle = page.locator("h1");
     this.dealStage = page
-      .locator('span')
+      .locator("span")
       .filter({
         hasText: /Prospecting|Qualification|Proposal|Negotiation|Closed/i,
       })
@@ -22,8 +22,12 @@ export class DealDetailPage extends BasePage {
     this.dealValue = page.getByText(/\$/);
   }
 
-  async goto(dealId: number) {
-    await this.page.goto(`/deals/${dealId}`);
+  override async goto(dealIdOrPath: number | string) {
+    if (typeof dealIdOrPath === "number") {
+      await this.page.goto(`/deals/${dealIdOrPath}`);
+    } else {
+      await this.page.goto(dealIdOrPath);
+    }
   }
 
   async clickEdit() {
@@ -35,16 +39,16 @@ export class DealDetailPage extends BasePage {
   }
 
   async getDealValue(): Promise<string> {
-    return (await this.dealValue.textContent()) || '';
+    return (await this.dealValue.textContent()) || "";
   }
 
   async getDealStage(): Promise<string> {
-    return (await this.dealStage.textContent()) || '';
+    return (await this.dealStage.textContent()) || "";
   }
 
   async getActivityItems() {
-    const activitySection = this.page.locator('text=Activity').locator('..');
-    const items = activitySection.locator('[data-activity-item]');
+    const activitySection = this.page.locator("text=Activity").locator("..");
+    const items = activitySection.locator("[data-activity-item]");
     return items.all();
   }
 
@@ -58,7 +62,7 @@ export class DealDetailPage extends BasePage {
     await commentInput.fill(comment);
 
     // Find and click post/submit button
-    const postButton = this.page.getByRole('button', {
+    const postButton = this.page.getByRole("button", {
       name: /Post|Submit|Send/i,
     });
     await postButton.click();

@@ -1,5 +1,5 @@
-import { Page, Locator } from '@playwright/test';
-import { BasePage } from './BasePage';
+import { Page, Locator } from "@playwright/test";
+import { BasePage } from "./BasePage";
 
 /**
  * Page Object Model for Settings page
@@ -11,17 +11,17 @@ export class SettingsPage extends BasePage {
   constructor(page: Page) {
     super(page);
     // These selectors might need adjustment based on actual implementation
-    this.connectGitHubButton = page.getByRole('button', {
+    this.connectGitHubButton = page.getByRole("button", {
       name: /connect|github/i,
     });
-    this.settingsForm = page.locator('form').or(page.locator('main'));
+    this.settingsForm = page.locator("form").or(page.locator("main"));
   }
 
   /**
    * Navigate to the settings page
    */
-  async goto() {
-    await super.goto('/settings');
+  override async goto() {
+    await super.goto("/settings");
   }
 
   /**
@@ -35,7 +35,7 @@ export class SettingsPage extends BasePage {
    * Save settings
    */
   async saveSettings() {
-    const saveButton = this.page.getByRole('button', { name: /save/i });
+    const saveButton = this.page.getByRole("button", { name: /save/i });
     await saveButton.click();
   }
 

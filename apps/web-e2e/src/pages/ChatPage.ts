@@ -1,5 +1,5 @@
-import { Page, Locator } from '@playwright/test';
-import { BasePage } from './BasePage';
+import { Page, Locator } from "@playwright/test";
+import { BasePage } from "./BasePage";
 
 /**
  * Page Object Model for Chat page
@@ -12,20 +12,20 @@ export class ChatPage extends BasePage {
   constructor(page: Page) {
     super(page);
     // These selectors might need adjustment based on actual implementation
-    this.chatInput = page.getByRole('textbox').or(page.locator('textarea'));
+    this.chatInput = page.getByRole("textbox").or(page.locator("textarea"));
     this.sendButton = page
-      .getByRole('button', { name: /send/i })
+      .getByRole("button", { name: /send/i })
       .or(page.locator('button[type="submit"]'));
     this.messagesContainer = page
       .locator('[data-testid="messages"]')
-      .or(page.locator('main'));
+      .or(page.locator("main"));
   }
 
   /**
    * Navigate to the chat page
    */
-  async goto() {
-    await super.goto('/chat');
+  override async goto() {
+    await super.goto("/chat");
   }
 
   /**
@@ -44,7 +44,7 @@ export class ChatPage extends BasePage {
     return this.page
       .locator('[data-testid="message"]')
       .or(
-        this.page.locator('.message').or(this.page.locator('[role="article"]')),
+        this.page.locator(".message").or(this.page.locator('[role="article"]')),
       )
       .all();
   }
