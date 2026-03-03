@@ -82,8 +82,6 @@ jobs:
         run: npx nx run @zuko/models:seed
 
       # Prepend any command with "nx-cloud record --" to record its logs to Nx Cloud
-      # - run: npx nx-cloud record -- echo Hello World
-      # - run: npx nx run-many -t lint test build typecheck
 
       # typecheck & Build (parallel)
       - name: Typecheck
