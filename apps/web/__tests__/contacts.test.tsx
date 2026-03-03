@@ -9,6 +9,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import ContactForm from '@/components/Contacts/ContactForm';
 import ContactsList, { EmptyContactsList } from '@/components/Contacts/ContactsList';
 import ContactDetail from '@/components/Contacts/ContactDetail';
+import type { Contact } from '@/lib/api/contacts';
 
 // Mock next/navigation
 const mockPush = vi.fn();
@@ -385,7 +386,9 @@ describe('ContactForm', () => {
   });
 
   it('shows Saving... and disables buttons while submitting in create mode', async () => {
-    let resolveCreate: (value: { id: number }) => void;
+    let resolveCreate: (value: { id: number }) => void = () => {
+      /* noop until Promise constructor runs */
+    };
     mockCreateContact.mockImplementation(
       () =>
         new Promise<{ id: number }>((resolve) => {
@@ -408,7 +411,7 @@ describe('ContactForm', () => {
     expect(submitBtn).toBeDisabled();
     expect(screen.getByRole('button', { name: /cancel/i })).toBeDisabled();
 
-    resolveCreate!({ id: 1 });
+    if (resolveCreate) resolveCreate({ id: 1 });
     await vi.waitFor(() => {
       expect(mockPush).toHaveBeenCalledWith('/contacts');
     });
@@ -522,7 +525,7 @@ describe('ContactsList', () => {
 
   it('shows loading state while fetching contacts', () => {
     mockGetContacts.mockImplementation(
-      () => new Promise(() => {}) // never resolves
+      () => new Promise<never>(() => undefined) // never resolves
     );
     render(<ContactsList />, { wrapper });
     expect(screen.getByText(/loading contacts/i)).toBeInTheDocument();
@@ -652,13 +655,15 @@ describe('ContactDetail', () => {
   });
 
   it('shows loading state while fetching contact', () => {
-    mockGetContact.mockImplementation(() => new Promise(() => {}));
+    mockGetContact.mockImplementation(
+      () => new Promise<never>(() => undefined)
+    );
     render(<ContactDetail contactId={7} currentUserId={1} />, { wrapper });
     expect(screen.getByText(/loading contact/i)).toBeInTheDocument();
   });
 
   it('shows contact not found when getContact returns no data', async () => {
-    mockGetContact.mockResolvedValue(null as any);
+    mockGetContact.mockResolvedValue(null as unknown as Contact);
     render(<ContactDetail contactId={999} currentUserId={1} />, { wrapper });
     await vi.waitFor(() => {
       expect(screen.getByText(/contact not found/i)).toBeInTheDocument();

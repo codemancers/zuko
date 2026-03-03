@@ -41,6 +41,23 @@ vi.mock('@/lib/api/companies', () => ({
   },
 }));
 
+// jsdom does not provide ResizeObserver (needed by Radix dropdown when menu opens)
+vi.stubGlobal(
+  'ResizeObserver',
+  class ResizeObserver {
+    // Minimal no-op implementations to satisfy the linter
+    observe() {
+      return undefined;
+    }
+    unobserve() {
+      return undefined;
+    }
+    disconnect() {
+      return undefined;
+    }
+  },
+);
+
 // Mock Speech Recognition so ChatInput's useEffect doesn't throw in jsdom
 beforeEach(() => {
   const MockSpeechRecognition = vi.fn().mockImplementation(function (this: any) {
@@ -104,6 +121,25 @@ describe('ChatInput', () => {
     render(<ChatInput onSubmit={onSubmit} />, { wrapper });
 
     expect(screen.getByRole('button', { name: /submit/i })).toBeInTheDocument();
+  });
+
+  it('renders footer with Submit, Search, and Voice buttons', () => {
+    const onSubmit = vi.fn();
+    render(<ChatInput onSubmit={onSubmit} />, { wrapper });
+
+    const submitButton = screen.getByRole('button', { name: /submit/i });
+    expect(submitButton).toBeInTheDocument();
+
+    const searchButton = screen.getByRole('button', { name: /search/i });
+    expect(searchButton).toBeInTheDocument();
+
+    // Voice button is icon-only (tooltip "Voice input"); identify by mic icon
+    const buttons = screen.getAllByRole('button');
+    const voiceButton = buttons.find((btn) => btn.querySelector('.lucide-mic'));
+    expect(voiceButton).toBeDefined();
+    expect(voiceButton).toBeInTheDocument();
+
+    expect(buttons.length).toBeGreaterThanOrEqual(4);
   });
 
   it('calls onSubmit with text when user types and submits', async () => {
@@ -202,24 +238,50 @@ describe('ChatInput', () => {
     });
   });
 
-  it('renders action menu trigger and Search button', () => {
-    const onSubmit = vi.fn();
-    render(<ChatInput onSubmit={onSubmit} />, { wrapper });
+  it('user can open action menu and see attachment option', async () => {
+    const user = userEvent.setup();
+    render(<ChatInput onSubmit={vi.fn()} />, { wrapper });
 
-    const buttons = screen.getAllByRole('button');
-    const searchButton = screen.getByRole('button', { name: /search/i });
-    expect(searchButton).toBeInTheDocument();
-    expect(buttons.length).toBeGreaterThanOrEqual(2);
+    const menuTrigger = screen
+      .getAllByRole('button')
+      .find((el) => el.getAttribute('aria-haspopup') === 'menu');
+    if (!menuTrigger) throw new Error('Action menu trigger not found');
+    await user.click(menuTrigger);
+
+    await waitFor(() => {
+      expect(screen.getByText(/add photos or files/i)).toBeInTheDocument();
+    });
   });
 
-  it('renders voice and submit buttons in footer', () => {
-    const onSubmit = vi.fn();
+  it('clicking Search button triggers web search handler', async () => {
+    const user = userEvent.setup();
+    const alertSpy = vi.spyOn(window, 'alert').mockImplementation(() => undefined);
+    render(<ChatInput onSubmit={vi.fn()} />, { wrapper });
+
+    await user.click(screen.getByRole('button', { name: /search/i }));
+
+    await waitFor(() => {
+      expect(alertSpy).toHaveBeenCalledWith(
+        'Web search feature - to be implemented'
+      );
+    });
+    alertSpy.mockRestore();
+  });
+
+  it('user can send a message by typing and clicking Submit', async () => {
+    const user = userEvent.setup();
+    const onSubmit = vi.fn().mockResolvedValue(undefined);
     render(<ChatInput onSubmit={onSubmit} />, { wrapper });
 
-    const submitButton = screen.getByRole('button', { name: /submit/i });
-    expect(submitButton).toBeInTheDocument();
-    const buttons = screen.getAllByRole('button');
-    expect(buttons.length).toBeGreaterThanOrEqual(2);
+    const input = screen.getByPlaceholderText(/ask anything.*try typing @/i);
+    await user.type(input, 'My message');
+    await user.click(screen.getByRole('button', { name: /submit/i }));
+
+    await waitFor(() => {
+      expect(onSubmit).toHaveBeenCalledWith(
+        expect.objectContaining({ text: 'My message' })
+      );
+    });
   });
 
   it('shows Stop button and calls onStop when status is streaming', async () => {
