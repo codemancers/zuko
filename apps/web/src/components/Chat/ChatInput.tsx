@@ -191,7 +191,10 @@ const ChatInputInner = ({
         <PromptInputTools>
           {/* Action Menu for file attachments and context */}
           <PromptInputActionMenu>
-            <PromptInputActionMenuTrigger tooltip="Add attachments" />
+            <PromptInputActionMenuTrigger
+              tooltip="Add attachments"
+              aria-label="Add attachments"
+            />
             <PromptInputActionMenuContent>
               <PromptInputActionMenuItem onSelect={handleFileAttachment}>
                 <ImageIcon className="mr-2 size-4" />

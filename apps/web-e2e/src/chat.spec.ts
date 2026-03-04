@@ -246,4 +246,73 @@ test.describe("Chat", () => {
       });
     });
   });
+
+  test.describe("with add-attachments context (contact, company, deal)", () => {
+    test("can add contact, company, and deal via Add attachments and submit", async ({
+      page,
+    }) => {
+      await page.goto(`/chat/${chatId}`);
+
+      // Open "Add attachments" menu
+      await page.getByRole("button", { name: "Add attachments" }).click();
+
+      // Add contact: click "Add contact" in menu, select seeded contact, confirm
+      await page.getByRole("menuitem", { name: /add contact/i }).click();
+      await expect(
+        page.getByRole("dialog", { name: /add contacts/i }),
+      ).toBeVisible({ timeout: 5000 });
+      const contactDialog = page.getByRole("dialog").filter({
+        has: page.getByText("Add Contacts"),
+      });
+      await contactDialog
+        .getByRole("button", { name: /TEST CONTACT/i })
+        .click();
+      await contactDialog.getByRole("button", { name: /^Add\s*(\(\d+\))?$/ }).click();
+      await expect(contactDialog).not.toBeVisible();
+
+      // Add company: open menu again, "Add company", select seeded company, confirm
+      await page.getByRole("button", { name: "Add attachments" }).click();
+      await page.getByRole("menuitem", { name: /add company/i }).click();
+      await expect(
+        page.getByRole("dialog", { name: /add companies/i }),
+      ).toBeVisible({ timeout: 5000 });
+      const companyDialog = page.getByRole("dialog").filter({
+        has: page.getByText("Add Companies"),
+      });
+      await companyDialog
+        .getByRole("button", { name: /TEST COMPANY/i })
+        .click();
+      await companyDialog.getByRole("button", { name: /^Add\s*(\(\d+\))?$/ }).click();
+      await expect(companyDialog).not.toBeVisible();
+
+      // Add deal: open menu again, "Add deal", select seeded deal, confirm
+      await page.getByRole("button", { name: "Add attachments" }).click();
+      await page.getByRole("menuitem", { name: /add deal/i }).click();
+      await expect(
+        page.getByRole("dialog", { name: /add deals/i }),
+      ).toBeVisible({ timeout: 5000 });
+      const dealDialog = page.getByRole("dialog").filter({
+        has: page.getByText("Add Deals"),
+      });
+      await dealDialog
+        .getByRole("button", { name: /TEST DEAL/i })
+        .click();
+      await dealDialog.getByRole("button", { name: /^Add\s*(\(\d+\))?$/ }).click();
+      await expect(dealDialog).not.toBeVisible();
+
+      // Type a message and submit
+      const textarea = page.getByPlaceholder("Ask anything...");
+      await textarea.fill("get the details");
+      const submitButton = page.locator('button[type="submit"]').last();
+      await submitButton.click();
+
+      // User message appears in chat
+      const chatLog = page.getByRole("log");
+      await expect(
+        chatLog.getByText("get the details"),
+      ).toBeVisible({ timeout: 5000 });
+      // AI response starts appearing
+      await page.waitForSelector('[data-slot="content"]', { timeout: 15000 });
+    });
+  });
 });
