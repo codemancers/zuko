@@ -9,9 +9,11 @@ import {
 import {
   ContactsService,
   CompaniesService,
+  DealsService,
   ActivityService,
   ContactsRepository,
   CompaniesRepository,
+  DealsRepository,
   ActivityRepository,
 } from '@zuko/sales';
 
@@ -54,6 +56,20 @@ import {
       inject: [CompaniesRepository],
     },
     {
+      provide: DealsRepository,
+      useFactory: (prismaService: PrismaService) => {
+        return new DealsRepository(prismaService);
+      },
+      inject: [PrismaService],
+    },
+    {
+      provide: DealsService,
+      useFactory: (dealsRepository: DealsRepository) => {
+        return new DealsService(dealsRepository);
+      },
+      inject: [DealsRepository],
+    },
+    {
       provide: ActivityRepository,
       useFactory: (prismaService: PrismaService) => {
         return new ActivityRepository(prismaService);
@@ -75,6 +91,7 @@ import {
         prismaService: PrismaService,
         contactsService: ContactsService,
         companiesService: CompaniesService,
+        dealsService: DealsService,
         activityService: ActivityService,
       ) => {
         return new OrchestratorService(
@@ -82,6 +99,7 @@ import {
           prismaService,
           contactsService,
           companiesService,
+          dealsService,
           activityService,
         );
       },
@@ -90,6 +108,7 @@ import {
         PrismaService,
         ContactsService,
         CompaniesService,
+        DealsService,
         ActivityService,
       ],
     },

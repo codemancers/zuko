@@ -34,6 +34,7 @@ export interface UpdateDealInput {
 
 export interface DealFilters {
   isHidden?: boolean;
+  dealIds?: number[];
   ownerIds?: number[];
   companyIds?: number[];
   contactIds?: number[];
@@ -206,6 +207,7 @@ export class DealsRepository {
   async findAll(filters: DealFilters = {}, pagination: PaginationOptions = {}) {
     const {
       isHidden = false,
+      dealIds,
       ownerIds,
       companyIds,
       contactIds,
@@ -221,6 +223,7 @@ export class DealsRepository {
 
     const where: Prisma.DealWhereInput = {
       isHidden,
+      ...(dealIds && dealIds.length > 0 ? { id: { in: dealIds } } : {}),
       ...(ownerIds && ownerIds.length > 0
         ? {
             owners: {
