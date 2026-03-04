@@ -5,7 +5,6 @@ import {
   Divider,
   Button,
   Avatar,
-  Select,
   Link,
   Text,
   Dropdown,
