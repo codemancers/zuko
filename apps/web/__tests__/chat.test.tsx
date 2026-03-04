@@ -11,6 +11,7 @@ import { ChatInput } from '@/components/Chat/ChatInput';
 import NewChatPage from '@/app/(app)/chat/page';
 import { contactsApi } from '@/lib/api/contacts';
 import { companiesApi } from '@/lib/api/companies';
+import { dealsApi } from '@/lib/api/deals';
 
 // Mock next/navigation
 const mockPush = vi.fn();
@@ -35,6 +36,17 @@ vi.mock('@/lib/api/companies', () => ({
     getCompanies: vi.fn(() =>
       Promise.resolve({
         companies: [],
+        pagination: { page: 1, limit: 100, total: 0, totalPages: 0 },
+      })
+    ),
+  },
+}));
+
+vi.mock('@/lib/api/deals', () => ({
+  dealsApi: {
+    getDeals: vi.fn(() =>
+      Promise.resolve({
+        deals: [],
         pagination: { page: 1, limit: 100, total: 0, totalPages: 0 },
       })
     ),
@@ -339,6 +351,19 @@ describe('ChatInput mentions', () => {
       website: 'https://acme.com',
     },
   ];
+  const mockDeals = [
+    {
+      id: 100,
+      title: 'Enterprise License',
+      stage: 'Negotiation',
+      value: 50000,
+      currency: 'USD',
+      isHidden: false,
+      createdAt: '',
+      updatedAt: '',
+      owners: [],
+    },
+  ];
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -348,6 +373,10 @@ describe('ChatInput mentions', () => {
     });
     vi.mocked(companiesApi.getCompanies).mockResolvedValue({
       companies: mockCompanies,
+      pagination: { page: 1, limit: 100, total: 1, totalPages: 1 },
+    });
+    vi.mocked(dealsApi.getDeals).mockResolvedValue({
+      deals: mockDeals,
       pagination: { page: 1, limit: 100, total: 1, totalPages: 1 },
     });
   });
@@ -450,6 +479,55 @@ describe('ChatInput mentions', () => {
     });
   });
 
+  it('shows deal suggestions when typing @', async () => {
+    const user = userEvent.setup();
+    const onSubmit = vi.fn();
+    render(<ChatInput onSubmit={onSubmit} />, { wrapper });
+
+    const input = screen.getByPlaceholderText(/ask anything.*try typing @/i);
+    await user.click(input);
+    await user.keyboard('@');
+
+    await waitFor(
+      () => {
+        expect(screen.getByText('Enterprise License')).toBeInTheDocument();
+      },
+      { timeout: 3000 }
+    );
+  });
+
+  it('calls onSubmit with deal mention in contextEntities when user selects a deal and submits', async () => {
+    const user = userEvent.setup();
+    const onSubmit = vi.fn().mockResolvedValue(undefined);
+    render(<ChatInput onSubmit={onSubmit} />, { wrapper });
+
+    const input = screen.getByPlaceholderText(/ask anything.*try typing @/i);
+    await user.click(input);
+    await user.keyboard('@');
+
+    await waitFor(
+      () => {
+        expect(screen.getByText('Enterprise License')).toBeInTheDocument();
+      },
+      { timeout: 3000 }
+    );
+
+    await user.click(screen.getByText('Enterprise License'));
+
+    await user.click(screen.getByRole('button', { name: /submit/i }));
+
+    await waitFor(() => {
+      expect(onSubmit).toHaveBeenCalledWith(
+        expect.objectContaining({
+          text: expect.stringMatching(/enterprise license/i),
+          metadata: {
+            contextEntities: [{ type: 'deal', id: 100 }],
+          },
+        })
+      );
+    });
+  });
+
   it('calls onSubmit with both contact and company mentions in contextEntities', async () => {
     const user = userEvent.setup();
     const onSubmit = vi.fn().mockResolvedValue(undefined);
@@ -489,6 +567,62 @@ describe('ChatInput mentions', () => {
       expect(call.metadata?.contextEntities).toContainEqual({
         type: 'company',
         id: 10,
+      });
+    });
+  });
+
+  it('calls onSubmit with contact, company and deal mentions in contextEntities', async () => {
+    const user = userEvent.setup();
+    const onSubmit = vi.fn().mockResolvedValue(undefined);
+    render(<ChatInput onSubmit={onSubmit} />, { wrapper });
+
+    const input = screen.getByPlaceholderText(/ask anything.*try typing @/i);
+    await user.click(input);
+    await user.keyboard('@');
+
+    await waitFor(
+      () => {
+        expect(screen.getByText('Alice Smith')).toBeInTheDocument();
+      },
+      { timeout: 3000 }
+    );
+    await user.click(screen.getByText('Alice Smith'));
+
+    await user.keyboard(' @');
+    await waitFor(
+      () => {
+        expect(screen.getByText('Acme Inc')).toBeInTheDocument();
+      },
+      { timeout: 3000 }
+    );
+    await user.click(screen.getByText('Acme Inc'));
+
+    await user.keyboard(' @');
+    await waitFor(
+      () => {
+        expect(screen.getByText('Enterprise License')).toBeInTheDocument();
+      },
+      { timeout: 3000 }
+    );
+    await user.click(screen.getByText('Enterprise License'));
+
+    await user.click(screen.getByRole('button', { name: /submit/i }));
+
+    await waitFor(() => {
+      expect(onSubmit).toHaveBeenCalled();
+      const call = onSubmit.mock.calls[0][0];
+      expect(call.metadata?.contextEntities).toHaveLength(3);
+      expect(call.metadata?.contextEntities).toContainEqual({
+        type: 'contact',
+        id: 1,
+      });
+      expect(call.metadata?.contextEntities).toContainEqual({
+        type: 'company',
+        id: 10,
+      });
+      expect(call.metadata?.contextEntities).toContainEqual({
+        type: 'deal',
+        id: 100,
       });
     });
   });

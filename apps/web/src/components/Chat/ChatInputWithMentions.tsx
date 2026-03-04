@@ -2,7 +2,7 @@
  * WORKAROUND: Chat input with @mentions support using react-mentions
  *
  * This component integrates PromptInputMentions with ChatContextManager to provide
- * mention suggestions for contacts and companies.
+ * mention suggestions for contacts, companies, and deals.
  *
  * TODO: Remove when https://github.com/vercel/ai-elements/issues/179 is resolved
  * @see https://github.com/vercel/ai-elements/issues/179
@@ -18,16 +18,16 @@ import {
   type MentionSuggestion,
   type MentionTriggerConfig,
 } from '@zuko/ui-kit';
-import { contactsApi } from '@/lib/api/contacts';
-import { companiesApi } from '@/lib/api/companies';
-import { UserIcon, BuildingIcon } from 'lucide-react';
+import { getContacts, getCompanies, getDeals } from '@/server/query-options';
+import { UserIcon, BuildingIcon, Briefcase } from 'lucide-react';
 
 // ============================================================================
 // Types
 // ============================================================================
 
+export type ChatEntityType = 'contact' | 'company' | 'deal';
 export interface ChatMention {
-  type: 'contact' | 'company';
+  type: ChatEntityType;
   id: number;
   name: string;
 }
@@ -39,6 +39,12 @@ export interface ChatInputWithMentionsProps extends Omit<
   onMentionsExtract?: (mentions: ChatMention[]) => void;
 }
 
+const MENTION_ICON_MAP: Record<ChatEntityType, typeof UserIcon> = {
+  contact: UserIcon,
+  company: BuildingIcon,
+  deal: Briefcase,
+};
+
 // ============================================================================
 // Mention Extraction Utility
 // ============================================================================
@@ -48,13 +54,13 @@ export interface ChatInputWithMentionsProps extends Omit<
  * Example: "@[John Doe](@contact-123)" => { type: "contact", id: 123, name: "John Doe" }
  */
 export function extractMentions(text: string): ChatMention[] {
-  const mentionRegex = /@\[([^\]]+)\]\(@(contact|company)-(\d+)\)/g;
+  const mentionRegex = /@\[([^\]]+)\]\(@(contact|company|deal)-(\d+)\)/g;
   const mentions: ChatMention[] = [];
   let match;
 
   while ((match = mentionRegex.exec(text)) !== null) {
     mentions.push({
-      type: match[2] as 'contact' | 'company',
+      type: match[2] as 'contact' | 'company' | 'deal',
       id: parseInt(match[3], 10),
       name: match[1],
     });
@@ -68,7 +74,7 @@ export function extractMentions(text: string): ChatMention[] {
  * Example: "@[John Doe](@contact-123)" => "@John Doe"
  */
 export function stripMentionMarkup(text: string): string {
-  return text.replace(/@\[([^\]]+)\]\(@(contact|company)-\d+\)/g, '@$1');
+  return text.replace(/@\[([^\]]+)\]\(@(contact|company|deal)-\d+\)/g, '@$1');
 }
 
 // ============================================================================
@@ -79,16 +85,10 @@ export const ChatInputWithMentions = React.forwardRef<
   HTMLTextAreaElement,
   ChatInputWithMentionsProps
 >(({ onMentionsExtract, onChange, ...props }, ref) => {
-  // Fetch contacts and companies
-  const { data: contactsData } = useQuery({
-    queryKey: ['contacts', { limit: 100 }],
-    queryFn: () => contactsApi.getContacts({ limit: 100 }),
-  });
-
-  const { data: companiesData } = useQuery({
-    queryKey: ['companies', { limit: 100 }],
-    queryFn: () => companiesApi.getCompanies({ limit: 100 }),
-  });
+  // Fetch contacts, companies, and deals
+  const { data: contactsData } = useQuery(getContacts({ limit: 100 }));
+  const { data: companiesData } = useQuery(getCompanies({ limit: 100 }));
+  const { data: dealsData } = useQuery(getDeals({ limit: 100 }));
 
   // Custom suggestion renderer
   const renderSuggestion = React.useCallback(
@@ -99,8 +99,9 @@ export const ChatInputWithMentions = React.forwardRef<
       _index: number,
       _focused: boolean,
     ) => {
-      const isContact = String(suggestion.id).startsWith('contact-');
-      const Icon = isContact ? UserIcon : BuildingIcon;
+      const idStr = String(suggestion.id);
+      const prefix = idStr.split('-')[0] as ChatMention['type'];
+      const Icon = MENTION_ICON_MAP[prefix] ?? UserIcon;
 
       return (
         <div className="flex items-center gap-2">
@@ -147,7 +148,22 @@ export const ChatInputWithMentions = React.forwardRef<
               description: company.website,
             })) || [];
 
-          const allSuggestions = [...contactSuggestions, ...companySuggestions];
+          const dealSuggestions: MentionSuggestion[] =
+            dealsData?.deals.map((deal) => ({
+              id: `deal-${deal.id}`,
+              display: deal.title,
+              description:
+                deal.stage ||
+                (deal.value != null
+                  ? `${deal.currency || 'USD'} ${deal.value.toLocaleString()}`
+                  : ''),
+            })) || [];
+
+          const allSuggestions = [
+            ...contactSuggestions,
+            ...companySuggestions,
+            ...dealSuggestions,
+          ];
 
           // Filter based on search
           const filtered = allSuggestions.filter(
@@ -161,7 +177,7 @@ export const ChatInputWithMentions = React.forwardRef<
         renderSuggestion,
       },
     ],
-    [contactsData, companiesData, renderSuggestion],
+    [contactsData, companiesData, dealsData, renderSuggestion],
   );
 
   // Handle change and extract mentions

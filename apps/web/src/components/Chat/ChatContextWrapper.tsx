@@ -1,8 +1,9 @@
 'use client';
 
 import { createContext, useContext, ReactNode, useEffect, useRef } from 'react';
-import { ChatContextManager, type ChatEntity } from './ChatContextManager';
 import { usePromptInputReferencedSources } from '@zuko/ui-kit';
+import { CHAT_ENTITY_TYPE_LABEL } from '@/lib/constants';
+import { ChatContextManager, type ChatEntity } from './ChatContextManager';
 
 // Create a context to share the context manager
 const ChatContextManagerContext = createContext<ReturnType<
@@ -63,7 +64,7 @@ export const ChatContextProvider = ({
           sourceId,
           mediaType: 'application/json',
           title:
-            entity.name ?? (entity.type === 'contact' ? 'Contact' : 'Company'),
+            entity.name ?? CHAT_ENTITY_TYPE_LABEL[entity.type],
           metadata: { type: entity.type, entityId: entity.id },
         } as any);
       });

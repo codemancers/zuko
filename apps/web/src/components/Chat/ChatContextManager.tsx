@@ -1,21 +1,24 @@
 'use client';
 
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, type ReactElement } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { UserIcon, BuildingIcon } from 'lucide-react';
+import { UserIcon, BuildingIcon, Briefcase } from 'lucide-react';
 import {
   ContextChip,
   EntityItem,
   usePromptInputReferencedSources,
 } from '@zuko/ui-kit';
-import { contactsApi, type Contact } from '@/lib/api/contacts';
-import { companiesApi, type SalesCompany } from '@/lib/api/companies';
+import { type Contact } from '@/lib/api/contacts';
+import { type SalesCompany } from '@/lib/api/companies';
+import { type Deal } from '@/lib/api/deals';
+import { getContacts, getCompanies, getDeals } from '@/server/query-options';
+import { CHAT_ENTITY_TYPE_LABEL } from '@/lib/constants/chat-context.constants';
 
 // ============================================================================
 // Types
 // ============================================================================
 
-export type ChatEntityType = 'contact' | 'company';
+export type ChatEntityType = 'contact' | 'company' | 'deal';
 
 export interface ChatEntity {
   type: ChatEntityType;
@@ -66,6 +69,29 @@ function companyToEntityItem(company: SalesCompany): EntityItem {
   };
 }
 
+function dealToEntityItem(deal: Deal): EntityItem {
+  const description =
+    deal.stage ||
+    (deal.value != null
+      ? `${deal.currency || 'USD'} ${deal.value.toLocaleString()}`
+      : '');
+
+  return {
+    id: `deal-${deal.id}`,
+    label: deal.title,
+    description,
+    icon: <Briefcase className="size-4" />,
+    metadata: {
+      type: 'deal',
+      entityId: deal.id,
+      stage: deal.stage,
+      value: deal.value,
+      currency: deal.currency,
+      summary: deal.summary,
+    },
+  };
+}
+
 function entityItemToChatEntity(item: EntityItem): ChatEntity {
   const type = item.metadata?.type as ChatEntityType;
   const entityId = item.metadata?.entityId as number;
@@ -90,9 +116,9 @@ export const ChatContextManager = ({
   onContextChange,
 }: ChatContextManagerProps) => {
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [dialogType, setDialogType] = useState<'contact' | 'company' | null>(
-    null,
-  );
+  const [dialogType, setDialogType] = useState<
+    'contact' | 'company' | 'deal' | null
+  >(null);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
   // Use PromptInput's referenced sources hook - must be inside PromptInput context
@@ -100,15 +126,15 @@ export const ChatContextManager = ({
   const { sources, add, remove } = referencedSources;
 
   // Fetch contacts and companies
-  const { data: contactsData, isLoading: contactsLoading } = useQuery({
-    queryKey: ['contacts', { limit: 100 }],
-    queryFn: () => contactsApi.getContacts({ limit: 100 }),
-  });
-
-  const { data: companiesData, isLoading: companiesLoading } = useQuery({
-    queryKey: ['companies', { limit: 100 }],
-    queryFn: () => companiesApi.getCompanies({ limit: 100 }),
-  });
+  const { data: contactsData, isLoading: contactsLoading } = useQuery(
+    getContacts({ limit: 100 }),
+  );
+  const { data: companiesData, isLoading: companiesLoading } = useQuery(
+    getCompanies({ limit: 100 }),
+  );
+  const { data: dealsData, isLoading: dealsLoading } = useQuery(
+    getDeals({ limit: 100 }),
+  );
 
   // Convert to generic EntityItem[]
   const contactItems = useMemo(
@@ -119,6 +145,11 @@ export const ChatContextManager = ({
   const companyItems = useMemo(
     () => companiesData?.companies.map(companyToEntityItem) || [],
     [companiesData],
+  );
+
+  const dealItems = useMemo(
+    () => dealsData?.deals.map(dealToEntityItem) || [],
+    [dealsData],
   );
 
   // Get current entities from sources
@@ -132,11 +163,14 @@ export const ChatContextManager = ({
   }, [sources]);
 
   // Handle dialog open
-  const handleOpenDialog = useCallback((type: 'contact' | 'company') => {
-    setDialogType(type);
-    setSelectedIds([]);
-    setDialogOpen(true);
-  }, []);
+  const handleOpenDialog = useCallback(
+    (type: 'contact' | 'company' | 'deal') => {
+      setDialogType(type);
+      setSelectedIds([]);
+      setDialogOpen(true);
+    },
+    [],
+  );
 
   // Handle entity removal
   const handleRemove = useCallback(
@@ -199,10 +233,16 @@ export const ChatContextManager = ({
       ? contactItems
       : dialogType === 'company'
         ? companyItems
-        : [];
+        : dialogType === 'deal'
+          ? dealItems
+          : [];
 
   const isDialogLoading =
-    dialogType === 'contact' ? contactsLoading : companiesLoading;
+    dialogType === 'contact'
+      ? contactsLoading
+      : dialogType === 'company'
+        ? companiesLoading
+        : dealsLoading;
 
   return {
     currentEntities,
@@ -225,6 +265,21 @@ export const ChatContextManager = ({
 // Chat Context Display Component
 // ============================================================================
 
+const CONTEXT_TYPE_ICON_MAP: Record<ChatEntityType, ReactElement> = {
+  contact: <UserIcon className="size-3.5" />,
+  company: <BuildingIcon className="size-3.5" />,
+  deal: <Briefcase className="size-3.5" />,
+};
+
+const CONTEXT_TYPE_COLOR_MAP: Record<
+  ChatEntityType,
+  'blue' | 'purple' | 'green'
+> = {
+  contact: 'blue',
+  company: 'purple',
+  deal: 'green',
+};
+
 export const ChatContextDisplay = () => {
   const { sources, remove } = usePromptInputReferencedSources();
 
@@ -234,22 +289,15 @@ export const ChatContextDisplay = () => {
     <div className="flex flex-wrap gap-2">
       {sources.map((source) => {
         const type = (source as any).metadata?.type as ChatEntityType;
-        const color = type === 'contact' ? 'blue' : 'purple';
-        const icon =
-          type === 'contact' ? (
-            <UserIcon className="size-3.5" />
-          ) : (
-            <BuildingIcon className="size-3.5" />
-          );
+        const color = CONTEXT_TYPE_COLOR_MAP[type] ?? CONTEXT_TYPE_COLOR_MAP.contact;
+        const icon = CONTEXT_TYPE_ICON_MAP[type] ?? CONTEXT_TYPE_ICON_MAP.contact;
         const rawLabel = (source as any).title ?? '';
         const label =
           typeof rawLabel === 'string' &&
           rawLabel &&
           !rawLabel.includes('undefined')
             ? rawLabel
-            : type === 'contact'
-              ? 'Contact'
-              : 'Company';
+            : CHAT_ENTITY_TYPE_LABEL[type] ?? CHAT_ENTITY_TYPE_LABEL.contact;
 
         return (
           <ContextChip
@@ -271,7 +319,7 @@ export const ChatContextDisplay = () => {
 // ============================================================================
 
 export interface EntitySelectorTriggerProps {
-  onSelectType: (type: 'contact' | 'company') => void;
+  onSelectType: (type: 'contact' | 'company' | 'deal') => void;
 }
 
 export const EntitySelectorTrigger = ({
@@ -294,6 +342,14 @@ export const EntitySelectorTrigger = ({
       >
         <BuildingIcon className="size-4" />
         Add company
+      </button>
+      <button
+        type="button"
+        onClick={() => onSelectType('deal')}
+        className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-md transition-colors"
+      >
+        <Briefcase className="size-4" />
+        Add deal
       </button>
     </>
   );
