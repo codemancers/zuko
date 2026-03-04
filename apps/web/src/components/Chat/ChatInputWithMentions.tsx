@@ -18,17 +18,16 @@ import {
   type MentionSuggestion,
   type MentionTriggerConfig,
 } from '@zuko/ui-kit';
-import { contactsApi } from '@/lib/api/contacts';
-import { companiesApi } from '@/lib/api/companies';
-import { dealsApi } from '@/lib/api/deals';
+import { getContacts, getCompanies, getDeals } from '@/server/query-options';
 import { UserIcon, BuildingIcon, Briefcase } from 'lucide-react';
 
 // ============================================================================
 // Types
 // ============================================================================
 
+export type ChatEntityType = 'contact' | 'company' | 'deal';
 export interface ChatMention {
-  type: 'contact' | 'company' | 'deal';
+  type: ChatEntityType;
   id: number;
   name: string;
 }
@@ -39,6 +38,12 @@ export interface ChatInputWithMentionsProps extends Omit<
 > {
   onMentionsExtract?: (mentions: ChatMention[]) => void;
 }
+
+const MENTION_ICON_MAP: Record<ChatEntityType, typeof UserIcon> = {
+  contact: UserIcon,
+  company: BuildingIcon,
+  deal: Briefcase,
+};
 
 // ============================================================================
 // Mention Extraction Utility
@@ -81,20 +86,9 @@ export const ChatInputWithMentions = React.forwardRef<
   ChatInputWithMentionsProps
 >(({ onMentionsExtract, onChange, ...props }, ref) => {
   // Fetch contacts, companies, and deals
-  const { data: contactsData } = useQuery({
-    queryKey: ['contacts', { limit: 100 }],
-    queryFn: () => contactsApi.getContacts({ limit: 100 }),
-  });
-
-  const { data: companiesData } = useQuery({
-    queryKey: ['companies', { limit: 100 }],
-    queryFn: () => companiesApi.getCompanies({ limit: 100 }),
-  });
-
-  const { data: dealsData } = useQuery({
-    queryKey: ['deals', { limit: 100 }],
-    queryFn: () => dealsApi.getDeals({ limit: 100 }),
-  });
+  const { data: contactsData } = useQuery(getContacts({ limit: 100 }));
+  const { data: companiesData } = useQuery(getCompanies({ limit: 100 }));
+  const { data: dealsData } = useQuery(getDeals({ limit: 100 }));
 
   // Custom suggestion renderer
   const renderSuggestion = React.useCallback(
@@ -106,11 +100,8 @@ export const ChatInputWithMentions = React.forwardRef<
       _focused: boolean,
     ) => {
       const idStr = String(suggestion.id);
-      const Icon = idStr.startsWith('contact-')
-        ? UserIcon
-        : idStr.startsWith('company-')
-          ? BuildingIcon
-          : Briefcase;
+      const prefix = idStr.split('-')[0] as ChatMention['type'];
+      const Icon = MENTION_ICON_MAP[prefix] ?? UserIcon;
 
       return (
         <div className="flex items-center gap-2">

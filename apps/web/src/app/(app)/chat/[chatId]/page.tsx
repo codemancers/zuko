@@ -17,6 +17,7 @@ import { useInvalidateChats } from '@/hooks/use-chats';
 import { contactsApi } from '@/lib/api/contacts';
 import { companiesApi } from '@/lib/api/companies';
 import { dealsApi } from '@/lib/api/deals';
+import { CHAT_ENTITY_TYPE_LABEL } from '@/lib/constants';
 
 export default function ChatPage() {
   const params = useParams();
@@ -97,12 +98,7 @@ export default function ChatPage() {
                   return {
                     type,
                     id: ref.id,
-                    name:
-                      type === 'contact'
-                        ? 'Contact'
-                        : type === 'company'
-                          ? 'Company'
-                          : 'Deal',
+                    name: CHAT_ENTITY_TYPE_LABEL[type],
                     metadata: { type, entityId: ref.id },
                   };
                 }

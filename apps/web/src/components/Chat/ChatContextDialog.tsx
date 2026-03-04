@@ -1,22 +1,8 @@
 'use client';
 
 import { EntitySelectorDialog } from '@zuko/ui-kit';
+import { CHAT_ENTITY_DIALOG_LABELS } from '@/lib/constants';
 import { useChatContextManager } from './ChatContextWrapper';
-
-const LABEL_MAP = {
-  contact: {
-    title: 'Add Contacts',
-    description: 'Select contacts to add as context',
-  },
-  company: {
-    title: 'Add Companies',
-    description: 'Select companies to add as context',
-  },
-  deal: {
-    title: 'Add Deals',
-    description: 'Select deals to add as context',
-  },
-};
 
 /**
  * Dialog for selecting contacts/companies to add as context
@@ -25,7 +11,7 @@ const LABEL_MAP = {
 export const ChatContextDialog = () => {
   const contextManager = useChatContextManager();
   const type = contextManager.dialogConfig.type ?? 'contact';
-  const labels = LABEL_MAP[type] ?? LABEL_MAP.contact;
+  const labels = CHAT_ENTITY_DIALOG_LABELS[type] ?? CHAT_ENTITY_DIALOG_LABELS.contact;
 
   return (
     <EntitySelectorDialog

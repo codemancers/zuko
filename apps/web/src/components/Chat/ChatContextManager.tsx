@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, type ReactElement } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { UserIcon, BuildingIcon, Briefcase } from 'lucide-react';
 import {
@@ -8,9 +8,11 @@ import {
   EntityItem,
   usePromptInputReferencedSources,
 } from '@zuko/ui-kit';
-import { contactsApi, type Contact } from '@/lib/api/contacts';
-import { companiesApi, type SalesCompany } from '@/lib/api/companies';
-import { dealsApi, type Deal } from '@/lib/api/deals';
+import { type Contact } from '@/lib/api/contacts';
+import { type SalesCompany } from '@/lib/api/companies';
+import { type Deal } from '@/lib/api/deals';
+import { getContacts, getCompanies, getDeals } from '@/server/query-options';
+import { CHAT_ENTITY_TYPE_LABEL } from '@/lib/constants/chat-context.constants';
 
 // ============================================================================
 // Types
@@ -124,20 +126,15 @@ export const ChatContextManager = ({
   const { sources, add, remove } = referencedSources;
 
   // Fetch contacts and companies
-  const { data: contactsData, isLoading: contactsLoading } = useQuery({
-    queryKey: ['contacts', { limit: 100 }],
-    queryFn: () => contactsApi.getContacts({ limit: 100 }),
-  });
-
-  const { data: companiesData, isLoading: companiesLoading } = useQuery({
-    queryKey: ['companies', { limit: 100 }],
-    queryFn: () => companiesApi.getCompanies({ limit: 100 }),
-  });
-
-  const { data: dealsData, isLoading: dealsLoading } = useQuery({
-    queryKey: ['deals', { limit: 100 }],
-    queryFn: () => dealsApi.getDeals({ limit: 100 }),
-  });
+  const { data: contactsData, isLoading: contactsLoading } = useQuery(
+    getContacts({ limit: 100 }),
+  );
+  const { data: companiesData, isLoading: companiesLoading } = useQuery(
+    getCompanies({ limit: 100 }),
+  );
+  const { data: dealsData, isLoading: dealsLoading } = useQuery(
+    getDeals({ limit: 100 }),
+  );
 
   // Convert to generic EntityItem[]
   const contactItems = useMemo(
@@ -268,6 +265,21 @@ export const ChatContextManager = ({
 // Chat Context Display Component
 // ============================================================================
 
+const CONTEXT_TYPE_ICON_MAP: Record<ChatEntityType, ReactElement> = {
+  contact: <UserIcon className="size-3.5" />,
+  company: <BuildingIcon className="size-3.5" />,
+  deal: <Briefcase className="size-3.5" />,
+};
+
+const CONTEXT_TYPE_COLOR_MAP: Record<
+  ChatEntityType,
+  'blue' | 'purple' | 'green'
+> = {
+  contact: 'blue',
+  company: 'purple',
+  deal: 'green',
+};
+
 export const ChatContextDisplay = () => {
   const { sources, remove } = usePromptInputReferencedSources();
 
@@ -277,27 +289,15 @@ export const ChatContextDisplay = () => {
     <div className="flex flex-wrap gap-2">
       {sources.map((source) => {
         const type = (source as any).metadata?.type as ChatEntityType;
-        const color =
-          type === 'contact' ? 'blue' : type === 'company' ? 'purple' : 'green';
-        const icon =
-          type === 'contact' ? (
-            <UserIcon className="size-3.5" />
-          ) : type === 'company' ? (
-            <BuildingIcon className="size-3.5" />
-          ) : (
-            <Briefcase className="size-3.5" />
-          );
+        const color = CONTEXT_TYPE_COLOR_MAP[type] ?? CONTEXT_TYPE_COLOR_MAP.contact;
+        const icon = CONTEXT_TYPE_ICON_MAP[type] ?? CONTEXT_TYPE_ICON_MAP.contact;
         const rawLabel = (source as any).title ?? '';
         const label =
           typeof rawLabel === 'string' &&
           rawLabel &&
           !rawLabel.includes('undefined')
             ? rawLabel
-            : type === 'contact'
-              ? 'Contact'
-              : type === 'company'
-                ? 'Company'
-                : 'Deal';
+            : CHAT_ENTITY_TYPE_LABEL[type] ?? CHAT_ENTITY_TYPE_LABEL.contact;
 
         return (
           <ContextChip
