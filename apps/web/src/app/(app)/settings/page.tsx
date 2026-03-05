@@ -6,6 +6,7 @@ import {
   Text,
   Divider,
   Badge,
+  Button,
   Tabs,
   TabsList,
   TabsTrigger,
@@ -20,7 +21,9 @@ import { authClient } from '@/lib/auth-client';
 import { OrgTeams } from '@/components/organization/org-teams';
 import { OrgMembers } from '@/components/organization/org-members';
 import { UserInvitations } from '@/components/organization/user-invitations';
-import { useQuery } from '@tanstack/react-query';
+import { AddMemberDialog } from '@/components/organization/add-member-dialog';
+import { AddMemberToTeamDialog } from '@/components/organization/add-member-to-team-dialog';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { getUserInvitations } from '@/server/query-options';
 import { useQueryState, parseAsStringLiteral } from 'nuqs';
 
@@ -84,6 +87,7 @@ export default function SettingsPage() {
 }
 
 function SettingsPageContent() {
+  const queryClient = useQueryClient();
   const [currentTab, setCurrentTab] = useQueryState(
     'tab',
     parseAsStringLiteral([
@@ -100,6 +104,20 @@ function SettingsPageContent() {
     new Set(),
   );
   const activeOrg = authClient.useActiveOrganization();
+
+  // Redirect to invitations tab if there are pending invitations
+  useEffect(() => {
+    if (invitations.length > 0 && currentTab === 'connections') {
+      const url = new URL(window.location.href);
+      if (!url.searchParams.has('tab')) {
+        setCurrentTab('invitations');
+      }
+    }
+  }, [invitations.length, currentTab, setCurrentTab]);
+
+  // Action states
+  const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
+  const [isAddTeamDialogOpen, setIsAddTeamDialogOpen] = useState(false);
 
   useEffect(() => {
     const loadData = async () => {
@@ -145,42 +163,49 @@ function SettingsPageContent() {
           setCurrentTab(ALL_TABS[index as number].id);
         }}
       >
-        <TabsList variant="line" className="justify-start">
-          {ALL_TABS.map((tab) => {
-            const isInvitations = tab.id === 'invitations';
-            const shouldShow =
-              !isInvitations ||
-              invitations.length > 0 ||
-              currentTab === 'invitations';
+        <div className="flex items-center justify-between border-b border-zinc-950/5 dark:border-white/5">
+          <TabsList variant="line" className="border-none!">
+            {ALL_TABS.map((tab) => {
+              const isInvitations = tab.id === 'invitations';
 
-            if (!shouldShow) return null;
+              return (
+                <TabsTrigger
+                  key={tab.id}
+                  value={tab.id}
+                  className={'cursor-pointer'}
+                >
+                  {tab.label}
+                  {isInvitations && invitations.length > 0 && (
+                    <Badge
+                      color="blue"
+                      className="ml-2 px-1.5 py-0 text-[10px]"
+                    >
+                      {invitations.length}
+                    </Badge>
+                  )}
+                </TabsTrigger>
+              );
+            })}
+          </TabsList>
 
-            return (
-              <TabsTrigger
-                key={tab.id}
-                value={tab.id}
-                className={'cursor-pointer'}
-              >
-                {tab.label}
-                {isInvitations && invitations.length > 0 && (
-                  <Badge color="blue" className="ml-2 px-1.5 py-0 text-[10px]">
-                    {invitations.length}
-                  </Badge>
-                )}
-              </TabsTrigger>
-            );
-          })}
-        </TabsList>
+          <div className="flex items-center gap-3">
+            {currentTab === 'members' && (
+              <>
+                <Button onClick={() => setIsInviteDialogOpen(true)}>
+                  Invite to Org
+                </Button>
+              </>
+            )}
+            {currentTab === 'teams' && (
+              <Button href={`/organization/${activeOrg.data?.slug}/teams/new`}>
+                Create Team
+              </Button>
+            )}
+          </div>
+        </div>
+
         <TabsPanels>
           {ALL_TABS.map((tab) => {
-            const isInvitations = tab.id === 'invitations';
-            const shouldShow =
-              !isInvitations ||
-              invitations.length > 0 ||
-              currentTab === 'invitations';
-
-            if (!shouldShow) return null;
-
             return (
               <TabsContent key={tab.id} value={tab.id} className="py-6">
                 {tab.id === 'invitations' && <UserInvitations />}
@@ -288,6 +313,39 @@ function SettingsPageContent() {
           })}
         </TabsPanels>
       </Tabs>
+
+      {activeOrg.data && (
+        <>
+          <AddMemberDialog
+            organizationId={activeOrg.data.id}
+            isOpen={isInviteDialogOpen}
+            onClose={() => setIsInviteDialogOpen(false)}
+            onSuccess={() => {
+              queryClient.invalidateQueries({
+                queryKey: ['organization', activeOrg.data?.id, 'members'],
+              });
+              queryClient.invalidateQueries({
+                queryKey: ['organization', activeOrg.data?.id, 'invitations'],
+              });
+            }}
+          />
+          <AddMemberToTeamDialog
+            organizationId={activeOrg.data.id}
+            userId=""
+            memberName=""
+            isOpen={isAddTeamDialogOpen}
+            onClose={() => setIsAddTeamDialogOpen(false)}
+            onSuccess={() => {
+              queryClient.invalidateQueries({
+                queryKey: ['organization', activeOrg.data?.id, 'teams'],
+              });
+              queryClient.invalidateQueries({
+                queryKey: ['team'],
+              });
+            }}
+          />
+        </>
+      )}
     </div>
   );
 }

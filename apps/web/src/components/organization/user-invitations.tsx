@@ -6,6 +6,7 @@ import { authClient } from '@/lib/auth-client';
 import { Button, Heading, Text, Badge } from '@zuko/ui-kit';
 import { toast } from 'sonner';
 import { useState } from 'react';
+import { MailOpen } from 'lucide-react';
 
 export const UserInvitations = () => {
   const queryClient = useQueryClient();
@@ -26,6 +27,16 @@ export const UserInvitations = () => {
       }
 
       toast.success('Invitation accepted');
+
+      // Set the accepted organization as active
+      // We find the invitation details to get the organizationId
+      const acceptedInv = invitations.find((i) => i.id === invitationId);
+      if (acceptedInv) {
+        await authClient.organization.setActive({
+          organizationId: acceptedInv.organizationId,
+        });
+      }
+
       // Invalidate queries to refresh organization list and user status
       queryClient.invalidateQueries({ queryKey: ['organizations'] });
       queryClient.invalidateQueries({ queryKey: ['user', 'invitations'] });
@@ -67,7 +78,19 @@ export const UserInvitations = () => {
   }
 
   if (invitations.length === 0) {
-    return null;
+    return (
+      <div className="flex flex-col items-center justify-center py-20 text-center">
+        <div className="rounded-2xl border border-zinc-200 p-4 dark:border-white/10">
+          <MailOpen className="size-8 text-zinc-400" />
+        </div>
+        <div className="mt-6 text-base font-semibold text-zinc-950 dark:text-white">
+          No invitations
+        </div>
+        <div className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
+          You don't have any pending invitations at the moment.
+        </div>
+      </div>
+    );
   }
 
   return (

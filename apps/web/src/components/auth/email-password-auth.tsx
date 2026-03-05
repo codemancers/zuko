@@ -48,7 +48,13 @@ export function EmailPasswordAuth({ mode = 'signin' }: EmailPasswordAuthProps) {
           if (data && data.length > 0) {
             router.push('/chat');
           } else {
-            router.push('/organization/create');
+            const { data: invitations } =
+              await authClient.organization.listUserInvitations();
+            if (invitations && invitations.length > 0) {
+              router.push('/settings?tab=invitations');
+            } else {
+              router.push('/organization/create');
+            }
           }
         }
       } else {
@@ -67,7 +73,13 @@ export function EmailPasswordAuth({ mode = 'signin' }: EmailPasswordAuthProps) {
           if (data && data.length > 0) {
             router.push('/chat');
           } else {
-            router.push('/organization/create');
+            const { data: invitations } =
+              await authClient.organization.listUserInvitations();
+            if (invitations && invitations.length > 0) {
+              router.push('/settings?tab=invitations');
+            } else {
+              router.push('/organization/create');
+            }
           }
         }
       }

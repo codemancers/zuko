@@ -45,7 +45,7 @@ export const OrgTeams = ({
   }
 
   return (
-    <div className="py-8">
+    <div>
       {!hideHeader && (
         <div className="flex items-center justify-between mb-10">
           <Link
@@ -58,20 +58,19 @@ export const OrgTeams = ({
         </div>
       )}
 
-      <div className="flex items-center justify-between mb-8">
-        {!hideHeader && (
+      {!hideHeader && (
+        <div className="flex items-center justify-between mb-8">
           <div>
             <Heading>Teams</Heading>
             <Text className="mt-1">Manage teams within {activeOrg.name}.</Text>
           </div>
-        )}
-        <Button
-          className={hideHeader ? 'ml-auto' : ''}
-          onClick={() => router.push(`/organization/${slug}/teams/new`)}
-        >
-          Create Team
-        </Button>
-      </div>
+          <Button
+            onClick={() => router.push(`/organization/${slug}/teams/new`)}
+          >
+            Create Team
+          </Button>
+        </div>
+      )}
 
       <ul className="mt-10">
         {teams.length === 0 ? (

@@ -147,7 +147,7 @@ export const OrgMembers = ({
   }
 
   return (
-    <div className="py-8">
+    <div>
       {!hideHeader && (
         <div className="flex items-center justify-between mb-10">
           <Link
@@ -160,26 +160,26 @@ export const OrgMembers = ({
         </div>
       )}
 
-      <div className="flex items-center justify-between mb-8">
-        {!hideHeader && (
+      {!hideHeader && (
+        <div className="flex items-center justify-between mb-8">
           <div>
             <Heading>Members</Heading>
             <Text className="mt-1">
               Manage who has access to {activeOrg.name}.
             </Text>
           </div>
-        )}
-        <div
-          className={`flex items-center gap-3 ${hideHeader ? 'ml-auto' : ''}`}
-        >
-          <Button outline onClick={() => setIsAddDialogOpen(true)}>
-            Invite to Org
-          </Button>
-          <Button onClick={() => setAddToTeamTarget({ userId: '', name: '' })}>
-            Add to Team
-          </Button>
+          <div className="flex items-center gap-3">
+            <Button outline onClick={() => setIsAddDialogOpen(true)}>
+              Invite to Org
+            </Button>
+            <Button
+              onClick={() => setAddToTeamTarget({ userId: '', name: '' })}
+            >
+              Add to Team
+            </Button>
+          </div>
         </div>
-      </div>
+      )}
 
       <Table className="mt-10 [--gutter:--spacing(6)] lg:[--gutter:--spacing(10)]">
         <TableHead>
