@@ -1,13 +1,17 @@
 'use client';
 
-import { Heading, Subheading, Text, Divider, Badge } from '@zuko/ui-kit';
 import {
+  Heading,
+  Subheading,
+  Text,
+  Divider,
+  Badge,
   Tabs,
   TabsList,
   TabsTrigger,
   TabsPanels,
   TabsContent,
-} from '@zuko/ui-kit/lib/tabs';
+} from '@zuko/ui-kit';
 import { ConnectButton } from './connect-button';
 import ConnectGitHub from '@/components/Settings/ConnectGitHub';
 import InstallGitHubApp from '@/components/Settings/InstallGitHubApp';
