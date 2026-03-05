@@ -6,7 +6,6 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 
 import { authClient } from '@/lib/auth-client';
-import { useRouter } from 'next/navigation';
 
 const orgSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -16,7 +15,6 @@ const orgSchema = z.object({
 type OrgFormValues = z.infer<typeof orgSchema>;
 
 export const CreateOrg = () => {
-  const router = useRouter();
   const form = useForm<OrgFormValues>({
     defaultValues: {
       name: '',
@@ -49,7 +47,21 @@ export const CreateOrg = () => {
           });
         }
       } else {
-        router.push('/chat');
+        const { id } = result.data;
+        try {
+          const { error: setActiveError } =
+            await authClient.organization.setActive({
+              organizationId: id.toString(),
+            });
+
+          if (setActiveError) {
+            console.error('Failed to set active organization:', setActiveError);
+          }
+        } catch (err) {
+          console.error('Error setting active organization:', err);
+        }
+        // Use window.location.href to ensure server-side components pick up the new session cookie
+        window.location.href = '/chat';
       }
     } catch (error) {
       console.error('Unexpected error:', error);

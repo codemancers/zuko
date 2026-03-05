@@ -1,4 +1,4 @@
-import { test as base } from "@playwright/test";
+import { test as base } from '@playwright/test';
 import {
   SignInPage,
   ContactsPage,
@@ -9,8 +9,9 @@ import {
   DealDetailPage,
   SettingsPage,
   ChatPage,
-} from "../pages";
-import { createUserWithSession, AuthUser } from "../lib/auth";
+  CreateOrgPage,
+} from '../pages';
+import { createUserWithSession, AuthUser } from '../lib/auth';
 
 type TestFixtures = {
   signInPage: SignInPage;
@@ -22,6 +23,7 @@ type TestFixtures = {
   dealDetailPage: DealDetailPage;
   settingsPage: SettingsPage;
   chatPage: ChatPage;
+  createOrgPage: CreateOrgPage;
   /**
    * Fixture that creates a fresh test user, injects signed session cookies into
    * the page context, and cleans up the user after the test.
@@ -67,6 +69,9 @@ export const test = base.extend<TestFixtures>({
   chatPage: async ({ page }, use) => {
     await use(new ChatPage(page));
   },
+  createOrgPage: async ({ page }, use) => {
+    await use(new CreateOrgPage(page));
+  },
 
   // ── Auth fixture ──────────────────────────────────────────────────────────
   auth: async ({ page }, use) => {
@@ -81,4 +86,4 @@ export const test = base.extend<TestFixtures>({
   },
 });
 
-export { expect } from "@playwright/test";
+export { expect } from '@playwright/test';
