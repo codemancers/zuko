@@ -163,7 +163,7 @@ function SettingsPageContent() {
           setCurrentTab(ALL_TABS[index as number].id);
         }}
       >
-        <div className="flex items-center justify-between border-b border-zinc-950/5 dark:border-white/5">
+        <div className="flex items-center justify-between">
           <TabsList variant="line" className="border-none!">
             {ALL_TABS.map((tab) => {
               const isInvitations = tab.id === 'invitations';
