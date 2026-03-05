@@ -1,10 +1,9 @@
 /**
  * @vitest-environment jsdom
  */
-import React from 'react';
+import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
 import SettingsPage from '@/app/(app)/settings/page';
 import ConnectGitHub from '@/components/Settings/ConnectGitHub';
 import InstallGitHubApp from '@/components/Settings/InstallGitHubApp';
@@ -15,6 +14,7 @@ vi.mock('@/lib/auth-client', () => ({
   authClient: {
     listAccounts: (...args: unknown[]) => mockListAccounts(...args),
     linkSocial: (...args: unknown[]) => mockLinkSocial(...args),
+    useActiveOrganization: vi.fn(() => ({ data: null, isLoading: false })),
   },
 }));
 
@@ -44,9 +44,11 @@ describe('SettingsPage', () => {
     } as Response);
 
     render(<SettingsPage />);
-    expect(screen.getByText('Settings')).toBeInTheDocument();
     expect(
-      screen.getByText(/manage your integrations and connected accounts/i)
+      screen.getByRole('heading', { name: 'Settings', level: 1 }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/manage your integrations and connected accounts/i),
     ).toBeInTheDocument();
   });
 
@@ -58,14 +60,23 @@ describe('SettingsPage', () => {
 
     render(<SettingsPage />);
     await waitFor(() => {
-      expect(screen.getByText('Integrations')).toBeInTheDocument();
+      expect(
+        screen.getByRole('heading', { name: 'Integrations' }),
+      ).toBeInTheDocument();
     });
     expect(
-      screen.getByText(/install apps to extend functionality/i)
+      screen.getByText(/install apps to extend functionality/i),
     ).toBeInTheDocument();
-    expect(screen.getByText('Connections')).toBeInTheDocument();
     expect(
-      screen.getByText(/connect your accounts for authentication and data access/i)
+      screen.getByRole('tab', { name: 'Connections' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { name: 'Connections' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        /connect your accounts for authentication and data access/i,
+      ),
     ).toBeInTheDocument();
   });
 
@@ -82,7 +93,7 @@ describe('SettingsPage', () => {
     expect(screen.getByText('GitHub')).toBeInTheDocument();
     expect(screen.getByText('Google Calendar')).toBeInTheDocument();
     expect(
-      screen.getByText(/sync events and availability for scheduling/i)
+      screen.getByText(/sync events and availability for scheduling/i),
     ).toBeInTheDocument();
   });
 
@@ -111,7 +122,9 @@ describe('SettingsPage', () => {
 
     render(<SettingsPage />);
     await waitFor(() => {
-      expect(screen.getByText('Connections')).toBeInTheDocument();
+      expect(
+        screen.getByRole('tab', { name: 'Connections' }),
+      ).toBeInTheDocument();
     });
     const notConnected = screen.getAllByText('Not connected');
     expect(notConnected.length).toBeGreaterThanOrEqual(1);
@@ -125,7 +138,7 @@ describe('ConnectGitHub', () => {
 
   it('shows loading skeleton initially', () => {
     mockListAccounts.mockImplementation(
-      () => new Promise<never>(() => undefined)
+      () => new Promise<never>(() => undefined),
     );
     render(<ConnectGitHub />);
     const skeleton = document.querySelector('.animate-pulse');
@@ -142,7 +155,7 @@ describe('ConnectGitHub', () => {
     });
     expect(screen.getByText('Connected')).toBeInTheDocument();
     expect(
-      screen.getByText(/your github account is connected for authentication/i)
+      screen.getByText(/your github account is connected for authentication/i),
     ).toBeInTheDocument();
   });
 
@@ -153,10 +166,10 @@ describe('ConnectGitHub', () => {
       expect(screen.getByText('GitHub')).toBeInTheDocument();
     });
     expect(
-      screen.getByText(/connect github for authentication and profile access/i)
+      screen.getByText(/connect github for authentication and profile access/i),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole('button', { name: /connect/i })
+      screen.getByRole('button', { name: /connect/i }),
     ).toBeInTheDocument();
   });
 
@@ -166,14 +179,16 @@ describe('ConnectGitHub', () => {
     const user = userEvent.setup();
     render(<ConnectGitHub />);
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: /connect/i })).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: /connect/i }),
+      ).toBeInTheDocument();
     });
     await user.click(screen.getByRole('button', { name: /^connect$/i }));
     expect(mockLinkSocial).toHaveBeenCalledWith(
       expect.objectContaining({
         provider: 'github',
         callbackURL: expect.any(String),
-      })
+      }),
     );
   });
 
@@ -186,16 +201,20 @@ describe('ConnectGitHub', () => {
       () =>
         new Promise<void>((resolve) => {
           resolveLink = resolve;
-        })
+        }),
     );
     const user = userEvent.setup();
     render(<ConnectGitHub />);
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: /connect/i })).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: /connect/i }),
+      ).toBeInTheDocument();
     });
     await user.click(screen.getByRole('button', { name: /^connect$/i }));
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: /connecting/i })).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: /connecting/i }),
+      ).toBeInTheDocument();
     });
     if (resolveLink) resolveLink();
   });
@@ -222,7 +241,7 @@ describe('InstallGitHubApp', () => {
 
   it('shows loading skeleton initially', () => {
     mockGetGitHubInstallationStatus.mockImplementation(
-      () => new Promise<never>(() => undefined)
+      () => new Promise<never>(() => undefined),
     );
     render(<InstallGitHubApp />);
     const skeleton = document.querySelector('.animate-pulse');
@@ -241,7 +260,7 @@ describe('InstallGitHubApp', () => {
     expect(screen.getByText('Installed')).toBeInTheDocument();
     expect(screen.getByText('my-org')).toBeInTheDocument();
     expect(
-      screen.getByText(/the github app is ready to manage tasks/i)
+      screen.getByText(/the github app is ready to manage tasks/i),
     ).toBeInTheDocument();
   });
 
@@ -255,10 +274,10 @@ describe('InstallGitHubApp', () => {
       expect(screen.getByText('GitHub App')).toBeInTheDocument();
     });
     expect(
-      screen.getByText(/install the github app to enable task management/i)
+      screen.getByText(/install the github app to enable task management/i),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole('button', { name: /^install$/i })
+      screen.getByRole('button', { name: /^install$/i }),
     ).toBeInTheDocument();
   });
 
@@ -269,7 +288,9 @@ describe('InstallGitHubApp', () => {
     });
     render(<InstallGitHubApp />);
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: /re-install/i })).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: /re-install/i }),
+      ).toBeInTheDocument();
     });
   });
 
@@ -284,12 +305,14 @@ describe('InstallGitHubApp', () => {
     const user = userEvent.setup();
     render(<InstallGitHubApp />);
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: /^install$/i })).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: /^install$/i }),
+      ).toBeInTheDocument();
     });
     await user.click(screen.getByRole('button', { name: /^install$/i }));
     await waitFor(() => {
       expect(window.location.href).toBe(
-        'https://github.com/apps/my-app/installations/new'
+        'https://github.com/apps/my-app/installations/new',
       );
     });
   });

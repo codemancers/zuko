@@ -25,7 +25,9 @@ import {
 } from '@zuko/ui-kit';
 import {
   ArrowRightStartOnRectangleIcon,
+  ChevronDownIcon,
   ChevronUpIcon,
+  PlusIcon,
   UserCircleIcon,
 } from '@heroicons/react/16/solid';
 import {
@@ -33,12 +35,15 @@ import {
   BuildingOfficeIcon,
   ChatBubbleLeftRightIcon,
   Cog6ToothIcon,
+  Cog8ToothIcon,
   UserGroupIcon,
 } from '@heroicons/react/20/solid';
 import { usePathname } from 'next/navigation';
 import { authClient } from '@/lib/auth-client';
 import { useEffect, useState } from 'react';
 import { useChats } from '@/hooks/use-chats';
+import { useQuery } from '@tanstack/react-query';
+import { getOrganizations } from '@/server/query-options';
 
 function AccountDropdownMenu({
   anchor,
@@ -75,6 +80,9 @@ export function ApplicationLayout({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
   const { data: chats = [] } = useChats();
   const recentChats = chats.slice(0, 5);
+
+  const { data: organizations = [] } = useQuery(getOrganizations());
+  const activeOrg = authClient.useActiveOrganization();
 
   useEffect(() => {
     const loadUser = async () => {
@@ -131,17 +139,50 @@ export function ApplicationLayout({ children }: { children: React.ReactNode }) {
       sidebar={
         <Sidebar>
           <SidebarHeader>
-            <div className="flex items-center gap-3 px-2 py-2.5">
-              <Avatar src="/logo.svg" initials="Z" className="size-10" />
-              <div className="flex flex-col">
-                <span className="text-sm/5 font-semibold text-zinc-950 dark:text-white">
-                  Zuko
-                </span>
-                <span className="text-xs/5 text-zinc-500 dark:text-zinc-400">
-                  Sell faster
-                </span>
-              </div>
-            </div>
+            <Dropdown>
+              <DropdownButton as={SidebarItem} className="cursor-pointer">
+                <Avatar
+                  src={activeOrg.data?.logo}
+                  initials={activeOrg.data?.name?.[0] || 'Z'}
+                />
+                <SidebarLabel>
+                  {activeOrg.data?.name || 'Select Organization'}
+                </SidebarLabel>
+                <ChevronDownIcon />
+              </DropdownButton>
+              <DropdownMenu
+                className="min-w-80 lg:min-w-64"
+                anchor="bottom start"
+              >
+                <DropdownItem href="/settings" className="cursor-pointer">
+                  <Cog8ToothIcon />
+                  <DropdownLabel>Settings</DropdownLabel>
+                </DropdownItem>
+                <DropdownDivider />
+                {organizations.map((org) => (
+                  <DropdownItem
+                    key={org.id}
+                    onClick={async () => {
+                      await authClient.organization.setActive({
+                        organizationId: org.id.toString(),
+                      });
+                    }}
+                    className="cursor-pointer"
+                  >
+                    <Avatar initials={org.name[0]?.toUpperCase()} />
+                    <DropdownLabel>{org.name}</DropdownLabel>
+                  </DropdownItem>
+                ))}
+                <DropdownDivider />
+                <DropdownItem
+                  href="/organization/create"
+                  className="cursor-pointer"
+                >
+                  <PlusIcon />
+                  <DropdownLabel>New organization&hellip;</DropdownLabel>
+                </DropdownItem>
+              </DropdownMenu>
+            </Dropdown>
           </SidebarHeader>
 
           <SidebarBody>

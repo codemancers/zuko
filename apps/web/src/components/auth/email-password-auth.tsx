@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { AuthLayout, Button, Field, Label, Input } from '@zuko/ui-kit';
 import { authClient } from '@/lib/auth-client';
+import Link from 'next/link';
 
 interface EmailPasswordAuthProps {
   mode?: 'signin' | 'signup';
@@ -43,7 +44,12 @@ export function EmailPasswordAuth({ mode = 'signin' }: EmailPasswordAuthProps) {
               'Failed to create account. Please try again.',
           );
         } else {
-          router.push('/chat');
+          const { data } = await authClient.organization.list();
+          if (data && data.length > 0) {
+            router.push('/chat');
+          } else {
+            router.push('/organization/create');
+          }
         }
       } else {
         const result = await authClient.signIn.email({
@@ -57,7 +63,12 @@ export function EmailPasswordAuth({ mode = 'signin' }: EmailPasswordAuthProps) {
               'Failed to sign in. Please check your credentials.',
           );
         } else {
-          router.push('/chat');
+          const { data } = await authClient.organization.list();
+          if (data && data.length > 0) {
+            router.push('/chat');
+          } else {
+            router.push('/organization/create');
+          }
         }
       }
     } catch (err) {
@@ -172,22 +183,22 @@ export function EmailPasswordAuth({ mode = 'signin' }: EmailPasswordAuthProps) {
               {isSignup ? (
                 <>
                   Already have an account?{' '}
-                  <a
+                  <Link
                     href="/sign-in"
                     className="font-semibold text-zinc-950 hover:text-zinc-700 dark:text-white dark:hover:text-zinc-300"
                   >
                     Sign in
-                  </a>
+                  </Link>
                 </>
               ) : (
                 <>
                   Don&apos;t have an account?{' '}
-                  <a
+                  <Link
                     href="/sign-up"
                     className="font-semibold text-zinc-950 hover:text-zinc-700 dark:text-white dark:hover:text-zinc-300"
                   >
                     Sign up
-                  </a>
+                  </Link>
                 </>
               )}
             </div>

@@ -27,6 +27,10 @@ model User {
   activities         Activity[]
   createdChats       Chat[]            @relation("ChatCreator")
   chatParticipations ChatParticipant[]
+  members       Member[]
+  invitations   Invitation[]
+
+  teammembers TeamMember[]
 
   @@unique([email])
   @@map("user")
@@ -43,6 +47,9 @@ model Session {
   userAgent String?  @map("user_agent")
   userId    Int      @map("user_id")
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  activeOrganizationId String?
+
+  activeTeamId String?
 
   @@unique([token])
   @@index([userId])
@@ -123,5 +130,90 @@ model ChatParticipant {
   @@unique([chatId, userId])
   @@index([userId])
   @@map("chat_participant")
+  @@schema("public")
+}
+
+
+model Organization {
+  id          Int          @id @default(autoincrement())
+  name        String
+  slug        String
+  logo        String?
+  createdAt   DateTime
+  metadata    String?
+  members     Member[]
+  invitations Invitation[]
+
+  teams Team[]
+
+  @@unique([slug])
+  @@map("organization")
+  @@schema("public")
+
+}
+
+model Member {
+  id             Int          @id @default(autoincrement())
+  organizationId Int
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  userId         Int
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role           String       @default("member")
+  createdAt      DateTime
+
+  @@index([organizationId])
+  @@index([userId])
+  @@map("member")
+  @@schema("public")
+
+}
+
+model Invitation {
+  id             Int          @id @default(autoincrement())
+  organizationId Int
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  email          String
+  role           String?
+  status         String       @default("pending")
+  expiresAt      DateTime
+  createdAt      DateTime     @default(now())
+  inviterId      Int
+  user           User         @relation(fields: [inviterId], references: [id], onDelete: Cascade)
+
+  teamId String?
+
+  @@index([organizationId])
+  @@index([email])
+  @@map("invitation")
+  @@schema("public")
+
+}
+
+model Team {
+  id             Int          @id @default(autoincrement())
+  name           String
+  organizationId Int
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdAt      DateTime
+  updatedAt      DateTime?    @updatedAt
+  teammembers    TeamMember[]
+
+  @@index([organizationId])
+  @@map("team")
+  @@schema("public")
+
+}
+
+model TeamMember {
+  id        Int       @id @default(autoincrement())
+  teamId    Int
+  team      Team      @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  userId    Int
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime?
+
+  @@index([teamId])
+  @@index([userId])
+  @@map("teamMember")
   @@schema("public")
 }

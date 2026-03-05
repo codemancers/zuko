@@ -1,4 +1,5 @@
 import { createAuthClient } from 'better-auth/react';
+import { organizationClient } from 'better-auth/client/plugins';
 
 // Use the frontend's auth proxy to avoid third-party cookie issues
 // The proxy at /auth forwards requests to the backend
@@ -35,4 +36,11 @@ export const authClient = createAuthClient({
   },
   // Make sure default fetch plugins (including redirect plugin) are enabled
   disableDefaultFetchPlugins: false,
+  plugins: [
+    organizationClient({
+      teams: {
+        enabled: true,
+      },
+    }),
+  ],
 });

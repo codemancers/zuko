@@ -1,4 +1,11 @@
 export * from './lib/ui-kit';
+export {
+  Tabs,
+  TabsList,
+  TabsTrigger,
+  TabsPanels,
+  TabsContent,
+} from './lib/tabs';
 export * from './lib/utils';
 // Export Headless UI primitives button (preferred over shadcn)
 export { Button } from './lib/button';

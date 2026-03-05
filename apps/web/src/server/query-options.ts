@@ -3,6 +3,7 @@ import { contactsApi, ContactFilters } from '@/lib/api/contacts';
 import { companiesApi, CompanyFilters } from '@/lib/api/companies';
 import { dealsApi, DealFilters } from '@/lib/api/deals';
 import { activitiesApi } from '@/lib/api/activities';
+import { authClient } from '@/lib/auth-client';
 
 export const getContacts = (filters?: ContactFilters) =>
   queryOptions({
@@ -87,5 +88,51 @@ export const getTimeline = (
         limit,
       );
       return response.activities;
+    },
+  });
+
+export const getOrganizations = (headers?: HeadersInit) =>
+  queryOptions({
+    queryKey: ['organizations'],
+    queryFn: async () => {
+      const { data } = await authClient.organization.list({
+        fetchOptions: {
+          headers,
+        },
+      });
+      return data || [];
+    },
+  });
+
+export const getTeams = (organizationId: string) =>
+  queryOptions({
+    queryKey: ['organization', organizationId, 'teams'],
+    queryFn: async () => {
+      const { data } = await authClient.organization.listTeams({
+        query: { organizationId },
+      });
+      return data || [];
+    },
+  });
+
+export const getMembers = (organizationId: string) =>
+  queryOptions({
+    queryKey: ['organization', organizationId, 'members'],
+    queryFn: async () => {
+      const { data } = await authClient.organization.listMembers({
+        query: { organizationId, limit: 100 },
+      });
+      return data?.members || [];
+    },
+  });
+
+export const getInvitations = (organizationId: string) =>
+  queryOptions({
+    queryKey: ['organization', organizationId, 'invitations'],
+    queryFn: async () => {
+      const { data } = await authClient.organization.listInvitations({
+        query: { organizationId },
+      });
+      return data || [];
     },
   });

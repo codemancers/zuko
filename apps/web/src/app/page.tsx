@@ -12,8 +12,12 @@ export default function Index() {
       try {
         const session = await authClient.getSession();
         if (session?.data?.user) {
-          // User is logged in, redirect to chat
-          router.push('/chat');
+          const { data } = await authClient.organization.list();
+          if (data && data.length > 0) {
+            router.push('/chat');
+          } else {
+            router.push('/organization/create');
+          }
         } else {
           // User is not logged in, redirect to sign-in
           router.push('/sign-in');
