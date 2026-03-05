@@ -388,7 +388,8 @@ describe('ChatInput mentions', () => {
 
     const input = screen.getByPlaceholderText(/ask anything.*try typing @/i);
     await user.click(input);
-    await user.keyboard('@');
+    // Min 3 chars after @ to show suggestions
+    await user.keyboard('@ali');
 
     await waitFor(
       () => {
@@ -405,7 +406,8 @@ describe('ChatInput mentions', () => {
 
     const input = screen.getByPlaceholderText(/ask anything.*try typing @/i);
     await user.click(input);
-    await user.keyboard('@');
+    // Min 3 chars after @ to show suggestions
+    await user.keyboard('@acm');
 
     await waitFor(
       () => {
@@ -422,7 +424,7 @@ describe('ChatInput mentions', () => {
 
     const input = screen.getByPlaceholderText(/ask anything.*try typing @/i);
     await user.click(input);
-    await user.keyboard('@');
+    await user.keyboard('@ali');
 
     await waitFor(
       () => {
@@ -454,7 +456,7 @@ describe('ChatInput mentions', () => {
 
     const input = screen.getByPlaceholderText(/ask anything.*try typing @/i);
     await user.click(input);
-    await user.keyboard('@');
+    await user.keyboard('@acm');
 
     await waitFor(
       () => {
@@ -486,7 +488,7 @@ describe('ChatInput mentions', () => {
 
     const input = screen.getByPlaceholderText(/ask anything.*try typing @/i);
     await user.click(input);
-    await user.keyboard('@');
+    await user.keyboard('@ent');
 
     await waitFor(
       () => {
@@ -503,7 +505,7 @@ describe('ChatInput mentions', () => {
 
     const input = screen.getByPlaceholderText(/ask anything.*try typing @/i);
     await user.click(input);
-    await user.keyboard('@');
+    await user.keyboard('@ent');
 
     await waitFor(
       () => {
@@ -535,7 +537,7 @@ describe('ChatInput mentions', () => {
 
     const input = screen.getByPlaceholderText(/ask anything.*try typing @/i);
     await user.click(input);
-    await user.keyboard('@');
+    await user.keyboard('@ali');
 
     await waitFor(
       () => {
@@ -545,7 +547,7 @@ describe('ChatInput mentions', () => {
     );
     await user.click(screen.getByText('Alice Smith'));
 
-    await user.keyboard(' and @');
+    await user.keyboard(' and @acm');
     await waitFor(
       () => {
         expect(screen.getByText('Acme Inc')).toBeInTheDocument();
@@ -578,7 +580,7 @@ describe('ChatInput mentions', () => {
 
     const input = screen.getByPlaceholderText(/ask anything.*try typing @/i);
     await user.click(input);
-    await user.keyboard('@');
+    await user.keyboard('@ali');
 
     await waitFor(
       () => {
@@ -588,7 +590,7 @@ describe('ChatInput mentions', () => {
     );
     await user.click(screen.getByText('Alice Smith'));
 
-    await user.keyboard(' @');
+    await user.keyboard(' @acm');
     await waitFor(
       () => {
         expect(screen.getByText('Acme Inc')).toBeInTheDocument();
@@ -597,7 +599,7 @@ describe('ChatInput mentions', () => {
     );
     await user.click(screen.getByText('Acme Inc'));
 
-    await user.keyboard(' @');
+    await user.keyboard(' @ent');
     await waitFor(
       () => {
         expect(screen.getByText('Enterprise License')).toBeInTheDocument();
@@ -762,7 +764,7 @@ describe('NewChatPage', () => {
 
     const input = screen.getByPlaceholderText(/ask anything.*try typing @/i);
     await user.click(input);
-    await user.keyboard('@');
+    await user.keyboard('@ali');
     await waitFor(() => expect(screen.getByText('Alice')).toBeInTheDocument());
     await user.click(screen.getByText('Alice'));
     await user.click(screen.getByRole('button', { name: /submit/i }));

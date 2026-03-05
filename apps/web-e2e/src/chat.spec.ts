@@ -226,9 +226,9 @@ test.describe("Chat", () => {
 
       const textarea = page.getByPlaceholder("Ask anything...");
       await textarea.click();
-      // Type like a real user so the @ keystroke triggers the mentions dropdown
+      // Type like a real user: @ plus min 3 chars to show the mentions dropdown
       await textarea.type("Hello, ");
-      await textarea.type("@");
+      await textarea.type("@tes");
 
       // Wait for the seeded contact (seed: "TEST CONTACT") to appear in the mentions list
       const mentionOption = page.getByRole("option", {
