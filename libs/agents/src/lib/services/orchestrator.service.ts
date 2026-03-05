@@ -16,18 +16,22 @@ import { AdminService } from "./admin.service";
 import type { PrismaService } from "../modules/prisma.types";
 // Import tool creators
 import {
+  createGetConversationContextTool,
   createGetContactDetailsTool,
   createGetContactOwnerTool,
   createGetCompanyDetailsTool,
+  createGetDealDetailsTool,
   createLeaveCommentTool,
   createQueryContactsTool,
   createQueryCompaniesTool,
+  createQueryDealsTool,
   createQueryActivitiesTool,
 } from "../tools";
 // Import services from @zuko/sales
 import type {
   ContactsService,
   CompaniesService,
+  DealsService,
   ActivityService,
 } from "@zuko/sales";
 // Import persistent context middleware
@@ -104,6 +108,7 @@ export class OrchestratorService {
     private readonly prisma: PrismaService,
     private readonly contactsService: ContactsService,
     private readonly companiesService: CompaniesService,
+    private readonly dealsService: DealsService,
     private readonly activityService: ActivityService,
   ) {}
 
@@ -133,20 +138,27 @@ export class OrchestratorService {
         "- userId: The authenticated user ID (use this when calling leave_comment)",
         "- contextEntities: Array of entity references (contacts, companies, deals) the user added to the conversation (e.g. via the + button)",
         "",
-        "IMPORTANT - When the user asks for company or contact details:",
-        "- If contextEntities contains companies or contacts, ALWAYS call get_company_details, get_contact_details, query_companies, or query_contacts. Do NOT ask the user for an ID.",
-        "- One entity in context: use get_company_details or get_contact_details (you can omit the ID; the tool uses context).",
-        "- Multiple entities in context: use query_companies with filters.companyIds or query_contacts with filters.contactIds.",
+        "When there is a mix of contacts, companies, or deals in context, call get_conversation_context first to see the list, then call the required detail or query tools (get_contact_details, get_company_details, get_deal_details, query_contacts, query_companies, query_deals) as needed.",
         "",
-        "Tools available:",
-        "- get_contact_details: Full contact info by ID (or from context if one contact)",
-        "- get_contact_owner: Get the owner(s) of a contact",
-        "- get_company_details: Company info by ID (or from context if one company)",
+        "IMPORTANT - When the user asks for company, contact, or deal details:",
+        "- ALWAYS call the relevant tool (get_contact_details, get_company_details, get_deal_details, query_contacts, query_companies, or query_deals). Do not skip the tool or ask the user for an ID.",
+        "- All entity IDs are optional. Tools resolve the entity from contextEntities when no ID is passed. If the user or context provides an ID, you may pass it.",
+        "- One entity in context: call get_company_details, get_contact_details, or get_deal_details with no arguments (tool uses context).",
+        "- Multiple entities in context: use query_companies with filters.companyIds, query_contacts with filters.contactIds, or query_deals with filters.dealIds.",
+        "- After calling a tool, always respond to the user with the result; do not leave the user without a reply.",
+        "",
+        "Tools (IDs are always optional; context from contextEntities is used when ID is omitted):",
+        "- get_conversation_context: Returns the current context (list of contacts, companies, deals in this conversation). Call to see what is in context before calling other tools. No arguments.",
+        "- get_contact_details: Full contact info. Call with no args when one contact in context; optional contactId if user provided an ID.",
+        "- get_contact_owner: Owner(s) of a contact. Optional contactId; uses context when one contact in context.",
+        "- get_company_details: Company info. Call with no args when one company in context; optional companyId if user provided an ID.",
+        "- get_deal_details: Deal info (title, value, stage, owners, companies, contacts). Call with no args when one deal in context; optional dealId if user provided an ID.",
         "- leave_comment: Add a comment (MUST pass userId from state)",
         "",
         "Query tools:",
         "- query_contacts: Filter/aggregate contacts; use filters.contactIds for multiple IDs from context",
         "- query_companies: Filter/aggregate companies; use filters.companyIds for multiple IDs from context",
+        "- query_deals: Filter/aggregate deals; use filters.dealIds for multiple IDs from context",
         "- query_activities: Search activity timeline",
         "",
         "Delegation:",
@@ -184,11 +196,12 @@ export class OrchestratorService {
       // Secretary agent is disabled (removed from codebase)
       const secretarySubagent = undefined;
 
-      // Create Tier 1 tools
       const tier1Tools = [
+        createGetConversationContextTool(),
         createGetContactDetailsTool(this.contactsService),
         createGetContactOwnerTool(this.contactsService),
         createGetCompanyDetailsTool(this.companiesService),
+        createGetDealDetailsTool(this.dealsService),
         createLeaveCommentTool(this.activityService),
       ];
 
@@ -196,6 +209,7 @@ export class OrchestratorService {
       const tier2Tools = [
         createQueryContactsTool(this.contactsService),
         createQueryCompaniesTool(this.companiesService),
+        createQueryDealsTool(this.dealsService),
         createQueryActivitiesTool(this.activityService),
       ];
 

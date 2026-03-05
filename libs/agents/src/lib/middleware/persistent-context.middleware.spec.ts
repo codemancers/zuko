@@ -24,6 +24,10 @@ const mockCompaniesService = {
   findById: jest.fn().mockResolvedValue({ id: 1, companyName: "Acme Corp" }),
 } as any;
 
+const mockDealsService = {
+  findById: jest.fn().mockResolvedValue({ id: 1, title: "Test Deal" }),
+} as any;
+
 const mockActivityService = {
   create: jest.fn().mockResolvedValue({ id: 1 }),
   findMany: jest.fn().mockResolvedValue([]),
@@ -57,6 +61,7 @@ describe("PersistentContextMiddleware - State Persistence", () => {
       prisma as any,
       mockContactsService,
       mockCompaniesService,
+      mockDealsService,
       mockActivityService,
     );
   });

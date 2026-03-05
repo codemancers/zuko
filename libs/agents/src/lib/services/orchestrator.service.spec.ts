@@ -46,6 +46,10 @@ describe("OrchestratorService - Persistence", () => {
         .mockResolvedValue({ id: "1", companyName: "Test Company" }),
     } as any;
 
+    const mockDealsService = {
+      findById: jest.fn().mockResolvedValue({ id: 1, title: 'Test Deal' }),
+    } as any;
+
     const mockActivityService = {} as any;
 
     service = new OrchestratorService(
@@ -53,6 +57,7 @@ describe("OrchestratorService - Persistence", () => {
       prisma as any,
       mockContactsService,
       mockCompaniesService,
+      mockDealsService,
       mockActivityService,
     );
   });
