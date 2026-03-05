@@ -1,23 +1,7 @@
 import { tool } from '@langchain/core/tools';
 import { z } from 'zod';
 import type { ContactsService } from '@zuko/sales';
-import type { ContextEntityReference } from '../../types/chat.types';
-
-/**
- * Runtime config that may be passed when the tool is invoked from a graph.
- * LangGraph can inject state/config so tools can read contextEntities.
- */
-type ToolRunConfig = {
-  configurable?: { contextEntities?: ContextEntityReference[] };
-  state?: { contextEntities?: ContextEntityReference[] };
-};
-
-function getContextEntities(
-  config: unknown,
-): ContextEntityReference[] | undefined {
-  const c = config as ToolRunConfig | undefined;
-  return c?.state?.contextEntities ?? c?.configurable?.contextEntities;
-}
+import { getContextEntities } from '../context/tool-context';
 
 /**
  * LangChain tool for retrieving full contact information.
