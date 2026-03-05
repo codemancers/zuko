@@ -211,16 +211,12 @@ export const OrgMembers = ({
                         ?.split(' ')
                         .map((n: string) => n[0])
                         .join('')}
-                      square
-                      className="size-10 shadow-sm"
+                      className="size-8 shadow-sm"
                     />
                     <div className="flex flex-col">
-                      <Link
-                        href={`/organization/${slug}/members/${member.id}`}
-                        className="text-sm font-medium text-zinc-950 dark:text-white hover:text-blue-600 transition-colors"
-                      >
+                      <div className="text-sm font-medium text-zinc-950 dark:text-white">
                         {member.user.name || member.user.email}
-                      </Link>
+                      </div>
                       <span className="text-xs text-zinc-500 mt-0.5">
                         {member.user.email}
                       </span>

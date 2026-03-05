@@ -78,24 +78,20 @@ export const OrgTeams = ({
         ) : (
           teams.map((team, index) => (
             <li key={team.id}>
-              <Divider soft={index > 0} />
+              {index > 0 && <Divider soft />}
               <div className="flex items-center justify-between">
                 <div className="flex gap-6 py-8">
                   <div className="shrink-0">
                     <Avatar
                       initials={team.name.charAt(0).toUpperCase()}
-                      square
                       className="size-12 shadow-sm bg-zinc-100 text-zinc-900 dark:bg-zinc-800 dark:text-white"
                     />
                   </div>
                   <div className="space-y-1.5 flex flex-col justify-center">
                     <div className="text-base/6 font-semibold">
-                      <Link
-                        href={`/organization/${slug}/teams/${team.id}`}
-                        className="text-zinc-950 dark:text-white hover:text-blue-600 transition-colors"
-                      >
+                      <div className="text-zinc-950 dark:text-white transition-colors">
                         {team.name}
-                      </Link>
+                      </div>
                     </div>
                     <div className="text-xs/6 text-zinc-600 dark:text-zinc-500 font-medium italic">
                       Created on {new Date(team.createdAt).toLocaleDateString()}
