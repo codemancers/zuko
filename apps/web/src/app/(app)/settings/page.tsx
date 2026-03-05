@@ -15,10 +15,14 @@ import {
 import { ConnectButton } from './connect-button';
 import ConnectGitHub from '@/components/Settings/ConnectGitHub';
 import InstallGitHubApp from '@/components/Settings/InstallGitHubApp';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { authClient } from '@/lib/auth-client';
 import { OrgTeams } from '@/components/organization/org-teams';
 import { OrgMembers } from '@/components/organization/org-members';
+import { UserInvitations } from '@/components/organization/user-invitations';
+import { useQuery } from '@tanstack/react-query';
+import { getUserInvitations } from '@/server/query-options';
+import { useQueryState, parseAsStringLiteral } from 'nuqs';
 
 const connections = [
   {
@@ -38,7 +42,7 @@ const getConnectionStatus = (accounts: Set<string>, provider: ConnectionId) => {
   return 'not-connected';
 };
 
-const SETTINGS_TABS = [
+const ALL_TABS = [
   {
     id: 'connections',
     label: 'Connections',
@@ -57,11 +61,41 @@ const SETTINGS_TABS = [
     heading: 'Members',
     description: 'Manage who has access to your organization.',
   },
+  {
+    id: 'invitations',
+    label: 'Invitations',
+    heading: 'Invitations',
+    description: 'Accept or decline invitations to organizations.',
+  },
 ] as const;
 
 export default function SettingsPage() {
-  const [activeTab, setActiveTab] =
-    useState<(typeof SETTINGS_TABS)[number]['id']>('connections');
+  return (
+    <Suspense
+      fallback={
+        <div className="py-10 text-center text-sm text-zinc-500">
+          Loading settings...
+        </div>
+      }
+    >
+      <SettingsPageContent />
+    </Suspense>
+  );
+}
+
+function SettingsPageContent() {
+  const [currentTab, setCurrentTab] = useQueryState(
+    'tab',
+    parseAsStringLiteral([
+      'connections',
+      'teams',
+      'members',
+      'invitations',
+    ] as const).withDefault('connections'),
+  );
+
+  const { data: invitations = [] } = useQuery(getUserInvitations());
+
   const [connectedProviders, setConnectedProviders] = useState<Set<string>>(
     new Set(),
   );
@@ -78,9 +112,11 @@ export default function SettingsPage() {
         });
 
         if (response.ok) {
-          const accountsData = await response.json();
+          const accountsData = (await response.json()) as {
+            accounts: { providerId: string }[];
+          };
           const connectedSet = new Set<string>(
-            accountsData.accounts.map((account: any) => account.providerId),
+            accountsData.accounts.map((account) => account.providerId),
           );
           setConnectedProviders(connectedSet);
         }
@@ -93,7 +129,7 @@ export default function SettingsPage() {
   }, []);
 
   const currentTabSpec =
-    SETTINGS_TABS.find((tab) => tab.id === activeTab) || SETTINGS_TABS[0];
+    ALL_TABS.find((tab) => tab.id === currentTab) || ALL_TABS[0];
 
   return (
     <div className="mx-auto max-w-6xl">
@@ -104,116 +140,152 @@ export default function SettingsPage() {
 
       <Tabs
         className="mt-8"
-        defaultValue="connections"
+        selectedIndex={ALL_TABS.findIndex((t) => t.id === currentTab)}
         onChange={(index) => {
-          // Headless UI TabGroup onChange provides the index
-          setActiveTab(SETTINGS_TABS[index as number].id);
+          setCurrentTab(ALL_TABS[index as number].id);
         }}
       >
         <TabsList variant="line" className="justify-start">
-          {SETTINGS_TABS.map((tab) => (
-            <TabsTrigger
-              key={tab.id}
-              value={tab.id}
-              disabled={tab.id !== 'connections' && !activeOrg.data}
-              className={'cursor-pointer'}
-            >
-              {tab.label}
-            </TabsTrigger>
-          ))}
+          {ALL_TABS.map((tab) => {
+            const isInvitations = tab.id === 'invitations';
+            const shouldShow =
+              !isInvitations ||
+              invitations.length > 0 ||
+              currentTab === 'invitations';
+
+            if (!shouldShow) return null;
+
+            return (
+              <TabsTrigger
+                key={tab.id}
+                value={tab.id}
+                className={'cursor-pointer'}
+              >
+                {tab.label}
+                {isInvitations && invitations.length > 0 && (
+                  <Badge color="blue" className="ml-2 px-1.5 py-0 text-[10px]">
+                    {invitations.length}
+                  </Badge>
+                )}
+              </TabsTrigger>
+            );
+          })}
         </TabsList>
         <TabsPanels>
-          <TabsContent value="connections" className="py-6">
-            {/* Integrations Section */}
-            <section>
-              <div className="mb-6">
-                <Subheading>Integrations</Subheading>
-                <Text className="mt-1 text-zinc-600 dark:text-zinc-400">
-                  Install apps to extend functionality.
-                </Text>
-              </div>
+          {ALL_TABS.map((tab) => {
+            const isInvitations = tab.id === 'invitations';
+            const shouldShow =
+              !isInvitations ||
+              invitations.length > 0 ||
+              currentTab === 'invitations';
 
-              <InstallGitHubApp />
-            </section>
+            if (!shouldShow) return null;
 
-            <Divider className="my-10" soft />
+            return (
+              <TabsContent key={tab.id} value={tab.id} className="py-6">
+                {tab.id === 'invitations' && <UserInvitations />}
 
-            {/* Connections Section */}
-            <section>
-              <div className="mb-6">
-                <Subheading>Connections</Subheading>
-                <Text className="mt-1 text-zinc-600 dark:text-zinc-400">
-                  Connect your accounts for authentication and data access.
-                </Text>
-              </div>
-
-              <div className="space-y-4">
-                <ConnectGitHub />
-
-                {connections.map((connection) => {
-                  const status = getConnectionStatus(
-                    connectedProviders,
-                    connection.id,
-                  );
-                  const isConnected = status === 'connected';
-
-                  return (
-                    <div
-                      key={connection.id}
-                      className="flex items-center justify-between rounded-2xl border border-zinc-200/70 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-zinc-900"
-                    >
-                      <div className="flex gap-6">
-                        <div className="space-y-1.5">
-                          <div className="text-base/6 font-semibold">
-                            {connection.name}
-                          </div>
-                          <div className="text-sm/6 text-zinc-600 dark:text-zinc-400">
-                            {connection.description}
-                          </div>
-                        </div>
+                {tab.id === 'connections' && (
+                  <>
+                    {/* Integrations Section */}
+                    <section>
+                      <div className="mb-6">
+                        <Subheading>Integrations</Subheading>
+                        <Text className="mt-1 text-zinc-600 dark:text-zinc-400">
+                          Install apps to extend functionality.
+                        </Text>
                       </div>
-                      <div className="flex items-center gap-4">
-                        <Badge
-                          className="max-sm:hidden"
-                          color={isConnected ? 'emerald' : 'zinc'}
-                        >
-                          {isConnected ? 'Connected' : 'Not connected'}
-                        </Badge>
-                        <ConnectButton
-                          provider={connection.id}
-                          disabled={isConnected}
-                        />
+
+                      <InstallGitHubApp />
+                    </section>
+
+                    <Divider className="my-10" soft />
+
+                    {/* Connections Section */}
+                    <section>
+                      <div className="mb-6">
+                        <Subheading>Connections</Subheading>
+                        <Text className="mt-1 text-zinc-600 dark:text-zinc-400">
+                          Connect your accounts for authentication and data
+                          access.
+                        </Text>
                       </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </section>
-          </TabsContent>
 
-          <TabsContent value="teams">
-            {activeOrg.data ? (
-              <div className="-mt-10">
-                <OrgTeams slug={activeOrg.data.slug} hideHeader />
-              </div>
-            ) : (
-              <div className="py-10 text-center text-zinc-500">
-                Please select an organization to manage teams.
-              </div>
-            )}
-          </TabsContent>
+                      <div className="space-y-4">
+                        <ConnectGitHub />
 
-          <TabsContent value="members">
-            {activeOrg.data ? (
-              <div className="-mt-10">
-                <OrgMembers slug={activeOrg.data.slug} hideHeader />
-              </div>
-            ) : (
-              <div className="py-10 text-center text-zinc-500">
-                Please select an organization to manage members.
-              </div>
-            )}
-          </TabsContent>
+                        {connections.map((connection) => {
+                          const status = getConnectionStatus(
+                            connectedProviders,
+                            connection.id,
+                          );
+                          const isConnected = status === 'connected';
+
+                          return (
+                            <div
+                              key={connection.id}
+                              className="flex items-center justify-between rounded-2xl border border-zinc-200/70 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-zinc-900"
+                            >
+                              <div className="flex gap-6">
+                                <div className="space-y-1.5">
+                                  <div className="text-base/6 font-semibold">
+                                    {connection.name}
+                                  </div>
+                                  <div className="text-sm/6 text-zinc-600 dark:text-zinc-400">
+                                    {connection.description}
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-4">
+                                <Badge
+                                  className="max-sm:hidden"
+                                  color={isConnected ? 'emerald' : 'zinc'}
+                                >
+                                  {isConnected ? 'Connected' : 'Not connected'}
+                                </Badge>
+                                <ConnectButton
+                                  provider={connection.id}
+                                  disabled={isConnected}
+                                />
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </section>
+                  </>
+                )}
+
+                {tab.id === 'teams' && (
+                  <>
+                    {activeOrg.data ? (
+                      <div className="-mt-10">
+                        <OrgTeams slug={activeOrg.data.slug} hideHeader />
+                      </div>
+                    ) : (
+                      <div className="py-10 text-center text-zinc-500">
+                        Please select an organization to manage teams.
+                      </div>
+                    )}
+                  </>
+                )}
+
+                {tab.id === 'members' && (
+                  <>
+                    {activeOrg.data ? (
+                      <div className="-mt-10">
+                        <OrgMembers slug={activeOrg.data.slug} hideHeader />
+                      </div>
+                    ) : (
+                      <div className="py-10 text-center text-zinc-500">
+                        Please select an organization to manage members.
+                      </div>
+                    )}
+                  </>
+                )}
+              </TabsContent>
+            );
+          })}
         </TabsPanels>
       </Tabs>
     </div>

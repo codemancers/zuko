@@ -8,8 +8,10 @@
     "ai": "^6.0.70",
     "better-auth": "1.5.0-beta.15",
     "next": "~16.0.1",
+    "nuqs": "^2.8.9",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "sonner": "^2.0.7"
   },
   "nx": {
     "targets": {
@@ -39,7 +41,9 @@
       },
       "test": {
         "executor": "@nx/vitest:test",
-        "outputs": ["{workspaceRoot}/apps/web/test-output/vitest/coverage"],
+        "outputs": [
+          "{workspaceRoot}/apps/web/test-output/vitest/coverage"
+        ],
         "options": {
           "configFile": "apps/web/vitest.config.ts"
         },

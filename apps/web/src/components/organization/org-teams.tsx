@@ -1,24 +1,14 @@
 'use client';
 
-import {
-  Heading,
-  Button,
-  Avatar,
-  Dropdown,
-  DropdownButton,
-  DropdownItem,
-  DropdownLabel,
-  DropdownMenu,
-  Link,
-  Divider,
-  Text,
-} from '@zuko/ui-kit';
-import {
-  EllipsisVerticalIcon,
-  ChevronLeftIcon,
-} from '@heroicons/react/20/solid';
+import { Heading, Button, Avatar, Link, Divider, Text } from '@zuko/ui-kit';
+import { ChevronLeftIcon } from '@heroicons/react/20/solid';
 import { useQuery } from '@tanstack/react-query';
-import { getOrganizations, getTeams } from '@/server/query-options';
+import {
+  getOrganizations,
+  getTeams,
+  getTeamMembers,
+  getMembers,
+} from '@/server/query-options';
 import { useRouter } from 'next/navigation';
 
 export const OrgTeams = ({
@@ -96,7 +86,7 @@ export const OrgTeams = ({
                     <Avatar
                       initials={team.name.charAt(0).toUpperCase()}
                       square
-                      className="size-12 shadow-sm"
+                      className="size-12 shadow-sm bg-zinc-100 text-zinc-900 dark:bg-zinc-800 dark:text-white"
                     />
                   </div>
                   <div className="space-y-1.5 flex flex-col justify-center">
@@ -111,27 +101,73 @@ export const OrgTeams = ({
                     <div className="text-xs/6 text-zinc-600 dark:text-zinc-500 font-medium italic">
                       Created on {new Date(team.createdAt).toLocaleDateString()}
                     </div>
+                    <TeamMemberAvatars
+                      teamId={team.id}
+                      organizationId={activeOrg.id}
+                    />
                   </div>
-                </div>
-                <div className="flex items-center gap-4">
-                  <Dropdown>
-                    <DropdownButton plain aria-label="More options">
-                      <EllipsisVerticalIcon className="size-5 text-zinc-400" />
-                    </DropdownButton>
-                    <DropdownMenu anchor="bottom end">
-                      <DropdownItem
-                        href={`/organization/${slug}/teams/${team.id}`}
-                      >
-                        <DropdownLabel>View Details</DropdownLabel>
-                      </DropdownItem>
-                    </DropdownMenu>
-                  </Dropdown>
                 </div>
               </div>
             </li>
           ))
         )}
       </ul>
+    </div>
+  );
+};
+
+// Sub-component to fetch and render team member avatars
+const TeamMemberAvatars = ({
+  teamId,
+  organizationId,
+}: {
+  teamId: string;
+  organizationId: string;
+}) => {
+  const { data: teamMembers = [] } = useQuery(getTeamMembers(teamId));
+  const { data: orgMembers = [] } = useQuery(getMembers(organizationId));
+
+  const enriched = teamMembers
+    .map((tm) => orgMembers.find((m) => m.user.id === tm.userId))
+    .filter(Boolean) as (typeof orgMembers)[number][];
+
+  if (enriched.length === 0) {
+    return <span className="text-xs text-zinc-400 italic">No members yet</span>;
+  }
+
+  const visible = enriched.slice(0, 5);
+  const overflow = enriched.length - visible.length;
+
+  return (
+    <div className="flex items-center gap-2">
+      <div className="flex -space-x-2">
+        {visible.map((member) => {
+          const nameToUse = member.user.name || member.user.email || '?';
+          return (
+            <Avatar
+              key={member.id}
+              src={member.user.image}
+              initials={nameToUse
+                .split(/[\s.@]+/)
+                .filter(Boolean)
+                .map((n: string) => n[0])
+                .join('')
+                .toUpperCase()
+                .slice(0, 2)}
+              className="size-6 bg-zinc-200 dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100 ring-2 ring-white dark:ring-zinc-900"
+              title={nameToUse}
+            />
+          );
+        })}
+        {overflow > 0 && (
+          <div className="size-6 rounded-full bg-zinc-200 dark:bg-zinc-700 ring-2 ring-white dark:ring-zinc-900 flex items-center justify-center text-[10px] font-medium text-zinc-600 dark:text-zinc-300">
+            +{overflow}
+          </div>
+        )}
+      </div>
+      <span className="text-xs text-zinc-500">
+        {enriched.length} {enriched.length === 1 ? 'member' : 'members'}
+      </span>
     </div>
   );
 };

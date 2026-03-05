@@ -136,3 +136,22 @@ export const getInvitations = (organizationId: string) =>
       return data || [];
     },
   });
+export const getTeamMembers = (teamId: string) =>
+  queryOptions({
+    queryKey: ['team', teamId, 'members'],
+    queryFn: async () => {
+      const { data } = await authClient.organization.listTeamMembers({
+        query: { teamId },
+      });
+      return data || [];
+    },
+  });
+
+export const getUserInvitations = () =>
+  queryOptions({
+    queryKey: ['user', 'invitations'],
+    queryFn: async () => {
+      const { data } = await authClient.organization.listUserInvitations();
+      return data || [];
+    },
+  });
