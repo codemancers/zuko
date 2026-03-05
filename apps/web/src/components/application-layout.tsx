@@ -38,7 +38,7 @@ import {
   Cog8ToothIcon,
   UserGroupIcon,
 } from '@heroicons/react/20/solid';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import { authClient } from '@/lib/auth-client';
 import { useEffect, useState } from 'react';
 import { useChats } from '@/hooks/use-chats';
@@ -81,7 +81,6 @@ export function ApplicationLayout({ children }: { children: React.ReactNode }) {
   const { data: chats = [] } = useChats();
   const recentChats = chats.slice(0, 5);
 
-  const router = useRouter();
   const { data: organizations = [] } = useQuery(getOrganizations());
   const activeOrg = authClient.useActiveOrganization();
 
@@ -155,10 +154,7 @@ export function ApplicationLayout({ children }: { children: React.ReactNode }) {
                 className="min-w-80 lg:min-w-64"
                 anchor="bottom start"
               >
-                <DropdownItem
-                  href={`/organization/${activeOrg.data?.slug}`}
-                  className="cursor-pointer"
-                >
+                <DropdownItem href={`settings`} className="cursor-pointer">
                   <Cog8ToothIcon />
                   <DropdownLabel>Settings</DropdownLabel>
                 </DropdownItem>
@@ -168,9 +164,8 @@ export function ApplicationLayout({ children }: { children: React.ReactNode }) {
                     key={org.id}
                     onClick={async () => {
                       await authClient.organization.setActive({
-                        organizationId: org.id,
+                        organizationId: org.id.toString(),
                       });
-                      router.push(`/organization/${org.slug}`);
                     }}
                     className="cursor-pointer"
                   >

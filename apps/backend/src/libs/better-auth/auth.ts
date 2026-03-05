@@ -9,6 +9,16 @@ const prisma = new PrismaService();
 const includeEmailAuth =
   process.env.NEXT_PUBLIC_BETTER_AUTH_INCLUDE_EMAILS_AUTH === 'true';
 
+async function getInitialOrganization(userId: number) {
+  const membership = await prisma.member.findFirst({
+    where: { userId },
+    include: {
+      organization: true,
+    },
+  });
+  return membership?.organization;
+}
+
 export const auth = betterAuth({
   // basePath: where auth endpoints are mounted (proxy forwards /api/auth/* to backend /auth/*)
   // In prod: proxy at /api/auth forwards to backend, so backend still serves at /auth
@@ -78,5 +88,22 @@ export const auth = betterAuth({
             sameSite: 'lax', // Standard for same-origin
             secure: false, // Allow HTTP in development
           },
+  },
+  databaseHooks: {
+    session: {
+      create: {
+        before: async (session) => {
+          const organization = await getInitialOrganization(
+            Number(session.userId),
+          );
+          return {
+            data: {
+              ...session,
+              activeOrganizationId: organization?.id?.toString(),
+            },
+          };
+        },
+      },
+    },
   },
 });

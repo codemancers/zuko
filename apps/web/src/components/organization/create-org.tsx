@@ -1,12 +1,5 @@
 'use client';
-import {
-  Button,
-  Divider,
-  Heading,
-  Input,
-  Subheading,
-  Text,
-} from '@zuko/ui-kit';
+import { Button, Divider, Heading, Input, Subheading } from '@zuko/ui-kit';
 import React from 'react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
@@ -22,7 +15,7 @@ const orgSchema = z.object({
 
 type OrgFormValues = z.infer<typeof orgSchema>;
 
-export const OrgSetting = () => {
+export const CreateOrg = () => {
   const router = useRouter();
   const form = useForm<OrgFormValues>({
     defaultValues: {
@@ -40,25 +33,46 @@ export const OrgSetting = () => {
       });
 
       if (result.error) {
-        console.error(result.error);
-        // Let's set a root error if needed or log it
+        console.error('Organization creation error:', result.error);
+        if (
+          result.error.status === 409 ||
+          result.error.message?.toLowerCase().includes('slug')
+        ) {
+          form.setError('slug', {
+            type: 'manual',
+            message: 'This slug is already taken. Please choose another one.',
+          });
+        } else {
+          form.setError('root', {
+            type: 'manual',
+            message: result.error.message || 'Failed to create organization',
+          });
+        }
       } else {
         router.push('/chat');
       }
     } catch (error) {
-      console.error(error);
+      console.error('Unexpected error:', error);
+      form.setError('root', {
+        type: 'manual',
+        message: 'An unexpected error occurred. Please try again.',
+      });
     }
   };
 
   return (
-    <form onSubmit={form.handleSubmit(onSubmit)} className="mx-auto max-w-4xl">
-      <Heading>Settings</Heading>
+    <form onSubmit={form.handleSubmit(onSubmit)} className="">
+      <Heading>Create Organization</Heading>
+      {form.formState.errors.root && (
+        <p className="mt-4 p-3 bg-red-50 border border-red-200 text-sm text-red-600 rounded-lg">
+          {form.formState.errors.root.message}
+        </p>
+      )}
       <Divider className="my-10 mt-6" />
 
       <section className="grid gap-x-8 gap-y-6 sm:grid-cols-2">
         <div className="space-y-1">
           <Subheading>Organization Name</Subheading>
-          <Text>This will be displayed on your public profile.</Text>
         </div>
         <div>
           <Input
@@ -90,7 +104,6 @@ export const OrgSetting = () => {
       <section className="grid gap-x-8 gap-y-6 sm:grid-cols-2">
         <div className="space-y-1">
           <Subheading>Organization Slug</Subheading>
-          <Text>This will be used in your public URL.</Text>
         </div>
         <div>
           <Input aria-label="Organization Slug" {...form.register('slug')} />
@@ -103,10 +116,19 @@ export const OrgSetting = () => {
       </section>
 
       <div className="flex justify-end gap-4 mt-10">
-        <Button type="button" plain onClick={() => form.reset()}>
+        <Button
+          type="button"
+          plain
+          onClick={() => form.reset()}
+          className="cursor-pointer"
+        >
           Reset
         </Button>
-        <Button type="submit" disabled={form.formState.isSubmitting}>
+        <Button
+          type="submit"
+          disabled={form.formState.isSubmitting}
+          className="cursor-pointer"
+        >
           {form.formState.isSubmitting ? 'Saving...' : 'Save changes'}
         </Button>
       </div>

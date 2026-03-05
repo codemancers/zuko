@@ -1,5 +1,5 @@
-import { OrgSetting } from '@/components/organization/org-setting';
+import { CreateOrg } from '@/components/organization/create-org';
 
 export default function OrganizationSettingsPage() {
-  return <OrgSetting />;
+  return <CreateOrg />;
 }

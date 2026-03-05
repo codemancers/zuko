@@ -21,7 +21,13 @@ import { useQuery } from '@tanstack/react-query';
 import { getOrganizations, getTeams } from '@/server/query-options';
 import { useRouter } from 'next/navigation';
 
-export const OrgTeams = ({ slug }: { slug: string }) => {
+export const OrgTeams = ({
+  slug,
+  hideHeader = false,
+}: {
+  slug: string;
+  hideHeader?: boolean;
+}) => {
   const router = useRouter();
   const { data: organizations, isLoading: isLoadingOrgs } =
     useQuery(getOrganizations());
@@ -49,23 +55,30 @@ export const OrgTeams = ({ slug }: { slug: string }) => {
   }
 
   return (
-    <div className="mx-auto max-w-4xl py-10">
-      <div className="flex items-center justify-between mb-10">
-        <Link
-          href={`/organization/${slug}`}
-          className="inline-flex items-center gap-2 text-sm/6 text-zinc-500 dark:text-zinc-400"
-        >
-          <ChevronLeftIcon className="size-4 fill-zinc-400 dark:fill-zinc-500" />
-          Back to {activeOrg.name}
-        </Link>
-      </div>
+    <div className="py-8">
+      {!hideHeader && (
+        <div className="flex items-center justify-between mb-10">
+          <Link
+            href={`/organization/${slug}`}
+            className="inline-flex items-center gap-2 text-sm/6 text-zinc-500 dark:text-zinc-400"
+          >
+            <ChevronLeftIcon className="size-4 fill-zinc-400 dark:fill-zinc-500" />
+            Back to {activeOrg.name}
+          </Link>
+        </div>
+      )}
 
       <div className="flex items-center justify-between mb-8">
-        <div>
-          <Heading>Teams</Heading>
-          <Text className="mt-1">Manage teams within {activeOrg.name}.</Text>
-        </div>
-        <Button onClick={() => router.push(`/organization/${slug}/teams/new`)}>
+        {!hideHeader && (
+          <div>
+            <Heading>Teams</Heading>
+            <Text className="mt-1">Manage teams within {activeOrg.name}.</Text>
+          </div>
+        )}
+        <Button
+          className={hideHeader ? 'ml-auto' : ''}
+          onClick={() => router.push(`/organization/${slug}/teams/new`)}
+        >
           Create Team
         </Button>
       </div>

@@ -20,7 +20,13 @@ import {
 import { useQuery } from '@tanstack/react-query';
 import { getOrganizations, getMembers } from '@/server/query-options';
 
-export const OrgMembers = ({ slug }: { slug: string }) => {
+export const OrgMembers = ({
+  slug,
+  hideHeader = false,
+}: {
+  slug: string;
+  hideHeader?: boolean;
+}) => {
   const { data: organizations, isLoading: isLoadingOrgs } =
     useQuery(getOrganizations());
   const activeOrg = organizations?.find((o) => o.slug === slug);
@@ -47,25 +53,32 @@ export const OrgMembers = ({ slug }: { slug: string }) => {
   }
 
   return (
-    <div className="mx-auto max-w-4xl py-10">
-      <div className="flex items-center justify-between mb-10">
-        <Link
-          href={`/organization/${slug}`}
-          className="inline-flex items-center gap-2 text-sm/6 text-zinc-500 dark:text-zinc-400"
-        >
-          <ChevronLeftIcon className="size-4 fill-zinc-400 dark:fill-zinc-500" />
-          Back to {activeOrg.name}
-        </Link>
-      </div>
+    <div className="py-8">
+      {!hideHeader && (
+        <div className="flex items-center justify-between mb-10">
+          <Link
+            href={`/organization/${slug}`}
+            className="inline-flex items-center gap-2 text-sm/6 text-zinc-500 dark:text-zinc-400"
+          >
+            <ChevronLeftIcon className="size-4 fill-zinc-400 dark:fill-zinc-500" />
+            Back to {activeOrg.name}
+          </Link>
+        </div>
+      )}
 
       <div className="flex items-center justify-between mb-8">
-        <div>
-          <Heading>Members</Heading>
-          <Text className="mt-1">
-            Manage who has access to {activeOrg.name}.
-          </Text>
-        </div>
-        <Button onClick={() => console.log('Invite member')}>
+        {!hideHeader && (
+          <div>
+            <Heading>Members</Heading>
+            <Text className="mt-1">
+              Manage who has access to {activeOrg.name}.
+            </Text>
+          </div>
+        )}
+        <Button
+          className={hideHeader ? 'ml-auto' : ''}
+          onClick={() => console.log('Invite member')}
+        >
           Invite Member
         </Button>
       </div>
@@ -112,11 +125,6 @@ export const OrgMembers = ({ slug }: { slug: string }) => {
                       <EllipsisVerticalIcon className="size-5 text-zinc-400" />
                     </DropdownButton>
                     <DropdownMenu anchor="bottom end">
-                      <DropdownItem
-                        href={`/organization/${slug}/members/${member.id}`}
-                      >
-                        <DropdownLabel>View Profile</DropdownLabel>
-                      </DropdownItem>
                       <DropdownItem>
                         <DropdownLabel className="text-red-500">
                           Remove Member

@@ -17,6 +17,7 @@ export * from './sidebar';
 export * from './table';
 export * from './text';
 export * from './textarea';
+export * from './tabs';
 
 // Layouts
 export * from '../layouts/auth-layout';
