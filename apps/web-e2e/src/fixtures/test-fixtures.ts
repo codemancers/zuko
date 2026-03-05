@@ -10,6 +10,7 @@ import {
   SettingsPage,
   ChatPage,
   CreateOrgPage,
+  TeamsPage,
 } from '../pages';
 import { createUserWithSession, AuthUser } from '../lib/auth';
 
@@ -24,6 +25,7 @@ type TestFixtures = {
   settingsPage: SettingsPage;
   chatPage: ChatPage;
   createOrgPage: CreateOrgPage;
+  teamsPage: TeamsPage;
   /**
    * Fixture that creates a fresh test user, injects signed session cookies into
    * the page context, and cleans up the user after the test.
@@ -71,6 +73,9 @@ export const test = base.extend<TestFixtures>({
   },
   createOrgPage: async ({ page }, use) => {
     await use(new CreateOrgPage(page));
+  },
+  teamsPage: async ({ page }, use) => {
+    await use(new TeamsPage(page));
   },
 
   // ── Auth fixture ──────────────────────────────────────────────────────────
