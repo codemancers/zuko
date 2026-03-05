@@ -154,7 +154,7 @@ export function ApplicationLayout({ children }: { children: React.ReactNode }) {
                 className="min-w-80 lg:min-w-64"
                 anchor="bottom start"
               >
-                <DropdownItem href={`settings`} className="cursor-pointer">
+                <DropdownItem href="/settings" className="cursor-pointer">
                   <Cog8ToothIcon />
                   <DropdownLabel>Settings</DropdownLabel>
                 </DropdownItem>
