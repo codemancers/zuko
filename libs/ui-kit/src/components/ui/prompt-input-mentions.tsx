@@ -95,7 +95,7 @@ const defaultMentionsStyle = {
       fontSize: '0.875rem',
       boxShadow:
         '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)',
-      maxHeight: '200px',
+      maxHeight: '360px',
       overflow: 'auto',
     },
     item: {
@@ -131,6 +131,12 @@ export const PromptInputMentions = React.forwardRef<
     ref,
   ) => {
     const containerRef = React.useRef<HTMLDivElement>(null);
+    const [portalHost, setPortalHost] = React.useState<Element | null>(null);
+
+    // Render suggestions in document.body so they escape overflow and appear outside the input
+    React.useEffect(() => {
+      setPortalHost(typeof document !== 'undefined' ? document.body : null);
+    }, []);
 
     const handleChange = React.useCallback(
       (event: any, newValue: string) => {
@@ -172,6 +178,8 @@ export const PromptInputMentions = React.forwardRef<
           className={cn('w-full', className)}
           style={defaultMentionsStyle}
           inputRef={ref as any}
+          suggestionsPortalHost={portalHost ?? undefined}
+          allowSuggestionsAboveCursor={true}
         >
           {mentionTriggers.map((config) => (
             <Mention

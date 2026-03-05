@@ -460,8 +460,10 @@ export class OrchestratorService {
                 name: (company as any).companyName ?? 'Company',
               };
             }
-            if (entity.type === 'deal') {
-              return { ...entity, name: `Deal #${entity.id}` };
+            if (entity.type === "deal" && this.dealsService) {
+              const deal = await this.dealsService.findById(entity.id);
+              const name = (deal as any).title ?? `Deal #${entity.id}`;
+              return { ...entity, name };
             }
             return { ...entity, name: 'Contact' };
           } catch (error) {
