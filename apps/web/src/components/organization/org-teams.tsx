@@ -5,7 +5,6 @@ import {
   Button,
   Avatar,
   Link,
-  Divider,
   Text,
   Table,
   TableBody,
@@ -209,8 +208,8 @@ export const OrgTeams = ({
       <Alert open={!!teamToRemove} onClose={() => setTeamToRemove(null)}>
         <AlertTitle>Remove Team</AlertTitle>
         <AlertDescription>
-          Are you sure you want to remove the team "{teamToRemove?.name}"? 
-          This will not remove members from the organization.
+          Are you sure you want to remove the team "{teamToRemove?.name}"? This
+          will not remove members from the organization.
         </AlertDescription>
         <AlertActions>
           <Button plain onClick={() => setTeamToRemove(null)}>
