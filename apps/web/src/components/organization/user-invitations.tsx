@@ -30,10 +30,10 @@ export const UserInvitations = () => {
 
       // Set the accepted organization as active
       // We find the invitation details to get the organizationId
-      const acceptedInv = invitations.find((i) => i.id === invitationId);
-      if (acceptedInv) {
+      const acceptedInvite = invitations.find((i) => i.id === invitationId);
+      if (acceptedInvite) {
         await authClient.organization.setActive({
-          organizationId: acceptedInv.organizationId,
+          organizationId: acceptedInvite.organizationId,
         });
       }
 
