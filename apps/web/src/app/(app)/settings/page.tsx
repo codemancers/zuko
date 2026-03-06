@@ -2,48 +2,32 @@
 
 import {
   Heading,
-  Subheading,
   Text,
-  Divider,
-  Badge,
   Button,
   Tabs,
   TabsList,
   TabsTrigger,
   TabsPanels,
   TabsContent,
+  Alert,
+  AlertActions,
+  AlertDescription,
+  AlertTitle,
+  Badge,
 } from '@zuko/ui-kit';
-import { ConnectButton } from './connect-button';
-import ConnectGitHub from '@/components/Settings/ConnectGitHub';
-import InstallGitHubApp from '@/components/Settings/InstallGitHubApp';
 import { useEffect, useState, Suspense } from 'react';
 import { authClient } from '@/lib/auth-client';
 import { OrgTeams } from '@/components/organization/org-teams';
 import { OrgMembers } from '@/components/organization/org-members';
 import { UserInvitations } from '@/components/organization/user-invitations';
+import { OrgConnections } from '@/components/organization/org-connections';
 import { AddMemberDialog } from '@/components/organization/add-member-dialog';
 import { AddMemberToTeamDialog } from '@/components/organization/add-member-to-team-dialog';
+import { CreateTeamDialog } from '@/components/organization/create-team-dialog';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { getUserInvitations } from '@/server/query-options';
 import { useQueryState, parseAsStringLiteral } from 'nuqs';
-
-const connections = [
-  {
-    id: 'google',
-    name: 'Google Calendar',
-    description: 'Sync events and availability for scheduling.',
-    type: 'connection' as const,
-  },
-] as const;
-
-type ConnectionId = (typeof connections)[number]['id'];
-
-const getConnectionStatus = (accounts: Set<string>, provider: ConnectionId) => {
-  if (accounts.has(provider)) {
-    return 'connected';
-  }
-  return 'not-connected';
-};
+import { toast } from 'sonner';
 
 const ALL_TABS = [
   {
@@ -99,10 +83,6 @@ function SettingsPageContent() {
   );
 
   const { data: invitations = [] } = useQuery(getUserInvitations());
-
-  const [connectedProviders, setConnectedProviders] = useState<Set<string>>(
-    new Set(),
-  );
   const activeOrg = authClient.useActiveOrganization();
 
   // Redirect to invitations tab if there are pending invitations
@@ -118,33 +98,36 @@ function SettingsPageContent() {
   // Action states
   const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
   const [isAddTeamDialogOpen, setIsAddTeamDialogOpen] = useState(false);
+  const [isCreateTeamDialogOpen, setIsCreateTeamDialogOpen] = useState(false);
+  const [teamToRemove, setTeamToRemove] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
 
-  useEffect(() => {
-    const loadData = async () => {
-      try {
-        // Fetch connected accounts from backend
-        const backendUrl =
-          process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001';
-        const response = await fetch(`${backendUrl}/api/auth/accounts`, {
-          credentials: 'include',
-        });
+  const handleRemoveTeam = async () => {
+    if (!teamToRemove || !activeOrg.data) return;
 
-        if (response.ok) {
-          const accountsData = (await response.json()) as {
-            accounts: { providerId: string }[];
-          };
-          const connectedSet = new Set<string>(
-            accountsData.accounts.map((account) => account.providerId),
-          );
-          setConnectedProviders(connectedSet);
-        }
-      } catch (error) {
-        console.error('Failed to load settings data:', error);
+    try {
+      const { error } = await authClient.organization.removeTeam({
+        teamId: teamToRemove.id,
+        organizationId: activeOrg.data.id,
+      });
+
+      if (error) {
+        toast.error(error.message || 'Failed to remove team');
+        return;
       }
-    };
 
-    loadData();
-  }, []);
+      toast.success(`Team "${teamToRemove.name}" removed`);
+      queryClient.invalidateQueries({
+        queryKey: ['organization', activeOrg.data.id, 'teams'],
+      });
+    } catch {
+      toast.error('An error occurred');
+    } finally {
+      setTeamToRemove(null);
+    }
+  };
 
   const currentTabSpec =
     ALL_TABS.find((tab) => tab.id === currentTab) || ALL_TABS[0];
@@ -194,7 +177,7 @@ function SettingsPageContent() {
               </>
             )}
             {currentTab === 'teams' && (
-              <Button href={`/organization/${activeOrg.data?.slug}/teams/new`}>
+              <Button onClick={() => setIsCreateTeamDialogOpen(true)}>
                 Create Team
               </Button>
             )}
@@ -207,76 +190,7 @@ function SettingsPageContent() {
               <TabsContent key={tab.id} value={tab.id} className="py-6">
                 {tab.id === 'invitations' && <UserInvitations />}
 
-                {tab.id === 'connections' && (
-                  <>
-                    {/* Integrations Section */}
-                    <section>
-                      <div className="mb-6">
-                        <Subheading>Integrations</Subheading>
-                        <Text className="mt-1 text-zinc-600 dark:text-zinc-400">
-                          Install apps to extend functionality.
-                        </Text>
-                      </div>
-
-                      <InstallGitHubApp />
-                    </section>
-
-                    <Divider className="my-10" soft />
-
-                    {/* Connections Section */}
-                    <section>
-                      <div className="mb-6">
-                        <Subheading>Connections</Subheading>
-                        <Text className="mt-1 text-zinc-600 dark:text-zinc-400">
-                          Connect your accounts for authentication and data
-                          access.
-                        </Text>
-                      </div>
-
-                      <div className="space-y-4">
-                        <ConnectGitHub />
-
-                        {connections.map((connection) => {
-                          const status = getConnectionStatus(
-                            connectedProviders,
-                            connection.id,
-                          );
-                          const isConnected = status === 'connected';
-
-                          return (
-                            <div
-                              key={connection.id}
-                              className="flex items-center justify-between rounded-2xl border border-zinc-200/70 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-zinc-900"
-                            >
-                              <div className="flex gap-6">
-                                <div className="space-y-1.5">
-                                  <div className="text-base/6 font-semibold">
-                                    {connection.name}
-                                  </div>
-                                  <div className="text-sm/6 text-zinc-600 dark:text-zinc-400">
-                                    {connection.description}
-                                  </div>
-                                </div>
-                              </div>
-                              <div className="flex items-center gap-4">
-                                <Badge
-                                  className="max-sm:hidden"
-                                  color={isConnected ? 'emerald' : 'zinc'}
-                                >
-                                  {isConnected ? 'Connected' : 'Not connected'}
-                                </Badge>
-                                <ConnectButton
-                                  provider={connection.id}
-                                  disabled={isConnected}
-                                />
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </section>
-                  </>
-                )}
+                {tab.id === 'connections' && <OrgConnections />}
 
                 {tab.id === 'teams' && (
                   <>
@@ -341,6 +255,32 @@ function SettingsPageContent() {
               });
             }}
           />
+          <CreateTeamDialog
+            organizationId={activeOrg.data.id}
+            isOpen={isCreateTeamDialogOpen}
+            onClose={() => setIsCreateTeamDialogOpen(false)}
+            onSuccess={() => {
+              queryClient.invalidateQueries({
+                queryKey: ['organization', activeOrg.data?.id, 'teams'],
+              });
+            }}
+          />
+
+          <Alert open={!!teamToRemove} onClose={() => setTeamToRemove(null)}>
+            <AlertTitle>Remove Team</AlertTitle>
+            <AlertDescription>
+              Are you sure you want to remove the team "{teamToRemove?.name}"?
+              This will not remove members from the organization.
+            </AlertDescription>
+            <AlertActions>
+              <Button plain onClick={() => setTeamToRemove(null)}>
+                Cancel
+              </Button>
+              <Button color="red" onClick={handleRemoveTeam}>
+                Remove
+              </Button>
+            </AlertActions>
+          </Alert>
         </>
       )}
     </div>

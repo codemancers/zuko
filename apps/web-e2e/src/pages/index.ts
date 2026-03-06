@@ -13,3 +13,5 @@ export { DealDetailPage } from './DealDetailPage';
 export { SettingsPage } from './SettingsPage';
 export { ChatPage } from './ChatPage';
 export { CreateOrgPage } from './CreateOrgPage';
+export { TeamsPage } from './TeamsPage';
+

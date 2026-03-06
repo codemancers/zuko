@@ -1,8 +1,31 @@
 'use client';
 
-import { Heading, Button, Avatar, Link, Divider, Text } from '@zuko/ui-kit';
-import { ChevronLeftIcon } from '@heroicons/react/20/solid';
-import { useQuery } from '@tanstack/react-query';
+import {
+  Heading,
+  Button,
+  Avatar,
+  Link,
+  Text,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+  Dropdown,
+  DropdownButton,
+  DropdownItem,
+  DropdownMenu,
+  Alert,
+  AlertActions,
+  AlertDescription,
+  AlertTitle,
+} from '@zuko/ui-kit';
+import {
+  ChevronLeftIcon,
+  EllipsisVerticalIcon,
+} from '@heroicons/react/20/solid';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   getOrganizations,
   getTeams,
@@ -10,6 +33,10 @@ import {
   getMembers,
 } from '@/server/query-options';
 import { useRouter } from 'next/navigation';
+import { useState } from 'react';
+import { CreateTeamDialog } from './create-team-dialog';
+import { authClient } from '@/lib/auth-client';
+import { toast } from 'sonner';
 
 export const OrgTeams = ({
   slug,
@@ -19,6 +46,17 @@ export const OrgTeams = ({
   hideHeader?: boolean;
 }) => {
   const router = useRouter();
+  const queryClient = useQueryClient();
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [teamToEdit, setTeamToEdit] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
+  const [teamToRemove, setTeamToRemove] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
+
   const { data: organizations, isLoading: isLoadingOrgs } =
     useQuery(getOrganizations());
   const activeOrg = organizations?.find((o) => o.slug === slug);
@@ -27,6 +65,31 @@ export const OrgTeams = ({
     ...getTeams(activeOrg?.id || ''),
     enabled: !!activeOrg?.id,
   });
+
+  const handleRemoveTeam = async () => {
+    if (!teamToRemove || !activeOrg) return;
+
+    try {
+      const { error } = await authClient.organization.removeTeam({
+        teamId: teamToRemove.id,
+        organizationId: activeOrg.id,
+      });
+
+      if (error) {
+        toast.error(error.message || 'Failed to remove team');
+        return;
+      }
+
+      toast.success(`Team "${teamToRemove.name}" removed`);
+      queryClient.invalidateQueries({
+        queryKey: ['organization', activeOrg.id, 'teams'],
+      });
+    } catch {
+      toast.error('An error occurred');
+    } finally {
+      setTeamToRemove(null);
+    }
+  };
 
   const isLoading = isLoadingOrgs || (!!activeOrg && isLoadingTeams);
 
@@ -64,50 +127,122 @@ export const OrgTeams = ({
             <Heading>Teams</Heading>
             <Text className="mt-1">Manage teams within {activeOrg.name}.</Text>
           </div>
-          <Button
-            onClick={() => router.push(`/organization/${slug}/teams/new`)}
-          >
+          <Button onClick={() => setIsCreateDialogOpen(true)}>
             Create Team
           </Button>
         </div>
       )}
 
-      <ul className="mt-10">
-        {teams.length === 0 ? (
-          <li className="py-12 text-center text-zinc-500">No teams found.</li>
-        ) : (
-          teams.map((team, index) => (
-            <li key={team.id}>
-              {index > 0 && <Divider soft />}
-              <div className="flex items-center justify-between">
-                <div className="flex gap-6 py-8">
-                  <div className="shrink-0">
+      <Table className="mt-10 [--gutter:--spacing(6)] lg:[--gutter:--spacing(10)]">
+        <TableHead>
+          <TableRow>
+            <TableHeader>Team</TableHeader>
+            <TableHeader>Created On</TableHeader>
+            <TableHeader>Members</TableHeader>
+            <TableHeader className="text-right">Actions</TableHeader>
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          {teams.length === 0 ? (
+            <TableRow>
+              <TableCell
+                colSpan={4}
+                className="py-12 text-center text-zinc-500"
+              >
+                No teams found.
+              </TableCell>
+            </TableRow>
+          ) : (
+            teams.map((team) => (
+              <TableRow key={team.id}>
+                <TableCell>
+                  <div className="flex items-center gap-4">
                     <Avatar
                       initials={team.name.charAt(0).toUpperCase()}
-                      className="size-12 shadow-sm bg-zinc-100 text-zinc-900 dark:bg-zinc-800 dark:text-white"
+                      className="size-8 shadow-sm bg-zinc-100 text-zinc-900 dark:bg-zinc-800 dark:text-white"
+                    />
+                    <span className="text-sm font-medium text-zinc-950 dark:text-white">
+                      {team.name}
+                    </span>
+                  </div>
+                </TableCell>
+                <TableCell className="text-zinc-500 text-sm">
+                  {new Date(team.createdAt).toLocaleDateString()}
+                </TableCell>
+                <TableCell>
+                  <TeamMemberAvatars
+                    teamId={team.id}
+                    organizationId={activeOrg.id}
+                  />
+                </TableCell>
+                <TableCell className="text-right">
+                  <div className="flex justify-end pr-2">
+                    <TeamDropdownMenu
+                      onEdit={() => setTeamToEdit(team)}
+                      onRemove={() => setTeamToRemove(team)}
                     />
                   </div>
-                  <div className="space-y-1.5 flex flex-col justify-center">
-                    <div className="text-base/6 font-semibold">
-                      <div className="text-zinc-950 dark:text-white transition-colors">
-                        {team.name}
-                      </div>
-                    </div>
-                    <div className="text-xs/6 text-zinc-600 dark:text-zinc-500 font-medium italic">
-                      Created on {new Date(team.createdAt).toLocaleDateString()}
-                    </div>
-                    <TeamMemberAvatars
-                      teamId={team.id}
-                      organizationId={activeOrg.id}
-                    />
-                  </div>
-                </div>
-              </div>
-            </li>
-          ))
-        )}
-      </ul>
+                </TableCell>
+              </TableRow>
+            ))
+          )}
+        </TableBody>
+      </Table>
+
+      <CreateTeamDialog
+        organizationId={activeOrg.id}
+        isOpen={isCreateDialogOpen || !!teamToEdit}
+        onClose={() => {
+          setIsCreateDialogOpen(false);
+          setTeamToEdit(null);
+        }}
+        initialData={teamToEdit || undefined}
+        onSuccess={() => {
+          if (!teamToEdit) {
+            router.push('/settings?tab=teams');
+            router.refresh();
+          }
+        }}
+      />
+
+      <Alert open={!!teamToRemove} onClose={() => setTeamToRemove(null)}>
+        <AlertTitle>Remove Team</AlertTitle>
+        <AlertDescription>
+          Are you sure you want to remove the team "{teamToRemove?.name}"? This
+          will not remove members from the organization.
+        </AlertDescription>
+        <AlertActions>
+          <Button plain onClick={() => setTeamToRemove(null)}>
+            Cancel
+          </Button>
+          <Button color="red" onClick={handleRemoveTeam}>
+            Remove
+          </Button>
+        </AlertActions>
+      </Alert>
     </div>
+  );
+};
+
+const TeamDropdownMenu = ({
+  onEdit,
+  onRemove,
+}: {
+  onEdit: () => void;
+  onRemove: () => void;
+}) => {
+  return (
+    <Dropdown>
+      <DropdownButton plain aria-label="More options">
+        <EllipsisVerticalIcon className="size-5" />
+      </DropdownButton>
+      <DropdownMenu>
+        <DropdownItem onClick={onEdit}>Update Team</DropdownItem>
+        <DropdownItem onClick={onRemove}>
+          <span className="text-red-600 dark:text-red-500">Remove Team</span>
+        </DropdownItem>
+      </DropdownMenu>
+    </Dropdown>
   );
 };
 
@@ -160,9 +295,6 @@ const TeamMemberAvatars = ({
           </div>
         )}
       </div>
-      <span className="text-xs text-zinc-500">
-        {enriched.length} {enriched.length === 1 ? 'member' : 'members'}
-      </span>
     </div>
   );
 };
