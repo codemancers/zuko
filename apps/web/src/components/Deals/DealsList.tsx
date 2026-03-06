@@ -2,25 +2,17 @@
 
 import { BriefcaseIcon, PlusIcon } from '@heroicons/react/24/outline';
 import {
-  Badge,
   Divider,
   Heading,
-  Link,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
   Button,
   Input,
 } from '@zuko/ui-kit';
 import { useQuery } from '@tanstack/react-query';
 import { getDeals } from '@/server/query-options';
-import dayjs from 'dayjs';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import type { Deal } from '@/lib/api/deals';
+import { dealColumns } from './columns';
+import { BaseTable } from '../Table';
 
 const DealsList = () => {
   const router = useRouter();
@@ -77,52 +69,6 @@ const DealsList = () => {
     router.push('/deals/new');
   };
 
-  const getPrimaryOwner = (deal: Deal) => {
-    const primaryOwner = deal.owners.find((o) => o.isPrimary);
-    return primaryOwner?.user.name || deal.owners[0]?.user.name || '-';
-  };
-
-  const getPrimaryCompany = (deal: Deal) => {
-    if (!deal.companies || deal.companies.length === 0) return null;
-    const primaryCompany = deal.companies.find((a) => a.isPrimary);
-    return primaryCompany || deal.companies[0] || null;
-  };
-
-  const formatCurrency = (value?: number, currency?: string) => {
-    if (value === undefined || value === null) return '-';
-    const curr = currency || 'USD';
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: curr,
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(value);
-  };
-
-  const getStageColor = (
-    stage: string,
-  ): 'zinc' | 'blue' | 'yellow' | 'green' | 'red' => {
-    const stageColors: Record<
-      string,
-      'zinc' | 'blue' | 'yellow' | 'green' | 'red'
-    > = {
-      prospecting: 'zinc',
-      qualification: 'blue',
-      proposal: 'yellow',
-      negotiation: 'yellow',
-      closed_won: 'green',
-      closed_lost: 'red',
-    };
-    return stageColors[stage] || 'zinc';
-  };
-
-  const formatStage = (stage: string) => {
-    return stage
-      .split('_')
-      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(' ');
-  };
-
   return (
     <>
       <div className="flex items-start justify-between">
@@ -151,122 +97,24 @@ const DealsList = () => {
         />
       </div>
 
-      {isLoading && (
-        <div className="mt-8 flex items-center justify-center">
-          <div className="text-sm text-zinc-600 dark:text-zinc-400">
-            Loading deals...
-          </div>
-        </div>
-      )}
-
-      {!isLoading && (
-        <div className="mt-8">
-          {deals.length === 0 ? (
-            <EmptyDealsList />
-          ) : (
-            <div className="flow-root">
-              <Table className="[--gutter:--spacing(6)] lg:[--gutter:--spacing(10)]">
-                <TableHead>
-                  <TableRow>
-                    <TableHeader>Title</TableHeader>
-                    <TableHeader>Value</TableHeader>
-                    <TableHeader>Stage</TableHeader>
-                    <TableHeader>Probability</TableHeader>
-                    <TableHeader>Owner</TableHeader>
-                    <TableHeader>Expected Close</TableHeader>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {sortedDeals.map((deal: Deal) => {
-                    const company = getPrimaryCompany(deal);
-                    return (
-                      <TableRow
-                        key={deal.id}
-                        className="transition-all duration-200 ease-in hover:cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-800/50"
-                        onClick={() => handleDealClick(deal.id)}
-                      >
-                        <TableCell className="align-top">
-                          <div className="flex items-center gap-3">
-                            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-zinc-100 dark:bg-zinc-800">
-                              <BriefcaseIcon className="h-5 w-5 text-zinc-600 dark:text-zinc-400" />
-                            </div>
-                            <div>
-                              <div className="font-medium">{deal.title}</div>
-                              {company && (
-                                <Link
-                                  href={`/companies/${company.companyId}`}
-                                  className="text-xs text-zinc-500 hover:text-zinc-700 dark:text-zinc-500 dark:hover:text-zinc-300 hover:underline"
-                                >
-                                  {company.company.companyName}
-                                </Link>
-                              )}
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell className="align-top text-sm text-zinc-600 dark:text-zinc-400">
-                          {formatCurrency(deal.value, deal.currency)}
-                        </TableCell>
-                        <TableCell className="align-top">
-                          <Badge
-                            color={getStageColor(deal.stage)}
-                            className="text-xs"
-                          >
-                            {formatStage(deal.stage)}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="align-top text-sm text-zinc-600 dark:text-zinc-400">
-                          {deal.probability !== undefined &&
-                          deal.probability !== null
-                            ? `${deal.probability}%`
-                            : '-'}
-                        </TableCell>
-                        <TableCell className="align-top text-sm text-zinc-600 dark:text-zinc-400">
-                          {getPrimaryOwner(deal)}
-                        </TableCell>
-                        <TableCell className="align-top text-sm text-zinc-600 dark:text-zinc-400">
-                          {deal.expectedCloseDate
-                            ? dayjs(deal.expectedCloseDate).format(
-                                'MMM D, YYYY',
-                              )
-                            : '-'}
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-
-              {/* Pagination Info */}
-              {data?.pagination && (
-                <div className="mt-4 text-sm text-zinc-600 dark:text-zinc-400">
-                  Showing {sortedDeals.length} of {data.pagination.total} deals
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      )}
+      <BaseTable
+        columns={dealColumns}
+        data={sortedDeals}
+        loading={isLoading}
+        onRowClick={(deal) => handleDealClick(deal.id)}
+        totalCount={data?.pagination?.total}
+        entityName="deals"
+        emptyStateConfig={{
+          icon: BriefcaseIcon,
+          title: 'No Deals',
+          description: 'Get started by creating a new deal.',
+          action: {
+            label: 'New Deal',
+            onClick: handleNewDeal,
+          },
+        }}
+      />
     </>
-  );
-};
-
-export const EmptyDealsList = () => {
-  return (
-    <div className="mt-40 text-center">
-      <BriefcaseIcon className="mx-auto h-12 w-12 text-zinc-400" />
-      <h3 className="mt-2 text-sm font-semibold text-zinc-950 dark:text-white">
-        No Deals
-      </h3>
-      <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
-        Get started by creating a new deal.
-      </p>
-      <div className="mt-6">
-        <Button href="/deals/new">
-          <PlusIcon className="h-4 w-4" />
-          New Deal
-        </Button>
-      </div>
-    </div>
   );
 };
 

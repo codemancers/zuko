@@ -7,7 +7,7 @@ import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import DealForm from '@/components/Deals/DealForm';
-import DealsList, { EmptyDealsList } from '@/components/Deals/DealsList';
+import DealsList from '@/components/Deals/DealsList';
 import DealDetail from '@/components/Deals/DealDetail';
 import type { Deal } from '@/lib/api/deals';
 
@@ -560,19 +560,4 @@ describe('DealDetail', () => {
   });
 });
 
-describe('EmptyDealsList', () => {
-  it('renders empty state message', () => {
-    render(<EmptyDealsList />);
-    expect(screen.getByText('No Deals')).toBeInTheDocument();
-    expect(
-      screen.getByText(/get started by creating a new deal/i)
-    ).toBeInTheDocument();
-  });
 
-  it('renders New Deal button/link', () => {
-    render(<EmptyDealsList />);
-    const link = screen.getByRole('link', { name: /new deal/i });
-    expect(link).toBeInTheDocument();
-    expect(link).toHaveAttribute('href', '/deals/new');
-  });
-});
