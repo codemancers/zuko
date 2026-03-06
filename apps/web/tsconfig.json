@@ -23,7 +23,7 @@
       "@zuko/ui-kit": ["../../libs/ui-kit/src/index.ts"],
       "@zuko/ui-kit/*": ["../../libs/ui-kit/src/*"]
     },
-    "types": ["node"],
+    "types": ["node", "@testing-library/jest-dom"],
     "outDir": "dist",
     "tsBuildInfoFile": "dist/tsconfig.tsbuildinfo"
   },
@@ -32,6 +32,8 @@
     "src/**/*.tsx",
     "src/**/*.js",
     "src/**/*.jsx",
+    "__tests__/**/*.ts",
+    "__tests__/**/*.tsx",
     "../../apps/web/.next/types/**/*.ts",
     "../../dist/apps/web/.next/types/**/*.ts",
     "next-env.d.ts"

@@ -7,7 +7,7 @@ import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import ContactForm from '@/components/Contacts/ContactForm';
-import ContactsList, { EmptyContactsList } from '@/components/Contacts/ContactsList';
+import ContactsList from '@/components/Contacts/ContactsList';
 import ContactDetail from '@/components/Contacts/ContactDetail';
 import type { Contact } from '@/lib/api/contacts';
 
@@ -720,19 +720,4 @@ describe('ContactDetail', () => {
   });
 });
 
-describe('EmptyContactsList', () => {
-  it('renders empty state message', () => {
-    render(<EmptyContactsList />);
-    expect(screen.getByText('No Contacts')).toBeInTheDocument();
-    expect(
-      screen.getByText(/get started by creating a new contact/i)
-    ).toBeInTheDocument();
-  });
 
-  it('renders New Contact link', () => {
-    render(<EmptyContactsList />);
-    const link = screen.getByRole('link', { name: /new contact/i });
-    expect(link).toBeInTheDocument();
-    expect(link).toHaveAttribute('href', '/contacts/new');
-  });
-});

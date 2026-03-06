@@ -86,6 +86,7 @@ export {
   TooltipContent,
   TooltipProvider,
 } from './components/ui/tooltip';
+export { Spinner } from './components/ui/spinner';
 export { AuthLayout } from './layouts/auth-layout';
 
 export {

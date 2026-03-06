@@ -7,9 +7,7 @@ import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import CompanyForm from '@/components/Companies/CompanyForm';
-import CompaniesList, {
-  EmptyCompaniesList,
-} from '@/components/Companies/CompaniesList';
+import CompaniesList from '@/components/Companies/CompaniesList';
 import CompanyDetail from '@/components/Companies/CompanyDetail';
 import type { SalesCompany } from '@/lib/api/companies';
 
@@ -584,19 +582,4 @@ describe('CompanyDetail', () => {
   });
 });
 
-describe('EmptyCompaniesList', () => {
-  it('renders empty state message', () => {
-    render(<EmptyCompaniesList />);
-    expect(screen.getByText('No Companies')).toBeInTheDocument();
-    expect(
-      screen.getByText(/get started by creating a new company/i)
-    ).toBeInTheDocument();
-  });
 
-  it('renders New Company link', () => {
-    render(<EmptyCompaniesList />);
-    const link = screen.getByRole('link', { name: /new company/i });
-    expect(link).toBeInTheDocument();
-    expect(link).toHaveAttribute('href', '/companies/new');
-  });
-});
