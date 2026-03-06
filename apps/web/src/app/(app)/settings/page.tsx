@@ -176,10 +176,7 @@ function SettingsPageContent() {
                 >
                   {tab.label}
                   {isInvitations && invitations.length > 0 && (
-                    <Badge
-                      color="blue"
-                      className="ml-2 px-1.5 py-0 text-[10px]"
-                    >
+                    <Badge color="blue" className="ml-2 px-1.5 py-0 text-xs">
                       {invitations.length}
                     </Badge>
                   )}
