@@ -10,6 +10,8 @@ import {
   getMembers,
 } from '@/server/query-options';
 import { useRouter } from 'next/navigation';
+import { useState } from 'react';
+import { CreateTeamDialog } from './create-team-dialog';
 
 export const OrgTeams = ({
   slug,
@@ -19,6 +21,7 @@ export const OrgTeams = ({
   hideHeader?: boolean;
 }) => {
   const router = useRouter();
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const { data: organizations, isLoading: isLoadingOrgs } =
     useQuery(getOrganizations());
   const activeOrg = organizations?.find((o) => o.slug === slug);
@@ -64,9 +67,7 @@ export const OrgTeams = ({
             <Heading>Teams</Heading>
             <Text className="mt-1">Manage teams within {activeOrg.name}.</Text>
           </div>
-          <Button
-            onClick={() => router.push(`/organization/${slug}/teams/new`)}
-          >
+          <Button onClick={() => setIsCreateDialogOpen(true)}>
             Create Team
           </Button>
         </div>
@@ -107,6 +108,16 @@ export const OrgTeams = ({
           ))
         )}
       </ul>
+
+      <CreateTeamDialog
+        organizationId={activeOrg.id}
+        isOpen={isCreateDialogOpen}
+        onClose={() => setIsCreateDialogOpen(false)}
+        onSuccess={() => {
+          router.push('/settings?tab=teams');
+          router.refresh();
+        }}
+      />
     </div>
   );
 };

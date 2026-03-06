@@ -15,7 +15,7 @@ export class TeamsPage extends BasePage {
     this.teamList = page.locator('ul.mt-10'); // Based on org-teams.tsx
   }
 
-  async goto(slug: string) {
+  override async goto(slug: string) {
     await this.page.goto(`/organization/${slug}/teams`);
   }
 

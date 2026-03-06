@@ -22,8 +22,13 @@ test.describe('Team Management', () => {
     const teamName = `Engineering ${Date.now()}`;
     await teamsPage.createTeam(teamName);
 
-    // 4. Verify team is created and visible in the list
+    // 4. Verify team is created and redirected to settings
     await expect(page.getByText(`Team "${teamName}" created successfully`)).toBeVisible();
-    await expect(teamsPage.teamList).toContainText(teamName);
+    
+    // Should be redirected to settings with tab=teams
+    await page.waitForURL('**/settings?tab=teams');
+    
+    // Verify team is visible in the list on settings page
+    await expect(page.locator('ul.mt-10')).toContainText(teamName);
   });
 });
