@@ -12,6 +12,10 @@ import {
   TabsTrigger,
   TabsPanels,
   TabsContent,
+  Alert,
+  AlertActions,
+  AlertDescription,
+  AlertTitle,
 } from '@zuko/ui-kit';
 import { ConnectButton } from './connect-button';
 import ConnectGitHub from '@/components/Settings/ConnectGitHub';
@@ -27,6 +31,7 @@ import { CreateTeamDialog } from '@/components/organization/create-team-dialog';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { getUserInvitations } from '@/server/query-options';
 import { useQueryState, parseAsStringLiteral } from 'nuqs';
+import { toast } from 'sonner';
 
 const connections = [
   {
@@ -120,6 +125,34 @@ function SettingsPageContent() {
   const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
   const [isAddTeamDialogOpen, setIsAddTeamDialogOpen] = useState(false);
   const [isCreateTeamDialogOpen, setIsCreateTeamDialogOpen] = useState(false);
+  const [teamToRemove, setTeamToRemove] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
+
+  const handleRemoveTeam = async () => {
+    if (!teamToRemove || !activeOrg.data) return;
+
+    try {
+      const { error } = await authClient.organization.deleteTeam({
+        teamId: teamToRemove.id,
+      });
+
+      if (error) {
+        toast.error(error.message || 'Failed to remove team');
+        return;
+      }
+
+      toast.success(`Team "${teamToRemove.name}" removed`);
+      queryClient.invalidateQueries({
+        queryKey: ['organization', activeOrg.data.id, 'teams'],
+      });
+    } catch {
+      toast.error('An error occurred');
+    } finally {
+      setTeamToRemove(null);
+    }
+  };
 
   useEffect(() => {
     const loadData = async () => {
@@ -356,6 +389,22 @@ function SettingsPageContent() {
               });
             }}
           />
+
+          <Alert open={!!teamToRemove} onClose={() => setTeamToRemove(null)}>
+            <AlertTitle>Remove Team</AlertTitle>
+            <AlertDescription>
+              Are you sure you want to remove the team "{teamToRemove?.name}"? 
+              This will not remove members from the organization.
+            </AlertDescription>
+            <AlertActions>
+              <Button plain onClick={() => setTeamToRemove(null)}>
+                Cancel
+              </Button>
+              <Button color="red" onClick={handleRemoveTeam}>
+                Remove
+              </Button>
+            </AlertActions>
+          </Alert>
         </>
       )}
     </div>

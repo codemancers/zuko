@@ -12,7 +12,7 @@ import {
   Input,
   ErrorMessage,
 } from '@zuko/ui-kit';
-import React from 'react';
+import React, { useEffect } from 'react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -31,6 +31,10 @@ interface CreateTeamDialogProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
+  initialData?: {
+    id: string;
+    name: string;
+  };
 }
 
 export const CreateTeamDialog = ({
@@ -38,8 +42,10 @@ export const CreateTeamDialog = ({
   isOpen,
   onClose,
   onSuccess,
+  initialData,
 }: CreateTeamDialogProps) => {
   const queryClient = useQueryClient();
+  const isUpdating = !!initialData;
   const form = useForm<TeamFormValues>({
     defaultValues: {
       name: '',
@@ -47,21 +53,39 @@ export const CreateTeamDialog = ({
     resolver: zodResolver(teamSchema),
   });
 
+  useEffect(() => {
+    if (isOpen) {
+      form.reset({
+        name: initialData?.name || '',
+      });
+    }
+  }, [isOpen, initialData, form]);
+
   const onSubmit = async (data: TeamFormValues) => {
     try {
-      const result = await authClient.organization.createTeam({
-        name: data.name,
-        organizationId: organizationId,
-      });
+      let error;
+      if (isUpdating) {
+        const result = await authClient.organization.updateTeam({
+          teamId: initialData.id,
+          name: data.name,
+        });
+        error = result.error;
+      } else {
+        const result = await authClient.organization.createTeam({
+          name: data.name,
+          organizationId: organizationId,
+        });
+        error = result.error;
+      }
 
-      if (result.error) {
-        console.error('Team creation error:', result.error);
+      if (error) {
+        console.error('Team operation error:', error);
         form.setError('root', {
           type: 'manual',
-          message: result.error.message || 'Failed to create team',
+          message: error.message || `Failed to ${isUpdating ? 'update' : 'create'} team`,
         });
       } else {
-        toast.success(`Team "${data.name}" created successfully`);
+        toast.success(`Team "${data.name}" ${isUpdating ? 'updated' : 'created'} successfully`);
         queryClient.invalidateQueries({
           queryKey: ['organization', organizationId, 'teams'],
         });
@@ -85,9 +109,11 @@ export const CreateTeamDialog = ({
 
   return (
     <Dialog open={isOpen} onClose={handleClose}>
-      <DialogTitle>Create Team</DialogTitle>
+      <DialogTitle>{isUpdating ? 'Update Team' : 'Create Team'}</DialogTitle>
       <DialogDescription>
-        Teams allow you to group members within your organization.
+        {isUpdating 
+          ? 'Update the details for this team.' 
+          : 'Teams allow you to group members within your organization.'}
       </DialogDescription>
       <form onSubmit={form.handleSubmit(onSubmit)}>
         <DialogBody className="space-y-4">
@@ -111,7 +137,9 @@ export const CreateTeamDialog = ({
             Cancel
           </Button>
           <Button type="submit" disabled={form.formState.isSubmitting}>
-            {form.formState.isSubmitting ? 'Creating...' : 'Create Team'}
+            {form.formState.isSubmitting 
+              ? (isUpdating ? 'Updating...' : 'Creating...') 
+              : (isUpdating ? 'Update Team' : 'Create Team')}
           </Button>
         </DialogActions>
       </form>
