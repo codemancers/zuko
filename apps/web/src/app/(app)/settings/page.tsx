@@ -134,8 +134,9 @@ function SettingsPageContent() {
     if (!teamToRemove || !activeOrg.data) return;
 
     try {
-      const { error } = await authClient.organization.deleteTeam({
+      const { error } = await authClient.organization.removeTeam({
         teamId: teamToRemove.id,
+        organizationId: activeOrg.data.id,
       });
 
       if (error) {

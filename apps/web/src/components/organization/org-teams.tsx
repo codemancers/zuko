@@ -71,8 +71,9 @@ export const OrgTeams = ({
     if (!teamToRemove || !activeOrg) return;
 
     try {
-      const { error } = await authClient.organization.deleteTeam({
+      const { error } = await authClient.organization.removeTeam({
         teamId: teamToRemove.id,
+        organizationId: activeOrg.id,
       });
 
       if (error) {

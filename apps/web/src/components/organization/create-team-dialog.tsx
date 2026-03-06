@@ -67,7 +67,9 @@ export const CreateTeamDialog = ({
       if (isUpdating) {
         const result = await authClient.organization.updateTeam({
           teamId: initialData.id,
-          name: data.name,
+          data: {
+            name: data.name,
+          },
         });
         error = result.error;
       } else {
