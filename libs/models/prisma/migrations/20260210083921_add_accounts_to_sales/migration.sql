@@ -1,5 +1,5 @@
 -- CreateTable
-CREATE TABLE "sales"."account" (
+CREATE TABLE "sales"."company" (
     "id" SERIAL NOT NULL,
     "company_name" TEXT NOT NULL,
     "website" TEXT,
@@ -9,13 +9,13 @@ CREATE TABLE "sales"."account" (
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
 
-    CONSTRAINT "account_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "company_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
-CREATE TABLE "sales"."account_contact" (
+CREATE TABLE "sales"."company_contact" (
     "id" SERIAL NOT NULL,
-    "account_id" INTEGER NOT NULL,
+    "company_id" INTEGER NOT NULL,
     "contact_id" INTEGER NOT NULL,
     "joined_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "left_at" TIMESTAMP(3),
@@ -24,52 +24,52 @@ CREATE TABLE "sales"."account_contact" (
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
 
-    CONSTRAINT "account_contact_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "company_contact_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
-CREATE TABLE "sales"."account_owner" (
+CREATE TABLE "sales"."company_owner" (
     "id" SERIAL NOT NULL,
-    "account_id" INTEGER NOT NULL,
+    "company_id" INTEGER NOT NULL,
     "user_id" INTEGER NOT NULL,
     "is_primary" BOOLEAN NOT NULL DEFAULT false,
     "assigned_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
-    CONSTRAINT "account_owner_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "company_owner_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateIndex
-CREATE INDEX "account_is_hidden_idx" ON "sales"."account"("is_hidden");
+CREATE INDEX "company_is_hidden_idx" ON "sales"."company"("is_hidden");
 
 -- CreateIndex
-CREATE INDEX "account_company_name_idx" ON "sales"."account"("company_name");
+CREATE INDEX "company_company_name_idx" ON "sales"."company"("company_name");
 
 -- CreateIndex
-CREATE INDEX "account_contact_account_id_idx" ON "sales"."account_contact"("account_id");
+CREATE INDEX "company_contact_company_id_idx" ON "sales"."company_contact"("company_id");
 
 -- CreateIndex
-CREATE INDEX "account_contact_contact_id_idx" ON "sales"."account_contact"("contact_id");
+CREATE INDEX "company_contact_contact_id_idx" ON "sales"."company_contact"("contact_id");
 
 -- CreateIndex
-CREATE INDEX "account_contact_left_at_idx" ON "sales"."account_contact"("left_at");
+CREATE INDEX "company_contact_left_at_idx" ON "sales"."company_contact"("left_at");
 
 -- CreateIndex
-CREATE INDEX "account_owner_user_id_idx" ON "sales"."account_owner"("user_id");
+CREATE INDEX "company_owner_user_id_idx" ON "sales"."company_owner"("user_id");
 
 -- CreateIndex
-CREATE INDEX "account_owner_account_id_idx" ON "sales"."account_owner"("account_id");
+CREATE INDEX "company_owner_company_id_idx" ON "sales"."company_owner"("company_id");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "account_owner_account_id_user_id_key" ON "sales"."account_owner"("account_id", "user_id");
+CREATE UNIQUE INDEX "company_owner_company_id_user_id_key" ON "sales"."company_owner"("company_id", "user_id");
 
 -- AddForeignKey
-ALTER TABLE "sales"."account_contact" ADD CONSTRAINT "account_contact_account_id_fkey" FOREIGN KEY ("account_id") REFERENCES "sales"."account"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "sales"."company_contact" ADD CONSTRAINT "company_contact_company_id_fkey" FOREIGN KEY ("company_id") REFERENCES "sales"."company"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "sales"."account_contact" ADD CONSTRAINT "account_contact_contact_id_fkey" FOREIGN KEY ("contact_id") REFERENCES "sales"."contact"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "sales"."company_contact" ADD CONSTRAINT "company_contact_contact_id_fkey" FOREIGN KEY ("contact_id") REFERENCES "sales"."contact"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "sales"."account_owner" ADD CONSTRAINT "account_owner_account_id_fkey" FOREIGN KEY ("account_id") REFERENCES "sales"."account"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "sales"."company_owner" ADD CONSTRAINT "company_owner_company_id_fkey" FOREIGN KEY ("company_id") REFERENCES "sales"."company"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "sales"."account_owner" ADD CONSTRAINT "account_owner_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "user"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "sales"."company_owner" ADD CONSTRAINT "company_owner_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "user"("id") ON DELETE CASCADE ON UPDATE CASCADE;
