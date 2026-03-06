@@ -19,9 +19,13 @@ export default function InstallGitHubApp() {
   const checkInstallationStatus = async () => {
     try {
       const data = await getGitHubInstallationStatus();
-      setStatus(data);
+      if (data) {
+        setStatus(data);
+      }
     } catch (error) {
-      console.error('Failed to check GitHub App installation status:', error);
+      console.warn('Failed to check GitHub App installation status:', error);
+      // Fallback to non-installed state instead of crashing
+      setStatus({ installed: false });
     } finally {
       setLoading(false);
     }

@@ -4,9 +4,23 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { NuqsTestingAdapter } from 'nuqs/adapters/testing';
 import SettingsPage from '@/app/(app)/settings/page';
 import ConnectGitHub from '@/components/Settings/ConnectGitHub';
 import InstallGitHubApp from '@/components/Settings/InstallGitHubApp';
+
+// Helper to create a fresh QueryClient and render with required providers
+function renderWithProviders(ui: React.ReactElement) {
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
+  return render(
+    <QueryClientProvider client={queryClient}>
+      <NuqsTestingAdapter>{ui}</NuqsTestingAdapter>
+    </QueryClientProvider>,
+  );
+}
 
 const mockListAccounts = vi.fn();
 const mockLinkSocial = vi.fn();
@@ -23,6 +37,26 @@ const mockGetGitHubInstallationUrl = vi.fn();
 vi.mock('@/server/actions/github', () => ({
   getGitHubInstallationStatus: () => mockGetGitHubInstallationStatus(),
   getGitHubInstallationUrl: () => mockGetGitHubInstallationUrl(),
+}));
+
+// Stub query-options so SettingsPage's useQuery calls resolve immediately
+vi.mock('@/server/query-options', () => ({
+  getUserInvitations: vi.fn(() => ({
+    queryKey: ['user', 'invitations'],
+    queryFn: async () => [],
+  })),
+  getOrganizations: vi.fn(() => ({
+    queryKey: ['organizations'],
+    queryFn: async () => [],
+  })),
+  getMembers: vi.fn((id: string) => ({
+    queryKey: ['members', id],
+    queryFn: async () => [],
+  })),
+  getTeams: vi.fn((id: string) => ({
+    queryKey: ['teams', id],
+    queryFn: async () => [],
+  })),
 }));
 
 describe('SettingsPage', () => {
@@ -43,7 +77,7 @@ describe('SettingsPage', () => {
       json: () => Promise.resolve({ accounts: [] }),
     } as Response);
 
-    render(<SettingsPage />);
+    renderWithProviders(<SettingsPage />);
     expect(
       screen.getByRole('heading', { name: 'Settings', level: 1 }),
     ).toBeInTheDocument();
@@ -58,7 +92,7 @@ describe('SettingsPage', () => {
       json: () => Promise.resolve({ accounts: [] }),
     } as Response);
 
-    render(<SettingsPage />);
+    renderWithProviders(<SettingsPage />);
     await waitFor(() => {
       expect(
         screen.getByRole('heading', { name: 'Integrations' }),
@@ -86,7 +120,7 @@ describe('SettingsPage', () => {
       json: () => Promise.resolve({ accounts: [] }),
     } as Response);
 
-    render(<SettingsPage />);
+    renderWithProviders(<SettingsPage />);
     await waitFor(() => {
       expect(screen.getByText('GitHub App')).toBeInTheDocument();
     });
@@ -106,7 +140,7 @@ describe('SettingsPage', () => {
         }),
     } as Response);
 
-    render(<SettingsPage />);
+    renderWithProviders(<SettingsPage />);
     await waitFor(() => {
       expect(screen.getByText('Google Calendar')).toBeInTheDocument();
     });
@@ -120,7 +154,7 @@ describe('SettingsPage', () => {
       json: () => Promise.resolve({ accounts: [] }),
     } as Response);
 
-    render(<SettingsPage />);
+    renderWithProviders(<SettingsPage />);
     await waitFor(() => {
       expect(
         screen.getByRole('tab', { name: 'Connections' }),

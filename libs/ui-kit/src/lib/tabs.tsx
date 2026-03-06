@@ -4,7 +4,11 @@ import * as Headless from '@headlessui/react';
 import { cva, type VariantProps } from 'class-variance-authority';
 import clsx from 'clsx';
 import { motion } from 'motion/react';
-import { useId } from 'react';
+import { createContext, useContext, useId } from 'react';
+
+// Shared layoutId context so all triggers in a list share the same
+// Framer Motion layoutId, enabling the sliding indicator animation.
+const TabsIndicatorContext = createContext<string>('tabs-indicator');
 
 const tabsListVariants = cva(
   'group/tabs-list inline-flex items-center justify-center text-zinc-500 dark:text-zinc-400',
@@ -46,12 +50,16 @@ export function TabsList({
   variant = 'default',
   ...props
 }: Headless.TabListProps & VariantProps<typeof tabsListVariants>) {
+  // Generate a single layoutId shared across all triggers in this list
+  const listId = useId();
   return (
-    <Headless.TabList
-      data-variant={variant}
-      className={clsx(tabsListVariants({ variant }), className)}
-      {...props}
-    />
+    <TabsIndicatorContext value={listId + '-indicator'}>
+      <Headless.TabList
+        data-variant={variant}
+        className={clsx(tabsListVariants({ variant }), className)}
+        {...props}
+      />
+    </TabsIndicatorContext>
   );
 }
 
@@ -61,7 +69,9 @@ export function TabsTrigger({
   value,
   ...props
 }: { value?: string } & Headless.TabProps) {
-  const id = useId();
+  // Use the shared layoutId from the parent TabsList so the indicator
+  // animates (slides) between tabs instead of fading in/out per tab.
+  const indicatorId = useContext(TabsIndicatorContext);
 
   return (
     <Headless.Tab
@@ -80,7 +90,8 @@ export function TabsTrigger({
           {children}
           {selected && (
             <motion.span
-              layoutId={id + '-indicator'}
+              layoutId={indicatorId}
+              transition={{ type: 'spring', stiffness: 500, damping: 40 }}
               className="absolute inset-x-0 -bottom-px h-px bg-zinc-950 group-data-[variant=default]/tabs-list:hidden dark:bg-white"
             />
           )}

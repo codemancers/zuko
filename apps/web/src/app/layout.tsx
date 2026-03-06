@@ -2,6 +2,8 @@ import '@zuko/ui-kit/globals.css';
 import { ThemeProvider } from '../components/theme-provider';
 import { QueryProvider } from '../lib/react-query/query-provider';
 import { ProgressBar } from '../components/progress-bar';
+import { NuqsAdapter } from 'nuqs/adapters/next/app';
+import { Toaster } from 'sonner';
 
 export const metadata = {
   title: {
@@ -26,7 +28,10 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <ProgressBar>
-            <QueryProvider>{children}</QueryProvider>
+            <NuqsAdapter>
+              <QueryProvider>{children}</QueryProvider>
+            </NuqsAdapter>
+            <Toaster richColors position="top-right" />
           </ProgressBar>
         </ThemeProvider>
       </body>

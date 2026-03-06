@@ -87,3 +87,10 @@ export {
   TooltipProvider,
 } from './components/ui/tooltip';
 export { AuthLayout } from './layouts/auth-layout';
+
+export {
+  Combobox,
+  ComboboxOption,
+  ComboboxLabel,
+  ComboboxDescription,
+} from './lib/combobox';

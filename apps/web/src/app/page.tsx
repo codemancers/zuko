@@ -16,13 +16,20 @@ export default function Index() {
           if (data && data.length > 0) {
             router.push('/chat');
           } else {
-            router.push('/organization/create');
+            // Check if user has any pending invitations
+            const { data: invitations } =
+              await authClient.organization.listUserInvitations();
+            if (invitations && invitations.length > 0) {
+              router.push('/settings?tab=invitations');
+            } else {
+              router.push('/organization/create');
+            }
           }
         } else {
           // User is not logged in, redirect to sign-in
           router.push('/sign-in');
         }
-      } catch (error) {
+      } catch {
         // On error, redirect to sign-in
         router.push('/sign-in');
       }
