@@ -20,15 +20,15 @@ CREATE TABLE "sales"."deal" (
 );
 
 -- CreateTable
-CREATE TABLE "sales"."deal_account" (
+CREATE TABLE "sales"."deal_company" (
     "id" SERIAL NOT NULL,
     "deal_id" INTEGER NOT NULL,
-    "account_id" INTEGER NOT NULL,
+    "company_id" INTEGER NOT NULL,
     "is_primary" BOOLEAN NOT NULL DEFAULT false,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
 
-    CONSTRAINT "deal_account_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "deal_company_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -71,13 +71,13 @@ CREATE INDEX "deal_actual_close_date_idx" ON "sales"."deal"("actual_close_date")
 CREATE INDEX "deal_created_at_idx" ON "sales"."deal"("created_at");
 
 -- CreateIndex
-CREATE INDEX "deal_account_deal_id_idx" ON "sales"."deal_account"("deal_id");
+CREATE INDEX "deal_company_deal_id_idx" ON "sales"."deal_company"("deal_id");
 
 -- CreateIndex
-CREATE INDEX "deal_account_account_id_idx" ON "sales"."deal_account"("account_id");
+CREATE INDEX "deal_company_company_id_idx" ON "sales"."deal_company"("company_id");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "deal_account_deal_id_account_id_key" ON "sales"."deal_account"("deal_id", "account_id");
+CREATE UNIQUE INDEX "deal_company_deal_id_company_id_key" ON "sales"."deal_company"("deal_id", "company_id");
 
 -- CreateIndex
 CREATE INDEX "deal_contact_deal_id_idx" ON "sales"."deal_contact"("deal_id");
@@ -101,10 +101,10 @@ CREATE INDEX "deal_owner_deal_id_idx" ON "sales"."deal_owner"("deal_id");
 CREATE UNIQUE INDEX "deal_owner_deal_id_user_id_key" ON "sales"."deal_owner"("deal_id", "user_id");
 
 -- AddForeignKey
-ALTER TABLE "sales"."deal_account" ADD CONSTRAINT "deal_account_deal_id_fkey" FOREIGN KEY ("deal_id") REFERENCES "sales"."deal"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "sales"."deal_company" ADD CONSTRAINT "deal_company_deal_id_fkey" FOREIGN KEY ("deal_id") REFERENCES "sales"."deal"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "sales"."deal_account" ADD CONSTRAINT "deal_account_account_id_fkey" FOREIGN KEY ("account_id") REFERENCES "sales"."account"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "sales"."deal_company" ADD CONSTRAINT "deal_company_company_id_fkey" FOREIGN KEY ("company_id") REFERENCES "sales"."company"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "sales"."deal_contact" ADD CONSTRAINT "deal_contact_deal_id_fkey" FOREIGN KEY ("deal_id") REFERENCES "sales"."deal"("id") ON DELETE CASCADE ON UPDATE CASCADE;
