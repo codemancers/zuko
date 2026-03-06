@@ -7,6 +7,8 @@ import { BaseTableHeader } from './BaseTableHeader';
 import { BaseTableBody } from './BaseTableBody';
 import { Table, Button } from '@zuko/ui-kit';
 import { PlusIcon } from '@heroicons/react/24/outline';
+const ChevronLeftIcon = '/icons/chevron-left.svg';
+const ChevronRightIcon = '/icons/chevron-right.svg';
 
 export function BaseTable<TData>(props: BaseTableProps<TData>) {
   const { table } = useBaseTable(props);
@@ -71,20 +73,20 @@ export function BaseTable<TData>(props: BaseTableProps<TData>) {
       {(props.totalCount !== undefined || (!props.manualPagination && (table.getCanNextPage() || table.getCanPreviousPage()))) && (
         <div className="mt-4 flex items-center justify-between">
           <div className="flex-1 flex justify-between sm:hidden">
-            <button
+            <Button
               onClick={() => table.previousPage()}
               disabled={!table.getCanPreviousPage()}
               className="relative inline-flex items-center px-4 py-2 border border-zinc-300 dark:border-zinc-700 text-sm font-medium rounded-md text-zinc-700 dark:text-zinc-300 bg-white dark:bg-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-700 disabled:opacity-50 transition-colors"
             >
               Previous
-            </button>
-            <button
+            </Button>
+            <Button
               onClick={() => table.nextPage()}
               disabled={!table.getCanNextPage()}
               className="ml-3 relative inline-flex items-center px-4 py-2 border border-zinc-300 dark:border-zinc-700 text-sm font-medium rounded-md text-zinc-700 dark:text-zinc-300 bg-white dark:bg-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-700 disabled:opacity-50 transition-colors"
             >
               Next
-            </button>
+            </Button>
           </div>
           <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
             <div>
@@ -115,26 +117,22 @@ export function BaseTable<TData>(props: BaseTableProps<TData>) {
                   </select>
                 </span>
                 <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
-                  <button
+                  <Button
                     onClick={() => table.previousPage()}
                     disabled={!table.getCanPreviousPage()}
                     className="relative inline-flex items-center px-3 py-2 rounded-l-md border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-sm font-medium text-zinc-500 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-700 disabled:opacity-50 transition-colors"
                   >
                     <span className="sr-only">Previous</span>
-                    <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
-                    </svg>
-                  </button>
-                  <button
+                    <img src={ChevronLeftIcon} className="h-5 w-5" alt="Previous" />
+                  </Button>
+                  <Button
                     onClick={() => table.nextPage()}
                     disabled={!table.getCanNextPage()}
                     className="relative inline-flex items-center px-3 py-2 rounded-r-md border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-sm font-medium text-zinc-500 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-700 disabled:opacity-50 transition-colors"
                   >
                     <span className="sr-only">Next</span>
-                    <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
-                    </svg>
-                  </button>
+                    <img src={ChevronRightIcon} className="h-5 w-5" alt="Next" />
+                  </Button>
                 </nav>
               </div>
             )}
