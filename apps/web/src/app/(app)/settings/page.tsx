@@ -23,6 +23,7 @@ import { OrgMembers } from '@/components/organization/org-members';
 import { UserInvitations } from '@/components/organization/user-invitations';
 import { AddMemberDialog } from '@/components/organization/add-member-dialog';
 import { AddMemberToTeamDialog } from '@/components/organization/add-member-to-team-dialog';
+import { CreateTeamDialog } from '@/components/organization/create-team-dialog';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { getUserInvitations } from '@/server/query-options';
 import { useQueryState, parseAsStringLiteral } from 'nuqs';
@@ -118,6 +119,7 @@ function SettingsPageContent() {
   // Action states
   const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
   const [isAddTeamDialogOpen, setIsAddTeamDialogOpen] = useState(false);
+  const [isCreateTeamDialogOpen, setIsCreateTeamDialogOpen] = useState(false);
 
   useEffect(() => {
     const loadData = async () => {
@@ -197,7 +199,7 @@ function SettingsPageContent() {
               </>
             )}
             {currentTab === 'teams' && (
-              <Button href={`/organization/${activeOrg.data?.slug}/teams/new`}>
+              <Button onClick={() => setIsCreateTeamDialogOpen(true)}>
                 Create Team
               </Button>
             )}
@@ -341,6 +343,16 @@ function SettingsPageContent() {
               });
               queryClient.invalidateQueries({
                 queryKey: ['team'],
+              });
+            }}
+          />
+          <CreateTeamDialog
+            organizationId={activeOrg.data.id}
+            isOpen={isCreateTeamDialogOpen}
+            onClose={() => setIsCreateTeamDialogOpen(false)}
+            onSuccess={() => {
+              queryClient.invalidateQueries({
+                queryKey: ['organization', activeOrg.data?.id, 'teams'],
               });
             }}
           />
