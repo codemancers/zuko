@@ -40,6 +40,7 @@ import {
 } from '@heroicons/react/20/solid';
 import { usePathname } from 'next/navigation';
 import { authClient } from '@/lib/auth-client';
+import { apiClient } from '@/lib/api-client';
 import { useEffect, useState } from 'react';
 import { useChats } from '@/hooks/use-chats';
 import { useQuery } from '@tanstack/react-query';
@@ -83,6 +84,12 @@ export function ApplicationLayout({ children }: { children: React.ReactNode }) {
 
   const { data: organizations = [] } = useQuery(getOrganizations());
   const activeOrg = authClient.useActiveOrganization();
+
+  // Pass current org to API client so backend receives X-Organization-Id (contacts, companies, deals)
+  useEffect(() => {
+    const id = activeOrg?.data?.id ?? null;
+    apiClient.setOrganizationId(id != null ? String(id) : null);
+  }, [activeOrg?.data?.id]);
 
   useEffect(() => {
     const loadUser = async () => {

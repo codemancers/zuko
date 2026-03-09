@@ -4,6 +4,7 @@ import type { PrismaService } from '../modules/prisma.types';
 import type { PaginationOptions } from './types';
 
 export interface CreateContactInput {
+  organizationId: number;
   name: string;
   email?: string;
   phone?: string;
@@ -23,6 +24,7 @@ export interface UpdateContactInput {
 }
 
 export interface ContactFilters {
+  organizationId: number;
   isHidden?: boolean;
   ownerIds?: number[];
   search?: string;
@@ -34,11 +36,12 @@ export class ContactsRepository {
   constructor(private readonly prisma: PrismaService) {}
 
   async create(input: CreateContactInput) {
-    const { ownerIds, primaryOwnerId, ...contactData } = input;
+    const { ownerIds, primaryOwnerId, organizationId, ...contactData } = input;
 
     return this.prisma.contact.create({
       data: {
         ...contactData,
+        organizationId,
         owners: {
           create: ownerIds.map((userId) => ({
             userId,
@@ -64,9 +67,9 @@ export class ContactsRepository {
     });
   }
 
-  async findById(id: number) {
-    return this.prisma.contact.findUnique({
-      where: { id },
+  async findById(id: number, organizationId: number) {
+    return this.prisma.contact.findFirst({
+      where: { id, organizationId },
       include: {
         owners: {
           include: {
@@ -112,14 +115,16 @@ export class ContactsRepository {
   }
 
   async findAll(
-    filters: ContactFilters = {},
+    filters: ContactFilters,
     pagination: PaginationOptions = {},
   ) {
-    const { isHidden = false, ownerIds, search, contactIds } = filters;
+    const { organizationId, isHidden = false, ownerIds, search, contactIds } =
+      filters;
     const { page = 1, limit = 50 } = pagination;
     const skip = (page - 1) * limit;
 
     const where: Prisma.ContactWhereInput = {
+      organizationId,
       isHidden,
       ...(contactIds && contactIds.length > 0
         ? { id: { in: contactIds } }
@@ -222,7 +227,11 @@ export class ContactsRepository {
     ]);
   }
 
-  async getContactsByUser(userId: number, pagination: PaginationOptions = {}) {
-    return this.findAll({ ownerIds: [userId] }, pagination);
+  async getContactsByUser(
+    organizationId: number,
+    userId: number,
+    pagination: PaginationOptions = {},
+  ) {
+    return this.findAll({ organizationId, ownerIds: [userId] }, pagination);
   }
 }

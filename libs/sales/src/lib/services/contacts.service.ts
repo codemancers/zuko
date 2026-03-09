@@ -84,12 +84,12 @@ export class ContactsService {
       `[SERVICE] Owner validation passed - ${input.ownerIds.length} owner(s)`,
     );
 
-    // Check for duplicate email
+    // Check for duplicate email (within same organization)
     if (input.email) {
       this.logger.debug(
         `[SERVICE] Checking for duplicate email: ${input.email}`,
       );
-      const duplicate = await this.findByEmail(input.email);
+      const duplicate = await this.findByEmail(input.organizationId, input.email);
       if (duplicate) {
         this.logger.warn(
           `[SERVICE] Duplicate email found: ${input.email} (existing ID: ${duplicate.id})`,
@@ -122,20 +122,17 @@ export class ContactsService {
     }
   }
 
-  async findById(id: number) {
-    const contact = await this.contactsRepository.findById(id);
+  async findById(id: number, organizationId: number) {
+    const contact = await this.contactsRepository.findById(id, organizationId);
     if (!contact) {
       throw new NotFoundException(`Contact with ID ${id} not found`);
     }
     return contact;
   }
 
-  async update(id: number, input: UpdateContactInput) {
-    // Check contact exists
-    await this.findById(id);
-
-    // If updating contact methods, validate at least one is present
-    const contact = await this.contactsRepository.findById(id);
+  async update(id: number, organizationId: number, input: UpdateContactInput) {
+    // Check contact exists and belongs to org
+    const contact = await this.contactsRepository.findById(id, organizationId);
     if (!contact) {
       throw new NotFoundException(`Contact with ID ${id} not found`);
     }
@@ -160,9 +157,9 @@ export class ContactsService {
       );
     }
 
-    // Check for duplicate email if being updated
+    // Check for duplicate email if being updated (within same organization)
     if (input.email && input.email !== contact.email) {
-      const duplicate = await this.findByEmail(input.email);
+      const duplicate = await this.findByEmail(organizationId, input.email);
       if (duplicate && duplicate.id !== id) {
         throw new BadRequestException(
           `A contact with email ${input.email} already exists (ID: ${duplicate.id})`,
@@ -173,41 +170,65 @@ export class ContactsService {
     return this.contactsRepository.update(id, input);
   }
 
-  async hide(id: number) {
-    await this.findById(id);
+  async hide(id: number, organizationId: number) {
+    await this.findById(id, organizationId);
     return this.contactsRepository.hide(id);
   }
 
-  async unhide(id: number) {
-    await this.findById(id);
+  async unhide(id: number, organizationId: number) {
+    await this.findById(id, organizationId);
     return this.contactsRepository.unhide(id);
   }
 
-  async findAll(filters?: ContactFilters, pagination?: PaginationOptions) {
+  async findAll(filters: ContactFilters, pagination?: PaginationOptions) {
     return this.contactsRepository.findAll(filters, pagination);
   }
 
-  async findByEmail(email: string) {
-    const result = await this.contactsRepository.findAll({ search: email });
+  async findByEmail(organizationId: number, email: string) {
+    const result = await this.contactsRepository.findAll(
+      { organizationId, search: email },
+      { limit: 100 },
+    );
     return result.contacts.find((c) => c.email === email);
   }
 
-  async addOwner(contactId: number, userId: number, isPrimary = false) {
-    await this.findById(contactId);
+  async addOwner(
+    contactId: number,
+    organizationId: number,
+    userId: number,
+    isPrimary = false,
+  ) {
+    await this.findById(contactId, organizationId);
     return this.contactsRepository.addOwner(contactId, userId, isPrimary);
   }
 
-  async removeOwner(contactId: number, userId: number) {
-    await this.findById(contactId);
+  async removeOwner(
+    contactId: number,
+    organizationId: number,
+    userId: number,
+  ) {
+    await this.findById(contactId, organizationId);
     return this.contactsRepository.removeOwner(contactId, userId);
   }
 
-  async setPrimaryOwner(contactId: number, userId: number) {
-    await this.findById(contactId);
+  async setPrimaryOwner(
+    contactId: number,
+    organizationId: number,
+    userId: number,
+  ) {
+    await this.findById(contactId, organizationId);
     return this.contactsRepository.setPrimaryOwner(contactId, userId);
   }
 
-  async getContactsByUser(userId: number, pagination?: PaginationOptions) {
-    return this.contactsRepository.getContactsByUser(userId, pagination);
+  async getContactsByUser(
+    organizationId: number,
+    userId: number,
+    pagination?: PaginationOptions,
+  ) {
+    return this.contactsRepository.getContactsByUser(
+      organizationId,
+      userId,
+      pagination,
+    );
   }
 }

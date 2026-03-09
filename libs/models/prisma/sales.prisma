@@ -3,20 +3,23 @@
 // ============================================
 
 model Contact {
-  id         Int      @id @default(autoincrement())
-  name       String
-  email      String?
-  phone      String? // E.164 format (e.g., +14155552671)
-  linkedinId String?  @map("linkedin_id")
-  notes      String?  @db.Text
-  isHidden   Boolean  @default(false) @map("is_hidden")
-  createdAt  DateTime @default(now()) @map("created_at")
-  updatedAt  DateTime @updatedAt @map("updated_at")
+  id             Int          @id @default(autoincrement())
+  organizationId Int          @map("organization_id")
+  name           String
+  email          String?
+  phone          String? // E.164 format (e.g., +14155552671)
+  linkedinId      String?      @map("linkedin_id")
+  notes          String?      @db.Text
+  isHidden       Boolean      @default(false) @map("is_hidden")
+  createdAt      DateTime     @default(now()) @map("created_at")
+  updatedAt      DateTime     @updatedAt @map("updated_at")
 
+  organization   Organization @relation("OrganizationContacts", fields: [organizationId], references: [id], onDelete: Cascade)
   owners         ContactOwner[]
   companyHistory CompanyContact[]
   deals          DealContact[]
 
+  @@index([organizationId])
   @@index([isHidden])
   @@index([email])
   @@index([phone])
@@ -62,19 +65,22 @@ model Activity {
 }
 
 model SalesCompany {
-  id          Int      @id @default(autoincrement())
-  companyName String   @map("company_name")
-  website     String?
-  linkedinUrl String?  @map("linkedin_url")
-  summary     String?  @db.Text
-  isHidden    Boolean  @default(false) @map("is_hidden")
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+  id             Int      @id @default(autoincrement())
+  organizationId Int      @map("organization_id")
+  companyName    String   @map("company_name")
+  website        String?
+  linkedinUrl    String?  @map("linkedin_url")
+  summary        String?  @db.Text
+  isHidden       Boolean  @default(false) @map("is_hidden")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
 
-  contacts CompanyContact[]
-  owners   CompanyOwner[]
-  deals    DealCompany[]
+  organization Organization @relation("OrganizationCompanies", fields: [organizationId], references: [id], onDelete: Cascade)
+  contacts    CompanyContact[]
+  owners      CompanyOwner[]
+  deals       DealCompany[]
 
+  @@index([organizationId])
   @@index([isHidden])
   @@index([companyName])
   @@map("company")
@@ -121,6 +127,7 @@ model CompanyOwner {
 
 model Deal {
   id                Int       @id @default(autoincrement())
+  organizationId    Int       @map("organization_id")
   title             String
   value             Decimal?  @db.Decimal(15, 2)
   currency          String?   @default("USD")
@@ -136,10 +143,12 @@ model Deal {
   createdAt         DateTime  @default(now()) @map("created_at")
   updatedAt         DateTime  @updatedAt @map("updated_at")
 
-  companies DealCompany[]
-  contacts  DealContact[]
-  owners    DealOwner[]
+  organization Organization @relation("OrganizationDeals", fields: [organizationId], references: [id], onDelete: Cascade)
+  companies    DealCompany[]
+  contacts     DealContact[]
+  owners       DealOwner[]
 
+  @@index([organizationId])
   @@index([isHidden])
   @@index([stage])
   @@index([expectedCloseDate])

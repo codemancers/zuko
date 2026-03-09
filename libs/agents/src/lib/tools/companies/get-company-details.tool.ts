@@ -1,7 +1,10 @@
 import { tool } from '@langchain/core/tools';
 import { z } from 'zod';
 import type { CompaniesService } from '@zuko/sales';
-import { getContextEntities } from '../context/tool-context';
+import {
+  getContextEntities,
+  getOrganizationId,
+} from '../context/tool-context';
 
 /**
  * LangChain tool for retrieving company information.
@@ -42,8 +45,19 @@ export function createGetCompanyDetailsTool(
         };
       }
 
+      const organizationId = getOrganizationId(config);
+      if (organizationId === undefined) {
+        return {
+          error:
+            'No organization context. Please select an organization and try again.',
+        };
+      }
+
       try {
-        const company = await companiesService.findById(companyId);
+        const company = await companiesService.findById(
+          companyId,
+          organizationId,
+        );
 
         return {
           id: company.id,

@@ -4,6 +4,7 @@ import type { PrismaService } from '../modules/prisma.types';
 import type { PaginationOptions } from './types';
 
 export interface CreateCompanyInput {
+  organizationId: number;
   companyName: string;
   website?: string;
   linkedinUrl?: string;
@@ -21,6 +22,7 @@ export interface UpdateCompanyInput {
 }
 
 export interface CompanyFilters {
+  organizationId: number;
   isHidden?: boolean;
   ownerIds?: number[];
   search?: string;
@@ -44,11 +46,12 @@ export class CompaniesRepository {
   constructor(private readonly prisma: PrismaService) {}
 
   async create(input: CreateCompanyInput) {
-    const { ownerIds, primaryOwnerId, ...companyData } = input;
+    const { ownerIds, primaryOwnerId, organizationId, ...companyData } = input;
 
     return this.prisma.salesCompany.create({
       data: {
         ...companyData,
+        organizationId,
         owners: {
           create: ownerIds.map((userId) => ({
             userId,
@@ -74,9 +77,9 @@ export class CompaniesRepository {
     });
   }
 
-  async findById(id: number) {
-    return this.prisma.salesCompany.findUnique({
-      where: { id },
+  async findById(id: number, organizationId: number) {
+    return this.prisma.salesCompany.findFirst({
+      where: { id, organizationId },
       include: {
         owners: {
           include: {
@@ -147,14 +150,16 @@ export class CompaniesRepository {
   }
 
   async findAll(
-    filters: CompanyFilters = {},
+    filters: CompanyFilters,
     pagination: PaginationOptions = {},
   ) {
-    const { isHidden = false, ownerIds, search, companyIds } = filters;
+    const { organizationId, isHidden = false, ownerIds, search, companyIds } =
+      filters;
     const { page = 1, limit = 50 } = pagination;
     const skip = (page - 1) * limit;
 
     const where: Prisma.SalesCompanyWhereInput = {
+      organizationId,
       isHidden,
       ...(companyIds && companyIds.length > 0
         ? { id: { in: companyIds } }
@@ -265,8 +270,12 @@ export class CompaniesRepository {
     ]);
   }
 
-  async getCompaniesByUser(userId: number, pagination: PaginationOptions = {}) {
-    return this.findAll({ ownerIds: [userId] }, pagination);
+  async getCompaniesByUser(
+    organizationId: number,
+    userId: number,
+    pagination: PaginationOptions = {},
+  ) {
+    return this.findAll({ organizationId, ownerIds: [userId] }, pagination);
   }
 
   async addContact(companyId: number, input: AddContactToCompanyInput) {

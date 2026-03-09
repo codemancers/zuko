@@ -63,9 +63,35 @@ async function main() {
     });
   }
 
+  // Organization required for sales entities (contacts, companies, deals)
+  const org = await prisma.organization.upsert({
+    where: { slug: "e2e-org" },
+    create: {
+      name: "E2E Org",
+      slug: "e2e-org",
+      createdAt: new Date(),
+    },
+    update: {},
+  });
+
+  const existingMember = await prisma.member.findFirst({
+    where: { organizationId: org.id, userId: user.id },
+  });
+  if (!existingMember) {
+    await prisma.member.create({
+      data: {
+        organizationId: org.id,
+        userId: user.id,
+        role: "member",
+        createdAt: new Date(),
+      },
+    });
+  }
+
   const company1 = await prisma.salesCompany.upsert({
     where: { id: 1 },
     create: {
+      organizationId: org.id,
       companyName: "TEST COMPANY",
       website: "https://test-company.example.com",
       linkedinUrl: "https://linkedin.com/company/test-company",
@@ -81,6 +107,7 @@ async function main() {
   const contact1 = await prisma.contact.upsert({
     where: { id: 1 },
     create: {
+      organizationId: org.id,
       name: "TEST CONTACT",
       email: "test-contact@example.com",
       phone: "+14155551234",
@@ -95,6 +122,7 @@ async function main() {
   await prisma.deal.upsert({
     where: { id: 1 },
     create: {
+      organizationId: org.id,
       title: "TEST DEAL",
       value: 50000,
       currency: "USD",

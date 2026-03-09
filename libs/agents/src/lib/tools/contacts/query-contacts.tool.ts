@@ -1,6 +1,7 @@
 import { tool } from '@langchain/core/tools';
 import { z } from 'zod';
 import type { ContactsService } from '@zuko/sales';
+import { getOrganizationId } from '../context/tool-context';
 
 /**
  * LangChain tool for querying contacts with flexible filters
@@ -8,10 +9,23 @@ import type { ContactsService } from '@zuko/sales';
  */
 export function createQueryContactsTool(contactsService: ContactsService) {
   return tool(
-    async ({ filters = {}, aggregation = 'list', groupBy, limit = 100 }) => {
+    async (
+      { filters = {}, aggregation = 'list', groupBy, limit = 100 },
+      config?,
+    ) => {
+      const organizationId = getOrganizationId(config);
+      if (organizationId === undefined) {
+        return {
+          error:
+            'No organization context. Please select an organization and try again.',
+        };
+      }
+
       try {
         // Build filter object for ContactsService
-        const contactFilters: any = {};
+        const contactFilters: Record<string, unknown> = {
+          organizationId,
+        };
         const paginationOptions: any = { limit: Math.min(limit, 1000) }; // Cap at 1000
 
         if (filters.ownerId) {
@@ -33,7 +47,7 @@ export function createQueryContactsTool(contactsService: ContactsService) {
 
         // Fetch contacts
         const result = await contactsService.findAll(
-          contactFilters,
+          contactFilters as unknown as Parameters<ContactsService['findAll']>[0],
           paginationOptions,
         );
         let contacts = result.contacts;

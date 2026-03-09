@@ -40,4 +40,9 @@ export interface AgentState {
    * Used for attributing actions (e.g., comments) to the correct user
    */
   userId?: number;
+  /**
+   * Active organization ID from the user's session.
+   * Scopes all sales operations (contacts, companies, deals) to this organization.
+   */
+  organizationId?: number;
 }

@@ -1,7 +1,13 @@
 /**
  * Type-safe API client for backend integration
  * Works in both Server and Client Components
+ *
+ * For org-scoped APIs (contacts, companies, deals), the current organization ID
+ * is sent via X-Organization-Id header (set in ApplicationLayout from active org).
  */
+
+/** Header sent to backend for org-scoped requests (must match backend ORGANIZATION_ID_HEADER) */
+export const ORGANIZATION_ID_HEADER = 'x-organization-id';
 
 interface ApiClientConfig {
   baseUrl?: string;
@@ -11,6 +17,7 @@ interface ApiClientConfig {
 class ApiClient {
   private baseUrl: string;
   private defaultHeaders: HeadersInit;
+  private organizationId: string | number | null = null;
 
   constructor(config: ApiClientConfig = {}) {
     // On client side, use Next.js proxy API route instead of hitting backend directly
@@ -26,6 +33,16 @@ class ApiClient {
         'http://localhost:3001';
     }
     this.defaultHeaders = config.headers || {};
+  }
+
+  /** Set the current organization ID so it is sent as X-Organization-Id on requests. */
+  setOrganizationId(id: string | number | null): void {
+    this.organizationId = id;
+  }
+
+  /** Get the currently set organization ID (for tests or debugging). */
+  getOrganizationId(): string | number | null {
+    return this.organizationId;
   }
 
   /**
@@ -49,6 +66,10 @@ class ApiClient {
       ...(this.defaultHeaders as Record<string, string>),
       ...(options.headers as Record<string, string>),
     };
+
+    if (this.organizationId != null && this.organizationId !== '') {
+      headers[ORGANIZATION_ID_HEADER] = String(this.organizationId);
+    }
 
     // On server side, get cookies and pass them explicitly
     if (this.isServer()) {

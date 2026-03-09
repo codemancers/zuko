@@ -1,7 +1,10 @@
 import { tool } from '@langchain/core/tools';
 import { z } from 'zod';
 import type { CompaniesService } from '@zuko/sales';
-import { getContextEntities } from '../context/tool-context';
+import {
+  getContextEntities,
+  getOrganizationId,
+} from '../context/tool-context';
 
 /**
  * LangChain tool for updating a company.
@@ -55,8 +58,20 @@ export function createUpdateCompanyTool(companiesService: CompaniesService) {
         };
       }
 
+      const organizationId = getOrganizationId(config);
+      if (organizationId === undefined) {
+        return {
+          error:
+            'No organization context. Please select an organization and try again.',
+        };
+      }
+
       try {
-        const company = await companiesService.update(companyId, updates);
+        const company = await companiesService.update(
+          companyId,
+          organizationId,
+          updates,
+        );
         const c = company as {
           id: number;
           companyName: string;

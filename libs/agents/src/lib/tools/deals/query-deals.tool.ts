@@ -1,6 +1,7 @@
 import { tool } from '@langchain/core/tools';
 import { z } from 'zod';
 import type { DealsService } from '@zuko/sales';
+import { getOrganizationId } from '../context/tool-context';
 
 /**
  * LangChain tool for querying deals with flexible filters
@@ -8,9 +9,20 @@ import type { DealsService } from '@zuko/sales';
  */
 export function createQueryDealsTool(dealsService: DealsService) {
   return tool(
-    async ({ filters = {}, aggregation = 'list', groupBy, limit = 100 }) => {
+    async (
+      { filters = {}, aggregation = 'list', groupBy, limit = 100 },
+      config?,
+    ) => {
+      const organizationId = getOrganizationId(config);
+      if (organizationId === undefined) {
+        return {
+          error:
+            'No organization context. Please select an organization and try again.',
+        };
+      }
+
       try {
-        const dealFilters: Record<string, unknown> = {};
+        const dealFilters: Record<string, unknown> = { organizationId };
         const paginationOptions = { page: 1, limit: Math.min(limit, 1000) };
 
         if (filters.ownerId) {
@@ -45,18 +57,7 @@ export function createQueryDealsTool(dealsService: DealsService) {
         }
 
         const result = await dealsService.findAll(
-          dealFilters as {
-            dealIds?: number[];
-            ownerIds?: number[];
-            stages?: string[];
-            minValue?: number;
-            maxValue?: number;
-            search?: string;
-            expectedCloseFrom?: Date;
-            expectedCloseTo?: Date;
-            companyIds?: number[];
-            contactIds?: number[];
-          },
+          dealFilters as unknown as Parameters<DealsService['findAll']>[0],
           paginationOptions,
         );
         let deals = result.deals;

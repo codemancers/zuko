@@ -420,13 +420,15 @@ export class OrchestratorService {
         return { messages: [], contextEntities: [] };
       }
 
-      // Extract messages and contextEntities from the checkpoint state
+      // Extract messages, contextEntities, and organizationId from the checkpoint state
       const channelValues = state.checkpoint.channel_values as {
         messages?: unknown[];
         contextEntities?: ContextEntityReference[];
+        organizationId?: number;
       };
       const messages = channelValues.messages || [];
       const contextEntities = channelValues.contextEntities || [];
+      const organizationId = channelValues.organizationId;
 
       // Convert to simple message format
       const formattedMessages = messages
@@ -444,17 +446,34 @@ export class OrchestratorService {
         }))
         .filter((msg) => msg.content && msg.content.trim().length > 0);
 
-      // Hydrate contextEntities with names from database (Contact model has .name, not firstName/lastName)
+      // Hydrate contextEntities with names from database (requires organizationId for org-scoped findById)
       const hydratedEntities = await Promise.all(
         contextEntities.map(async (entity) => {
+          if (organizationId === undefined) {
+            return {
+              ...entity,
+              name:
+                entity.type === 'contact'
+                  ? 'Contact'
+                  : entity.type === 'company'
+                    ? 'Company'
+                    : `Deal #${entity.id}`,
+            };
+          }
           try {
             if (entity.type === 'contact' && this.contactsService) {
-              const contact = await this.contactsService.findById(entity.id);
+              const contact = await this.contactsService.findById(
+                entity.id,
+                organizationId,
+              );
               const name = (contact as any).name ?? 'Contact';
               return { ...entity, name };
             }
             if (entity.type === 'company' && this.companiesService) {
-              const company = await this.companiesService.findById(entity.id);
+              const company = await this.companiesService.findById(
+                entity.id,
+                organizationId,
+              );
               return {
                 ...entity,
                 name: (company as any).companyName ?? 'Company',

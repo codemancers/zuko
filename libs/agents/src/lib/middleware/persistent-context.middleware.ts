@@ -25,6 +25,16 @@ const userIdReducer = (
 };
 
 /**
+ * Reducer for organizationId - replaces current value with update
+ */
+const organizationIdReducer = (
+  current: number | undefined,
+  update: number | undefined,
+): number | undefined => {
+  return update ?? current;
+};
+
+/**
  * State schema for persistent context fields
  * These fields are persisted in LangGraph checkpoints and restored on page reload
  */
@@ -56,6 +66,15 @@ const PersistentContextStateSchema = z.object({
     .meta({
       reducer: {
         fn: userIdReducer,
+        schema: z.number().optional(),
+      },
+    }),
+  organizationId: z
+    .number()
+    .optional()
+    .meta({
+      reducer: {
+        fn: organizationIdReducer,
         schema: z.number().optional(),
       },
     }),

@@ -1,7 +1,10 @@
 import { tool } from '@langchain/core/tools';
 import { z } from 'zod';
 import type { DealsService } from '@zuko/sales';
-import { getContextEntities } from '../context/tool-context';
+import {
+  getContextEntities,
+  getOrganizationId,
+} from '../context/tool-context';
 
 /**
  * LangChain tool for retrieving full deal information.
@@ -36,8 +39,16 @@ export function createGetDealDetailsTool(dealsService: DealsService) {
         };
       }
 
+      const organizationId = getOrganizationId(config);
+      if (organizationId === undefined) {
+        return {
+          error:
+            'No organization context. Please select an organization and try again.',
+        };
+      }
+
       try {
-        const deal = await dealsService.findById(dealId);
+        const deal = await dealsService.findById(dealId, organizationId);
         const d = deal as {
           id: number;
           title: string;

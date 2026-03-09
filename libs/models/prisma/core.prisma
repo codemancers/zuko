@@ -135,7 +135,7 @@ model ChatParticipant {
 
 
 model Organization {
-  id          Int          @id @default(autoincrement())
+  id          Int            @id @default(autoincrement())
   name        String
   slug        String
   logo        String?
@@ -143,13 +143,15 @@ model Organization {
   metadata    String?
   members     Member[]
   invitations Invitation[]
+  teams       Team[]
 
-  teams Team[]
+  contacts  Contact[]     @relation("OrganizationContacts")
+  companies SalesCompany[] @relation("OrganizationCompanies")
+  deals     Deal[]        @relation("OrganizationDeals")
 
   @@unique([slug])
   @@map("organization")
   @@schema("public")
-
 }
 
 model Member {

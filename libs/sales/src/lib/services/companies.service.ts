@@ -97,7 +97,10 @@ export class CompaniesService {
     );
 
     // Check for duplicate company name (warning only, not blocking)
-    const duplicate = await this.findByCompanyName(input.companyName);
+    const duplicate = await this.findByCompanyName(
+      input.organizationId,
+      input.companyName,
+    );
     if (duplicate) {
       this.logger.warn(
         `[SERVICE] Company with similar name already exists: ${input.companyName} (existing ID: ${duplicate.id})`,
@@ -126,17 +129,17 @@ export class CompaniesService {
     }
   }
 
-  async findById(id: number) {
-    const company = await this.companiesRepository.findById(id);
+  async findById(id: number, organizationId: number) {
+    const company = await this.companiesRepository.findById(id, organizationId);
     if (!company) {
       throw new NotFoundException(`Company with ID ${id} not found`);
     }
     return company;
   }
 
-  async update(id: number, input: UpdateCompanyInput) {
-    // Check company exists
-    await this.findById(id);
+  async update(id: number, organizationId: number, input: UpdateCompanyInput) {
+    // Check company exists and belongs to org
+    await this.findById(id, organizationId);
 
     // Validate company name if being updated
     if (input.companyName !== undefined) {
@@ -166,22 +169,23 @@ export class CompaniesService {
     return this.companiesRepository.update(id, input);
   }
 
-  async hide(id: number) {
-    await this.findById(id);
+  async hide(id: number, organizationId: number) {
+    await this.findById(id, organizationId);
     return this.companiesRepository.hide(id);
   }
 
-  async unhide(id: number) {
-    await this.findById(id);
+  async unhide(id: number, organizationId: number) {
+    await this.findById(id, organizationId);
     return this.companiesRepository.unhide(id);
   }
 
-  async findAll(filters?: CompanyFilters, pagination?: PaginationOptions) {
+  async findAll(filters: CompanyFilters, pagination?: PaginationOptions) {
     return this.companiesRepository.findAll(filters, pagination);
   }
 
-  async findByCompanyName(companyName: string) {
+  async findByCompanyName(organizationId: number, companyName: string) {
     const result = await this.companiesRepository.findAll({
+      organizationId,
       search: companyName,
     });
     return result.companies.find(
@@ -189,31 +193,56 @@ export class CompaniesService {
     );
   }
 
-  async addOwner(companyId: number, userId: number, isPrimary = false) {
-    await this.findById(companyId);
+  async addOwner(
+    companyId: number,
+    organizationId: number,
+    userId: number,
+    isPrimary = false,
+  ) {
+    await this.findById(companyId, organizationId);
     return this.companiesRepository.addOwner(companyId, userId, isPrimary);
   }
 
-  async removeOwner(companyId: number, userId: number) {
-    await this.findById(companyId);
+  async removeOwner(
+    companyId: number,
+    organizationId: number,
+    userId: number,
+  ) {
+    await this.findById(companyId, organizationId);
     return this.companiesRepository.removeOwner(companyId, userId);
   }
 
-  async setPrimaryOwner(companyId: number, userId: number) {
-    await this.findById(companyId);
+  async setPrimaryOwner(
+    companyId: number,
+    organizationId: number,
+    userId: number,
+  ) {
+    await this.findById(companyId, organizationId);
     return this.companiesRepository.setPrimaryOwner(companyId, userId);
   }
 
-  async getCompaniesByUser(userId: number, pagination?: PaginationOptions) {
-    return this.companiesRepository.getCompaniesByUser(userId, pagination);
+  async getCompaniesByUser(
+    organizationId: number,
+    userId: number,
+    pagination?: PaginationOptions,
+  ) {
+    return this.companiesRepository.getCompaniesByUser(
+      organizationId,
+      userId,
+      pagination,
+    );
   }
 
-  async addContact(companyId: number, input: AddContactToCompanyInput) {
+  async addContact(
+    companyId: number,
+    organizationId: number,
+    input: AddContactToCompanyInput,
+  ) {
     this.logger.log(
       `[SERVICE] Adding contact ${input.contactId} to company ${companyId}`,
     );
 
-    await this.findById(companyId);
+    await this.findById(companyId, organizationId);
 
     // Check if contact is already active in this company
     const existingActive =
@@ -249,12 +278,16 @@ export class CompaniesService {
     }
   }
 
-  async removeContact(companyId: number, contactId: number) {
+  async removeContact(
+    companyId: number,
+    organizationId: number,
+    contactId: number,
+  ) {
     this.logger.log(
       `[SERVICE] Removing contact ${contactId} from company ${companyId}`,
     );
 
-    await this.findById(companyId);
+    await this.findById(companyId, organizationId);
 
     try {
       const result = await this.companiesRepository.removeContact(
@@ -279,10 +312,11 @@ export class CompaniesService {
 
   async updateContactCompany(
     companyId: number,
+    organizationId: number,
     contactId: number,
     input: UpdateContactCompanyInput,
   ) {
-    await this.findById(companyId);
+    await this.findById(companyId, organizationId);
     return this.companiesRepository.updateContactCompany(
       companyId,
       contactId,
@@ -290,13 +324,13 @@ export class CompaniesService {
     );
   }
 
-  async getActiveContacts(companyId: number) {
-    await this.findById(companyId);
+  async getActiveContacts(companyId: number, organizationId: number) {
+    await this.findById(companyId, organizationId);
     return this.companiesRepository.getActiveContacts(companyId);
   }
 
-  async getContactHistory(companyId: number) {
-    await this.findById(companyId);
+  async getContactHistory(companyId: number, organizationId: number) {
+    await this.findById(companyId, organizationId);
     return this.companiesRepository.getContactHistory(companyId);
   }
 

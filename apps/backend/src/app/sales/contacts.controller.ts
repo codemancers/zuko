@@ -19,9 +19,13 @@ import {
   CreateContactInput,
   UpdateContactInput,
 } from '@zuko/sales';
+import { OrganizationGuard } from '../../common/auth/organization.guard';
+import { OrgId } from '../../common/auth/org-id.decorator';
 
-// DTOs for API requests
-export class CreateContactDto implements CreateContactInput {
+// DTOs for API requests (organizationId is set from session via OrganizationGuard)
+export class CreateContactDto
+  implements Omit<CreateContactInput, 'organizationId'>
+{
   name!: string;
   email?: string;
   phone?: string;
@@ -53,7 +57,7 @@ export class AddOwnerDto {
 }
 
 @Controller('contacts')
-@UseGuards(AuthGuard)
+@UseGuards(AuthGuard, OrganizationGuard)
 export class ContactsController {
   private readonly logger = new Logger(ContactsController.name);
 
@@ -61,7 +65,7 @@ export class ContactsController {
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  async create(@Body() dto: CreateContactDto) {
+  async create(@OrgId() organizationId: number, @Body() dto: CreateContactDto) {
     this.logger.log('[CREATE_CONTACT] Request received');
     this.logger.debug(
       `[CREATE_CONTACT] Payload: ${JSON.stringify({
@@ -76,7 +80,10 @@ export class ContactsController {
     );
 
     try {
-      const result = await this.contactsService.create(dto);
+      const result = await this.contactsService.create({
+        ...dto,
+        organizationId,
+      });
       this.logger.log(`[CREATE_CONTACT] Success - Contact ID: ${result.id}`);
       return result;
     } catch (error: unknown) {
@@ -89,8 +96,12 @@ export class ContactsController {
   }
 
   @Get()
-  async list(@Query() query: ContactListQueryDto) {
+  async list(
+    @OrgId() organizationId: number,
+    @Query() query: ContactListQueryDto,
+  ) {
     const filters = {
+      organizationId,
       search: query.search,
       isHidden: query.isHidden === 'true',
       ownerIds: query.ownerIds
@@ -107,57 +118,76 @@ export class ContactsController {
   }
 
   @Get(':id')
-  async findOne(@Param('id', ParseIntPipe) id: number) {
-    return this.contactsService.findById(id);
+  async findOne(
+    @OrgId() organizationId: number,
+    @Param('id', ParseIntPipe) id: number,
+  ) {
+    return this.contactsService.findById(id, organizationId);
   }
 
   @Patch(':id')
   async update(
+    @OrgId() organizationId: number,
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateContactDto,
   ) {
-    return this.contactsService.update(id, dto);
+    return this.contactsService.update(id, organizationId, dto);
   }
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  async hide(@Param('id', ParseIntPipe) id: number) {
-    await this.contactsService.hide(id);
+  async hide(
+    @OrgId() organizationId: number,
+    @Param('id', ParseIntPipe) id: number,
+  ) {
+    await this.contactsService.hide(id, organizationId);
   }
 
   @Post(':id/unhide')
-  async unhide(@Param('id', ParseIntPipe) id: number) {
-    return this.contactsService.unhide(id);
+  async unhide(
+    @OrgId() organizationId: number,
+    @Param('id', ParseIntPipe) id: number,
+  ) {
+    return this.contactsService.unhide(id, organizationId);
   }
 
   @Post(':id/owners')
   async addOwner(
+    @OrgId() organizationId: number,
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: AddOwnerDto,
   ) {
-    return this.contactsService.addOwner(id, dto.userId, dto.isPrimary);
+    return this.contactsService.addOwner(
+      id,
+      organizationId,
+      dto.userId,
+      dto.isPrimary,
+    );
   }
 
   @Delete(':id/owners/:userId')
   @HttpCode(HttpStatus.NO_CONTENT)
   async removeOwner(
+    @OrgId() organizationId: number,
     @Param('id', ParseIntPipe) id: number,
     @Param('userId', ParseIntPipe) userId: number,
   ) {
-    await this.contactsService.removeOwner(id, userId);
+    await this.contactsService.removeOwner(id, organizationId, userId);
   }
 
   @Post(':id/owners/:userId/set-primary')
   async setPrimaryOwner(
+    @OrgId() organizationId: number,
     @Param('id', ParseIntPipe) id: number,
     @Param('userId', ParseIntPipe) userId: number,
   ) {
-    await this.contactsService.setPrimaryOwner(id, userId);
+    await this.contactsService.setPrimaryOwner(id, organizationId, userId);
     return { success: true };
   }
 
   @Get('user/:userId')
   async getContactsByUser(
+    @OrgId() organizationId: number,
     @Param('userId', ParseIntPipe) userId: number,
     @Query() query: ContactListQueryDto,
   ) {
@@ -166,6 +196,10 @@ export class ContactsController {
       limit: query.limit ? Number(query.limit) : 50,
     };
 
-    return this.contactsService.getContactsByUser(userId, pagination);
+    return this.contactsService.getContactsByUser(
+      organizationId,
+      userId,
+      pagination,
+    );
   }
 }
