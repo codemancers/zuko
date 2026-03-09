@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { CheckIcon, SearchIcon } from 'lucide-react';
+import { SearchIcon } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -32,6 +32,10 @@ export interface EntitySelectorDialogProps {
   selectedIds: string[];
   onSelectionChange: (selectedIds: string[]) => void;
   onConfirm: (selectedItems: EntityItem[]) => void;
+  /** When set, clicking a row adds that item immediately (no checkboxes, no Add button). */
+  onItemClick?: (item: EntityItem) => void;
+  /** When using onItemClick, IDs that are already in context (show checkmark, click is no-op). */
+  alreadyInContextIds?: string[];
   isLoading?: boolean;
   multiSelect?: boolean;
   className?: string;
@@ -48,21 +52,33 @@ export const EntitySelectorDialog = ({
   selectedIds,
   onSelectionChange,
   onConfirm,
+  onItemClick,
+  alreadyInContextIds = [],
   isLoading = false,
   multiSelect = true,
   className,
 }: EntitySelectorDialogProps) => {
   const [searchQuery, setSearchQuery] = React.useState('');
+  const clickToAddMode = Boolean(onItemClick);
 
   const filteredItems = React.useMemo(() => {
-    if (!searchQuery) return items;
-    const query = searchQuery.toLowerCase();
-    return items.filter(
-      (item) =>
-        item.label.toLowerCase().includes(query) ||
-        item.description?.toLowerCase().includes(query),
-    );
-  }, [items, searchQuery]);
+    const base = !searchQuery
+      ? items
+      : items.filter((item) => {
+          const query = searchQuery.toLowerCase();
+          return (
+            item.label.toLowerCase().includes(query) ||
+            item.description?.toLowerCase().includes(query)
+          );
+        });
+    // Hide items that are already selected; they only show in the chip row
+    return base.filter((item) => !selectedIds.includes(item.id));
+  }, [items, searchQuery, selectedIds]);
+
+  const selectedItems = React.useMemo(
+    () => items.filter((item) => selectedIds.includes(item.id)),
+    [items, selectedIds],
+  );
 
   const handleToggleItem = (id: string) => {
     if (multiSelect) {
@@ -102,6 +118,25 @@ export const EntitySelectorDialog = ({
             />
           </div>
 
+          {/* Selected as chips (like tag input) */}
+          {multiSelect && selectedItems.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {selectedItems.map((item) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => handleToggleItem(item.id)}
+                  className="inline-flex items-center gap-1.5 rounded-full bg-zinc-200 px-2.5 py-1 text-xs font-medium text-zinc-800 hover:bg-zinc-300 dark:bg-zinc-700 dark:text-zinc-100 dark:hover:bg-zinc-600"
+                >
+                  <span className="truncate max-w-40">{item.label}</span>
+                  <span aria-hidden className="text-zinc-500 dark:text-zinc-300">
+                    ×
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
+
           {/* Items List */}
           <div className="max-h-[300px] overflow-y-auto rounded-md border border-zinc-200 dark:border-zinc-800">
             {isLoading ? (
@@ -115,43 +150,42 @@ export const EntitySelectorDialog = ({
             ) : (
               <div className="divide-y divide-zinc-200 dark:divide-zinc-800">
                 {filteredItems.map((item) => {
-                  const isSelected = selectedIds.includes(item.id);
+                  const alreadyInContext = clickToAddMode && alreadyInContextIds.includes(item.id);
+                  const handleClick = () => {
+                    if (clickToAddMode) {
+                      if (!alreadyInContext) onItemClick?.(item);
+                    } else {
+                      handleToggleItem(item.id);
+                    }
+                  };
                   return (
                     <button
                       key={item.id}
                       type="button"
-                      onClick={() => handleToggleItem(item.id)}
+                      onClick={handleClick}
                       className={cn(
                         'flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-zinc-50 dark:hover:bg-zinc-800/50',
-                        isSelected &&
-                          'bg-blue-50 dark:bg-blue-950/20 hover:bg-blue-100 dark:hover:bg-blue-950/30',
+                        clickToAddMode && alreadyInContext && 'opacity-60',
                       )}
                     >
                       {/* Icon */}
                       {item.icon && <div className="shrink-0">{item.icon}</div>}
 
-                      {/* Content */}
-                      <div className="min-w-0 flex-1">
-                        <div className="truncate font-medium text-sm text-zinc-900 dark:text-white">
+                      {/* Content: label and description on same line (matches @mention list) */}
+                      <div className="min-w-0 flex-1 flex items-baseline gap-2 text-sm truncate">
+                        <span className="truncate font-medium text-zinc-900 dark:text-white">
                           {item.label}
-                        </div>
+                        </span>
                         {item.description && (
-                          <div className="truncate text-xs text-zinc-600 dark:text-zinc-400">
-                            {item.description}
-                          </div>
+                          <>
+                            <span className="shrink-0 text-zinc-500 dark:text-zinc-400">·</span>
+                            <span className="truncate text-zinc-600 dark:text-zinc-400">
+                              {item.description}
+                            </span>
+                          </>
                         )}
                       </div>
 
-                      {/* Checkbox/Checkmark */}
-                      <div className="shrink-0">
-                        {isSelected ? (
-                          <div className="flex size-5 items-center justify-center rounded bg-blue-600 text-white">
-                            <CheckIcon className="size-3.5" />
-                          </div>
-                        ) : (
-                          <div className="size-5 rounded border-2 border-zinc-300 dark:border-zinc-700" />
-                        )}
-                      </div>
                     </button>
                   );
                 })}
@@ -159,12 +193,6 @@ export const EntitySelectorDialog = ({
             )}
           </div>
 
-          {/* Selected Count */}
-          {multiSelect && selectedIds.length > 0 && (
-            <div className="text-center text-sm text-zinc-600 dark:text-zinc-400">
-              {selectedIds.length} selected
-            </div>
-          )}
         </div>
 
         <DialogFooter>
@@ -173,15 +201,17 @@ export const EntitySelectorDialog = ({
             onClick={() => onOpenChange(false)}
             type="button"
           >
-            Cancel
+            {clickToAddMode ? 'Close' : 'Cancel'}
           </Button>
-          <Button
-            onClick={handleConfirm}
-            disabled={selectedIds.length === 0}
-            type="button"
-          >
-            Add {selectedIds.length > 0 && `(${selectedIds.length})`}
-          </Button>
+          {!clickToAddMode && (
+            <Button
+              onClick={handleConfirm}
+              disabled={selectedIds.length === 0}
+              type="button"
+            >
+              Add {selectedIds.length > 0 && `(${selectedIds.length})`}
+            </Button>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>

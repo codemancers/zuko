@@ -14,6 +14,7 @@ import * as React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
   PromptInputMentions,
+  usePromptInputReferencedSources,
   type PromptInputMentionsProps,
   type MentionSuggestion,
   type MentionTriggerConfig,
@@ -44,6 +45,21 @@ const MENTION_ICON_MAP: Record<ChatEntityType, typeof UserIcon> = {
   company: BuildingIcon,
   deal: Briefcase,
 };
+
+const HEADER_IDS = {
+  contact: '__header_contact__',
+  company: '__header_company__',
+  deal: '__header_deal__',
+} as const;
+
+function isHeaderId(id: string | number): boolean {
+  return String(id).startsWith('__header_');
+}
+
+/** Strip header "mentions" if user accidentally selects a section header */
+function stripHeaderMentions(value: string): string {
+  return value.replace(/@\[[^\]]+\]\(@__header_[^)]+\)\s?/g, '');
+}
 
 // ============================================================================
 // Mention Extraction Utility
@@ -90,7 +106,14 @@ export const ChatInputWithMentions = React.forwardRef<
   const { data: companiesData } = useQuery(getCompanies({ limit: 100 }));
   const { data: dealsData } = useQuery(getDeals({ limit: 100 }));
 
-  // Custom suggestion renderer
+  // Entities already in context (from + button or previous @mentions) – exclude from list
+  const { sources } = usePromptInputReferencedSources();
+  const contextEntityIds = React.useMemo(
+    () => new Set(sources.map((s) => s.id)),
+    [sources],
+  );
+
+  // Custom suggestion renderer (item row or section header)
   const renderSuggestion = React.useCallback(
     (
       suggestion: MentionSuggestion,
@@ -100,20 +123,40 @@ export const ChatInputWithMentions = React.forwardRef<
       _focused: boolean,
     ) => {
       const idStr = String(suggestion.id);
+      if (isHeaderId(idStr)) {
+        return (
+          <div
+            data-section-header
+            className="sticky top-0 z-10 -my-2 -mx-3 w-[calc(100%+1.5rem)] bg-popover px-3 py-2 text-xs font-medium uppercase tracking-wide text-muted-foreground select-none"
+            role="presentation"
+            onMouseDown={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+            }}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+            }}
+          >
+            {suggestion.display}
+          </div>
+        );
+      }
       const prefix = idStr.split('-')[0] as ChatMention['type'];
       const Icon = MENTION_ICON_MAP[prefix] ?? UserIcon;
 
       return (
-        <div className="flex items-center gap-2">
-          <Icon className="size-4 text-muted-foreground" />
-          <div className="flex-1 min-w-0">
-            <div className="text-sm font-medium truncate">
-              {suggestion.display}
-            </div>
+        <div className="flex items-center gap-2 min-w-0">
+          <Icon className="size-4 shrink-0 text-muted-foreground" />
+          <div className="flex-1 min-w-0 flex items-baseline gap-2 text-sm truncate">
+            <span className="font-medium truncate">{suggestion.display}</span>
             {suggestion.description && (
-              <div className="text-xs text-muted-foreground truncate">
-                {suggestion.description}
-              </div>
+              <>
+                <span className="text-muted-foreground shrink-0">·</span>
+                <span className="text-muted-foreground truncate">
+                  {suggestion.description}
+                </span>
+              </>
             )}
           </div>
         </div>
@@ -122,7 +165,7 @@ export const ChatInputWithMentions = React.forwardRef<
     [],
   );
 
-  // Mention triggers configuration
+  // Mention triggers configuration: grouped by Contacts, Companies, Deals
   const mentionTriggers = React.useMemo<MentionTriggerConfig[]>(
     () => [
       {
@@ -131,63 +174,97 @@ export const ChatInputWithMentions = React.forwardRef<
           search: string,
           callback: (data: MentionSuggestion[]) => void,
         ) => {
+          // Show list only after user types at least 3 characters after @
+          if (search.length < 3) {
+            callback([]);
+            return;
+          }
           const searchLower = search.toLowerCase();
+          const match = (s: { display: string; description?: string }) =>
+            s.display.toLowerCase().includes(searchLower) ||
+            (s.description?.toLowerCase().includes(searchLower) ?? false);
 
-          // Combine contacts and companies
           const contactSuggestions: MentionSuggestion[] =
-            contactsData?.contacts.map((contact) => ({
-              id: `contact-${contact.id}`,
-              display: contact.name,
-              description: contact.email || contact.phone,
-            })) || [];
+            contactsData?.contacts
+              .filter((contact) => !contextEntityIds.has(`contact-${contact.id}`))
+              .map((contact) => ({
+                id: `contact-${contact.id}`,
+                display: contact.name,
+                description: contact.email || contact.phone,
+              })) || [];
+          const filteredContacts = contactSuggestions.filter(match);
 
           const companySuggestions: MentionSuggestion[] =
-            companiesData?.companies.map((company) => ({
-              id: `company-${company.id}`,
-              display: company.companyName,
-              description: company.website,
-            })) || [];
+            companiesData?.companies
+              .filter(
+                (company) => !contextEntityIds.has(`company-${company.id}`),
+              )
+              .map((company) => ({
+                id: `company-${company.id}`,
+                display: company.companyName,
+                description: company.website,
+              })) || [];
+          const filteredCompanies = companySuggestions.filter(match);
 
           const dealSuggestions: MentionSuggestion[] =
-            dealsData?.deals.map((deal) => ({
-              id: `deal-${deal.id}`,
-              display: deal.title,
-              description:
-                deal.stage ||
-                (deal.value != null
-                  ? `${deal.currency || 'USD'} ${deal.value.toLocaleString()}`
-                  : ''),
-            })) || [];
+            dealsData?.deals
+              .filter((deal) => !contextEntityIds.has(`deal-${deal.id}`))
+              .map((deal) => ({
+                id: `deal-${deal.id}`,
+                display: deal.title,
+                description:
+                  deal.stage ||
+                  (deal.value != null
+                    ? `${deal.currency || 'USD'} ${deal.value.toLocaleString()}`
+                    : ''),
+              })) || [];
+          const filteredDeals = dealSuggestions.filter(match);
 
-          const allSuggestions = [
-            ...contactSuggestions,
-            ...companySuggestions,
-            ...dealSuggestions,
-          ];
+          const grouped: MentionSuggestion[] = [];
+          if (filteredContacts.length > 0) {
+            grouped.push({
+              id: HEADER_IDS.contact,
+              display: 'Contacts',
+              description: '',
+            });
+            grouped.push(...filteredContacts);
+          }
+          if (filteredCompanies.length > 0) {
+            grouped.push({
+              id: HEADER_IDS.company,
+              display: 'Companies',
+              description: '',
+            });
+            grouped.push(...filteredCompanies);
+          }
+          if (filteredDeals.length > 0) {
+            grouped.push({
+              id: HEADER_IDS.deal,
+              display: 'Deals',
+              description: '',
+            });
+            grouped.push(...filteredDeals);
+          }
 
-          // Filter based on search
-          const filtered = allSuggestions.filter(
-            (s) =>
-              s.display.toLowerCase().includes(searchLower) ||
-              s.description?.toLowerCase().includes(searchLower),
-          );
-
-          callback(filtered);
+          callback(grouped);
         },
         renderSuggestion,
       },
     ],
-    [contactsData, companiesData, dealsData, renderSuggestion],
+    [contactsData, companiesData, dealsData, contextEntityIds, renderSuggestion],
   );
 
-  // Handle change and extract mentions
+  // Handle change: strip section-header "mentions" if selected, then notify parent
   const handleChange = React.useCallback(
     (event: { target: { value: string } }) => {
+      const value = stripHeaderMentions(event.target.value);
+      if (value !== event.target.value) {
+        event = { target: { value } };
+      }
       onChange?.(event);
 
-      // Extract mentions and notify parent
       if (onMentionsExtract) {
-        const mentions = extractMentions(event.target.value);
+        const mentions = extractMentions(value);
         onMentionsExtract(mentions);
       }
     },
