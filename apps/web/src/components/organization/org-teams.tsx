@@ -136,8 +136,8 @@ export const OrgTeams = ({
       <Table className="mt-10 [--gutter:--spacing(6)] lg:[--gutter:--spacing(10)]">
         <TableHead>
           <TableRow>
-            <TableHeader>Team</TableHeader>
-            <TableHeader>Created On</TableHeader>
+            <TableHeader className="w-12"></TableHeader>
+            <TableHeader>Team Name</TableHeader>
             <TableHeader>Members</TableHeader>
             <TableHeader className="text-right">Actions</TableHeader>
           </TableRow>
@@ -156,19 +156,17 @@ export const OrgTeams = ({
             teams.map((team) => (
               <TableRow key={team.id}>
                 <TableCell>
-                  <div className="flex items-center gap-4">
-                    <Avatar
-                      initials={team.name.charAt(0).toUpperCase()}
-                      className="size-8 shadow-sm bg-zinc-100 text-zinc-900 dark:bg-zinc-800 dark:text-white"
-                    />
-                    <span className="text-sm font-medium text-zinc-950 dark:text-white">
-                      {team.name}
-                    </span>
-                  </div>
+                  <Avatar
+                    initials={team.name.charAt(0).toUpperCase()}
+                    className="size-8 shadow-sm bg-zinc-100 text-zinc-900 dark:bg-zinc-800 dark:text-white"
+                  />
                 </TableCell>
-                <TableCell className="text-zinc-500 text-sm">
-                  {new Date(team.createdAt).toLocaleDateString()}
+                <TableCell>
+                  <span className="text-sm font-medium text-zinc-950 dark:text-white">
+                    {team.name}
+                  </span>
                 </TableCell>
+
                 <TableCell>
                   <TeamMemberAvatars
                     teamId={team.id}
@@ -269,7 +267,7 @@ const TeamMemberAvatars = ({
   const overflow = enriched.length - visible.length;
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-4">
       <div className="flex -space-x-2">
         {visible.map((member) => {
           const nameToUse = member.user.name || member.user.email || '?';
@@ -295,6 +293,9 @@ const TeamMemberAvatars = ({
           </div>
         )}
       </div>
+      <span className="text-sm text-zinc-500 dark:text-zinc-400">
+        {enriched.length} {enriched.length === 1 ? 'member' : 'members'}
+      </span>
     </div>
   );
 };
