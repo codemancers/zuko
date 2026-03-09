@@ -270,7 +270,7 @@ export class CompaniesRepository {
     ]);
   }
 
-  async getCompaniesByUser(
+  async getCompaniesByOwner(
     organizationId: number,
     userId: number,
     pagination: PaginationOptions = {},

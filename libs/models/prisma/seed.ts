@@ -5,13 +5,17 @@
  * Usage: npx prisma db seed (from libs/models) or nx run @zuko/models:seed
  *
  * Prisma v7 requires a driver adapter: https://www.prisma.io/docs/orm/prisma-migrate/workflows/seeding
+ *
+ * The E2E user is created via better-auth's signUpEmail so the password is hashed
+ * in the format better-auth expects (same as production sign-in).
  */
 
 import * as path from "node:path";
-import * as crypto from "node:crypto";
 import { Pool } from "pg";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "@prisma/client";
+import { betterAuth } from "better-auth";
+import { prismaAdapter } from "better-auth/adapters/prisma";
 
 import dotenv from "dotenv";
 dotenv.config({ path: path.join(__dirname, "..", "..", ".env") });
@@ -22,46 +26,36 @@ const E2E_USER_PASSWORD = "TestPassword123!";
 
 const connectionString = process.env.DATABASE_URL;
 if (!connectionString) throw new Error("DATABASE_URL is not set");
+const secret = process.env.BETTER_AUTH_SECRET || process.env.AUTH_SECRET;
+if (!secret) throw new Error("BETTER_AUTH_SECRET or AUTH_SECRET is not set");
+
 const pool = new Pool({ connectionString });
 const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
 
-function hashPassword(password: string): string {
-  const salt = crypto.randomBytes(16);
-  const key = crypto.scryptSync(password, salt, 64);
-  return `${salt.toString("base64")}:${key.toString("base64")}`;
-}
+const auth = betterAuth({
+  database: prismaAdapter(prisma, { provider: "postgresql" }),
+  secret,
+  emailAndPassword: { enabled: true },
+  advanced: {
+    database: { generateId: "serial" },
+  },
+});
 
 async function main() {
-  const user = await prisma.user.upsert({
-    where: { email: E2E_USER_EMAIL },
-    create: {
+  const signUpResult = await auth.api.signUpEmail({
+    body: {
       name: E2E_USER_NAME,
       email: E2E_USER_EMAIL,
-      emailVerified: true,
+      password: E2E_USER_PASSWORD,
     },
-    update: {},
   });
 
-  const hashed = hashPassword(E2E_USER_PASSWORD);
-  const existing = await prisma.account.findFirst({
-    where: { userId: user.id, providerId: "credential" },
-  });
-  if (existing) {
-    await prisma.account.update({
-      where: { id: existing.id },
-      data: { password: hashed },
-    });
-  } else {
-    await prisma.account.create({
-      data: {
-        accountId: E2E_USER_EMAIL,
-        providerId: "credential",
-        userId: user.id,
-        password: hashed,
-      },
-    });
-  }
+  const result = signUpResult as { user: { id: number | string } };
+  const userId =
+    typeof result.user.id === "string"
+      ? parseInt(result.user.id, 10)
+      : result.user.id;
 
   // Organization required for sales entities (contacts, companies, deals)
   const org = await prisma.organization.upsert({
@@ -74,21 +68,23 @@ async function main() {
     update: {},
   });
 
+
+
   const existingMember = await prisma.member.findFirst({
-    where: { organizationId: org.id, userId: user.id },
+    where: { organizationId: org.id, userId },
   });
   if (!existingMember) {
     await prisma.member.create({
       data: {
         organizationId: org.id,
-        userId: user.id,
-        role: "member",
+        userId,
+        role: "owner",
         createdAt: new Date(),
       },
     });
   }
 
-  const company1 = await prisma.salesCompany.upsert({
+  await prisma.salesCompany.upsert({
     where: { id: 1 },
     create: {
       organizationId: org.id,
@@ -97,14 +93,13 @@ async function main() {
       linkedinUrl: "https://linkedin.com/company/test-company",
       summary: "TEST COMPANY SUMMARY",
       owners: {
-        create: { userId: user.id, isPrimary: true },
+        create: { userId, isPrimary: true },
       },
     },
     update: {},
-    include: { owners: true },
   });
 
-  const contact1 = await prisma.contact.upsert({
+  await prisma.contact.upsert({
     where: { id: 1 },
     create: {
       organizationId: org.id,
@@ -113,7 +108,7 @@ async function main() {
       phone: "+14155551234",
       notes: "TEST CONTACT NOTES",
       owners: {
-        create: { userId: user.id, isPrimary: true },
+        create: { userId, isPrimary: true },
       },
     },
     update: {},
@@ -131,7 +126,7 @@ async function main() {
       source: "Website",
       priority: 2,
       owners: {
-        create: { userId: user.id, isPrimary: true },
+        create: { userId, isPrimary: true },
       },
     },
     update: {},

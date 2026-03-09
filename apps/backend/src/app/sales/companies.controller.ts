@@ -196,7 +196,7 @@ export class CompaniesController {
   }
 
   @Get('user/:userId')
-  async getCompaniesByUser(
+  async getCompaniesByOwner(
     @OrgId() organizationId: number,
     @Param('userId', ParseIntPipe) userId: number,
     @Query() query: CompanyListQueryDto,
@@ -206,7 +206,7 @@ export class CompaniesController {
       limit: query.limit ? Number(query.limit) : 50,
     };
 
-    return this.companiesService.getCompaniesByUser(
+    return this.companiesService.getCompaniesByOwner(
       organizationId,
       userId,
       pagination,

@@ -252,7 +252,7 @@ export class DealsController {
   }
 
   @Get('user/:userId')
-  async getDealsByUser(
+  async getDealsByOwner(
     @OrgId() organizationId: number,
     @Param('userId', ParseIntPipe) userId: number,
     @Query() query: DealListQueryDto,
@@ -262,7 +262,7 @@ export class DealsController {
       limit: query.limit ? Number(query.limit) : 50,
     };
 
-    return this.dealsService.getDealsByUser(
+    return this.dealsService.getDealsByOwner(
       organizationId,
       userId,
       pagination,

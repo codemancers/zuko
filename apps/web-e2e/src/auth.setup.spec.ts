@@ -2,39 +2,34 @@ import { test as base } from '@playwright/test';
 import * as path from 'path';
 
 /**
- * Gather-style auth setup: real sign-up in the browser, then save storage state.
- * The "auth" project depends on this and uses storageState: '.auth/user.json',
- * so no cookie injection is needed and cookies are sent (same as Gather).
+ * Auth setup: sign in as the seeded E2E user and save storage state.
+ * The "e2e" project uses storageState: '.auth/user.json', so all E2E specs run as this user.
+ *
+ * Requires the database to be seeded first so the E2E user and org exist:
+ *   nx run @zuko/models:seed
+ * (Seed creates e2e@example.com, org "e2e-org", and TEST CONTACT / TEST COMPANY / etc.)
  */
+const E2E_USER_EMAIL = 'e2e@example.com';
+const E2E_USER_PASSWORD = 'TestPassword123!';
+
 const test = base.extend<object>({});
 
 test.describe('Auth setup', () => {
-  test('sign up and save storage state for authenticated tests', async ({
+  test('sign in as seeded E2E user and save storage state for authenticated tests', async ({
     page,
   }) => {
-    const email = `e2e-setup-${Date.now()}@example.com`;
-    const name = 'E2E Setup User';
-    const password = 'TestPassword123!';
+    await page.goto('/sign-in');
 
-    await page.goto('/sign-up');
-    await page.getByRole('textbox', { name: /full name/i }).fill(name);
-    await page.getByLabel(/email/i).fill(email);
-    await page.getByLabel(/^password$/i).fill(password);
-    await page.getByRole('button', { name: /create account/i }).click();
+    await page.getByLabel(/email/i).fill(E2E_USER_EMAIL);
+    await page.getByLabel(/^password$/i).fill(E2E_USER_PASSWORD);
+    await page.getByRole('button', { name: /sign in/i }).click();
 
-    await page.waitForURL('**/organization/create', { timeout: 60000 });
-
-    // Create an organization so we have an active session with an org
-    const orgName = `E2E Org ${Date.now()}`;
-    const orgSlug = `e2e-org-${Date.now()}`;
-
-    await page.getByLabel(/organization name/i).fill(orgName);
-    // Slug is auto-generated, but we can fill it to be sure
-    await page.getByLabel(/organization slug/i).fill(orgSlug);
-
-    await page.getByRole('button', { name: /save changes/i }).click();
-
-    await page.waitForURL('**/chat', { timeout: 60000 });
+    // Wait for app (chat, contacts, or org create if first time)
+    await page.waitForURL(
+      (url) =>
+        !url.pathname.startsWith('/sign-in') && !url.pathname.startsWith('/sign-up'),
+      { timeout: 60000 }
+    );
 
     const authDir = path.join(__dirname, '..', '.auth');
     await page

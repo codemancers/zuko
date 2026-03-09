@@ -388,7 +388,7 @@ export class DealsRepository {
     ]);
   }
 
-  async getDealsByUser(
+  async getDealsByOwner(
     organizationId: number,
     userId: number,
     pagination: PaginationOptions = {},

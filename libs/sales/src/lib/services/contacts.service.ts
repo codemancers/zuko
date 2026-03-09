@@ -220,12 +220,12 @@ export class ContactsService {
     return this.contactsRepository.setPrimaryOwner(contactId, userId);
   }
 
-  async getContactsByUser(
+  async getContactsByOwner(
     organizationId: number,
     userId: number,
     pagination?: PaginationOptions,
   ) {
-    return this.contactsRepository.getContactsByUser(
+    return this.contactsRepository.getContactsByOwner(
       organizationId,
       userId,
       pagination,

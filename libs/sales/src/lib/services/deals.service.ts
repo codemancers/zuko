@@ -173,12 +173,12 @@ export class DealsService {
     return this.dealsRepository.setPrimaryOwner(dealId, userId);
   }
 
-  async getDealsByUser(
+  async getDealsByOwner(
     organizationId: number,
     userId: number,
     pagination?: PaginationOptions,
   ) {
-    return this.dealsRepository.getDealsByUser(
+    return this.dealsRepository.getDealsByOwner(
       organizationId,
       userId,
       pagination,

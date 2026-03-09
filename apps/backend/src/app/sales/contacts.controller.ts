@@ -186,7 +186,7 @@ export class ContactsController {
   }
 
   @Get('user/:userId')
-  async getContactsByUser(
+  async getContactsByOwner(
     @OrgId() organizationId: number,
     @Param('userId', ParseIntPipe) userId: number,
     @Query() query: ContactListQueryDto,
@@ -196,7 +196,7 @@ export class ContactsController {
       limit: query.limit ? Number(query.limit) : 50,
     };
 
-    return this.contactsService.getContactsByUser(
+    return this.contactsService.getContactsByOwner(
       organizationId,
       userId,
       pagination,

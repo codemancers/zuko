@@ -221,12 +221,12 @@ export class CompaniesService {
     return this.companiesRepository.setPrimaryOwner(companyId, userId);
   }
 
-  async getCompaniesByUser(
+  async getCompaniesByOwner(
     organizationId: number,
     userId: number,
     pagination?: PaginationOptions,
   ) {
-    return this.companiesRepository.getCompaniesByUser(
+    return this.companiesRepository.getCompaniesByOwner(
       organizationId,
       userId,
       pagination,

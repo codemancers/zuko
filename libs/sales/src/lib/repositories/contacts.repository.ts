@@ -227,7 +227,7 @@ export class ContactsRepository {
     ]);
   }
 
-  async getContactsByUser(
+  async getContactsByOwner(
     organizationId: number,
     userId: number,
     pagination: PaginationOptions = {},

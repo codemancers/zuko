@@ -446,20 +446,17 @@ export class OrchestratorService {
         }))
         .filter((msg) => msg.content && msg.content.trim().length > 0);
 
-      // Hydrate contextEntities with names from database (requires organizationId for org-scoped findById)
+      // Without organizationId we cannot hydrate contextEntities (org-scoped findById); do not proceed
+      if (organizationId === undefined) {
+        return {
+          messages: formattedMessages,
+          contextEntities: [],
+        };
+      }
+
+      // Hydrate contextEntities with names from database
       const hydratedEntities = await Promise.all(
         contextEntities.map(async (entity) => {
-          if (organizationId === undefined) {
-            return {
-              ...entity,
-              name:
-                entity.type === 'contact'
-                  ? 'Contact'
-                  : entity.type === 'company'
-                    ? 'Company'
-                    : `Deal #${entity.id}`,
-            };
-          }
           try {
             if (entity.type === 'contact' && this.contactsService) {
               const contact = await this.contactsService.findById(
