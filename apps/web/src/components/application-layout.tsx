@@ -45,6 +45,7 @@ import { useEffect, useState } from 'react';
 import { useChats } from '@/hooks/use-chats';
 import { useQuery } from '@tanstack/react-query';
 import { getOrganizations } from '@/server/query-options';
+import { CalendarIcon } from '@heroicons/react/24/outline';
 
 function AccountDropdownMenu({
   anchor,
@@ -218,6 +219,13 @@ export function ApplicationLayout({ children }: { children: React.ReactNode }) {
               >
                 <BriefcaseIcon />
                 <SidebarLabel>Deals</SidebarLabel>
+              </SidebarItem>
+              <SidebarItem
+                href="/meetings"
+                current={pathname.startsWith('/meetings')}
+              >
+                <CalendarIcon />
+                <SidebarLabel>Meetings</SidebarLabel>
               </SidebarItem>
               <SidebarItem
                 href="/settings"
