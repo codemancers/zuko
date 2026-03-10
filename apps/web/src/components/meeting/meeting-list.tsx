@@ -174,7 +174,7 @@ export const MeetingList = () => {
           </Select>
         </div>
         <div className="flex max-w-xl flex-1 gap-3 md:justify-end">
-          <Button href="/meetings/add" className="whitespace-nowrap shadow-sm">
+          <Button href="/meeting/add" className="whitespace-nowrap shadow-sm">
             <PlusIcon className="h-5 w-5" aria-hidden="true" />
             Add to a meeting
           </Button>
@@ -188,7 +188,7 @@ export const MeetingList = () => {
               <div className="flex gap-6 py-6">
                 <div
                   className="min-w-0 flex-1 cursor-pointer"
-                  onClick={() => router.push(`/meetings/${meeting.id}`)}
+                  onClick={() => router.push(`/meeting/${meeting.id}`)}
                 >
                   <div className="flex min-w-0 flex-col gap-1">
                     <div className="flex min-w-0 items-center justify-between">
@@ -241,7 +241,7 @@ export const MeetingList = () => {
                     <EllipsisVerticalIcon className="h-5 w-5 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200" />
                   </DropdownButton>
                   <DropdownMenu anchor="bottom end">
-                    <DropdownItem href={`/meetings/${meeting.id}`}>
+                    <DropdownItem href={`/meeting/${meeting.id}`}>
                       View
                     </DropdownItem>
                     <DropdownItem

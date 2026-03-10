@@ -66,9 +66,18 @@ interface ActionItem {
 
 interface MeetingDetailProps {
   meetingId: string;
+  /** Optional override for testing (e.g. empty states, IN_PROGRESS) */
+  meetingOverride?: Partial<{
+    status: string;
+    recordingUrl: string | null;
+    transcript: TranscriptData[];
+    chatMessages: ChatMessage[];
+    summary: MeetingSummary | null;
+    actionItems: ActionItem[];
+  }>;
 }
 
-const MeetingDetail = ({ meetingId }: MeetingDetailProps) => {
+const MeetingDetail = ({ meetingId, meetingOverride }: MeetingDetailProps) => {
   const [activeTab, setActiveTab] = useState<Tab>('recording');
   const [actionItemSearch, setActionItemSearch] = useState('');
   const [supportsPiP, setSupportsPiP] = useState(false);
@@ -77,7 +86,7 @@ const MeetingDetail = ({ meetingId }: MeetingDetailProps) => {
 
   // Dummy Data
   // TODO: Remove this and use the actual data from the API
-  const meeting = {
+  const defaultMeeting = {
     id: meetingId,
     name: 'Weekly Sync - Product & Engineering',
     status: 'COMPLETED',
@@ -158,6 +167,9 @@ const MeetingDetail = ({ meetingId }: MeetingDetailProps) => {
       },
     ],
   };
+  const meeting = meetingOverride
+    ? { ...defaultMeeting, ...meetingOverride }
+    : defaultMeeting;
 
   const isAsanaIntegrationEnabled = true;
   const isAsanaConnected = true;
