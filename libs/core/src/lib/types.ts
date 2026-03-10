@@ -12,3 +12,11 @@ export interface RequestWithUser extends Request {
     [key: string]: unknown;
   };
 }
+
+/**
+ * Request with user and active organization (set by OrganizationGuard after AuthGuard).
+ * Use for routes that scope data to the current organization.
+ */
+export interface RequestWithOrganization extends RequestWithUser {
+  organizationId: number;
+}

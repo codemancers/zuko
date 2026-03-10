@@ -53,12 +53,8 @@ export class DealDetailPage extends BasePage {
   }
 
   async postComment(comment: string) {
-    // Find comment input (textarea or input for comments)
-    const commentInput = this.page
-      .locator(
-        'textarea[placeholder*="comment" i], input[placeholder*="comment" i]',
-      )
-      .first();
+    const commentInput = this.page.getByPlaceholder("Add a comment...");
+    await commentInput.waitFor({ state: "visible", timeout: 15000 });
     await commentInput.fill(comment);
 
     // Find and click post/submit button

@@ -70,6 +70,8 @@ describe("PersistentContextMiddleware - State Persistence", () => {
     await globalPool.end();
   });
 
+  const TEST_ORGANIZATION_ID = 1;
+
   describe("contextEntities persistence", () => {
     it("should hydrate contextEntities with names from database", async () => {
       const threadId = `test-hydration-${randomUUID()}`;
@@ -79,7 +81,7 @@ describe("PersistentContextMiddleware - State Persistence", () => {
         { type: "company", id: 2 },
       ];
 
-      // Send message with contextEntities
+      // Send message with contextEntities and organizationId (required for getMessages to hydrate names via findById)
       const agent = await (service as any).ensureAgent();
       const config = {
         streamMode: ["values"] as const,
@@ -91,6 +93,7 @@ describe("PersistentContextMiddleware - State Persistence", () => {
           messages: [{ role: "user", content: "Test hydration" }],
           contextEntities,
           userId,
+          organizationId: TEST_ORGANIZATION_ID,
         },
         config,
       );
@@ -143,12 +146,13 @@ describe("PersistentContextMiddleware - State Persistence", () => {
         configurable: { thread_id: threadId },
       };
 
-      // Stream with contextEntities and userId in initial state
+      // Stream with contextEntities, userId, and organizationId in initial state
       const stream = await agent.stream(
         {
           messages: [{ role: "user", content: "What is 1+1?" }],
           contextEntities,
           userId,
+          organizationId: TEST_ORGANIZATION_ID,
         },
         config,
       );
@@ -193,7 +197,7 @@ describe("PersistentContextMiddleware - State Persistence", () => {
         { type: "deal", id: 20 },
       ];
 
-      // Send message with contextEntities
+      // Send message with contextEntities and organizationId for hydration
       const agent = await (service as any).ensureAgent();
       const config = {
         streamMode: ["values"] as const,
@@ -205,6 +209,7 @@ describe("PersistentContextMiddleware - State Persistence", () => {
           messages: [{ role: "user", content: "Hello" }],
           contextEntities,
           userId,
+          organizationId: TEST_ORGANIZATION_ID,
         },
         config,
       );
@@ -259,6 +264,7 @@ describe("PersistentContextMiddleware - State Persistence", () => {
           messages: [{ role: "user", content: "First message" }],
           contextEntities: initialEntities,
           userId,
+          organizationId: TEST_ORGANIZATION_ID,
         },
         config,
       );
@@ -288,6 +294,7 @@ describe("PersistentContextMiddleware - State Persistence", () => {
           ],
           contextEntities: updatedEntities,
           userId,
+          organizationId: TEST_ORGANIZATION_ID,
         },
         config,
       );
@@ -360,6 +367,7 @@ describe("PersistentContextMiddleware - State Persistence", () => {
           messages: [{ role: "user", content: "Test all entity types" }],
           contextEntities,
           userId: 999,
+          organizationId: TEST_ORGANIZATION_ID,
         },
         config,
       );
@@ -445,6 +453,7 @@ describe("PersistentContextMiddleware - State Persistence", () => {
           messages: [{ role: "user", content: "Thread 1" }],
           contextEntities: entities1,
           userId: 100,
+          organizationId: TEST_ORGANIZATION_ID,
         },
         {
           streamMode: ["values"] as const,
@@ -461,6 +470,7 @@ describe("PersistentContextMiddleware - State Persistence", () => {
           messages: [{ role: "user", content: "Thread 2" }],
           contextEntities: entities2,
           userId: 200,
+          organizationId: TEST_ORGANIZATION_ID,
         },
         {
           streamMode: ["values"] as const,

@@ -3,6 +3,9 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { DealsController, CreateDealDto } from './deals.controller';
 import { DealsService } from '@zuko/sales';
 import { AuthGuard } from '@thallesp/nestjs-better-auth';
+import { OrganizationGuard } from '../../common/auth/organization.guard';
+
+const TEST_ORGANIZATION_ID = 1;
 
 describe('DealsController', () => {
   let controller: DealsController;
@@ -17,7 +20,7 @@ describe('DealsController', () => {
     addOwner: jest.fn(),
     removeOwner: jest.fn(),
     setPrimaryOwner: jest.fn(),
-    getDealsByUser: jest.fn(),
+    getDealsByOwner: jest.fn(),
     addCompany: jest.fn(),
     removeCompany: jest.fn(),
     updateCompany: jest.fn(),
@@ -41,6 +44,8 @@ describe('DealsController', () => {
       ],
     })
       .overrideGuard(AuthGuard)
+      .useValue({ canActivate: () => true })
+      .overrideGuard(OrganizationGuard)
       .useValue({ canActivate: () => true })
       .compile();
 
@@ -82,7 +87,7 @@ describe('DealsController', () => {
         mockCreatedDeal as never,
       );
 
-      await controller.create(dto);
+      await controller.create(TEST_ORGANIZATION_ID, dto);
 
       // Check that the service was called with a Date object, not a string
       expect(mockDealsService.create).toHaveBeenCalledTimes(1);
@@ -122,7 +127,7 @@ describe('DealsController', () => {
         mockCreatedDeal as never,
       );
 
-      await controller.create(dto);
+      await controller.create(TEST_ORGANIZATION_ID, dto);
 
       expect(mockDealsService.create).toHaveBeenCalledTimes(1);
       const callArg = mockDealsService.create.mock.calls[0][0] as {
@@ -154,15 +159,17 @@ describe('DealsController', () => {
         mockUpdatedDeal as never,
       );
 
-      await controller.update(dealId, dto);
+      await controller.update(TEST_ORGANIZATION_ID, dealId, dto);
 
       expect(mockDealsService.update).toHaveBeenCalledTimes(1);
-      const [id, callArg] = mockDealsService.update.mock.calls[0] as [
+      const [id, orgId, callArg] = mockDealsService.update.mock.calls[0] as [
+        number,
         number,
         { expectedCloseDate?: Date; actualCloseDate?: Date },
       ];
 
       expect(id).toBe(dealId);
+      expect(orgId).toBe(TEST_ORGANIZATION_ID);
       expect(callArg.expectedCloseDate).toBeInstanceOf(Date);
       expect(callArg.actualCloseDate).toBeInstanceOf(Date);
       expect((callArg.expectedCloseDate as Date).toISOString()).toContain(
@@ -190,10 +197,11 @@ describe('DealsController', () => {
         mockUpdatedDeal as never,
       );
 
-      await controller.update(dealId, dto);
+      await controller.update(TEST_ORGANIZATION_ID, dealId, dto);
 
       expect(mockDealsService.update).toHaveBeenCalledTimes(1);
-      const [, callArg] = mockDealsService.update.mock.calls[0] as [
+      const [, , callArg] = mockDealsService.update.mock.calls[0] as [
+        number,
         number,
         { expectedCloseDate?: Date; actualCloseDate?: Date },
       ];

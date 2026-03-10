@@ -1,7 +1,10 @@
 import { tool } from '@langchain/core/tools';
 import { z } from 'zod';
 import type { ContactsService } from '@zuko/sales';
-import { getContextEntities } from '../context/tool-context';
+import {
+  getContextEntities,
+  getOrganizationId,
+} from '../context/tool-context';
 
 /**
  * LangChain tool for retrieving contact owner(s)
@@ -25,8 +28,19 @@ export function createGetContactOwnerTool(contactsService: ContactsService) {
         };
       }
 
+      const organizationId = getOrganizationId(config);
+      if (organizationId === undefined) {
+        return {
+          error:
+            'No organization context. Please select an organization and try again.',
+        };
+      }
+
       try {
-        const contact = await contactsService.findById(contactId);
+        const contact = await contactsService.findById(
+          contactId,
+          organizationId,
+        );
 
         if (!contact.owners || contact.owners.length === 0) {
           return {

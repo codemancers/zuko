@@ -4,6 +4,7 @@ import type { PrismaService } from '../modules/prisma.types';
 import type { PaginationOptions } from './types';
 
 export interface CreateDealInput {
+  organizationId: number;
   title: string;
   value?: number;
   currency?: string;
@@ -33,6 +34,7 @@ export interface UpdateDealInput {
 }
 
 export interface DealFilters {
+  organizationId: number;
   isHidden?: boolean;
   dealIds?: number[];
   ownerIds?: number[];
@@ -67,11 +69,12 @@ export class DealsRepository {
   constructor(private readonly prisma: PrismaService) {}
 
   async create(input: CreateDealInput) {
-    const { ownerIds, primaryOwnerId, ...dealData } = input;
+    const { ownerIds, primaryOwnerId, organizationId, ...dealData } = input;
 
     return this.prisma.deal.create({
       data: {
         ...dealData,
+        organizationId,
         owners: {
           create: ownerIds.map((userId) => ({
             userId,
@@ -119,9 +122,9 @@ export class DealsRepository {
     });
   }
 
-  async findById(id: number) {
-    return this.prisma.deal.findUnique({
-      where: { id },
+  async findById(id: number, organizationId: number) {
+    return this.prisma.deal.findFirst({
+      where: { id, organizationId },
       include: {
         owners: {
           include: {
@@ -204,8 +207,9 @@ export class DealsRepository {
     return this.update(id, { isHidden: false });
   }
 
-  async findAll(filters: DealFilters = {}, pagination: PaginationOptions = {}) {
+  async findAll(filters: DealFilters, pagination: PaginationOptions = {}) {
     const {
+      organizationId,
       isHidden = false,
       dealIds,
       ownerIds,
@@ -222,6 +226,7 @@ export class DealsRepository {
     const skip = (page - 1) * limit;
 
     const where: Prisma.DealWhereInput = {
+      organizationId,
       isHidden,
       ...(dealIds && dealIds.length > 0 ? { id: { in: dealIds } } : {}),
       ...(ownerIds && ownerIds.length > 0
@@ -383,8 +388,12 @@ export class DealsRepository {
     ]);
   }
 
-  async getDealsByUser(userId: number, pagination: PaginationOptions = {}) {
-    return this.findAll({ ownerIds: [userId] }, pagination);
+  async getDealsByOwner(
+    organizationId: number,
+    userId: number,
+    pagination: PaginationOptions = {},
+  ) {
+    return this.findAll({ organizationId, ownerIds: [userId] }, pagination);
   }
 
   async addCompany(dealId: number, input: AddCompanyToDealInput) {
@@ -595,16 +604,24 @@ export class DealsRepository {
   }
 
   async getDealsByCompany(
+    organizationId: number,
     companyId: number,
     pagination: PaginationOptions = {},
   ) {
-    return this.findAll({ companyIds: [companyId] }, pagination);
+    return this.findAll(
+      { organizationId, companyIds: [companyId] },
+      pagination,
+    );
   }
 
   async getDealsByContact(
+    organizationId: number,
     contactId: number,
     pagination: PaginationOptions = {},
   ) {
-    return this.findAll({ contactIds: [contactId] }, pagination);
+    return this.findAll(
+      { organizationId, contactIds: [contactId] },
+      pagination,
+    );
   }
 }

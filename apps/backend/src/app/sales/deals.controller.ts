@@ -22,9 +22,11 @@ import {
   AddContactToDealInput,
   UpdateContactDealInput,
 } from '@zuko/sales';
+import { OrganizationGuard } from '../../common/auth/organization.guard';
+import { OrgId } from '../../common/auth/org-id.decorator';
 
-// DTOs for API requests
-export class CreateDealDto implements CreateDealInput {
+// DTOs for API requests (organizationId is set from session via OrganizationGuard)
+export class CreateDealDto implements Omit<CreateDealInput, 'organizationId'> {
   title!: string;
   value?: number;
   currency?: string;
@@ -93,7 +95,7 @@ export class UpdateContactDto implements UpdateContactDealInput {
 }
 
 @Controller('deals')
-@UseGuards(AuthGuard)
+@UseGuards(AuthGuard, OrganizationGuard)
 export class DealsController {
   private readonly logger = new Logger(DealsController.name);
 
@@ -101,7 +103,7 @@ export class DealsController {
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  async create(@Body() dto: CreateDealDto) {
+  async create(@OrgId() organizationId: number, @Body() dto: CreateDealDto) {
     this.logger.log('[CREATE_DEAL] Request received');
     this.logger.debug(
       `[CREATE_DEAL] Payload: ${JSON.stringify({
@@ -114,9 +116,9 @@ export class DealsController {
     );
 
     try {
-      // Transform expectedCloseDate string to Date object if provided
       const input: CreateDealInput = {
         ...dto,
+        organizationId,
         expectedCloseDate: dto.expectedCloseDate
           ? new Date(dto.expectedCloseDate)
           : undefined,
@@ -135,8 +137,12 @@ export class DealsController {
   }
 
   @Get()
-  async list(@Query() query: DealListQueryDto) {
+  async list(
+    @OrgId() organizationId: number,
+    @Query() query: DealListQueryDto,
+  ) {
     const filters = {
+      organizationId,
       search: query.search,
       isHidden: query.isHidden === 'true',
       ownerIds: query.ownerIds
@@ -168,16 +174,19 @@ export class DealsController {
   }
 
   @Get(':id')
-  async findOne(@Param('id', ParseIntPipe) id: number) {
-    return this.dealsService.findById(id);
+  async findOne(
+    @OrgId() organizationId: number,
+    @Param('id', ParseIntPipe) id: number,
+  ) {
+    return this.dealsService.findById(id, organizationId);
   }
 
   @Patch(':id')
   async update(
+    @OrgId() organizationId: number,
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateDealDto,
   ) {
-    // Transform date strings to Date objects if provided
     const input: UpdateDealInput = {
       ...dto,
       expectedCloseDate: dto.expectedCloseDate
@@ -188,48 +197,63 @@ export class DealsController {
         : undefined,
     };
 
-    return this.dealsService.update(id, input);
+    return this.dealsService.update(id, organizationId, input);
   }
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  async hide(@Param('id', ParseIntPipe) id: number) {
-    await this.dealsService.hide(id);
+  async hide(
+    @OrgId() organizationId: number,
+    @Param('id', ParseIntPipe) id: number,
+  ) {
+    await this.dealsService.hide(id, organizationId);
   }
 
   @Post(':id/unhide')
-  async unhide(@Param('id', ParseIntPipe) id: number) {
-    return this.dealsService.unhide(id);
+  async unhide(
+    @OrgId() organizationId: number,
+    @Param('id', ParseIntPipe) id: number,
+  ) {
+    return this.dealsService.unhide(id, organizationId);
   }
 
   @Post(':id/owners')
   async addOwner(
+    @OrgId() organizationId: number,
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: AddOwnerDto,
   ) {
-    return this.dealsService.addOwner(id, dto.userId, dto.isPrimary);
+    return this.dealsService.addOwner(
+      id,
+      organizationId,
+      dto.userId,
+      dto.isPrimary,
+    );
   }
 
   @Delete(':id/owners/:userId')
   @HttpCode(HttpStatus.NO_CONTENT)
   async removeOwner(
+    @OrgId() organizationId: number,
     @Param('id', ParseIntPipe) id: number,
     @Param('userId', ParseIntPipe) userId: number,
   ) {
-    await this.dealsService.removeOwner(id, userId);
+    await this.dealsService.removeOwner(id, organizationId, userId);
   }
 
   @Post(':id/owners/:userId/set-primary')
   async setPrimaryOwner(
+    @OrgId() organizationId: number,
     @Param('id', ParseIntPipe) id: number,
     @Param('userId', ParseIntPipe) userId: number,
   ) {
-    await this.dealsService.setPrimaryOwner(id, userId);
+    await this.dealsService.setPrimaryOwner(id, organizationId, userId);
     return { success: true };
   }
 
   @Get('user/:userId')
-  async getDealsByUser(
+  async getDealsByOwner(
+    @OrgId() organizationId: number,
     @Param('userId', ParseIntPipe) userId: number,
     @Query() query: DealListQueryDto,
   ) {
@@ -238,12 +262,17 @@ export class DealsController {
       limit: query.limit ? Number(query.limit) : 50,
     };
 
-    return this.dealsService.getDealsByUser(userId, pagination);
+    return this.dealsService.getDealsByOwner(
+      organizationId,
+      userId,
+      pagination,
+    );
   }
 
   @Post(':id/companies')
   @HttpCode(HttpStatus.CREATED)
   async addCompany(
+    @OrgId() organizationId: number,
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: AddCompanyDto,
   ) {
@@ -252,7 +281,7 @@ export class DealsController {
     );
 
     try {
-      const result = await this.dealsService.addCompany(id, dto);
+      const result = await this.dealsService.addCompany(id, organizationId, dto);
       this.logger.log(
         `[ADD_COMPANY_TO_DEAL] Success - Company ${dto.companyId} added to Deal ${id}`,
       );
@@ -271,30 +300,41 @@ export class DealsController {
 
   @Patch(':id/companies/:companyId')
   async updateCompany(
+    @OrgId() organizationId: number,
     @Param('id', ParseIntPipe) id: number,
     @Param('companyId', ParseIntPipe) companyId: number,
     @Body() dto: UpdateCompanyDto,
   ) {
-    return this.dealsService.updateCompany(id, companyId, dto.isPrimary);
+    return this.dealsService.updateCompany(
+      id,
+      organizationId,
+      companyId,
+      dto.isPrimary,
+    );
   }
 
   @Delete(':id/companies/:companyId')
   @HttpCode(HttpStatus.NO_CONTENT)
   async removeCompany(
+    @OrgId() organizationId: number,
     @Param('id', ParseIntPipe) id: number,
     @Param('companyId', ParseIntPipe) companyId: number,
   ) {
-    await this.dealsService.removeCompany(id, companyId);
+    await this.dealsService.removeCompany(id, organizationId, companyId);
   }
 
   @Get(':id/companies')
-  async getCompanies(@Param('id', ParseIntPipe) id: number) {
-    return this.dealsService.getCompanies(id);
+  async getCompanies(
+    @OrgId() organizationId: number,
+    @Param('id', ParseIntPipe) id: number,
+  ) {
+    return this.dealsService.getCompanies(id, organizationId);
   }
 
   @Post(':id/contacts')
   @HttpCode(HttpStatus.CREATED)
   async addContact(
+    @OrgId() organizationId: number,
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: AddContactDto,
   ) {
@@ -303,7 +343,7 @@ export class DealsController {
     );
 
     try {
-      const result = await this.dealsService.addContact(id, dto);
+      const result = await this.dealsService.addContact(id, organizationId, dto);
       this.logger.log(
         `[ADD_CONTACT_TO_DEAL] Success - Contact ${dto.contactId} added to Deal ${id}`,
       );
@@ -322,29 +362,35 @@ export class DealsController {
 
   @Patch(':id/contacts/:contactId')
   async updateContact(
+    @OrgId() organizationId: number,
     @Param('id', ParseIntPipe) id: number,
     @Param('contactId', ParseIntPipe) contactId: number,
     @Body() dto: UpdateContactDto,
   ) {
-    return this.dealsService.updateContact(id, contactId, dto);
+    return this.dealsService.updateContact(id, organizationId, contactId, dto);
   }
 
   @Delete(':id/contacts/:contactId')
   @HttpCode(HttpStatus.NO_CONTENT)
   async removeContact(
+    @OrgId() organizationId: number,
     @Param('id', ParseIntPipe) id: number,
     @Param('contactId', ParseIntPipe) contactId: number,
   ) {
-    await this.dealsService.removeContact(id, contactId);
+    await this.dealsService.removeContact(id, organizationId, contactId);
   }
 
   @Get(':id/contacts')
-  async getContacts(@Param('id', ParseIntPipe) id: number) {
-    return this.dealsService.getContacts(id);
+  async getContacts(
+    @OrgId() organizationId: number,
+    @Param('id', ParseIntPipe) id: number,
+  ) {
+    return this.dealsService.getContacts(id, organizationId);
   }
 
   @Get('company/:companyId')
   async getDealsByCompany(
+    @OrgId() organizationId: number,
     @Param('companyId', ParseIntPipe) companyId: number,
     @Query() query: DealListQueryDto,
   ) {
@@ -353,11 +399,16 @@ export class DealsController {
       limit: query.limit ? Number(query.limit) : 50,
     };
 
-    return this.dealsService.getDealsByCompany(companyId, pagination);
+    return this.dealsService.getDealsByCompany(
+      organizationId,
+      companyId,
+      pagination,
+    );
   }
 
   @Get('contact/:contactId')
   async getDealsByContact(
+    @OrgId() organizationId: number,
     @Param('contactId', ParseIntPipe) contactId: number,
     @Query() query: DealListQueryDto,
   ) {
@@ -366,6 +417,10 @@ export class DealsController {
       limit: query.limit ? Number(query.limit) : 50,
     };
 
-    return this.dealsService.getDealsByContact(contactId, pagination);
+    return this.dealsService.getDealsByContact(
+      organizationId,
+      contactId,
+      pagination,
+    );
   }
 }

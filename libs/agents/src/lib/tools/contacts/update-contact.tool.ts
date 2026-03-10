@@ -1,7 +1,10 @@
 import { tool } from '@langchain/core/tools';
 import { z } from 'zod';
 import type { ContactsService } from '@zuko/sales';
-import { getContextEntities } from '../context/tool-context';
+import {
+  getContextEntities,
+  getOrganizationId,
+} from '../context/tool-context';
 
 /**
  * LangChain tool for updating a contact.
@@ -54,8 +57,20 @@ export function createUpdateContactTool(contactsService: ContactsService) {
         };
       }
 
+      const organizationId = getOrganizationId(config);
+      if (organizationId === undefined) {
+        return {
+          error:
+            'No organization context. Please select an organization and try again.',
+        };
+      }
+
       try {
-        const contact = await contactsService.update(contactId, updates as any);
+        const contact = await contactsService.update(
+          contactId,
+          organizationId,
+          updates as any,
+        );
         return {
           success: true,
           message: 'Contact updated.',

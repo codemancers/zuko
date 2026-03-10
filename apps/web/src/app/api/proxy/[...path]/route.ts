@@ -71,8 +71,13 @@ async function proxyRequest(
     Cookie: cookieHeader,
   };
 
-  // Copy relevant headers from original request
-  const relevantHeaders = ['authorization', 'accept', 'accept-language'];
+  // Copy relevant headers from original request (including org context for backend)
+  const relevantHeaders = [
+    'authorization',
+    'accept',
+    'accept-language',
+    'x-organization-id',
+  ];
   relevantHeaders.forEach((header) => {
     const value = request.headers.get(header);
     if (value) {

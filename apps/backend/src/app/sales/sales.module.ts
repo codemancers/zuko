@@ -19,6 +19,7 @@ import {
 } from '@zuko/sales';
 import { PrismaModule } from '../../prisma/prisma.module';
 import { PrismaService } from '../../prisma/prisma.service';
+import { OrganizationGuard } from '../../common/auth/organization.guard';
 
 @Module({
   imports: [PrismaModule],
@@ -31,6 +32,7 @@ import { PrismaService } from '../../prisma/prisma.service';
     CompanyActivitiesController,
   ],
   providers: [
+    OrganizationGuard,
     {
       provide: ContactsRepository,
       useFactory: (prismaService: PrismaService) => {

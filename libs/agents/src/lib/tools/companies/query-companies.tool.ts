@@ -1,6 +1,7 @@
 import { tool } from '@langchain/core/tools';
 import { z } from 'zod';
 import type { CompaniesService } from '@zuko/sales';
+import { getOrganizationId } from '../context/tool-context';
 
 /**
  * LangChain tool for querying companies with flexible filters
@@ -8,9 +9,22 @@ import type { CompaniesService } from '@zuko/sales';
  */
 export function createQueryCompaniesTool(companiesService: CompaniesService) {
   return tool(
-    async ({ filters = {}, aggregation = 'list', limit = 100 }) => {
+    async ({ filters = {}, aggregation = 'list', limit = 100 }, config?) => {
+      const organizationId = getOrganizationId(config);
+      if (organizationId === undefined) {
+        return {
+          error:
+            'No organization context. Please select an organization and try again.',
+        };
+      }
+
       try {
-        const companyFilters: Record<string, unknown> = {};
+        const companyFilters: {
+          organizationId: number;
+          search?: string;
+          ownerIds?: number[];
+          companyIds?: number[];
+        } = { organizationId };
         const paginationOptions = { limit: Math.min(limit, 1000) }; // Cap at 1000
 
         if (filters.search) {

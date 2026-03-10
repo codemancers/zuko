@@ -14,6 +14,9 @@ export default [
             '{projectRoot}/prisma/seed.ts',
             '{projectRoot}/jest.config.{js,cjs,mjs,ts,cts,mts}',
           ],
+          ignoredDependencies: [
+            'better-auth',
+          ],
         },
       ],
     },

@@ -83,17 +83,17 @@ export class DealsService {
     }
   }
 
-  async findById(id: number) {
-    const deal = await this.dealsRepository.findById(id);
+  async findById(id: number, organizationId: number) {
+    const deal = await this.dealsRepository.findById(id, organizationId);
     if (!deal) {
       throw new NotFoundException(`Deal with ID ${id} not found`);
     }
     return deal;
   }
 
-  async update(id: number, input: UpdateDealInput) {
-    // Check deal exists
-    await this.findById(id);
+  async update(id: number, organizationId: number, input: UpdateDealInput) {
+    // Check deal exists and belongs to org
+    await this.findById(id, organizationId);
 
     // Validate title if being updated
     if (input.title !== undefined) {
@@ -135,45 +135,66 @@ export class DealsService {
     return this.dealsRepository.update(id, input);
   }
 
-  async hide(id: number) {
-    await this.findById(id);
+  async hide(id: number, organizationId: number) {
+    await this.findById(id, organizationId);
     return this.dealsRepository.hide(id);
   }
 
-  async unhide(id: number) {
-    await this.findById(id);
+  async unhide(id: number, organizationId: number) {
+    await this.findById(id, organizationId);
     return this.dealsRepository.unhide(id);
   }
 
-  async findAll(filters?: DealFilters, pagination?: PaginationOptions) {
+  async findAll(filters: DealFilters, pagination?: PaginationOptions) {
     return this.dealsRepository.findAll(filters, pagination);
   }
 
-  async addOwner(dealId: number, userId: number, isPrimary = false) {
-    await this.findById(dealId);
+  async addOwner(
+    dealId: number,
+    organizationId: number,
+    userId: number,
+    isPrimary = false,
+  ) {
+    await this.findById(dealId, organizationId);
     return this.dealsRepository.addOwner(dealId, userId, isPrimary);
   }
 
-  async removeOwner(dealId: number, userId: number) {
-    await this.findById(dealId);
+  async removeOwner(dealId: number, organizationId: number, userId: number) {
+    await this.findById(dealId, organizationId);
     return this.dealsRepository.removeOwner(dealId, userId);
   }
 
-  async setPrimaryOwner(dealId: number, userId: number) {
-    await this.findById(dealId);
+  async setPrimaryOwner(
+    dealId: number,
+    organizationId: number,
+    userId: number,
+  ) {
+    await this.findById(dealId, organizationId);
     return this.dealsRepository.setPrimaryOwner(dealId, userId);
   }
 
-  async getDealsByUser(userId: number, pagination?: PaginationOptions) {
-    return this.dealsRepository.getDealsByUser(userId, pagination);
+  async getDealsByOwner(
+    organizationId: number,
+    userId: number,
+    pagination?: PaginationOptions,
+  ) {
+    return this.dealsRepository.getDealsByOwner(
+      organizationId,
+      userId,
+      pagination,
+    );
   }
 
-  async addCompany(dealId: number, input: AddCompanyToDealInput) {
+  async addCompany(
+    dealId: number,
+    organizationId: number,
+    input: AddCompanyToDealInput,
+  ) {
     this.logger.log(
       `[SERVICE] Adding company ${input.companyId} to deal ${dealId}`,
     );
 
-    await this.findById(dealId);
+    await this.findById(dealId, organizationId);
 
     // Check if company is already associated with this deal
     const existingCompanies = await this.dealsRepository.getCompanies(dealId);
@@ -205,12 +226,16 @@ export class DealsService {
     }
   }
 
-  async removeCompany(dealId: number, companyId: number) {
+  async removeCompany(
+    dealId: number,
+    organizationId: number,
+    companyId: number,
+  ) {
     this.logger.log(
       `[SERVICE] Removing company ${companyId} from deal ${dealId}`,
     );
 
-    await this.findById(dealId);
+    await this.findById(dealId, organizationId);
 
     try {
       const result = await this.dealsRepository.removeCompany(
@@ -233,22 +258,31 @@ export class DealsService {
     }
   }
 
-  async updateCompany(dealId: number, companyId: number, isPrimary: boolean) {
-    await this.findById(dealId);
+  async updateCompany(
+    dealId: number,
+    organizationId: number,
+    companyId: number,
+    isPrimary: boolean,
+  ) {
+    await this.findById(dealId, organizationId);
     return this.dealsRepository.updateCompany(dealId, companyId, isPrimary);
   }
 
-  async getCompanies(dealId: number) {
-    await this.findById(dealId);
+  async getCompanies(dealId: number, organizationId: number) {
+    await this.findById(dealId, organizationId);
     return this.dealsRepository.getCompanies(dealId);
   }
 
-  async addContact(dealId: number, input: AddContactToDealInput) {
+  async addContact(
+    dealId: number,
+    organizationId: number,
+    input: AddContactToDealInput,
+  ) {
     this.logger.log(
       `[SERVICE] Adding contact ${input.contactId} to deal ${dealId}`,
     );
 
-    await this.findById(dealId);
+    await this.findById(dealId, organizationId);
 
     // Check if contact is already associated with this deal
     const existingContacts = await this.dealsRepository.getContacts(dealId);
@@ -280,12 +314,16 @@ export class DealsService {
     }
   }
 
-  async removeContact(dealId: number, contactId: number) {
+  async removeContact(
+    dealId: number,
+    organizationId: number,
+    contactId: number,
+  ) {
     this.logger.log(
       `[SERVICE] Removing contact ${contactId} from deal ${dealId}`,
     );
 
-    await this.findById(dealId);
+    await this.findById(dealId, organizationId);
 
     try {
       const result = await this.dealsRepository.removeContact(
@@ -310,23 +348,40 @@ export class DealsService {
 
   async updateContact(
     dealId: number,
+    organizationId: number,
     contactId: number,
     input: UpdateContactDealInput,
   ) {
-    await this.findById(dealId);
+    await this.findById(dealId, organizationId);
     return this.dealsRepository.updateContact(dealId, contactId, input);
   }
 
-  async getContacts(dealId: number) {
-    await this.findById(dealId);
+  async getContacts(dealId: number, organizationId: number) {
+    await this.findById(dealId, organizationId);
     return this.dealsRepository.getContacts(dealId);
   }
 
-  async getDealsByCompany(companyId: number, pagination?: PaginationOptions) {
-    return this.dealsRepository.getDealsByCompany(companyId, pagination);
+  async getDealsByCompany(
+    organizationId: number,
+    companyId: number,
+    pagination?: PaginationOptions,
+  ) {
+    return this.dealsRepository.getDealsByCompany(
+      organizationId,
+      companyId,
+      pagination,
+    );
   }
 
-  async getDealsByContact(contactId: number, pagination?: PaginationOptions) {
-    return this.dealsRepository.getDealsByContact(contactId, pagination);
+  async getDealsByContact(
+    organizationId: number,
+    contactId: number,
+    pagination?: PaginationOptions,
+  ) {
+    return this.dealsRepository.getDealsByContact(
+      organizationId,
+      contactId,
+      pagination,
+    );
   }
 }

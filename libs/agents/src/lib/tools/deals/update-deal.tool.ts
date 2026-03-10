@@ -1,7 +1,10 @@
 import { tool } from '@langchain/core/tools';
 import { z } from 'zod';
 import type { DealsService } from '@zuko/sales';
-import { getContextEntities } from '../context/tool-context';
+import {
+  getContextEntities,
+  getOrganizationId,
+} from '../context/tool-context';
 
 function parseOptionalDate(value: string | undefined): Date | undefined {
   if (value === undefined || value === null || value === '') return undefined;
@@ -80,8 +83,20 @@ export function createUpdateDealTool(dealsService: DealsService) {
         };
       }
 
+      const organizationId = getOrganizationId(config);
+      if (organizationId === undefined) {
+        return {
+          error:
+            'No organization context. Please select an organization and try again.',
+        };
+      }
+
       try {
-        const deal = await dealsService.update(dealId, updates as any);
+        const deal = await dealsService.update(
+          dealId,
+          organizationId,
+          updates as any,
+        );
         const d = deal as {
           id: number;
           title: string;

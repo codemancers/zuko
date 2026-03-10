@@ -21,9 +21,13 @@ import {
   AddContactToCompanyInput,
   UpdateContactCompanyInput,
 } from '@zuko/sales';
+import { OrganizationGuard } from '../../common/auth/organization.guard';
+import { OrgId } from '../../common/auth/org-id.decorator';
 
-// DTOs for API requests (properties set by Nest from request body)
-export class CreateCompanyDto implements CreateCompanyInput {
+// DTOs for API requests (organizationId is set from session via OrganizationGuard)
+export class CreateCompanyDto
+  implements Omit<CreateCompanyInput, 'organizationId'>
+{
   companyName!: string;
   website?: string;
   linkedinUrl?: string;
@@ -65,7 +69,7 @@ export class UpdateContactDto implements UpdateContactCompanyInput {
 }
 
 @Controller('companies')
-@UseGuards(AuthGuard)
+@UseGuards(AuthGuard, OrganizationGuard)
 export class CompaniesController {
   private readonly logger = new Logger(CompaniesController.name);
 
@@ -73,7 +77,7 @@ export class CompaniesController {
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  async create(@Body() dto: CreateCompanyDto) {
+  async create(@OrgId() organizationId: number, @Body() dto: CreateCompanyDto) {
     this.logger.log('[CREATE_COMPANY] Request received');
     this.logger.debug(
       `[CREATE_COMPANY] Payload: ${JSON.stringify({
@@ -86,7 +90,10 @@ export class CompaniesController {
     );
 
     try {
-      const result = await this.companiesService.create(dto);
+      const result = await this.companiesService.create({
+        ...dto,
+        organizationId,
+      });
       this.logger.log(`[CREATE_COMPANY] Success - Company ID: ${result.id}`);
       return result;
     } catch (error: unknown) {
@@ -99,8 +106,12 @@ export class CompaniesController {
   }
 
   @Get()
-  async list(@Query() query: CompanyListQueryDto) {
+  async list(
+    @OrgId() organizationId: number,
+    @Query() query: CompanyListQueryDto,
+  ) {
     const filters = {
+      organizationId,
       search: query.search,
       isHidden: query.isHidden === 'true',
       ownerIds: query.ownerIds
@@ -117,57 +128,76 @@ export class CompaniesController {
   }
 
   @Get(':id')
-  async findOne(@Param('id', ParseIntPipe) id: number) {
-    return this.companiesService.findById(id);
+  async findOne(
+    @OrgId() organizationId: number,
+    @Param('id', ParseIntPipe) id: number,
+  ) {
+    return this.companiesService.findById(id, organizationId);
   }
 
   @Patch(':id')
   async update(
+    @OrgId() organizationId: number,
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateCompanyDto,
   ) {
-    return this.companiesService.update(id, dto);
+    return this.companiesService.update(id, organizationId, dto);
   }
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  async hide(@Param('id', ParseIntPipe) id: number) {
-    await this.companiesService.hide(id);
+  async hide(
+    @OrgId() organizationId: number,
+    @Param('id', ParseIntPipe) id: number,
+  ) {
+    await this.companiesService.hide(id, organizationId);
   }
 
   @Post(':id/unhide')
-  async unhide(@Param('id', ParseIntPipe) id: number) {
-    return this.companiesService.unhide(id);
+  async unhide(
+    @OrgId() organizationId: number,
+    @Param('id', ParseIntPipe) id: number,
+  ) {
+    return this.companiesService.unhide(id, organizationId);
   }
 
   @Post(':id/owners')
   async addOwner(
+    @OrgId() organizationId: number,
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: AddOwnerDto,
   ) {
-    return this.companiesService.addOwner(id, dto.userId, dto.isPrimary);
+    return this.companiesService.addOwner(
+      id,
+      organizationId,
+      dto.userId,
+      dto.isPrimary,
+    );
   }
 
   @Delete(':id/owners/:userId')
   @HttpCode(HttpStatus.NO_CONTENT)
   async removeOwner(
+    @OrgId() organizationId: number,
     @Param('id', ParseIntPipe) id: number,
     @Param('userId', ParseIntPipe) userId: number,
   ) {
-    await this.companiesService.removeOwner(id, userId);
+    await this.companiesService.removeOwner(id, organizationId, userId);
   }
 
   @Post(':id/owners/:userId/set-primary')
   async setPrimaryOwner(
+    @OrgId() organizationId: number,
     @Param('id', ParseIntPipe) id: number,
     @Param('userId', ParseIntPipe) userId: number,
   ) {
-    await this.companiesService.setPrimaryOwner(id, userId);
+    await this.companiesService.setPrimaryOwner(id, organizationId, userId);
     return { success: true };
   }
 
   @Get('user/:userId')
-  async getCompaniesByUser(
+  async getCompaniesByOwner(
+    @OrgId() organizationId: number,
     @Param('userId', ParseIntPipe) userId: number,
     @Query() query: CompanyListQueryDto,
   ) {
@@ -176,12 +206,17 @@ export class CompaniesController {
       limit: query.limit ? Number(query.limit) : 50,
     };
 
-    return this.companiesService.getCompaniesByUser(userId, pagination);
+    return this.companiesService.getCompaniesByOwner(
+      organizationId,
+      userId,
+      pagination,
+    );
   }
 
   @Post(':id/contacts')
   @HttpCode(HttpStatus.CREATED)
   async addContact(
+    @OrgId() organizationId: number,
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: AddContactDto,
   ) {
@@ -190,7 +225,11 @@ export class CompaniesController {
     );
 
     try {
-      const result = await this.companiesService.addContact(id, dto);
+      const result = await this.companiesService.addContact(
+        id,
+        organizationId,
+        dto,
+      );
       this.logger.log(
         `[ADD_CONTACT_TO_COMPANY] Success - Contact ${dto.contactId} added to Company ${id}`,
       );
@@ -209,29 +248,42 @@ export class CompaniesController {
 
   @Patch(':id/contacts/:contactId')
   async updateContact(
+    @OrgId() organizationId: number,
     @Param('id', ParseIntPipe) id: number,
     @Param('contactId', ParseIntPipe) contactId: number,
     @Body() dto: UpdateContactDto,
   ) {
-    return this.companiesService.updateContactCompany(id, contactId, dto);
+    return this.companiesService.updateContactCompany(
+      id,
+      organizationId,
+      contactId,
+      dto,
+    );
   }
 
   @Delete(':id/contacts/:contactId')
   @HttpCode(HttpStatus.NO_CONTENT)
   async removeContact(
+    @OrgId() organizationId: number,
     @Param('id', ParseIntPipe) id: number,
     @Param('contactId', ParseIntPipe) contactId: number,
   ) {
-    await this.companiesService.removeContact(id, contactId);
+    await this.companiesService.removeContact(id, organizationId, contactId);
   }
 
   @Get(':id/contacts')
-  async getActiveContacts(@Param('id', ParseIntPipe) id: number) {
-    return this.companiesService.getActiveContacts(id);
+  async getActiveContacts(
+    @OrgId() organizationId: number,
+    @Param('id', ParseIntPipe) id: number,
+  ) {
+    return this.companiesService.getActiveContacts(id, organizationId);
   }
 
   @Get(':id/contacts/history')
-  async getContactHistory(@Param('id', ParseIntPipe) id: number) {
-    return this.companiesService.getContactHistory(id);
+  async getContactHistory(
+    @OrgId() organizationId: number,
+    @Param('id', ParseIntPipe) id: number,
+  ) {
+    return this.companiesService.getContactHistory(id, organizationId);
   }
 }

@@ -22,6 +22,8 @@ import { toBaseMessages, toUIMessageStream } from "@ai-sdk/langchain";
 import type { UIMessage } from "ai";
 import type { RequestWithUser } from "@zuko/core";
 import { ChatsService } from "../chats/chats.service";
+import { PrismaService } from "../prisma/prisma.service";
+import { getActiveOrganizationId } from "../common/auth/get-organization-id";
 
 const LOCAL_MODEL_ID = process.env.AGENTS_LLM_MODEL ?? "gpt-4o";
 
@@ -30,6 +32,7 @@ export class ChatController {
   constructor(
     private readonly agentsService: OrchestratorService,
     private readonly chatsService: ChatsService,
+    private readonly prisma: PrismaService,
   ) {}
 
   @Post("chat/completions")
@@ -118,6 +121,7 @@ export class ChatController {
     );
     
     const userId = parseInt(req.user.id, 10);
+    const organizationId = await getActiveOrganizationId(req, this.prisma);
 
     // Verify user is a participant in this chat
     const isParticipant = await this.chatsService.isParticipant(chatId, userId);
@@ -181,18 +185,19 @@ export class ChatController {
       streamMode: ["values", "messages"] as const,
       configurable: {
         thread_id: threadId,
-        // So tools can read context (e.g. get_contact_details uses it when there is one contact in context)
         contextEntities,
+        organizationId,
       },
     };
 
     // Stream from the LangGraph agent
-    // Pass contextEntities and userId in state - will be auto-persisted by LangGraph checkpointer
+    // Pass contextEntities, userId, organizationId in state - persisted by LangGraph checkpointer so tools can scope to org
     const stream = await agent.stream(
       {
         messages: langchainMessages,
         contextEntities,
         userId,
+        organizationId,
       },
       config,
     );
