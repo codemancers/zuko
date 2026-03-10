@@ -18,6 +18,7 @@ import {
   ComboboxOption,
   Button,
   Text,
+  Switch,
 } from '@zuko/ui-kit';
 import z from 'zod';
 
@@ -199,11 +200,10 @@ const AddMeeting = () => {
             </section>
 
             <section className="mb-4 flex items-center gap-2">
-              <input
-                type="checkbox"
+              <Switch
                 checked={isJoinNow}
-                onChange={(e) => setIsJoinNow(e.target.checked)}
-                className="h-4 w-4 rounded border-zinc-300 text-blue-600 focus:ring-blue-500"
+                onChange={setIsJoinNow}
+                color="blue"
               />
               <Text>Join Now</Text>
             </section>

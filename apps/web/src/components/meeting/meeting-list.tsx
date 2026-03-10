@@ -56,6 +56,13 @@ const ReusableDialog = ({
 dayjs.extend(utc);
 dayjs.extend(timezone);
 
+const MEETING_STATUS_COLOR_MAP: Record<string, string> = {
+  completed: 'lime',
+  failed: 'red',
+  in_progress: 'blue',
+  processing: 'blue',
+};
+
 export const MeetingList = () => {
   const router = useRouter();
   const [search, setSearch] = useState('');
@@ -223,14 +230,13 @@ export const MeetingList = () => {
               <div className="flex items-center gap-4">
                 <Badge
                   color={
-                    meeting.status.toLowerCase() === 'completed'
-                      ? 'lime'
-                      : meeting.status.toLowerCase() === 'failed'
-                        ? 'red'
-                        : meeting.status.toLowerCase() === 'in_progress' ||
-                            meeting.status.toLowerCase() === 'processing'
-                          ? 'blue'
-                          : 'zinc'
+                    (MEETING_STATUS_COLOR_MAP[
+                      meeting.status.toLowerCase()
+                    ] ?? 'zinc') as
+                      | 'lime'
+                      | 'red'
+                      | 'blue'
+                      | 'zinc'
                   }
                   className="text-xs font-semibold uppercase"
                 >

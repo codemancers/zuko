@@ -22,6 +22,13 @@ import { Badge, Button, Heading, Text, Text as ZukoText } from '@zuko/ui-kit';
 dayjs.extend(utc);
 dayjs.extend(timezone);
 
+const MEETING_STATUS_COLOR_MAP: Record<string, string> = {
+  completed: 'lime',
+  failed: 'red',
+  in_progress: 'blue',
+  processing: 'blue',
+};
+
 type Tab = 'recording' | 'transcript' | 'chat' | 'summary' | 'actionItems';
 
 export interface TranscriptData {
@@ -562,14 +569,8 @@ const MeetingDetail = ({ meetingId, meetingOverride }: MeetingDetailProps) => {
               <div className="mt-1">
                 <Badge
                   color={
-                    meeting.status.toLowerCase() === 'completed'
-                      ? 'lime'
-                      : meeting.status.toLowerCase() === 'failed'
-                        ? 'red'
-                        : meeting.status.toLowerCase() === 'in_progress' ||
-                            meeting.status.toLowerCase() === 'processing'
-                          ? 'blue'
-                          : 'zinc'
+                    MEETING_STATUS_COLOR_MAP[meeting.status.toLowerCase()] ??
+                    'zinc'
                   }
                 >
                   {meeting.status.replace(/_/g, ' ')}

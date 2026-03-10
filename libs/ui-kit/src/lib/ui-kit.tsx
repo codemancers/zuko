@@ -18,6 +18,7 @@ export * from './table';
 export * from './text';
 export * from './textarea';
 export * from './tabs';
+export * from './switch';
 
 // Layouts
 export * from '../layouts/auth-layout';

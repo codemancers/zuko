@@ -171,7 +171,8 @@ describe('AddMeeting', () => {
     expect(
       screen.getByPlaceholderText(/meeting description/i)
     ).toBeInTheDocument();
-    expect(screen.getByRole('checkbox')).toBeInTheDocument();
+    // Join Now toggle
+    expect(screen.getByText(/join now/i)).toBeInTheDocument();
     expect(screen.getByTestId('timezone-field')).toBeInTheDocument();
     expect(screen.getByLabelText(/schedule time/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /submit/i })).toBeInTheDocument();
@@ -181,7 +182,7 @@ describe('AddMeeting', () => {
   it('when Join Now is checked, schedule time and timezone are hidden', async () => {
     const user = userEvent.setup();
     render(<AddMeeting />);
-    const joinNow = screen.getByRole('checkbox');
+    const joinNow = screen.getByText(/join now/i);
     await user.click(joinNow);
     expect(screen.queryByLabelText(/schedule time/i)).not.toBeInTheDocument();
     expect(screen.queryByTestId('timezone-field')).not.toBeInTheDocument();
