@@ -56,7 +56,27 @@ const ReusableDialog = ({
 dayjs.extend(utc);
 dayjs.extend(timezone);
 
-const MEETING_STATUS_COLOR_MAP: Record<string, string> = {
+type BadgeColor =
+  | 'zinc'
+  | 'indigo'
+  | 'cyan'
+  | 'red'
+  | 'orange'
+  | 'amber'
+  | 'yellow'
+  | 'lime'
+  | 'green'
+  | 'emerald'
+  | 'teal'
+  | 'sky'
+  | 'blue'
+  | 'violet'
+  | 'purple'
+  | 'fuchsia'
+  | 'pink'
+  | 'rose';
+
+const MEETING_STATUS_COLOR_MAP: Record<string, BadgeColor> = {
   completed: 'lime',
   failed: 'red',
   in_progress: 'blue',
@@ -230,13 +250,8 @@ export const MeetingList = () => {
               <div className="flex items-center gap-4">
                 <Badge
                   color={
-                    (MEETING_STATUS_COLOR_MAP[
-                      meeting.status.toLowerCase()
-                    ] ?? 'zinc') as
-                      | 'lime'
-                      | 'red'
-                      | 'blue'
-                      | 'zinc'
+                    MEETING_STATUS_COLOR_MAP[meeting.status.toLowerCase()] ??
+                    'zinc'
                   }
                   className="text-xs font-semibold uppercase"
                 >

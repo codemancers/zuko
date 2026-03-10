@@ -22,7 +22,27 @@ import { Badge, Button, Heading, Text, Text as ZukoText } from '@zuko/ui-kit';
 dayjs.extend(utc);
 dayjs.extend(timezone);
 
-const MEETING_STATUS_COLOR_MAP: Record<string, string> = {
+type BadgeColor =
+  | 'zinc'
+  | 'indigo'
+  | 'cyan'
+  | 'red'
+  | 'orange'
+  | 'amber'
+  | 'yellow'
+  | 'lime'
+  | 'green'
+  | 'emerald'
+  | 'teal'
+  | 'sky'
+  | 'blue'
+  | 'violet'
+  | 'purple'
+  | 'fuchsia'
+  | 'pink'
+  | 'rose';
+
+const MEETING_STATUS_COLOR_MAP: Record<string, BadgeColor> = {
   completed: 'lime',
   failed: 'red',
   in_progress: 'blue',
