@@ -182,8 +182,8 @@ describe('AddMeeting', () => {
   it('when Join Now is checked, schedule time and timezone are hidden', async () => {
     const user = userEvent.setup();
     render(<AddMeeting />);
-    const joinNow = screen.getByText(/join now/i);
-    await user.click(joinNow);
+    const joinNowSwitch = screen.getByRole('switch');
+    await user.click(joinNowSwitch);
     expect(screen.queryByLabelText(/schedule time/i)).not.toBeInTheDocument();
     expect(screen.queryByTestId('timezone-field')).not.toBeInTheDocument();
   });
