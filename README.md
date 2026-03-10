@@ -1,85 +1,126 @@
 # Zuko
 
-## Migrations
+Zuko is an **agentic CRM** — a monorepo with a **Next.js web app** and **NestJS backend**, featuring contacts, deals, companies, and **AI chat** with context (e.g. attach contact, deal, or company to conversations). Built with Nx, Prisma, better-auth, and the AI SDK. Deployable to Fly.io; issue tracking lives in [Beads](.beads/) (`.beads/issues.jsonl`).
 
-Run this command `npx nx prisma:migrate slack -- --name init` to apply changes
+## Prerequisites
 
-<a alt="Nx logo" href="https://nx.dev" target="_blank" rel="noreferrer"><img src="https://raw.githubusercontent.com/nrwl/nx/master/images/nx-logo.png" width="45"></a>
+- **Node.js** 22 (matches CI)
+- **npm**
+- **PostgreSQL** (for the backend database)
 
-✨ Your new, shiny [Nx workspace](https://nx.dev) is almost ready ✨.
+## Setup
 
-[Learn more about this workspace setup and its capabilities](https://nx.dev/nx-api/node?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) or run `npx nx graph` to visually explore what was created. Now, let's get you up to speed!
+### 1. Clone the repository
 
-## Finish your CI setup
-
-[Click here to finish setting up your workspace!](https://cloud.nx.app/connect/uw5xZqleAg)
-
-## Run tasks
-
-To run the dev server for your app, use:
+If you haven't already, clone the repo and enter the project directory:
 
 ```sh
-npx nx serve zuko
+git clone <repository-url> zuko && cd zuko
 ```
 
-To create a production bundle:
+### 2. Install dependencies
 
 ```sh
-npx nx build zuko
+npm install
 ```
 
-To see all available targets to run for a project, run:
+### 3. Environment variables
+
+Copy the example env files and set values as needed:
+
+- **Backend:** `apps/backend/.env.example` → `apps/backend/.env`
+- **Web:** `apps/web/.env.example` → `apps/web/.env`
+
+Key variables:
+
+| Variable | Description |
+|----------|-------------|
+| `DATABASE_URL` | PostgreSQL connection string (backend) |
+| `OPENAI_API_KEY` | Required for AI chat |
+| `GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET` | GitHub OAuth (see example comments) |
+| `BETTER_AUTH_*` | Auth config (see example files) |
+| `NEXT_PUBLIC_APP_URL` / `NEXT_PUBLIC_BACKEND_URL` | App and API URLs (web) |
+
+### 4. Database
+
+Generate the Prisma client and run migrations:
 
 ```sh
-npx nx show project zuko
+# Generate Prisma client
+npx nx run @zuko/models:prisma:generate
+
+# Run migrations (creates/updates DB schema)
+npx nx run @zuko/models:prisma:migrate -- --name init
 ```
 
-These targets are either [inferred automatically](https://nx.dev/concepts/inferred-tasks?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) or defined in the `project.json` or `package.json` files.
-
-[More about running tasks in the docs &raquo;](https://nx.dev/features/run-tasks?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-
-## Add new projects
-
-While you could add new projects to your workspace manually, you might want to leverage [Nx plugins](https://nx.dev/concepts/nx-plugins?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) and their [code generation](https://nx.dev/features/generate-code?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) feature.
-
-Use the plugin's generator to create new projects.
-
-To generate a new application, use:
+Optional: seed test data:
 
 ```sh
-npx nx g @nx/node:app demo
+npx nx run @zuko/models:seed
 ```
 
-To generate a new library, use:
+## Running the app
+
+**Recommended — backend + web together:**
 
 ```sh
-npx nx g @nx/node:lib mylib
+npx nx run @zuko/web:dev
 ```
 
-You can use `npx nx list` to get a list of installed plugins. Then, run `npx nx list <plugin-name>` to learn about more specific capabilities of a particular plugin. Alternatively, [install Nx Console](https://nx.dev/getting-started/editor-setup?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) to browse plugins and generators in your IDE.
+This starts the NestJS backend (e.g. port 3001) and the Next.js app (e.g. port 3000).
 
-[Learn more about Nx plugins &raquo;](https://nx.dev/concepts/nx-plugins?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) | [Browse the plugin registry &raquo;](https://nx.dev/plugin-registry?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
+**Backend only:**
 
-[Learn more about Nx on CI](https://nx.dev/ci/intro/ci-with-nx#ready-get-started-with-your-provider?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
+```sh
+npx nx run @zuko/backend:serve
+```
 
-## Install Nx Console
+**Build (production):**
 
-Nx Console is an editor extension that enriches your developer experience. It lets you run tasks, generate code, and improves code autocompletion in your IDE. It is available for VSCode and IntelliJ.
+```sh
+npx nx run @zuko/backend:build
+npx nx run @zuko/web:build
+```
 
-[Install Nx Console &raquo;](https://nx.dev/getting-started/editor-setup?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
+## Tests
 
-## Useful links
+- **Unit tests:** `npx nx run @zuko/backend:test`, `npx nx run @zuko/web:test`  
+  Or for affected projects: `npx nx affected -t test`
+- **E2E (web):** `npx nx run @zuko/web-e2e:e2e`
+- **Lint / typecheck:** `npx nx affected -t lint`, `npx nx affected -t typecheck`
 
-Learn more:
+## Project structure
 
-- [Learn more about this workspace setup](https://nx.dev/nx-api/node?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-- [Learn about Nx on CI](https://nx.dev/ci/intro/ci-with-nx?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-- [Releasing Packages with Nx release](https://nx.dev/features/manage-releases?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-- [What are Nx plugins?](https://nx.dev/concepts/nx-plugins?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
+| Path | Description |
+|------|-------------|
+| **Apps** | |
+| `apps/backend` | NestJS API (auth, chat, sales: contacts/deals/companies) |
+| `apps/web` | Next.js frontend |
+| `apps/backend-e2e` | Backend E2E tests |
+| `apps/web-e2e` | Web E2E tests (Playwright) |
+| **Libs** | |
+| `libs/agents` | AI agent orchestration and tools |
+| `libs/core` | Shared core utilities |
+| `libs/models` | Prisma schema and client |
+| `libs/sales` | CRM domain (contacts, deals, companies) |
+| `libs/ui-kit` | Shared UI components |
+| `libs/beads` | Beads issue-tracking integration |
 
-And join the Nx community:
+## Documentation
 
-- [Discord](https://go.nx.dev/community)
-- [Follow us on X](https://twitter.com/nxdevtools) or [LinkedIn](https://www.linkedin.com/company/nrwl)
-- [Our Youtube channel](https://www.youtube.com/@nxdevtools)
-- [Our blog](https://nx.dev/blog?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
+- **[E2E tests](apps/web-e2e/README.md)** — How to run and write Playwright E2E tests for the web app.
+- **[Beads](.beads/README.md)** — Issue tracking (CLI, sync with git).
+- **Guides (e.g. Mintlify):** Planned; see the issue tracker for progress.
+
+## Nx
+
+This workspace is powered by [Nx](https://nx.dev). Useful commands:
+
+- **Explore project graph:** `npx nx graph`
+- **List targets for a project:** `npx nx show project @zuko/backend` (or `@zuko/web`)
+- **Run tasks:** Use `npx nx run <project>:<target>` — e.g. `@zuko/backend`, `@zuko/web`, `@zuko/models`. [Nx run tasks](https://nx.dev/features/run-tasks).
+- **IDE:** [Nx Console](https://nx.dev/getting-started/editor-setup) for VSCode/IntelliJ.
+
+## License
+
+MIT
