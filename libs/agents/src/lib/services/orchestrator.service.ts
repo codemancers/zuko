@@ -17,6 +17,7 @@ import type { PrismaService } from '../modules/prisma.types';
 // Import tool creators
 import {
   createGetConversationContextTool,
+  createCreateContactTool,
   createGetContactDetailsTool,
   createGetContactOwnerTool,
   createGetCompanyDetailsTool,
@@ -154,6 +155,7 @@ export class OrchestratorService {
         '',
         'Tools (IDs are always optional; context from contextEntities is used when ID is omitted):',
         '- get_conversation_context: Returns the current context (list of contacts, companies, deals in this conversation). Call to see what is in context before calling other tools. No arguments.',
+        '- create_contact: Create a new contact. Use when user asks to "create/add a contact". Requires name and email; owner defaults to the authenticated user.',
         '- get_contact_details: Full contact info. Call with no args when one contact in context; optional contactId if user provided an ID.',
         '- get_contact_owner: Owner(s) of a contact. Optional contactId; uses context when one contact in context.',
         '- get_company_details: Company info. Call with no args when one company in context; optional companyId if user provided an ID.',
@@ -206,6 +208,7 @@ export class OrchestratorService {
 
       const tier1Tools = [
         createGetConversationContextTool(),
+        createCreateContactTool(this.contactsService),
         createGetContactDetailsTool(this.contactsService),
         createGetContactOwnerTool(this.contactsService),
         createGetCompanyDetailsTool(this.companiesService),

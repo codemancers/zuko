@@ -2,6 +2,7 @@
 export { createGetConversationContextTool } from './context/get-conversation-context.tool';
 
 // Tier 1 Tools - Simple entity operations
+export { createCreateContactTool } from './contacts/create-contact.tool';
 export { createGetContactDetailsTool } from './contacts/get-contact-details.tool';
 export { createGetContactOwnerTool } from './contacts/get-contact-owner.tool';
 export { createGetCompanyDetailsTool } from './companies/get-company-details.tool';

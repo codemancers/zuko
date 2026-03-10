@@ -8,10 +8,12 @@ export type ToolRunConfig = {
   configurable?: {
     contextEntities?: ContextEntityReference[];
     organizationId?: number;
+    userId?: number;
   };
   state?: {
     contextEntities?: ContextEntityReference[];
     organizationId?: number;
+    userId?: number;
   };
 };
 
@@ -34,4 +36,14 @@ export function getContextEntities(
 export function getOrganizationId(config: unknown): number | undefined {
   const c = config as ToolRunConfig | undefined;
   return c?.state?.organizationId ?? c?.configurable?.organizationId;
+}
+
+/**
+ * Get authenticated user ID from LangGraph tool invocation config/state.
+ * Set by the chat controller in the LangGraph input state.
+ * Useful for default ownership assignment when creating entities from chat.
+ */
+export function getUserId(config: unknown): number | undefined {
+  const c = config as ToolRunConfig | undefined;
+  return c?.state?.userId ?? c?.configurable?.userId;
 }
