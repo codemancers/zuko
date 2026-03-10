@@ -7,6 +7,7 @@ export { createGetContactDetailsTool } from './contacts/get-contact-details.tool
 export { createGetContactOwnerTool } from './contacts/get-contact-owner.tool';
 export { createCreateCompanyTool } from './companies/create-company.tool';
 export { createGetCompanyDetailsTool } from './companies/get-company-details.tool';
+export { createCreateDealTool } from './deals/create-deal.tool';
 export { createGetDealDetailsTool } from './deals/get-deal-details.tool';
 export { createUpdateContactTool } from './contacts/update-contact.tool';
 export { createUpdateCompanyTool } from './companies/update-company.tool';
