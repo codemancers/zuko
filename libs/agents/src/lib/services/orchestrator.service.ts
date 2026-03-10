@@ -17,9 +17,12 @@ import type { PrismaService } from '../modules/prisma.types';
 // Import tool creators
 import {
   createGetConversationContextTool,
+  createCreateContactTool,
   createGetContactDetailsTool,
   createGetContactOwnerTool,
+  createCreateCompanyTool,
   createGetCompanyDetailsTool,
+  createCreateDealTool,
   createGetDealDetailsTool,
   createUpdateContactTool,
   createUpdateCompanyTool,
@@ -154,6 +157,12 @@ export class OrchestratorService {
         '',
         'Tools (IDs are always optional; context from contextEntities is used when ID is omitted):',
         '- get_conversation_context: Returns the current context (list of contacts, companies, deals in this conversation). Call to see what is in context before calling other tools. No arguments.',
+        '',
+        'Creation (IMPORTANT - pick the correct create_* tool):',
+        '- create_contact: Use ONLY for contacts. Requires fields: name + email. If the user provides a deal title, DO NOT call this tool.',
+        '- create_company: Use ONLY for companies. Requires fields: companyName + website (URL).',
+        '- create_deal: Use ONLY for deals. Requires field: title (deal name). If input has { title: ... } it is a deal, so call create_deal.',
+        '',
         '- get_contact_details: Full contact info. Call with no args when one contact in context; optional contactId if user provided an ID.',
         '- get_contact_owner: Owner(s) of a contact. Optional contactId; uses context when one contact in context.',
         '- get_company_details: Company info. Call with no args when one company in context; optional companyId if user provided an ID.',
@@ -206,9 +215,12 @@ export class OrchestratorService {
 
       const tier1Tools = [
         createGetConversationContextTool(),
+        createCreateContactTool(this.contactsService),
         createGetContactDetailsTool(this.contactsService),
         createGetContactOwnerTool(this.contactsService),
+        createCreateCompanyTool(this.companiesService),
         createGetCompanyDetailsTool(this.companiesService),
+        createCreateDealTool(this.dealsService),
         createGetDealDetailsTool(this.dealsService),
         createUpdateContactTool(this.contactsService),
         createUpdateCompanyTool(this.companiesService),
