@@ -7,6 +7,8 @@ import {
   ContactActivitiesController,
   CompanyActivitiesController,
 } from './activities.controller';
+import { ViewsController } from './views.controller';
+import { ViewsService } from './views.service';
 import {
   ContactsRepository,
   ContactsService,
@@ -30,6 +32,7 @@ import { OrganizationGuard } from '../../common/auth/organization.guard';
     ActivitiesController,
     ContactActivitiesController,
     CompanyActivitiesController,
+    ViewsController,
   ],
   providers: [
     OrganizationGuard,
@@ -89,6 +92,7 @@ import { OrganizationGuard } from '../../common/auth/organization.guard';
       },
       inject: [DealsRepository],
     },
+    ViewsService,
   ],
 })
 export class SalesModule {}
