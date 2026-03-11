@@ -14,4 +14,6 @@ export { SettingsPage } from './SettingsPage';
 export { ChatPage } from './ChatPage';
 export { CreateOrgPage } from './CreateOrgPage';
 export { TeamsPage } from './TeamsPage';
+export { MeetingsPage } from './MeetingsPage';
+export { MeetingDetailPage } from './MeetingDetailPage';
 

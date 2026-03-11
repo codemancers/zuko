@@ -95,3 +95,9 @@ export {
   ComboboxLabel,
   ComboboxDescription,
 } from './lib/combobox';
+
+export {
+  Switch,
+  SwitchGroup,
+  SwitchField,
+} from './lib/switch';

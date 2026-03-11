@@ -155,3 +155,25 @@ export const getUserInvitations = () =>
       return data || [];
     },
   });
+
+export const getMeetings = queryOptions({
+  queryKey: ['meetings'],
+  queryFn: async () => {
+    // Placeholder: Replace with actual API call
+    return [] as any[];
+  },
+});
+
+export const getMeeting = (id: string) =>
+  queryOptions({
+    queryKey: ['meeting', id],
+    queryFn: async () => {
+      // Placeholder: Replace with actual API call
+      return {
+        id,
+        name: 'Meeting ' + id,
+        platform: 'ZOOM',
+        status: 'COMPLETED',
+      };
+    },
+  });
