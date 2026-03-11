@@ -16,7 +16,7 @@
     "@zuko/models": "^0.0.1",
     "@zuko/sales": "^0.0.1",
     "ai": "^6.0.70",
-    "better-auth": "1.5.0-beta.15",
+    "better-auth": "^1.5.4",
     "dayjs": "^1.11.19",
     "dotenv": "^16.4.5",
     "graphql": "^16.12.0",
