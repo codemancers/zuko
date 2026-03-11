@@ -22,7 +22,6 @@ import {
 } from '@heroicons/react/20/solid';
 import { UserGroupIcon } from '@heroicons/react/24/outline';
 import { useQuery, useQueryClient, useQueries } from '@tanstack/react-query';
-import type { ColumnDef } from '@tanstack/react-table';
 import {
   getOrganizations,
   getMembers,
@@ -37,7 +36,7 @@ import { AddMemberDialog } from './add-member-dialog';
 import { AddMemberToTeamDialog } from './add-member-to-team-dialog';
 import { RemoveFromTeamsDialog } from './remove-from-teams-dialog';
 import { BaseTable } from '../Table';
-import { memberColumns as baseMemberColumns, OrgMember } from './member-columns';
+import { createMemberColumns, OrgMember } from './member-columns';
 
 export const OrgMembers = ({
   slug,
@@ -129,57 +128,42 @@ export const OrgMembers = ({
     isLoadingOrgs ||
     (!!activeOrg && (isLoadingMembers || isLoadingInvitations));
 
-  const memberColumns: ColumnDef<OrgMember>[] = activeOrg
-    ? ([
-        ...baseMemberColumns,
-        {
-          id: 'teams',
-          header: 'Teams',
-          cell: ({ row }) => (
-            <MemberTeamBadges
-              userId={row.original.user.id}
+  const memberColumns = activeOrg
+    ? createMemberColumns({
+        renderTeamsCell: (member: OrgMember) => (
+          <MemberTeamBadges
+            userId={member.user.id}
+            organizationId={activeOrg.id}
+          />
+        ),
+        renderActionsCell: (member: OrgMember) => (
+          <div className="flex justify-end pr-2">
+            <MemberDropdownMenu
+              member={member}
               organizationId={activeOrg.id}
+              slug={slug}
+              onAddToTeam={() =>
+                setAddToTeamTarget({
+                  userId: member.user.id,
+                  name: member.user.name || member.user.email,
+                })
+              }
+              onRemoveFromTeams={() =>
+                setRemoveFromTeamsTarget({
+                  userId: member.user.id,
+                  name: member.user.name || member.user.email,
+                })
+              }
+              onRemoveMember={() =>
+                setMemberToRemove({
+                  id: member.id,
+                  name: member.user.name || member.user.email,
+                })
+              }
             />
-          ),
-        },
-        {
-          id: 'actions',
-          header: () => (
-            <span className="flex w-full justify-end pr-2">Actions</span>
-          ),
-          cell: ({ row }) => {
-            const member = row.original;
-
-            return (
-              <div className="flex justify-end pr-2">
-                <MemberDropdownMenu
-                  member={member}
-                  organizationId={activeOrg.id}
-                  slug={slug}
-                  onAddToTeam={() =>
-                    setAddToTeamTarget({
-                      userId: member.user.id,
-                      name: member.user.name || member.user.email,
-                    })
-                  }
-                  onRemoveFromTeams={() =>
-                    setRemoveFromTeamsTarget({
-                      userId: member.user.id,
-                      name: member.user.name || member.user.email,
-                    })
-                  }
-                  onRemoveMember={() =>
-                    setMemberToRemove({
-                      id: member.id,
-                      name: member.user.name || member.user.email,
-                    })
-                  }
-                />
-              </div>
-            );
-          },
-        },
-      ] as ColumnDef<OrgMember>[])
+          </div>
+        ),
+      })
     : [];
 
   if (isLoading) {
