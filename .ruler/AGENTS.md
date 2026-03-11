@@ -10,8 +10,8 @@ You have superpowers. Superpowers teach you new skills and capabilities. RIGHT N
 
 - Refer to .ruler/tasks.md for task management instructions
 
-<!-- nx configuration start-->
-<!-- Leave the start & end comments to automatically receive updates. -->
+{/* nx configuration start */}
+{/* Leave the start & end comments to automatically receive updates. */}
 
 ## General Guidelines for working with Nx
 
@@ -22,7 +22,7 @@ You have superpowers. Superpowers teach you new skills and capabilities. RIGHT N
 - For questions around nx configuration, best practices or if you're unsure, use the `nx_docs` tool to get relevant, up-to-date docs. Always use this instead of assuming things about nx configuration
 - If the user needs help with an Nx configuration or project graph error, use the `nx_workspace` tool to get any errors
 
-<!-- nx configuration end-->
+{/* nx configuration end */}
 
 For Nx related code generation, setup etc, use Nx MCP. For all other always use context7
 when I need code generation, setup or configuration steps, or library/API documentation.
