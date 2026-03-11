@@ -1,0 +1,34 @@
+---
+title: Using Zuko as an Agentic CRM
+---
+
+This guide explains how to use Zuko as an **agentic CRM**, combining CRM data with AI chat.
+
+## Working with CRM entities
+
+Zuko models three core CRM entities:
+
+- **Contacts** – people you interact with.
+- **Companies** – organizations associated with contacts and deals.
+- **Deals** – sales opportunities tied to contacts and companies.
+
+You can create and manage these entities through the web app. The backend stores them in PostgreSQL via Prisma.
+
+## Chat with context
+
+The chat experience in Zuko becomes much more powerful when you attach CRM context:
+
+- Attach a **contact** so the agent can answer questions about that person.
+- Attach a **deal** so the agent can discuss deal details and next steps.
+- Attach a **company** so the agent can reason about the account as a whole.
+
+When you send messages with context attached, the backend includes that context in the prompt or retrieval pipeline so responses stay grounded.
+
+## Example workflows
+
+- **Prepare for a call**: Attach a contact and company, then ask the agent for a summary of recent interactions and open deals.
+- **Update follow-ups**: After a conversation, ask the agent to summarize next steps and reflect them into deals or notes.
+- **Pipeline review**: Use chat to ask questions like “Which deals are closest to closing this month?” while viewing the deals UI.
+
+As Zuko evolves, additional guides can expand on specific flows for contacts, companies, and deals, as well as deeper agent behavior and customization.
+

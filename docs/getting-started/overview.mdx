@@ -1,0 +1,26 @@
+---
+title: What is Zuko?
+---
+
+Zuko is an **agentic CRM** that combines a modern CRM data model (contacts, companies, deals) with an **AI chat** experience. You can keep conversations in the context of specific CRM entities so that every interaction is grounded in the right customer, deal, or company.
+
+Zuko is built as an Nx monorepo with:
+
+- A **Next.js web app** (`apps/web`)
+- A **NestJS backend** (`apps/backend`)
+- Shared libraries for agents, core utilities, Prisma models, sales domain, and UI components
+
+## Core concepts
+
+- **Contacts, companies, deals**: Core CRM entities modeled in the backend and exposed to the web app.
+- **Agentic chat**: An AI chat interface that can be given context from contacts, companies, and deals so responses stay grounded.
+- **Beads issue tracking**: Issues live in `.beads/issues.jsonl` and are managed with the `bd` CLI, close to the code.
+
+## When to use Zuko
+
+Use Zuko when you want:
+
+- A CRM that is tightly integrated with AI assistants and workflows.
+- A codebase that is friendly to AI coding agents (issues and docs live with the code).
+- A starting point for experimenting with agentic CRM use cases.
+
