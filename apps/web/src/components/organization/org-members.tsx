@@ -4,7 +4,6 @@ import {
   Heading,
   Divider,
   Button,
-  Avatar,
   Link,
   Text,
   Dropdown,
@@ -38,17 +37,7 @@ import { AddMemberDialog } from './add-member-dialog';
 import { AddMemberToTeamDialog } from './add-member-to-team-dialog';
 import { RemoveFromTeamsDialog } from './remove-from-teams-dialog';
 import { BaseTable } from '../Table';
-
-type OrgMember = {
-  id: string;
-  role: string;
-  user: {
-    id: string;
-    name: string | null;
-    email: string;
-    image?: string | null;
-  };
-};
+import { memberColumns as baseMemberColumns, OrgMember } from './member-columns';
 
 export const OrgMembers = ({
   slug,
@@ -141,47 +130,8 @@ export const OrgMembers = ({
     (!!activeOrg && (isLoadingMembers || isLoadingInvitations));
 
   const memberColumns: ColumnDef<OrgMember>[] = activeOrg
-    ? [
-        {
-          id: 'member',
-          header: 'Member',
-          cell: ({ row }) => {
-            const member = row.original;
-            const name = member.user.name || member.user.email;
-
-            return (
-              <div className="flex items-center gap-4">
-                <Avatar
-                  src={member.user.image}
-                  initials={
-                    name
-                      ?.split(' ')
-                      .map((n: string) => n[0])
-                      .join('') ?? ''
-                  }
-                  className="size-8 shadow-sm"
-                />
-                <div className="flex flex-col">
-                  <div className="text-sm font-medium text-zinc-950 dark:text-white">
-                    {name}
-                  </div>
-                  <span className="text-xs text-zinc-500 mt-0.5">
-                    {member.user.email}
-                  </span>
-                </div>
-              </div>
-            );
-          },
-        },
-        {
-          id: 'role',
-          header: 'Role',
-          cell: ({ row }) => (
-            <Badge color={row.original.role === 'owner' ? 'red' : 'blue'}>
-              {row.original.role}
-            </Badge>
-          ),
-        },
+    ? ([
+        ...baseMemberColumns,
         {
           id: 'teams',
           header: 'Teams',
@@ -229,7 +179,7 @@ export const OrgMembers = ({
             );
           },
         },
-      ]
+      ] as ColumnDef<OrgMember>[])
     : [];
 
   if (isLoading) {

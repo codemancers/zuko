@@ -14,6 +14,10 @@ import {
   AlertActions,
   AlertDescription,
   AlertTitle,
+  Tooltip,
+  TooltipTrigger,
+  TooltipContent,
+  TooltipProvider,
 } from '@zuko/ui-kit';
 import {
   ChevronLeftIcon,
@@ -32,13 +36,8 @@ import { useState } from 'react';
 import { CreateTeamDialog } from './create-team-dialog';
 import { authClient } from '@/lib/auth-client';
 import { toast } from 'sonner';
-import type { ColumnDef } from '@tanstack/react-table';
 import { BaseTable } from '../Table';
-
-type OrgTeam = {
-  id: string;
-  name: string;
-};
+import { createTeamColumns, OrgTeam } from './team-columns';
 
 export const OrgTeams = ({
   slug,
@@ -137,51 +136,24 @@ export const OrgTeams = ({
 
       <BaseTable
         columns={
-          ([
-            {
-              id: 'avatar',
-              header: '',
-              cell: ({ row }) => (
-                <Avatar
-                  initials={row.original.name.charAt(0).toUpperCase()}
-                  className="size-8 shadow-sm bg-zinc-100 text-zinc-900 dark:bg-zinc-800 dark:text-white"
-                />
-              ),
-            },
-            {
-              id: 'name',
-              header: 'Team Name',
-              cell: ({ row }) => (
-                <span className="text-sm font-medium text-zinc-950 dark:text-white">
-                  {row.original.name}
-                </span>
-              ),
-            },
-            {
-              id: 'members',
-              header: 'Members',
-              cell: ({ row }) => (
-                <TeamMemberAvatars
-                  teamId={row.original.id}
-                  organizationId={activeOrg.id}
-                />
-              ),
-            },
-            {
-              id: 'actions',
-              header: () => (
-                <span className="flex w-full justify-end pr-2">Actions</span>
-              ),
-              cell: ({ row }) => (
-                <div className="flex justify-end pr-2">
-                  <TeamDropdownMenu
-                    onEdit={() => setTeamToEdit(row.original)}
-                    onRemove={() => setTeamToRemove(row.original)}
+          activeOrg
+            ? createTeamColumns({
+                renderMembersCell: (team: OrgTeam) => (
+                  <TeamMemberAvatars
+                    teamId={team.id}
+                    organizationId={activeOrg.id}
                   />
-                </div>
-              ),
-            },
-          ] as ColumnDef<OrgTeam>[])
+                ),
+                renderActionsCell: (team: OrgTeam) => (
+                  <div className="flex justify-end pr-2">
+                    <TeamDropdownMenu
+                      onEdit={() => setTeamToEdit(team)}
+                      onRemove={() => setTeamToRemove(team)}
+                    />
+                  </div>
+                ),
+              })
+            : []
         }
         data={teams}
         loading={isLoading}
@@ -277,35 +249,48 @@ const TeamMemberAvatars = ({
   const overflow = enriched.length - visible.length;
 
   return (
-    <div className="flex items-center gap-4">
-      <div className="flex -space-x-2">
-        {visible.map((member) => {
-          const nameToUse = member.user.name || member.user.email || '?';
-          return (
-            <Avatar
-              key={member.id}
-              src={member.user.image}
-              initials={nameToUse
-                .split(/[\s.@]+/)
-                .filter(Boolean)
-                .map((n: string) => n[0])
-                .join('')
-                .toUpperCase()
-                .slice(0, 2)}
-              className="size-6 bg-zinc-200 dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100 ring-2 ring-white dark:ring-zinc-900"
-              title={nameToUse}
-            />
-          );
-        })}
-        {overflow > 0 && (
-          <div className="size-6 rounded-full bg-zinc-200 dark:bg-zinc-700 ring-2 ring-white dark:ring-zinc-900 flex items-center justify-center text-[10px] font-medium text-zinc-600 dark:text-zinc-300">
-            +{overflow}
-          </div>
-        )}
+    <TooltipProvider>
+      <div className="flex items-center gap-3">
+        <div className="flex items-center justify-center -space-x-2">
+          {visible.map((member) => {
+            const nameToUse = member.user.name || member.user.email || '?';
+            return (
+              <Tooltip key={member.id}>
+                <TooltipTrigger asChild>
+                  <Avatar
+                    src={member.user.image}
+                    initials={nameToUse
+                      .split(/[\s.@]+/)
+                      .filter(Boolean)
+                      .map((n: string) => n[0])
+                      .join('')
+                      .toUpperCase()
+                      .slice(0, 2)}
+                    className="size-8 bg-zinc-200 dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100 ring-2 ring-white dark:ring-zinc-900"
+                  />
+                </TooltipTrigger>
+                <TooltipContent sideOffset={4}>
+                  <p>{nameToUse}</p>
+                </TooltipContent>
+              </Tooltip>
+            );
+          })}
+          {overflow > 0 && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="size-8 rounded-full bg-zinc-200 dark:bg-zinc-700 ring-2 ring-white dark:ring-zinc-900 flex items-center justify-center text-[10px] font-medium text-zinc-600 dark:text-zinc-300">
+                  +{overflow}
+                </div>
+              </TooltipTrigger>
+              <TooltipContent sideOffset={4}>
+                <p>
+                  {overflow} more member{overflow === 1 ? '' : 's'}
+                </p>
+              </TooltipContent>
+            </Tooltip>
+          )}
+        </div>
       </div>
-      <span className="text-sm text-zinc-500 dark:text-zinc-400">
-        {enriched.length} {enriched.length === 1 ? 'member' : 'members'}
-      </span>
-    </div>
+    </TooltipProvider>
   );
 };

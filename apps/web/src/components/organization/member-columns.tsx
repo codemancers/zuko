@@ -1,0 +1,62 @@
+'use client';
+
+import type { ColumnDef } from '@tanstack/react-table';
+import { Avatar, Badge } from '@zuko/ui-kit';
+
+export type OrgMember = {
+  id: string;
+  role: string;
+  user: {
+    id: string;
+    name: string | null;
+    email: string;
+    image?: string | null;
+  };
+};
+
+export const memberColumns: ColumnDef<OrgMember>[] = [
+  {
+    id: 'member',
+    header: 'Member',
+    cell: ({ row }) => {
+      const member = row.original;
+      const name = member.user.name || member.user.email;
+
+      return (
+        <div className="flex items-center gap-3">
+          <Avatar
+            src={member.user.image}
+            initials={
+              name
+                ?.split(/[\s.@]+/)
+                .filter(Boolean)
+                .map((n: string) => n[0])
+                .join('')
+                .toUpperCase()
+                .slice(0, 2) ?? ''
+            }
+            className="size-8 bg-zinc-200 dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100 ring-2 ring-white dark:ring-zinc-900"
+          />
+          <div className="flex flex-col">
+            <div className="font-medium text-zinc-950 dark:text-white">
+              {name}
+            </div>
+            <span className="text-xs text-zinc-500 mt-0.5">
+              {member.user.email}
+            </span>
+          </div>
+        </div>
+      );
+    },
+  },
+  {
+    id: 'role',
+    header: 'Role',
+    cell: ({ row }) => (
+      <Badge color={row.original.role === 'owner' ? 'red' : 'blue'}>
+        {row.original.role}
+      </Badge>
+    ),
+  },
+];
+
