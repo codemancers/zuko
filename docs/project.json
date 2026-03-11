@@ -1,0 +1,23 @@
+{
+  "name": "@zuko/docs",
+  "$schema": "../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "sourceRoot": "docs",
+  "targets": {
+    "dev": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "NODE_OPTIONS='--max-old-space-size=4096' mintlify dev --port 4002",
+        "cwd": "docs"
+      }
+    },
+    "validate": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "mintlify validate",
+        "cwd": "docs"
+      }
+    }
+  }
+}
+
