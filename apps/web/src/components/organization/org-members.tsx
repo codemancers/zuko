@@ -364,7 +364,9 @@ const MemberTeamBadges = ({
   return (
     <div className="flex flex-wrap gap-1 mt-0.5">
       {memberTeams.map((team) => (
-        <Badge color="fuchsia">{team.name}</Badge>
+        <Badge key={team.id} color="fuchsia">
+          {team.name}
+        </Badge>
       ))}
     </div>
   );
