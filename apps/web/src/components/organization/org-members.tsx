@@ -16,18 +16,14 @@ import {
   AlertDescription,
   AlertTitle,
   Badge,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
 } from '@zuko/ui-kit';
 import {
   ChevronLeftIcon,
   EllipsisVerticalIcon,
 } from '@heroicons/react/20/solid';
+import { UserGroupIcon } from '@heroicons/react/24/outline';
 import { useQuery, useQueryClient, useQueries } from '@tanstack/react-query';
+import type { ColumnDef } from '@tanstack/react-table';
 import {
   getOrganizations,
   getMembers,
@@ -41,6 +37,18 @@ import { useState } from 'react';
 import { AddMemberDialog } from './add-member-dialog';
 import { AddMemberToTeamDialog } from './add-member-to-team-dialog';
 import { RemoveFromTeamsDialog } from './remove-from-teams-dialog';
+import { BaseTable } from '../Table';
+
+type OrgMember = {
+  id: string;
+  role: string;
+  user: {
+    id: string;
+    name: string | null;
+    email: string;
+    image?: string | null;
+  };
+};
 
 export const OrgMembers = ({
   slug,
@@ -132,6 +140,98 @@ export const OrgMembers = ({
     isLoadingOrgs ||
     (!!activeOrg && (isLoadingMembers || isLoadingInvitations));
 
+  const memberColumns: ColumnDef<OrgMember>[] = activeOrg
+    ? [
+        {
+          id: 'member',
+          header: 'Member',
+          cell: ({ row }) => {
+            const member = row.original;
+            const name = member.user.name || member.user.email;
+
+            return (
+              <div className="flex items-center gap-4">
+                <Avatar
+                  src={member.user.image}
+                  initials={
+                    name
+                      ?.split(' ')
+                      .map((n: string) => n[0])
+                      .join('') ?? ''
+                  }
+                  className="size-8 shadow-sm"
+                />
+                <div className="flex flex-col">
+                  <div className="text-sm font-medium text-zinc-950 dark:text-white">
+                    {name}
+                  </div>
+                  <span className="text-xs text-zinc-500 mt-0.5">
+                    {member.user.email}
+                  </span>
+                </div>
+              </div>
+            );
+          },
+        },
+        {
+          id: 'role',
+          header: 'Role',
+          cell: ({ row }) => (
+            <Badge color={row.original.role === 'owner' ? 'red' : 'blue'}>
+              {row.original.role}
+            </Badge>
+          ),
+        },
+        {
+          id: 'teams',
+          header: 'Teams',
+          cell: ({ row }) => (
+            <MemberTeamBadges
+              userId={row.original.user.id}
+              organizationId={activeOrg.id}
+            />
+          ),
+        },
+        {
+          id: 'actions',
+          header: () => (
+            <span className="flex w-full justify-end pr-2">Actions</span>
+          ),
+          cell: ({ row }) => {
+            const member = row.original;
+
+            return (
+              <div className="flex justify-end pr-2">
+                <MemberDropdownMenu
+                  member={member}
+                  organizationId={activeOrg.id}
+                  slug={slug}
+                  onAddToTeam={() =>
+                    setAddToTeamTarget({
+                      userId: member.user.id,
+                      name: member.user.name || member.user.email,
+                    })
+                  }
+                  onRemoveFromTeams={() =>
+                    setRemoveFromTeamsTarget({
+                      userId: member.user.id,
+                      name: member.user.name || member.user.email,
+                    })
+                  }
+                  onRemoveMember={() =>
+                    setMemberToRemove({
+                      id: member.id,
+                      name: member.user.name || member.user.email,
+                    })
+                  }
+                />
+              </div>
+            );
+          },
+        },
+      ]
+    : [];
+
   if (isLoading) {
     return (
       <div className="p-8 text-center text-zinc-500">Loading members...</div>
@@ -181,91 +281,22 @@ export const OrgMembers = ({
         </div>
       )}
 
-      <Table className="mt-10 [--gutter:--spacing(6)] lg:[--gutter:--spacing(10)]">
-        <TableHead>
-          <TableRow>
-            <TableHeader>Member</TableHeader>
-            <TableHeader>Role</TableHeader>
-            <TableHeader>Teams</TableHeader>
-            <TableHeader className="text-right">Actions</TableHeader>
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {members.length === 0 ? (
-            <TableRow>
-              <TableCell
-                colSpan={4}
-                className="py-12 text-center text-zinc-500"
-              >
-                No members found.
-              </TableCell>
-            </TableRow>
-          ) : (
-            members.map((member) => (
-              <TableRow key={member.id}>
-                <TableCell>
-                  <div className="flex items-center gap-4">
-                    <Avatar
-                      src={member.user.image}
-                      initials={member.user.name
-                        ?.split(' ')
-                        .map((n: string) => n[0])
-                        .join('')}
-                      className="size-8 shadow-sm"
-                    />
-                    <div className="flex flex-col">
-                      <div className="text-sm font-medium text-zinc-950 dark:text-white">
-                        {member.user.name || member.user.email}
-                      </div>
-                      <span className="text-xs text-zinc-500 mt-0.5">
-                        {member.user.email}
-                      </span>
-                    </div>
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <Badge color={member.role === 'owner' ? 'red' : 'blue'}>
-                    {member.role}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  <MemberTeamBadges
-                    userId={member.user.id}
-                    organizationId={activeOrg.id}
-                  />
-                </TableCell>
-                <TableCell className="text-right">
-                  <div className="flex justify-end pr-2">
-                    <MemberDropdownMenu
-                      member={member}
-                      organizationId={activeOrg.id}
-                      slug={slug}
-                      onAddToTeam={() =>
-                        setAddToTeamTarget({
-                          userId: member.user.id,
-                          name: member.user.name || member.user.email,
-                        })
-                      }
-                      onRemoveFromTeams={() =>
-                        setRemoveFromTeamsTarget({
-                          userId: member.user.id,
-                          name: member.user.name || member.user.email,
-                        })
-                      }
-                      onRemoveMember={() =>
-                        setMemberToRemove({
-                          id: member.id,
-                          name: member.user.name || member.user.email,
-                        })
-                      }
-                    />
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))
-          )}
-        </TableBody>
-      </Table>
+      <BaseTable
+        columns={memberColumns}
+        data={members}
+        loading={isLoading}
+        entityName="members"
+        emptyStateConfig={{
+          icon: UserGroupIcon,
+          title: 'No members found',
+          description:
+            'Invite someone to your organization to give them access.',
+          action: {
+            label: 'Invite to Org',
+            onClick: () => setIsAddDialogOpen(true),
+          },
+        }}
+      />
 
       {invitations.length > 0 && (
         <div className="mt-16">

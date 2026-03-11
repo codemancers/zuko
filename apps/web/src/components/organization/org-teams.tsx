@@ -6,12 +6,6 @@ import {
   Avatar,
   Link,
   Text,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
   Dropdown,
   DropdownButton,
   DropdownItem,
@@ -25,6 +19,7 @@ import {
   ChevronLeftIcon,
   EllipsisVerticalIcon,
 } from '@heroicons/react/20/solid';
+import { UserGroupIcon } from '@heroicons/react/24/outline';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   getOrganizations,
@@ -37,6 +32,13 @@ import { useState } from 'react';
 import { CreateTeamDialog } from './create-team-dialog';
 import { authClient } from '@/lib/auth-client';
 import { toast } from 'sonner';
+import type { ColumnDef } from '@tanstack/react-table';
+import { BaseTable } from '../Table';
+
+type OrgTeam = {
+  id: string;
+  name: string;
+};
 
 export const OrgTeams = ({
   slug,
@@ -133,59 +135,67 @@ export const OrgTeams = ({
         </div>
       )}
 
-      <Table className="mt-10 [--gutter:--spacing(6)] lg:[--gutter:--spacing(10)]">
-        <TableHead>
-          <TableRow>
-            <TableHeader className="w-12"></TableHeader>
-            <TableHeader>Team Name</TableHeader>
-            <TableHeader>Members</TableHeader>
-            <TableHeader className="text-right">Actions</TableHeader>
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {teams.length === 0 ? (
-            <TableRow>
-              <TableCell
-                colSpan={4}
-                className="py-12 text-center text-zinc-500"
-              >
-                No teams found.
-              </TableCell>
-            </TableRow>
-          ) : (
-            teams.map((team) => (
-              <TableRow key={team.id}>
-                <TableCell>
-                  <Avatar
-                    initials={team.name.charAt(0).toUpperCase()}
-                    className="size-8 shadow-sm bg-zinc-100 text-zinc-900 dark:bg-zinc-800 dark:text-white"
+      <BaseTable
+        columns={
+          ([
+            {
+              id: 'avatar',
+              header: '',
+              cell: ({ row }) => (
+                <Avatar
+                  initials={row.original.name.charAt(0).toUpperCase()}
+                  className="size-8 shadow-sm bg-zinc-100 text-zinc-900 dark:bg-zinc-800 dark:text-white"
+                />
+              ),
+            },
+            {
+              id: 'name',
+              header: 'Team Name',
+              cell: ({ row }) => (
+                <span className="text-sm font-medium text-zinc-950 dark:text-white">
+                  {row.original.name}
+                </span>
+              ),
+            },
+            {
+              id: 'members',
+              header: 'Members',
+              cell: ({ row }) => (
+                <TeamMemberAvatars
+                  teamId={row.original.id}
+                  organizationId={activeOrg.id}
+                />
+              ),
+            },
+            {
+              id: 'actions',
+              header: () => (
+                <span className="flex w-full justify-end pr-2">Actions</span>
+              ),
+              cell: ({ row }) => (
+                <div className="flex justify-end pr-2">
+                  <TeamDropdownMenu
+                    onEdit={() => setTeamToEdit(row.original)}
+                    onRemove={() => setTeamToRemove(row.original)}
                   />
-                </TableCell>
-                <TableCell>
-                  <span className="text-sm font-medium text-zinc-950 dark:text-white">
-                    {team.name}
-                  </span>
-                </TableCell>
-
-                <TableCell>
-                  <TeamMemberAvatars
-                    teamId={team.id}
-                    organizationId={activeOrg.id}
-                  />
-                </TableCell>
-                <TableCell className="text-right">
-                  <div className="flex justify-end pr-2">
-                    <TeamDropdownMenu
-                      onEdit={() => setTeamToEdit(team)}
-                      onRemove={() => setTeamToRemove(team)}
-                    />
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))
-          )}
-        </TableBody>
-      </Table>
+                </div>
+              ),
+            },
+          ] as ColumnDef<OrgTeam>[])
+        }
+        data={teams}
+        loading={isLoading}
+        entityName="teams"
+        emptyStateConfig={{
+          icon: UserGroupIcon,
+          title: 'No teams found',
+          description: 'Create a team to organize members in your organization.',
+          action: {
+            label: 'Create Team',
+            onClick: () => setIsCreateDialogOpen(true),
+          },
+        }}
+      />
 
       <CreateTeamDialog
         organizationId={activeOrg.id}
