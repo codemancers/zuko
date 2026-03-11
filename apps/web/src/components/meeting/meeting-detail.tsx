@@ -89,6 +89,12 @@ interface ActionItem {
   meetingId: number;
   taskId: string | null;
   title: string;
+  completed?: boolean;
+}
+
+interface NewActionItem {
+  title: string;
+  description: string;
 }
 
 interface MeetingDetailProps {
@@ -194,9 +200,49 @@ const MeetingDetail = ({ meetingId, meetingOverride }: MeetingDetailProps) => {
       },
     ],
   };
+  const [actionItems, setActionItems] = useState<ActionItem[]>(
+    meetingOverride?.actionItems || defaultMeeting.actionItems,
+  );
+  const [isAddingTask, setIsAddingTask] = useState(false);
+  const [newTask, setNewTask] = useState<NewActionItem>({
+    title: '',
+    description: '',
+  });
+
+  const handleAddTask = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newTask.title.trim()) {
+      toast.error('Task title is required');
+      return;
+    }
+
+    const newItem: ActionItem = {
+      id: Math.max(0, ...actionItems.map((it) => it.id)) + 1,
+      title: newTask.title,
+      description: newTask.description || null,
+      taskId: null,
+      meetingId: Number(meetingId),
+      createdAt: dayjs().toISOString(),
+      updatedAt: dayjs().toISOString(),
+      completed: false,
+    };
+
+    setActionItems((prev) => [newItem, ...prev]);
+    setNewTask({ title: '', description: '' });
+    setIsAddingTask(false);
+    toast.success('Task added successfully');
+  };
+
+  const toggleTaskCompletion = (id: number) => {
+    setActionItems((prev) =>
+      prev.map((it) => (it.id === id ? { ...it, completed: !it.completed } : it)),
+    );
+    toast.success('Task status updated');
+  };
+
   const meeting = meetingOverride
-    ? { ...defaultMeeting, ...meetingOverride }
-    : defaultMeeting;
+    ? { ...defaultMeeting, ...meetingOverride, actionItems }
+    : { ...defaultMeeting, actionItems };
 
   const isAsanaIntegrationEnabled = true;
   const isAsanaConnected = true;
@@ -392,11 +438,14 @@ const MeetingDetail = ({ meetingId, meetingOverride }: MeetingDetailProps) => {
         }
 
         case 'actionItems': {
-          const items: ActionItem[] = meeting.actionItems || [];
-          if (!items || items.length === 0) {
+          const items: ActionItem[] = actionItems;
+          if (!items || (items.length === 0 && !isAddingTask)) {
             return (
-              <div className="flex h-40 items-center justify-center rounded-lg border border-zinc-200 dark:border-zinc-800">
+              <div className="flex h-40 flex-col items-center justify-center gap-4 rounded-lg border border-zinc-200 dark:border-zinc-800">
                 <ZukoText>No action items for this meeting</ZukoText>
+                <Button onClick={() => setIsAddingTask(true)}>
+                  Create New Task
+                </Button>
               </div>
             );
           }
@@ -418,8 +467,16 @@ const MeetingDetail = ({ meetingId, meetingOverride }: MeetingDetailProps) => {
           return (
             <div className="space-y-4">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <div className="text-sm text-zinc-600 dark:text-zinc-400">
-                  {filtered.length} of {items.length} items
+                <div className="flex items-center gap-3">
+                  <div className="text-sm text-zinc-600 dark:text-zinc-400">
+                    {filtered.length} of {items.length} items
+                  </div>
+                  <Button
+                    outline
+                    onClick={() => setIsAddingTask(!isAddingTask)}
+                  >
+                    {isAddingTask ? 'Cancel Add' : 'Add Task'}
+                  </Button>
                 </div>
                 <div className="flex w-full gap-2 sm:w-auto">
                   <input
@@ -431,6 +488,54 @@ const MeetingDetail = ({ meetingId, meetingOverride }: MeetingDetailProps) => {
                 </div>
               </div>
 
+              {isAddingTask && (
+                <form
+                  onSubmit={handleAddTask}
+                  className="space-y-3 rounded-xl border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-800 dark:bg-zinc-900/50"
+                >
+                  <div className="space-y-1">
+                    <ZukoText className="text-xs font-medium text-zinc-500">
+                      Title
+                    </ZukoText>
+                    <input
+                      value={newTask.title}
+                      onChange={(e) =>
+                        setNewTask({ ...newTask, title: e.target.value })
+                      }
+                      placeholder="Task title..."
+                      className="w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm outline-none focus:border-zinc-400 dark:border-zinc-800 dark:bg-zinc-900"
+                      autoFocus
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <ZukoText className="text-xs font-medium text-zinc-500">
+                      Description
+                    </ZukoText>
+                    <textarea
+                      value={newTask.description}
+                      onChange={(e) =>
+                        setNewTask({ ...newTask, description: e.target.value })
+                      }
+                      placeholder="Add more details..."
+                      rows={2}
+                      className="w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm outline-none focus:border-zinc-400 dark:border-zinc-800 dark:bg-zinc-900"
+                    />
+                  </div>
+                  <div className="flex justify-end gap-2">
+                    <Button
+                      plain
+                      onClick={() => setIsAddingTask(false)}
+                      type="button"
+                    >
+                      Cancel
+                    </Button>
+                    <Button type="submit">
+                      Save Task
+                    </Button>
+                  </div>
+                </form>
+              )}
+
               {filtered.length === 0 && actionItemSearch.trim() ? (
                 <div className="flex h-40 items-center justify-center rounded-lg border border-zinc-200 dark:border-zinc-800">
                   <ZukoText className="text-zinc-500 dark:text-zinc-400">
@@ -441,25 +546,48 @@ const MeetingDetail = ({ meetingId, meetingOverride }: MeetingDetailProps) => {
                 <ul className="grid grid-cols-1 gap-3 md:grid-cols-2">
                   {filtered.map((it) => {
                     const hasTask = !!it.taskId;
+                    const isCompleted = !!it.completed;
 
                     return (
                       <li
                         key={it.id}
                         className={[
-                          'group rounded-xl border p-4 transition',
-                          hasTask
-                            ? 'opacity-75 border-zinc-200/50 bg-zinc-50/50 dark:border-zinc-800/50 dark:bg-zinc-900/50'
+                          'group relative rounded-xl border p-4 transition',
+                          isCompleted
+                            ? 'border-zinc-100 bg-zinc-50/30 opacity-60 dark:border-zinc-800/50 dark:bg-zinc-900/10'
+                            : hasTask
+                            ? 'border-zinc-200/50 bg-zinc-50/50 dark:border-zinc-800/50 dark:bg-zinc-900/50'
                             : 'border-zinc-200 bg-white hover:shadow-sm dark:border-zinc-800 dark:bg-zinc-900',
                         ].join(' ')}
                       >
                         <div className="flex flex-col gap-3">
-                          <div className="min-w-0">
+                          <div className="flex gap-3 min-w-0">
+                            <button
+                              onClick={() => toggleTaskCompletion(it.id)}
+                              className={[
+                                'mt-0.5 flex size-5 shrink-0 items-center justify-center rounded border transition-colors',
+                                isCompleted
+                                  ? 'border-green-500 bg-green-500 text-white'
+                                  : 'border-zinc-300 bg-white hover:border-zinc-400 dark:border-zinc-700 dark:bg-zinc-800',
+                              ].join(' ')}
+                            >
+                              {isCompleted && (
+                                <svg
+                                  className="size-3.5 fill-current"
+                                  viewBox="0 0 20 20"
+                                >
+                                  <path d="M0 11l2-2 5 5L18 3l2 2L7 18z" />
+                                </svg>
+                              )}
+                            </button>
                             <div className="min-w-0 flex-1">
                               <ZukoText
                                 className={[
                                   'text-base md:text-lg font-semibold md:font-bold tracking-tight',
-                                  hasTask
-                                    ? 'text-zinc-400 dark:text-zinc-600'
+                                  isCompleted
+                                    ? 'text-zinc-400 dark:text-zinc-600 line-through'
+                                    : hasTask
+                                    ? 'text-zinc-600 dark:text-zinc-400'
                                     : 'text-zinc-950 dark:text-zinc-50',
                                 ].join(' ')}
                               >
@@ -470,8 +598,10 @@ const MeetingDetail = ({ meetingId, meetingOverride }: MeetingDetailProps) => {
                                 <div
                                   className={[
                                     'mt-1.5 text-sm leading-relaxed',
-                                    hasTask
+                                    isCompleted
                                       ? 'text-zinc-400 dark:text-zinc-600'
+                                      : hasTask
+                                      ? 'text-zinc-500 dark:text-zinc-500'
                                       : 'text-zinc-700 dark:text-zinc-300',
                                   ].join(' ')}
                                 >
