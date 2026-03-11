@@ -177,11 +177,3 @@ export const getMeeting = (id: string) =>
       };
     },
   });
-
-export const getIsAsanaConnected = queryOptions({
-  queryKey: ['asana', 'connected'],
-  queryFn: async () => {
-    // Placeholder: Replace with actual API call
-    return false;
-  },
-});

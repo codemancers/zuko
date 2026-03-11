@@ -162,6 +162,31 @@ test.describe("Meetings - Authenticated", () => {
     ).toBeVisible();
   });
 
+  test("meeting detail Action Items tab shows Add Task button", async ({
+    meetingDetailPage,
+    page,
+  }) => {
+    await meetingDetailPage.goto("1");
+    await page.getByRole("button", { name: /action items/i }).click();
+    await expect(page.getByRole("button", { name: /add task/i })).toBeVisible({
+      timeout: 5000,
+    });
+  });
+
+  test("can add a task from Action Items tab", async ({
+    meetingDetailPage,
+    page,
+  }) => {
+    await meetingDetailPage.goto("1");
+    await page.getByRole("button", { name: /action items/i }).click();
+    await page.getByRole("button", { name: /add task/i }).click();
+    await page.getByPlaceholder(/task title/i).fill("E2E New Task");
+    await page.getByPlaceholder(/add more details/i).fill("E2E task description");
+    await page.getByRole("button", { name: /save task/i }).click();
+    await expect(page.getByText("E2E New Task")).toBeVisible({ timeout: 5000 });
+    await expect(page.getByText("E2E task description")).toBeVisible();
+  });
+
   test("meeting detail back button returns to list", async ({
     meetingsPage,
     meetingDetailPage,

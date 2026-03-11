@@ -15,7 +15,6 @@ import {
   ScrollText,
   CheckCircle,
   Copy,
-  ExternalLink,
 } from 'lucide-react';
 import { Badge, Button, Heading, Text, Text as ZukoText } from '@zuko/ui-kit';
 
@@ -191,9 +190,9 @@ const MeetingDetail = ({ meetingId, meetingOverride }: MeetingDetailProps) => {
       },
       {
         id: 2,
-        title: 'Setup Asana integration',
-        description: 'Bob to check the API documentation.',
-        taskId: 'asana-task-1',
+        title: 'Review API documentation',
+        description: 'Bob to check the API docs.',
+        taskId: null,
         meetingId: Number(meetingId),
         createdAt: dayjs().toISOString(),
         updatedAt: dayjs().toISOString(),
@@ -243,10 +242,6 @@ const MeetingDetail = ({ meetingId, meetingOverride }: MeetingDetailProps) => {
   const meeting = meetingOverride
     ? { ...defaultMeeting, ...meetingOverride, actionItems }
     : { ...defaultMeeting, actionItems };
-
-  const isAsanaIntegrationEnabled = true;
-  const isAsanaConnected = true;
-  const projectId = meeting.projects[0].id;
 
   const onEndMeeting = (id: string) => {
     toast.success('Meeting ended: ' + id);
@@ -612,25 +607,6 @@ const MeetingDetail = ({ meetingId, meetingOverride }: MeetingDetailProps) => {
                           </div>
 
                           <div className="flex items-center justify-end gap-2">
-                            {isAsanaIntegrationEnabled && projectId && (
-                              <button
-                                onClick={() => handleAddToAsana(it)}
-                                className={[
-                                  'inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs font-medium transition',
-                                  hasTask
-                                    ? 'border-green-200 bg-green-50 text-green-700 hover:bg-green-100 dark:border-green-800 dark:bg-green-500/10 dark:text-green-400 dark:hover:bg-green-500/20'
-                                    : 'border-orange-200 text-orange-700 hover:bg-orange-50 dark:border-orange-700 dark:text-orange-300 dark:hover:bg-orange-500/10',
-                                ].join(' ')}
-                              >
-                                <ExternalLink className="h-3.5 w-3.5" />
-                                {isAsanaConnected
-                                  ? hasTask
-                                    ? 'Open in Asana'
-                                    : 'Add to Asana'
-                                  : 'Connect'}
-                              </button>
-                            )}
-
                             <button
                               onClick={() =>
                                 copyText(
@@ -659,18 +635,6 @@ const MeetingDetail = ({ meetingId, meetingOverride }: MeetingDetailProps) => {
       }
     }
     return null;
-  };
-
-  const handleAddToAsana = (actionItem: ActionItem) => {
-    if (isAsanaConnected) {
-      if (actionItem.taskId) {
-        const url = `https://app.asana.com/0/${projectId}/${actionItem.taskId}`;
-        window.open(url, '_blank', 'noopener,noreferrer');
-        return;
-      }
-    } else {
-      router.push('/settings');
-    }
   };
 
   return (

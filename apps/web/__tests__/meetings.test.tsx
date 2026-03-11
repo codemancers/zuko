@@ -365,7 +365,7 @@ describe('MeetingDetail', () => {
     await user.click(screen.getByRole('button', { name: /action items/i }));
     expect(screen.getByText(/2 of 2 items/)).toBeInTheDocument();
     expect(screen.getByText('Review UI refactor components')).toBeInTheDocument();
-    expect(screen.getByText('Setup Asana integration')).toBeInTheDocument();
+    expect(screen.getByText('Review API documentation')).toBeInTheDocument();
   });
 
   it('shows No action items when actionItems is empty', async () => {
