@@ -212,3 +212,35 @@ model DealOwner {
   @@map("deal_owner")
   @@schema("sales")
 }
+
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  DONE
+  CANCELLED
+
+  @@schema("sales")
+}
+
+model Task {
+  id             Int        @id @default(autoincrement())
+  organizationId Int        @map("organization_id")
+  title          String
+  description    String?    @db.Text
+  status         TaskStatus @default(TODO)
+  completedAt    DateTime?  @map("completed_at")
+  parentId       Int?       @map("parent_id")
+  assignee       String?
+
+  parent   Task?  @relation("TaskSubtasks", fields: [parentId], references: [id])
+  subtasks Task[] @relation("TaskSubtasks")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([organizationId])
+  @@index([parentId])
+  @@index([status])
+  @@map("task")
+  @@schema("sales")
+}

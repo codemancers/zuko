@@ -34,6 +34,7 @@ import {
   BriefcaseIcon,
   BuildingOfficeIcon,
   ChatBubbleLeftRightIcon,
+  ClipboardDocumentListIcon,
   Cog6ToothIcon,
   Cog8ToothIcon,
   UserGroupIcon,
@@ -219,6 +220,13 @@ export function ApplicationLayout({ children }: { children: React.ReactNode }) {
               >
                 <BriefcaseIcon />
                 <SidebarLabel>Deals</SidebarLabel>
+              </SidebarItem>
+              <SidebarItem
+                href="/tasks"
+                current={pathname.startsWith('/tasks')}
+              >
+                <ClipboardDocumentListIcon />
+                <SidebarLabel>Tasks</SidebarLabel>
               </SidebarItem>
               <SidebarItem
                 href="/meetings"
