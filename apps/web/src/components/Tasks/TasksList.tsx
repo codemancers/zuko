@@ -2,17 +2,42 @@
 
 import { ClipboardDocumentListIcon, PlusIcon } from '@heroicons/react/24/outline';
 import { Divider, Heading, Button } from '@zuko/ui-kit';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { getTasks } from '@/server/query-options';
 import { useRouter } from 'next/navigation';
-import { taskColumns } from './columns';
+import { useMemo } from 'react';
+import { tasksApi, UpdateTaskDto } from '@/lib/api/tasks';
+import { createTaskColumns, FlatTask } from './columns';
 import { BaseTable } from '../Table';
 
 const TasksList = () => {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { data, isLoading } = useQuery(getTasks());
 
-  const tasks = data?.tasks ?? [];
+  const { mutate: updateTask } = useMutation({
+    mutationFn: ({ id, data }: { id: number; data: UpdateTaskDto }) =>
+      tasksApi.updateTask(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+    },
+  });
+
+  const columns = useMemo(
+    () => createTaskColumns((id, data) => updateTask({ id, data })),
+    [updateTask],
+  );
+
+  const flatTasks = useMemo<FlatTask[]>(() => {
+    const rows: FlatTask[] = [];
+    for (const task of data?.tasks ?? []) {
+      rows.push(task);
+      for (const sub of task.subtasks) {
+        rows.push({ ...sub, parentTitle: task.title });
+      }
+    }
+    return rows;
+  }, [data?.tasks]);
 
   return (
     <>
@@ -32,8 +57,8 @@ const TasksList = () => {
       <Divider className="mt-6" />
 
       <BaseTable
-        columns={taskColumns}
-        data={tasks}
+        columns={columns}
+        data={flatTasks}
         loading={isLoading}
         onRowClick={(task) => router.push(`/tasks/${task.id}`)}
         totalCount={data?.pagination?.total}

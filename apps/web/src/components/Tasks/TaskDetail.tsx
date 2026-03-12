@@ -6,7 +6,8 @@ import { tasksApi } from '@/lib/api/tasks';
 import { useRouter } from 'next/navigation';
 import { Badge, Button, Divider, Heading, Subheading } from '@zuko/ui-kit';
 import dayjs from 'dayjs';
-import { PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
+import { ChevronLeftIcon, PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
+import Link from 'next/link';
 import type { TaskStatus } from '@/lib/api/tasks';
 
 const statusConfig: Record<
@@ -63,7 +64,12 @@ const TaskDetail = ({ taskId }: TaskDetailProps) => {
 
   return (
     <>
-      <div className="flex items-start justify-between">
+      <Link href="/tasks" className="inline-flex items-center gap-2 text-sm/6 text-zinc-500 dark:text-zinc-400">
+        <ChevronLeftIcon className="size-4" />
+        Tasks
+      </Link>
+
+      <div className="mt-4 flex items-start justify-between">
         <div>
           <Heading>{task.title}</Heading>
           {task.description && (
