@@ -9,6 +9,8 @@ import dayjs from 'dayjs';
 import { ChevronLeftIcon, PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
 import Link from 'next/link';
 import type { TaskStatus } from '@/lib/api/tasks';
+import { useState } from 'react';
+import ConfirmDialog from '@/components/shared/ConfirmDialog';
 
 const statusConfig: Record<
   TaskStatus,
@@ -28,6 +30,7 @@ const TaskDetail = ({ taskId }: TaskDetailProps) => {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { data: task, isLoading } = useQuery(getTask(taskId));
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   const deleteMutation = useMutation({
     mutationFn: () => tasksApi.deleteTask(taskId),
@@ -57,9 +60,8 @@ const TaskDetail = ({ taskId }: TaskDetailProps) => {
   };
 
   const handleDelete = () => {
-    if (confirm('Delete this task? This cannot be undone.')) {
-      deleteMutation.mutate();
-    }
+    deleteMutation.mutate();
+    setShowDeleteDialog(false);
   };
 
   return (
@@ -85,7 +87,7 @@ const TaskDetail = ({ taskId }: TaskDetailProps) => {
           </Button>
           <Button
             color="red"
-            onClick={handleDelete}
+            onClick={() => setShowDeleteDialog(true)}
             disabled={deleteMutation.isPending}
           >
             <TrashIcon className="h-4 w-4" />
@@ -95,6 +97,17 @@ const TaskDetail = ({ taskId }: TaskDetailProps) => {
       </div>
 
       <Divider className="mt-6" />
+
+      <ConfirmDialog
+        open={showDeleteDialog}
+        onClose={() => setShowDeleteDialog(false)}
+        onConfirm={handleDelete}
+        title="Delete Task"
+        description={`Are you sure you want to delete "${task.title}"? This action cannot be undone.`}
+        confirmText="Delete"
+        confirmColor="red"
+        isLoading={deleteMutation.isPending}
+      />
 
       <dl className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
         {[

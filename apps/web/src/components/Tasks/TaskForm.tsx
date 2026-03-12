@@ -1,8 +1,10 @@
 'use client';
 
-import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
+import { useForm, Controller } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import {
   Button,
   Field,
@@ -16,6 +18,16 @@ import {
 } from '@zuko/ui-kit';
 import { tasksApi, TaskStatus, type Task } from '@/lib/api/tasks';
 import { getTasks } from '@/server/query-options';
+
+const taskFormSchema = z.object({
+  title: z.string().min(1, 'Title is required'),
+  description: z.string().optional(),
+  status: z.enum(['TODO', 'IN_PROGRESS', 'DONE', 'CANCELLED']),
+  assignee: z.string().optional(),
+  parentId: z.string(),
+});
+
+type TaskFormValues = z.infer<typeof taskFormSchema>;
 
 interface TaskFormProps {
   mode: 'create' | 'edit';
@@ -34,37 +46,42 @@ const TaskForm = ({ mode, task, defaultParentId }: TaskFormProps) => {
   const router = useRouter();
   const queryClient = useQueryClient();
 
-  const [title, setTitle] = useState(task?.title ?? '');
-  const [description, setDescription] = useState(task?.description ?? '');
-  const [status, setStatus] = useState<TaskStatus>(task?.status ?? 'TODO');
-  const [assignee, setAssignee] = useState(task?.assignee ?? '');
-  const [parentId, setParentId] = useState<string>(
-    String(task?.parentId ?? defaultParentId ?? ''),
-  );
-  const [error, setError] = useState('');
-
   const { data: tasksData } = useQuery(getTasks());
   const topLevelTasks = (tasksData?.tasks ?? []).filter(
     (t) => t.id !== task?.id,
   );
 
+  const form = useForm<TaskFormValues>({
+    resolver: zodResolver(taskFormSchema),
+    defaultValues: {
+      title: task?.title ?? '',
+      description: task?.description ?? '',
+      status: task?.status ?? 'TODO',
+      assignee: task?.assignee ?? '',
+      parentId: String(task?.parentId ?? defaultParentId ?? ''),
+    },
+  });
+
   const mutation = useMutation({
-    mutationFn: async () => {
-      const parentIdNum = parentId ? parseInt(parentId, 10) : undefined;
+    mutationFn: async (data: TaskFormValues) => {
+      const parentIdNum = data.parentId
+        ? parseInt(data.parentId, 10)
+        : undefined;
       if (mode === 'create') {
         return tasksApi.createTask({
-          title,
-          description: description || undefined,
-          status,
-          assignee: assignee || undefined,
+          title: data.title,
+          description: data.description || undefined,
+          status: data.status,
+          assignee: data.assignee || undefined,
           parentId: parentIdNum,
         });
       } else {
-        return tasksApi.updateTask(task!.id, {
-          title,
-          description: description || null,
-          status,
-          assignee: assignee || null,
+        if (!task) throw new Error('Task required in edit mode');
+        return tasksApi.updateTask(task.id, {
+          title: data.title,
+          description: data.description || null,
+          status: data.status,
+          assignee: data.assignee || null,
           parentId: parentIdNum ?? null,
         });
       }
@@ -78,49 +95,56 @@ const TaskForm = ({ mode, task, defaultParentId }: TaskFormProps) => {
       }
     },
     onError: (err: Error) => {
-      setError(err.message || 'Something went wrong');
+      form.setError('root', {
+        type: 'manual',
+        message: err.message || 'Something went wrong',
+      });
     },
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!title.trim()) {
-      setError('Title is required');
-      return;
+  const onSubmit = (data: TaskFormValues) => {
+    mutation.mutate(data);
+  };
+
+  const handleCancel = () => {
+    if (mode === 'create' || !task) {
+      router.push('/tasks');
+    } else {
+      router.push(`/tasks/${task.id}`);
     }
-    setError('');
-    mutation.mutate();
   };
 
   return (
-    <form onSubmit={handleSubmit}>
+    <form onSubmit={form.handleSubmit(onSubmit)}>
       <Fieldset>
         <FieldGroup>
           <Field>
             <Label>Title *</Label>
             <Input
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
               placeholder="Task title"
-              required
+              {...form.register('title')}
+              disabled={mutation.isPending}
             />
+            {form.formState.errors.title && (
+              <ErrorMessage>{form.formState.errors.title.message}</ErrorMessage>
+            )}
           </Field>
 
           <Field>
             <Label>Description</Label>
             <Textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
               placeholder="Optional description"
               rows={3}
+              {...form.register('description')}
+              disabled={mutation.isPending}
             />
           </Field>
 
           <Field>
             <Label>Status</Label>
             <Select
-              value={status}
-              onChange={(e) => setStatus(e.target.value as TaskStatus)}
+              {...form.register('status')}
+              disabled={mutation.isPending}
             >
               {STATUS_OPTIONS.map((opt) => (
                 <option key={opt.value} value={opt.value}>
@@ -128,33 +152,45 @@ const TaskForm = ({ mode, task, defaultParentId }: TaskFormProps) => {
                 </option>
               ))}
             </Select>
+            {form.formState.errors.status && (
+              <ErrorMessage>{form.formState.errors.status.message}</ErrorMessage>
+            )}
           </Field>
 
           <Field>
             <Label>Assignee</Label>
             <Input
-              value={assignee}
-              onChange={(e) => setAssignee(e.target.value)}
               placeholder="Person responsible"
+              {...form.register('assignee')}
+              disabled={mutation.isPending}
             />
           </Field>
 
           <Field>
             <Label>Parent Task</Label>
-            <Select
-              value={parentId}
-              onChange={(e) => setParentId(e.target.value)}
-            >
-              <option value="">No parent (top-level)</option>
-              {topLevelTasks.map((t) => (
-                <option key={t.id} value={String(t.id)}>
-                  {t.title}
-                </option>
-              ))}
-            </Select>
+            <Controller
+              control={form.control}
+              name="parentId"
+              render={({ field }) => (
+                <Select
+                  {...field}
+                  value={field.value}
+                  disabled={mutation.isPending}
+                >
+                  <option value="">No parent (top-level)</option>
+                  {topLevelTasks.map((t) => (
+                    <option key={t.id} value={String(t.id)}>
+                      {t.title}
+                    </option>
+                  ))}
+                </Select>
+              )}
+            />
           </Field>
 
-          {error && <ErrorMessage>{error}</ErrorMessage>}
+          {form.formState.errors.root && (
+            <ErrorMessage>{form.formState.errors.root.message}</ErrorMessage>
+          )}
 
           <div className="flex gap-3">
             <Button type="submit" disabled={mutation.isPending}>
@@ -169,7 +205,8 @@ const TaskForm = ({ mode, task, defaultParentId }: TaskFormProps) => {
             <Button
               type="button"
               plain
-              onClick={() => router.back()}
+              onClick={handleCancel}
+              disabled={mutation.isPending}
             >
               Cancel
             </Button>
