@@ -1,10 +1,4 @@
-import {
-  Controller,
-  Get,
-  Query,
-  UseGuards,
-} from '@nestjs/common';
-import { AuthGuard } from '@thallesp/nestjs-better-auth';
+import { Injectable } from '@nestjs/common';
 import {
   CompaniesService,
   ContactsService,
@@ -12,32 +6,23 @@ import {
   COMPANY_TABLE_METADATA,
   CONTACT_TABLE_METADATA,
   DEAL_TABLE_METADATA,
-  TableViewCompany,
-  TableViewContact,
-  TableViewDeal,
 } from '@zuko/sales';
-import { ViewsService } from './views.service';
-import { CompanyListQueryDto } from './companies.controller';
-import { ContactListQueryDto } from './contacts.controller';
-import { DealListQueryDto } from './deals.controller';
-import { OrgId } from '../../common/auth/org-id.decorator';
-import { OrganizationGuard } from '../../common/auth/organization.guard';
+import { TableRowBuilder } from './row-builder/table-row.builder';
+import { CompanyListQueryDto } from '../companies.controller';
+import { ContactListQueryDto } from '../contacts.controller';
+import { DealListQueryDto } from '../deals.controller';
+import { UpdateCellDto } from './table.controller';
 
-@Controller('views')
-@UseGuards(AuthGuard, OrganizationGuard)
-export class ViewsController {
+@Injectable()
+export class TableService {
   constructor(
     private readonly companiesService: CompaniesService,
     private readonly contactsService: ContactsService,
     private readonly dealsService: DealsService,
-    private readonly viewsService: ViewsService,
+    private readonly rowBuilder: TableRowBuilder,
   ) {}
 
-  @Get('companies')
-  async getCompaniesTable(
-    @OrgId() organizationId: number,
-    @Query() query: CompanyListQueryDto
-  ) {
+  async getCompaniesTable(organizationId: number, query: CompanyListQueryDto) {
     const filters = {
       organizationId,
       search: query.search,
@@ -54,18 +39,14 @@ export class ViewsController {
 
     const result = await this.companiesService.findAll(filters, pagination);
 
-    return this.viewsService.buildTableView<TableViewCompany>(
-      result.companies,
-      COMPANY_TABLE_METADATA,
-      result.pagination,
-    );
+    return {
+      metadata: COMPANY_TABLE_METADATA,
+      data: this.rowBuilder.buildRows(result.companies, COMPANY_TABLE_METADATA),
+      pagination: result.pagination,
+    };
   }
 
-  @Get('contacts')
-  async getContactsTable(
-    @OrgId() organizationId: number,
-    @Query() query: ContactListQueryDto
-  ) {
+  async getContactsTable(organizationId: number, query: ContactListQueryDto) {
     const filters = {
       organizationId,
       search: query.search,
@@ -82,18 +63,14 @@ export class ViewsController {
 
     const result = await this.contactsService.findAll(filters, pagination);
 
-    return this.viewsService.buildTableView<TableViewContact>(
-      result.contacts,
-      CONTACT_TABLE_METADATA,
-      result.pagination,
-    );
+    return {
+      metadata: CONTACT_TABLE_METADATA,
+      data: this.rowBuilder.buildRows(result.contacts, CONTACT_TABLE_METADATA),
+      pagination: result.pagination,
+    };
   }
 
-  @Get('deals')
-  async getDealsTable(
-    @OrgId() organizationId: number,
-    @Query() query: DealListQueryDto
-  ) {
+  async getDealsTable(organizationId: number, query: DealListQueryDto) {
     const filters = {
       organizationId,
       search: query.search,
@@ -125,10 +102,14 @@ export class ViewsController {
 
     const result = await this.dealsService.findAll(filters, pagination);
 
-    return this.viewsService.buildTableView<TableViewDeal>(
-      result.deals,
-      DEAL_TABLE_METADATA,
-      result.pagination,
-    );
+    return {
+      metadata: DEAL_TABLE_METADATA,
+      data: this.rowBuilder.buildRows(result.deals, DEAL_TABLE_METADATA),
+      pagination: result.pagination,
+    };
+  }
+
+  async updateCell(entity: string, rowId: number, dto: UpdateCellDto) {
+    // cell update logic
   }
 }

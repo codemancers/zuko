@@ -1,38 +1,61 @@
-export type ColumnType = 
-  | 'text' 
-  | 'badge' 
-  | 'date' 
-  | 'currency' 
-  | 'link' 
+export type ColumnType =
+  | 'text'
+  | 'number'
+  | 'date'
+  | 'currency'
+  | 'select'
+  | 'multiselect'
+  | 'relation'
   | 'entity';
 
-export type ColumnFormat = 
-  | 'date' 
-  | 'currency' 
-  | 'owner' 
-  | 'stage';
+export type DataType = 'text' | 'number' | 'boolean' | 'date' | 'json';
+
+export type ColumnRender = 'link' | 'badge' | 'email' | 'phone' | 'entity';
+
+export type ColumnFormat = 'date' | 'currency' | 'owner' | 'stage';
 
 export interface CellValue<T> {
   value: T;
   display: string;
 }
 
+export interface SelectOption {
+  label: string;
+  value: string;
+}
+
+export interface RelationConfig {
+  entity: 'user' | 'company' | 'contact' | 'deal';
+  labelField?: string;
+}
+
+export interface ColumnConfig {
+  entityType?: 'company' | 'contact' | 'deal';
+  accessorKey?: string;
+  hrefTemplate?: string; // for links/urls
+  currency?: string;
+  dateFormat?: string;
+  icon?: string;
+  colorMap?: Record<string, string>; // for badges
+  format?: ColumnFormat;
+  options?: SelectOption[]; // for select dropdown fields
+  relation?: RelationConfig; // for relation fields
+  render?: ColumnRender; // additional rendering login on default field types
+}
+
 export interface ColumnMetadata {
   id: string;
   header: string;
-  type: ColumnType;
+  fieldType: ColumnType;
+  dataType: DataType;
   sortable?: boolean;
+  filterable?: boolean;
+  searchable?: boolean;
+  editable?: boolean;
   isVisible?: boolean;
-  config?: {
-    colorMap?: Record<string, string>;
-    hrefTemplate?: string;
-    entityType?: 'company' | 'contact' | 'deal';
-    currency?: string;
-    dateFormat?: string;
-    icon?: string;
-    accessorKey?: string;
-    format?: ColumnFormat;
-  };
+  width?: number;
+  default?: boolean;
+  config?: ColumnConfig;
 }
 
 export interface PaginationInfo {
@@ -46,33 +69,4 @@ export interface TableViewResponse<T> {
   data: T[];
   metadata: ColumnMetadata[];
   pagination: PaginationInfo;
-}
-
-export interface TableViewCompany {
-  id: number;
-  companyName: string;
-  website?: string;
-  linkedinUrl?: string;
-  owners: string;
-  createdAt: CellValue<string>;
-}
-
-export interface TableViewContact {
-  id: number;
-  name: string;
-  email?: string;
-  phone?: string;
-  owners: string;
-  createdAt: CellValue<string>;
-}
-
-export interface TableViewDeal {
-  id: number;
-  title: string;
-  value: CellValue<number>;
-  stage: CellValue<string>;
-  probability?: number | string;
-  owners: string;
-  expectedCloseDate: CellValue<string>;
-  createdAt: CellValue<string>;
 }
