@@ -63,7 +63,7 @@ test.describe("Companies - Authenticated", () => {
   test("can search for companies", async ({ companiesPage, page }) => {
     await companiesPage.goto();
     const responsePromise = page.waitForResponse(
-      (resp) => resp.url().includes("/api/companies") && resp.ok()
+      (resp) => resp.url().includes("/tables/companies") && resp.ok()
     );
     await companiesPage.searchCompany("test");
     await responsePromise;
@@ -76,7 +76,7 @@ test.describe("Companies - Authenticated", () => {
     await companiesPage.goto();
     const companies = await companiesPage.getCompanyItems();
     if (companies.length > 0) {
-      await companies[0].click();
+      await companies[0].locator("td:first-child").click();
       await page.waitForURL(/\/companies\/\d+$/, { timeout: 10000 });
       expect(page.url()).toMatch(/\/companies\/\d+$/);
     } else {

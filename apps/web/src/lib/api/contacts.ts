@@ -4,6 +4,8 @@
  */
 
 import { apiClient } from '../api-client';
+import type { TableViewResponse, PaginationInfo } from '@/types/table-metadata';
+import type { BaseRow } from '@/components/Table';
 
 export interface Contact {
   id: number;
@@ -33,13 +35,11 @@ export interface ContactOwner {
 
 export interface ContactsListResponse {
   contacts: Contact[];
-  pagination: {
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
-  };
+  pagination: PaginationInfo;
 }
+
+// Table response uses generic BaseRow to maintain dynamic rendering
+export type TableViewContactsResponse = TableViewResponse<BaseRow>;
 
 export interface CreateContactDto {
   name: string;
@@ -88,6 +88,30 @@ export const contactsApi = {
 
     const queryString = params.toString();
     return apiClient.get(`/contacts${queryString ? `?${queryString}` : ''}`);
+  },
+
+  /**
+   * Get contacts formatted for table view with metadata
+   */
+  async getTableViewContacts(
+    filters?: ContactFilters,
+  ): Promise<TableViewContactsResponse> {
+    const params = new URLSearchParams();
+
+    if (filters) {
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value !== undefined) {
+          if (Array.isArray(value)) {
+            params.append(key, value.join(','));
+          } else {
+            params.append(key, value.toString());
+          }
+        }
+      });
+    }
+
+    const queryString = params.toString();
+    return apiClient.get(`/tables/contacts${queryString ? `?${queryString}` : ''}`);
   },
 
   /**

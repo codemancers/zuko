@@ -8,58 +8,25 @@ import {
   Input,
 } from '@zuko/ui-kit';
 import { useQuery } from '@tanstack/react-query';
-import { getDeals } from '@/server/query-options';
-import { useState } from 'react';
+import { getTableViewDeals } from '@/server/query-options';
+import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { dealColumns } from './columns';
-import { BaseTable } from '../Table';
+import { BaseTable, createColumnsFromMetadata, type BaseRow } from '../Table';
 
 const DealsList = () => {
   const router = useRouter();
   const [searchTerm, setSearchTerm] = useState('');
-  const { data, isLoading } = useQuery(
-    getDeals({ search: searchTerm || undefined }),
+  const { data: dealsData, isLoading } = useQuery(
+    getTableViewDeals({ search: searchTerm || undefined }),
   );
 
-  const deals = data?.deals || [];
+  const deals = dealsData?.data || [];
+  const metadata = dealsData?.metadata || [];
 
-  // Define stage priority (lower number = higher priority)
-  const stagePriority: Record<string, number> = {
-    negotiation: 1,
-    proposal: 2,
-    qualification: 3,
-    prospecting: 4,
-    closed_won: 5,
-    closed_lost: 6,
-  };
-
-  // Sort by: 1) Stage priority, 2) Probability (desc), 3) Expected close date (asc)
-  const sortedDeals = [...deals].sort((a, b) => {
-    // First, sort by stage priority
-    const stageA = stagePriority[a.stage] ?? 999;
-    const stageB = stagePriority[b.stage] ?? 999;
-    if (stageA !== stageB) {
-      return stageA - stageB;
-    }
-
-    // If stages are equal, sort by probability (higher probability first)
-    const probA = a.probability ?? 0;
-    const probB = b.probability ?? 0;
-    if (probA !== probB) {
-      return probB - probA;
-    }
-
-    // If probabilities are equal, sort by expected close date (earlier dates first)
-    if (a.expectedCloseDate && b.expectedCloseDate) {
-      return (
-        new Date(a.expectedCloseDate).getTime() -
-        new Date(b.expectedCloseDate).getTime()
-      );
-    }
-    if (a.expectedCloseDate) return -1;
-    if (b.expectedCloseDate) return 1;
-    return 0;
-  });
+  const columns = useMemo(
+    () => createColumnsFromMetadata<BaseRow>(metadata),
+    [metadata]
+  );
 
   const handleDealClick = (dealId: number) => {
     router.push(`/deals/${dealId}`);
@@ -97,12 +64,12 @@ const DealsList = () => {
         />
       </div>
 
-      <BaseTable
-        columns={dealColumns}
-        data={sortedDeals}
+      <BaseTable<BaseRow>
+        columns={columns}
+        data={deals}
         loading={isLoading}
-        onRowClick={(deal) => handleDealClick(deal.id)}
-        totalCount={data?.pagination?.total}
+        onRowClick={(deal) => handleDealClick(Number(deal.id))}
+        totalCount={dealsData?.pagination?.total}
         entityName="deals"
         emptyStateConfig={{
           icon: BriefcaseIcon,

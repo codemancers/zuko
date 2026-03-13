@@ -6,6 +6,8 @@
 import { apiClient } from '../api-client';
 import type { Contact } from './contacts';
 import type { SalesCompany } from './companies';
+import type { TableViewResponse, PaginationInfo } from '@/types/table-metadata';
+import type { BaseRow } from '@/components/Table';
 
 export interface Deal {
   id: number;
@@ -68,13 +70,11 @@ export interface DealContactAssociation {
 
 export interface DealsListResponse {
   deals: Deal[];
-  pagination: {
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
-  };
+  pagination: PaginationInfo;
 }
+
+// Table response uses generic BaseRow to maintain dynamic rendering
+export type TableViewDealsResponse = TableViewResponse<BaseRow>;
 
 export interface CreateDealDto {
   title: string;
@@ -161,6 +161,32 @@ export const dealsApi = {
     const queryString = params.toString();
     return apiClient.get<DealsListResponse>(
       `/deals${queryString ? `?${queryString}` : ''}`,
+    );
+  },
+
+  /**
+   * Get deals formatted for table view with metadata
+   */
+  async getTableViewDeals(
+    filters?: DealFilters,
+  ): Promise<TableViewDealsResponse> {
+    const params = new URLSearchParams();
+
+    if (filters) {
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value !== undefined) {
+          if (Array.isArray(value)) {
+            params.append(key, value.join(','));
+          } else {
+            params.append(key, value.toString());
+          }
+        }
+      });
+    }
+
+    const queryString = params.toString();
+    return apiClient.get<TableViewDealsResponse>(
+      `/tables/deals${queryString ? `?${queryString}` : ''}`,
     );
   },
 

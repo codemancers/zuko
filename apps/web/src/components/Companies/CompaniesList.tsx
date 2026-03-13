@@ -8,20 +8,25 @@ import {
   Input,
 } from '@zuko/ui-kit';
 import { useQuery } from '@tanstack/react-query';
-import { getCompanies } from '@/server/query-options';
-import { useState } from 'react';
+import { getTableViewCompanies } from '@/server/query-options';
+import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { companyColumns } from './columns';
-import { BaseTable } from '../Table';
+import { BaseTable, createColumnsFromMetadata, type BaseRow } from '../Table';
 
 const CompaniesList = () => {
   const router = useRouter();
   const [searchTerm, setSearchTerm] = useState('');
-  const { data, isLoading } = useQuery(
-    getCompanies({ search: searchTerm || undefined }),
+  const { data: companiesData, isLoading } = useQuery(
+    getTableViewCompanies({ search: searchTerm || undefined }),
   );
 
-  const companies = data?.companies || [];
+   const companies = companiesData?.data || [];
+  const metadata = companiesData?.metadata || [];
+
+  const columns = useMemo(
+    () => createColumnsFromMetadata<BaseRow>(metadata),
+    [metadata]
+  );
 
   const handleCompanyClick = (companyId: number) => {
     router.push(`/companies/${companyId}`);
@@ -59,12 +64,12 @@ const CompaniesList = () => {
         />
       </div>
 
-      <BaseTable
-        columns={companyColumns}
+      <BaseTable<BaseRow>
+        columns={columns}
         data={companies}
         loading={isLoading}
-        onRowClick={(company) => handleCompanyClick(company.id)}
-        totalCount={data?.pagination?.total}
+        onRowClick={(company) => handleCompanyClick(Number(company.id))}
+        totalCount={companiesData?.pagination?.total}
         entityName="companies"
         emptyStateConfig={{
           icon: BuildingOfficeIcon,

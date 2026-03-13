@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { UserIcon, PlusIcon } from '@heroicons/react/24/outline';
 import {
   Divider,
@@ -9,23 +9,27 @@ import {
   Input,
 } from '@zuko/ui-kit';
 import { useQuery } from '@tanstack/react-query';
-import { getContacts } from '@/server/query-options';
+import { getTableViewContacts } from '@/server/query-options';
 import { useRouter } from 'next/navigation';
-import type { Contact } from '@/lib/api/contacts';
-import { contactColumns } from './columns';
-import { BaseTable } from '../Table';
+import { BaseTable, createColumnsFromMetadata, type BaseRow } from '../Table';
 
 const ContactsList = () => {
   const router = useRouter();
   const [searchTerm, setSearchTerm] = useState('');
-  const { data, isLoading } = useQuery(
-    getContacts({ search: searchTerm || undefined }),
+  const { data: contactsData, isLoading } = useQuery(
+    getTableViewContacts({ search: searchTerm || undefined }),
   );
 
-  const contacts = data?.contacts || [];
+  const contacts = contactsData?.data || [];
+  const metadata = contactsData?.metadata || [];
 
-  const handleRowClick = (contact: Contact) => {
-    router.push(`/contacts/${contact.id}`);
+  const columns = useMemo(
+    () => createColumnsFromMetadata<BaseRow>(metadata),
+    [metadata]
+  );
+
+  const handleRowClick = (contactId: number) => {
+    router.push(`/contacts/${contactId}`);
   };
 
   const handleNewContact = () => {
@@ -60,12 +64,12 @@ const ContactsList = () => {
         />
       </div>
 
-      <BaseTable
-        columns={contactColumns}
+      <BaseTable<BaseRow>
+        columns={columns}
         data={contacts}
         loading={isLoading}
-        onRowClick={handleRowClick}
-        totalCount={data?.pagination?.total}
+        onRowClick={(contact) => handleRowClick(Number(contact.id))}
+        totalCount={contactsData?.pagination?.total}
         entityName="contacts"
         emptyStateConfig={{
           icon: UserIcon,

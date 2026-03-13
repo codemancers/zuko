@@ -21,6 +21,7 @@ vi.mock('next/navigation', () => ({
 const mockCreateContact = vi.fn();
 const mockUpdateContact = vi.fn();
 const mockGetContacts = vi.fn();
+const mockGetTableViewContacts = vi.fn();
 const mockGetContact = vi.fn();
 const mockHideContact = vi.fn();
 vi.mock('@/lib/api/contacts', () => ({
@@ -28,6 +29,7 @@ vi.mock('@/lib/api/contacts', () => ({
     createContact: (...args: unknown[]) => mockCreateContact(...args),
     updateContact: (...args: unknown[]) => mockUpdateContact(...args),
     getContacts: (...args: unknown[]) => mockGetContacts(...args),
+    getTableViewContacts: (...args: unknown[]) => mockGetTableViewContacts(...args),
     getContact: (...args: unknown[]) => mockGetContact(...args),
     hideContact: (...args: unknown[]) => mockHideContact(...args),
   },
@@ -418,34 +420,128 @@ describe('ContactForm', () => {
   });
 });
 
+const mockMetadata = [
+  {
+      id: "name",
+      header: "Name",
+      fieldType: "entity",
+      dataType: "text",
+      sortable: true,
+      filterable: true,
+      searchable: true,
+      editable: true,
+      isVisible: true,
+      default: true,
+      config: {
+          entityType: "contact",
+          hrefTemplate: "/contacts/{id}"
+      }
+  },
+  {
+      id: "email",
+      header: "Email",
+      fieldType: "text",
+      dataType: "text",
+      sortable: false,
+      filterable: true,
+      searchable: true,
+      editable: true,
+      isVisible: true,
+      default: true,
+      config: {
+          render: "email",
+          accessorKey: "email"
+      }
+  },
+  {
+      id: "phone",
+      header: "Phone",
+      fieldType: "text",
+      dataType: "text",
+      sortable: false,
+      filterable: true,
+      searchable: true,
+      editable: true,
+      isVisible: true,
+      default: true,
+      config: {
+          render: "phone",
+          accessorKey: "phone"
+      }
+  },
+  {
+      id: "owners",
+      header: "Owner",
+      fieldType: "text",
+      dataType: "json",
+      sortable: false,
+      filterable: true,
+      searchable: true,
+      editable: false,
+      isVisible: true,
+      default: true,
+      config: {
+          format: "owner"
+      }
+  },
+  {
+      id: "createdAt",
+      header: "Created",
+      fieldType: "date",
+      dataType: "date",
+      sortable: true,
+      filterable: true,
+      searchable: true,
+      editable: false,
+      isVisible: true,
+      default: true,
+      config: {
+          format: "date"
+      }
+  }
+];
+
 const emptyContactsResponse = {
-  contacts: [],
+  data: [],
+  metadata: mockMetadata,
   pagination: { page: 1, limit: 10, total: 0, totalPages: 0 },
 };
 
 const mockContact = {
   id: 1,
+  organizationId: 1,
   name: 'John Doe',
   email: 'john@example.com',
+  phone: "+14155552671",
+  linkedinId: "john-doe-123",
+  notes: "test",
   isHidden: false,
-  createdAt: '2025-01-15T00:00:00Z',
-  updatedAt: '2025-01-15T00:00:00Z',
-  owners: [
-    {
-      id: 1,
-      userId: 1,
-      contactId: 1,
-      isPrimary: true,
-      assignedAt: '',
-      user: { id: 1, name: 'Alice', email: 'alice@example.com' },
-    },
-  ],
+  createdAt: {
+      value: "2026-03-10T07:30:06.648Z",
+      display: "10 Mar 2026"
+  },
+  updatedAt: "2026-03-10T07:30:06.648Z",
+  owners: {
+      value: {
+          id: 1,
+          contactId: 1,
+          userId: 1,
+          isPrimary: true,
+          assignedAt: "2026-03-10T07:30:06.648Z",
+          user: {
+              id: 1,
+              name: "Alice",
+              email: "alice@example.com"
+          }
+      },
+      display: "Alice"
+  }
 };
 
 describe('ContactsList', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockGetContacts.mockResolvedValue(emptyContactsResponse);
+    mockGetTableViewContacts.mockResolvedValue(emptyContactsResponse);
   });
 
   it('renders heading and description', () => {
@@ -497,8 +593,9 @@ describe('ContactsList', () => {
   });
 
   it('shows table with contact when data is returned', async () => {
-    mockGetContacts.mockResolvedValue({
-      contacts: [mockContact],
+    mockGetTableViewContacts.mockResolvedValue({
+      data: [mockContact],
+      metadata: mockMetadata,
       pagination: { page: 1, limit: 10, total: 1, totalPages: 1 },
     });
     render(<ContactsList />, { wrapper });
@@ -510,8 +607,9 @@ describe('ContactsList', () => {
   });
 
   it('navigates to contact detail when row is clicked', async () => {
-    mockGetContacts.mockResolvedValue({
-      contacts: [mockContact],
+    mockGetTableViewContacts.mockResolvedValue({
+      data: [mockContact],
+      metadata: mockMetadata,
       pagination: { page: 1, limit: 10, total: 1, totalPages: 1 },
     });
     const user = userEvent.setup();
@@ -519,19 +617,20 @@ describe('ContactsList', () => {
     await vi.waitFor(() => {
       expect(screen.getByText('John Doe')).toBeInTheDocument();
     });
-    await user.click(screen.getByText('John Doe'));
+    // Click a non-link cell to bubble up to the row's onClick
+    await user.click(screen.getByText('Alice'));
     expect(mockPush).toHaveBeenCalledWith('/contacts/1');
   });
 
   it('shows loading state while fetching contacts', () => {
-    mockGetContacts.mockImplementation(
+    mockGetTableViewContacts.mockImplementation(
       () => new Promise<never>(() => undefined) // never resolves
     );
     render(<ContactsList />, { wrapper });
     expect(screen.getByText(/loading contacts/i)).toBeInTheDocument();
   });
 
-  it('calls getContacts with search param when user types in search', async () => {
+  it('calls getTableViewContacts with search param when user types in search', async () => {
     const user = userEvent.setup();
     render(<ContactsList />, { wrapper });
     const search = screen.getByPlaceholderText(
@@ -539,15 +638,16 @@ describe('ContactsList', () => {
     );
     await user.type(search, 'alice');
     await vi.waitFor(() => {
-      expect(mockGetContacts).toHaveBeenCalledWith(
+      expect(mockGetTableViewContacts).toHaveBeenCalledWith(
         expect.objectContaining({ search: 'alice' })
       );
     });
   });
 
   it('shows pagination text when data has pagination', async () => {
-    mockGetContacts.mockResolvedValue({
-      contacts: [mockContact],
+    mockGetTableViewContacts.mockResolvedValue({
+      data: [mockContact],
+      metadata: mockMetadata,
       pagination: { page: 1, limit: 10, total: 42, totalPages: 5 },
     });
     render(<ContactsList />, { wrapper });
@@ -557,71 +657,6 @@ describe('ContactsList', () => {
     expect(
       screen.getByText(/showing 1 of 42 contacts/i)
     ).toBeInTheDocument();
-  });
-
-  it('shows contact with phone only in Contact Info column', async () => {
-    const phoneOnlyContact = {
-      ...mockContact,
-      id: 2,
-      name: 'Phone Only',
-      email: undefined,
-      phone: '+14155559999',
-      linkedinId: undefined,
-      owners: [
-        {
-          id: 2,
-          userId: 1,
-          contactId: 2,
-          isPrimary: true,
-          assignedAt: '',
-          user: { id: 1, name: 'Bob', email: 'bob@example.com' },
-        },
-      ],
-    };
-    mockGetContacts.mockResolvedValue({
-      contacts: [phoneOnlyContact],
-      pagination: { page: 1, limit: 10, total: 1, totalPages: 1 },
-    });
-    render(<ContactsList />, { wrapper });
-    await vi.waitFor(() => {
-      expect(screen.getByText('Phone Only')).toBeInTheDocument();
-    });
-    expect(screen.getByText('+14155559999')).toBeInTheDocument();
-  });
-
-  it('shows owners count badge when contact has multiple owners', async () => {
-    const multiOwnerContact = {
-      ...mockContact,
-      id: 3,
-      name: 'Multi Owner',
-      owners: [
-        {
-          id: 1,
-          userId: 1,
-          contactId: 3,
-          isPrimary: true,
-          assignedAt: '',
-          user: { id: 1, name: 'Alice', email: 'alice@example.com' },
-        },
-        {
-          id: 2,
-          userId: 2,
-          contactId: 3,
-          isPrimary: false,
-          assignedAt: '',
-          user: { id: 2, name: 'Bob', email: 'bob@example.com' },
-        },
-      ],
-    };
-    mockGetContacts.mockResolvedValue({
-      contacts: [multiOwnerContact],
-      pagination: { page: 1, limit: 10, total: 1, totalPages: 1 },
-    });
-    render(<ContactsList />, { wrapper });
-    await vi.waitFor(() => {
-      expect(screen.getByText('Multi Owner')).toBeInTheDocument();
-    });
-    expect(screen.getByText('+1')).toBeInTheDocument(); // badge "+1" for extra owners
   });
 });
 

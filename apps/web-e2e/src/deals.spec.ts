@@ -80,7 +80,7 @@ test.describe("Deals - Authenticated", () => {
 
     const deals = await dealsPage.getDealItems();
     if (deals.length > 0) {
-      await deals[0].click();
+      await deals[0].locator("td:first-child").click();
 
       await page.waitForURL("**/deals/**");
       expect(page.url()).toMatch(/\/deals\/\d+$/);
@@ -639,6 +639,9 @@ test.describe("Deal Activity Timeline - Comments", () => {
     page,
   }) => {
     await dealDetailPage.goto(1);
+
+    const commentInput = page.getByPlaceholder("Add a comment...");
+    await expect(commentInput).toBeVisible();
 
     const postButton = page.getByRole("button", { name: /Post Comment/i });
     await expect(postButton).toBeDisabled();

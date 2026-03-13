@@ -44,7 +44,7 @@ test.describe("Contacts - Authenticated", () => {
   test("can search for contacts", async ({ contactsPage, page }) => {
     await contactsPage.goto();
     const responsePromise = page.waitForResponse(
-      (resp) => resp.url().includes("/api/contacts") && resp.ok()
+      (resp) => resp.url().includes("/tables/contacts") && resp.ok()
     );
     await contactsPage.searchContact("test");
     await responsePromise;
@@ -57,7 +57,7 @@ test.describe("Contacts - Authenticated", () => {
     await contactsPage.goto();
     const contacts = await contactsPage.getContactItems();
 
-    await contacts[0].click();
+    await contacts[0].locator("td:first-child").click();
     await page.waitForURL("**/contacts/**", { timeout: 10000 });
 
     await expect(
