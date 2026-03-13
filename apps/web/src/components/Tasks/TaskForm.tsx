@@ -17,6 +17,7 @@ import {
   ErrorMessage,
 } from '@zuko/ui-kit';
 import { tasksApi, TaskStatus, type Task } from '@/lib/api/tasks';
+import { toast } from 'sonner';
 import { getTasks } from '@/server/query-options';
 
 const taskFormSchema = z.object({
@@ -89,12 +90,15 @@ const TaskForm = ({ mode, task, defaultParentId }: TaskFormProps) => {
     onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
       if (mode === 'create') {
+        toast.success('Task created successfully');
         router.push('/tasks');
       } else {
+        toast.success('Task updated successfully');
         router.push(`/tasks/${result.id}`);
       }
     },
     onError: (err: Error) => {
+      toast.error(err.message || 'Something went wrong');
       form.setError('root', {
         type: 'manual',
         message: err.message || 'Something went wrong',

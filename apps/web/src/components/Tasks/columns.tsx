@@ -1,9 +1,10 @@
 'use client';
 
 import { ColumnDef } from '@tanstack/react-table';
-import { Badge } from '@zuko/ui-kit';
+import { Badge, Dropdown, DropdownButton, DropdownItem, DropdownMenu } from '@zuko/ui-kit';
 import dayjs from 'dayjs';
 import { useRef, useState } from 'react';
+import { EllipsisVerticalIcon } from '@heroicons/react/24/outline';
 import type { Task, TaskStatus, UpdateTaskDto } from '@/lib/api/tasks';
 
 export type FlatTask = Task & { parentTitle?: string };
@@ -20,9 +21,14 @@ const statusConfig: Record<
 
 const ALL_STATUSES = Object.keys(statusConfig) as TaskStatus[];
 
-type OnUpdate = (id: number, data: UpdateTaskDto) => void;
+type TaskColumnCallbacks = {
+  onUpdate: (id: number, data: UpdateTaskDto) => void;
+  onEdit: (task: FlatTask) => void;
+  onDelete: (task: FlatTask) => void;
+  onComplete: (task: FlatTask) => void;
+};
 
-function StatusCell({ task, onUpdate }: { task: FlatTask; onUpdate: OnUpdate }) {
+function StatusCell({ task, onUpdate }: { task: FlatTask; onUpdate: (id: number, data: UpdateTaskDto) => void }) {
   const cfg = statusConfig[task.status] ?? { label: task.status, color: 'zinc' as const };
 
   return (
@@ -54,7 +60,7 @@ function StatusCell({ task, onUpdate }: { task: FlatTask; onUpdate: OnUpdate }) 
   );
 }
 
-function AssigneeCell({ task, onUpdate }: { task: FlatTask; onUpdate: OnUpdate }) {
+function AssigneeCell({ task, onUpdate }: { task: FlatTask; onUpdate: (id: number, data: UpdateTaskDto) => void }) {
   const [editing, setEditing] = useState(false);
   const [value, setValue] = useState(task.assignee ?? '');
   const inputRef = useRef<HTMLInputElement>(null);
@@ -109,7 +115,38 @@ function AssigneeCell({ task, onUpdate }: { task: FlatTask; onUpdate: OnUpdate }
   );
 }
 
-export function createTaskColumns(onUpdate: OnUpdate): ColumnDef<FlatTask>[] {
+function TaskActionsDropdown({
+  task,
+  callbacks,
+}: {
+  task: FlatTask;
+  callbacks: TaskColumnCallbacks;
+}) {
+  const { onEdit, onDelete, onComplete } = callbacks;
+  const isComplete = task.status === 'DONE';
+
+  return (
+    <div className="flex justify-end pr-2" onClick={(e) => e.stopPropagation()}>
+      <Dropdown>
+        <DropdownButton plain aria-label="Task actions">
+          <EllipsisVerticalIcon className="size-5" />
+        </DropdownButton>
+        <DropdownMenu>
+          <DropdownItem onClick={() => onEdit(task)}>Edit</DropdownItem>
+          {!isComplete && (
+            <DropdownItem onClick={() => onComplete(task)}>Complete</DropdownItem>
+          )}
+          <DropdownItem onClick={() => onDelete(task)}>
+            <span className="text-red-600 dark:text-red-500">Delete</span>
+          </DropdownItem>
+        </DropdownMenu>
+      </Dropdown>
+    </div>
+  );
+}
+
+export function createTaskColumns(callbacks: TaskColumnCallbacks): ColumnDef<FlatTask>[] {
+  const { onUpdate } = callbacks;
   return [
     {
       accessorKey: 'title',
@@ -146,12 +183,16 @@ export function createTaskColumns(onUpdate: OnUpdate): ColumnDef<FlatTask>[] {
     {
       accessorKey: 'status',
       header: 'Status',
-      cell: ({ row }) => <StatusCell task={row.original} onUpdate={onUpdate} />,
+      cell: ({ row }) => (
+        <StatusCell task={row.original} onUpdate={(id, data) => onUpdate(id, data)} />
+      ),
     },
     {
       accessorKey: 'assignee',
       header: 'Assignee',
-      cell: ({ row }) => <AssigneeCell task={row.original} onUpdate={onUpdate} />,
+      cell: ({ row }) => (
+        <AssigneeCell task={row.original} onUpdate={(id, data) => onUpdate(id, data)} />
+      ),
     },
     {
       accessorKey: 'completedAt',
@@ -174,8 +215,22 @@ export function createTaskColumns(onUpdate: OnUpdate): ColumnDef<FlatTask>[] {
         </span>
       ),
     },
+    {
+      id: 'actions',
+      header: () => (
+        <span className="flex w-full justify-end pr-2">Actions</span>
+      ),
+      cell: ({ row }) => (
+        <TaskActionsDropdown task={row.original} callbacks={callbacks} />
+      ),
+    },
   ];
 }
 
-// Backward-compatible export
-export const taskColumns = createTaskColumns(() => undefined);
+// Backward-compatible export (no-op callbacks for standalone column usage)
+export const taskColumns = createTaskColumns({
+  onUpdate: () => undefined,
+  onEdit: () => undefined,
+  onDelete: () => undefined,
+  onComplete: () => undefined,
+});

@@ -11,6 +11,7 @@ import Link from 'next/link';
 import type { TaskStatus } from '@/lib/api/tasks';
 import { useState } from 'react';
 import ConfirmDialog from '@/components/shared/ConfirmDialog';
+import { toast } from 'sonner';
 
 const statusConfig: Record<
   TaskStatus,
@@ -35,8 +36,12 @@ const TaskDetail = ({ taskId }: TaskDetailProps) => {
   const deleteMutation = useMutation({
     mutationFn: () => tasksApi.deleteTask(taskId),
     onSuccess: () => {
+      toast.success('Task deleted successfully');
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
       router.push('/tasks');
+    },
+    onError: (err: Error) => {
+      toast.error(err.message || 'Failed to delete task');
     },
   });
 

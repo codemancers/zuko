@@ -18,7 +18,7 @@ test.describe('Tasks - CRUD', () => {
   test('displays tasks page with header', async ({ tasksPage, page }) => {
     await tasksPage.goto();
     await expect(page.getByRole('heading', { name: /^Tasks$/i })).toBeVisible();
-    await expect(page.getByRole('button', { name: /new task/i })).toBeVisible();
+    await expect(page.getByRole('button', { name: /new task/i }).first()).toBeVisible();
   });
 
   test('can create a task and see it in the list', async ({ tasksPage, page }) => {
@@ -95,6 +95,52 @@ test.describe('Task Form Validation', () => {
     await page.getByRole('button', { name: /cancel/i }).click();
     await page.waitForURL('**/tasks');
     expect(page.url()).toContain('/tasks');
+  });
+});
+
+test.describe('Task Actions (table dropdown)', () => {
+  test('Edit from action dropdown navigates to edit page', async ({
+    tasksPage,
+    page,
+  }) => {
+    await tasksPage.createTask({ title: 'Task for Dropdown Edit' });
+    await tasksPage.goto();
+
+    await tasksPage.clickTaskActionEdit('Task for Dropdown Edit');
+    await page.waitForURL('**/tasks/**/edit');
+    await expect(page.getByLabel(/title \*/i)).toHaveValue('Task for Dropdown Edit');
+  });
+
+  test('Complete from action dropdown marks task as done', async ({
+    tasksPage,
+    page,
+  }) => {
+    await tasksPage.createTask({ title: 'Task to Complete via Dropdown' });
+    await tasksPage.goto();
+
+    await tasksPage.clickTaskActionComplete('Task to Complete via Dropdown');
+    // Task should show Done badge in the list
+    await expect(
+      page.getByRole('row').filter({ hasText: 'Task to Complete via Dropdown' }),
+    ).toContainText(/done/i);
+  });
+
+  test('Delete from action dropdown removes task after confirmation', async ({
+    tasksPage,
+    page,
+  }) => {
+    await tasksPage.createTask({ title: 'Task to Delete via Dropdown' });
+    await tasksPage.goto();
+
+    await tasksPage.clickTaskActionDelete('Task to Delete via Dropdown');
+
+    await expect(page.getByText(/delete task/i)).toBeVisible();
+    await page.getByRole('button', { name: /^delete$/i }).click();
+
+    await page.waitForURL('**/tasks', { timeout: 10000 });
+    await expect(
+      page.getByRole('row').filter({ hasText: 'Task to Delete via Dropdown' }),
+    ).toBeHidden();
   });
 });
 

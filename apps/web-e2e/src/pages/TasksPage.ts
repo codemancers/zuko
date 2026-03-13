@@ -70,4 +70,25 @@ export class TasksPage extends BasePage {
     await this.page.waitForURL('**/tasks/**');
     return this.page.url().match(/\/tasks\/(\d+)$/)?.[1];
   }
+
+  /** Open the action dropdown for a task row by title and select an action */
+  async openTaskActions(title: string) {
+    const row = this.page.getByRole('row').filter({ hasText: title }).first();
+    await row.getByRole('button', { name: /task actions|more options/i }).click();
+  }
+
+  async clickTaskActionEdit(title: string) {
+    await this.openTaskActions(title);
+    await this.page.getByRole('menuitem', { name: /^edit$/i }).click();
+  }
+
+  async clickTaskActionComplete(title: string) {
+    await this.openTaskActions(title);
+    await this.page.getByRole('menuitem', { name: /^complete$/i }).click();
+  }
+
+  async clickTaskActionDelete(title: string) {
+    await this.openTaskActions(title);
+    await this.page.getByRole('menuitem', { name: /^delete$/i }).click();
+  }
 }
