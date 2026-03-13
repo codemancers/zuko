@@ -13,6 +13,7 @@ export interface CreateTaskInput {
   completedAt?: Date;
   parentId?: number;
   assignee?: string;
+  createdBy?: string;
 }
 
 export interface UpdateTaskInput {

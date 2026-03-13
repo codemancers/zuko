@@ -16,7 +16,9 @@ const TasksList = () => {
   const router = useRouter();
   const queryClient = useQueryClient();
   const [taskToDelete, setTaskToDelete] = useState<FlatTask | null>(null);
-  const { data, isLoading } = useQuery(getTasks());
+
+  // Fetch all top-level tasks in one go; client-side pagination handles 10-per-page
+  const { data, isLoading } = useQuery(getTasks({ limit: 100 }));
 
   const { mutate: updateTask } = useMutation({
     mutationFn: ({ id, data }: { id: number; data: UpdateTaskDto }) =>
@@ -64,6 +66,7 @@ const TasksList = () => {
     [updateTask, router],
   );
 
+  // Flatten: parent task followed immediately by its subtasks
   const flatTasks = useMemo<FlatTask[]>(() => {
     const rows: FlatTask[] = [];
     for (const task of data?.tasks ?? []) {
@@ -97,7 +100,7 @@ const TasksList = () => {
         data={flatTasks}
         loading={isLoading}
         onRowClick={(task) => router.push(`/tasks/${task.id}`)}
-        totalCount={data?.pagination?.total}
+        totalCount={flatTasks.length}
         entityName="tasks"
         emptyStateConfig={{
           icon: ClipboardDocumentListIcon,

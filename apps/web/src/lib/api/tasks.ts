@@ -11,6 +11,7 @@ export interface Task {
   completedAt?: string | null;
   parentId?: number | null;
   assignee?: string | null;
+  createdBy?: string | null;
   subtasks: Task[];
   createdAt: string;
   updatedAt: string;

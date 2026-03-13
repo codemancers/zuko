@@ -238,6 +238,7 @@ model Task {
   completedAt    DateTime?  @map("completed_at")
   parentId       Int?       @map("parent_id")
   assignee       String?
+  createdBy      String?    @map("created_by")
 
   parent   Task?  @relation("TaskSubtasks", fields: [parentId], references: [id])
   subtasks Task[] @relation("TaskSubtasks")

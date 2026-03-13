@@ -76,6 +76,8 @@ export function useBaseTable<TData>({
     manualPagination,
     manualSorting,
     manualFiltering,
+
+    autoResetPageIndex: false,
     
     // Selection
     enableRowSelection,
