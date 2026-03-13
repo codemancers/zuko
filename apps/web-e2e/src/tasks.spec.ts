@@ -84,7 +84,8 @@ test.describe('Task Form Validation', () => {
 
   test('displays all status options', async ({ page }) => {
     await page.goto('/tasks/new');
-    const options = await page.getByLabel(/status/i).locator('option').allTextContents();
+    await page.getByRole('combobox', { name: /status/i }).waitFor({ state: 'visible' });
+    const options = await page.getByRole('combobox', { name: /status/i }).locator('option').allTextContents();
     expect(options).toEqual(
       expect.arrayContaining(['To Do', 'In Progress', 'Done', 'Cancelled']),
     );
