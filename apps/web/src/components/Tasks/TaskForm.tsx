@@ -1,0 +1,224 @@
+'use client';
+
+import { useRouter } from 'next/navigation';
+import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
+import { useForm, Controller } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import {
+  Button,
+  Field,
+  FieldGroup,
+  Fieldset,
+  Input,
+  Label,
+  Select,
+  Textarea,
+  ErrorMessage,
+} from '@zuko/ui-kit';
+import { tasksApi, TaskStatus, type Task } from '@/lib/api/tasks';
+import { toast } from 'sonner';
+import { getTasks } from '@/server/query-options';
+
+const taskFormSchema = z.object({
+  title: z.string().min(1, 'Title is required'),
+  description: z.string().optional(),
+  status: z.enum(['TODO', 'IN_PROGRESS', 'DONE', 'CANCELLED']),
+  assignee: z.string().optional(),
+  parentId: z.string(),
+});
+
+type TaskFormValues = z.infer<typeof taskFormSchema>;
+
+interface TaskFormProps {
+  mode: 'create' | 'edit';
+  task?: Task;
+  defaultParentId?: number;
+}
+
+const STATUS_OPTIONS: { value: TaskStatus; label: string }[] = [
+  { value: 'TODO', label: 'To Do' },
+  { value: 'IN_PROGRESS', label: 'In Progress' },
+  { value: 'DONE', label: 'Done' },
+  { value: 'CANCELLED', label: 'Cancelled' },
+];
+
+const TaskForm = ({ mode, task, defaultParentId }: TaskFormProps) => {
+  const router = useRouter();
+  const queryClient = useQueryClient();
+
+  const { data: tasksData } = useQuery(getTasks());
+  const topLevelTasks = (tasksData?.tasks ?? []).filter(
+    (t) => t.id !== task?.id,
+  );
+
+  const form = useForm<TaskFormValues>({
+    resolver: zodResolver(taskFormSchema),
+    defaultValues: {
+      title: task?.title ?? '',
+      description: task?.description ?? '',
+      status: task?.status ?? 'TODO',
+      assignee: task?.assignee ?? '',
+      parentId: String(task?.parentId ?? defaultParentId ?? ''),
+    },
+  });
+
+  const mutation = useMutation({
+    mutationFn: async (data: TaskFormValues) => {
+      const parentIdNum = data.parentId
+        ? parseInt(data.parentId, 10)
+        : undefined;
+      if (mode === 'create') {
+        return tasksApi.createTask({
+          title: data.title,
+          description: data.description || undefined,
+          status: data.status,
+          assignee: data.assignee || undefined,
+          parentId: parentIdNum,
+        });
+      } else {
+        if (!task) throw new Error('Task required in edit mode');
+        return tasksApi.updateTask(task.id, {
+          title: data.title,
+          description: data.description || null,
+          status: data.status,
+          assignee: data.assignee || null,
+          parentId: parentIdNum ?? null,
+        });
+      }
+    },
+    onSuccess: (result) => {
+      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      if (mode === 'create') {
+        toast.success('Task created successfully');
+        router.push('/tasks');
+      } else {
+        toast.success('Task updated successfully');
+        router.push(`/tasks/${result.id}`);
+      }
+    },
+    onError: (err: Error) => {
+      toast.error(err.message || 'Something went wrong');
+      form.setError('root', {
+        type: 'manual',
+        message: err.message || 'Something went wrong',
+      });
+    },
+  });
+
+  const onSubmit = (data: TaskFormValues) => {
+    mutation.mutate(data);
+  };
+
+  const handleCancel = () => {
+    if (mode === 'create' || !task) {
+      router.push('/tasks');
+    } else {
+      router.push(`/tasks/${task.id}`);
+    }
+  };
+
+  return (
+    <form onSubmit={form.handleSubmit(onSubmit)}>
+      <Fieldset>
+        <FieldGroup>
+          <Field>
+            <Label>Title *</Label>
+            <Input
+              placeholder="Task title"
+              {...form.register('title')}
+              disabled={mutation.isPending}
+            />
+            {form.formState.errors.title && (
+              <ErrorMessage>{form.formState.errors.title.message}</ErrorMessage>
+            )}
+          </Field>
+
+          <Field>
+            <Label>Description</Label>
+            <Textarea
+              placeholder="Optional description"
+              rows={3}
+              {...form.register('description')}
+              disabled={mutation.isPending}
+            />
+          </Field>
+
+          <Field>
+            <Label>Status</Label>
+            <Select
+              {...form.register('status')}
+              disabled={mutation.isPending}
+            >
+              {STATUS_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </Select>
+            {form.formState.errors.status && (
+              <ErrorMessage>{form.formState.errors.status.message}</ErrorMessage>
+            )}
+          </Field>
+
+          <Field>
+            <Label>Assignee</Label>
+            <Input
+              placeholder="Person responsible"
+              {...form.register('assignee')}
+              disabled={mutation.isPending}
+            />
+          </Field>
+
+          <Field>
+            <Label>Parent Task</Label>
+            <Controller
+              control={form.control}
+              name="parentId"
+              render={({ field }) => (
+                <Select
+                  {...field}
+                  value={field.value}
+                  disabled={mutation.isPending}
+                >
+                  <option value="">No parent (top-level)</option>
+                  {topLevelTasks.map((t) => (
+                    <option key={t.id} value={String(t.id)}>
+                      {t.title}
+                    </option>
+                  ))}
+                </Select>
+              )}
+            />
+          </Field>
+
+          {form.formState.errors.root && (
+            <ErrorMessage>{form.formState.errors.root.message}</ErrorMessage>
+          )}
+
+          <div className="flex gap-3">
+            <Button type="submit" disabled={mutation.isPending}>
+              {mutation.isPending
+                ? mode === 'create'
+                  ? 'Creating...'
+                  : 'Saving...'
+                : mode === 'create'
+                  ? 'Create Task'
+                  : 'Save Changes'}
+            </Button>
+            <Button
+              type="button"
+              plain
+              onClick={handleCancel}
+              disabled={mutation.isPending}
+            >
+              Cancel
+            </Button>
+          </div>
+        </FieldGroup>
+      </Fieldset>
+    </form>
+  );
+};
+
+export default TaskForm;

@@ -2,6 +2,7 @@ import { queryOptions } from '@tanstack/react-query';
 import { contactsApi, ContactFilters } from '@/lib/api/contacts';
 import { companiesApi, CompanyFilters } from '@/lib/api/companies';
 import { dealsApi, DealFilters } from '@/lib/api/deals';
+import { tasksApi, TaskFilters } from '@/lib/api/tasks';
 import { activitiesApi } from '@/lib/api/activities';
 import { authClient } from '@/lib/auth-client';
 
@@ -46,6 +47,18 @@ export const getDeals = (filters?: DealFilters) =>
       const response = await dealsApi.getDeals(filters);
       return response;
     },
+  });
+
+export const getTasks = (filters?: TaskFilters) =>
+  queryOptions({
+    queryKey: ['tasks', filters],
+    queryFn: () => tasksApi.getTasks(filters),
+  });
+
+export const getTask = (id: number) =>
+  queryOptions({
+    queryKey: ['task', id],
+    queryFn: () => tasksApi.getTask(id),
   });
 
 export const getDeal = (id: number) =>

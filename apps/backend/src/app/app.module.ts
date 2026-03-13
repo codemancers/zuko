@@ -9,6 +9,7 @@ import { ChatsModule } from '../chats/chats.module';
 import { GraphController } from '../graph/graph.controller';
 import { agentsEnvSchema } from './env.validation';
 import { SalesModule } from './sales/sales.module';
+import { TasksModule } from './tasks/tasks.module';
 import { AgentsWrapperModule } from './agents/agents.module';
 import { AdminModule } from './admin/admin.module';
 import { auth } from '../libs/better-auth/auth';
@@ -29,6 +30,7 @@ const authModule = AuthModule.forRoot({ auth, disableGlobalAuthGuard: true });
     authModule,
     AgentsWrapperModule,
     SalesModule,
+    TasksModule,
     ChatsModule,
     AdminModule,
   ],

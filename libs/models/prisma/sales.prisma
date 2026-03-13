@@ -212,3 +212,4 @@ model DealOwner {
   @@map("deal_owner")
   @@schema("sales")
 }
+
