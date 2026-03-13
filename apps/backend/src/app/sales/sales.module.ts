@@ -7,8 +7,6 @@ import {
   ContactActivitiesController,
   CompanyActivitiesController,
 } from './activities.controller';
-import { ViewsController } from './views.controller';
-import { ViewsService } from './views.service';
 import {
   ContactsRepository,
   ContactsService,
@@ -22,6 +20,9 @@ import {
 import { PrismaModule } from '../../prisma/prisma.module';
 import { PrismaService } from '../../prisma/prisma.service';
 import { OrganizationGuard } from '../../common/auth/organization.guard';
+import { TableController } from './table/table.controller';
+import { TableService } from './table/table.service';
+import { TableRowBuilder } from './table/row-builder/table-row.builder';
 
 @Module({
   imports: [PrismaModule],
@@ -32,7 +33,7 @@ import { OrganizationGuard } from '../../common/auth/organization.guard';
     ActivitiesController,
     ContactActivitiesController,
     CompanyActivitiesController,
-    ViewsController,
+    TableController,
   ],
   providers: [
     OrganizationGuard,
@@ -92,7 +93,8 @@ import { OrganizationGuard } from '../../common/auth/organization.guard';
       },
       inject: [DealsRepository],
     },
-    ViewsService,
+    TableService,
+    TableRowBuilder,
   ],
 })
 export class SalesModule {}
