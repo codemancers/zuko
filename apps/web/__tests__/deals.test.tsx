@@ -19,6 +19,7 @@ vi.mock('next/navigation', () => ({
 const mockCreateDeal = vi.fn();
 const mockUpdateDeal = vi.fn();
 const mockGetDeals = vi.fn();
+const mockGetTableViewDeals = vi.fn();
 const mockGetDeal = vi.fn();
 const mockHideDeal = vi.fn();
 const mockRemoveCompany = vi.fn();
@@ -30,6 +31,7 @@ vi.mock('@/lib/api/deals', () => ({
     createDeal: (...args: unknown[]) => mockCreateDeal(...args),
     updateDeal: (...args: unknown[]) => mockUpdateDeal(...args),
     getDeals: (...args: unknown[]) => mockGetDeals(...args),
+    getTableViewDeals: (...args: unknown[]) => mockGetTableViewDeals(...args),
     getDeal: (...args: unknown[]) => mockGetDeal(...args),
     hideDeal: (...args: unknown[]) => mockHideDeal(...args),
     removeCompany: (...args: unknown[]) => mockRemoveCompany(...args),
@@ -325,43 +327,172 @@ describe('DealForm', () => {
   });
 });
 
+const mockMetadata = [
+  {
+      id: "title",
+      header: "Title",
+      fieldType: "entity",
+      dataType: "text",
+      sortable: true,
+      filterable: true,
+      searchable: true,
+      editable: true,
+      isVisible: true,
+      default: true,
+      config: {
+          entityType: "deal",
+          hrefTemplate: "/deals/{id}"
+      }
+  },
+  {
+      id: "value",
+      header: "Value",
+      fieldType: "currency",
+      dataType: "number",
+      sortable: true,
+      filterable: true,
+      searchable: true,
+      editable: true,
+      isVisible: true,
+      default: true,
+      config: {
+          currency: "USD",
+          format: "currency"
+      }
+  },
+  {
+      id: "stage",
+      header: "Stage",
+      fieldType: "select",
+      dataType: "text",
+      sortable: true,
+      filterable: true,
+      searchable: true,
+      editable: true,
+      isVisible: true,
+      default: true,
+      config: {
+          render: "badge",
+          format: "stage",
+          options: [
+              { label: "Negotiation", value: "negotiation" },
+              { label: "Proposal", value: "proposal" },
+              { label: "Qualification", value: "qualification" },
+              { label: "Prospecting", value: "prospecting" },
+              { label: "Closed Won", value: "closed_won" },
+              { label: "Closed Lost", value: "closed_lost" }
+          ],
+          colorMap: {
+              prospecting: "zinc",
+              qualification: "blue",
+              proposal: "yellow",
+              negotiation: "yellow",
+              closed_won: "green",
+              closed_lost: "red"
+          }
+      }
+  },
+  {
+      id: "probability",
+      header: "Probability",
+      fieldType: "number",
+      dataType: "number",
+      sortable: true,
+      filterable: true,
+      searchable: true,
+      editable: true,
+      isVisible: true,
+      default: true,
+      config: {
+          accessorKey: "probability"
+      }
+  },
+  {
+      id: "owners",
+      header: "Owner",
+      fieldType: "text",
+      dataType: "json",
+      sortable: false,
+      filterable: true,
+      searchable: true,
+      editable: false,
+      isVisible: true,
+      default: true,
+      config: {
+          format: "owner"
+      }
+  },
+  {
+      id: "expectedCloseDate",
+      header: "Expected Close",
+      fieldType: "date",
+      dataType: "date",
+      sortable: true,
+      filterable: true,
+      searchable: true,
+      editable: false,
+      isVisible: true,
+      default: true,
+      config: {
+          format: "date"
+      }
+  }
+];
+
 const emptyDealsResponse = {
-  deals: [],
+  data: [],
+  metadata: mockMetadata,
   pagination: { page: 1, limit: 10, total: 0, totalPages: 0 },
 };
 
 const mockDeal = {
   id: 1,
+  organizationId: 1,
   title: 'Enterprise Deal',
-  value: 100000,
+  value: {
+      value: "100000",
+      display: "$100,000"
+  },
   currency: 'USD',
   probability: 70,
-  stage: 'negotiation',
-  summary: undefined,
-  expectedCloseDate: '2025-12-31',
+  stage: {
+      value: 'negotiation',
+      display: 'Negotiation'
+  },
+  summary: 'Deal summary',
+  expectedCloseDate: {
+      value: '2025-12-31T00:00:00.000Z',
+      display: '31 Dec 2025'
+  },
+  actualCloseDate: null,
+  lostReason: null,
   source: 'Inbound',
   priority: 1,
   isHidden: false,
   createdAt: '2025-01-15T00:00:00Z',
   updatedAt: '2025-01-15T00:00:00Z',
-  owners: [
-    {
-      id: 1,
-      userId: 1,
-      dealId: 1,
-      isPrimary: true,
-      assignedAt: '',
-      user: { id: 1, name: 'Alice', email: 'alice@example.com' },
-    },
-  ],
+  owners: {
+      value: {
+          id: 1,
+          dealId: 1,
+          userId: 1,
+          isPrimary: true,
+          assignedAt: '2025-01-15T00:00:00Z',
+          user: { id: 1, name: 'Alice', email: 'alice@example.com' },
+      },
+      display: 'Alice'
+  },
   companies: [],
-  contacts: [],
+  _count: {
+      companies: 0,
+      contacts: 0
+  }
 };
 
 describe('DealsList', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockGetDeals.mockResolvedValue(emptyDealsResponse);
+    mockGetTableViewDeals.mockResolvedValue(emptyDealsResponse);
   });
 
   it('renders heading and description', () => {
@@ -399,8 +530,9 @@ describe('DealsList', () => {
   });
 
   it('shows table with deal when data is returned', async () => {
-    mockGetDeals.mockResolvedValue({
-      deals: [mockDeal],
+    mockGetTableViewDeals.mockResolvedValue({
+      data: [mockDeal],
+      metadata: mockMetadata,
       pagination: { page: 1, limit: 10, total: 1, totalPages: 1 },
     });
     render(<DealsList />, { wrapper });
@@ -408,14 +540,15 @@ describe('DealsList', () => {
       expect(screen.getByText('Enterprise Deal')).toBeInTheDocument();
     });
     expect(screen.getByText(/\$100,000/)).toBeInTheDocument();
-    expect(screen.getByText(/negotiation/i)).toBeInTheDocument();
-    expect(screen.getByText(/70%/)).toBeInTheDocument();
+    expect(screen.getByText(/Negotiation/i)).toBeInTheDocument();
+    expect(screen.getByText(/70/)).toBeInTheDocument();
     expect(screen.getByText('Alice')).toBeInTheDocument();
   });
 
   it('navigates to deal detail when row is clicked', async () => {
-    mockGetDeals.mockResolvedValue({
-      deals: [mockDeal],
+    mockGetTableViewDeals.mockResolvedValue({
+      data: [mockDeal],
+      metadata: mockMetadata,
       pagination: { page: 1, limit: 10, total: 1, totalPages: 1 },
     });
     const user = userEvent.setup();
@@ -423,12 +556,13 @@ describe('DealsList', () => {
     await waitFor(() => {
       expect(screen.getByText('Enterprise Deal')).toBeInTheDocument();
     });
-    await user.click(screen.getByText('Enterprise Deal'));
+    // Click a non-link cell to bubble up to the row's onClick
+    await user.click(screen.getByText('Alice'));
     expect(mockPush).toHaveBeenCalledWith('/deals/1');
   });
 
   it('shows loading state', () => {
-    mockGetDeals.mockImplementation(
+    mockGetTableViewDeals.mockImplementation(
       () => new Promise<never>(() => undefined)
     );
     render(<DealsList />, { wrapper });
@@ -443,15 +577,16 @@ describe('DealsList', () => {
     );
     await user.type(search, 'enterprise');
     await waitFor(() => {
-      expect(mockGetDeals).toHaveBeenCalledWith(
+      expect(mockGetTableViewDeals).toHaveBeenCalledWith(
         expect.objectContaining({ search: 'enterprise' })
       );
     });
   });
 
   it('shows pagination text', async () => {
-    mockGetDeals.mockResolvedValue({
-      deals: [mockDeal],
+    mockGetTableViewDeals.mockResolvedValue({
+      data: [mockDeal],
+      metadata: mockMetadata,
       pagination: { page: 1, limit: 10, total: 50, totalPages: 5 },
     });
     render(<DealsList />, { wrapper });

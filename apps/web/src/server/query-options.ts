@@ -15,6 +15,15 @@ export const getContacts = (filters?: ContactFilters) =>
     },
   });
 
+export const getTableViewContacts = (filters?: ContactFilters) =>
+  queryOptions({
+    queryKey: ['contacts', 'table', filters],
+    queryFn: async () => {
+      const response = await contactsApi.getTableViewContacts(filters);
+      return response;
+    },
+  });
+
 export const getContact = (id: number) =>
   queryOptions({
     queryKey: ['contact', id],
@@ -28,6 +37,15 @@ export const getCompanies = (filters?: CompanyFilters) =>
     queryKey: ['companies', filters],
     queryFn: async () => {
       const response = await companiesApi.getCompanies(filters);
+      return response;
+    },
+  });
+
+export const getTableViewCompanies = (filters?: CompanyFilters) =>
+  queryOptions({
+    queryKey: ['companies', 'table', filters],
+    queryFn: async () => {
+      const response = await companiesApi.getTableViewCompanies(filters);
       return response;
     },
   });
@@ -59,6 +77,14 @@ export const getTask = (id: number) =>
   queryOptions({
     queryKey: ['task', id],
     queryFn: () => tasksApi.getTask(id),
+  });
+export const getTableViewDeals = (filters?: DealFilters) =>
+  queryOptions({
+    queryKey: ['deals', 'table', filters],
+    queryFn: async () => {
+      const response = await dealsApi.getTableViewDeals(filters);
+      return response;
+    },
   });
 
 export const getDeal = (id: number) =>

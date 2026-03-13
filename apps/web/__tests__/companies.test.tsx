@@ -19,6 +19,7 @@ vi.mock('next/navigation', () => ({
 const mockCreateCompany = vi.fn();
 const mockUpdateCompany = vi.fn();
 const mockGetCompanies = vi.fn();
+const mockGetTableViewCompanies = vi.fn();
 const mockGetCompany = vi.fn();
 const mockHideCompany = vi.fn();
 const mockUpdateContact = vi.fn();
@@ -28,6 +29,7 @@ vi.mock('@/lib/api/companies', () => ({
     createCompany: (...args: unknown[]) => mockCreateCompany(...args),
     updateCompany: (...args: unknown[]) => mockUpdateCompany(...args),
     getCompanies: (...args: unknown[]) => mockGetCompanies(...args),
+    getTableViewCompanies: (...args: unknown[]) => mockGetTableViewCompanies(...args),
     getCompany: (...args: unknown[]) => mockGetCompany(...args),
     hideCompany: (...args: unknown[]) => mockHideCompany(...args),
     updateContact: (...args: unknown[]) => mockUpdateContact(...args),
@@ -326,36 +328,126 @@ describe('CompanyForm', () => {
   });
 });
 
+const mockMetadata = [
+  {
+      id: "companyName",
+      header: "Company",
+      fieldType: "entity",
+      dataType: "text",
+      sortable: true,
+      filterable: true,
+      searchable: true,
+      editable: true,
+      isVisible: true,
+      default: true,
+      config: {
+          entityType: "company",
+          hrefTemplate: "/companies/{id}"
+      }
+  },
+  {
+      id: "website",
+      header: "Website",
+      fieldType: "text",
+      dataType: "text",
+      sortable: true,
+      filterable: true,
+      searchable: true,
+      editable: true,
+      isVisible: true,
+      default: true,
+      config: {
+          render: "link",
+          hrefTemplate: "{value}"
+      }
+  },
+  {
+      id: "linkedinUrl",
+      header: "LinkedIn",
+      fieldType: "text",
+      dataType: "text",
+      sortable: false,
+      filterable: true,
+      searchable: true,
+      editable: true,
+      isVisible: true,
+      default: true,
+      config: {
+          render: "link",
+          hrefTemplate: "{value}"
+      }
+  },
+  {
+      id: "owners",
+      header: "Owner",
+      fieldType: "text",
+      dataType: "json",
+      sortable: false,
+      filterable: true,
+      searchable: true,
+      editable: false,
+      isVisible: true,
+      default: true,
+      config: {
+          format: "owner"
+      }
+  },
+  {
+      id: "createdAt",
+      header: "Created",
+      fieldType: "date",
+      dataType: "date",
+      sortable: true,
+      filterable: true,
+      searchable: true,
+      editable: false,
+      isVisible: true,
+      default: true,
+      config: {
+          format: "date"
+      }
+  }
+];
+
 const emptyCompaniesResponse = {
-  companies: [],
+  data: [],
+  metadata: mockMetadata,
   pagination: { page: 1, limit: 10, total: 0, totalPages: 0 },
 };
 
 const mockCompany = {
   id: 1,
+  organizationId: 1,
   companyName: 'Acme Inc',
   website: 'https://acme.com',
   linkedinUrl: undefined,
   summary: undefined,
   isHidden: false,
-  createdAt: '2025-01-15T00:00:00Z',
+  createdAt: {
+      value: "2025-01-15T00:00:00Z",
+      display: "15 Jan 2025"
+  },
   updatedAt: '2025-01-15T00:00:00Z',
-  owners: [
-    {
-      id: 1,
-      userId: 1,
-      companyId: 1,
-      isPrimary: true,
-      assignedAt: '',
-      user: { id: 1, name: 'Alice', email: 'alice@example.com' },
-    },
-  ],
+  owners: {
+      value: {
+          id: 1,
+          companyId: 1,
+          userId: 1,
+          isPrimary: true,
+          assignedAt: '',
+          user: { id: 1, name: 'Alice', email: 'alice@example.com' },
+      },
+      display: "Alice"
+  },
+  _count: {
+      contacts: 0
+  }
 };
 
 describe('CompaniesList', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockGetCompanies.mockResolvedValue(emptyCompaniesResponse);
+    mockGetTableViewCompanies.mockResolvedValue(emptyCompaniesResponse);
   });
 
   it('renders heading and description', () => {
@@ -393,21 +485,23 @@ describe('CompaniesList', () => {
   });
 
   it('shows table with company when data is returned', async () => {
-    mockGetCompanies.mockResolvedValue({
-      companies: [mockCompany],
+    mockGetTableViewCompanies.mockResolvedValue({
+      data: [mockCompany],
+      metadata: mockMetadata,
       pagination: { page: 1, limit: 10, total: 1, totalPages: 1 },
     });
     render(<CompaniesList />, { wrapper });
     await waitFor(() => {
       expect(screen.getByText('Acme Inc')).toBeInTheDocument();
     });
-    expect(screen.getByText(/acme\.com/)).toBeInTheDocument();
+    expect(screen.getByText(/https:\/\/acme\.com/)).toBeInTheDocument();
     expect(screen.getByText('Alice')).toBeInTheDocument();
   });
 
   it('navigates to company detail when row is clicked', async () => {
-    mockGetCompanies.mockResolvedValue({
-      companies: [mockCompany],
+    mockGetTableViewCompanies.mockResolvedValue({
+      data: [mockCompany],
+      metadata: mockMetadata,
       pagination: { page: 1, limit: 10, total: 1, totalPages: 1 },
     });
     const user = userEvent.setup();
@@ -415,19 +509,19 @@ describe('CompaniesList', () => {
     await waitFor(() => {
       expect(screen.getByText('Acme Inc')).toBeInTheDocument();
     });
-    await user.click(screen.getByText('Acme Inc'));
+    await user.click(screen.getByText('Alice'));
     expect(mockPush).toHaveBeenCalledWith('/companies/1');
   });
 
   it('shows loading state', () => {
-    mockGetCompanies.mockImplementation(
+    mockGetTableViewCompanies.mockImplementation(
       () => new Promise<void>(() => undefined)
     );
     render(<CompaniesList />, { wrapper });
     expect(screen.getByText(/loading companies/i)).toBeInTheDocument();
   });
 
-  it('calls getCompanies with search when user types', async () => {
+  it('calls getTableViewCompanies with search when user types', async () => {
     const user = userEvent.setup();
     render(<CompaniesList />, { wrapper });
     const search = screen.getByPlaceholderText(
@@ -435,15 +529,16 @@ describe('CompaniesList', () => {
     );
     await user.type(search, 'acme');
     await waitFor(() => {
-      expect(mockGetCompanies).toHaveBeenCalledWith(
+      expect(mockGetTableViewCompanies).toHaveBeenCalledWith(
         expect.objectContaining({ search: 'acme' })
       );
     });
   });
 
   it('shows pagination text', async () => {
-    mockGetCompanies.mockResolvedValue({
-      companies: [mockCompany],
+    mockGetTableViewCompanies.mockResolvedValue({
+      data: [mockCompany],
+      metadata: mockMetadata,
       pagination: { page: 1, limit: 10, total: 50, totalPages: 5 },
     });
     render(<CompaniesList />, { wrapper });
@@ -453,41 +548,6 @@ describe('CompaniesList', () => {
     expect(
       screen.getByText(/showing 1 of 50 companies/i)
     ).toBeInTheDocument();
-  });
-
-  it('shows owners count badge when multiple owners', async () => {
-    const multiOwner = {
-      ...mockCompany,
-      id: 2,
-      companyName: 'Multi Co',
-      owners: [
-        {
-          id: 1,
-          userId: 1,
-          companyId: 2,
-          isPrimary: true,
-          assignedAt: '',
-          user: { id: 1, name: 'Alice', email: 'a@b.com' },
-        },
-        {
-          id: 2,
-          userId: 2,
-          companyId: 2,
-          isPrimary: false,
-          assignedAt: '',
-          user: { id: 2, name: 'Bob', email: 'b@b.com' },
-        },
-      ],
-    };
-    mockGetCompanies.mockResolvedValue({
-      companies: [multiOwner],
-      pagination: { page: 1, limit: 10, total: 1, totalPages: 1 },
-    });
-    render(<CompaniesList />, { wrapper });
-    await waitFor(() => {
-      expect(screen.getByText('Multi Co')).toBeInTheDocument();
-    });
-    expect(screen.getByText('+1')).toBeInTheDocument();
   });
 });
 
