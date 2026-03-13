@@ -145,9 +145,9 @@ model Organization {
   invitations Invitation[]
   teams       Team[]
 
-  contacts  Contact[]     @relation("OrganizationContacts")
-  companies SalesCompany[] @relation("OrganizationCompanies")
-  deals     Deal[]        @relation("OrganizationDeals")
+  contacts  Contact[]  @relation("OrganizationContacts")
+  companies Company[]  @relation("OrganizationCompanies")
+  deals     Deal[]     @relation("OrganizationDeals")
 
   @@unique([slug])
   @@map("organization")

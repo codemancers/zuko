@@ -9,7 +9,7 @@ import {
   usePromptInputReferencedSources,
 } from '@zuko/ui-kit';
 import { type Contact } from '@/lib/api/contacts';
-import { type SalesCompany } from '@/lib/api/companies';
+import { type Company } from '@/lib/api/companies';
 import { type Deal } from '@/lib/api/deals';
 import { getContacts, getCompanies, getDeals } from '@/server/query-options';
 import { CHAT_ENTITY_TYPE_LABEL } from '@/lib/constants/chat-context.constants';
@@ -48,7 +48,7 @@ function contactToEntityItem(contact: Contact): EntityItem {
   };
 }
 
-function companyToEntityItem(company: SalesCompany): EntityItem {
+function companyToEntityItem(company: Company): EntityItem {
   const contactCount = company._count?.contacts || 0;
   const description =
     company.website ||

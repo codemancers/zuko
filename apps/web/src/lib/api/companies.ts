@@ -8,7 +8,7 @@ import type { Contact } from './contacts';
 import type { TableViewResponse, PaginationInfo } from '@/types/table-metadata';
 import type { BaseRow } from '@/components/Table';
 
-export interface SalesCompany {
+export interface Company {
   id: number;
   companyName: string;
   website?: string;
@@ -51,7 +51,7 @@ export interface CompanyContactAssociation {
 }
 
 export interface CompaniesListResponse {
-  companies: SalesCompany[];
+  companies: Company[];
   pagination: PaginationInfo;
 }
 
@@ -146,14 +146,14 @@ export const companiesApi = {
   /**
    * Get a single company by ID
    */
-  async getCompany(id: number): Promise<SalesCompany> {
+  async getCompany(id: number): Promise<Company> {
     return apiClient.get(`/companies/${id}`);
   },
 
   /**
    * Create a new company
    */
-  async createCompany(data: CreateCompanyDto): Promise<SalesCompany> {
+  async createCompany(data: CreateCompanyDto): Promise<Company> {
     return apiClient.post('/companies', data);
   },
 
@@ -163,7 +163,7 @@ export const companiesApi = {
   async updateCompany(
     id: number,
     data: UpdateCompanyDto,
-  ): Promise<SalesCompany> {
+  ): Promise<Company> {
     return apiClient.patch(`/companies/${id}`, data);
   },
 
@@ -177,7 +177,7 @@ export const companiesApi = {
   /**
    * Unhide a company
    */
-  async unhideCompany(id: number): Promise<SalesCompany> {
+  async unhideCompany(id: number): Promise<Company> {
     return apiClient.post(`/companies/${id}/unhide`);
   },
 

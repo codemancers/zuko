@@ -5,7 +5,7 @@
 
 import { apiClient } from '../api-client';
 import type { Contact } from './contacts';
-import type { SalesCompany } from './companies';
+import type { Company } from './companies';
 import type { TableViewResponse, PaginationInfo } from '@/types/table-metadata';
 import type { BaseRow } from '@/components/Table';
 
@@ -54,7 +54,7 @@ export interface DealCompanyAssociation {
   isPrimary: boolean;
   createdAt: string;
   updatedAt: string;
-  company: SalesCompany;
+  company: Company;
 }
 
 export interface DealContactAssociation {

@@ -84,7 +84,7 @@ async function main() {
     });
   }
 
-  await prisma.salesCompany.upsert({
+  await prisma.company.upsert({
     where: { id: 1 },
     create: {
       organizationId: org.id,

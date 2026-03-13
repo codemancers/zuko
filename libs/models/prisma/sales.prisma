@@ -64,7 +64,7 @@ model Activity {
   @@schema("sales")
 }
 
-model SalesCompany {
+model Company {
   id             Int      @id @default(autoincrement())
   organizationId Int      @map("organization_id")
   companyName    String   @map("company_name")
@@ -98,8 +98,8 @@ model CompanyContact {
   createdAt DateTime  @default(now()) @map("created_at")
   updatedAt DateTime  @updatedAt @map("updated_at")
 
-  company SalesCompany @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  contact Contact      @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  contact Contact @relation(fields: [contactId], references: [id], onDelete: Cascade)
 
   @@index([companyId])
   @@index([contactId])
@@ -115,8 +115,8 @@ model CompanyOwner {
   isPrimary  Boolean  @default(false) @map("is_primary")
   assignedAt DateTime @default(now()) @map("assigned_at")
 
-  company SalesCompany @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  user    User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([companyId, userId])
   @@index([userId])
@@ -166,8 +166,8 @@ model DealCompany {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  deal    Deal         @relation(fields: [dealId], references: [id], onDelete: Cascade)
-  company SalesCompany @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  deal    Deal    @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
   @@unique([dealId, companyId])
   @@index([dealId])
