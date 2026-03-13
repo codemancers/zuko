@@ -5,6 +5,8 @@
 
 import { apiClient } from '../api-client';
 import type { Contact } from './contacts';
+import type { TableViewResponse, PaginationInfo } from '@/types/table-metadata';
+import type { BaseRow } from '@/components/Table';
 
 export interface SalesCompany {
   id: number;
@@ -50,13 +52,11 @@ export interface CompanyContactAssociation {
 
 export interface CompaniesListResponse {
   companies: SalesCompany[];
-  pagination: {
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
-  };
+  pagination: PaginationInfo;
 }
+
+// Table response uses generic BaseRow to maintain dynamic rendering
+export type TableViewCompaniesResponse = TableViewResponse<BaseRow>;
 
 export interface CreateCompanyDto {
   companyName: string;
@@ -115,6 +115,32 @@ export const companiesApi = {
 
     const queryString = params.toString();
     return apiClient.get(`/companies${queryString ? `?${queryString}` : ''}`);
+  },
+
+  /**
+   * Get companies formatted for table view with metadata
+   */
+  async getTableViewCompanies(
+    filters?: CompanyFilters,
+  ): Promise<TableViewCompaniesResponse> {
+    const params = new URLSearchParams();
+
+    if (filters) {
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value !== undefined) {
+          if (Array.isArray(value)) {
+            params.append(key, value.join(','));
+          } else {
+            params.append(key, value.toString());
+          }
+        }
+      });
+    }
+
+    const queryString = params.toString();
+    return apiClient.get<TableViewCompaniesResponse>(
+      `/tables/companies${queryString ? `?${queryString}` : ''}`,
+    );
   },
 
   /**

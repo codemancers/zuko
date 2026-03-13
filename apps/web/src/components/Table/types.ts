@@ -9,6 +9,13 @@ import {
   Row,
 } from '@tanstack/react-table';
 
+export type { ColumnType, ColumnMetadata, TableViewResponse, CellValue } from '@/types/table-metadata';
+
+export interface BaseRow {
+  id: string | number;
+  [key: string]: unknown;
+}
+
 export interface BaseTableProps<TData> {
   columns: ColumnDef<TData, any>[];
   data: TData[];
