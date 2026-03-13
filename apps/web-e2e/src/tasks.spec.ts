@@ -21,7 +21,7 @@ test.describe('Tasks - CRUD', () => {
     await expect(page.getByRole('button', { name: /new task/i })).toBeVisible();
   });
 
-  test('can create a task and see it in the list', async ({ tasksPage }) => {
+  test('can create a task and see it in the list', async ({ tasksPage, page }) => {
     await tasksPage.createTask({
       title: 'TEST E2E TASK',
       description: 'Created by E2E test',
@@ -30,7 +30,7 @@ test.describe('Tasks - CRUD', () => {
     });
 
     await tasksPage.goto();
-    await expect(tasksPage.page.getByText('TEST E2E TASK').first()).toBeVisible();
+    await expect(page.getByText('TEST E2E TASK').first()).toBeVisible();
   });
 
   test('can view task detail', async ({ tasksPage, page }) => {
