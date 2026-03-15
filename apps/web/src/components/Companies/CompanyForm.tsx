@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   companiesApi,
-  type SalesCompany,
+  type Company,
   type CreateCompanyDto,
   type UpdateCompanyDto,
 } from '@/lib/api/companies';
@@ -20,7 +20,7 @@ import {
 import { useRouter } from 'next/navigation';
 
 interface CompanyFormProps {
-  company?: SalesCompany;
+  company?: Company;
   mode: 'create' | 'edit';
   currentUserId: number;
 }

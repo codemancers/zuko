@@ -9,7 +9,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import CompanyForm from '@/components/Companies/CompanyForm';
 import CompaniesList from '@/components/Companies/CompaniesList';
 import CompanyDetail from '@/components/Companies/CompanyDetail';
-import type { SalesCompany } from '@/lib/api/companies';
+import type { Company } from '@/lib/api/companies';
 
 const mockPush = vi.fn();
 vi.mock('next/navigation', () => ({
@@ -589,7 +589,7 @@ describe('CompanyDetail', () => {
   });
 
   it('shows company not found when getCompany returns no data', async () => {
-    mockGetCompany.mockResolvedValue(null as unknown as SalesCompany);
+    mockGetCompany.mockResolvedValue(null as unknown as Company);
     render(<CompanyDetail companyId={999} currentUserId={1} />, { wrapper });
     await waitFor(() => {
       expect(screen.getByText(/company not found/i)).toBeInTheDocument();

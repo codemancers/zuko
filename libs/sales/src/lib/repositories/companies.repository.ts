@@ -48,7 +48,7 @@ export class CompaniesRepository {
   async create(input: CreateCompanyInput) {
     const { ownerIds, primaryOwnerId, organizationId, ...companyData } = input;
 
-    return this.prisma.salesCompany.create({
+    return this.prisma.company.create({
       data: {
         ...companyData,
         organizationId,
@@ -78,7 +78,7 @@ export class CompaniesRepository {
   }
 
   async findById(id: number, organizationId: number) {
-    return this.prisma.salesCompany.findFirst({
+    return this.prisma.company.findFirst({
       where: { id, organizationId },
       include: {
         owners: {
@@ -122,7 +122,7 @@ export class CompaniesRepository {
   }
 
   async update(id: number, input: UpdateCompanyInput) {
-    return this.prisma.salesCompany.update({
+    return this.prisma.company.update({
       where: { id },
       data: input,
       include: {
@@ -158,7 +158,7 @@ export class CompaniesRepository {
     const { page = 1, limit = 50 } = pagination;
     const skip = (page - 1) * limit;
 
-    const where: Prisma.SalesCompanyWhereInput = {
+    const where: Prisma.CompanyWhereInput = {
       organizationId,
       isHidden,
       ...(companyIds && companyIds.length > 0
@@ -187,7 +187,7 @@ export class CompaniesRepository {
     };
 
     const [companies, total] = await Promise.all([
-      this.prisma.salesCompany.findMany({
+      this.prisma.company.findMany({
         where,
         skip,
         take: limit,
@@ -215,7 +215,7 @@ export class CompaniesRepository {
           },
         },
       }),
-      this.prisma.salesCompany.count({ where }),
+      this.prisma.company.count({ where }),
     ]);
 
     return {
