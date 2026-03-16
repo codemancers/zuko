@@ -41,6 +41,13 @@
           }
         }
       },
+      "dev": {
+        "executor": "nx:run-commands",
+        "options": {
+          "command": "npx @langchain/langgraph-cli dev",
+          "cwd": "apps/ai-agents"
+        }
+      },
       "prune-lockfile": {
         "dependsOn": [
           "build"
