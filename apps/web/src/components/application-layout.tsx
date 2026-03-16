@@ -17,6 +17,7 @@ import {
   SidebarFooter,
   SidebarHeader,
   SidebarHeading,
+  SidebarDivider,
   SidebarItem,
   SidebarLabel,
   SidebarLayout,
@@ -200,6 +201,7 @@ export function ApplicationLayout({ children }: { children: React.ReactNode }) {
                 <ChatBubbleLeftRightIcon />
                 <SidebarLabel>New chat</SidebarLabel>
               </SidebarItem>
+              <SidebarDivider />
               <SidebarItem
                 href="/contacts"
                 current={pathname.startsWith('/contacts')}
@@ -221,6 +223,7 @@ export function ApplicationLayout({ children }: { children: React.ReactNode }) {
                 <BriefcaseIcon />
                 <SidebarLabel>Deals</SidebarLabel>
               </SidebarItem>
+              <SidebarDivider />
               <SidebarItem
                 href="/tasks"
                 current={pathname.startsWith('/tasks')}
@@ -235,6 +238,7 @@ export function ApplicationLayout({ children }: { children: React.ReactNode }) {
                 <CalendarIcon />
                 <SidebarLabel>Meetings</SidebarLabel>
               </SidebarItem>
+              <SidebarDivider />
               <SidebarItem
                 href="/settings"
                 current={pathname.startsWith('/settings')}
