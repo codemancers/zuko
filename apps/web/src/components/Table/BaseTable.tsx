@@ -1,21 +1,39 @@
 'use client';
 
-import React from 'react';
+import { useState, useEffect } from 'react';
 import { useBaseTable } from '@/hooks/use-base-table';
 import { BaseTableProps } from './types';
 import { BaseTableHeader } from './BaseTableHeader';
 import { BaseTableBody } from './BaseTableBody';
 import { Table, Button } from '@zuko/ui-kit';
 import { PlusIcon } from '@heroicons/react/24/outline';
+import { AddColumnDialog } from './AddColumnDialog';
+
 const ChevronLeftIcon = '/icons/chevron-left.svg';
 const ChevronRightIcon = '/icons/chevron-right.svg';
 
 export function BaseTable<TData>(props: BaseTableProps<TData>) {
-  const { table } = useBaseTable(props);
-  const { loading, className, onRowClick, data, emptyStateConfig } = props;
-  const [hasMounted, setHasMounted] = React.useState(false);
+  const { 
+    table,
+    isAddColumnDialogOpen,
+    openAddColumnDialog,
+    closeAddColumnDialog
+  } = useBaseTable(props);
+  
+  const { 
+    loading, 
+    className, 
+    onRowClick, 
+    data, 
+    emptyStateConfig, 
+    showAddRow,
+    onAddRow,
+    showAddColumn,
+    onAddColumn
+  } = props;
+  const [hasMounted, setHasMounted] = useState(false);
 
-  React.useEffect(() => {
+  useEffect(() => {
     setHasMounted(true);
   }, []);
 
@@ -59,15 +77,40 @@ export function BaseTable<TData>(props: BaseTableProps<TData>) {
 
   return (
     <div className={`mt-8 ${className ?? ''}`}>
-      <div className="flow-root">
-        <Table className="[--gutter:--spacing(6)] lg:[--gutter:--spacing(10)]">
-          <BaseTableHeader headerGroups={table.getHeaderGroups()} />
+      <div className="flow-root overflow-hidden border border-zinc-200 dark:border-zinc-800 rounded-lg shadow-sm bg-white dark:bg-zinc-950">
+        <Table grid dense className="[--gutter:--spacing(6)] lg:[--gutter:--spacing(10)] text-sm">
+          <BaseTableHeader 
+            headerGroups={table.getHeaderGroups()} 
+            showAddColumn={showAddColumn}
+            onAddColumn={openAddColumnDialog}
+          />
           <BaseTableBody 
             rowModel={table.getRowModel()} 
             onRowClick={onRowClick}
+            showAddColumn={showAddColumn}
           />
         </Table>
+        
+        {showAddRow && (
+          <div className="pl-2 py-1 h-10 border-zinc-200 dark:border-zinc-800 flex items-center bg-zinc-50/50 dark:bg-zinc-900/50">
+            <Button 
+              onClick={onAddRow}
+              aria-label="Add row"
+              className="flex h-8 w-8 items-center justify-center"
+            >
+              <PlusIcon className="h-4 w-4 text-zinc-400 cursor-pointer" />
+            </Button>
+          </div>
+        )}
       </div>
+
+      <AddColumnDialog 
+        isOpen={isAddColumnDialogOpen}
+        onClose={closeAddColumnDialog}
+        onAdd={(name: string, type: string) => {
+          onAddColumn?.(name, type);
+        }}
+      />
       
       {/* Pagination & Summary Footer */}
       {(props.totalCount !== undefined || (!props.manualPagination && (table.getCanNextPage() || table.getCanPreviousPage()))) && (

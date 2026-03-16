@@ -127,17 +127,18 @@ export function TableHeader({
   className,
   ...props
 }: React.ComponentPropsWithoutRef<'th'>) {
-  const { bleed, grid } = useContext(TableContext);
+  const { bleed, grid, dense } = useContext(TableContext);
 
   return (
     <th
       {...props}
       className={clsx(
         className,
-        'border-b border-b-zinc-950/10 px-4 py-2 font-medium first:pl-(--gutter,--spacing(2)) last:pr-(--gutter,--spacing(2)) dark:border-b-white/10',
+        'border-b border-b-zinc-950/10 px-4 font-medium first:pl-(--gutter,--spacing(2)) last:pr-(--gutter,--spacing(2)) dark:border-b-white/10',
+        dense ? 'h-10 py-0' : 'py-2',
         grid &&
-          'border-l border-l-zinc-950/5 first:border-l-0 dark:border-l-white/5',
-        !bleed && 'sm:first:pl-1 sm:last:pr-1',
+          'border-l border-l-zinc-950/5 first:border-l-0 first:pl-4 last:pr-4 dark:border-l-white/5',
+        !bleed && !grid && 'sm:first:pl-1 sm:last:pr-1',
       )}
     />
   );
@@ -161,9 +162,9 @@ export function TableCell({
         'relative px-4 first:pl-(--gutter,--spacing(2)) last:pr-(--gutter,--spacing(2))',
         !striped && 'border-b border-zinc-950/5 dark:border-white/5',
         grid &&
-          'border-l border-l-zinc-950/5 first:border-l-0 dark:border-l-white/5',
-        dense ? 'py-2.5' : 'py-4',
-        !bleed && 'sm:first:pl-1 sm:last:pr-1',
+          'border-l border-l-zinc-950/5 first:border-l-0 first:pl-4 last:pr-4 dark:border-l-white/5',
+        dense ? 'h-10 py-0' : 'py-4',
+        !bleed && !grid && 'sm:first:pl-1 sm:last:pr-1',
       )}
     >
       {href && (

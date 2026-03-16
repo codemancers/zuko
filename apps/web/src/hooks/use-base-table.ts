@@ -1,3 +1,4 @@
+import React from 'react';
 import {
   getCoreRowModel,
   getPaginationRowModel,
@@ -28,9 +29,25 @@ export function useBaseTable<TData>({
   manualFiltering,
   enableRowSelection,
 }: BaseTableProps<TData>) {
+  const tableColumns = React.useMemo(() => {
+    const snoColumn = {
+      id: 'sno',
+      header: 'S.No',
+      cell: (info: any) => {
+        const pageIndex = pagination?.pageIndex ?? 0;
+        const pageSize = pagination?.pageSize ?? 10;
+        return pageIndex * pageSize + info.row.index + 1;
+      },
+      size: 64,
+      enableSorting: false,
+      enableHiding: false,
+    };
+    return [snoColumn, ...columns];
+  }, [columns, pagination]);
+
   const table = useReactTable({
     data,
-    columns,
+    columns: tableColumns,
     pageCount: pageCount,
     state: {
       pagination: pagination ?? { pageIndex: 0, pageSize: 10 },
@@ -64,5 +81,14 @@ export function useBaseTable<TData>({
     enableRowSelection,
   });
 
-  return { table };
+  const [isAddColumnDialogOpen, setIsAddColumnDialogOpen] = React.useState(false);
+  const openAddColumnDialog = React.useCallback(() => setIsAddColumnDialogOpen(true), []);
+  const closeAddColumnDialog = React.useCallback(() => setIsAddColumnDialogOpen(false), []);
+
+  return { 
+    table,
+    isAddColumnDialogOpen,
+    openAddColumnDialog,
+    closeAddColumnDialog
+  };
 }

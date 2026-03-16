@@ -54,6 +54,10 @@ export interface BaseTableProps<TData> {
   renderEmptyState?: () => React.ReactNode;
   totalCount?: number;
   entityName?: string; // e.g. 'contacts', 'deals'
+  showAddRow?: boolean;
+  onAddRow?: () => void;
+  showAddColumn?: boolean;
+  onAddColumn?: (name: string, type: string) => void;
   emptyStateConfig: {
     icon: React.ElementType;
     title: string;

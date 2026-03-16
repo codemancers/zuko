@@ -36,6 +36,10 @@ const CompaniesList = () => {
     router.push('/companies/new');
   };
 
+  const handleNewColumn = (name: string, type: string) => {
+    // TODO: Implement add column functionality
+  };
+
   return (
     <>
       <div className="flex items-start justify-between">
@@ -71,6 +75,10 @@ const CompaniesList = () => {
         onRowClick={(company) => handleCompanyClick(Number(company.id))}
         totalCount={companiesData?.pagination?.total}
         entityName="companies"
+        showAddRow
+        onAddRow={handleNewCompany}
+        showAddColumn
+        onAddColumn={handleNewColumn}
         emptyStateConfig={{
           icon: BuildingOfficeIcon,
           title: 'No Companies',

@@ -1,11 +1,12 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import { Badge, Link } from '@zuko/ui-kit';
+import { Badge, Link, Avatar } from '@zuko/ui-kit';
 import { 
   BuildingOfficeIcon, 
   UserIcon, 
   BriefcaseIcon,
+  UserGroupIcon,
 } from '@heroicons/react/24/outline';
 import { type ColumnMetadata, type BaseRow } from './types';
 
@@ -66,7 +67,7 @@ export function EntityField({ value, display, metadata, row }: FieldProps<BaseRo
   const entityType = metadata.config?.entityType;
   
   let Icon = BuildingOfficeIcon;
-  let linkTarget = `#`;
+  let linkTarget: string | undefined = '#';
   let displayText = display ?? value ?? row.name;
 
   if(entityType === 'company') {
@@ -81,6 +82,14 @@ export function EntityField({ value, display, metadata, row }: FieldProps<BaseRo
     Icon = BriefcaseIcon;
     linkTarget = `/deals/${row.id}`;
     displayText = display ?? value ?? row.title;
+  } else if (entityType === 'team') {
+    Icon = UserGroupIcon;
+    linkTarget = undefined; // Team names are simple text
+    displayText = display ?? value;
+  } else if (entityType === 'member') {
+    Icon = UserIcon; // Fallback icon
+    linkTarget = undefined; // Member names are simple text
+    displayText = display ?? (value as string);
   }
 
   if (metadata.config?.hrefTemplate) {
@@ -88,18 +97,38 @@ export function EntityField({ value, display, metadata, row }: FieldProps<BaseRo
   }
 
   return (
-    <div className="flex items-center gap-3">
-      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-zinc-100 dark:bg-zinc-800">
-        <Icon className="h-5 w-5 text-zinc-600 dark:text-zinc-400" />
+    <div className="flex items-center gap-2">
+      <div className="flex shrink-0">
+        {metadata.config?.useAvatar && metadata.config.avatarSrcField ? (
+          <Avatar
+            src={metadata.config.avatarSrcField}
+            initials={(displayText as string)
+              ?.split(/[\s.@]+/)
+              .filter(Boolean)
+              .map((n) => n[0])
+              .join('')
+              .toUpperCase()
+              .slice(0, 2)}
+            className="size-6 bg-zinc-200 dark:bg-zinc-700 text-xs text-zinc-900 dark:text-zinc-100 ring-1 ring-white dark:ring-zinc-900"
+          />
+        ) : (
+          <div className="flex h-6 w-6 items-center justify-center rounded-full bg-zinc-100 dark:bg-zinc-800">
+            <Icon className="h-3.5 w-3.5 text-zinc-600 dark:text-zinc-400" />
+          </div>
+        )}
       </div>
-      <div>
-        <Link 
-          href={linkTarget}
-          className="font-medium text-zinc-950 dark:text-white hover:underline"
-          onClick={(e) => e.stopPropagation()}
-        >
-          {displayText as ReactNode}
-        </Link>
+      <div className="text-sm font-medium text-zinc-950 dark:text-white">
+        {linkTarget && linkTarget !== '#' ? (
+          <Link
+            href={linkTarget}
+            className="hover:underline"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {displayText as ReactNode}
+          </Link>
+        ) : (
+          displayText as ReactNode
+        )}
       </div>
     </div>
   );

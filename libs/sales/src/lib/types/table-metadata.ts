@@ -30,7 +30,9 @@ export interface RelationConfig {
 }
 
 export interface ColumnConfig {
-  entityType?: 'company' | 'contact' | 'deal';
+  entityType?: 'company' | 'contact' | 'deal' | 'team' | 'member';
+  useAvatar?: boolean;
+  avatarSrcField?: string;
   accessorKey?: string;
   hrefTemplate?: string; // for links/urls
   currency?: string;

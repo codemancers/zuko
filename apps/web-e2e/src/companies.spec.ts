@@ -83,6 +83,33 @@ test.describe("Companies - Authenticated", () => {
       test.skip();
     }
   });
+
+  test("Renders add row button at the bottom of the table", async ({
+    companiesPage,
+    page,
+  }) => {
+    await companiesPage.goto();
+    const companies = await companiesPage.getCompanyItems();
+
+    if (companies.length > 0) {
+      const addRowButton = page.getByRole("button", { name: /Add row/i });
+      await expect(addRowButton).toBeVisible();
+    }
+  });
+
+  test("Opens add column dialog when header plus icon is clicked", async ({
+    companiesPage,
+    page,
+  }) => {
+    await companiesPage.goto();
+    const companies = await companiesPage.getCompanyItems();
+
+    if (companies.length > 0) {
+      const addColumnButton = page.getByRole("button", { name: /Add column/i });
+      await addColumnButton.click();
+      await expect(page.getByText(/Add new field/i)).toBeVisible();
+    }
+  });
 });
 
 test.describe("Company Detail - Contact Management", () => {

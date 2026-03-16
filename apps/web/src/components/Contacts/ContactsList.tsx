@@ -36,6 +36,10 @@ const ContactsList = () => {
     router.push('/contacts/new');
   };
 
+  const handleNewColumn = (name: string, type: string) => {
+    // TODO: Implement add column functionality
+  };
+
   return (
     <>
       <div className="flex items-start justify-between">
@@ -71,6 +75,10 @@ const ContactsList = () => {
         onRowClick={(contact) => handleRowClick(Number(contact.id))}
         totalCount={contactsData?.pagination?.total}
         entityName="contacts"
+        showAddRow
+        onAddRow={handleNewContact}
+        showAddColumn
+        onAddColumn={handleNewColumn}
         emptyStateConfig={{
           icon: UserIcon,
           title: 'No Contacts',

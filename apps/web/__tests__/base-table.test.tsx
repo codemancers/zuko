@@ -134,4 +134,63 @@ describe('BaseTable', () => {
 
     expect(screen.getByText('Showing 2 of 100 people')).toBeInTheDocument();
   });
+
+  describe('Add Row Feature', () => {
+    it('renders the add row button when showAddRow is true', () => {
+      const onAddRow = vi.fn();
+      render(
+        <BaseTable
+          columns={mockColumns}
+          data={mockData}
+          loading={false}
+          showAddRow={true}
+          onAddRow={onAddRow}
+          emptyStateConfig={mockEmptyStateConfig}
+        />
+      );
+
+      const addButton = screen.getByRole('button', { name: /Add row/i });
+      expect(addButton).toBeInTheDocument();
+      
+      fireEvent.click(addButton);
+      expect(onAddRow).toHaveBeenCalled();
+    });
+  });
+
+  describe('Add Column Feature', () => {
+    it('renders the add column trigger in the header when showAddColumn is true', () => {
+      render(
+        <BaseTable
+          columns={mockColumns}
+          data={mockData}
+          loading={false}
+          showAddColumn={true}
+          emptyStateConfig={mockEmptyStateConfig}
+        />
+      );
+
+      const addColumnButton = screen.getByRole('button', { name: /Add column/i });
+      expect(addColumnButton).toBeInTheDocument();
+    });
+
+    it('opens the Add Column dialog when the header trigger is clicked', () => {
+      const onAddColumn = vi.fn();
+      render(
+        <BaseTable
+          columns={mockColumns}
+          data={mockData}
+          loading={false}
+          showAddColumn={true}
+          onAddColumn={onAddColumn}
+          emptyStateConfig={mockEmptyStateConfig}
+        />
+      );
+
+      const headerPlusButton = screen.getByRole('button', { name: /Add column/i });
+      fireEvent.click(headerPlusButton);
+
+      expect(screen.getByText('Add new field')).toBeInTheDocument();
+      expect(screen.getByText('Field Name')).toBeInTheDocument();
+    });
+  });
 });

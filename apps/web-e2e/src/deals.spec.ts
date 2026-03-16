@@ -114,6 +114,33 @@ test.describe("Deals - Authenticated", () => {
       expect(count).toBeGreaterThanOrEqual(0);
     }
   });
+
+  test("Renders add row button at the bottom of the table", async ({
+    dealsPage,
+    page,
+  }) => {
+    await dealsPage.goto();
+    const deals = await dealsPage.getDealItems();
+
+    if (deals.length > 0) {
+      const addRowButton = page.getByRole("button", { name: /Add row/i });
+      await expect(addRowButton).toBeVisible();
+    }
+  });
+
+  test("Opens add column dialog when header plus icon is clicked", async ({
+    dealsPage,
+    page,
+  }) => {
+    await dealsPage.goto();
+    const deals = await dealsPage.getDealItems();
+
+    if (deals.length > 0) {
+      const addColumnButton = page.getByRole("button", { name: /Add column/i });
+      await addColumnButton.click();
+      await expect(page.getByText(/Add new field/i)).toBeVisible();
+    }
+  });
 });
 
 test.describe("Deal Creation", () => {
@@ -627,6 +654,11 @@ test.describe("Deal Activity Timeline - Comments", () => {
   }) => {
     await dealDetailPage.goto(1);
 
+    // Wait for the Activity section to render
+    await expect(
+      page.getByRole("heading", { name: /Activity/i })
+    ).toBeVisible();
+
     const commentInput = page.getByPlaceholder("Add a comment...");
     await expect(commentInput).toBeVisible();
 
@@ -639,6 +671,11 @@ test.describe("Deal Activity Timeline - Comments", () => {
     page,
   }) => {
     await dealDetailPage.goto(1);
+
+    // Wait for the Activity section to render
+    await expect(
+      page.getByRole("heading", { name: /Activity/i })
+    ).toBeVisible();
 
     const commentInput = page.getByPlaceholder("Add a comment...");
     await expect(commentInput).toBeVisible();

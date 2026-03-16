@@ -1,14 +1,15 @@
 import { Row } from '@tanstack/react-table';
 import { BaseTableCell } from './BaseTableCell';
-import { TableRow } from '@zuko/ui-kit';
+import { TableRow, TableCell } from '@zuko/ui-kit';
 import clsx from 'clsx';
 
 interface BaseTableRowProps<TData> {
   row: Row<TData>;
   onRowClick?: (row: TData) => void;
+  showAddColumn?: boolean;
 }
 
-export function BaseTableRow<TData>({ row, onRowClick }: BaseTableRowProps<TData>) {
+export function BaseTableRow<TData>({ row, onRowClick, showAddColumn }: BaseTableRowProps<TData>) {
   return (
     <TableRow
       className={clsx(
@@ -20,6 +21,7 @@ export function BaseTableRow<TData>({ row, onRowClick }: BaseTableRowProps<TData
       {row.getVisibleCells().map((cell) => (
         <BaseTableCell key={cell.id} cell={cell} />
       ))}
+      {showAddColumn && <TableCell className="w-10" />}
     </TableRow>
   );
 }
