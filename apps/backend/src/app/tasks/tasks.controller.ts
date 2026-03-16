@@ -41,7 +41,6 @@ export class TasksController {
   ) {
     return this.taskService.createTask(organizationId, {
       ...dto,
-      createdBy: req.user.name ?? req.user.email ?? undefined,
       createdByUserId: Number(req.user.id),
     });
   }
