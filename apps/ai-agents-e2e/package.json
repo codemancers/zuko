@@ -1,0 +1,26 @@
+{
+  "name": "@zuko/ai-agents-e2e",
+  "version": "0.0.1",
+  "private": true,
+  "nx": {
+    "implicitDependencies": [
+      "@zuko/ai-agents"
+    ],
+    "targets": {
+      "e2e": {
+        "executor": "@nx/jest:jest",
+        "outputs": [
+          "{projectRoot}/test-output/jest/coverage"
+        ],
+        "options": {
+          "jestConfig": "apps/ai-agents-e2e/jest.config.cts",
+          "passWithNoTests": true
+        },
+        "dependsOn": [
+          "@zuko/ai-agents:build",
+          "@zuko/ai-agents:serve"
+        ]
+      }
+    }
+  }
+}

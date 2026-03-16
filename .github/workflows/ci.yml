@@ -99,7 +99,7 @@ jobs:
         run: npx nx affected -t test --parallel=1 --nxBail
 
       - name: E2E tests
-        run: npx nx affected -t e2e --exclude=backend-e2e --nxBail
+        run: npx nx affected -t e2e --exclude=backend-e2e --exclude=ai-agents-e2e --nxBail
 
       # Nx Cloud recommends fixes for failures to help you get CI green faster. Learn more: https://nx.dev/ci/features/self-healing-ci
       - run: npx nx fix-ci

@@ -1,7 +1,10 @@
 {
   "$schema": "./node_modules/nx/schemas/nx-schema.json",
   "namedInputs": {
-    "default": ["{projectRoot}/**/*", "sharedGlobals"],
+    "default": [
+      "{projectRoot}/**/*",
+      "sharedGlobals"
+    ],
     "production": [
       "default",
       "!{projectRoot}/.eslintrc.json",
@@ -32,7 +35,10 @@
     },
     {
       "plugin": "nx/plugins/package-json",
-      "exclude": ["dist/**", "**/dist/**"]
+      "exclude": [
+        "dist/**",
+        "**/dist/**"
+      ]
     },
     {
       "plugin": "@nx/webpack/plugin",
@@ -56,7 +62,11 @@
       "options": {
         "targetName": "test"
       },
-      "exclude": ["apps/backend-e2e/**/*", "apps/web/**/*"]
+      "exclude": [
+        "apps/backend-e2e/**/*",
+        "apps/web/**/*",
+        "apps/ai-agents-e2e/**/*"
+      ]
     },
     {
       "plugin": "@nx/vitest",
@@ -95,7 +105,9 @@
   ],
   "targetDefaults": {
     "test": {
-      "dependsOn": ["^build"],
+      "dependsOn": [
+        "^build"
+      ],
       "options": {
         "env": {
           "NODE_OPTIONS": "--experimental-vm-modules"
@@ -104,8 +116,23 @@
     },
     "@nx/js:tsc": {
       "cache": true,
-      "dependsOn": ["^build"],
-      "inputs": ["production", "^production"]
+      "dependsOn": [
+        "^build"
+      ],
+      "inputs": [
+        "production",
+        "^production"
+      ]
+    },
+    "@nx/esbuild:esbuild": {
+      "cache": true,
+      "dependsOn": [
+        "^build"
+      ],
+      "inputs": [
+        "production",
+        "^production"
+      ]
     }
   },
   "generators": {
