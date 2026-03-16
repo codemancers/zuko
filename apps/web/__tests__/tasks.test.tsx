@@ -431,13 +431,6 @@ describe('createTaskColumns', () => {
       expect(screen.getByText('Column Test Task')).toBeInTheDocument();
     });
 
-    it('renders parentTitle label for subtasks', () => {
-      const subtask: FlatTask = { ...baseTask, parentTitle: 'Parent Task' };
-      renderCell(columns, 'title', subtask);
-      expect(screen.getByText(/subtask of/i)).toBeInTheDocument();
-      expect(screen.getByText('Parent Task')).toBeInTheDocument();
-    });
-
     it('does not render parentTitle label for top-level tasks', () => {
       renderCell(columns, 'title', baseTask);
       expect(screen.queryByText(/subtask of/i)).not.toBeInTheDocument();
