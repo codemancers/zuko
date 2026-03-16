@@ -12,7 +12,6 @@ import {
 } from "@nestjs/common";
 import { AuthGuard } from "@thallesp/nestjs-better-auth";
 import { ChatsService } from "./chats.service";
-import { OrchestratorService } from "@zuko/agents";
 import type { RequestWithUser } from "@zuko/core";
 
 @Controller("chats")
@@ -20,7 +19,6 @@ import type { RequestWithUser } from "@zuko/core";
 export class ChatsController {
   constructor(
     private chatsService: ChatsService,
-    private orchestratorService: OrchestratorService,
   ) {}
 
   /**
@@ -126,11 +124,62 @@ export class ChatsController {
     // Get the chat to extract threadId
     const chat = await this.chatsService.findOne(chatId);
 
-    // Fetch messages and contextEntities from LangGraph checkpoints
-    const { messages, contextEntities } =
-      await this.orchestratorService.getMessages(chat.threadId);
+    const threadId = chat.threadId;
 
-    return { messages, contextEntities };
+    // If LANGSMITH_SERVER_URL is configured, fetch history from LangSmith thread state
+    const agentServerUrl = process.env.LANGSMITH_SERVER_URL ?? "http://localhost:2024";
+    const baseUrl = agentServerUrl.replace(/\/$/, "");
+    const url = `${baseUrl}/threads/${threadId}/state`;
+
+    const res = await fetch(url, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (!res.ok) {
+      throw new Error("Failed to fetch thread state");
+    }
+
+      const state: any = await res.json();
+      const values = state?.values ?? {};
+
+      // Expect messages array and optional contextEntities in thread state values
+      const rawMessages: any[] = Array.isArray(values.messages)
+        ? values.messages
+        : [];
+
+      const messages = rawMessages
+        .map((msg) => {
+          const role =
+            msg.type === "human"
+              ? "user"
+              : msg.type === "ai"
+                ? "assistant"
+                : msg.type ?? "system";
+
+          const content =
+            typeof msg.content === "string"
+              ? msg.content
+              : typeof msg.text === "string"
+                ? msg.text
+                : "";
+
+          if (!content || !content.trim()) {
+            return null;
+          }
+
+          return { role, content };
+        })
+        .filter((m): m is { role: string; content: string } => m !== null);
+
+      const contextEntities =
+        Array.isArray(values.contextEntities) && values.contextEntities.length > 0
+          ? values.contextEntities
+          : [];
+
+      return { messages, contextEntities };
   }
 
   /**
