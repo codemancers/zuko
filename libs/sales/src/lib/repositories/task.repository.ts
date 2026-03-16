@@ -14,6 +14,7 @@ export interface CreateTaskInput {
   parentId?: number;
   assignee?: string;
   createdBy?: string;
+  createdByUserId?: number;
 }
 
 export interface UpdateTaskInput {
@@ -25,22 +26,45 @@ export interface UpdateTaskInput {
   assignee?: string | null;
 }
 
+const taskInclude = {
+  subtasks: true,
+  owners: {
+    include: { user: { select: { id: true, name: true, email: true } } },
+  },
+} as const;
+
 @Injectable()
 export class TaskRepository {
   constructor(private readonly prisma: PrismaService) {}
 
   async create(input: CreateTaskInput) {
-    const { organizationId, ...data } = input;
-    return this.prisma.task.create({
-      data: { ...data, organizationId },
-      include: { subtasks: true },
+    const { organizationId, createdByUserId, ...data } = input;
+
+    return this.prisma.$transaction(async (tx) => {
+      const task = await tx.task.create({
+        data: { ...data, organizationId },
+        include: taskInclude,
+      });
+
+      if (createdByUserId) {
+        await tx.taskOwner.create({
+          data: { taskId: task.id, userId: createdByUserId, isPrimary: true },
+        });
+
+        return tx.task.findUniqueOrThrow({
+          where: { id: task.id },
+          include: taskInclude,
+        });
+      }
+
+      return task;
     });
   }
 
   async findById(id: number, organizationId: number) {
     return this.prisma.task.findFirst({
       where: { id, organizationId },
-      include: { subtasks: true },
+      include: taskInclude,
     });
   }
 
@@ -64,7 +88,7 @@ export class TaskRepository {
         skip,
         take: limit,
         orderBy: { createdAt: 'desc' },
-        include: { subtasks: true },
+        include: taskInclude,
       }),
       this.prisma.task.count({ where }),
     ]);
@@ -84,7 +108,7 @@ export class TaskRepository {
     return this.prisma.task.update({
       where: { id },
       data: input,
-      include: { subtasks: true },
+      include: taskInclude,
     });
   }
 
