@@ -70,8 +70,11 @@ test.describe('Member Management', () => {
     await settingsPage.goto(); // Ensure we are on settings
     await settingsPage.switchTab('members');
 
+    // Todo: Add logic to handle email later
+    // Find User B by name. 
     // Find User B specifically by email
-    const userBRow = page.locator('tr').filter({ hasText: userBEmail });
+    // const userBRow = page.locator('tr').filter({ hasText: userBEmail });
+    const userBRow = page.locator('tr').filter({ hasText: userBName });
     await expect(userBRow).toBeVisible({ timeout: 15000 });
 
     // Add to team

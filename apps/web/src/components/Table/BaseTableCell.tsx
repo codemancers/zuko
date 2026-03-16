@@ -7,7 +7,14 @@ interface BaseTableCellProps<TData> {
 
 export function BaseTableCell<TData>({ cell }: BaseTableCellProps<TData>) {
   return (
-    <TableCell className="align-middle">
+    <TableCell 
+      className="align-middle"
+      style={{ 
+        width: cell.column.id === 'sno' ? cell.column.getSize() : undefined,
+        minWidth: cell.column.id === 'sno' ? cell.column.getSize() : cell.column.columnDef.minSize,
+        maxWidth: cell.column.id === 'sno' ? cell.column.getSize() : cell.column.columnDef.maxSize,
+      }}
+    >
       {flexRender(cell.column.columnDef.cell, cell.getContext())}
     </TableCell>
   );

@@ -67,4 +67,32 @@ test.describe("Contacts - Authenticated", () => {
       timeout: 10000,
     });
   });
+
+
+  test("Renders add row button at the bottom of the table", async ({
+    contactsPage,
+    page,
+  }) => {
+    await contactsPage.goto();
+    const contacts = await contactsPage.getContactItems();
+
+    if (contacts.length > 0) {
+      const addRowButton = page.getByRole("button", { name: /Add row/i });
+      await expect(addRowButton).toBeVisible();
+    }
+  });
+
+  test("Opens add column dialog when header plus icon is clicked", async ({
+    contactsPage,
+    page,
+  }) => {
+    await contactsPage.goto();
+    const contacts = await contactsPage.getContactItems();
+
+    if (contacts.length > 0) {
+      const addColumnButton = page.getByRole("button", { name: /Add column/i });
+      await addColumnButton.click();
+      await expect(page.getByText(/Add new field/i)).toBeVisible();
+    }
+  });
 });

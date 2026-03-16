@@ -266,7 +266,7 @@ const TeamMemberAvatars = ({
                       .join('')
                       .toUpperCase()
                       .slice(0, 2)}
-                    className="size-8 bg-zinc-200 dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100 ring-2 ring-white dark:ring-zinc-900"
+                    className="size-6 bg-zinc-200 dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100 ring-1 ring-white dark:ring-zinc-900"
                   />
                 </TooltipTrigger>
                 <TooltipContent sideOffset={4}>
@@ -278,7 +278,7 @@ const TeamMemberAvatars = ({
           {overflow > 0 && (
             <Tooltip>
               <TooltipTrigger asChild>
-                <div className="size-8 rounded-full bg-zinc-200 dark:bg-zinc-700 ring-2 ring-white dark:ring-zinc-900 flex items-center justify-center text-[10px] font-medium text-zinc-600 dark:text-zinc-300">
+                <div className="size-6 rounded-full bg-zinc-200 dark:bg-zinc-700 ring-1 ring-white dark:ring-zinc-900 flex items-center justify-center text-xs font-medium text-zinc-600 dark:text-zinc-300">
                   +{overflow}
                 </div>
               </TooltipTrigger>

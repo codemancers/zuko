@@ -36,6 +36,10 @@ const DealsList = () => {
     router.push('/deals/new');
   };
 
+  const handleNewColumn = (name: string, type: string) => {
+    // TODO: Implement add column functionality
+  };
+
   return (
     <>
       <div className="flex items-start justify-between">
@@ -71,6 +75,10 @@ const DealsList = () => {
         onRowClick={(deal) => handleDealClick(Number(deal.id))}
         totalCount={dealsData?.pagination?.total}
         entityName="deals"
+        showAddRow
+        onAddRow={handleNewDeal}
+        showAddColumn
+        onAddColumn={handleNewColumn}
         emptyStateConfig={{
           icon: BriefcaseIcon,
           title: 'No Deals',
