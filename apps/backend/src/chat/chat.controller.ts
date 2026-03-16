@@ -25,7 +25,8 @@ import type { RequestWithUser } from "@zuko/core";
 import { ChatsService } from "../chats/chats.service";
 import { PrismaService } from "../prisma/prisma.service";
 import { getActiveOrganizationId } from "../common/auth/get-organization-id";
-import { transformSSEToLangChainStreamFromNode } from "./langsmith-stream.util";
+import { LangsmithService } from "../langsmith/langsmith.service";
+import { transformSSEToLangChainStreamFromNode } from "../langsmith/langsmith-stream.util";
 
 const LOCAL_MODEL_ID = process.env.AGENTS_LLM_MODEL ?? "gpt-4o";
 
@@ -35,6 +36,7 @@ export class ChatController {
     private readonly agentsService: OrchestratorService,
     private readonly chatsService: ChatsService,
     private readonly prisma: PrismaService,
+    private readonly langsmithService: LangsmithService,
   ) {}
 
   @Post("chat/completions")
@@ -158,62 +160,31 @@ export class ChatController {
     response.setHeader("X-Thread-Id", threadId);
     response.setHeader("X-Chat-Id", chatId);
 
-    // If LANGSMITH_SERVER_URL is configured, stream via LangSmith agent server.
-    const agentServerUrl = process.env.LANGSMITH_SERVER_URL ?? "http://localhost:2024";
+    const upstreamBody = await this.langsmithService.createRunStream({
+      threadId,
+      messages: langchainMessages,
+      contextEntities,
+      userId,
+      organizationId,
+    });
 
-      const assistantId =
-        process.env.LANGSMITH_ASSISTANT_ID ?? "agent";
-      const baseUrl = agentServerUrl.replace(/\/$/, "");
-      const url = `${baseUrl}/threads/${threadId}/runs/stream`;
+    const nodeStream = Readable.fromWeb(
+      upstreamBody as unknown as ReadableStream,
+    );
+    const langchainStream =
+      transformSSEToLangChainStreamFromNode(nodeStream);
+    const uiStream = toUIMessageStream(langchainStream as any);
 
-      const payload = {
-        assistant_id: assistantId,
-        input: {
-          messages: langchainMessages,
-          contextEntities,
-          userId,
-          organizationId,
-        },
-        stream_mode: ["values", "messages"] as const,
-        multitask_strategy: "enqueue" as const,
-        if_not_exists: "create" as const,
-        on_disconnect: "continue" as const,
-      };
-
-      const upstream = await fetch(url, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
-      }).catch((error) => {
-        console.error("Failed to connect to agent server", error as Error);
-        throw error;
-      });
-
-      if (!upstream.ok || !upstream.body) {
-        await upstream.text().catch(() => "");
-        throw new Error("Agent server stream failed");
+    try {
+      for await (const chunk of uiStream) {
+        response.write(`data: ${JSON.stringify(chunk)}\n\n`);
       }
+    } catch (err) {
+      // swallow streaming errors for now; connection will just end
+    } finally {
+      response.end();
+    }
 
-      const nodeStream = Readable.fromWeb(
-        upstream.body as unknown as ReadableStream,
-      );
-      const langchainStream =
-        transformSSEToLangChainStreamFromNode(nodeStream);
-      const uiStream = toUIMessageStream(langchainStream as any);
-
-      try {
-        for await (const chunk of uiStream) {
-          response.write(`data: ${JSON.stringify(chunk)}\n\n`);
-        }
-      } catch (err) {
-        // swallow streaming errors for now; connection will just end
-      } finally {
-        response.end();
-      }
-
-      return;
- 
+    return;
   }
 }
