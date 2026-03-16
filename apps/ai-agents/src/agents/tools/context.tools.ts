@@ -1,4 +1,4 @@
-import { tool } from '@langchain/core/tools';
+import { tool } from 'langchain';
 import { z } from 'zod';
 import type { ContextEntityReference } from '../../types/chat.types';
 
@@ -60,39 +60,70 @@ export function getUserId(config: unknown): number | undefined {
  * get_contact_details, get_company_details, or query_* tools (e.g. when there
  * is a mix of types or you are unsure what is in context).
  */
-export function getConversationContextTool() {
-  return tool(
-    async (_input, config?: unknown) => {
-      const contextEntities = getContextEntities(config) ?? [];
 
-      const contacts = contextEntities
-        .filter((e) => e.type === 'contact')
-        .map((e) => ({ type: e.type, id: e.id }));
-      const companies = contextEntities
-        .filter((e) => e.type === 'company')
-        .map((e) => ({ type: e.type, id: e.id }));
-      const deals = contextEntities
-        .filter((e) => e.type === 'deal')
-        .map((e) => ({ type: e.type, id: e.id }));
-
-      return {
-        contacts,
-        companies,
-        deals,
-        total: contextEntities.length,
-        summary:
-          contextEntities.length === 0
-            ? 'No entities in context. User can add contacts, companies, or deals via the + button.'
-            : `${contacts.length} contact(s), ${companies.length} company(ies), ${deals.length} deal(s) in context. Use get_contact_details/get_company_details for single entities, or query_contacts/query_companies for multiple.`,
-      };
-    },
-    {
-      name: 'get_conversation_context',
-      description: `Returns the current conversation context: list of contacts, companies, and deals the user has added to this conversation. Call this when you need to see what is in context before fetching details—e.g. when there is a mix of contacts and companies, or when you are unsure. Then use get_contact_details, get_company_details, or query_contacts/query_companies as needed. No arguments.`,
-      schema: z.object({}),
-    },
-  );
+function isContact(
+  entity: ContextEntityReference,
+): entity is ContextEntityReference & { type: 'contact' } {
+  return entity.type === 'contact';
 }
+
+function isCompany(
+  entity: ContextEntityReference,
+): entity is ContextEntityReference & { type: 'company' } {
+  return entity.type === 'company';
+}
+
+function isDeal(
+  entity: ContextEntityReference,
+): entity is ContextEntityReference & { type: 'deal' } {
+  return entity.type === 'deal';
+}
+
+export const getConversationContextTool = tool(
+  async (
+    _input,
+    config?: unknown,
+  ): Promise<{
+    contacts: { type: 'contact'; id: number }[];
+    companies: { type: 'company'; id: number }[];
+    deals: { type: 'deal'; id: number }[];
+    total: number;
+    summary: string;
+  }> => {
+    const contextEntities = getContextEntities(config) ?? [];
+
+    const contacts = contextEntities.filter(isContact).map((e) => ({
+      type: 'contact' as const,
+      id: e.id,
+    }));
+
+    const companies = contextEntities.filter(isCompany).map((e) => ({
+      type: 'company' as const,
+      id: e.id,
+    }));
+
+    const deals = contextEntities.filter(isDeal).map((e) => ({
+      type: 'deal' as const,
+      id: e.id,
+    }));
+
+    return {
+      contacts,
+      companies,
+      deals,
+      total: contextEntities.length,
+      summary:
+        contextEntities.length === 0
+          ? 'No entities in context. User can add contacts, companies, or deals via the + button.'
+          : `${contacts.length} contact(s), ${companies.length} company(ies), ${deals.length} deal(s) in context. Use get_contact_details/get_company_details for single entities, or query_contacts/query_companies for multiple.`,
+    };
+  },
+  {
+    name: 'get_conversation_context',
+    description: `Returns the current conversation context: list of contacts, companies, and deals the user has added to this conversation. Call this when you need to see what is in context before fetching details—e.g. when there is a mix of contacts and companies, or when you are unsure. Then use get_contact_details, get_company_details, or query_contacts/query_companies as needed. No arguments.`,
+    schema: z.object({}),
+  },
+);
 
 
 export const contextTools = [getConversationContextTool];

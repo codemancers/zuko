@@ -1,10 +1,16 @@
 import { ChatOpenAI } from "@langchain/openai";
 import {  SubAgent, createDeepAgent } from "deepagents";
 import { Tool } from "langchain";
-import { MemorySaver } from "@langchain/langgraph";
 
 import { createPersistentContextMiddleware } from "../middleware";
 import { SYSTEM_PROMPT } from "../shared/prompts";
+
+import { getCheckpointer } from "../shared/checkpointer";
+
+import { companyTools } from "./tools/company.tools";
+import { contextTools } from "./tools/context.tools";
+
+
 
 type DeepAgent = ReturnType<typeof createDeepAgent>;
 
@@ -19,7 +25,8 @@ export async function initializeAgent(
   const model = new ChatOpenAI({
     model: OPENAI_MODEL,
   });
-  const checkpointer = new MemorySaver();
+
+  const checkpointer = await getCheckpointer();
 
   const agent = createDeepAgent({
     model,
@@ -34,7 +41,7 @@ export async function initializeAgent(
 }
 
 export const agent = (async () => {
-  const tools: Tool[] = [];
+  const tools = [...companyTools, ...contextTools] as unknown as Tool[];
 
   return await initializeAgent(tools, []);
 })();
