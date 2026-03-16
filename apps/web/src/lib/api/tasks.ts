@@ -2,6 +2,19 @@ import { apiClient } from '../api-client';
 
 export type TaskStatus = 'TODO' | 'IN_PROGRESS' | 'DONE' | 'CANCELLED';
 
+export interface TaskOwner {
+  id: number;
+  taskId: number;
+  userId: number;
+  isPrimary: boolean;
+  assignedAt: string;
+  user: {
+    id: number;
+    name: string;
+    email: string;
+  };
+}
+
 export interface Task {
   id: number;
   organizationId: number;
@@ -11,7 +24,7 @@ export interface Task {
   completedAt?: string | null;
   parentId?: number | null;
   assignee?: string | null;
-  createdBy?: string | null;
+  owners: TaskOwner[];
   subtasks: Task[];
   createdAt: string;
   updatedAt: string;

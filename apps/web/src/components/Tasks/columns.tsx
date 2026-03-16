@@ -235,13 +235,16 @@ export function createTaskColumns(callbacks: TaskColumnCallbacks): ColumnDef<Fla
       ),
     },
     {
-      accessorKey: 'createdBy',
+      accessorKey: 'owners',
       header: 'Created By',
-      cell: ({ getValue }) => (
-        <span className="text-sm text-zinc-600 dark:text-zinc-400">
-          {(getValue() as string | null) ?? '—'}
-        </span>
-      ),
+      cell: ({ row }) => {
+        const primaryOwner = row.original.owners?.find((o) => o.isPrimary);
+        return (
+          <span className="text-sm text-zinc-600 dark:text-zinc-400">
+            {primaryOwner?.user.name ?? '—'}
+          </span>
+        );
+      },
     },
     {
       accessorKey: 'completedAt',
