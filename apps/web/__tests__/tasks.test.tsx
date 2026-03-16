@@ -9,7 +9,10 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import TaskForm from '@/components/Tasks/TaskForm';
 import TasksList from '@/components/Tasks/TasksList';
 import TaskDetail from '@/components/Tasks/TaskDetail';
+import { createTaskColumns } from '@/components/Tasks/columns';
 import type { Task } from '@/lib/api/tasks';
+import type { FlatTask } from '@/components/Tasks/columns';
+import type { ColumnDef } from '@tanstack/react-table';
 
 const mockPush = vi.fn();
 const mockBack = vi.fn();
@@ -330,6 +333,360 @@ describe('TaskDetail', () => {
     await waitFor(() => {
       expect(mockDeleteTask).toHaveBeenCalledWith(1);
       expect(mockPush).toHaveBeenCalledWith('/tasks');
+    });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Helper: render a single column's cell given a FlatTask
+// ---------------------------------------------------------------------------
+type CellArgs = { row: { original: FlatTask }; getValue: () => unknown };
+
+function renderCell(columns: ColumnDef<FlatTask>[], colId: string, task: FlatTask) {
+  const col = columns.find(
+    (c) => (c as { id?: string; accessorKey?: string }).id === colId ||
+            (c as { id?: string; accessorKey?: string }).accessorKey === colId
+  ) as (ColumnDef<FlatTask> & { cell?: (args: CellArgs) => React.ReactNode }) | undefined;
+
+  if (!col?.cell) throw new Error(`Column "${colId}" not found or has no cell renderer`);
+
+  const args: CellArgs = {
+    row: { original: task },
+    getValue: () => (task as Record<string, unknown>)[colId],
+  };
+
+  const Cell = () => <>{col.cell!(args)}</>;
+  return render(<Cell />);
+}
+
+const baseTask: FlatTask = {
+  id: 42,
+  organizationId: 1,
+  title: 'Column Test Task',
+  description: 'desc',
+  status: 'TODO',
+  completedAt: null,
+  parentId: null,
+  assignee: 'alice@example.com',
+  createdBy: 'bob@example.com',
+  subtasks: [],
+  createdAt: '2026-03-12T00:00:00Z',
+  updatedAt: '2026-03-12T00:00:00Z',
+};
+
+describe('createTaskColumns', () => {
+  const onUpdate = vi.fn();
+  const onEdit = vi.fn();
+  const onDelete = vi.fn();
+  const onComplete = vi.fn();
+  let columns: ColumnDef<FlatTask>[];
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    columns = createTaskColumns({ onUpdate, onEdit, onDelete, onComplete });
+  });
+
+  it('returns 8 columns', () => {
+    expect(columns).toHaveLength(8);
+  });
+
+  describe('ID column', () => {
+    it('renders the task id', () => {
+      renderCell(columns, 'id', baseTask);
+      expect(screen.getByText('42')).toBeInTheDocument();
+    });
+
+    it('copies id to clipboard and shows "Copied" feedback on click', async () => {
+      const user = userEvent.setup();
+      const writeText = vi.fn().mockResolvedValue(undefined);
+      Object.defineProperty(navigator, 'clipboard', {
+        value: { writeText },
+        writable: true,
+        configurable: true,
+      });
+
+      renderCell(columns, 'id', baseTask);
+
+      await user.click(screen.getByText('42'));
+
+      await waitFor(() => {
+        expect(writeText).toHaveBeenCalledWith('42');
+        expect(screen.getByText(/copied/i)).toBeInTheDocument();
+      });
+    });
+  });
+
+  describe('Title column', () => {
+    it('renders the task title', () => {
+      renderCell(columns, 'title', baseTask);
+      expect(screen.getByText('Column Test Task')).toBeInTheDocument();
+    });
+
+    it('renders parentTitle label for subtasks', () => {
+      const subtask: FlatTask = { ...baseTask, parentTitle: 'Parent Task' };
+      renderCell(columns, 'title', subtask);
+      expect(screen.getByText(/subtask of/i)).toBeInTheDocument();
+      expect(screen.getByText('Parent Task')).toBeInTheDocument();
+    });
+
+    it('does not render parentTitle label for top-level tasks', () => {
+      renderCell(columns, 'title', baseTask);
+      expect(screen.queryByText(/subtask of/i)).not.toBeInTheDocument();
+    });
+  });
+
+  describe('Subtasks column', () => {
+    it('renders "—" for a subtask row (has parentTitle)', () => {
+      const subtask: FlatTask = { ...baseTask, parentTitle: 'Parent Task' };
+      renderCell(columns, 'subtasks', subtask);
+      expect(screen.getByText('—')).toBeInTheDocument();
+    });
+
+    it('renders "—" when a top-level task has no subtasks', () => {
+      renderCell(columns, 'subtasks', { ...baseTask, subtasks: [] });
+      expect(screen.getByText('—')).toBeInTheDocument();
+    });
+
+    it('renders singular badge for 1 subtask', () => {
+      const task: FlatTask = { ...baseTask, subtasks: [{ ...baseTask, id: 99 }] };
+      renderCell(columns, 'subtasks', task);
+      expect(screen.getByText('1 subtask')).toBeInTheDocument();
+    });
+
+    it('renders plural badge for multiple subtasks', () => {
+      const task: FlatTask = {
+        ...baseTask,
+        subtasks: [{ ...baseTask, id: 99 }, { ...baseTask, id: 100 }],
+      };
+      renderCell(columns, 'subtasks', task);
+      expect(screen.getByText('2 subtasks')).toBeInTheDocument();
+    });
+  });
+
+  describe('Status column', () => {
+    it.each([
+      ['TODO', 'To Do'],
+      ['IN_PROGRESS', 'In Progress'],
+      ['DONE', 'Done'],
+      ['CANCELLED', 'Cancelled'],
+    ] as const)('renders label "%s" for status %s', (status, label) => {
+      renderCell(columns, 'status', { ...baseTask, status });
+      // The label appears in both the Badge and the <option> — verify at least one is present
+      expect(screen.getAllByText(label).length).toBeGreaterThan(0);
+    });
+
+    it('calls onUpdate with new status when select changes', async () => {
+      const user = userEvent.setup();
+      renderCell(columns, 'status', { ...baseTask, status: 'TODO' });
+
+      await user.selectOptions(
+        screen.getByRole('combobox'),
+        'IN_PROGRESS'
+      );
+
+      expect(onUpdate).toHaveBeenCalledWith(42, expect.objectContaining({ status: 'IN_PROGRESS' }));
+    });
+
+    it('includes completedAt when changing to DONE', async () => {
+      const user = userEvent.setup();
+      renderCell(columns, 'status', { ...baseTask, status: 'TODO' });
+
+      await user.selectOptions(screen.getByRole('combobox'), 'DONE');
+
+      expect(onUpdate).toHaveBeenCalledWith(
+        42,
+        expect.objectContaining({ status: 'DONE', completedAt: expect.any(String) })
+      );
+    });
+
+    it('clears completedAt when changing away from DONE', async () => {
+      const user = userEvent.setup();
+      renderCell(columns, 'status', {
+        ...baseTask,
+        status: 'DONE',
+        completedAt: '2026-03-12T00:00:00Z',
+      });
+
+      await user.selectOptions(screen.getByRole('combobox'), 'TODO');
+
+      expect(onUpdate).toHaveBeenCalledWith(
+        42,
+        expect.objectContaining({ status: 'TODO', completedAt: null })
+      );
+    });
+  });
+
+  describe('Assignee column', () => {
+    it('renders the assignee name', () => {
+      renderCell(columns, 'assignee', baseTask);
+      expect(screen.getByText('alice@example.com')).toBeInTheDocument();
+    });
+
+    it('renders "Unassigned" when assignee is null', () => {
+      renderCell(columns, 'assignee', { ...baseTask, assignee: null });
+      expect(screen.getByText('Unassigned')).toBeInTheDocument();
+    });
+
+    it('switches to input on click', async () => {
+      const user = userEvent.setup();
+      renderCell(columns, 'assignee', baseTask);
+
+      await user.click(screen.getByText('alice@example.com'));
+      expect(screen.getByRole('textbox')).toBeInTheDocument();
+    });
+
+    it('calls onUpdate with new value on blur', async () => {
+      const user = userEvent.setup();
+      renderCell(columns, 'assignee', baseTask);
+
+      await user.click(screen.getByText('alice@example.com'));
+      const input = screen.getByRole('textbox');
+      await user.clear(input);
+      await user.type(input, 'carol@example.com');
+      await user.tab(); // blur
+
+      expect(onUpdate).toHaveBeenCalledWith(42, { assignee: 'carol@example.com' });
+    });
+
+    it('commits on Enter key', async () => {
+      const user = userEvent.setup();
+      renderCell(columns, 'assignee', { ...baseTask, assignee: null });
+
+      await user.click(screen.getByText('Unassigned'));
+      await user.type(screen.getByRole('textbox'), 'new@example.com');
+      await user.keyboard('{Enter}');
+
+      expect(onUpdate).toHaveBeenCalledWith(42, { assignee: 'new@example.com' });
+    });
+
+    it('reverts to display mode on Escape without calling onUpdate', async () => {
+      const user = userEvent.setup();
+      renderCell(columns, 'assignee', baseTask);
+
+      await user.click(screen.getByText('alice@example.com'));
+      await user.keyboard('{Escape}');
+
+      expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
+      expect(onUpdate).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('Created By column', () => {
+    it('renders the createdBy value', () => {
+      renderCell(columns, 'createdBy', baseTask);
+      expect(screen.getByText('bob@example.com')).toBeInTheDocument();
+    });
+
+    it('renders "—" when createdBy is null', () => {
+      renderCell(columns, 'createdBy', { ...baseTask, createdBy: null });
+      expect(screen.getByText('—')).toBeInTheDocument();
+    });
+  });
+
+  describe('Completed At column', () => {
+    it('renders "—" when completedAt is null', () => {
+      renderCell(columns, 'completedAt', baseTask);
+      expect(screen.getByText('—')).toBeInTheDocument();
+    });
+
+    it('renders formatted date when completedAt is set', () => {
+      renderCell(columns, 'completedAt', {
+        ...baseTask,
+        completedAt: '2026-03-12T00:00:00Z',
+      });
+      expect(screen.getByText('Mar 12, 2026')).toBeInTheDocument();
+    });
+  });
+
+  describe('Actions column', () => {
+    it('renders the actions dropdown trigger', () => {
+      const col = columns.find(
+        (c) => (c as { id?: string }).id === 'actions'
+      ) as ColumnDef<FlatTask> & { cell: (args: CellArgs) => React.ReactNode };
+
+      const Cell = () => (
+        <>
+          {col.cell({ row: { original: baseTask }, getValue: () => undefined })}
+        </>
+      );
+      render(<Cell />);
+
+      expect(screen.getByLabelText(/task actions/i)).toBeInTheDocument();
+    });
+
+    it('calls onEdit when Edit is clicked', async () => {
+      const user = userEvent.setup();
+      const col = columns.find(
+        (c) => (c as { id?: string }).id === 'actions'
+      ) as ColumnDef<FlatTask> & { cell: (args: CellArgs) => React.ReactNode };
+
+      const Cell = () => (
+        <>
+          {col.cell({ row: { original: baseTask }, getValue: () => undefined })}
+        </>
+      );
+      render(<Cell />);
+
+      await user.click(screen.getByLabelText(/task actions/i));
+      await user.click(screen.getByText('Edit'));
+
+      expect(onEdit).toHaveBeenCalledWith(baseTask);
+    });
+
+    it('calls onDelete when Delete is clicked', async () => {
+      const user = userEvent.setup();
+      const col = columns.find(
+        (c) => (c as { id?: string }).id === 'actions'
+      ) as ColumnDef<FlatTask> & { cell: (args: CellArgs) => React.ReactNode };
+
+      const Cell = () => (
+        <>
+          {col.cell({ row: { original: baseTask }, getValue: () => undefined })}
+        </>
+      );
+      render(<Cell />);
+
+      await user.click(screen.getByLabelText(/task actions/i));
+      await user.click(screen.getByText('Delete'));
+
+      expect(onDelete).toHaveBeenCalledWith(baseTask);
+    });
+
+    it('calls onComplete when Complete is clicked for non-done tasks', async () => {
+      const user = userEvent.setup();
+      const col = columns.find(
+        (c) => (c as { id?: string }).id === 'actions'
+      ) as ColumnDef<FlatTask> & { cell: (args: CellArgs) => React.ReactNode };
+
+      const Cell = () => (
+        <>
+          {col.cell({ row: { original: baseTask }, getValue: () => undefined })}
+        </>
+      );
+      render(<Cell />);
+
+      await user.click(screen.getByLabelText(/task actions/i));
+      await user.click(screen.getByText('Complete'));
+
+      expect(onComplete).toHaveBeenCalledWith(baseTask);
+    });
+
+    it('does not render Complete for tasks with status DONE', async () => {
+      const user = userEvent.setup();
+      const col = columns.find(
+        (c) => (c as { id?: string }).id === 'actions'
+      ) as ColumnDef<FlatTask> & { cell: (args: CellArgs) => React.ReactNode };
+
+      const doneTask: FlatTask = { ...baseTask, status: 'DONE' };
+      const Cell = () => (
+        <>
+          {col.cell({ row: { original: doneTask }, getValue: () => undefined })}
+        </>
+      );
+      render(<Cell />);
+
+      await user.click(screen.getByLabelText(/task actions/i));
+      expect(screen.queryByText('Complete')).not.toBeInTheDocument();
     });
   });
 });
