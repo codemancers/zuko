@@ -368,7 +368,16 @@ const baseTask: FlatTask = {
   completedAt: null,
   parentId: null,
   assignee: 'alice@example.com',
-  createdBy: 'bob@example.com',
+  owners: [
+    {
+      isPrimary: true,
+      user: {
+        id: 1,
+        name: 'bob@example.com',
+        email: 'bob@example.com',
+      },
+    },
+  ] as any,
   subtasks: [],
   createdAt: '2026-03-12T00:00:00Z',
   updatedAt: '2026-03-12T00:00:00Z',
@@ -572,13 +581,13 @@ describe('createTaskColumns', () => {
   });
 
   describe('Created By column', () => {
-    it('renders the createdBy value', () => {
-      renderCell(columns, 'createdBy', baseTask);
+    it('renders the primary owner name', () => {
+      renderCell(columns, 'owners', baseTask);
       expect(screen.getByText('bob@example.com')).toBeInTheDocument();
     });
 
-    it('renders "—" when createdBy is null', () => {
-      renderCell(columns, 'createdBy', { ...baseTask, createdBy: null });
+    it('renders "—" when there is no primary owner', () => {
+      renderCell(columns, 'owners', { ...baseTask, owners: [] } as any);
       expect(screen.getByText('—')).toBeInTheDocument();
     });
   });
