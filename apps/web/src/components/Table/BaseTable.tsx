@@ -93,13 +93,13 @@ export function BaseTable<TData>(props: BaseTableProps<TData>) {
         
         {showAddRow && (
           <div className="pl-2 py-1 h-10 border-zinc-200 dark:border-zinc-800 flex items-center bg-zinc-50/50 dark:bg-zinc-900/50">
-            <button 
+            <Button 
               onClick={onAddRow}
               aria-label="Add row"
               className="flex h-8 w-8 items-center justify-center"
             >
               <PlusIcon className="h-4 w-4 text-zinc-400 cursor-pointer" />
-            </button>
+            </Button>
           </div>
         )}
       </div>
