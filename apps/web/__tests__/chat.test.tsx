@@ -8,6 +8,14 @@ import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { TooltipProvider } from '@zuko/ui-kit';
 import { ChatInput } from '@/components/Chat/ChatInput';
+import {
+  Tool,
+  ToolContent,
+  ToolHeader,
+  ToolInput,
+  ToolOutput,
+  getStatusBadge,
+} from '@/components/Chat/Tool';
 import NewChatPage from '@/app/(app)/chat/page';
 import { contactsApi } from '@/lib/api/contacts';
 import { companiesApi } from '@/lib/api/companies';
@@ -661,6 +669,233 @@ describe('ChatInput mentions', () => {
       { timeout: 3000 }
     );
     expect(screen.queryByText('Bob Jones')).not.toBeInTheDocument();
+  });
+});
+
+describe('Tool component', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  describe('Tool', () => {
+    it('renders with data-slot and data-state closed by default', () => {
+      render(
+        <Tool>
+          <span>Child</span>
+        </Tool>,
+        { wrapper }
+      );
+      const container = screen.getByText('Child').closest('[data-slot="tool"]');
+      expect(container).toBeInTheDocument();
+      expect(container).toHaveAttribute('data-state', 'closed');
+    });
+
+    it('renders with data-state open when defaultOpen is true', () => {
+      render(
+        <Tool defaultOpen>
+          <span>Child</span>
+        </Tool>,
+        { wrapper }
+      );
+      const container = screen.getByText('Child').closest('[data-slot="tool"]');
+      expect(container).toHaveAttribute('data-state', 'open');
+    });
+
+    it('applies custom className', () => {
+      render(
+        <Tool className="custom-class">
+          <span>Child</span>
+        </Tool>,
+        { wrapper }
+      );
+      const container = screen.getByText('Child').closest('[data-slot="tool"]');
+      expect(container).toHaveClass('custom-class');
+    });
+  });
+
+  describe('ToolHeader', () => {
+    it('shows toolName for type dynamic-tool', () => {
+      render(
+        <Tool>
+          <ToolHeader
+            type="dynamic-tool"
+            state="output-available"
+            toolName="Search"
+          />
+        </Tool>,
+        { wrapper }
+      );
+      expect(screen.getByText('Search')).toBeInTheDocument();
+    });
+
+    it('shows title when provided', () => {
+      render(
+        <Tool>
+          <ToolHeader
+            type="tool-invocation"
+            state="input-available"
+            title="Custom title"
+          />
+        </Tool>,
+        { wrapper }
+      );
+      expect(screen.getByText('Custom title')).toBeInTheDocument();
+    });
+
+    it('shows status badge for state', () => {
+      render(
+        <Tool>
+          <ToolHeader
+            type="dynamic-tool"
+            state="output-available"
+            toolName="Test"
+          />
+        </Tool>,
+        { wrapper }
+      );
+      expect(screen.getByText('Completed')).toBeInTheDocument();
+    });
+
+    it('toggles ToolContent visibility when clicked', async () => {
+      const user = userEvent.setup();
+      render(
+        <Tool>
+          <ToolHeader
+            type="dynamic-tool"
+            state="output-available"
+            toolName="Toggle"
+          />
+          <ToolContent>Content inside</ToolContent>
+        </Tool>,
+        { wrapper }
+      );
+      expect(screen.queryByText('Content inside')).not.toBeInTheDocument();
+      await user.click(screen.getByRole('button', { name: /toggle/i }));
+      expect(screen.getByText('Content inside')).toBeInTheDocument();
+      await user.click(screen.getByRole('button', { name: /toggle/i }));
+      expect(screen.queryByText('Content inside')).not.toBeInTheDocument();
+    });
+  });
+
+  describe('ToolContent', () => {
+    it('does not render when Tool is closed', () => {
+      render(
+        <Tool defaultOpen={false}>
+          <ToolHeader
+            type="dynamic-tool"
+            state="output-available"
+            toolName="Test"
+          />
+          <ToolContent>Hidden content</ToolContent>
+        </Tool>,
+        { wrapper }
+      );
+      expect(screen.queryByText('Hidden content')).not.toBeInTheDocument();
+    });
+
+    it('renders children when Tool is open', () => {
+      render(
+        <Tool defaultOpen>
+          <ToolContent>Visible content</ToolContent>
+        </Tool>,
+        { wrapper }
+      );
+      expect(screen.getByText('Visible content')).toBeInTheDocument();
+    });
+  });
+
+  describe('ToolInput', () => {
+    it('renders Parameters heading and formatted input JSON', () => {
+      const input = { query: 'test', limit: 10 };
+      render(
+        <Tool defaultOpen>
+          <ToolContent>
+            <ToolInput input={input} />
+          </ToolContent>
+        </Tool>,
+        { wrapper }
+      );
+      expect(screen.getByText('Parameters')).toBeInTheDocument();
+      expect(screen.getByText(/"query":/)).toBeInTheDocument();
+      expect(screen.getByText(/"test"/)).toBeInTheDocument();
+      expect(screen.getByText(/"limit":/)).toBeInTheDocument();
+      expect(screen.getByText(/10/)).toBeInTheDocument();
+    });
+  });
+
+  describe('ToolOutput', () => {
+    it('returns null when output and errorText are falsy', () => {
+      render(
+        <Tool defaultOpen>
+          <ToolContent>
+            <ToolOutput output={undefined} errorText={undefined} />
+          </ToolContent>
+        </Tool>,
+        { wrapper }
+      );
+      expect(screen.queryByText('Result')).not.toBeInTheDocument();
+      expect(screen.queryByText('Error')).not.toBeInTheDocument();
+    });
+
+    it('shows Result heading and output when output is provided', () => {
+      render(
+        <Tool defaultOpen>
+          <ToolContent>
+            <ToolOutput output={{ count: 5 }} errorText={undefined} />
+          </ToolContent>
+        </Tool>,
+        { wrapper }
+      );
+      expect(screen.getByText('Result')).toBeInTheDocument();
+      expect(screen.getByText(/"count":/)).toBeInTheDocument();
+      expect(screen.getByText(/5/)).toBeInTheDocument();
+    });
+
+    it('shows Error heading and errorText when errorText is provided', () => {
+      render(
+        <Tool defaultOpen>
+          <ToolContent>
+            <ToolOutput
+              output={undefined}
+              errorText="Something went wrong"
+            />
+          </ToolContent>
+        </Tool>,
+        { wrapper }
+      );
+      expect(screen.getByText('Error')).toBeInTheDocument();
+      expect(screen.getByText('Something went wrong')).toBeInTheDocument();
+    });
+
+    it('renders string output as plain text when not valid JSON', () => {
+      render(
+        <Tool defaultOpen>
+          <ToolContent>
+            <ToolOutput output="Plain text result" errorText={undefined} />
+          </ToolContent>
+        </Tool>,
+        { wrapper }
+      );
+      expect(screen.getByText('Result')).toBeInTheDocument();
+      expect(screen.getByText('Plain text result')).toBeInTheDocument();
+    });
+  });
+
+  describe('getStatusBadge', () => {
+    it('renders badge for output-available state', () => {
+      render(<>{getStatusBadge('output-available')}</>, { wrapper });
+      expect(screen.getByText('Completed')).toBeInTheDocument();
+    });
+
+    it('renders badge for output-error state', () => {
+      render(<>{getStatusBadge('output-error')}</>, { wrapper });
+      expect(screen.getByText('Error')).toBeInTheDocument();
+    });
+
+    it('renders badge for approval-requested state', () => {
+      render(<>{getStatusBadge('approval-requested')}</>, { wrapper });
+      expect(screen.getByText('Awaiting Approval')).toBeInTheDocument();
+    });
   });
 });
 

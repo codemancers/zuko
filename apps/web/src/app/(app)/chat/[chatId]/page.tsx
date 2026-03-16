@@ -11,6 +11,12 @@ import {
 } from '@zuko/ui-kit';
 import { type ChatEntity } from '@/components/Chat/ChatContextManager';
 import { ChatInput } from '@/components/Chat/ChatInput';
+import {
+  Tool,
+  ToolContent,
+  ToolHeader,
+  ToolOutput,
+} from '@/components/Chat/Tool';
 import { useState, useCallback, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { useInvalidateChats } from '@/hooks/use-chats';
@@ -249,17 +255,39 @@ export default function ChatPage() {
               <Conversation className="h-full">
                 <ConversationContent className="mx-auto max-w-3xl">
                   {messages.map((message) => {
-                    // Extract text from parts array (AI SDK v6 format)
-                    const content =
-                      message.parts
-                        ?.filter((part: any) => part.type === 'text')
-                        .map((part: any) => part.text)
-                        .join('') || '';
+                    const parts = message.parts ?? [];
+                    const textContent = parts
+                      .filter((part: any) => part.type === 'text')
+                      .map((part: any) => part.text)
+                      .join('');
+
+                    // Message with role 'tool' is a tool result (e.g. from history) – render with Tool component
+                    if ((message as { role: string }).role === 'tool') {
+                      return (
+                        <Message key={message.id} from="assistant">
+                          <MessageContent>
+                            <Tool key={`${message.id}-tool`} defaultOpen>
+                              <ToolHeader
+                                type="dynamic-tool"
+                                state="output-available"
+                                toolName="Tool result"
+                              />
+                              <ToolContent>
+                                <ToolOutput
+                                  output={textContent}
+                                  errorText={undefined}
+                                />
+                              </ToolContent>
+                            </Tool>
+                          </MessageContent>
+                        </Message>
+                      );
+                    }
 
                     return (
                       <Message key={message.id} from={message.role}>
                         <MessageContent>
-                          <MessageResponse>{content}</MessageResponse>
+                          <MessageResponse>{textContent}</MessageResponse>
                         </MessageContent>
                       </Message>
                     );
