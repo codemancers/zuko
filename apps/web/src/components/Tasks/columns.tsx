@@ -189,15 +189,7 @@ export function createTaskColumns(callbacks: TaskColumnCallbacks): ColumnDef<Fla
       cell: ({ row }) => {
         const task = row.original;
         return (
-          <div className="max-w-96">
-            {task.parentTitle && (
-              <div className="mb-0.5 truncate text-xs text-zinc-500 dark:text-zinc-500">
-                Subtask of{' '}
-                <span className="font-medium text-zinc-400 dark:text-zinc-400">
-                  {task.parentTitle}
-                </span>
-              </div>
-            )}
+          <div className="max-w-80">
             <div className="truncate font-medium text-zinc-950 dark:text-white">
               {task.title}
             </div>

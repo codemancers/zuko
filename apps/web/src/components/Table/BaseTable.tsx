@@ -9,6 +9,7 @@ import { Table, Button } from '@zuko/ui-kit';
 import { PlusIcon } from '@heroicons/react/24/outline';
 import type { PaginationState } from '@tanstack/react-table';
 import { AddColumnDialog } from './AddColumnDialog';
+import React from 'react';
 
 const ChevronLeftIcon = '/icons/chevron-left.svg';
 const ChevronRightIcon = '/icons/chevron-right.svg';
