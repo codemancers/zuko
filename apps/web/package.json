@@ -39,6 +39,13 @@
           "command": "export FLY_APP=$(grep '^app = ' apps/web/fly.toml | cut -d \"'\" -f 2) && export GIT_SHA=$(git rev-parse --short HEAD) && flyctl auth docker && docker push registry.fly.io/$FLY_APP:$GIT_SHA && fly deploy --image registry.fly.io/$FLY_APP:$GIT_SHA -c apps/web/fly.toml"
         }
       },
+      "build": {
+        "outputs": [
+          "{projectRoot}/.next",
+          "!{projectRoot}/.next/cache",
+          "!{projectRoot}/.next/standalone"
+        ]
+      },
       "test": {
         "executor": "@nx/vitest:test",
         "outputs": [
