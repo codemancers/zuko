@@ -8,7 +8,9 @@ import { OrganizationGuard } from '../../common/auth/organization.guard';
 
 const ORG_ID = 1;
 
-const mockReq = { user: { name: 'Alice', email: 'alice@example.com' } } as any;
+const mockReq = {
+  user: { id: '1', name: 'Alice', email: 'alice@example.com' },
+} as any;
 
 const mockTask = {
   id: 1,
@@ -63,10 +65,13 @@ describe('TasksController', () => {
       const dto = { title: 'Test task' };
       const result = await controller.create(ORG_ID, dto, mockReq);
 
-      expect(mockTaskService.createTask).toHaveBeenCalledWith(ORG_ID, {
-        ...dto,
-        createdBy: 'Alice',
-      });
+      expect(mockTaskService.createTask).toHaveBeenCalledWith(
+        ORG_ID,
+        expect.objectContaining({
+          ...dto,
+          createdByUserId: 1,
+        }),
+      );
       expect(result).toEqual(mockTask);
     });
 
@@ -84,10 +89,13 @@ describe('TasksController', () => {
 
       await controller.create(ORG_ID, dto, mockReq);
 
-      expect(mockTaskService.createTask).toHaveBeenCalledWith(ORG_ID, {
-        ...dto,
-        createdBy: 'Alice',
-      });
+      expect(mockTaskService.createTask).toHaveBeenCalledWith(
+        ORG_ID,
+        expect.objectContaining({
+          ...dto,
+          createdByUserId: 1,
+        }),
+      );
     });
   });
 
