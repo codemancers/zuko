@@ -11,7 +11,9 @@
     "libs/ui-kit",
     "libs/models",
     "libs/beads",
-    "libs/sales"
+    "libs/sales",
+    "apps/ai-agents",
+    "apps/ai-agents-e2e"
   ],
   "scripts": {
     "postinstall": "patch-package",
@@ -55,6 +57,7 @@
     "@next/eslint-plugin-next": "^16.0.1",
     "@nx/devkit": "22.4.3",
     "@nx/docker": "22.4.3",
+    "@nx/esbuild": "22.4.3",
     "@nx/eslint": "22.4.3",
     "@nx/eslint-plugin": "22.4.3",
     "@nx/jest": "22.4.3",
@@ -92,6 +95,7 @@
     "autoprefixer": "10.4.13",
     "babel-jest": "^30.0.2",
     "bcrypt": "^6.0.0",
+    "esbuild": "^0.19.2",
     "eslint": "^9.8.0",
     "eslint-config-next": "^16.0.1",
     "eslint-config-prettier": "^10.0.0",
