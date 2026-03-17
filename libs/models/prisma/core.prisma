@@ -31,6 +31,7 @@ model User {
   invitations   Invitation[]
 
   teammembers TeamMember[]
+  taskOwners  TaskOwner[]
 
   @@unique([email])
   @@map("user")
@@ -241,6 +242,7 @@ model Task {
 
   parent   Task?  @relation("TaskSubtasks", fields: [parentId], references: [id])
   subtasks Task[] @relation("TaskSubtasks")
+  owners   TaskOwner[]
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -249,5 +251,22 @@ model Task {
   @@index([parentId])
   @@index([status])
   @@map("task")
+  @@schema("public")
+}
+
+model TaskOwner {
+  id         Int      @id @default(autoincrement())
+  taskId     Int      @map("task_id")
+  userId     Int      @map("user_id")
+  isPrimary  Boolean  @default(false) @map("is_primary")
+  assignedAt DateTime @default(now()) @map("assigned_at")
+
+  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([taskId, userId])
+  @@index([userId])
+  @@index([taskId])
+  @@map("task_owner")
   @@schema("public")
 }

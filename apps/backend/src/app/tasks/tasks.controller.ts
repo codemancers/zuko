@@ -7,6 +7,7 @@ import {
   Body,
   Param,
   Query,
+  Req,
   ParseIntPipe,
   HttpCode,
   HttpStatus,
@@ -14,6 +15,7 @@ import {
 } from '@nestjs/common';
 import { AuthGuard } from '@thallesp/nestjs-better-auth';
 import { TaskService } from '@zuko/sales';
+import type { RequestWithUser } from '@zuko/core';
 import { OrganizationGuard } from '../../common/auth/organization.guard';
 import { OrgId } from '../../common/auth/org-id.decorator';
 import { CreateTaskDto } from './dto/create-task.dto';
@@ -32,8 +34,15 @@ export class TasksController {
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  async create(@OrgId() organizationId: number, @Body() dto: CreateTaskDto) {
-    return this.taskService.createTask(organizationId, dto);
+  async create(
+    @OrgId() organizationId: number,
+    @Body() dto: CreateTaskDto,
+    @Req() req: RequestWithUser,
+  ) {
+    return this.taskService.createTask(organizationId, {
+      ...dto,
+      createdByUserId: Number(req.user.id),
+    });
   }
 
   @Get()

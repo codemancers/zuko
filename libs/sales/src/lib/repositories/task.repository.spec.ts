@@ -30,7 +30,17 @@ describe('TaskRepository', () => {
       update: jest.fn(),
       updateMany: jest.fn(),
       delete: jest.fn(),
+      findUniqueOrThrow: jest.fn(),
     },
+    taskOwner: {
+      create: jest.fn(),
+    },
+    $transaction: jest.fn(async (fn: (tx: typeof mockPrisma) => Promise<unknown>) =>
+      fn({
+        task: mockPrisma.task,
+        taskOwner: mockPrisma.taskOwner,
+      } as never),
+    ),
   };
 
   beforeEach(() => {
@@ -49,10 +59,12 @@ describe('TaskRepository', () => {
         title: 'Test task',
       });
 
-      expect(mockPrisma.task.create).toHaveBeenCalledWith({
-        data: { title: 'Test task', organizationId: ORG_ID },
-        include: { subtasks: true },
-      });
+      expect(mockPrisma.task.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: { title: 'Test task', organizationId: ORG_ID },
+          include: expect.objectContaining({ subtasks: true }),
+        }),
+      );
       expect(result).toEqual(mockTask);
     });
   });
@@ -65,10 +77,12 @@ describe('TaskRepository', () => {
 
       const result = await repo.findById(1, ORG_ID);
 
-      expect(mockPrisma.task.findFirst).toHaveBeenCalledWith({
-        where: { id: 1, organizationId: ORG_ID },
-        include: { subtasks: true },
-      });
+      expect(mockPrisma.task.findFirst).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: 1, organizationId: ORG_ID },
+          include: expect.objectContaining({ subtasks: true }),
+        }),
+      );
       expect(result).toEqual(mockTask);
     });
 
@@ -142,11 +156,13 @@ describe('TaskRepository', () => {
 
       const result = await repo.update(1, ORG_ID, { title: 'Updated' });
 
-      expect(mockPrisma.task.update).toHaveBeenCalledWith({
-        where: { id: 1 },
-        data: { title: 'Updated' },
-        include: { subtasks: true },
-      });
+      expect(mockPrisma.task.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: 1 },
+          data: { title: 'Updated' },
+          include: expect.objectContaining({ subtasks: true }),
+        }),
+      );
       expect(result).toEqual(updated);
     });
   });

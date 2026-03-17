@@ -4,7 +4,7 @@ import { ColumnDef } from '@tanstack/react-table';
 import { Badge, Dropdown, DropdownButton, DropdownItem, DropdownMenu } from '@zuko/ui-kit';
 import dayjs from 'dayjs';
 import { useRef, useState } from 'react';
-import { EllipsisVerticalIcon } from '@heroicons/react/24/outline';
+import { EllipsisVerticalIcon, CheckIcon } from '@heroicons/react/24/outline';
 import type { Task, TaskStatus, UpdateTaskDto } from '@/lib/api/tasks';
 
 export type FlatTask = Task & { parentTitle?: string };
@@ -27,6 +27,34 @@ type TaskColumnCallbacks = {
   onDelete: (task: FlatTask) => void;
   onComplete: (task: FlatTask) => void;
 };
+
+function IdCell({ id }: { id: number }) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    navigator.clipboard.writeText(String(id)).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    });
+  };
+
+  return (
+    <div
+      onClick={handleCopy}
+      className="inline-flex items-center cursor-pointer  gap-1 rounded px-1.5 py-0.5 text-xs font-mono text-zinc-500 hover:bg-zinc-100 hover:text-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-200 transition-colors"
+    >
+      {copied ? (
+        <>
+          <CheckIcon className="h-3 w-3 text-green-500" />
+          <span className="text-green-500">Copied</span>
+        </>
+      ) : (
+        <span className="font-mono">{id}</span>
+      )}
+    </div>
+  );
+}
 
 function StatusCell({ task, onUpdate }: { task: FlatTask; onUpdate: (id: number, data: UpdateTaskDto) => void }) {
   const cfg = statusConfig[task.status] ?? { label: task.status, color: 'zinc' as const };
@@ -149,34 +177,37 @@ export function createTaskColumns(callbacks: TaskColumnCallbacks): ColumnDef<Fla
   const { onUpdate } = callbacks;
   return [
     {
+      id: 'id',
+      accessorKey: 'id',
+      header: 'ID',
+      cell: ({ row }) => <IdCell id={row.original.id} />,
+    },
+    {
       accessorKey: 'title',
       header: 'Title',
       cell: ({ row }) => {
         const task = row.original;
         return (
-          <div className="max-w-96">
-            {task.parentTitle && (
-              <div className="mb-0.5 truncate text-xs text-zinc-500 dark:text-zinc-500">
-                Subtask of{' '}
-                <span className="font-medium text-zinc-400 dark:text-zinc-400">
-                  {task.parentTitle}
-                </span>
-              </div>
-            )}
+          <div className="max-w-80">
             <div className="truncate font-medium text-zinc-950 dark:text-white">
               {task.title}
             </div>
-            {task.description && (
-              <div className="mt-0.5 truncate text-xs text-zinc-500 dark:text-zinc-400">
-                {task.description}
-              </div>
-            )}
-            {!task.parentTitle && task.subtasks.length > 0 && (
-              <div className="mt-1 text-xs text-zinc-400 dark:text-zinc-500">
-                {task.subtasks.length} subtask{task.subtasks.length !== 1 ? 's' : ''}
-              </div>
-            )}
           </div>
+        );
+      },
+    },
+    {
+      id: 'subtasks',
+      header: 'Subtasks',
+      cell: ({ row }) => {
+        const task = row.original;
+        if (task.parentTitle) return <span className="text-sm text-zinc-400">—</span>;
+        const count = task.subtasks.length;
+        if (count === 0) return <span className="text-sm text-zinc-400">—</span>;
+        return (
+          <Badge color="zinc" className="text-xs">
+            {count} subtask{count !== 1 ? 's' : ''}
+          </Badge>
         );
       },
     },
@@ -195,25 +226,28 @@ export function createTaskColumns(callbacks: TaskColumnCallbacks): ColumnDef<Fla
       ),
     },
     {
-      accessorKey: 'completedAt',
-      header: 'Completed',
-      cell: ({ getValue }) => {
-        const date = getValue() as string | null;
+      accessorKey: 'owners',
+      header: 'Created By',
+      cell: ({ row }) => {
+        const primaryOwner = row.original.owners?.find((o) => o.isPrimary);
         return (
           <span className="text-sm text-zinc-600 dark:text-zinc-400">
-            {date ? dayjs(date).format('MMM D, YYYY') : '-'}
+            {primaryOwner?.user.name ?? '—'}
           </span>
         );
       },
     },
     {
-      accessorKey: 'createdAt',
-      header: 'Created',
-      cell: ({ getValue }) => (
-        <span className="text-sm text-zinc-600 dark:text-zinc-400">
-          {dayjs(getValue() as string).format('MMM D, YYYY')}
-        </span>
-      ),
+      accessorKey: 'completedAt',
+      header: 'Completed At',
+      cell: ({ getValue }) => {
+        const date = getValue() as string | null;
+        return (
+          <span className="text-sm text-zinc-600 dark:text-zinc-400">
+            {date ? dayjs(date).format('MMM D, YYYY') : '—'}
+          </span>
+        );
+      },
     },
     {
       id: 'actions',

@@ -7,25 +7,38 @@ import { BaseTableHeader } from './BaseTableHeader';
 import { BaseTableBody } from './BaseTableBody';
 import { Table, Button } from '@zuko/ui-kit';
 import { PlusIcon } from '@heroicons/react/24/outline';
+import type { PaginationState } from '@tanstack/react-table';
 import { AddColumnDialog } from './AddColumnDialog';
+import React from 'react';
 
 const ChevronLeftIcon = '/icons/chevron-left.svg';
 const ChevronRightIcon = '/icons/chevron-right.svg';
 
 export function BaseTable<TData>(props: BaseTableProps<TData>) {
-  const { 
+  const [internalPagination, setInternalPagination] = React.useState<PaginationState>({
+    pageIndex: 0,
+    pageSize: 10,
+  });
+
+  const effectiveProps = {
+    ...props,
+    pagination: props.pagination ?? internalPagination,
+    onPaginationChange: props.onPaginationChange ?? setInternalPagination,
+  };
+
+  const {
     table,
     isAddColumnDialogOpen,
     openAddColumnDialog,
     closeAddColumnDialog
-  } = useBaseTable(props);
-  
-  const { 
-    loading, 
-    className, 
-    onRowClick, 
-    data, 
-    emptyStateConfig, 
+  } = useBaseTable(effectiveProps);
+
+  const {
+    loading,
+    className,
+    onRowClick,
+    data,
+    emptyStateConfig,
     showAddRow,
     onAddRow,
     showAddColumn,
@@ -79,21 +92,21 @@ export function BaseTable<TData>(props: BaseTableProps<TData>) {
     <div className={`mt-8 ${className ?? ''}`}>
       <div className="flow-root overflow-hidden border border-zinc-200 dark:border-zinc-800 rounded-lg shadow-sm bg-white dark:bg-zinc-950">
         <Table grid dense className="[--gutter:--spacing(6)] lg:[--gutter:--spacing(10)] text-sm">
-          <BaseTableHeader 
-            headerGroups={table.getHeaderGroups()} 
+          <BaseTableHeader
+            headerGroups={table.getHeaderGroups()}
             showAddColumn={showAddColumn}
             onAddColumn={openAddColumnDialog}
           />
-          <BaseTableBody 
-            rowModel={table.getRowModel()} 
+          <BaseTableBody
+            rowModel={table.getRowModel()}
             onRowClick={onRowClick}
             showAddColumn={showAddColumn}
           />
         </Table>
-        
+
         {showAddRow && (
           <div className="pl-2 py-1 h-10 border-zinc-200 dark:border-zinc-800 flex items-center bg-zinc-50/50 dark:bg-zinc-900/50">
-            <Button 
+            <Button
               onClick={onAddRow}
               aria-label="Add row"
               className="flex h-8 w-8 items-center justify-center"
@@ -104,14 +117,14 @@ export function BaseTable<TData>(props: BaseTableProps<TData>) {
         )}
       </div>
 
-      <AddColumnDialog 
+      <AddColumnDialog
         isOpen={isAddColumnDialogOpen}
         onClose={closeAddColumnDialog}
         onAdd={(name: string, type: string) => {
           onAddColumn?.(name, type);
         }}
       />
-      
+
       {/* Pagination & Summary Footer */}
       {(props.totalCount !== undefined || (!props.manualPagination && (table.getCanNextPage() || table.getCanPreviousPage()))) && (
         <div className="mt-4 flex items-center justify-between">
