@@ -31,12 +31,15 @@ Copy the example env files and adjust as needed:
 
 - Backend: `apps/backend/.env.example` → `apps/backend/.env`
 - Web: `apps/web/.env.example` → `apps/web/.env`
+- AI agents: `apps/ai-agents/.env.example` → `apps/ai-agents/.env`
 
 Make sure to set at least:
 
 - `DATABASE_URL` – PostgreSQL connection string for the backend
 - `OPENAI_API_KEY` – API key for AI chat
 - `NEXT_PUBLIC_APP_URL` and `NEXT_PUBLIC_BACKEND_URL` – app and API URLs for the web app
+- `AGENT_TOKEN` – shared token used by `apps/ai-agents` to call the backend `/api/agents/*` endpoints
+- `BACKEND_URL` – backend base URL for `apps/ai-agents` (example: `http://localhost:3001`)
 
 ## 4. Set up the database
 
@@ -62,6 +65,16 @@ npx nx run @zuko/web:dev
 ```
 
 This starts the NestJS backend (for example on port 3001) and the Next.js app (for example on port 3000).
+
+## 6. Run the AI agents service (optional)
+
+Zuko includes a separate **ai-agents** service (`apps/ai-agents`) that hosts the LLM agent and calls the backend via `/api/agents/*`.
+
+In a separate terminal:
+
+```bash
+npx nx run @zuko/ai-agents:dev
+```
 
 ## 6. Next steps
 

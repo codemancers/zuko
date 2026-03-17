@@ -1,0 +1,71 @@
+---
+title: AI Agents Service
+---
+
+Zuko includes a separate service, **ai-agents** (`apps/ai-agents`), that hosts the LLM agent runtime and executes CRM tools by calling the backend **Agents API** (`/api/agents/*`).
+
+## When you need it
+
+Use `apps/ai-agents` when you want:
+
+- The agent runtime to run as a standalone service (separate from the NestJS backend)
+- Tool execution to happen through the backend’s **agent-scoped** endpoints (`/api/agents/*`)
+
+## Environment variables
+
+`apps/ai-agents` reads:
+
+- `BACKEND_URL`: Backend base URL (example: `http://localhost:3001`)
+- `AGENT_TOKEN`: Shared token used to authenticate requests to `/api/agents/*`
+- `OPENAI_API_KEY` and `OPENAI_MODEL`: Model credentials/config for the agent runtime
+
+The backend must also have the same `AGENT_TOKEN` configured so it can validate requests.
+
+## Run locally
+
+```bash
+npx nx run @zuko/ai-agents:dev
+```
+
+## How tool calls reach the backend
+
+`apps/ai-agents` uses `apps/ai-agents/src/shared/backend.ts` to call the backend.
+
+Requests include:
+
+- `x-agent-token`: must match `AGENT_TOKEN` on the backend
+- `x-org-id`: the active organization ID (required for CRM operations)
+- `x-user-id`: optional (used when tools default ownership to the current user)
+
+On the backend, `AgentGuard` validates the token and sets `request.organizationId` from `x-org-id`, so routes can keep using `@OrgId()`.
+
+## Available CRM tools
+
+The ai-agents runtime exposes CRM tools:
+
+### Companies
+
+- `get_company_details`
+- `query_companies`
+- `create_company`
+- `update_company`
+
+### Contacts
+
+- `get_contact_details`
+- `get_contact_owner`
+- `query_contacts`
+- `create_contact`
+- `update_contact`
+
+### Deals
+
+- `get_deal_details`
+- `query_deals`
+- `create_deal`
+- `update_deal`
+
+### Context
+
+- `get_conversation_context`: lists the contact/company/deal IDs currently attached as context in the conversation
+
