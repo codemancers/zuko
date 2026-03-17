@@ -28,7 +28,9 @@
     "tslib": "^2.3.0"
   },
   "devDependencies": {
-    "@nestjs/testing": "^11.0.0"
+    "@jest/globals": "^30.3.0",
+    "@nestjs/testing": "^11.0.0",
+    "@types/jest": "^30.0.0"
   },
   "nx": {
     "targets": {
