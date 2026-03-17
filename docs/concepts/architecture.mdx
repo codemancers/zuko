@@ -7,13 +7,13 @@ Zuko is organized as an Nx monorepo. This page gives a high-level view of the ma
 ## Apps
 
 - `apps/backend`: NestJS API for auth, chat, and the sales domain (contacts, companies, deals).
+- `apps/ai-agents`: Agent runtime service. Hosts the LLM agent and exposes tools that call the backend `/api/agents/*` endpoints (machine-to-machine via `AGENT_TOKEN`).
 - `apps/web`: Next.js frontend that provides the web UI and chat experience.
 - `apps/backend-e2e`: Backend end-to-end tests.
 - `apps/web-e2e`: Playwright-based E2E tests for the web app.
 
 ## Libraries
 
-- `libs/agents`: AI agent orchestration and tools.
 - `libs/core`: Shared core utilities.
 - `libs/models`: Prisma schema and client, including migrations and seed logic.
 - `libs/sales`: CRM domain logic for contacts, companies, and deals.
@@ -24,7 +24,7 @@ Zuko is organized as an Nx monorepo. This page gives a high-level view of the ma
 
 1. The **web app** calls the **backend** (NestJS) for auth, chat, and CRM operations.
 2. The backend uses **Prisma** (from `libs/models`) to read and write to PostgreSQL.
-3. AI chat endpoints orchestrate agent logic (from `libs/agents`) and can incorporate CRM context from `libs/sales`.
+3. AI chat endpoints can incorporate CRM context from `libs/sales`. The backend can also delegate tool execution to the **ai-agents** service via `/api/agents/*`.
 4. UI components from `libs/ui-kit` render CRM entities and chat interfaces in the web app.
 
 ## Testing and tooling
