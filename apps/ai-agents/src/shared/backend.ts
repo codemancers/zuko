@@ -1,6 +1,6 @@
 interface BackendRequestConfig {
   method?: "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
-  userId: string;
+  userId?: string;
   body?: any;
   organisationId?: string;
 }
@@ -22,7 +22,7 @@ export const Backend = async (
   const fetchConfig: RequestInit = {
     method,
     headers: {
-      "x-user-id": userId,
+      "x-user-id": userId || "",
       "x-agent-token": AGENT_TOKEN,
       "Content-Type": "application/json",
       "x-org-id": organisationId || "",

@@ -140,7 +140,9 @@ export class ChatController {
         // Don't await - let it run in background
         this.chatsService
           .autoGenerateTitle(chatId, text.trim())
-          .catch(() => {});
+          .catch((error) => {
+            console.error("Error auto-generating title", error);
+          });
       }
     }
 

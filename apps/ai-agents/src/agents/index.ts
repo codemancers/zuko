@@ -8,9 +8,9 @@ import { SYSTEM_PROMPT } from "../shared/prompts";
 import { getCheckpointer } from "../shared/checkpointer";
 
 import { companyTools } from "./tools/company.tools";
+import { contactTools } from "./tools/contacts.tools";
 import { contextTools } from "./tools/context.tools";
-
-
+import { dealTools } from "./tools/deals.tools";
 
 type DeepAgent = ReturnType<typeof createDeepAgent>;
 
@@ -41,7 +41,12 @@ export async function initializeAgent(
 }
 
 export const agent = (async () => {
-  const tools = [...companyTools, ...contextTools] as unknown as Tool[];
+  const tools = [
+    ...companyTools,
+    ...contactTools,
+    ...dealTools,
+    ...contextTools,
+  ] as unknown as Tool[];
 
   return await initializeAgent(tools, []);
 })();
