@@ -175,6 +175,12 @@
       "dependencies": {
         "dotenv": "16.4.5",
       },
+      "devDependencies": {
+        "@prisma/adapter-pg": "^7.2.0",
+        "@types/pg": "^8.16.0",
+        "better-auth": "^1.5.4",
+        "pg": "^8.16.3",
+      },
     },
     "libs/agents": {
       "name": "@zuko/agents",
