@@ -12,15 +12,15 @@ import {
 } from "@nestjs/common";
 import { AuthGuard } from "@thallesp/nestjs-better-auth";
 import { ChatsService } from "./chats.service";
-import { OrchestratorService } from "@zuko/agents";
 import type { RequestWithUser } from "@zuko/core";
+import { LangsmithService } from "../langsmith/langsmith.service";
 
 @Controller("chats")
 @UseGuards(AuthGuard)
 export class ChatsController {
   constructor(
     private chatsService: ChatsService,
-    private orchestratorService: OrchestratorService,
+    private readonly langsmithService: LangsmithService,
   ) {}
 
   /**
@@ -31,6 +31,12 @@ export class ChatsController {
   async create(@Req() req: RequestWithUser, @Body() body: { participantIds?: number[] }) {
     const userId = parseInt(req.user.id, 10);
     const chat = await this.chatsService.create(userId, body.participantIds);
+
+    try {
+      await this.langsmithService.createThread(chat.threadId);
+    } catch {
+      // Chat is already created; thread will be created on first run if LangSmith was unavailable
+    }
 
     return {
       id: chat.id,
@@ -126,11 +132,46 @@ export class ChatsController {
     // Get the chat to extract threadId
     const chat = await this.chatsService.findOne(chatId);
 
-    // Fetch messages and contextEntities from LangGraph checkpoints
-    const { messages, contextEntities } =
-      await this.orchestratorService.getMessages(chat.threadId);
+    const threadId = chat.threadId;
 
-    return { messages, contextEntities };
+      const state: any = await this.langsmithService.getThreadState(threadId);
+      const values = state?.values ?? {};
+
+      // Expect messages array and optional contextEntities in thread state values
+      const rawMessages: any[] = Array.isArray(values.messages)
+        ? values.messages
+        : [];
+
+      const messages = rawMessages
+        .map((msg) => {
+          const role =
+            msg.type === "human"
+              ? "user"
+              : msg.type === "ai"
+                ? "assistant"
+                : msg.type ?? "system";
+
+          const content =
+            typeof msg.content === "string"
+              ? msg.content
+              : typeof msg.text === "string"
+                ? msg.text
+                : "";
+
+          if (!content || !content.trim()) {
+            return null;
+          }
+
+          return { role, content };
+        })
+        .filter((m): m is { role: string; content: string } => m !== null);
+
+      const contextEntities =
+        Array.isArray(values.contextEntities) && values.contextEntities.length > 0
+          ? values.contextEntities
+          : [];
+
+      return { messages, contextEntities };
   }
 
   /**

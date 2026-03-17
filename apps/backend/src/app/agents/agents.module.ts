@@ -1,6 +1,8 @@
 import { Module } from '@nestjs/common';
+import { AgentGuard } from '../../common/auth/agent.guard';
 import { PrismaModule } from '../../prisma/prisma.module';
 import { PrismaService } from '../../prisma/prisma.service';
+import { AgentsController } from './agents.controller';
 import {
   AdminService,
   OrchestratorService,
@@ -19,7 +21,8 @@ import {
 
 @Module({
   imports: [PrismaModule],
-  providers: [
+  controllers: [AgentsController],
+  providers: [AgentGuard,
     {
       provide: ConnectionsRepository,
       useFactory: (prismaService: PrismaService) => {

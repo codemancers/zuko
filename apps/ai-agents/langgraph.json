@@ -1,0 +1,7 @@
+{
+  "dockerfile_lines": [],
+  "graphs": {
+    "agent": "./src/agents/index.ts:agent"
+  },
+  "dependencies": ["."]
+}

@@ -8,6 +8,7 @@ import { ChatController } from '../chat/chat.controller';
 import { ChatsModule } from '../chats/chats.module';
 import { GraphController } from '../graph/graph.controller';
 import { agentsEnvSchema } from './env.validation';
+import { LangsmithService } from '../langsmith/langsmith.service';
 import { SalesModule } from './sales/sales.module';
 import { TasksModule } from './tasks/tasks.module';
 import { AgentsWrapperModule } from './agents/agents.module';
@@ -35,6 +36,6 @@ const authModule = AuthModule.forRoot({ auth, disableGlobalAuthGuard: true });
     AdminModule,
   ],
   controllers: [AppController, ChatController, GraphController],
-  providers: [AppService],
+  providers: [AppService, LangsmithService],
 })
 export class AppModule {}
