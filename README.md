@@ -4,8 +4,8 @@ Zuko is an **agentic CRM** — a monorepo with a **Next.js web app** and **NestJ
 
 ## Prerequisites
 
-- **Node.js** 22 (matches CI)
-- **npm**
+- **Node.js** 24 (matches CI)
+- **bun**
 - **PostgreSQL** (for the backend database)
 
 ## Setup
@@ -21,7 +21,7 @@ git clone <repository-url> zuko && cd zuko
 ### 2. Install dependencies
 
 ```sh
-npm install
+bun install
 ```
 
 ### 3. Environment variables
@@ -47,16 +47,13 @@ Generate the Prisma client and run migrations:
 
 ```sh
 # Generate Prisma client
-npx nx run @zuko/models:prisma:generate
+bun nx run @zuko/models:prisma:generate
 
 # Run migrations (creates/updates DB schema)
-npx nx run @zuko/models:prisma:migrate -- --name init
-```
+bun nx run @zuko/models:prisma:migrate -- --name init
 
-Optional: seed test data:
-
-```sh
-npx nx run @zuko/models:seed
+# Optional: seed test data
+bun nx run @zuko/models:seed
 ```
 
 ## Running the app
@@ -64,30 +61,39 @@ npx nx run @zuko/models:seed
 **Recommended — backend + web together:**
 
 ```sh
-npx nx run @zuko/web:dev
+bun nx run @zuko/web:dev
 ```
 
 This starts the NestJS backend (e.g. port 3001) and the Next.js app (e.g. port 3000).
 
+**AI Agents only:**
+
+```sh
+bun nx run @zuko/ai-agents:dev
+```
+
+Starts the LangGraph-based agents service.
+
 **Backend only:**
 
 ```sh
-npx nx run @zuko/backend:serve
+bun nx run @zuko/backend:serve
 ```
 
 **Build (production):**
 
 ```sh
-npx nx run @zuko/backend:build
-npx nx run @zuko/web:build
+bun nx run @zuko/backend:build
+bun nx run @zuko/web:build
+bun nx run @zuko/ai-agents:build
 ```
 
 ## Tests
 
-- **Unit tests:** `npx nx run @zuko/backend:test`, `npx nx run @zuko/web:test`  
-  Or for affected projects: `npx nx affected -t test`
-- **E2E (web):** `npx nx run @zuko/web-e2e:e2e`
-- **Lint / typecheck:** `npx nx affected -t lint`, `npx nx affected -t typecheck`
+- **Unit tests:** `bun nx run @zuko/backend:test`, `bun nx run @zuko/web:test`  
+  Or for affected projects: `bun nx affected -t test`
+- **E2E (web):** `bun nx run @zuko/web-e2e:e2e`
+- **Lint / typecheck:** `bun nx affected -t lint`, `bun nx affected -t typecheck`
 
 ## Project structure
 
@@ -96,15 +102,17 @@ npx nx run @zuko/web:build
 | **Apps** | |
 | `apps/backend` | NestJS API (auth, chat, sales: contacts/deals/companies) |
 | `apps/web` | Next.js frontend |
+| `apps/ai-agents` | LangGraph-based AI agents service |
 | `apps/backend-e2e` | Backend E2E tests |
 | `apps/web-e2e` | Web E2E tests (Playwright) |
+| `apps/ai-agents-e2e` | AI agents E2E tests |
 | **Libs** | |
 | `libs/agents` | AI agent orchestration and tools |
 | `libs/core` | Shared core utilities |
 | `libs/models` | Prisma schema and client |
 | `libs/sales` | CRM domain (contacts, deals, companies) |
 | `libs/ui-kit` | Shared UI components |
-| `libs/beads` | Beads issue-tracking integration |
+| `.beads/` | Beads issue-tracking system |
 
 ## Documentation
 
@@ -116,9 +124,9 @@ npx nx run @zuko/web:build
 
 This workspace is powered by [Nx](https://nx.dev). Useful commands:
 
-- **Explore project graph:** `npx nx graph`
-- **List targets for a project:** `npx nx show project @zuko/backend` (or `@zuko/web`)
-- **Run tasks:** Use `npx nx run <project>:<target>` — e.g. `@zuko/backend`, `@zuko/web`, `@zuko/models`. [Nx run tasks](https://nx.dev/features/run-tasks).
+- **Explore project graph:** `bun nx graph`
+- **List targets for a project:** `bun nx show project @zuko/backend` (or `@zuko/web`)
+- **Run tasks:** Use `bun nx run <project>:<target>` — e.g. `@zuko/backend`, `@zuko/web`, `@zuko/models`. [Nx run tasks](https://nx.dev/features/run-tasks).
 - **IDE:** [Nx Console](https://nx.dev/getting-started/editor-setup) for VSCode/IntelliJ.
 
 ## License
