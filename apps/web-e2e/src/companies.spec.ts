@@ -158,9 +158,11 @@ test.describe("Company Detail - Contact Management", () => {
     }
     const firstContactRow = associatedContacts[0];
     await expect(firstContactRow).toBeVisible({ timeout: 10000 });
-    const firstContactText =
-      (await firstContactRow.textContent({ timeout: 5000 })) ?? "";
-    const firstContactName = firstContactText?.split(/\s+/)[0] ?? "";
+    const firstContactName =
+      (await firstContactRow
+        .locator('a[href^="/contacts/"]')
+        .first()
+        .textContent())?.trim() ?? "";
     if (!firstContactName) {
       test.skip();
     }
@@ -168,10 +170,21 @@ test.describe("Company Detail - Contact Management", () => {
     await expect(page.getByText("Add Contact to Company")).toBeVisible({
       timeout: 5000,
     });
-    const select = page.locator("select").first();
-    const options = await select.locator("option").allTextContents();
-    const isInDropdown = options.some((opt) => opt.includes(firstContactName));
-    expect(isInDropdown).toBe(false);
+    const dialog = page.getByRole("dialog");
+    const select = dialog.locator("select").first();
+
+    const selectableOptions = select.locator('option[value]:not([value=""])');
+    const matchingOptions = selectableOptions.filter({ hasText: firstContactName });
+
+    // When all contacts are already associated, there will be no selectable options.
+    if ((await selectableOptions.count()) === 0) {
+      await expect(
+        dialog.getByText(/All contacts are already associated with this company/i)
+      ).toBeVisible();
+      await expect(dialog.getByRole("button", { name: /Add Contact/i })).toBeDisabled();
+    } else {
+      await expect(matchingOptions).toHaveCount(0);
+    }
   });
 
   test("can remove a contact from a company", async ({

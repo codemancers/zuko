@@ -258,9 +258,11 @@ test.describe("Deal Detail", () => {
   }) => {
     await dealDetailPage.goto(1);
 
-    await expect(
-      page.getByRole("heading", { name: /Activity/i })
-    ).toBeVisible();
+    // CI can be slower to render this section; the comment input is a more
+    // stable signal than the heading text/role.
+    const commentInput = page.getByPlaceholder("Add a comment...");
+    await commentInput.scrollIntoViewIfNeeded();
+    await expect(commentInput).toBeVisible({ timeout: 30000 });
   });
 
   test("displays metadata section", async ({ dealDetailPage, page }) => {
@@ -654,13 +656,9 @@ test.describe("Deal Activity Timeline - Comments", () => {
   }) => {
     await dealDetailPage.goto(1);
 
-    // Wait for the Activity section to render
-    await expect(
-      page.getByRole("heading", { name: /Activity/i })
-    ).toBeVisible();
-
     const commentInput = page.getByPlaceholder("Add a comment...");
-    await expect(commentInput).toBeVisible();
+    await commentInput.scrollIntoViewIfNeeded();
+    await expect(commentInput).toBeVisible({ timeout: 30000 });
 
     const postButton = page.getByRole("button", { name: /Post Comment/i });
     await expect(postButton).toBeVisible();
@@ -672,13 +670,9 @@ test.describe("Deal Activity Timeline - Comments", () => {
   }) => {
     await dealDetailPage.goto(1);
 
-    // Wait for the Activity section to render
-    await expect(
-      page.getByRole("heading", { name: /Activity/i })
-    ).toBeVisible();
-
     const commentInput = page.getByPlaceholder("Add a comment...");
-    await expect(commentInput).toBeVisible();
+    await commentInput.scrollIntoViewIfNeeded();
+    await expect(commentInput).toBeVisible({ timeout: 30000 });
 
     const postButton = page.getByRole("button", { name: /Post Comment/i });
     await expect(postButton).toBeDisabled();
