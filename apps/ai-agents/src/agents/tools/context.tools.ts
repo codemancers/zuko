@@ -1,5 +1,6 @@
 import { tool } from 'langchain';
 import { z } from 'zod';
+import type { RunnableConfig } from '@langchain/core/runnables';
 import type { ContextEntityReference } from '../../types/chat.types';
 
 /**
@@ -24,9 +25,9 @@ export type ToolRunConfig = {
  * Used by context-aware tools to resolve contact/company/deal from conversation context.
  */
 export function getContextEntities(
-  config: unknown,
+  config?: RunnableConfig,
 ): ContextEntityReference[] | undefined {
-  const c = config as ToolRunConfig | undefined;
+  const c = config as (ToolRunConfig & RunnableConfig) | undefined;
   return c?.state?.contextEntities ?? c?.configurable?.contextEntities;
 }
 
@@ -35,8 +36,8 @@ export function getContextEntities(
  * Set by the chat controller from the user's session (active organization).
  * Required for all sales entity operations (contacts, companies, deals).
  */
-export function getOrganizationId(config: unknown): number | undefined {
-  const c = config as ToolRunConfig | undefined;
+export function getOrganizationId(config?: RunnableConfig): number | undefined {
+  const c = config as (ToolRunConfig & RunnableConfig) | undefined;
   return c?.state?.organizationId ?? c?.configurable?.organizationId;
 }
 
@@ -45,8 +46,8 @@ export function getOrganizationId(config: unknown): number | undefined {
  * Set by the chat controller in the LangGraph input state.
  * Useful for default ownership assignment when creating entities from chat.
  */
-export function getUserId(config: unknown): number | undefined {
-  const c = config as ToolRunConfig | undefined;
+export function getUserId(config?: RunnableConfig): number | undefined {
+  const c = config as (ToolRunConfig & RunnableConfig) | undefined;
   return c?.state?.userId ?? c?.configurable?.userId;
 }
 
@@ -81,8 +82,8 @@ function isDeal(
 
 export const getConversationContextTool = tool(
   async (
-    _input,
-    config?: unknown,
+    _input: Record<string, never>,
+    config?: RunnableConfig,
   ): Promise<{
     contacts: { type: 'contact'; id: number }[];
     companies: { type: 'company'; id: number }[];

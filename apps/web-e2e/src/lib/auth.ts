@@ -26,7 +26,10 @@ async function createContext() {
   if (!secret) throw new Error("BETTER_AUTH_SECRET is not set");
 
   const pool = new Pool({ connectionString });
-  const prisma = new PrismaClient({ adapter: new PrismaPg(pool) });
+
+  const prisma = new PrismaClient({
+    adapter: new PrismaPg(pool as any),
+  });
 
   // Create a minimal auth instance that shares the same secret and generateId
   // config as the running backend, so session cookies are accepted by it.

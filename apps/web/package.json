@@ -11,7 +11,10 @@
     "nuqs": "^2.8.9",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "sonner": "^2.0.7"
+    "sonner": "^2.0.7",
+    "lucide-react": "^0.563.0",
+    "clsx": "^2.1.1",
+    "@bprogress/react": "1.2.7"
   },
   "nx": {
     "targets": {
@@ -39,6 +42,13 @@
           "command": "export FLY_APP=$(grep '^app = ' apps/web/fly.toml | cut -d \"'\" -f 2) && export GIT_SHA=$(git rev-parse --short HEAD) && flyctl auth docker && docker push registry.fly.io/$FLY_APP:$GIT_SHA && fly deploy --image registry.fly.io/$FLY_APP:$GIT_SHA -c apps/web/fly.toml"
         }
       },
+      "build": {
+        "outputs": [
+          "{projectRoot}/.next",
+          "!{projectRoot}/.next/cache",
+          "!{projectRoot}/.next/standalone"
+        ]
+      },
       "test": {
         "executor": "@nx/vitest:test",
         "outputs": [
@@ -54,5 +64,9 @@
         }
       }
     }
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.2.1",
+    "shiki": "^4.0.2"
   }
 }

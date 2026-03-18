@@ -1,4 +1,5 @@
 import { tool } from "langchain";
+import type { RunnableConfig } from "@langchain/core/runnables";
 import { Backend } from "../../shared/backend";
 import { z } from "zod";
 import {
@@ -12,7 +13,7 @@ function orgHeader(organisationId: number | undefined): string {
 }
 
 export const getContactDetailsTool = tool(
-  async (input: { contactId?: number }, config) => {
+  async (input: { contactId?: number }, config: RunnableConfig) => {
     const organisationId = getOrganizationId(config);
     const contextEntities = getContextEntities(config);
     const contextContacts =
@@ -68,7 +69,7 @@ export const getContactDetailsTool = tool(
 );
 
 export const getContactOwnerTool = tool(
-  async (input: { contactId?: number }, config) => {
+  async (input: { contactId?: number }, config: RunnableConfig) => {
     const organisationId = getOrganizationId(config);
     const contextEntities = getContextEntities(config);
     const contextContacts =
@@ -159,7 +160,7 @@ export const queryContactsTool = tool(
       groupBy?: "ownerId";
       limit?: number;
     },
-    config
+    config: RunnableConfig
   ) => {
     const organisationId = getOrganizationId(config);
     if (!organisationId) {
@@ -214,7 +215,7 @@ export const createContactTool = tool(
       ownerIds?: number[];
       primaryOwnerId?: number;
     },
-    config
+    config: RunnableConfig
   ) => {
     const organisationId = getOrganizationId(config);
     const userId = getUserId(config);
@@ -277,7 +278,7 @@ export const updateContactTool = tool(
       linkedinId?: string;
       notes?: string;
     },
-    config
+    config: RunnableConfig
   ) => {
     const organisationId = getOrganizationId(config);
     const contextEntities = getContextEntities(config);

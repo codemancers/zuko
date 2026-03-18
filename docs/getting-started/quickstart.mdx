@@ -7,7 +7,7 @@ This guide walks you through running Zuko locally.
 ## Prerequisites
 
 - **Node.js** 22 (matches CI)
-- **npm**
+- **Bun** (recommended package manager)
 - **PostgreSQL** for the backend database
 
 ## 1. Clone the repository
@@ -22,7 +22,7 @@ cd zuko
 From the repo root:
 
 ```bash
-npm install
+bun install
 ```
 
 ## 3. Configure environment variables
@@ -46,22 +46,22 @@ Make sure to set at least:
 Generate the Prisma client and run migrations:
 
 ```bash
-npx nx run @zuko/models:prisma:generate
-npx nx run @zuko/models:prisma:migrate -- --name init
+bun nx run @zuko/models:prisma:generate
+bun nx run @zuko/models:prisma:migrate -- --name init
 ```
 
 Optionally seed test data:
 
 ```bash
-npx nx run @zuko/models:seed
+bun nx run @zuko/models:seed
 ```
 
 ## 5. Run the app
 
-Recommended: run backend and web together:
+Recommended: run the entire stack (backend, web, and agents):
 
 ```bash
-npx nx run @zuko/web:dev
+bun nx run @zuko/web:dev
 ```
 
 This starts the NestJS backend (for example on port 3001) and the Next.js app (for example on port 3000).

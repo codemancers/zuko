@@ -33,14 +33,14 @@ export async function initializeAgent(
     systemPrompt,
     tools,
     checkpointer,
-    middleware: [createPersistentContextMiddleware()],
+    middleware: [createPersistentContextMiddleware() as any],
     subagents: subAgents,
   });
 
   return agent;
 }
 
-export const agent = (async () => {
+export const agent: Promise<DeepAgent> = (async () => {
   const tools = [
     ...companyTools,
     ...contactTools,
