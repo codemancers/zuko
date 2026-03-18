@@ -1,4 +1,5 @@
 import { tool } from "langchain";
+import type { RunnableConfig } from "@langchain/core/runnables";
 import { Backend } from "../../shared/backend";
 import { z } from "zod";
 import {
@@ -12,7 +13,7 @@ function orgHeader(organisationId: number | undefined): string {
 }
 
 export const getDealDetailsTool = tool(
-  async (input: { dealId?: number }, config) => {
+  async (input: { dealId?: number }, config: RunnableConfig) => {
     const organisationId = getOrganizationId(config);
     const contextEntities = getContextEntities(config);
     const contextDeals =
@@ -88,7 +89,7 @@ export const queryDealsTool = tool(
       groupBy?: "stage" | "ownerId";
       limit?: number;
     },
-    config
+    config: RunnableConfig
   ) => {
     const organisationId = getOrganizationId(config);
     if (!organisationId) {
@@ -153,7 +154,7 @@ export const createDealTool = tool(
       ownerIds?: number[];
       primaryOwnerId?: number;
     },
-    config
+    config: RunnableConfig
   ) => {
     const organisationId = getOrganizationId(config);
     const userId = getUserId(config);
@@ -230,7 +231,7 @@ export const updateDealTool = tool(
       source?: string;
       priority?: number;
     },
-    config
+    config: RunnableConfig
   ) => {
     const organisationId = getOrganizationId(config);
     const contextEntities = getContextEntities(config);

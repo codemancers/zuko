@@ -117,6 +117,13 @@
     "apps/ai-agents": {
       "name": "@zuko/ai-agents",
       "version": "0.0.1",
+      "dependencies": {
+        "@langchain/core": "^1.1.12",
+        "@langchain/langgraph-checkpoint-postgres": "^1.0.0",
+        "@langchain/openai": "^1.2.1",
+        "deepagents": "^1.4.0",
+        "langchain": "^1.2.7",
+      },
     },
     "apps/ai-agents-e2e": {
       "name": "@zuko/ai-agents-e2e",

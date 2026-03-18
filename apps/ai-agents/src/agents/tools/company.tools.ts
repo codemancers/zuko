@@ -1,4 +1,5 @@
 import { tool } from "langchain";
+import type { RunnableConfig } from "@langchain/core/runnables";
 import { Backend } from "../../shared/backend";
 import { z } from "zod";
 import {
@@ -12,7 +13,7 @@ function orgHeader(organisationId: number | undefined): string {
 }
 
 export const getCompanyDetailsTool = tool(
-  async (input: { companyId?: number }, config) => {
+  async (input: { companyId?: number }, config: RunnableConfig) => {
     const organisationId = getOrganizationId(config);
     const contextEntities = getContextEntities(config);
     const contextCompanies =
@@ -86,7 +87,7 @@ export const queryCompaniesTool = tool(
       aggregation?: "count" | "list";
       limit?: number;
     },
-    config
+    config: RunnableConfig
   ) => {
     const organisationId = getOrganizationId(config);
     if (!organisationId) {
@@ -136,7 +137,7 @@ export const createCompanyTool = tool(
       ownerIds?: number[];
       primaryOwnerId?: number;
     },
-    config
+    config: RunnableConfig
   ) => {
     const organisationId = getOrganizationId(config);
     const userId = getUserId(config);
@@ -196,7 +197,7 @@ export const updateCompanyTool = tool(
       linkedinUrl?: string;
       summary?: string;
     },
-    config
+    config: RunnableConfig
   ) => {
     const organisationId = getOrganizationId(config);
     const contextEntities = getContextEntities(config);
