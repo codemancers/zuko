@@ -99,6 +99,21 @@ async function main() {
     update: {},
   });
 
+  await prisma.company.upsert({
+    where: { id: 2 },
+    create: {
+      organizationId: org.id,
+      companyName: "TEST 2 COMPANY",
+      website: "https://test-company2.example.com",
+      linkedinUrl: "https://linkedin.com/company/test-company2",
+      summary: "TEST COMPANY SUMMARY2",
+      owners: {
+        create: { userId, isPrimary: true },
+      },
+    },
+    update: {},
+  });
+
   await prisma.contact.upsert({
     where: { id: 1 },
     create: {
@@ -107,6 +122,21 @@ async function main() {
       email: "test-contact@example.com",
       phone: "+14155551234",
       notes: "TEST CONTACT NOTES",
+      owners: {
+        create: { userId, isPrimary: true },
+      },
+    },
+    update: {},
+  });
+
+  await prisma.contact.upsert({
+    where: { id: 2 },
+    create: {
+      organizationId: org.id,
+      name: "TEST 2 CONTACT",
+      email: "test-contact2@example.com",
+      phone: "+14155551235",
+      notes: "TEST CONTACT NOTES2",
       owners: {
         create: { userId, isPrimary: true },
       },
@@ -123,6 +153,24 @@ async function main() {
       currency: "USD",
       stage: "prospecting",
       summary: "TEST DEAL SUMMARY",
+      source: "Website",
+      priority: 2,
+      owners: {
+        create: { userId, isPrimary: true },
+      },
+    },
+    update: {},
+  });
+
+  await prisma.deal.upsert({
+    where: { id: 2 },
+    create: {
+      organizationId: org.id,
+      title: "TEST 2 DEAL",
+      value: 75000,
+      currency: "USD",
+      stage: "prospecting",
+      summary: "TEST DEAL SUMMARY2",
       source: "Website",
       priority: 2,
       owners: {

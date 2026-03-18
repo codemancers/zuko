@@ -96,12 +96,15 @@ export class ContactDetailPage extends BasePage {
    */
   async createComment(text: string) {
     await this.commentInput.fill(text);
+    // Set up the response wait *before* clicking to avoid missing fast responses in CI.
+    const createResp = this.page.waitForResponse((resp) => {
+      if (!resp.url().includes("/activities/comments")) return false;
+      const status = resp.status();
+      return status >= 200 && status < 300;
+    });
+
     await this.postCommentButton.click();
-    // Wait for comment to be posted
-    await this.page.waitForResponse(
-      (resp) =>
-        resp.url().includes("/activities/comments") && resp.status() === 201,
-    );
+    await createResp;
   }
 
   /**
