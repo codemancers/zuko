@@ -143,6 +143,53 @@ export class ContactActivitiesController {
   }
 }
 
+// Deal activities
+@Controller('deals/:dealId/activities')
+@UseGuards(AuthGuard)
+export class DealActivitiesController {
+  private readonly logger = new Logger(DealActivitiesController.name);
+
+  constructor(private readonly activityService: ActivityService) {}
+
+  @Get()
+  async getTimeline(
+    @Param('dealId', ParseIntPipe) dealId: number,
+    @Query('limit') limitStr?: string,
+  ) {
+    this.logger.log(`[GET_DEAL_TIMELINE] Deal ID: ${dealId}`);
+    const limit = limitStr ? parseInt(limitStr, 10) : undefined;
+    return this.activityService.getTimeline('deal', dealId, limit);
+  }
+
+  @Post('comments')
+  @HttpCode(HttpStatus.CREATED)
+  async createComment(
+    @Req() req: RequestWithUser,
+    @Param('dealId', ParseIntPipe) dealId: number,
+    @Body() dto: CreateCommentDto,
+  ) {
+    const userId = parseInt(req.user.id, 10);
+    this.logger.log(`[CREATE_COMMENT] Deal ID: ${dealId}, User: ${userId}`);
+
+    try {
+      const result = await this.activityService.createComment(
+        'deal',
+        dealId,
+        userId,
+        dto.content,
+      );
+      this.logger.log(`[CREATE_COMMENT] Success - Activity ID: ${result.id}`);
+      return result;
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      const errorStack = error instanceof Error ? error.stack : undefined;
+      this.logger.error(`[CREATE_COMMENT] Failed: ${errorMessage}`, errorStack);
+      throw error;
+    }
+  }
+}
+
 // Company activities (entityType 'company': contact | company | deal).
 @Controller('companies/:companyId/activities')
 @UseGuards(AuthGuard)

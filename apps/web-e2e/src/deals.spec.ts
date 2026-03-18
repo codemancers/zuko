@@ -650,38 +650,36 @@ test.describe("Deal Associations - Contacts", () => {
 
 test.describe("Deal Activity Timeline - Comments", () => {
   // ── 1. Empty state ─────────────────────────────────────────────────────
-  // TODO: Add tests for empty state
-  // test("should display comment input form in activity timeline", async ({
-  //   dealDetailPage,
-  //   page,
-  // }) => {
-  //   await dealDetailPage.goto(1);
+  test("should display comment input form in activity timeline", async ({
+    dealDetailPage,
+    page,
+  }) => {
+    await dealDetailPage.goto(1);
 
-  //   const commentInput = page.getByPlaceholder("Add a comment...");
-  //   await commentInput.scrollIntoViewIfNeeded();
-  //   await expect(commentInput).toBeVisible({ timeout: 30000 });
+    const commentInput = page.getByPlaceholder("Add a comment...");
+    await commentInput.scrollIntoViewIfNeeded();
+    await expect(commentInput).toBeVisible({ timeout: 30000 });
 
-  //   const postButton = page.getByRole("button", { name: /Post Comment/i });
-  //   await expect(postButton).toBeVisible();
-  // });
+    const postButton = page.getByRole("button", { name: /Post Comment/i });
+    await expect(postButton).toBeVisible();
+  });
 
-  // test("should disable post button when comment is empty", async ({
-  //   dealDetailPage,
-  //   page,
-  // }) => {
-  //   await dealDetailPage.goto(1);
+  test("should disable post button when comment is empty", async ({
+    dealDetailPage,
+    page,
+  }) => {
+    await dealDetailPage.goto(1);
 
-  //   const commentInput = page.getByPlaceholder("Add a comment...");
-  //   await commentInput.scrollIntoViewIfNeeded();
-  //   await expect(commentInput).toBeVisible({ timeout: 30000 });
+    const commentInput = page.getByPlaceholder("Add a comment...");
+    await commentInput.scrollIntoViewIfNeeded();
+    await expect(commentInput).toBeVisible({ timeout: 30000 });
 
-  //   const postButton = page.getByRole("button", { name: /Post Comment/i });
-  //   await expect(postButton).toBeDisabled();
-  // });
+    const postButton = page.getByRole("button", { name: /Post Comment/i });
+    await expect(postButton).toBeDisabled();
+  });
 
   // ── 2. Create ───────────────────────────────────────────────────────────
-  // The API for creating a comment on a deal is not implemented yet.
-  test.skip("should create a new comment successfully on a deal", async ({
+  test("should create a new comment successfully on a deal", async ({
     dealDetailPage,
     page,
   }) => {
