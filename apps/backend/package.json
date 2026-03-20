@@ -11,7 +11,6 @@
     "@prisma/adapter-pg": "^7.2.0",
     "@prisma/client": "^7.2.0",
     "@thallesp/nestjs-better-auth": "^2.5.1",
-    "@zuko/agents": "^0.0.1",
     "@zuko/core": "^0.0.1",
     "@zuko/models": "^0.0.1",
     "@zuko/sales": "^0.0.1",

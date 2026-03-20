@@ -2,7 +2,6 @@ import {
   Body,
   Controller,
   ForbiddenException,
-  Headers,
   Post,
   Req,
   Res,
@@ -10,15 +9,8 @@ import {
 } from "@nestjs/common";
 import { AuthGuard } from "@thallesp/nestjs-better-auth";
 import type { Response } from "express";
-import { randomUUID } from "node:crypto";
 import { Readable } from "node:stream";
-import {
-  OrchestratorService,
-  BaseMessageLike,
-  type ChatCompletionRequest,
-  ContextEntityReference,
-  MessageMetadata,
-} from "@zuko/agents";
+import { ContextEntityReference, MessageMetadata } from "../types/chat";
 import { toBaseMessages, toUIMessageStream } from "@ai-sdk/langchain";
 import type { UIMessage } from "ai";
 import type { RequestWithUser } from "@zuko/core";
@@ -28,67 +20,14 @@ import { getActiveOrganizationId } from "../common/auth/get-organization-id";
 import { LangsmithService } from "../langsmith/langsmith.service";
 import { transformSSEToLangChainStreamFromNode } from "../langsmith/langsmith-stream.util";
 
-const LOCAL_MODEL_ID = process.env.AGENTS_LLM_MODEL ?? "gpt-4o";
 
 @Controller("v1")
 export class ChatController {
   constructor(
-    private readonly agentsService: OrchestratorService,
     private readonly chatsService: ChatsService,
     private readonly prisma: PrismaService,
     private readonly langsmithService: LangsmithService,
   ) {}
-
-  @Post("chat/completions")
-  async openwebuiChat(
-    @Body() body: ChatCompletionRequest,
-    @Headers("accept") accept?: string,
-    @Res({ passthrough: true }) response?: Response,
-  ) {
-    const incomingMessages = Array.isArray(body?.messages) ? body.messages : [];
-    const messages: BaseMessageLike[] = [...incomingMessages];
-    if (messages.length === 0) {
-      messages.push({ role: "user", content: "What is 1+1." });
-    }
-
-    const threadId = body.thread_id ?? randomUUID();
-
-    if (
-      accept?.includes("text/event-stream") ||
-      accept?.includes("text/plain")
-    ) {
-      response?.setHeader("Content-Type", "text/event-stream; charset=utf-8");
-      response?.setHeader("Cache-Control", "no-cache");
-      response?.setHeader("Connection", "keep-alive");
-      response?.setHeader("X-Thread-Id", threadId);
-
-      for await (const chunk of this.agentsService.streamReply(
-        messages,
-        threadId,
-      )) {
-        response?.write(`data: ${chunk}\n\n`);
-      }
-      response?.end();
-      return;
-    }
-
-    response?.setHeader("X-Thread-Id", threadId);
-    const reply = await this.agentsService.generateReply(messages, threadId);
-
-    return {
-      id: `chatcmpl-${Date.now()}`,
-      object: "chat.completion",
-      created: Math.floor(Date.now() / 1000),
-      model: body.model ?? LOCAL_MODEL_ID,
-      choices: [
-        {
-          index: 0,
-          message: { role: "assistant", content: reply },
-          finish_reason: "stop",
-        },
-      ],
-    };
-  }
 
   @Post("chat")
   @UseGuards(AuthGuard)

@@ -107,7 +107,6 @@ bun nx run @zuko/ai-agents:build
 | `apps/web-e2e` | Web E2E tests (Playwright) |
 | `apps/ai-agents-e2e` | AI agents E2E tests |
 | **Libs** | |
-| `libs/agents` | AI agent orchestration and tools |
 | `libs/core` | Shared core utilities |
 | `libs/models` | Prisma schema and client |
 | `libs/sales` | CRM domain (contacts, deals, companies) |

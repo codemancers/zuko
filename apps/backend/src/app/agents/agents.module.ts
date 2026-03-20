@@ -4,11 +4,6 @@ import { PrismaModule } from '../../prisma/prisma.module';
 import { PrismaService } from '../../prisma/prisma.service';
 import { AgentsController } from './agents.controller';
 import {
-  AdminService,
-  OrchestratorService,
-  ConnectionsRepository,
-} from '@zuko/agents';
-import {
   ContactsService,
   CompaniesService,
   DealsService,
@@ -23,13 +18,6 @@ import {
   imports: [PrismaModule],
   controllers: [AgentsController],
   providers: [AgentGuard,
-    {
-      provide: ConnectionsRepository,
-      useFactory: (prismaService: PrismaService) => {
-        return new ConnectionsRepository(prismaService);
-      },
-      inject: [PrismaService],
-    },
     {
       provide: ContactsRepository,
       useFactory: (prismaService: PrismaService) => {
@@ -86,36 +74,6 @@ import {
       },
       inject: [ActivityRepository],
     },
-    AdminService,
-    {
-      provide: OrchestratorService,
-      useFactory: (
-        adminService: AdminService,
-        prismaService: PrismaService,
-        contactsService: ContactsService,
-        companiesService: CompaniesService,
-        dealsService: DealsService,
-        activityService: ActivityService,
-      ) => {
-        return new OrchestratorService(
-          adminService,
-          prismaService,
-          contactsService,
-          companiesService,
-          dealsService,
-          activityService,
-        );
-      },
-      inject: [
-        AdminService,
-        PrismaService,
-        ContactsService,
-        CompaniesService,
-        DealsService,
-        ActivityService,
-      ],
-    },
   ],
-  exports: [OrchestratorService, AdminService, ConnectionsRepository],
 })
 export class AgentsWrapperModule {}
