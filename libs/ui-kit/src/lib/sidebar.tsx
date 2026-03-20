@@ -1,7 +1,7 @@
 'use client';
 
 import * as Headless from '@headlessui/react';
-import clsx from 'clsx';
+import { cn } from './utils';
 import { LayoutGroup, motion } from 'motion/react';
 import React, { forwardRef, useId } from 'react';
 import { TouchTarget } from './button';
@@ -23,7 +23,7 @@ export function Sidebar({
   return (
     <nav
       {...props}
-      className={clsx(
+      className={cn(
         className,
         'flex h-full min-h-0 flex-col transition-all duration-300 ease-in-out',
         collapsed ? 'w-20' : 'w-64',
@@ -40,7 +40,7 @@ export function SidebarHeader({
   return (
     <div
       {...props}
-      className={clsx(
+      className={cn(
         className,
         'flex flex-col border-b border-zinc-950/5 p-4 dark:border-white/5 [&>[data-slot=section]+[data-slot=section]]:mt-2.5 transition-all duration-300',
         collapsed && 'items-center px-2',
@@ -57,7 +57,7 @@ export function SidebarBody({
   return (
     <div
       {...props}
-      className={clsx(
+      className={cn(
         className,
         'flex flex-1 flex-col overflow-y-auto p-4 [&>[data-slot=section]+[data-slot=section]]:mt-8 transition-all duration-300',
         collapsed && 'items-center px-2',
@@ -74,7 +74,7 @@ export function SidebarFooter({
   return (
     <div
       {...props}
-      className={clsx(
+      className={cn(
         className,
         'flex flex-col border-t border-zinc-950/5 p-4 dark:border-white/5 [&>[data-slot=section]+[data-slot=section]]:mt-2.5 transition-all duration-300',
         collapsed && 'items-center px-2',
@@ -95,7 +95,7 @@ export function SidebarSection({
       <div
         {...props}
         data-slot="section"
-        className={clsx(
+        className={cn(
           className,
           'flex flex-col gap-0.5 transition-all duration-300',
           collapsed && 'items-center',
@@ -112,7 +112,7 @@ export function SidebarDivider({
   return (
     <hr
       {...props}
-      className={clsx(
+      className={cn(
         className,
         'my-4 border-t border-zinc-950/5 lg:-mx-4 dark:border-white/5',
       )}
@@ -128,7 +128,7 @@ export function SidebarSpacer({
     <div
       aria-hidden="true"
       {...props}
-      className={clsx(className, 'mt-8 flex-1')}
+      className={cn(className, 'mt-8 flex-1')}
     />
   );
 }
@@ -143,7 +143,7 @@ export function SidebarHeading({
   return (
     <h3
       {...props}
-      className={clsx(
+      className={cn(
         className,
         'mb-1 px-2 text-xs/6 font-medium text-zinc-500 dark:text-zinc-400',
       )}
@@ -174,7 +174,7 @@ export const SidebarItem = forwardRef(function SidebarItem(
   ),
   ref: React.ForwardedRef<HTMLAnchorElement | HTMLButtonElement>,
 ) {
-  const classes = clsx(
+  const classes = cn(
     // Base
     'flex w-full items-center gap-3 rounded-lg px-2 py-2.5 text-left text-base/6 font-medium text-zinc-950 sm:py-2 sm:text-sm/5 transition-all duration-300',
     // Leading icon/icon-only
@@ -182,7 +182,7 @@ export const SidebarItem = forwardRef(function SidebarItem(
     // Trailing icon (down chevron or similar)
     '*:last:data-[slot=icon]:ml-auto *:last:data-[slot=icon]:size-5 sm:*:last:data-[slot=icon]:size-4',
     // Avatar
-    '*:data-[slot=avatar]:-m-0.5 *:data-[slot=avatar]:size-7 sm:*:data-[slot=avatar]:size-6',
+    '*:data-[slot=avatar]:-m-0.5 *:data-[slot=avatar]:size-8 sm:*:data-[slot=avatar]:size-6',
     // Hover
     'data-hover:bg-zinc-950/5 data-hover:*:data-[slot=icon]:fill-zinc-950',
     // Active
@@ -196,11 +196,11 @@ export const SidebarItem = forwardRef(function SidebarItem(
     'dark:data-current:*:data-[slot=icon]:fill-white',
     // Collapsed
     collapsed &&
-      'justify-center px-0 py-0 sm:py-0 sm:*:data-[slot=icon]:size-7 sm:*:data-[slot=icon]:shrink-0 sm:*:data-[slot=avatar]:size-10',
+      'justify-center *:data-[slot=icon]:!size-5 sm:*:data-[slot=icon]:!size-5 *:data-[slot=icon]:shrink-0 *:data-[slot=avatar]:size-8 sm:*:data-[slot=avatar]:size-8',
   );
 
   return (
-    <span className={clsx(className, 'relative')}>
+    <span className={cn(className, 'relative')}>
       {current && (
         <motion.span
           layoutId="current-indicator"
@@ -232,7 +232,7 @@ export const SidebarItem = forwardRef(function SidebarItem(
       ) : (
         <Headless.Button
           {...props}
-          className={clsx('cursor-default', classes)}
+          className={cn('cursor-default', classes)}
           data-current={current ? 'true' : undefined}
           ref={ref}
         >
@@ -261,7 +261,7 @@ export function SidebarLabel({
   ...props
 }: React.ComponentPropsWithoutRef<'span'> & { collapsed?: boolean }) {
   if (collapsed) return null;
-  return <span {...props} className={clsx(className, 'truncate')} />;
+  return <span {...props} className={cn(className, 'truncate')} />;
 }
 
 export function SidebarNavItem({
