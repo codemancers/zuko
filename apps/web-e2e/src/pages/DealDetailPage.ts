@@ -7,6 +7,10 @@ export class DealDetailPage extends BasePage {
   readonly dealTitle: Locator;
   readonly dealStage: Locator;
   readonly dealValue: Locator;
+  readonly activitySection: Locator;
+  readonly activityItems: Locator;
+  readonly commentInput: Locator;
+  readonly postCommentButton: Locator;
 
   constructor(page: Page, dealId?: number) {
     super(page);
@@ -20,6 +24,12 @@ export class DealDetailPage extends BasePage {
       })
       .first();
     this.dealValue = page.getByText(/\$/);
+    this.activitySection = page.locator('h2:has-text("Activity")').first();
+    this.activityItems = page.locator('[data-testid="activity-item"]');
+    this.commentInput = page.getByPlaceholder("Add a comment...");
+    this.postCommentButton = page.getByRole("button", {
+      name: /Post Comment/i,
+    });
   }
 
   override async goto(dealIdOrPath: number | string) {
@@ -46,21 +56,73 @@ export class DealDetailPage extends BasePage {
     return (await this.dealStage.textContent()) || "";
   }
 
+  async isActivitySectionVisible(): Promise<boolean> {
+    return this.activitySection.isVisible();
+  }
+
   async getActivityItems() {
-    const activitySection = this.page.locator("text=Activity").locator("..");
-    const items = activitySection.locator("[data-activity-item]");
-    return items.all();
+    return this.activityItems.all();
+  }
+
+  async getActivityCount(): Promise<number> {
+    return this.activityItems.count();
+  }
+
+  async isPostButtonDisabled(): Promise<boolean> {
+    return this.postCommentButton.isDisabled();
+  }
+
+  async hasNoActivityMessage(): Promise<boolean> {
+    const message = this.page.getByText("No activity yet");
+    return message.isVisible().catch(() => false);
+  }
+
+  async createComment(text: string) {
+    await this.commentInput.fill(text);
+    const createResp = this.page.waitForResponse((resp) => {
+      if (!resp.url().includes("/activities/comments")) return false;
+      const status = resp.status();
+      return status >= 200 && status < 300;
+    });
+    await this.postCommentButton.click();
+    await createResp;
+  }
+
+  async editComment(index: number, newContent: string) {
+    const items = await this.activityItems.all();
+    if (items[index]) {
+      const editButton = items[index]
+        .getByRole("button", { name: /edit/i })
+        .or(items[index].locator('button[title="Edit comment"]'));
+      await editButton.click();
+
+      const textarea = items[index].locator("textarea");
+      await textarea.waitFor({ state: "visible" });
+      await textarea.fill(newContent);
+
+      const saveButton = items[index].getByRole("button", { name: /^Save$/i });
+      await saveButton.click();
+
+      await textarea.waitFor({ state: "detached", timeout: 10000 });
+    }
+  }
+
+  async cancelEditComment(index: number) {
+    const items = await this.activityItems.all();
+    if (items[index]) {
+      const cancelButton = items[index].getByRole("button", {
+        name: /cancel/i,
+      });
+      await cancelButton.click();
+
+      const textarea = items[index].locator("textarea");
+      await textarea.waitFor({ state: "detached", timeout: 5000 });
+    }
   }
 
   async postComment(comment: string) {
-    const commentInput = this.page.getByPlaceholder("Add a comment...");
-    await commentInput.waitFor({ state: "visible", timeout: 15000 });
-    await commentInput.fill(comment);
-
-    // Find and click post/submit button
-    const postButton = this.page.getByRole("button", {
-      name: /Post|Submit|Send/i,
-    });
-    await postButton.click();
+    await this.commentInput.waitFor({ state: "visible", timeout: 15000 });
+    await this.commentInput.fill(comment);
+    await this.postCommentButton.click();
   }
 }

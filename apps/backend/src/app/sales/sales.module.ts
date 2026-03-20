@@ -6,6 +6,7 @@ import {
   ActivitiesController,
   ContactActivitiesController,
   CompanyActivitiesController,
+  DealActivitiesController,
 } from './activities.controller';
 import {
   ContactsRepository,
@@ -33,6 +34,7 @@ import { TableRowBuilder } from './table/row-builder/table-row.builder';
     ActivitiesController,
     ContactActivitiesController,
     CompanyActivitiesController,
+    DealActivitiesController,
     TableController,
   ],
   providers: [

@@ -92,8 +92,7 @@ export const activitiesApi = {
     }
 
     const queryString = params.toString();
-    // Pluralize entityType (contact -> contacts, company -> companies)
-    const pluralEntity = `${entityType}s`;
+    const pluralEntity = entityType === 'company' ? 'companies' : `${entityType}s`;
     return apiClient.get(
       `/${pluralEntity}/${entityId}/activities${queryString ? `?${queryString}` : ''}`,
     );
@@ -107,8 +106,7 @@ export const activitiesApi = {
     entityId: number,
     data: CreateCommentDto,
   ): Promise<Activity> {
-    // Pluralize entityType (contact -> contacts, company -> companies)
-    const pluralEntity = `${entityType}s`;
+    const pluralEntity = entityType === 'company' ? 'companies' : `${entityType}s`;
     return apiClient.post(
       `/${pluralEntity}/${entityId}/activities/comments`,
       data,
