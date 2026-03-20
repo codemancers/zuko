@@ -306,7 +306,7 @@ export function ApplicationLayout({ children }: { children: React.ReactNode }) {
                     <ChevronRightIcon data-slot="icon" />
                   ) : (
                     <>
-                      <ChevronLeftIcon data-slot="icon" fontSize={50} />
+                      <ChevronLeftIcon data-slot="icon" />
                       <SidebarLabel collapsed={isSidebarCollapsed}>
                         Collapse
                       </SidebarLabel>
@@ -325,9 +325,8 @@ export function ApplicationLayout({ children }: { children: React.ReactNode }) {
                   <Avatar
                     src={user?.image ?? undefined}
                     initials={user?.name?.[0]?.toUpperCase() || 'U'}
-                    className="size-10"
+                    className="size-10!"
                     square
-                    data-slot="avatar"
                   />
                   {!isSidebarCollapsed && (
                     <span className="min-w-0">
