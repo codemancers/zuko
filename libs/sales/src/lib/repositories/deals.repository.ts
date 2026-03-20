@@ -354,6 +354,11 @@ export class DealsRepository {
         userId,
         isPrimary,
       },
+      include: {
+        user: {
+          select: { id: true, name: true },
+        },
+      },
     });
   }
 
@@ -363,6 +368,11 @@ export class DealsRepository {
         dealId_userId: {
           dealId,
           userId,
+        },
+      },
+      include: {
+        user: {
+          select: { id: true, name: true },
         },
       },
     });

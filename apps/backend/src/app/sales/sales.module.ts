@@ -90,10 +90,10 @@ import { TableRowBuilder } from './table/row-builder/table-row.builder';
     },
     {
       provide: DealsService,
-      useFactory: (dealsRepository: DealsRepository) => {
-        return new DealsService(dealsRepository);
+      useFactory: (dealsRepository: DealsRepository, activityService: ActivityService) => {
+        return new DealsService(dealsRepository, activityService);
       },
-      inject: [DealsRepository],
+      inject: [DealsRepository, ActivityService],
     },
     TableService,
     TableRowBuilder,

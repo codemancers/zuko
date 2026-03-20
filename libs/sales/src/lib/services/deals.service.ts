@@ -14,14 +14,18 @@ import {
   AddContactToDealInput,
   UpdateContactDealInput,
 } from '../repositories/deals.repository';
+import { ActivityService } from './activity.service';
 
 @Injectable()
 export class DealsService {
   private readonly logger = new Logger(DealsService.name);
 
-  constructor(private readonly dealsRepository: DealsRepository) {}
+  constructor(
+    private readonly dealsRepository: DealsRepository,
+    private readonly activityService: ActivityService,
+  ) {}
 
-  async create(input: CreateDealInput) {
+  async create(input: CreateDealInput, actorId?: number) {
     this.logger.log('[SERVICE] Starting deal creation');
 
     // Validate title
@@ -70,6 +74,13 @@ export class DealsService {
       this.logger.log(
         `[SERVICE] Deal created successfully with ID: ${result.id}`,
       );
+      await this.activityService.create({
+        activityType: 'deal_created',
+        entityType: 'deal',
+        entityId: result.id,
+        actorId,
+        metadata: {},
+      });
       return result;
     } catch (error: unknown) {
       const errorMessage =
@@ -91,9 +102,9 @@ export class DealsService {
     return deal;
   }
 
-  async update(id: number, organizationId: number, input: UpdateDealInput) {
+  async update(id: number, organizationId: number, input: UpdateDealInput, actorId?: number) {
     // Check deal exists and belongs to org
-    await this.findById(id, organizationId);
+    const existingDeal = await this.findById(id, organizationId);
 
     // Validate title if being updated
     if (input.title !== undefined) {
@@ -132,7 +143,56 @@ export class DealsService {
       }
     }
 
-    return this.dealsRepository.update(id, input);
+    const result = await this.dealsRepository.update(id, input);
+
+    // Log activity events for meaningful changes
+    const activityBase = { entityType: 'deal', entityId: id, actorId };
+
+    if (input.stage !== undefined && input.stage !== existingDeal.stage) {
+      await this.activityService.create({
+        ...activityBase,
+        activityType: 'stage_change',
+        metadata: { from: existingDeal.stage, to: input.stage },
+      });
+    }
+
+    if (
+      input.actualCloseDate !== undefined &&
+      !existingDeal.actualCloseDate
+    ) {
+      const stage = input.stage ?? existingDeal.stage;
+      await this.activityService.create({
+        ...activityBase,
+        activityType: 'deal_closed',
+        metadata: {
+          outcome: stage === 'closed_won' ? 'won' : 'lost',
+          lostReason: input.lostReason ?? existingDeal.lostReason ?? undefined,
+        },
+      });
+    }
+
+    const trackedFields: Array<keyof UpdateDealInput> = [
+      'title',
+      'value',
+      'probability',
+      'expectedCloseDate',
+      'priority',
+    ];
+    for (const field of trackedFields) {
+      if (input[field] !== undefined) {
+        const oldVal = existingDeal[field as keyof typeof existingDeal];
+        const newVal = input[field];
+        if (String(oldVal) !== String(newVal)) {
+          await this.activityService.create({
+            ...activityBase,
+            activityType: 'field_update',
+            metadata: { field, from: oldVal, to: newVal },
+          });
+        }
+      }
+    }
+
+    return result;
   }
 
   async hide(id: number, organizationId: number) {
@@ -154,14 +214,31 @@ export class DealsService {
     organizationId: number,
     userId: number,
     isPrimary = false,
+    actorId?: number,
   ) {
     await this.findById(dealId, organizationId);
-    return this.dealsRepository.addOwner(dealId, userId, isPrimary);
+    const result = await this.dealsRepository.addOwner(dealId, userId, isPrimary);
+    await this.activityService.create({
+      activityType: 'owner_assigned',
+      entityType: 'deal',
+      entityId: dealId,
+      actorId,
+      metadata: { userId, userName: result.user?.name ?? 'Unknown' },
+    });
+    return result;
   }
 
-  async removeOwner(dealId: number, organizationId: number, userId: number) {
+  async removeOwner(dealId: number, organizationId: number, userId: number, actorId?: number) {
     await this.findById(dealId, organizationId);
-    return this.dealsRepository.removeOwner(dealId, userId);
+    const result = await this.dealsRepository.removeOwner(dealId, userId);
+    await this.activityService.create({
+      activityType: 'owner_removed',
+      entityType: 'deal',
+      entityId: dealId,
+      actorId,
+      metadata: { userId, userName: result.user?.name ?? 'Unknown' },
+    });
+    return result;
   }
 
   async setPrimaryOwner(
@@ -189,6 +266,7 @@ export class DealsService {
     dealId: number,
     organizationId: number,
     input: AddCompanyToDealInput,
+    actorId?: number,
   ) {
     this.logger.log(
       `[SERVICE] Adding company ${input.companyId} to deal ${dealId}`,
@@ -213,6 +291,13 @@ export class DealsService {
       this.logger.log(
         `[SERVICE] Company ${input.companyId} added to deal ${dealId} successfully`,
       );
+      await this.activityService.create({
+        activityType: 'company_linked',
+        entityType: 'deal',
+        entityId: dealId,
+        actorId,
+        metadata: { companyId: input.companyId, companyName: result.company.companyName },
+      });
       return result;
     } catch (error: unknown) {
       const errorMessage =
@@ -230,12 +315,17 @@ export class DealsService {
     dealId: number,
     organizationId: number,
     companyId: number,
+    actorId?: number,
   ) {
     this.logger.log(
       `[SERVICE] Removing company ${companyId} from deal ${dealId}`,
     );
 
     await this.findById(dealId, organizationId);
+
+    const companies = await this.dealsRepository.getCompanies(dealId);
+    const companyToRemove = companies.find((c) => c.companyId === companyId);
+    const companyName = companyToRemove?.company?.companyName ?? 'Unknown';
 
     try {
       const result = await this.dealsRepository.removeCompany(
@@ -245,6 +335,13 @@ export class DealsService {
       this.logger.log(
         `[SERVICE] Company ${companyId} removed from deal ${dealId} successfully`,
       );
+      await this.activityService.create({
+        activityType: 'company_unlinked',
+        entityType: 'deal',
+        entityId: dealId,
+        actorId,
+        metadata: { companyId, companyName },
+      });
       return result;
     } catch (error: unknown) {
       const errorMessage =
@@ -277,6 +374,7 @@ export class DealsService {
     dealId: number,
     organizationId: number,
     input: AddContactToDealInput,
+    actorId?: number,
   ) {
     this.logger.log(
       `[SERVICE] Adding contact ${input.contactId} to deal ${dealId}`,
@@ -301,6 +399,17 @@ export class DealsService {
       this.logger.log(
         `[SERVICE] Contact ${input.contactId} added to deal ${dealId} successfully`,
       );
+      await this.activityService.create({
+        activityType: 'contact_linked',
+        entityType: 'deal',
+        entityId: dealId,
+        actorId,
+        metadata: {
+          contactId: input.contactId,
+          contactName: result.contact.name,
+          ...(input.role && { role: input.role }),
+        },
+      });
       return result;
     } catch (error: unknown) {
       const errorMessage =
@@ -318,12 +427,17 @@ export class DealsService {
     dealId: number,
     organizationId: number,
     contactId: number,
+    actorId?: number,
   ) {
     this.logger.log(
       `[SERVICE] Removing contact ${contactId} from deal ${dealId}`,
     );
 
     await this.findById(dealId, organizationId);
+
+    const contacts = await this.dealsRepository.getContacts(dealId);
+    const contactToRemove = contacts.find((c) => c.contactId === contactId);
+    const contactName = contactToRemove?.contact?.name ?? 'Unknown';
 
     try {
       const result = await this.dealsRepository.removeContact(
@@ -333,6 +447,13 @@ export class DealsService {
       this.logger.log(
         `[SERVICE] Contact ${contactId} removed from deal ${dealId} successfully`,
       );
+      await this.activityService.create({
+        activityType: 'contact_unlinked',
+        entityType: 'deal',
+        entityId: dealId,
+        actorId,
+        metadata: { contactId, contactName },
+      });
       return result;
     } catch (error: unknown) {
       const errorMessage =

@@ -11,6 +11,77 @@ import relativeTime from 'dayjs/plugin/relativeTime';
 
 dayjs.extend(relativeTime);
 
+const STAGE_LABELS: Record<string, string> = {
+  prospecting: 'Prospecting',
+  qualification: 'Qualification',
+  proposal: 'Proposal',
+  negotiation: 'Negotiation',
+  closed_won: 'Closed Won',
+  closed_lost: 'Closed Lost',
+};
+
+function formatStage(stage: string) {
+  return STAGE_LABELS[stage] ?? stage;
+}
+
+const FIELD_LABELS: Record<string, string> = {
+  title: 'title',
+  value: 'value',
+  probability: 'probability',
+  expectedCloseDate: 'expected close date',
+  priority: 'priority',
+};
+
+function formatFieldName(field: string) {
+  return FIELD_LABELS[field] ?? field;
+}
+
+function formatFieldValue(field: string, val: unknown): string {
+  if (val === null || val === undefined) return '—';
+  if (field === 'expectedCloseDate' || field === 'actualCloseDate') {
+    return dayjs(String(val)).format('MMM D, YYYY');
+  }
+  if (field === 'probability') return `${val}%`;
+  if (field === 'value') return String(val);
+  return String(val);
+}
+
+function renderSystemEventText(activity: { activityType: string; metadata?: Record<string, unknown> | null }) {
+  const m = (activity.metadata ?? {}) as Record<string, unknown>;
+  switch (activity.activityType) {
+    case 'deal_created':
+      return 'created this deal';
+    case 'stage_change':
+      return `moved deal from ${formatStage(String(m.from))} to ${formatStage(String(m.to))}`;
+    case 'field_update': {
+      const fieldName = formatFieldName(String(m.field));
+      const newVal = formatFieldValue(String(m.field), m.to);
+      const oldVal = m.from === null || m.from === undefined ? null : formatFieldValue(String(m.field), m.from);
+      return oldVal
+        ? `updated ${fieldName} from "${oldVal}" to "${newVal}"`
+        : `set ${fieldName} to "${newVal}"`;
+    }
+    case 'deal_closed':
+      return m.outcome === 'won'
+        ? 'marked deal as Won'
+        : `marked deal as Lost${m.lostReason ? `: ${m.lostReason}` : ''}`;
+    case 'company_linked':
+      return `linked company ${m.companyName}`;
+    case 'company_unlinked':
+      return `unlinked company ${m.companyName}`;
+    case 'contact_linked':
+      return `linked contact ${m.contactName}${m.role ? ` as ${m.role}` : ''}`;
+    case 'contact_unlinked':
+      return `unlinked contact ${m.contactName}`;
+    case 'owner_assigned':
+      return `assigned ${m.userName} as owner`;
+    case 'owner_removed':
+      return `removed ${m.userName} as owner`;
+    default:
+      return activity.activityType;
+  }
+}
+
 interface ActivityTimelineProps {
   entityType: string;
   entityId: number;
@@ -215,8 +286,8 @@ export default function ActivityTimeline({
                       )}
 
                     {activity.activityType !== 'comment' && (
-                      <div className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
-                        {activity.activityType}
+                      <div className="mt-1 text-sm text-zinc-500 dark:text-zinc-400 italic">
+                        {renderSystemEventText(activity)}
                       </div>
                     )}
                   </div>
