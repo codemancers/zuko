@@ -1,5 +1,4 @@
 import { describe, it, expect, beforeEach, jest } from '@jest/globals';
-import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { DealsService } from './deals.service';
 import { DealsRepository } from '../repositories/deals.repository';
 import { ActivityService } from './activity.service';
@@ -73,7 +72,7 @@ describe('DealsService - activity events', () => {
       (mockActivityService.create as jest.Mock).mockResolvedValue(undefined as never);
 
       await service.create(
-        { title: 'Test Deal', ownerIds: [1] },
+        { title: 'Test Deal', ownerIds: [1], organizationId: ORG_ID },
         ACTOR_ID,
       );
 
@@ -90,7 +89,7 @@ describe('DealsService - activity events', () => {
       (mockRepo.create as jest.Mock).mockRejectedValue(new Error('DB error') as never);
 
       await expect(
-        service.create({ title: 'Test Deal', ownerIds: [1] }),
+        service.create({ title: 'Test Deal', ownerIds: [1], organizationId: ORG_ID }),
       ).rejects.toThrow('DB error');
 
       expect(mockActivityService.create).not.toHaveBeenCalled();
