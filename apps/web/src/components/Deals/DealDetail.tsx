@@ -52,6 +52,7 @@ export default function DealDetail({ dealId, currentUserId }: DealDetailProps) {
     onSuccess: async () => {
       await queryClient.refetchQueries({ queryKey: ['deal', dealId] });
       await queryClient.invalidateQueries({ queryKey: ['deals'] });
+      await queryClient.invalidateQueries({ queryKey: ['timeline', 'deal', dealId] });
     },
   });
 
@@ -76,6 +77,7 @@ export default function DealDetail({ dealId, currentUserId }: DealDetailProps) {
     onSuccess: async () => {
       await queryClient.refetchQueries({ queryKey: ['deal', dealId] });
       await queryClient.invalidateQueries({ queryKey: ['deals'] });
+      await queryClient.invalidateQueries({ queryKey: ['timeline', 'deal', dealId] });
     },
   });
 
