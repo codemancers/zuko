@@ -7,28 +7,43 @@ import React, { forwardRef, useId } from 'react';
 import { TouchTarget } from './button';
 import { Link } from './link';
 
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '../components/ui/tooltip';
+
+export const SIDEBAR_COLLAPSED_KEY = 'zuko-sidebar-collapsed';
+
 export function Sidebar({
   className,
+  collapsed,
   ...props
-}: React.ComponentPropsWithoutRef<'nav'>) {
+}: React.ComponentPropsWithoutRef<'nav'> & { collapsed?: boolean }) {
   return (
     <nav
       {...props}
-      className={clsx(className, 'flex h-full min-h-0 flex-col')}
+      className={clsx(
+        className,
+        'flex h-full min-h-0 flex-col transition-all duration-300 ease-in-out',
+        collapsed ? 'w-20' : 'w-64',
+      )}
     />
   );
 }
 
 export function SidebarHeader({
   className,
+  collapsed,
   ...props
-}: React.ComponentPropsWithoutRef<'div'>) {
+}: React.ComponentPropsWithoutRef<'div'> & { collapsed?: boolean }) {
   return (
     <div
       {...props}
       className={clsx(
         className,
-        'flex flex-col border-b border-zinc-950/5 p-4 dark:border-white/5 [&>[data-slot=section]+[data-slot=section]]:mt-2.5',
+        'flex flex-col border-b border-zinc-950/5 p-4 dark:border-white/5 [&>[data-slot=section]+[data-slot=section]]:mt-2.5 transition-all duration-300',
+        collapsed && 'items-center px-2',
       )}
     />
   );
@@ -36,14 +51,16 @@ export function SidebarHeader({
 
 export function SidebarBody({
   className,
+  collapsed,
   ...props
-}: React.ComponentPropsWithoutRef<'div'>) {
+}: React.ComponentPropsWithoutRef<'div'> & { collapsed?: boolean }) {
   return (
     <div
       {...props}
       className={clsx(
         className,
-        'flex flex-1 flex-col overflow-y-auto p-4 [&>[data-slot=section]+[data-slot=section]]:mt-8',
+        'flex flex-1 flex-col overflow-y-auto p-4 [&>[data-slot=section]+[data-slot=section]]:mt-8 transition-all duration-300',
+        collapsed && 'items-center px-2',
       )}
     />
   );
@@ -51,14 +68,16 @@ export function SidebarBody({
 
 export function SidebarFooter({
   className,
+  collapsed,
   ...props
-}: React.ComponentPropsWithoutRef<'div'>) {
+}: React.ComponentPropsWithoutRef<'div'> & { collapsed?: boolean }) {
   return (
     <div
       {...props}
       className={clsx(
         className,
-        'flex flex-col border-t border-zinc-950/5 p-4 dark:border-white/5 [&>[data-slot=section]+[data-slot=section]]:mt-2.5',
+        'flex flex-col border-t border-zinc-950/5 p-4 dark:border-white/5 [&>[data-slot=section]+[data-slot=section]]:mt-2.5 transition-all duration-300',
+        collapsed && 'items-center px-2',
       )}
     />
   );
@@ -66,8 +85,9 @@ export function SidebarFooter({
 
 export function SidebarSection({
   className,
+  collapsed,
   ...props
-}: React.ComponentPropsWithoutRef<'div'>) {
+}: React.ComponentPropsWithoutRef<'div'> & { collapsed?: boolean }) {
   const id = useId();
 
   return (
@@ -75,7 +95,11 @@ export function SidebarSection({
       <div
         {...props}
         data-slot="section"
-        className={clsx(className, 'flex flex-col gap-0.5')}
+        className={clsx(
+          className,
+          'flex flex-col gap-0.5 transition-all duration-300',
+          collapsed && 'items-center',
+        )}
       />
     </LayoutGroup>
   );
@@ -111,8 +135,11 @@ export function SidebarSpacer({
 
 export function SidebarHeading({
   className,
+  collapsed,
+  children,
   ...props
-}: React.ComponentPropsWithoutRef<'h3'>) {
+}: React.ComponentPropsWithoutRef<'h3'> & { collapsed?: boolean }) {
+  if (collapsed) return null;
   return (
     <h3
       {...props}
@@ -120,17 +147,25 @@ export function SidebarHeading({
         className,
         'mb-1 px-2 text-xs/6 font-medium text-zinc-500 dark:text-zinc-400',
       )}
-    />
+    >
+      {children}
+    </h3>
   );
 }
 
 export const SidebarItem = forwardRef(function SidebarItem(
   {
     current,
+    collapsed,
     className,
     children,
     ...props
-  }: { current?: boolean; className?: string; children: React.ReactNode } & (
+  }: {
+    current?: boolean;
+    collapsed?: boolean;
+    className?: string;
+    children: React.ReactNode;
+  } & (
     | ({ href?: never } & Omit<Headless.ButtonProps, 'as' | 'className'>)
     | ({ href: string } & Omit<
         Headless.ButtonProps<typeof Link>,
@@ -141,7 +176,7 @@ export const SidebarItem = forwardRef(function SidebarItem(
 ) {
   const classes = clsx(
     // Base
-    'flex w-full items-center gap-3 rounded-lg px-2 py-2.5 text-left text-base/6 font-medium text-zinc-950 sm:py-2 sm:text-sm/5',
+    'flex w-full items-center gap-3 rounded-lg px-2 py-2.5 text-left text-base/6 font-medium text-zinc-950 sm:py-2 sm:text-sm/5 transition-all duration-300',
     // Leading icon/icon-only
     '*:data-[slot=icon]:size-6 *:data-[slot=icon]:shrink-0 *:data-[slot=icon]:fill-zinc-500 sm:*:data-[slot=icon]:size-5',
     // Trailing icon (down chevron or similar)
@@ -159,6 +194,9 @@ export const SidebarItem = forwardRef(function SidebarItem(
     'dark:data-hover:bg-white/5 dark:data-hover:*:data-[slot=icon]:fill-white',
     'dark:data-active:bg-white/5 dark:data-active:*:data-[slot=icon]:fill-white',
     'dark:data-current:*:data-[slot=icon]:fill-white',
+    // Collapsed
+    collapsed &&
+      'justify-center px-0 py-0 sm:py-0 sm:*:data-[slot=icon]:!size-5 sm:*:data-[slot=icon]:!shrink-5 sm:*:data-[slot=avatar]:size-10',
   );
 
   return (
@@ -177,7 +215,19 @@ export const SidebarItem = forwardRef(function SidebarItem(
           data-current={current ? 'true' : undefined}
           ref={ref}
         >
-          <TouchTarget>{children}</TouchTarget>
+          <TouchTarget>
+            {React.Children.map(children, (child) => {
+              if (
+                collapsed &&
+                React.isValidElement(child) &&
+                (child.type === SidebarLabel ||
+                  (typeof child.type === 'string' && child.type === 'span'))
+              ) {
+                return null;
+              }
+              return child;
+            })}
+          </TouchTarget>
         </Headless.CloseButton>
       ) : (
         <Headless.Button
@@ -186,7 +236,19 @@ export const SidebarItem = forwardRef(function SidebarItem(
           data-current={current ? 'true' : undefined}
           ref={ref}
         >
-          <TouchTarget>{children}</TouchTarget>
+          <TouchTarget>
+            {React.Children.map(children, (child) => {
+              if (
+                collapsed &&
+                React.isValidElement(child) &&
+                (child.type === SidebarLabel ||
+                  (typeof child.type === 'string' && child.type === 'span'))
+              ) {
+                return null;
+              }
+              return child;
+            })}
+          </TouchTarget>
         </Headless.Button>
       )}
     </span>
@@ -195,7 +257,60 @@ export const SidebarItem = forwardRef(function SidebarItem(
 
 export function SidebarLabel({
   className,
+  collapsed,
   ...props
-}: React.ComponentPropsWithoutRef<'span'>) {
+}: React.ComponentPropsWithoutRef<'span'> & { collapsed?: boolean }) {
+  if (collapsed) return null;
   return <span {...props} className={clsx(className, 'truncate')} />;
+}
+
+export function SidebarNavItem({
+  href,
+  current,
+  collapsed,
+  label,
+  icon: Icon,
+  ...props
+}: {
+  href: string;
+  current?: boolean;
+  collapsed?: boolean;
+  label: string;
+  icon: React.ElementType;
+} & React.ComponentPropsWithoutRef<typeof Link>) {
+  return (
+    <WithSidebarTooltip collapsed={collapsed} label={label}>
+      <SidebarItem
+        href={href}
+        current={current}
+        collapsed={collapsed}
+        {...(props as any)}
+      >
+        <Icon data-slot="icon" />
+        <SidebarLabel collapsed={collapsed}>{label}</SidebarLabel>
+      </SidebarItem>
+    </WithSidebarTooltip>
+  );
+}
+
+export function WithSidebarTooltip({
+  collapsed,
+  label,
+  children,
+}: {
+  collapsed?: boolean;
+  label: string;
+  children: React.ReactNode;
+}) {
+  if (collapsed) {
+    return (
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <div>{children}</div>
+        </TooltipTrigger>
+        <TooltipContent side="right">{label}</TooltipContent>
+      </Tooltip>
+    );
+  }
+  return children as React.ReactElement;
 }
