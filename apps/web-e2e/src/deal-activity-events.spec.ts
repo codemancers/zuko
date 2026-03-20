@@ -35,7 +35,7 @@ test.describe("Deal Activity Timeline - System Events", () => {
       await page.waitForURL(/\/deals\/\d+/, { timeout: 10000 });
 
       await page
-        .getByRole("heading", { name: /Activity/i })
+        .getByRole("heading", { name: "Activity", exact: true })
         .scrollIntoViewIfNeeded();
 
       await expect(
@@ -82,7 +82,7 @@ test.describe("Deal Activity Timeline - System Events", () => {
       await page.waitForURL(/\/deals\/\d+$/, { timeout: 10000 });
 
       await page
-        .getByRole("heading", { name: /Activity/i })
+        .getByRole("heading", { name: "Activity", exact: true })
         .scrollIntoViewIfNeeded();
 
       await expect(
@@ -139,7 +139,7 @@ test.describe("Deal Activity Timeline - System Events", () => {
       ).toBeHidden({ timeout: 5000 });
 
       await page
-        .getByRole("heading", { name: /Activity/i })
+        .getByRole("heading", { name: "Activity", exact: true })
         .scrollIntoViewIfNeeded();
 
       await expect(
@@ -168,7 +168,7 @@ test.describe("Deal Activity Timeline - System Events", () => {
       await removeButtons.first().click();
 
       await page
-        .getByRole("heading", { name: /Activity/i })
+        .getByRole("heading", { name: "Activity", exact: true })
         .scrollIntoViewIfNeeded();
 
       await expect(
@@ -224,7 +224,7 @@ test.describe("Deal Activity Timeline - System Events", () => {
       ).toBeHidden({ timeout: 5000 });
 
       await page
-        .getByRole("heading", { name: /Activity/i })
+        .getByRole("heading", { name: "Activity", exact: true })
         .scrollIntoViewIfNeeded();
 
       await expect(
@@ -253,7 +253,7 @@ test.describe("Deal Activity Timeline - System Events", () => {
       await removeButtons.first().click();
 
       await page
-        .getByRole("heading", { name: /Activity/i })
+        .getByRole("heading", { name: "Activity", exact: true })
         .scrollIntoViewIfNeeded();
 
       await expect(
