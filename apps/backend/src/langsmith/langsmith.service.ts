@@ -1,5 +1,6 @@
 import { Injectable, Logger } from "@nestjs/common";
-import { BaseMessageLike, ContextEntityReference } from "@zuko/agents";
+import { BaseMessageLike } from "@langchain/core/messages";
+import { ContextEntityReference } from "../types/chat";
 
 @Injectable()
 export class LangsmithService {

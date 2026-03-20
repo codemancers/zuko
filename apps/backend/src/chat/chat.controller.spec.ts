@@ -1,5 +1,5 @@
 import { describe, it, expect } from "@jest/globals";
-import { MessageMetadata } from "@zuko/agents";
+import { MessageMetadata } from "../types/chat";
 
 /**
  * Tests for contextEntities extraction from AI SDK message metadata

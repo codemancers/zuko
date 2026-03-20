@@ -6,7 +6,6 @@ import { PrismaModule } from '../prisma/prisma.module';
 import { AuthModule } from '@thallesp/nestjs-better-auth';
 import { ChatController } from '../chat/chat.controller';
 import { ChatsModule } from '../chats/chats.module';
-import { GraphController } from '../graph/graph.controller';
 import { agentsEnvSchema } from './env.validation';
 import { LangsmithService } from '../langsmith/langsmith.service';
 import { SalesModule } from './sales/sales.module';
@@ -35,7 +34,7 @@ const authModule = AuthModule.forRoot({ auth, disableGlobalAuthGuard: true });
     ChatsModule,
     AdminModule,
   ],
-  controllers: [AppController, ChatController, GraphController],
+  controllers: [AppController, ChatController],
   providers: [AppService, LangsmithService],
 })
 export class AppModule {}

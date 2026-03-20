@@ -22,9 +22,6 @@
       "path": "./apps/backend"
     },
     {
-      "path": "./libs/agents"
-    },
-    {
       "path": "./libs/models"
     },
     {

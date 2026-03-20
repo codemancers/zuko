@@ -91,7 +91,9 @@ const PersistentContextStateSchema = z.object({
  *
  * @returns AgentMiddleware that adds persistent context state fields
  */
-export function createPersistentContextMiddleware() {
+export function createPersistentContextMiddleware(): ReturnType<
+  typeof createMiddleware
+> {
   return createMiddleware({
     name: 'PersistentContextMiddleware',
     stateSchema: PersistentContextStateSchema,
