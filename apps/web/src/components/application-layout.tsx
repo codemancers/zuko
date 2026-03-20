@@ -325,7 +325,7 @@ export function ApplicationLayout({ children }: { children: React.ReactNode }) {
                   <Avatar
                     src={user?.image ?? undefined}
                     initials={user?.name?.[0]?.toUpperCase() || 'U'}
-                    className="size-8"
+                    className="size-10"
                     square
                     data-slot="avatar"
                   />
