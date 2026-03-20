@@ -23,6 +23,9 @@ import {
   SidebarLayout,
   SidebarSection,
   SidebarSpacer,
+  SIDEBAR_COLLAPSED_KEY,
+  SidebarNavItem,
+  WithSidebarTooltip,
 } from '@zuko/ui-kit';
 import {
   ArrowRightStartOnRectangleIcon,
@@ -30,6 +33,8 @@ import {
   ChevronUpIcon,
   PlusIcon,
   UserCircleIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
 } from '@heroicons/react/16/solid';
 import {
   BriefcaseIcon,
@@ -74,6 +79,24 @@ function AccountDropdownMenu({
   );
 }
 
+const navigation = [
+  {
+    name: 'New chat',
+    href: '/chat',
+    icon: ChatBubbleLeftRightIcon,
+    exact: true,
+  },
+  { divider: true },
+  { name: 'Contacts', href: '/contacts', icon: UserGroupIcon },
+  { name: 'Companies', href: '/companies', icon: BuildingOfficeIcon },
+  { name: 'Deals', href: '/deals', icon: BriefcaseIcon },
+  { divider: true },
+  { name: 'Tasks', href: '/tasks', icon: ClipboardDocumentListIcon },
+  { name: 'Meetings', href: '/meetings', icon: CalendarIcon },
+  { divider: true },
+  { name: 'Settings', href: '/settings', icon: Cog6ToothIcon },
+];
+
 export function ApplicationLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [user, setUser] = useState<{
@@ -82,11 +105,25 @@ export function ApplicationLayout({ children }: { children: React.ReactNode }) {
     image?: string | null;
   } | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const { data: chats = [] } = useChats();
   const recentChats = chats.slice(0, 5);
 
   const { data: organizations = [] } = useQuery(getOrganizations());
   const activeOrg = authClient.useActiveOrganization();
+
+  // Load initial sidebar state
+  useEffect(() => {
+    const saved = localStorage.getItem(SIDEBAR_COLLAPSED_KEY);
+    if (saved !== null) {
+      setIsSidebarCollapsed(saved === 'true');
+    }
+  }, []);
+
+  // Persist sidebar state
+  useEffect(() => {
+    localStorage.setItem(SIDEBAR_COLLAPSED_KEY, String(isSidebarCollapsed));
+  }, [isSidebarCollapsed]);
 
   // Pass current org to API client so backend receives X-Organization-Id (contacts, companies, deals)
   useEffect(() => {
@@ -116,6 +153,8 @@ export function ApplicationLayout({ children }: { children: React.ReactNode }) {
     loadUser();
   }, []);
 
+  const onCollapseToggle = () => setIsSidebarCollapsed(!isSidebarCollapsed);
+
   // Show loading state while checking session
   if (loading) {
     return (
@@ -129,6 +168,7 @@ export function ApplicationLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <SidebarLayout
+      collapsed={isSidebarCollapsed}
       navbar={
         <Navbar>
           <NavbarSpacer />
@@ -147,19 +187,29 @@ export function ApplicationLayout({ children }: { children: React.ReactNode }) {
         </Navbar>
       }
       sidebar={
-        <Sidebar>
-          <SidebarHeader>
+        <Sidebar collapsed={isSidebarCollapsed}>
+          <SidebarHeader collapsed={isSidebarCollapsed}>
             <Dropdown>
-              <DropdownButton as={SidebarItem} className="cursor-pointer">
-                <Avatar
-                  src={activeOrg.data?.logo}
-                  initials={activeOrg.data?.name?.[0] || 'Z'}
-                />
-                <SidebarLabel>
-                  {activeOrg.data?.name || 'Select Organization'}
-                </SidebarLabel>
-                <ChevronDownIcon />
-              </DropdownButton>
+              <WithSidebarTooltip
+                collapsed={isSidebarCollapsed}
+                label={activeOrg.data?.name || 'Select Organization'}
+              >
+                <DropdownButton
+                  as={SidebarItem}
+                  className="cursor-pointer"
+                  collapsed={isSidebarCollapsed}
+                >
+                  <Avatar
+                    src={activeOrg.data?.logo}
+                    initials={activeOrg.data?.name?.[0] || 'Z'}
+                    data-slot="avatar"
+                  />
+                  <SidebarLabel collapsed={isSidebarCollapsed}>
+                    {activeOrg.data?.name || 'Select Organization'}
+                  </SidebarLabel>
+                  {!isSidebarCollapsed && <ChevronDownIcon />}
+                </DropdownButton>
+              </WithSidebarTooltip>
               <DropdownMenu
                 className="min-w-80 lg:min-w-64"
                 anchor="bottom start"
@@ -195,70 +245,42 @@ export function ApplicationLayout({ children }: { children: React.ReactNode }) {
             </Dropdown>
           </SidebarHeader>
 
-          <SidebarBody>
-            <SidebarSection>
-              <SidebarItem href="/chat" current={pathname === '/chat'}>
-                <ChatBubbleLeftRightIcon />
-                <SidebarLabel>New chat</SidebarLabel>
-              </SidebarItem>
-              <SidebarDivider />
-              <SidebarItem
-                href="/contacts"
-                current={pathname.startsWith('/contacts')}
-              >
-                <UserGroupIcon />
-                <SidebarLabel>Contacts</SidebarLabel>
-              </SidebarItem>
-              <SidebarItem
-                href="/companies"
-                current={pathname.startsWith('/companies')}
-              >
-                <BuildingOfficeIcon />
-                <SidebarLabel>Companies</SidebarLabel>
-              </SidebarItem>
-              <SidebarItem
-                href="/deals"
-                current={pathname.startsWith('/deals')}
-              >
-                <BriefcaseIcon />
-                <SidebarLabel>Deals</SidebarLabel>
-              </SidebarItem>
-              <SidebarDivider />
-              <SidebarItem
-                href="/tasks"
-                current={pathname.startsWith('/tasks')}
-              >
-                <ClipboardDocumentListIcon />
-                <SidebarLabel>Tasks</SidebarLabel>
-              </SidebarItem>
-              <SidebarItem
-                href="/meetings"
-                current={pathname.startsWith('/meetings')}
-              >
-                <CalendarIcon />
-                <SidebarLabel>Meetings</SidebarLabel>
-              </SidebarItem>
-              <SidebarDivider />
-              <SidebarItem
-                href="/settings"
-                current={pathname.startsWith('/settings')}
-              >
-                <Cog6ToothIcon />
-                <SidebarLabel>Settings</SidebarLabel>
-              </SidebarItem>
+          <SidebarBody collapsed={isSidebarCollapsed}>
+            <SidebarSection collapsed={isSidebarCollapsed}>
+              {navigation.map((item, index) =>
+                'divider' in item ? (
+                  <SidebarDivider key={`divider-${index}`} />
+                ) : (
+                  <SidebarNavItem
+                    key={item.href}
+                    href={item.href}
+                    current={
+                      item.exact
+                        ? pathname === item.href
+                        : pathname.startsWith(item.href)
+                    }
+                    collapsed={isSidebarCollapsed}
+                    label={item.name}
+                    icon={item.icon}
+                  />
+                ),
+              )}
             </SidebarSection>
 
             {recentChats.length > 0 && (
-              <SidebarSection>
-                <SidebarHeading>Your chats</SidebarHeading>
+              <SidebarSection collapsed={isSidebarCollapsed}>
+                <SidebarHeading collapsed={isSidebarCollapsed}>
+                  Your chats
+                </SidebarHeading>
                 {recentChats.map((chat) => (
-                  <SidebarItem
+                  <SidebarNavItem
                     key={chat.id}
                     href={`/chat/${chat.id}`}
                     current={pathname === `/chat/${chat.id}`}
-                  >
-                    <SidebarLabel>{chat.title || 'Untitled chat'}</SidebarLabel>
-                  </SidebarItem>
+                    collapsed={isSidebarCollapsed}
+                    label={chat.title || 'Untitled chat'}
+                    icon={ChatBubbleLeftRightIcon}
+                  />
                 ))}
               </SidebarSection>
             )}
@@ -266,27 +288,61 @@ export function ApplicationLayout({ children }: { children: React.ReactNode }) {
             <SidebarSpacer />
           </SidebarBody>
 
-          <SidebarFooter className="max-lg:hidden">
+          <SidebarFooter
+            className="max-lg:hidden"
+            collapsed={isSidebarCollapsed}
+          >
+            <div className="mb-4 border-b border-zinc-950/5 pb-4 dark:border-white/5">
+              <WithSidebarTooltip
+                collapsed={isSidebarCollapsed}
+                label={isSidebarCollapsed ? 'Expand sidebar' : 'Collapse'}
+              >
+                <SidebarItem
+                  className="justify-center cursor-pointer"
+                  onClick={onCollapseToggle}
+                  collapsed={isSidebarCollapsed}
+                >
+                  {isSidebarCollapsed ? (
+                    <ChevronRightIcon data-slot="icon" />
+                  ) : (
+                    <>
+                      <ChevronLeftIcon data-slot="icon" fontSize={50} />
+                      <SidebarLabel collapsed={isSidebarCollapsed}>
+                        Collapse
+                      </SidebarLabel>
+                    </>
+                  )}
+                </SidebarItem>
+              </WithSidebarTooltip>
+            </div>
+
             <Dropdown>
-              <DropdownButton as={SidebarItem}>
-                <span className="flex min-w-0 items-center gap-3">
+              <WithSidebarTooltip
+                collapsed={isSidebarCollapsed}
+                label={user?.name || 'User'}
+              >
+                <DropdownButton as={SidebarItem} collapsed={isSidebarCollapsed}>
                   <Avatar
                     src={user?.image ?? undefined}
                     initials={user?.name?.[0]?.toUpperCase() || 'U'}
-                    className="size-10"
+                    className="size-8"
                     square
+                    data-slot="avatar"
                   />
-                  <span className="min-w-0">
-                    <span className="block truncate text-sm/5 font-medium text-zinc-950 dark:text-white">
-                      {user?.name || 'User'}
+                  {!isSidebarCollapsed && (
+                    <span className="min-w-0">
+                      <span className="block truncate text-sm/5 font-medium text-zinc-950 dark:text-white">
+                        {user?.name || 'User'}
+                      </span>
+                      <span className="block truncate text-xs/5 font-normal text-zinc-500 dark:text-zinc-400">
+                        {user?.email || 'user@example.com'}
+                      </span>
                     </span>
-                    <span className="block truncate text-xs/5 font-normal text-zinc-500 dark:text-zinc-400">
-                      {user?.email || 'user@example.com'}
-                    </span>
-                  </span>
-                </span>
-                <ChevronUpIcon />
-              </DropdownButton>
+                  )}
+
+                  {!isSidebarCollapsed && <ChevronUpIcon />}
+                </DropdownButton>
+              </WithSidebarTooltip>
               <AccountDropdownMenu anchor="top start" />
             </Dropdown>
           </SidebarFooter>
