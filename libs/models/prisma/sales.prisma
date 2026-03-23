@@ -8,8 +8,9 @@ model Contact {
   name           String
   email          String?
   phone          String? // E.164 format (e.g., +14155552671)
-  linkedinId      String?      @map("linkedin_id")
+  linkedinId     String?      @map("linkedin_id")
   notes          String?      @db.Text
+  fields         Json         @default("{}") @map("fields")
   isHidden       Boolean      @default(false) @map("is_hidden")
   createdAt      DateTime     @default(now()) @map("created_at")
   updatedAt      DateTime     @updatedAt @map("updated_at")
@@ -72,6 +73,7 @@ model Company {
   linkedinUrl    String?  @map("linkedin_url")
   summary        String?  @db.Text
   isHidden       Boolean  @default(false) @map("is_hidden")
+  fields         Json     @default("{}") @map("fields")
   createdAt      DateTime @default(now()) @map("created_at")
   updatedAt     DateTime @updatedAt @map("updated_at")
 
@@ -140,6 +142,7 @@ model Deal {
   source            String?
   priority          Int?      @default(2)
   isHidden          Boolean   @default(false) @map("is_hidden")
+  fields            Json      @default("{}") @map("fields")
   createdAt         DateTime  @default(now()) @map("created_at")
   updatedAt         DateTime  @updatedAt @map("updated_at")
 
@@ -213,3 +216,27 @@ model DealOwner {
   @@schema("sales")
 }
 
+model TableColumn {
+  id             Int      @id @default(autoincrement())
+  organizationId Int      @map("organization_id")
+  createdById    Int      @map("created_by_id")
+  tableName      String   @map("table_name")
+  columnKey      String   @map("column_key")
+  label          String
+  fieldType      String   @map("field_type")
+  isRequired     Boolean  @default(false) @map("is_required")
+  config         Json     @default("{}") @map("config")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  organization   Organization @relation("OrganizationTableColumns", fields: [organizationId], references: [id], onDelete: Cascade)
+  createdBy      User         @relation("CreatedTableColumns", fields: [createdById], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, tableName, columnKey])
+
+  @@index([organizationId])
+  @@index([tableName])
+  @@index([organizationId, tableName])
+
+  @@map("table_column")
+  @@schema("sales")
+}
