@@ -60,6 +60,7 @@ export default function ContactForm({
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['contacts'] });
       queryClient.invalidateQueries({ queryKey: ['contact', contact!.id] });
+      queryClient.invalidateQueries({ queryKey: ['timeline', 'contact', contact!.id] });
       router.push(`/contacts/${contact!.id}`);
     },
     onError: (error: any) => {

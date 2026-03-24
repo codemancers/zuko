@@ -4,6 +4,7 @@ import {
   NotFoundException,
   Logger,
 } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import type { PaginationOptions } from '../repositories/types';
 import {
   DealsRepository,
@@ -14,7 +15,19 @@ import {
   AddContactToDealInput,
   UpdateContactDealInput,
 } from '../repositories/deals.repository';
-import { ActivityService } from './activity.service';
+import {
+  DEAL_EVENTS,
+  DealFieldUpdatedEvent,
+  ActivitySource,
+} from '../events/deal-events';
+
+// Fields handled by dedicated events or not user-visible — excluded from generic field_update
+const FIELD_UPDATE_EXCLUDED = new Set<keyof UpdateDealInput>([
+  'stage',           // handled by STAGE_CHANGED event
+  'actualCloseDate', // handled by CLOSED event
+  'lostReason',      // part of CLOSED event metadata
+  'isHidden',        // handled by hide/unhide methods
+]);
 
 @Injectable()
 export class DealsService {
@@ -22,10 +35,10 @@ export class DealsService {
 
   constructor(
     private readonly dealsRepository: DealsRepository,
-    private readonly activityService: ActivityService,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
-  async create(input: CreateDealInput, actorId?: number) {
+  async create(input: CreateDealInput, actorId?: number, source?: ActivitySource) {
     this.logger.log('[SERVICE] Starting deal creation');
 
     // Validate title
@@ -74,12 +87,10 @@ export class DealsService {
       this.logger.log(
         `[SERVICE] Deal created successfully with ID: ${result.id}`,
       );
-      await this.activityService.create({
-        activityType: 'deal_created',
-        entityType: 'deal',
-        entityId: result.id,
+      await this.eventEmitter.emitAsync(DEAL_EVENTS.CREATED, {
+        dealId: result.id,
         actorId,
-        metadata: {},
+        source,
       });
       return result;
     } catch (error: unknown) {
@@ -102,7 +113,7 @@ export class DealsService {
     return deal;
   }
 
-  async update(id: number, organizationId: number, input: UpdateDealInput, actorId?: number) {
+  async update(id: number, organizationId: number, input: UpdateDealInput, actorId?: number, source?: ActivitySource) {
     // Check deal exists and belongs to org
     const existingDeal = await this.findById(id, organizationId);
 
@@ -145,50 +156,37 @@ export class DealsService {
 
     const result = await this.dealsRepository.update(id, input);
 
-    // Log activity events for meaningful changes
-    const activityBase = { entityType: 'deal', entityId: id, actorId };
+    const eventBase = { dealId: id, actorId, source };
 
     if (input.stage !== undefined && input.stage !== existingDeal.stage) {
-      await this.activityService.create({
-        ...activityBase,
-        activityType: 'stage_change',
-        metadata: { from: existingDeal.stage, to: input.stage },
+      await this.eventEmitter.emitAsync(DEAL_EVENTS.STAGE_CHANGED, {
+        ...eventBase,
+        from: existingDeal.stage,
+        to: input.stage,
       });
     }
 
-    if (
-      input.actualCloseDate !== undefined &&
-      !existingDeal.actualCloseDate
-    ) {
+    if (input.actualCloseDate !== undefined && !existingDeal.actualCloseDate) {
       const stage = input.stage ?? existingDeal.stage;
-      await this.activityService.create({
-        ...activityBase,
-        activityType: 'deal_closed',
-        metadata: {
-          outcome: stage === 'closed_won' ? 'won' : 'lost',
-          lostReason: input.lostReason ?? existingDeal.lostReason ?? undefined,
-        },
+      await this.eventEmitter.emitAsync(DEAL_EVENTS.CLOSED, {
+        ...eventBase,
+        outcome: stage === 'closed_won' ? 'won' : 'lost',
+        lostReason: input.lostReason ?? existingDeal.lostReason ?? undefined,
       });
     }
 
-    const trackedFields: Array<keyof UpdateDealInput> = [
-      'title',
-      'value',
-      'probability',
-      'expectedCloseDate',
-      'priority',
-    ];
-    for (const field of trackedFields) {
-      if (input[field] !== undefined) {
-        const oldVal = existingDeal[field as keyof typeof existingDeal];
-        const newVal = input[field];
-        if (String(oldVal) !== String(newVal)) {
-          await this.activityService.create({
-            ...activityBase,
-            activityType: 'field_update',
-            metadata: { field, from: oldVal, to: newVal },
-          });
-        }
+    for (const field of Object.keys(input) as Array<keyof UpdateDealInput>) {
+      if (FIELD_UPDATE_EXCLUDED.has(field)) continue;
+      if (input[field] === undefined) continue;
+      const oldVal = existingDeal[field as keyof typeof existingDeal];
+      const newVal = input[field];
+      if (String(oldVal) !== String(newVal)) {
+        await this.eventEmitter.emitAsync(DEAL_EVENTS.FIELD_UPDATED, {
+          ...eventBase,
+          field,
+          from: oldVal,
+          to: newVal,
+        } satisfies DealFieldUpdatedEvent);
       }
     }
 
@@ -218,12 +216,11 @@ export class DealsService {
   ) {
     await this.findById(dealId, organizationId);
     const result = await this.dealsRepository.addOwner(dealId, userId, isPrimary);
-    await this.activityService.create({
-      activityType: 'owner_assigned',
-      entityType: 'deal',
-      entityId: dealId,
+    await this.eventEmitter.emitAsync(DEAL_EVENTS.OWNER_ASSIGNED, {
+      dealId,
       actorId,
-      metadata: { userId, userName: result.user?.name ?? 'Unknown' },
+      userId,
+      userName: result.user?.name ?? 'Unknown',
     });
     return result;
   }
@@ -231,12 +228,11 @@ export class DealsService {
   async removeOwner(dealId: number, organizationId: number, userId: number, actorId?: number) {
     await this.findById(dealId, organizationId);
     const result = await this.dealsRepository.removeOwner(dealId, userId);
-    await this.activityService.create({
-      activityType: 'owner_removed',
-      entityType: 'deal',
-      entityId: dealId,
+    await this.eventEmitter.emitAsync(DEAL_EVENTS.OWNER_REMOVED, {
+      dealId,
       actorId,
-      metadata: { userId, userName: result.user?.name ?? 'Unknown' },
+      userId,
+      userName: result.user?.name ?? 'Unknown',
     });
     return result;
   }
@@ -291,12 +287,11 @@ export class DealsService {
       this.logger.log(
         `[SERVICE] Company ${input.companyId} added to deal ${dealId} successfully`,
       );
-      await this.activityService.create({
-        activityType: 'company_linked',
-        entityType: 'deal',
-        entityId: dealId,
+      await this.eventEmitter.emitAsync(DEAL_EVENTS.COMPANY_LINKED, {
+        dealId,
         actorId,
-        metadata: { companyId: input.companyId, companyName: result.company.companyName },
+        companyId: input.companyId,
+        companyName: result.company.companyName,
       });
       return result;
     } catch (error: unknown) {
@@ -335,12 +330,11 @@ export class DealsService {
       this.logger.log(
         `[SERVICE] Company ${companyId} removed from deal ${dealId} successfully`,
       );
-      await this.activityService.create({
-        activityType: 'company_unlinked',
-        entityType: 'deal',
-        entityId: dealId,
+      await this.eventEmitter.emitAsync(DEAL_EVENTS.COMPANY_UNLINKED, {
+        dealId,
         actorId,
-        metadata: { companyId, companyName },
+        companyId,
+        companyName,
       });
       return result;
     } catch (error: unknown) {
@@ -399,16 +393,12 @@ export class DealsService {
       this.logger.log(
         `[SERVICE] Contact ${input.contactId} added to deal ${dealId} successfully`,
       );
-      await this.activityService.create({
-        activityType: 'contact_linked',
-        entityType: 'deal',
-        entityId: dealId,
+      await this.eventEmitter.emitAsync(DEAL_EVENTS.CONTACT_LINKED, {
+        dealId,
         actorId,
-        metadata: {
-          contactId: input.contactId,
-          contactName: result.contact.name,
-          ...(input.role && { role: input.role }),
-        },
+        contactId: input.contactId,
+        contactName: result.contact.name,
+        ...(input.role && { role: input.role }),
       });
       return result;
     } catch (error: unknown) {
@@ -447,12 +437,11 @@ export class DealsService {
       this.logger.log(
         `[SERVICE] Contact ${contactId} removed from deal ${dealId} successfully`,
       );
-      await this.activityService.create({
-        activityType: 'contact_unlinked',
-        entityType: 'deal',
-        entityId: dealId,
+      await this.eventEmitter.emitAsync(DEAL_EVENTS.CONTACT_UNLINKED, {
+        dealId,
         actorId,
-        metadata: { contactId, contactName },
+        contactId,
+        contactName,
       });
       return result;
     } catch (error: unknown) {

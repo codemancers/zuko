@@ -1,7 +1,8 @@
 import { describe, it, expect, beforeEach, jest } from '@jest/globals';
 import { DealsService } from './deals.service';
 import { DealsRepository } from '../repositories/deals.repository';
-import { ActivityService } from './activity.service';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { DEAL_EVENTS } from '../events/deal-events';
 
 const ORG_ID = 1;
 const ACTOR_ID = 42;
@@ -50,56 +51,52 @@ describe('DealsService - activity events', () => {
     getDealsByContact: jest.fn(),
   };
 
-  const mockActivityService = {
-    create: jest.fn(),
+  const mockEventEmitter = {
+    emitAsync: jest.fn().mockImplementation(() => Promise.resolve([])),
   };
 
   beforeEach(() => {
     service = new DealsService(
       mockRepo as unknown as DealsRepository,
-      mockActivityService as unknown as ActivityService,
+      mockEventEmitter as unknown as EventEmitter2,
     );
     jest.clearAllMocks();
     // Default: findById returns the mock deal
     (mockRepo.findById as jest.Mock).mockResolvedValue(mockDeal as never);
   });
 
-  // ── deal_created ──────────────────────────────────────────────────────────
+  // ── deal.created ──────────────────────────────────────────────────────────
 
   describe('create', () => {
-    it('logs deal_created event after deal is created', async () => {
+    it('emits deal.created event after deal is created', async () => {
       (mockRepo.create as jest.Mock).mockResolvedValue(mockDeal as never);
-      (mockActivityService.create as jest.Mock).mockResolvedValue(undefined as never);
 
       await service.create(
         { title: 'Test Deal', ownerIds: [1], organizationId: ORG_ID },
         ACTOR_ID,
       );
 
-      expect(mockActivityService.create).toHaveBeenCalledWith({
-        activityType: 'deal_created',
-        entityType: 'deal',
-        entityId: mockDeal.id,
-        actorId: ACTOR_ID,
-        metadata: {},
-      });
+      expect(mockEventEmitter.emitAsync).toHaveBeenCalledWith(
+        DEAL_EVENTS.CREATED,
+        { dealId: mockDeal.id, actorId: ACTOR_ID },
+      );
     });
 
-    it('does not log event when repo.create throws', async () => {
+    it('does not emit event when repo.create throws', async () => {
       (mockRepo.create as jest.Mock).mockRejectedValue(new Error('DB error') as never);
 
       await expect(
         service.create({ title: 'Test Deal', ownerIds: [1], organizationId: ORG_ID }),
       ).rejects.toThrow('DB error');
 
-      expect(mockActivityService.create).not.toHaveBeenCalled();
+      expect(mockEventEmitter.emitAsync).not.toHaveBeenCalled();
     });
   });
 
-  // ── stage_change ──────────────────────────────────────────────────────────
+  // ── deal.stage_changed ────────────────────────────────────────────────────
 
   describe('update - stage_change', () => {
-    it('logs stage_change when stage differs from existing', async () => {
+    it('emits deal.stage_changed when stage differs from existing', async () => {
       (mockRepo.update as jest.Mock).mockResolvedValue({
         ...mockDeal,
         stage: 'qualification',
@@ -107,41 +104,31 @@ describe('DealsService - activity events', () => {
 
       await service.update(mockDeal.id, ORG_ID, { stage: 'qualification' }, ACTOR_ID);
 
-      expect(mockActivityService.create).toHaveBeenCalledWith(
+      expect(mockEventEmitter.emitAsync).toHaveBeenCalledWith(
+        DEAL_EVENTS.STAGE_CHANGED,
         expect.objectContaining({
-          activityType: 'stage_change',
-          entityType: 'deal',
-          entityId: mockDeal.id,
+          dealId: mockDeal.id,
           actorId: ACTOR_ID,
-          metadata: { from: 'prospecting', to: 'qualification' },
+          from: 'prospecting',
+          to: 'qualification',
         }),
       );
     });
 
-    it('does not log stage_change when stage is unchanged', async () => {
+    it('does not emit stage_changed when stage is unchanged', async () => {
       (mockRepo.update as jest.Mock).mockResolvedValue(mockDeal as never);
 
-      await service.update(
-        mockDeal.id,
-        ORG_ID,
-        { stage: 'prospecting' },
-        ACTOR_ID,
-      );
+      await service.update(mockDeal.id, ORG_ID, { stage: 'prospecting' }, ACTOR_ID);
 
-      const calls = (mockActivityService.create as jest.Mock).mock.calls as Array<
-        [{ activityType: string }]
-      >;
-      const stageChangeCalls = calls.filter(
-        ([arg]) => arg.activityType === 'stage_change',
-      );
-      expect(stageChangeCalls).toHaveLength(0);
+      const calls = (mockEventEmitter.emitAsync as jest.Mock).mock.calls as Array<[string, unknown]>;
+      expect(calls.some(([event]) => event === DEAL_EVENTS.STAGE_CHANGED)).toBe(false);
     });
   });
 
-  // ── deal_closed ───────────────────────────────────────────────────────────
+  // ── deal.closed ───────────────────────────────────────────────────────────
 
   describe('update - deal_closed', () => {
-    it('logs deal_closed with outcome=won when actualCloseDate set and stage is closed_won', async () => {
+    it('emits deal.closed with outcome=won when actualCloseDate set and stage is closed_won', async () => {
       (mockRepo.update as jest.Mock).mockResolvedValue({
         ...mockDeal,
         stage: 'closed_won',
@@ -155,15 +142,13 @@ describe('DealsService - activity events', () => {
         ACTOR_ID,
       );
 
-      expect(mockActivityService.create).toHaveBeenCalledWith(
-        expect.objectContaining({
-          activityType: 'deal_closed',
-          metadata: expect.objectContaining({ outcome: 'won' }),
-        }),
+      expect(mockEventEmitter.emitAsync).toHaveBeenCalledWith(
+        DEAL_EVENTS.CLOSED,
+        expect.objectContaining({ outcome: 'won' }),
       );
     });
 
-    it('logs deal_closed with outcome=lost when stage is closed_lost', async () => {
+    it('emits deal.closed with outcome=lost when stage is closed_lost', async () => {
       (mockRepo.update as jest.Mock).mockResolvedValue({
         ...mockDeal,
         stage: 'closed_lost',
@@ -177,103 +162,110 @@ describe('DealsService - activity events', () => {
         ACTOR_ID,
       );
 
-      expect(mockActivityService.create).toHaveBeenCalledWith(
-        expect.objectContaining({
-          activityType: 'deal_closed',
-          metadata: expect.objectContaining({ outcome: 'lost', lostReason: 'Price' }),
-        }),
+      expect(mockEventEmitter.emitAsync).toHaveBeenCalledWith(
+        DEAL_EVENTS.CLOSED,
+        expect.objectContaining({ outcome: 'lost', lostReason: 'Price' }),
       );
     });
 
-    it('does not log deal_closed when actualCloseDate was already set', async () => {
+    it('does not emit deal.closed when actualCloseDate was already set', async () => {
       const dealAlreadyClosed = { ...mockDeal, actualCloseDate: new Date() };
       (mockRepo.findById as jest.Mock).mockResolvedValue(dealAlreadyClosed as never);
       (mockRepo.update as jest.Mock).mockResolvedValue(dealAlreadyClosed as never);
 
-      await service.update(
-        mockDeal.id,
-        ORG_ID,
-        { actualCloseDate: new Date() },
-        ACTOR_ID,
-      );
+      await service.update(mockDeal.id, ORG_ID, { actualCloseDate: new Date() }, ACTOR_ID);
 
-      const calls = (mockActivityService.create as jest.Mock).mock.calls as Array<
-        [{ activityType: string }]
-      >;
-      expect(calls.some(([a]) => a.activityType === 'deal_closed')).toBe(false);
+      const calls = (mockEventEmitter.emitAsync as jest.Mock).mock.calls as Array<[string, unknown]>;
+      expect(calls.some(([event]) => event === DEAL_EVENTS.CLOSED)).toBe(false);
     });
   });
 
-  // ── field_update ──────────────────────────────────────────────────────────
+  // ── deal.field_updated ────────────────────────────────────────────────────
 
   describe('update - field_update', () => {
-    it('logs field_update for each changed tracked field', async () => {
+    it('emits deal.field_updated for each changed field', async () => {
       (mockRepo.update as jest.Mock).mockResolvedValue({
         ...mockDeal,
         value: 9999,
         probability: 80,
       } as never);
 
-      await service.update(
-        mockDeal.id,
-        ORG_ID,
-        { value: 9999, probability: 80 },
-        ACTOR_ID,
-      );
+      await service.update(mockDeal.id, ORG_ID, { value: 9999, probability: 80 }, ACTOR_ID);
 
-      const calls = (mockActivityService.create as jest.Mock).mock.calls as Array<
-        [{ activityType: string; metadata: Record<string, unknown> }]
-      >;
+      const calls = (mockEventEmitter.emitAsync as jest.Mock).mock.calls as Array<[string, { field: string }]>;
       const fieldUpdates = calls
-        .filter(([a]) => a.activityType === 'field_update')
-        .map(([a]) => a.metadata.field);
+        .filter(([event]) => event === DEAL_EVENTS.FIELD_UPDATED)
+        .map(([, payload]) => payload.field);
 
       expect(fieldUpdates).toContain('value');
       expect(fieldUpdates).toContain('probability');
     });
 
-    it('does not log field_update when value is unchanged', async () => {
+    it('does not emit field_updated when value is unchanged', async () => {
       (mockRepo.update as jest.Mock).mockResolvedValue(mockDeal as never);
 
       await service.update(mockDeal.id, ORG_ID, { value: 5000 }, ACTOR_ID);
 
-      const calls = (mockActivityService.create as jest.Mock).mock.calls as Array<
-        [{ activityType: string }]
-      >;
-      expect(calls.some(([a]) => a.activityType === 'field_update')).toBe(false);
+      const calls = (mockEventEmitter.emitAsync as jest.Mock).mock.calls as Array<[string, unknown]>;
+      expect(calls.some(([event]) => event === DEAL_EVENTS.FIELD_UPDATED)).toBe(false);
+    });
+
+    it('emits field_updated for fields not previously in the hardcoded list (e.g. currency)', async () => {
+      (mockRepo.update as jest.Mock).mockResolvedValue({ ...mockDeal, currency: 'EUR' } as never);
+
+      await service.update(mockDeal.id, ORG_ID, { currency: 'EUR' }, ACTOR_ID);
+
+      const calls = (mockEventEmitter.emitAsync as jest.Mock).mock.calls as Array<[string, { field: string }]>;
+      const fields = calls
+        .filter(([event]) => event === DEAL_EVENTS.FIELD_UPDATED)
+        .map(([, payload]) => payload.field);
+      expect(fields).toContain('currency');
+    });
+
+    it('does not emit field_updated for excluded fields (stage, actualCloseDate, lostReason, isHidden)', async () => {
+      (mockRepo.update as jest.Mock).mockResolvedValue({ ...mockDeal, stage: 'qualification' } as never);
+
+      await service.update(
+        mockDeal.id,
+        ORG_ID,
+        { stage: 'qualification', actualCloseDate: new Date(), lostReason: 'Price', isHidden: true },
+        ACTOR_ID,
+      );
+
+      const calls = (mockEventEmitter.emitAsync as jest.Mock).mock.calls as Array<[string, { field: string }]>;
+      const fieldUpdateFields = calls
+        .filter(([event]) => event === DEAL_EVENTS.FIELD_UPDATED)
+        .map(([, payload]) => payload.field);
+
+      expect(fieldUpdateFields).not.toContain('stage');
+      expect(fieldUpdateFields).not.toContain('actualCloseDate');
+      expect(fieldUpdateFields).not.toContain('lostReason');
+      expect(fieldUpdateFields).not.toContain('isHidden');
     });
   });
 
-  // ── company_linked ────────────────────────────────────────────────────────
+  // ── deal.company_linked ───────────────────────────────────────────────────
 
   describe('addCompany', () => {
-    it('logs company_linked event', async () => {
+    it('emits deal.company_linked event', async () => {
       (mockRepo.getCompanies as jest.Mock).mockResolvedValue([] as never);
       (mockRepo.addCompany as jest.Mock).mockResolvedValue({
         company: { companyName: 'Acme Corp' },
       } as never);
 
-      await service.addCompany(
-        mockDeal.id,
-        ORG_ID,
-        { companyId: 5 },
-        ACTOR_ID,
-      );
+      await service.addCompany(mockDeal.id, ORG_ID, { companyId: 5 }, ACTOR_ID);
 
-      expect(mockActivityService.create).toHaveBeenCalledWith({
-        activityType: 'company_linked',
-        entityType: 'deal',
-        entityId: mockDeal.id,
-        actorId: ACTOR_ID,
-        metadata: { companyId: 5, companyName: 'Acme Corp' },
-      });
+      expect(mockEventEmitter.emitAsync).toHaveBeenCalledWith(
+        DEAL_EVENTS.COMPANY_LINKED,
+        { dealId: mockDeal.id, actorId: ACTOR_ID, companyId: 5, companyName: 'Acme Corp' },
+      );
     });
   });
 
-  // ── company_unlinked ──────────────────────────────────────────────────────
+  // ── deal.company_unlinked ─────────────────────────────────────────────────
 
   describe('removeCompany', () => {
-    it('logs company_unlinked event with company name', async () => {
+    it('emits deal.company_unlinked event with company name', async () => {
       (mockRepo.getCompanies as jest.Mock).mockResolvedValue([
         { companyId: 5, company: { companyName: 'Acme Corp' } },
       ] as never);
@@ -281,13 +273,10 @@ describe('DealsService - activity events', () => {
 
       await service.removeCompany(mockDeal.id, ORG_ID, 5, ACTOR_ID);
 
-      expect(mockActivityService.create).toHaveBeenCalledWith({
-        activityType: 'company_unlinked',
-        entityType: 'deal',
-        entityId: mockDeal.id,
-        actorId: ACTOR_ID,
-        metadata: { companyId: 5, companyName: 'Acme Corp' },
-      });
+      expect(mockEventEmitter.emitAsync).toHaveBeenCalledWith(
+        DEAL_EVENTS.COMPANY_UNLINKED,
+        { dealId: mockDeal.id, actorId: ACTOR_ID, companyId: 5, companyName: 'Acme Corp' },
+      );
     });
 
     it('falls back to "Unknown" when company name is not available', async () => {
@@ -296,19 +285,17 @@ describe('DealsService - activity events', () => {
 
       await service.removeCompany(mockDeal.id, ORG_ID, 99, ACTOR_ID);
 
-      expect(mockActivityService.create).toHaveBeenCalledWith(
-        expect.objectContaining({
-          activityType: 'company_unlinked',
-          metadata: { companyId: 99, companyName: 'Unknown' },
-        }),
+      expect(mockEventEmitter.emitAsync).toHaveBeenCalledWith(
+        DEAL_EVENTS.COMPANY_UNLINKED,
+        expect.objectContaining({ companyId: 99, companyName: 'Unknown' }),
       );
     });
   });
 
-  // ── contact_linked ────────────────────────────────────────────────────────
+  // ── deal.contact_linked ───────────────────────────────────────────────────
 
   describe('addContact', () => {
-    it('logs contact_linked event', async () => {
+    it('emits deal.contact_linked event', async () => {
       (mockRepo.getContacts as jest.Mock).mockResolvedValue([] as never);
       (mockRepo.addContact as jest.Mock).mockResolvedValue({
         contact: { name: 'Jane Smith' },
@@ -321,16 +308,13 @@ describe('DealsService - activity events', () => {
         ACTOR_ID,
       );
 
-      expect(mockActivityService.create).toHaveBeenCalledWith({
-        activityType: 'contact_linked',
-        entityType: 'deal',
-        entityId: mockDeal.id,
-        actorId: ACTOR_ID,
-        metadata: { contactId: 7, contactName: 'Jane Smith', role: 'Decision Maker' },
-      });
+      expect(mockEventEmitter.emitAsync).toHaveBeenCalledWith(
+        DEAL_EVENTS.CONTACT_LINKED,
+        { dealId: mockDeal.id, actorId: ACTOR_ID, contactId: 7, contactName: 'Jane Smith', role: 'Decision Maker' },
+      );
     });
 
-    it('omits role from metadata when not provided', async () => {
+    it('omits role from payload when not provided', async () => {
       (mockRepo.getContacts as jest.Mock).mockResolvedValue([] as never);
       (mockRepo.addContact as jest.Mock).mockResolvedValue({
         contact: { name: 'Jane Smith' },
@@ -338,18 +322,16 @@ describe('DealsService - activity events', () => {
 
       await service.addContact(mockDeal.id, ORG_ID, { contactId: 7 }, ACTOR_ID);
 
-      const calls = (mockActivityService.create as jest.Mock).mock.calls as Array<
-        [{ metadata: Record<string, unknown> }]
-      >;
-      const metadata = calls[0][0].metadata;
-      expect(metadata).not.toHaveProperty('role');
+      const calls = (mockEventEmitter.emitAsync as jest.Mock).mock.calls as Array<[string, Record<string, unknown>]>;
+      const payload = calls.find(([event]) => event === DEAL_EVENTS.CONTACT_LINKED)?.[1];
+      expect(payload).not.toHaveProperty('role');
     });
   });
 
-  // ── contact_unlinked ──────────────────────────────────────────────────────
+  // ── deal.contact_unlinked ─────────────────────────────────────────────────
 
   describe('removeContact', () => {
-    it('logs contact_unlinked event with contact name', async () => {
+    it('emits deal.contact_unlinked event with contact name', async () => {
       (mockRepo.getContacts as jest.Mock).mockResolvedValue([
         { contactId: 7, contact: { name: 'Jane Smith' } },
       ] as never);
@@ -357,13 +339,10 @@ describe('DealsService - activity events', () => {
 
       await service.removeContact(mockDeal.id, ORG_ID, 7, ACTOR_ID);
 
-      expect(mockActivityService.create).toHaveBeenCalledWith({
-        activityType: 'contact_unlinked',
-        entityType: 'deal',
-        entityId: mockDeal.id,
-        actorId: ACTOR_ID,
-        metadata: { contactId: 7, contactName: 'Jane Smith' },
-      });
+      expect(mockEventEmitter.emitAsync).toHaveBeenCalledWith(
+        DEAL_EVENTS.CONTACT_UNLINKED,
+        { dealId: mockDeal.id, actorId: ACTOR_ID, contactId: 7, contactName: 'Jane Smith' },
+      );
     });
 
     it('falls back to "Unknown" when contact name is not available', async () => {
@@ -372,50 +351,42 @@ describe('DealsService - activity events', () => {
 
       await service.removeContact(mockDeal.id, ORG_ID, 99, ACTOR_ID);
 
-      expect(mockActivityService.create).toHaveBeenCalledWith(
-        expect.objectContaining({
-          activityType: 'contact_unlinked',
-          metadata: { contactId: 99, contactName: 'Unknown' },
-        }),
+      expect(mockEventEmitter.emitAsync).toHaveBeenCalledWith(
+        DEAL_EVENTS.CONTACT_UNLINKED,
+        expect.objectContaining({ contactId: 99, contactName: 'Unknown' }),
       );
     });
   });
 
-  // ── owner_assigned / owner_removed ────────────────────────────────────────
+  // ── deal.owner_assigned / deal.owner_removed ──────────────────────────────
 
   describe('addOwner', () => {
-    it('logs owner_assigned event', async () => {
+    it('emits deal.owner_assigned event', async () => {
       (mockRepo.addOwner as jest.Mock).mockResolvedValue({
         user: { name: 'Bob', id: 3 },
       } as never);
 
       await service.addOwner(mockDeal.id, ORG_ID, 3, false, ACTOR_ID);
 
-      expect(mockActivityService.create).toHaveBeenCalledWith({
-        activityType: 'owner_assigned',
-        entityType: 'deal',
-        entityId: mockDeal.id,
-        actorId: ACTOR_ID,
-        metadata: { userId: 3, userName: 'Bob' },
-      });
+      expect(mockEventEmitter.emitAsync).toHaveBeenCalledWith(
+        DEAL_EVENTS.OWNER_ASSIGNED,
+        { dealId: mockDeal.id, actorId: ACTOR_ID, userId: 3, userName: 'Bob' },
+      );
     });
   });
 
   describe('removeOwner', () => {
-    it('logs owner_removed event', async () => {
+    it('emits deal.owner_removed event', async () => {
       (mockRepo.removeOwner as jest.Mock).mockResolvedValue({
         user: { name: 'Bob', id: 3 },
       } as never);
 
       await service.removeOwner(mockDeal.id, ORG_ID, 3, ACTOR_ID);
 
-      expect(mockActivityService.create).toHaveBeenCalledWith({
-        activityType: 'owner_removed',
-        entityType: 'deal',
-        entityId: mockDeal.id,
-        actorId: ACTOR_ID,
-        metadata: { userId: 3, userName: 'Bob' },
-      });
+      expect(mockEventEmitter.emitAsync).toHaveBeenCalledWith(
+        DEAL_EVENTS.OWNER_REMOVED,
+        { dealId: mockDeal.id, actorId: ACTOR_ID, userId: 3, userName: 'Bob' },
+      );
     });
   });
 });

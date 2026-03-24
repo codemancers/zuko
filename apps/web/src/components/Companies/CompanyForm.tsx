@@ -59,6 +59,7 @@ export default function CompanyForm({
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['companies'] });
       queryClient.invalidateQueries({ queryKey: ['company', company!.id] });
+      queryClient.invalidateQueries({ queryKey: ['timeline', 'company', company!.id] });
       router.push(`/companies/${company!.id}`);
     },
     onError: (error: any) => {

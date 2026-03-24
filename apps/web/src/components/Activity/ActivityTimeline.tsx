@@ -1,6 +1,8 @@
 'use client';
 
 import { useState } from 'react';
+
+const ACTIVITY_SOURCES = { AI: 'ai' } as const;
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { PencilIcon } from '@heroicons/react/24/outline';
 import { Button, Divider } from '@zuko/ui-kit';
@@ -51,6 +53,10 @@ function renderSystemEventText(activity: { activityType: string; metadata?: Reco
   switch (activity.activityType) {
     case 'deal_created':
       return 'created this deal';
+    case 'company_created':
+      return 'created this company';
+    case 'contact_created':
+      return 'created this contact';
     case 'stage_change':
       return `moved deal from ${formatStage(String(m.from))} to ${formatStage(String(m.to))}`;
     case 'field_update': {
@@ -223,7 +229,7 @@ export default function ActivityTimeline({
                     data-testid="activity-avatar"
                   >
                     <span className="text-xs font-medium text-zinc-600 dark:text-zinc-300">
-                      {activity.actor?.name?.charAt(0).toUpperCase() || 'S'}
+                      {activity.actor?.name?.charAt(0).toUpperCase() || (activity.metadata?.source === ACTIVITY_SOURCES.AI ? 'Z' : 'S')}
                     </span>
                   </div>
                 )}
@@ -235,7 +241,7 @@ export default function ActivityTimeline({
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
                       <span className="text-sm font-medium text-zinc-950 dark:text-white">
-                        {activity.actor?.name || 'System'}
+                        {activity.actor?.name || (activity.metadata?.source === ACTIVITY_SOURCES.AI ? 'Zuko AI' : 'System')}
                       </span>
                       <span className="text-xs text-zinc-600 dark:text-zinc-400">
                         {dayjs(activity.createdAt).fromNow()}

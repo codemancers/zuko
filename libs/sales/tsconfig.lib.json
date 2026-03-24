@@ -6,6 +6,7 @@
     "outDir": "dist",
     "tsBuildInfoFile": "dist/tsconfig.lib.tsbuildinfo",
     "emitDeclarationOnly": false,
+    "experimentalDecorators": true,
     "types": ["node"]
   },
   "include": ["src/**/*.ts"],

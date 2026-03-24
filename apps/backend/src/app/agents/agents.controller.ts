@@ -16,6 +16,7 @@ import {
   CompaniesService,
   ContactsService,
   DealsService,
+  ACTIVITY_SOURCES,
 } from "@zuko/sales";
 
 // DTOs for agent API (organizationId from AgentGuard via @OrgId())
@@ -221,7 +222,7 @@ export class AgentsController {
       summary: dto.summary,
       ownerIds: dto.ownerIds,
       primaryOwnerId: dto.primaryOwnerId,
-    });
+    }, undefined, ACTIVITY_SOURCES.AI);
   }
 
   @Patch("companies/:id")
@@ -230,7 +231,7 @@ export class AgentsController {
     @Param("id", ParseIntPipe) id: number,
     @Body() dto: CompanyUpdateDto
   ) {
-    return this.companiesService.update(id, organizationId, dto);
+    return this.companiesService.update(id, organizationId, dto, undefined, ACTIVITY_SOURCES.AI);
   }
 
   // --- Contacts ---
@@ -327,7 +328,7 @@ export class AgentsController {
       notes: dto.notes,
       ownerIds: dto.ownerIds,
       primaryOwnerId: dto.primaryOwnerId,
-    });
+    }, undefined, ACTIVITY_SOURCES.AI);
   }
 
   @Patch("contacts/:id")
@@ -336,7 +337,7 @@ export class AgentsController {
     @Param("id", ParseIntPipe) id: number,
     @Body() dto: ContactUpdateDto
   ) {
-    return this.contactsService.update(id, organizationId, dto);
+    return this.contactsService.update(id, organizationId, dto, undefined, ACTIVITY_SOURCES.AI);
   }
 
   // --- Deals ---
@@ -460,7 +461,7 @@ export class AgentsController {
       priority: dto.priority,
       ownerIds: dto.ownerIds,
       primaryOwnerId: dto.primaryOwnerId,
-    });
+    }, undefined, ACTIVITY_SOURCES.AI);
   }
 
   @Patch("deals/:id")
@@ -477,6 +478,6 @@ export class AgentsController {
       actualCloseDate: dto.actualCloseDate
         ? new Date(dto.actualCloseDate)
         : undefined,
-    });
+    }, undefined, ACTIVITY_SOURCES.AI);
   }
 }
