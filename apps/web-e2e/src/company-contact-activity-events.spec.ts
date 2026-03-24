@@ -14,7 +14,6 @@ test.describe("Company Activity Timeline - System Events", () => {
   test.describe("company_created", () => {
     test("shows 'created this company' after a new company is created", async ({
       companiesPage,
-      companyDetailPage,
       page,
     }) => {
       await companiesPage.goto();
@@ -217,7 +216,7 @@ test.describe("Contact Activity Timeline - System Events", () => {
       page,
     }) => {
       await contactsPage.goto();
-      await page.waitForSelector("tbody tr, text=No Contacts", { timeout: 10000 }).catch(() => {});
+      await page.waitForSelector("tbody tr, text=No Contacts", { timeout: 10000 }).catch((_e: unknown) => undefined);
 
       const firstContactLink = page.locator('a[href^="/contacts/"]').first();
       await firstContactLink.click();
