@@ -165,7 +165,7 @@ test.describe('Task Status Workflow', () => {
     await page.getByRole('button', { name: /save changes/i }).click();
     await page.waitForURL('**/tasks/**', { timeout: 10000 });
 
-    await expect(page.getByText(/done/i)).toBeVisible();
+    await expect(page.getByText('Done', { exact: true }).first()).toBeVisible();
   });
 });
 
@@ -194,8 +194,8 @@ test.describe('Hierarchical Tasks', () => {
 
     await page.goto(`/tasks/${parentId}`);
     await expect(page.getByText(/subtasks/i)).toBeVisible();
-    await expect(page.getByText('Sub A')).toBeVisible();
-    await expect(page.getByText('Sub B')).toBeVisible();
+    await expect(page.getByText('Sub A', { exact: true })).toBeVisible();
+    await expect(page.getByText('Sub B', { exact: true })).toBeVisible();
   });
 
   test('can promote subtask to top-level by clearing parent', async ({ tasksPage, page }) => {
