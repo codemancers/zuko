@@ -1,10 +1,10 @@
-import { test, expect } from "./fixtures";
+import { test, expect } from './fixtures';
 
 /**
  * Task Activity Timeline Tests.
  * Creates a fresh task per describe block to test comment functionality.
  */
-test.describe("Task Activity Timeline - Comments", () => {
+test.describe('Task Activity Timeline - Comments', () => {
   let taskId!: number;
 
   test.beforeEach(async ({ tasksPage, page }) => {
@@ -17,12 +17,12 @@ test.describe("Task Activity Timeline - Comments", () => {
     const taskLink = page.getByText(taskTitle).first();
     await taskLink.click();
     await page.waitForURL(/\/tasks\/\d+/, { timeout: 10000 });
-    taskId = parseInt(page.url().match(/\/tasks\/(\d+)/)?.[1] ?? "0", 10);
+    taskId = parseInt(page.url().match(/\/tasks\/(\d+)/)?.[1] ?? '0', 10);
   });
 
   // ── 1. Empty states ───────────────────────────────────────────────────────
 
-  test("should display activity timeline section", async ({
+  test('should display activity timeline section', async ({
     taskDetailPage,
   }) => {
     await taskDetailPage.goto(taskId);
@@ -30,18 +30,18 @@ test.describe("Task Activity Timeline - Comments", () => {
     expect(isVisible).toBeTruthy();
   });
 
-  test("should display comment input form", async ({
+  test('should display comment input form', async ({
     taskDetailPage,
     page,
   }) => {
     await taskDetailPage.goto(taskId);
     await page
-      .getByRole("heading", { name: "Activity", exact: true })
+      .getByRole('heading', { name: 'Activity', exact: true })
       .scrollIntoViewIfNeeded();
     await expect(taskDetailPage.commentInput).toBeVisible({ timeout: 10000 });
   });
 
-  test("should disable post button when comment is empty", async ({
+  test('should disable post button when comment is empty', async ({
     taskDetailPage,
   }) => {
     await taskDetailPage.goto(taskId);
@@ -49,14 +49,14 @@ test.describe("Task Activity Timeline - Comments", () => {
     expect(isDisabled).toBeTruthy();
   });
 
-  test("should not submit whitespace-only comments", async ({
+  test('should not submit whitespace-only comments', async ({
     taskDetailPage,
     page,
   }) => {
     await taskDetailPage.goto(taskId);
     const initialCount = await taskDetailPage.getActivityCount();
 
-    await page.getByPlaceholder("Add a comment...").fill("   ");
+    await page.getByPlaceholder('Add a comment...').fill('   ');
     const isDisabled = await taskDetailPage.isPostButtonDisabled();
     expect(isDisabled).toBeTruthy();
 
@@ -66,7 +66,7 @@ test.describe("Task Activity Timeline - Comments", () => {
 
   // ── 2. Create comment ─────────────────────────────────────────────────────
 
-  test("should create a new comment successfully", async ({
+  test('should create a new comment successfully', async ({
     taskDetailPage,
   }) => {
     await taskDetailPage.goto(taskId);
@@ -80,28 +80,28 @@ test.describe("Task Activity Timeline - Comments", () => {
     );
   });
 
-  test("should clear input after successful comment submission", async ({
+  test('should clear input after successful comment submission', async ({
     taskDetailPage,
     page,
   }) => {
     await taskDetailPage.goto(taskId);
 
-    await taskDetailPage.createComment("Comment that should clear");
+    await taskDetailPage.createComment('Comment that should clear');
 
-    const textarea = page.getByPlaceholder("Add a comment...");
-    await expect(textarea).toHaveValue("", { timeout: 5000 });
+    const textarea = page.getByPlaceholder('Add a comment...');
+    await expect(textarea).toHaveValue('', { timeout: 5000 });
   });
 
   // ── 3. Edit comment ───────────────────────────────────────────────────────
 
-  test("should successfully edit own comment", async ({
+  test('should successfully edit own comment', async ({
     taskDetailPage,
     page,
   }) => {
     await taskDetailPage.goto(taskId);
 
-    const originalComment = "Original comment " + Date.now();
-    const editedComment = "Edited comment " + Date.now();
+    const originalComment = 'Original comment ' + Date.now();
+    const editedComment = 'Edited comment ' + Date.now();
 
     await taskDetailPage.createComment(originalComment);
     await expect(page.getByText(originalComment)).toBeVisible({
@@ -123,10 +123,10 @@ test.describe("Task Activity Timeline - Comments", () => {
     await expect(page.getByText(editedComment)).toBeVisible({ timeout: 10000 });
   });
 
-  test("should cancel editing a comment", async ({ taskDetailPage, page }) => {
+  test('should cancel editing a comment', async ({ taskDetailPage, page }) => {
     await taskDetailPage.goto(taskId);
 
-    const originalComment = "Cancel edit test " + Date.now();
+    const originalComment = 'Cancel edit test ' + Date.now();
     await taskDetailPage.createComment(originalComment);
     await expect(taskDetailPage.activityItems.last()).toContainText(
       originalComment,
@@ -135,12 +135,12 @@ test.describe("Task Activity Timeline - Comments", () => {
 
     const items = await taskDetailPage.activityItems.all();
     const lastItem = items[items.length - 1];
-    const editButton = lastItem.getByRole("button", { name: /edit/i });
+    const editButton = lastItem.getByRole('button', { name: /edit/i });
     await editButton.click();
 
-    const textarea = lastItem.locator("textarea");
+    const textarea = lastItem.locator('textarea');
     await expect(textarea).toBeVisible({ timeout: 3000 });
-    await textarea.fill("This should not be saved");
+    await textarea.fill('This should not be saved');
 
     const count = await taskDetailPage.getActivityCount();
     await taskDetailPage.cancelEditComment(count - 1);
@@ -150,7 +150,7 @@ test.describe("Task Activity Timeline - Comments", () => {
       originalComment,
     );
     await expect(taskDetailPage.activityItems.last()).not.toContainText(
-      "This should not be saved",
+      'This should not be saved',
     );
   });
 });
