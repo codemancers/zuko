@@ -13,7 +13,7 @@ interface ContactEventBase {
   source?: ActivitySource;
 }
 
-export interface ContactCreatedEvent extends ContactEventBase {}
+export type ContactCreatedEvent = ContactEventBase;
 
 export interface ContactFieldUpdatedEvent extends ContactEventBase {
   field: string;

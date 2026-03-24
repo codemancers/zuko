@@ -15,7 +15,7 @@ interface CompanyEventBase {
   source?: ActivitySource;
 }
 
-export interface CompanyCreatedEvent extends CompanyEventBase {}
+export type CompanyCreatedEvent = CompanyEventBase;
 
 export interface CompanyFieldUpdatedEvent extends CompanyEventBase {
   field: string;

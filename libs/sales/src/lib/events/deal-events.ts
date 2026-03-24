@@ -23,7 +23,7 @@ interface DealEventBase {
   source?: ActivitySource;
 }
 
-export interface DealCreatedEvent extends DealEventBase {}
+export type DealCreatedEvent = DealEventBase;
 
 export interface DealStageChangedEvent extends DealEventBase {
   from: string;

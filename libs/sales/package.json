@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "@nestjs/common": "^11.0.0",
+    "@nestjs/event-emitter": "^2.1.1",
     "@prisma/client": "^7.2.0",
     "pg": "^8.16.3",
     "tslib": "^2.3.0"
