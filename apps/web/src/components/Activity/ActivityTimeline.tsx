@@ -1,11 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
+import { RichCommentBox } from './RichCommentBox';
+import { RichContent } from './RichContent';
 
 const ACTIVITY_SOURCES = { AI: 'ai' } as const;
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { PencilIcon } from '@heroicons/react/24/outline';
-import { Button, Divider } from '@zuko/ui-kit';
+import { Divider } from '@zuko/ui-kit';
 import { getTimeline } from '@/server/query-options';
 import { activitiesApi } from '@/lib/api/activities';
 import dayjs from 'dayjs';
@@ -117,12 +119,9 @@ export default function ActivityTimeline({
   currentUserId,
   limit = 50,
 }: ActivityTimelineProps) {
-  const [comment, setComment] = useState('');
   const queryClient = useQueryClient();
-  const [editingActivityId, setEditingActivityId] = useState<number | null>(
-    null,
-  );
-  const [editedContent, setEditedContent] = useState('');
+  const [editingActivityId, setEditingActivityId] = useState<number | null>(null);
+  const clearNewCommentRef = useRef<{ clear: () => void } | null>(null);
 
   const { data: activities, isLoading } = useQuery(
     getTimeline(entityType, entityId, limit),
@@ -142,7 +141,7 @@ export default function ActivityTimeline({
       queryClient.invalidateQueries({
         queryKey: ['timeline', entityType, entityId],
       });
-      setComment('');
+      clearNewCommentRef.current?.clear();
     },
   });
 
@@ -167,38 +166,21 @@ export default function ActivityTimeline({
         queryKey: ['timeline', entityType, entityId],
       });
       setEditingActivityId(null);
-      setEditedContent('');
     },
   });
 
-  const handleSubmitComment = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (comment.trim()) {
-      createCommentMutation.mutate(comment.trim());
-    }
-  };
-
-  const handleEdit = (activityId: number, currentContent: string) => {
+  const handleEdit = (activityId: number) => {
     setEditingActivityId(activityId);
-    setEditedContent(currentContent);
   };
 
-  const handleSave = (activityId: number) => {
-    if (
-      editedContent.trim() &&
-      editedContent.trim() !==
-        activities?.find((a) => a.id === activityId)?.content
-    ) {
-      updateActivityMutation.mutate({
-        activityId,
-        content: editedContent.trim(),
-      });
+  const handleEditSubmit = (content: string) => {
+    if (editingActivityId) {
+      updateActivityMutation.mutate({ activityId: editingActivityId, content });
     }
   };
 
   const handleCancel = () => {
     setEditingActivityId(null);
-    setEditedContent('');
   };
 
   return (
@@ -268,40 +250,18 @@ export default function ActivityTimeline({
                       activity.content && (
                         <>
                           {editingActivityId === activity.id ? (
-                            <div className="mt-2 space-y-2">
-                              <textarea
-                                value={editedContent}
-                                onChange={(e) =>
-                                  setEditedContent(e.target.value)
-                                }
-                                rows={3}
-                                className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-white"
-                                autoFocus
+                            <div className="mt-2">
+                              <RichCommentBox
+                                initialContent={activity.content ?? undefined}
+                                onSubmit={handleEditSubmit}
+                                isSubmitting={updateActivityMutation.isPending}
+                                submitLabel={updateActivityMutation.isPending ? 'Saving...' : 'Save'}
+                                onCancel={handleCancel}
                               />
-                              <div className="flex gap-2">
-                                <Button
-                                  onClick={() => handleSave(activity.id)}
-                                  disabled={
-                                    !editedContent.trim() ||
-                                    updateActivityMutation.isPending
-                                  }
-                                >
-                                  {updateActivityMutation.isPending
-                                    ? 'Saving...'
-                                    : 'Save'}
-                                </Button>
-                                <Button
-                                  plain
-                                  onClick={handleCancel}
-                                  disabled={updateActivityMutation.isPending}
-                                >
-                                  Cancel
-                                </Button>
-                              </div>
                             </div>
                           ) : (
-                            <div className="mt-1 text-sm text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap">
-                              {activity.content}
+                            <div className="mt-1">
+                              <RichContent content={activity.content} />
                             </div>
                           )}
                         </>
@@ -320,9 +280,7 @@ export default function ActivityTimeline({
                     activity.actorId === currentUserId &&
                     editingActivityId !== activity.id && (
                       <button
-                        onClick={() =>
-                          handleEdit(activity.id, activity.content || '')
-                        }
+                        onClick={() => handleEdit(activity.id)}
                         disabled={updateActivityMutation.isPending}
                         className="text-zinc-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                         title="Edit comment"
@@ -341,27 +299,13 @@ export default function ActivityTimeline({
       {currentUserId && (
         <>
           <Divider />
-          <form onSubmit={handleSubmitComment} className="space-y-3">
-            <div>
-              <textarea
-                value={comment}
-                onChange={(e) => setComment(e.target.value)}
-                placeholder="Add a comment..."
-                rows={3}
-                className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-white"
-              />
-            </div>
-            <div className="flex justify-end">
-              <Button
-                type="submit"
-                disabled={!comment.trim() || createCommentMutation.isPending}
-              >
-                {createCommentMutation.isPending
-                  ? 'Posting...'
-                  : 'Post Comment'}
-              </Button>
-            </div>
-          </form>
+          <RichCommentBox
+            title="Add a comment"
+            onSubmit={(content) => createCommentMutation.mutate(content)}
+            isSubmitting={createCommentMutation.isPending}
+            submitLabel={createCommentMutation.isPending ? 'Posting...' : 'Comment'}
+            onReady={(api) => { clearNewCommentRef.current = api; }}
+          />
         </>
       )}
     </div>
