@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { TasksController } from './tasks.controller';
 import { TaskRepository, TaskService } from '@zuko/sales';
 import { PrismaModule } from '../../prisma/prisma.module';
@@ -18,9 +19,9 @@ import { OrganizationGuard } from '../../common/auth/organization.guard';
     },
     {
       provide: TaskService,
-      useFactory: (taskRepository: TaskRepository) =>
-        new TaskService(taskRepository),
-      inject: [TaskRepository],
+      useFactory: (taskRepository: TaskRepository, eventEmitter: EventEmitter2) =>
+        new TaskService(taskRepository, eventEmitter),
+      inject: [TaskRepository, EventEmitter2],
     },
   ],
 })

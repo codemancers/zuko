@@ -39,10 +39,12 @@ export class TasksController {
     @Body() dto: CreateTaskDto,
     @Req() req: RequestWithUser,
   ) {
-    return this.taskService.createTask(organizationId, {
-      ...dto,
-      createdByUserId: Number(req.user.id),
-    });
+    const actorId = Number(req.user.id);
+    return this.taskService.createTask(
+      organizationId,
+      { ...dto, createdByUserId: actorId },
+      actorId,
+    );
   }
 
   @Get()
@@ -75,8 +77,9 @@ export class TasksController {
     @OrgId() organizationId: number,
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateTaskDto,
+    @Req() req: RequestWithUser,
   ) {
-    return this.taskService.updateTask(organizationId, id, dto);
+    return this.taskService.updateTask(organizationId, id, dto, Number(req.user.id));
   }
 
   @Delete(':id')

@@ -8,6 +8,7 @@ import {
   ContactActivitiesController,
   CompanyActivitiesController,
   DealActivitiesController,
+  TaskActivitiesController,
 } from './activities.controller';
 import {
   ContactsRepository,
@@ -22,6 +23,7 @@ import {
   ContactActivityListener,
   CompanyActivityListener,
   TableColumnRepository,
+  TaskActivityListener,
 } from '@zuko/sales';
 import { PrismaModule } from '../../prisma/prisma.module';
 import { PrismaService } from '../../prisma/prisma.service';
@@ -40,6 +42,7 @@ import { TableRowBuilder } from './table/row-builder/table-row.builder';
     ContactActivitiesController,
     CompanyActivitiesController,
     DealActivitiesController,
+    TaskActivitiesController,
     TableController,
   ],
   providers: [
@@ -53,7 +56,10 @@ import { TableRowBuilder } from './table/row-builder/table-row.builder';
     },
     {
       provide: ContactsService,
-      useFactory: (contactsRepository: ContactsRepository, eventEmitter: EventEmitter2) => {
+      useFactory: (
+        contactsRepository: ContactsRepository,
+        eventEmitter: EventEmitter2,
+      ) => {
         return new ContactsService(contactsRepository, eventEmitter);
       },
       inject: [ContactsRepository, EventEmitter2],
@@ -67,7 +73,10 @@ import { TableRowBuilder } from './table/row-builder/table-row.builder';
     },
     {
       provide: CompaniesService,
-      useFactory: (companiesRepository: CompaniesRepository, eventEmitter: EventEmitter2) => {
+      useFactory: (
+        companiesRepository: CompaniesRepository,
+        eventEmitter: EventEmitter2,
+      ) => {
         return new CompaniesService(companiesRepository, eventEmitter);
       },
       inject: [CompaniesRepository, EventEmitter2],
@@ -95,7 +104,10 @@ import { TableRowBuilder } from './table/row-builder/table-row.builder';
     },
     {
       provide: DealsService,
-      useFactory: (dealsRepository: DealsRepository, eventEmitter: EventEmitter2) => {
+      useFactory: (
+        dealsRepository: DealsRepository,
+        eventEmitter: EventEmitter2,
+      ) => {
         return new DealsService(dealsRepository, eventEmitter);
       },
       inject: [DealsRepository, EventEmitter2],
@@ -118,6 +130,13 @@ import { TableRowBuilder } from './table/row-builder/table-row.builder';
       provide: CompanyActivityListener,
       useFactory: (activityService: ActivityService) => {
         return new CompanyActivityListener(activityService);
+      },
+      inject: [ActivityService],
+    },
+    {
+      provide: TaskActivityListener,
+      useFactory: (activityService: ActivityService) => {
+        return new TaskActivityListener(activityService);
       },
       inject: [ActivityService],
     },

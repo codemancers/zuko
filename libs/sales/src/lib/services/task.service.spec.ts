@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, jest } from '@jest/globals';
 import { NotFoundException } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { TaskService } from './task.service';
 import { TaskRepository, TaskStatus } from '../repositories/task.repository';
 
@@ -31,9 +32,15 @@ describe('TaskService', () => {
     updateSubtasksCompletedAt: jest.fn(),
   };
 
+  const mockEventEmitter = { emitAsync: jest.fn() };
+
   beforeEach(() => {
-    service = new TaskService(mockRepo as unknown as TaskRepository);
+    service = new TaskService(
+      mockRepo as unknown as TaskRepository,
+      mockEventEmitter as unknown as EventEmitter2,
+    );
     jest.clearAllMocks();
+    (mockEventEmitter.emitAsync as jest.Mock).mockResolvedValue(undefined as never);
   });
 
   describe('createTask', () => {

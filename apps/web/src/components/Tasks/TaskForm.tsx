@@ -90,9 +90,13 @@ const TaskForm = ({ mode, task, defaultParentId }: TaskFormProps) => {
     onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
       if (mode === 'create') {
+        if (result.parentId) {
+          queryClient.invalidateQueries({ queryKey: ['timeline', 'task', result.parentId] });
+        }
         toast.success('Task created successfully');
         router.push('/tasks');
       } else {
+        queryClient.invalidateQueries({ queryKey: ['timeline', 'task', result.id] });
         toast.success('Task updated successfully');
         router.push(`/tasks/${result.id}`);
       }
