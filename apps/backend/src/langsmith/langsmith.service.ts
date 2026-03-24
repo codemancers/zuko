@@ -9,7 +9,7 @@ export class LangsmithService {
   private readonly langsmithServerUrl: string;
   constructor() {
     this.langsmithApiKey = process.env.LANGSMITH_API_KEY as string;
-    this.langsmithServerUrl = process.env.LANGSMITH_SERVER_URL ?? "http://localhost:2024";
+    this.langsmithServerUrl = process.env.LANGSMITH_SERVER_URL ?? "http://localhost:8080";
   }
 
   /**
@@ -61,6 +61,7 @@ export class LangsmithService {
     contextEntities: ContextEntityReference[];
     userId: number;
     organizationId: number | null;
+    sandboxUrl?: string;
   }) {
     const {
       threadId,
@@ -68,12 +69,12 @@ export class LangsmithService {
       contextEntities,
       userId,
       organizationId,
+      sandboxUrl,
     } = params;
 
     
     const assistantId = process.env.LANGSMITH_ASSISTANT_ID ?? "agent";
-    const baseUrl = this.langsmithServerUrl.replace(/\/$/, "");
-    const url = `${baseUrl}/threads/${threadId}/runs/stream`;
+    const url = `${sandboxUrl ?? this.langsmithServerUrl}/threads/${threadId}/runs/stream`;
 
     const payload = {
       assistant_id: assistantId,
