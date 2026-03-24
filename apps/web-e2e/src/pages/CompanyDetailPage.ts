@@ -224,10 +224,18 @@ export class CompanyDetailPage extends BasePage {
   }
 
   /**
-   * Check if a contact is associated
+   * Check if a contact is associated.
+   * Scoped to the Associated Contacts section to avoid matching timeline text.
    */
   async isContactAssociated(contactName: string): Promise<boolean> {
-    const contactElement = this.page.locator(`text=${contactName}`).first();
+    const section = this.page
+      .getByRole("heading", { name: "Associated Contacts" })
+      .locator("..")
+      .locator("..");
+    const contactElement = section
+      .locator('a[href^="/contacts/"]')
+      .filter({ hasText: contactName })
+      .first();
     return await contactElement.isVisible().catch(() => false);
   }
 

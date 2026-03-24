@@ -183,7 +183,7 @@ test.describe("Contact Activity Timeline - System Events", () => {
       await contactsPage.clickNewContact();
       await page.waitForURL("**/contacts/new", { timeout: 10000 });
 
-      const contactName = `Activity Test Contact ${Date.now()}`;
+      const contactName = `E2E Contact ${Date.now()}`;
       await page.getByLabel(/Name \*/i).fill(contactName);
       await page.getByLabel(/Email/i).fill(`test${Date.now()}@example.com`);
       await page.getByRole("button", { name: /Create Contact/i }).click();
