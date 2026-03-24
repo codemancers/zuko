@@ -14,6 +14,7 @@ import { AuthGuard } from "@thallesp/nestjs-better-auth";
 import { ChatsService } from "./chats.service";
 import type { RequestWithUser } from "@zuko/core";
 import { LangsmithService } from "../langsmith/langsmith.service";
+import { SpritesService } from "../sprites/sprites.service";
 
 @Controller("chats")
 @UseGuards(AuthGuard)
@@ -21,6 +22,7 @@ export class ChatsController {
   constructor(
     private chatsService: ChatsService,
     private readonly langsmithService: LangsmithService,
+    private readonly spritesService: SpritesService,
   ) {}
 
   /**
@@ -31,12 +33,6 @@ export class ChatsController {
   async create(@Req() req: RequestWithUser, @Body() body: { participantIds?: number[] }) {
     const userId = parseInt(req.user.id, 10);
     const chat = await this.chatsService.create(userId, body.participantIds);
-
-    try {
-      await this.langsmithService.createThread(chat.threadId);
-    } catch {
-      // Chat is already created; thread will be created on first run if LangSmith was unavailable
-    }
 
     return {
       id: chat.id,
@@ -133,45 +129,56 @@ export class ChatsController {
     const chat = await this.chatsService.findOne(chatId);
 
     const threadId = chat.threadId;
+    const sandboxUrl = chat.sandboxes[0]?.url ?? "";
 
-      const state: any = await this.langsmithService.getThreadState(threadId);
-      const values = state?.values ?? {};
+    const spriteName = `${chatId}-${threadId}`;
 
-      // Expect messages array and optional contextEntities in thread state values
-      const rawMessages: any[] = Array.isArray(values.messages)
-        ? values.messages
+    let values: { messages: any[], contextEntities: any[] };
+    if (!sandboxUrl) {
+      values = { messages: [], contextEntities: [] };
+    }else{
+      
+      await this.spritesService.startServer(spriteName);
+      
+      const state: any = await this.langsmithService.getThreadState(threadId, sandboxUrl);
+      values = state?.values ?? { messages: [], contextEntities: [] };
+    }
+
+    // Expect messages array and optional contextEntities in thread state values
+    const rawMessages: any[] = Array.isArray(values.messages)
+      ? values.messages
+      : [];
+
+    const messages = rawMessages
+      .map((msg) => {
+        const role =
+          msg.type === "human"
+            ? "user"
+            : msg.type === "ai"
+              ? "assistant"
+              : msg.type ?? "system";
+
+        const content =
+          typeof msg.content === "string"
+            ? msg.content
+            : typeof msg.text === "string"
+              ? msg.text
+              : "";
+
+        if (!content || !content.trim()) {
+          return null;
+        }
+
+        return { role, content };
+      })
+      .filter((m): m is { role: string; content: string } => m !== null);
+
+    const contextEntities =
+      Array.isArray(values.contextEntities) && values.contextEntities.length > 0
+        ? values.contextEntities
         : [];
 
-      const messages = rawMessages
-        .map((msg) => {
-          const role =
-            msg.type === "human"
-              ? "user"
-              : msg.type === "ai"
-                ? "assistant"
-                : msg.type ?? "system";
-
-          const content =
-            typeof msg.content === "string"
-              ? msg.content
-              : typeof msg.text === "string"
-                ? msg.text
-                : "";
-
-          if (!content || !content.trim()) {
-            return null;
-          }
-
-          return { role, content };
-        })
-        .filter((m): m is { role: string; content: string } => m !== null);
-
-      const contextEntities =
-        Array.isArray(values.contextEntities) && values.contextEntities.length > 0
-          ? values.contextEntities
-          : [];
-
-      return { messages, contextEntities };
+    return { messages, contextEntities };
   }
 
   /**

@@ -7,9 +7,11 @@ export class LangsmithService {
   private readonly logger = new Logger(LangsmithService.name);
   private readonly langsmithApiKey: string;
   private readonly langsmithServerUrl: string;
+  private readonly spritesToken: string;
   constructor() {
     this.langsmithApiKey = process.env.LANGSMITH_API_KEY as string;
     this.langsmithServerUrl = process.env.LANGSMITH_SERVER_URL ?? "http://localhost:8080";
+    this.spritesToken = process.env.SPRITES_TOKEN as string;
   }
 
   /**
@@ -38,13 +40,14 @@ export class LangsmithService {
     }
   }
 
-  async getThreadState(threadId: string) {
+  async getThreadState(threadId: string, sandboxUrl?: string) {
     const response = await fetch(
-      `${this.langsmithServerUrl}/threads/${threadId}/state`,
+      `${sandboxUrl ?? this.langsmithServerUrl}/threads/${threadId}/state`,
       {
         headers: {
           "x-api-key": this.langsmithApiKey,
           "Content-Type": "application/json",
+          "Authorization": `Bearer ${this.spritesToken}`,
         },
       },
     );
@@ -95,6 +98,7 @@ export class LangsmithService {
       headers: {
         "Content-Type": "application/json",
         "x-api-key": this.langsmithApiKey,
+        "Authorization": `Bearer ${this.spritesToken}`,
       },
       body: JSON.stringify(payload),
     }).catch((error) => {

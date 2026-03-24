@@ -66,20 +66,26 @@ export class ChatController {
     // Get the chat to extract threadId
     const chat = await this.chatsService.findOne(chatId);
     const threadId = chat.threadId;
+    const spriteName = `${chatId}-${threadId}`;
 
     // There will be only one sandbox per chat
     const sandboxes = chat.sandboxes;
     let sandbox;
     if (sandboxes.length === 0) {
       // create a new sandbox
-      const sprite = await this.spritesService.createSprite(threadId);
-      await this.spritesService.setupSprite(threadId);
+      const sprite = await this.spritesService.createSprite(spriteName);
+      await this.spritesService.setupSprite(spriteName);
       // store in database
       const sandboxUrl = sprite.url;
       sandbox = await this.prisma.sandbox.create({
         data: {
-          name: threadId,
-          url: sandboxUrl
+          name: spriteName,
+          url: sandboxUrl,
+          chats: {
+            connect: {
+              id: chat.id,
+            },
+          },
         },
       });
     }else{
@@ -87,7 +93,6 @@ export class ChatController {
     }
 
     const sandboxUrl = sandbox?.url ?? "";
-    console.log("sandboxUrl", sandboxUrl);
 
     // Auto-generate title from first message if chat has no title
     if (!chat.title && messages.length === 1) {
@@ -124,6 +129,8 @@ export class ChatController {
     response.setHeader("Connection", "keep-alive");
     response.setHeader("X-Thread-Id", threadId);
     response.setHeader("X-Chat-Id", chatId);
+
+    await this.spritesService.startServer(spriteName);
 
     const upstreamBody = await this.langsmithService.createRunStream({
       threadId,

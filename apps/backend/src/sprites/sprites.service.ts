@@ -1,6 +1,5 @@
 import { Injectable, InternalServerErrorException } from "@nestjs/common";
 
-/** Shape returned by POST/GET https://api.sprites.dev/v1/sprites */
 export type SpriteRecord = {
   id: string;
   name: string;
@@ -14,10 +13,7 @@ export type SpriteRecord = {
   last_active_at?: string | null;
 };
 
-/**
- * POST /v1/sprites/{name}/exec — non-TTY HTTP exec.
- * @see https://sprites.dev/api/sprites/exec#execute-command-post
- */
+
 export type ExecPostOptions = {
   /** Command and arguments; sent as repeated `cmd` query parameters. */
   cmd: string[];
@@ -86,21 +82,6 @@ export class SpritesService {
       const text = await res.text();
       throw new InternalServerErrorException(
         `Sprites API create failed (${res.status}): ${text}`,
-      );
-    }
-    return (await res.json()) as SpriteRecord;
-  }
-
-  async getSprite(threadId: string): Promise<SpriteRecord> {
-    const name = encodeURIComponent(this.spriteName(threadId));
-    const res = await fetch(`${this.baseUrl}/v1/sprites/${name}`, {
-      method: "GET",
-      headers: this.bearerHeaders(),
-    });
-    if (!res.ok) {
-      const text = await res.text();
-      throw new InternalServerErrorException(
-        `Sprites API get failed (${res.status}): ${text}`,
       );
     }
     return (await res.json()) as SpriteRecord;
@@ -175,10 +156,9 @@ export class SpritesService {
       headers["Content-Type"] = "application/octet-stream";
     }
 
-    const res = await fetch(
-      `${this.baseUrl}/v1/sprites/${name}/exec?${params.toString()}`,
-      { method: "POST", headers, body },
-    );
+    const url = `${this.baseUrl}/v1/sprites/${name}/exec?${params.toString()}`;
+
+    const res = await fetch(url, { method: "POST", headers, body });
     if (!res.ok) {
       const text = await res.text();
       throw new InternalServerErrorException(
@@ -197,28 +177,52 @@ export class SpritesService {
 
     console.log("repo cloned");
     // install dependencies
-    try {
-      await this.executeCommandPost(threadId, {
-        cmd: ["bun install --prefix ./zuko"],
-        env: this.getEnvironmentVariables(),
-      });
-    } catch (error) {
-      console.error("error installing dependencies", error);
-      throw new InternalServerErrorException("error installing dependencies");
-    }
+ 
+    await this.executeCommandPost(threadId, {
+      cmd: ["bash", "-c", "bun install"],
+      env: this.getEnvironmentVariables(),
+      dir: "/home/sprite/zuko",
+    });
+    
     console.log("dependencies installed");
 
     // start the server
-    await this.executeCommandPost(threadId, {
-      cmd: ["bunx nx dev ai-agents"],
-      env: this.getEnvironmentVariables(),
-    });
+    await this.startServer(threadId);
   }
+
+  async startServer(threadId: string): Promise<void> {
+    await this.checkIsSandboxUp(threadId)
+
+    console.log(`starting server: ${threadId}`);
+    await this.executeCommandPost(threadId, {
+      cmd: [
+        "bash",
+        "-c",
+        "ss -tulnp | grep ':8080 ' > /dev/null || (nohup bunx nx dev ai-agents --host 0.0.0.0 > dev.log 2>&1 & until curl -s http://localhost:8080 > /dev/null; do sleep 1; done)"
+      ],
+      env: this.getEnvironmentVariables(),
+      dir: "/home/sprite/zuko",
+    });
+    console.log(`server started: ${threadId}`);
+
+  }
+
+  async checkIsSandboxUp(threadId: string): Promise<boolean> {
+    const res = await this.executeCommandPost(threadId, {
+      cmd: ["ls"],
+    });
+    console.log(`SandboxUp: ${threadId} - ${res}`);
+    return true
+  }
+
+
 
   private getEnvironmentVariables(): Record<string, string> {
     return {
       OPENAI_API_KEY: process.env.OPENAI_API_KEY ?? "",
       OPENAI_MODEL: process.env.OPENAI_MODEL ?? "gpt-4.1",
+      BACKEND_URL: process.env.BACKEND_URL ?? "",
+      AGENT_TOKEN: process.env.AGENT_TOKEN ?? "",
     };
   }
 }
