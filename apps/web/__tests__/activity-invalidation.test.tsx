@@ -108,8 +108,9 @@ describe('CompanyForm – timeline invalidation', () => {
       { wrapper: createWrapper() },
     );
 
-    await user.clear(screen.getByDisplayValue('Acme'));
-    await user.type(screen.getByDisplayValue(''), 'Acme Updated');
+    const nameInput = screen.getByPlaceholderText(/acme inc/i);
+    await user.clear(nameInput);
+    await user.type(nameInput, 'Acme Updated');
     await user.click(screen.getByRole('button', { name: /save changes/i }));
 
     await waitFor(() => {
@@ -133,8 +134,9 @@ describe('ContactForm – timeline invalidation', () => {
       { wrapper: createWrapper() },
     );
 
-    await user.clear(screen.getByDisplayValue('Bob Smith'));
-    await user.type(screen.getByDisplayValue(''), 'Bob Updated');
+    const nameInput = screen.getByPlaceholderText(/john doe/i);
+    await user.clear(nameInput);
+    await user.type(nameInput, 'Bob Updated');
     await user.click(screen.getByRole('button', { name: /save changes/i }));
 
     await waitFor(() => {
