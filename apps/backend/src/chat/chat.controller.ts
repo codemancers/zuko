@@ -19,6 +19,7 @@ import { PrismaService } from "../prisma/prisma.service";
 import { getActiveOrganizationId } from "../common/auth/get-organization-id";
 import { LangsmithService } from "../langsmith/langsmith.service";
 import { transformSSEToLangChainStreamFromNode } from "../langsmith/langsmith-stream.util";
+import { SpritesService } from "../sprites/sprites.service";
 
 
 @Controller("v1")
@@ -27,6 +28,7 @@ export class ChatController {
     private readonly chatsService: ChatsService,
     private readonly prisma: PrismaService,
     private readonly langsmithService: LangsmithService,
+    private readonly spritesService: SpritesService,
   ) {}
 
   @Post("chat")
@@ -64,6 +66,28 @@ export class ChatController {
     // Get the chat to extract threadId
     const chat = await this.chatsService.findOne(chatId);
     const threadId = chat.threadId;
+
+    // There will be only one sandbox per chat
+    const sandboxes = chat.sandboxes;
+    let sandbox;
+    if (sandboxes.length === 0) {
+      // create a new sandbox
+      const sprite = await this.spritesService.createSprite(threadId);
+      await this.spritesService.setupSprite(threadId);
+      // store in database
+      const sandboxUrl = sprite.url;
+      sandbox = await this.prisma.sandbox.create({
+        data: {
+          name: threadId,
+          url: sandboxUrl
+        },
+      });
+    }else{
+      sandbox = sandboxes[0];
+    }
+
+    const sandboxUrl = sandbox?.url ?? "";
+    console.log("sandboxUrl", sandboxUrl);
 
     // Auto-generate title from first message if chat has no title
     if (!chat.title && messages.length === 1) {
@@ -107,6 +131,7 @@ export class ChatController {
       contextEntities,
       userId,
       organizationId,
+      sandboxUrl,
     });
 
     const nodeStream = Readable.fromWeb(
