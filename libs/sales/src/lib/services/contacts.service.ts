@@ -4,6 +4,7 @@ import {
   NotFoundException,
   Logger,
 } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import type { PaginationOptions } from '../repositories/types';
 import {
   ContactsRepository,
@@ -11,6 +12,8 @@ import {
   UpdateContactInput,
   ContactFilters,
 } from '../repositories/contacts.repository';
+import { CONTACT_EVENTS, ContactFieldUpdatedEvent } from '../events/contact-events';
+import type { ActivitySource } from '../events/deal-events';
 
 /**
  * Validates E.164 phone number format
@@ -37,13 +40,20 @@ function validateContactMethods(
   }
 }
 
+const FIELD_UPDATE_EXCLUDED = new Set<keyof UpdateContactInput>([
+  'isHidden', // handled by hide/unhide methods
+]);
+
 @Injectable()
 export class ContactsService {
   private readonly logger = new Logger(ContactsService.name);
 
-  constructor(private readonly contactsRepository: ContactsRepository) {}
+  constructor(
+    private readonly contactsRepository: ContactsRepository,
+    private readonly eventEmitter: EventEmitter2,
+  ) {}
 
-  async create(input: CreateContactInput) {
+  async create(input: CreateContactInput, actorId?: number, source?: ActivitySource) {
     this.logger.log('[SERVICE] Starting contact creation');
 
     // Validate at least one contact method
@@ -109,6 +119,11 @@ export class ContactsService {
       this.logger.log(
         `[SERVICE] Contact created successfully with ID: ${result.id}`,
       );
+      await this.eventEmitter.emitAsync(CONTACT_EVENTS.CREATED, {
+        contactId: result.id,
+        actorId,
+        source,
+      });
       return result;
     } catch (error: unknown) {
       const errorMessage =
@@ -130,19 +145,19 @@ export class ContactsService {
     return contact;
   }
 
-  async update(id: number, organizationId: number, input: UpdateContactInput) {
+  async update(id: number, organizationId: number, input: UpdateContactInput, actorId?: number, source?: ActivitySource) {
     // Check contact exists and belongs to org
-    const contact = await this.contactsRepository.findById(id, organizationId);
-    if (!contact) {
+    const existingContact = await this.contactsRepository.findById(id, organizationId);
+    if (!existingContact) {
       throw new NotFoundException(`Contact with ID ${id} not found`);
     }
 
     const updatedEmail =
-      input.email !== undefined ? input.email : contact.email;
+      input.email !== undefined ? input.email : existingContact.email;
     const updatedPhone =
-      input.phone !== undefined ? input.phone : contact.phone;
+      input.phone !== undefined ? input.phone : existingContact.phone;
     const updatedLinkedinId =
-      input.linkedinId !== undefined ? input.linkedinId : contact.linkedinId;
+      input.linkedinId !== undefined ? input.linkedinId : existingContact.linkedinId;
 
     validateContactMethods(
       updatedEmail ?? undefined,
@@ -158,7 +173,7 @@ export class ContactsService {
     }
 
     // Check for duplicate email if being updated (within same organization)
-    if (input.email && input.email !== contact.email) {
+    if (input.email && input.email !== existingContact.email) {
       const duplicate = await this.findByEmail(organizationId, input.email);
       if (duplicate && duplicate.id !== id) {
         throw new BadRequestException(
@@ -167,7 +182,25 @@ export class ContactsService {
       }
     }
 
-    return this.contactsRepository.update(id, input);
+    const result = await this.contactsRepository.update(id, input);
+
+    const eventBase = { contactId: id, actorId, source };
+    for (const field of Object.keys(input) as Array<keyof UpdateContactInput>) {
+      if (FIELD_UPDATE_EXCLUDED.has(field)) continue;
+      if (input[field] === undefined) continue;
+      const oldVal = existingContact[field as keyof typeof existingContact];
+      const newVal = input[field];
+      if (String(oldVal) !== String(newVal)) {
+        await this.eventEmitter.emitAsync(CONTACT_EVENTS.FIELD_UPDATED, {
+          ...eventBase,
+          field,
+          from: oldVal,
+          to: newVal,
+        } satisfies ContactFieldUpdatedEvent);
+      }
+    }
+
+    return result;
   }
 
   async hide(id: number, organizationId: number) {
@@ -197,18 +230,34 @@ export class ContactsService {
     organizationId: number,
     userId: number,
     isPrimary = false,
+    actorId?: number,
   ) {
     await this.findById(contactId, organizationId);
-    return this.contactsRepository.addOwner(contactId, userId, isPrimary);
+    const result = await this.contactsRepository.addOwner(contactId, userId, isPrimary);
+    await this.eventEmitter.emitAsync(CONTACT_EVENTS.OWNER_ASSIGNED, {
+      contactId,
+      actorId,
+      userId,
+      userName: result.user?.name ?? 'Unknown',
+    });
+    return result;
   }
 
   async removeOwner(
     contactId: number,
     organizationId: number,
     userId: number,
+    actorId?: number,
   ) {
     await this.findById(contactId, organizationId);
-    return this.contactsRepository.removeOwner(contactId, userId);
+    const result = await this.contactsRepository.removeOwner(contactId, userId);
+    await this.eventEmitter.emitAsync(CONTACT_EVENTS.OWNER_REMOVED, {
+      contactId,
+      actorId,
+      userId,
+      userName: result.user?.name ?? 'Unknown',
+    });
+    return result;
   }
 
   async setPrimaryOwner(

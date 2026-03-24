@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { ContactsController } from './contacts.controller';
 import { CompaniesController } from './companies.controller';
 import { DealsController } from './deals.controller';
@@ -17,6 +18,9 @@ import {
   DealsService,
   ActivityRepository,
   ActivityService,
+  DealActivityListener,
+  ContactActivityListener,
+  CompanyActivityListener,
 } from '@zuko/sales';
 import { PrismaModule } from '../../prisma/prisma.module';
 import { PrismaService } from '../../prisma/prisma.service';
@@ -48,10 +52,10 @@ import { TableRowBuilder } from './table/row-builder/table-row.builder';
     },
     {
       provide: ContactsService,
-      useFactory: (contactsRepository: ContactsRepository) => {
-        return new ContactsService(contactsRepository);
+      useFactory: (contactsRepository: ContactsRepository, eventEmitter: EventEmitter2) => {
+        return new ContactsService(contactsRepository, eventEmitter);
       },
-      inject: [ContactsRepository],
+      inject: [ContactsRepository, EventEmitter2],
     },
     {
       provide: CompaniesRepository,
@@ -62,10 +66,10 @@ import { TableRowBuilder } from './table/row-builder/table-row.builder';
     },
     {
       provide: CompaniesService,
-      useFactory: (companiesRepository: CompaniesRepository) => {
-        return new CompaniesService(companiesRepository);
+      useFactory: (companiesRepository: CompaniesRepository, eventEmitter: EventEmitter2) => {
+        return new CompaniesService(companiesRepository, eventEmitter);
       },
-      inject: [CompaniesRepository],
+      inject: [CompaniesRepository, EventEmitter2],
     },
     {
       provide: ActivityRepository,
@@ -90,10 +94,31 @@ import { TableRowBuilder } from './table/row-builder/table-row.builder';
     },
     {
       provide: DealsService,
-      useFactory: (dealsRepository: DealsRepository) => {
-        return new DealsService(dealsRepository);
+      useFactory: (dealsRepository: DealsRepository, eventEmitter: EventEmitter2) => {
+        return new DealsService(dealsRepository, eventEmitter);
       },
-      inject: [DealsRepository],
+      inject: [DealsRepository, EventEmitter2],
+    },
+    {
+      provide: DealActivityListener,
+      useFactory: (activityService: ActivityService) => {
+        return new DealActivityListener(activityService);
+      },
+      inject: [ActivityService],
+    },
+    {
+      provide: ContactActivityListener,
+      useFactory: (activityService: ActivityService) => {
+        return new ContactActivityListener(activityService);
+      },
+      inject: [ActivityService],
+    },
+    {
+      provide: CompanyActivityListener,
+      useFactory: (activityService: ActivityService) => {
+        return new CompanyActivityListener(activityService);
+      },
+      inject: [ActivityService],
     },
     TableService,
     TableRowBuilder,

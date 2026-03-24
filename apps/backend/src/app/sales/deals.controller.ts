@@ -7,6 +7,7 @@ import {
   Body,
   Param,
   Query,
+  Req,
   ParseIntPipe,
   HttpCode,
   HttpStatus,
@@ -22,6 +23,7 @@ import {
   AddContactToDealInput,
   UpdateContactDealInput,
 } from '@zuko/sales';
+import type { RequestWithUser } from '@zuko/core';
 import { OrganizationGuard } from '../../common/auth/organization.guard';
 import { OrgId } from '../../common/auth/org-id.decorator';
 
@@ -103,7 +105,7 @@ export class DealsController {
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  async create(@OrgId() organizationId: number, @Body() dto: CreateDealDto) {
+  async create(@Req() req: RequestWithUser, @OrgId() organizationId: number, @Body() dto: CreateDealDto) {
     this.logger.log('[CREATE_DEAL] Request received');
     this.logger.debug(
       `[CREATE_DEAL] Payload: ${JSON.stringify({
@@ -124,7 +126,8 @@ export class DealsController {
           : undefined,
       };
 
-      const result = await this.dealsService.create(input);
+      const actorId = parseInt(req.user.id, 10);
+      const result = await this.dealsService.create(input, actorId);
       this.logger.log(`[CREATE_DEAL] Success - Deal ID: ${result.id}`);
       return result;
     } catch (error: unknown) {
@@ -183,6 +186,7 @@ export class DealsController {
 
   @Patch(':id')
   async update(
+    @Req() req: RequestWithUser,
     @OrgId() organizationId: number,
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateDealDto,
@@ -197,7 +201,8 @@ export class DealsController {
         : undefined,
     };
 
-    return this.dealsService.update(id, organizationId, input);
+    const actorId = parseInt(req.user.id, 10);
+    return this.dealsService.update(id, organizationId, input, actorId);
   }
 
   @Delete(':id')
@@ -219,26 +224,31 @@ export class DealsController {
 
   @Post(':id/owners')
   async addOwner(
+    @Req() req: RequestWithUser,
     @OrgId() organizationId: number,
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: AddOwnerDto,
   ) {
+    const actorId = parseInt(req.user.id, 10);
     return this.dealsService.addOwner(
       id,
       organizationId,
       dto.userId,
       dto.isPrimary,
+      actorId,
     );
   }
 
   @Delete(':id/owners/:userId')
   @HttpCode(HttpStatus.NO_CONTENT)
   async removeOwner(
+    @Req() req: RequestWithUser,
     @OrgId() organizationId: number,
     @Param('id', ParseIntPipe) id: number,
     @Param('userId', ParseIntPipe) userId: number,
   ) {
-    await this.dealsService.removeOwner(id, organizationId, userId);
+    const actorId = parseInt(req.user.id, 10);
+    await this.dealsService.removeOwner(id, organizationId, userId, actorId);
   }
 
   @Post(':id/owners/:userId/set-primary')
@@ -272,6 +282,7 @@ export class DealsController {
   @Post(':id/companies')
   @HttpCode(HttpStatus.CREATED)
   async addCompany(
+    @Req() req: RequestWithUser,
     @OrgId() organizationId: number,
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: AddCompanyDto,
@@ -281,7 +292,8 @@ export class DealsController {
     );
 
     try {
-      const result = await this.dealsService.addCompany(id, organizationId, dto);
+      const actorId = parseInt(req.user.id, 10);
+      const result = await this.dealsService.addCompany(id, organizationId, dto, actorId);
       this.logger.log(
         `[ADD_COMPANY_TO_DEAL] Success - Company ${dto.companyId} added to Deal ${id}`,
       );
@@ -316,11 +328,13 @@ export class DealsController {
   @Delete(':id/companies/:companyId')
   @HttpCode(HttpStatus.NO_CONTENT)
   async removeCompany(
+    @Req() req: RequestWithUser,
     @OrgId() organizationId: number,
     @Param('id', ParseIntPipe) id: number,
     @Param('companyId', ParseIntPipe) companyId: number,
   ) {
-    await this.dealsService.removeCompany(id, organizationId, companyId);
+    const actorId = parseInt(req.user.id, 10);
+    await this.dealsService.removeCompany(id, organizationId, companyId, actorId);
   }
 
   @Get(':id/companies')
@@ -334,6 +348,7 @@ export class DealsController {
   @Post(':id/contacts')
   @HttpCode(HttpStatus.CREATED)
   async addContact(
+    @Req() req: RequestWithUser,
     @OrgId() organizationId: number,
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: AddContactDto,
@@ -343,7 +358,8 @@ export class DealsController {
     );
 
     try {
-      const result = await this.dealsService.addContact(id, organizationId, dto);
+      const actorId = parseInt(req.user.id, 10);
+      const result = await this.dealsService.addContact(id, organizationId, dto, actorId);
       this.logger.log(
         `[ADD_CONTACT_TO_DEAL] Success - Contact ${dto.contactId} added to Deal ${id}`,
       );
@@ -373,11 +389,13 @@ export class DealsController {
   @Delete(':id/contacts/:contactId')
   @HttpCode(HttpStatus.NO_CONTENT)
   async removeContact(
+    @Req() req: RequestWithUser,
     @OrgId() organizationId: number,
     @Param('id', ParseIntPipe) id: number,
     @Param('contactId', ParseIntPipe) contactId: number,
   ) {
-    await this.dealsService.removeContact(id, organizationId, contactId);
+    const actorId = parseInt(req.user.id, 10);
+    await this.dealsService.removeContact(id, organizationId, contactId, actorId);
   }
 
   @Get(':id/contacts')

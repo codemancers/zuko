@@ -6,6 +6,7 @@ import { AuthGuard } from '@thallesp/nestjs-better-auth';
 import { OrganizationGuard } from '../../common/auth/organization.guard';
 
 const TEST_ORGANIZATION_ID = 1;
+const mockReq = { user: { id: '1' } } as any;
 
 describe('DealsController', () => {
   let controller: DealsController;
@@ -87,7 +88,7 @@ describe('DealsController', () => {
         mockCreatedDeal as never,
       );
 
-      await controller.create(TEST_ORGANIZATION_ID, dto);
+      await controller.create(mockReq, TEST_ORGANIZATION_ID, dto);
 
       // Check that the service was called with a Date object, not a string
       expect(mockDealsService.create).toHaveBeenCalledTimes(1);
@@ -127,7 +128,7 @@ describe('DealsController', () => {
         mockCreatedDeal as never,
       );
 
-      await controller.create(TEST_ORGANIZATION_ID, dto);
+      await controller.create(mockReq, TEST_ORGANIZATION_ID, dto);
 
       expect(mockDealsService.create).toHaveBeenCalledTimes(1);
       const callArg = mockDealsService.create.mock.calls[0][0] as {
@@ -159,7 +160,7 @@ describe('DealsController', () => {
         mockUpdatedDeal as never,
       );
 
-      await controller.update(TEST_ORGANIZATION_ID, dealId, dto);
+      await controller.update(mockReq, TEST_ORGANIZATION_ID, dealId, dto);
 
       expect(mockDealsService.update).toHaveBeenCalledTimes(1);
       const [id, orgId, callArg] = mockDealsService.update.mock.calls[0] as [
@@ -197,7 +198,7 @@ describe('DealsController', () => {
         mockUpdatedDeal as never,
       );
 
-      await controller.update(TEST_ORGANIZATION_ID, dealId, dto);
+      await controller.update(mockReq, TEST_ORGANIZATION_ID, dealId, dto);
 
       expect(mockDealsService.update).toHaveBeenCalledTimes(1);
       const [, , callArg] = mockDealsService.update.mock.calls[0] as [

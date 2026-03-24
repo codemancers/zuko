@@ -7,6 +7,7 @@ import {
   Body,
   Param,
   Query,
+  Req,
   ParseIntPipe,
   HttpCode,
   HttpStatus,
@@ -14,6 +15,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { AuthGuard } from '@thallesp/nestjs-better-auth';
+import type { RequestWithUser } from '@zuko/core';
 import {
   ContactsService,
   CreateContactInput,
@@ -65,7 +67,11 @@ export class ContactsController {
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  async create(@OrgId() organizationId: number, @Body() dto: CreateContactDto) {
+  async create(
+    @OrgId() organizationId: number,
+    @Body() dto: CreateContactDto,
+    @Req() req: RequestWithUser,
+  ) {
     this.logger.log('[CREATE_CONTACT] Request received');
     this.logger.debug(
       `[CREATE_CONTACT] Payload: ${JSON.stringify({
@@ -80,10 +86,8 @@ export class ContactsController {
     );
 
     try {
-      const result = await this.contactsService.create({
-        ...dto,
-        organizationId,
-      });
+      const actorId = parseInt(req.user.id, 10);
+      const result = await this.contactsService.create({ ...dto, organizationId }, actorId);
       this.logger.log(`[CREATE_CONTACT] Success - Contact ID: ${result.id}`);
       return result;
     } catch (error: unknown) {
@@ -130,8 +134,10 @@ export class ContactsController {
     @OrgId() organizationId: number,
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateContactDto,
+    @Req() req: RequestWithUser,
   ) {
-    return this.contactsService.update(id, organizationId, dto);
+    const actorId = parseInt(req.user.id, 10);
+    return this.contactsService.update(id, organizationId, dto, actorId);
   }
 
   @Delete(':id')
@@ -156,13 +162,10 @@ export class ContactsController {
     @OrgId() organizationId: number,
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: AddOwnerDto,
+    @Req() req: RequestWithUser,
   ) {
-    return this.contactsService.addOwner(
-      id,
-      organizationId,
-      dto.userId,
-      dto.isPrimary,
-    );
+    const actorId = parseInt(req.user.id, 10);
+    return this.contactsService.addOwner(id, organizationId, dto.userId, dto.isPrimary, actorId);
   }
 
   @Delete(':id/owners/:userId')
@@ -171,8 +174,10 @@ export class ContactsController {
     @OrgId() organizationId: number,
     @Param('id', ParseIntPipe) id: number,
     @Param('userId', ParseIntPipe) userId: number,
+    @Req() req: RequestWithUser,
   ) {
-    await this.contactsService.removeOwner(id, organizationId, userId);
+    const actorId = parseInt(req.user.id, 10);
+    await this.contactsService.removeOwner(id, organizationId, userId, actorId);
   }
 
   @Post(':id/owners/:userId/set-primary')

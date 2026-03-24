@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { AgentGuard } from '../../common/auth/agent.guard';
 import { PrismaModule } from '../../prisma/prisma.module';
 import { PrismaService } from '../../prisma/prisma.service';
@@ -27,10 +28,10 @@ import {
     },
     {
       provide: ContactsService,
-      useFactory: (contactsRepository: ContactsRepository) => {
-        return new ContactsService(contactsRepository);
+      useFactory: (contactsRepository: ContactsRepository, eventEmitter: EventEmitter2) => {
+        return new ContactsService(contactsRepository, eventEmitter);
       },
-      inject: [ContactsRepository],
+      inject: [ContactsRepository, EventEmitter2],
     },
     {
       provide: CompaniesRepository,
@@ -41,10 +42,10 @@ import {
     },
     {
       provide: CompaniesService,
-      useFactory: (companiesRepository: CompaniesRepository) => {
-        return new CompaniesService(companiesRepository);
+      useFactory: (companiesRepository: CompaniesRepository, eventEmitter: EventEmitter2) => {
+        return new CompaniesService(companiesRepository, eventEmitter);
       },
-      inject: [CompaniesRepository],
+      inject: [CompaniesRepository, EventEmitter2],
     },
     {
       provide: DealsRepository,
@@ -52,13 +53,6 @@ import {
         return new DealsRepository(prismaService);
       },
       inject: [PrismaService],
-    },
-    {
-      provide: DealsService,
-      useFactory: (dealsRepository: DealsRepository) => {
-        return new DealsService(dealsRepository);
-      },
-      inject: [DealsRepository],
     },
     {
       provide: ActivityRepository,
@@ -73,6 +67,13 @@ import {
         return new ActivityService(activityRepository);
       },
       inject: [ActivityRepository],
+    },
+    {
+      provide: DealsService,
+      useFactory: (dealsRepository: DealsRepository, eventEmitter: EventEmitter2) => {
+        return new DealsService(dealsRepository, eventEmitter);
+      },
+      inject: [DealsRepository, EventEmitter2],
     },
   ],
 })

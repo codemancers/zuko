@@ -236,6 +236,9 @@ export class CompaniesRepository {
         userId,
         isPrimary,
       },
+      include: {
+        user: { select: { id: true, name: true } },
+      },
     });
   }
 
@@ -246,6 +249,9 @@ export class CompaniesRepository {
           companyId,
           userId,
         },
+      },
+      include: {
+        user: { select: { id: true, name: true } },
       },
     });
   }

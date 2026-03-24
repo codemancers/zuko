@@ -4,6 +4,7 @@ import {
   NotFoundException,
   Logger,
 } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import type { PaginationOptions } from '../repositories/types';
 import {
   CompaniesRepository,
@@ -13,6 +14,8 @@ import {
   AddContactToCompanyInput,
   UpdateContactCompanyInput,
 } from '../repositories/companies.repository';
+import { COMPANY_EVENTS, CompanyFieldUpdatedEvent } from '../events/company-events';
+import type { ActivitySource } from '../events/deal-events';
 
 /**
  * Validates URL format
@@ -42,13 +45,20 @@ function isValidLinkedInUrl(url: string): boolean {
   }
 }
 
+const FIELD_UPDATE_EXCLUDED = new Set<keyof UpdateCompanyInput>([
+  'isHidden', // handled by hide/unhide methods
+]);
+
 @Injectable()
 export class CompaniesService {
   private readonly logger = new Logger(CompaniesService.name);
 
-  constructor(private readonly companiesRepository: CompaniesRepository) {}
+  constructor(
+    private readonly companiesRepository: CompaniesRepository,
+    private readonly eventEmitter: EventEmitter2,
+  ) {}
 
-  async create(input: CreateCompanyInput) {
+  async create(input: CreateCompanyInput, actorId?: number, source?: ActivitySource) {
     this.logger.log('[SERVICE] Starting company creation');
 
     // Validate company name
@@ -116,6 +126,11 @@ export class CompaniesService {
       this.logger.log(
         `[SERVICE] Company created successfully with ID: ${result.id}`,
       );
+      await this.eventEmitter.emitAsync(COMPANY_EVENTS.CREATED, {
+        companyId: result.id,
+        actorId,
+        source,
+      });
       return result;
     } catch (error: unknown) {
       const errorMessage =
@@ -137,9 +152,8 @@ export class CompaniesService {
     return company;
   }
 
-  async update(id: number, organizationId: number, input: UpdateCompanyInput) {
-    // Check company exists and belongs to org
-    await this.findById(id, organizationId);
+  async update(id: number, organizationId: number, input: UpdateCompanyInput, actorId?: number, source?: ActivitySource) {
+    const existingCompany = await this.findById(id, organizationId);
 
     // Validate company name if being updated
     if (input.companyName !== undefined) {
@@ -166,7 +180,25 @@ export class CompaniesService {
       }
     }
 
-    return this.companiesRepository.update(id, input);
+    const result = await this.companiesRepository.update(id, input);
+
+    const eventBase = { companyId: id, actorId, source };
+    for (const field of Object.keys(input) as Array<keyof UpdateCompanyInput>) {
+      if (FIELD_UPDATE_EXCLUDED.has(field)) continue;
+      if (input[field] === undefined) continue;
+      const oldVal = existingCompany[field as keyof typeof existingCompany];
+      const newVal = input[field];
+      if (String(oldVal) !== String(newVal)) {
+        await this.eventEmitter.emitAsync(COMPANY_EVENTS.FIELD_UPDATED, {
+          ...eventBase,
+          field,
+          from: oldVal,
+          to: newVal,
+        } satisfies CompanyFieldUpdatedEvent);
+      }
+    }
+
+    return result;
   }
 
   async hide(id: number, organizationId: number) {
@@ -198,18 +230,34 @@ export class CompaniesService {
     organizationId: number,
     userId: number,
     isPrimary = false,
+    actorId?: number,
   ) {
     await this.findById(companyId, organizationId);
-    return this.companiesRepository.addOwner(companyId, userId, isPrimary);
+    const result = await this.companiesRepository.addOwner(companyId, userId, isPrimary);
+    await this.eventEmitter.emitAsync(COMPANY_EVENTS.OWNER_ASSIGNED, {
+      companyId,
+      actorId,
+      userId,
+      userName: result.user?.name ?? 'Unknown',
+    });
+    return result;
   }
 
   async removeOwner(
     companyId: number,
     organizationId: number,
     userId: number,
+    actorId?: number,
   ) {
     await this.findById(companyId, organizationId);
-    return this.companiesRepository.removeOwner(companyId, userId);
+    const result = await this.companiesRepository.removeOwner(companyId, userId);
+    await this.eventEmitter.emitAsync(COMPANY_EVENTS.OWNER_REMOVED, {
+      companyId,
+      actorId,
+      userId,
+      userName: result.user?.name ?? 'Unknown',
+    });
+    return result;
   }
 
   async setPrimaryOwner(
@@ -237,6 +285,7 @@ export class CompaniesService {
     companyId: number,
     organizationId: number,
     input: AddContactToCompanyInput,
+    actorId?: number,
   ) {
     this.logger.log(
       `[SERVICE] Adding contact ${input.contactId} to company ${companyId}`,
@@ -265,6 +314,13 @@ export class CompaniesService {
       this.logger.log(
         `[SERVICE] Contact ${input.contactId} added to company ${companyId} successfully`,
       );
+      await this.eventEmitter.emitAsync(COMPANY_EVENTS.CONTACT_LINKED, {
+        companyId,
+        actorId,
+        contactId: input.contactId,
+        contactName: result.contact.name,
+        ...(input.role && { role: input.role }),
+      });
       return result;
     } catch (error: unknown) {
       const errorMessage =
@@ -282,12 +338,17 @@ export class CompaniesService {
     companyId: number,
     organizationId: number,
     contactId: number,
+    actorId?: number,
   ) {
     this.logger.log(
       `[SERVICE] Removing contact ${contactId} from company ${companyId}`,
     );
 
     await this.findById(companyId, organizationId);
+
+    const activeContacts = await this.companiesRepository.getActiveContacts(companyId);
+    const contactToRemove = activeContacts.find((c) => c.contactId === contactId);
+    const contactName = contactToRemove?.contact?.name ?? 'Unknown';
 
     try {
       const result = await this.companiesRepository.removeContact(
@@ -297,6 +358,12 @@ export class CompaniesService {
       this.logger.log(
         `[SERVICE] Contact ${contactId} removed from company ${companyId} successfully`,
       );
+      await this.eventEmitter.emitAsync(COMPANY_EVENTS.CONTACT_UNLINKED, {
+        companyId,
+        actorId,
+        contactId,
+        contactName,
+      });
       return result;
     } catch (error: unknown) {
       const errorMessage =

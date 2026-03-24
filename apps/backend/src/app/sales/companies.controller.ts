@@ -7,6 +7,7 @@ import {
   Body,
   Param,
   Query,
+  Req,
   ParseIntPipe,
   HttpCode,
   HttpStatus,
@@ -14,6 +15,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { AuthGuard } from '@thallesp/nestjs-better-auth';
+import type { RequestWithUser } from '@zuko/core';
 import {
   CompaniesService,
   CreateCompanyInput,
@@ -77,7 +79,7 @@ export class CompaniesController {
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  async create(@OrgId() organizationId: number, @Body() dto: CreateCompanyDto) {
+  async create(@OrgId() organizationId: number, @Body() dto: CreateCompanyDto, @Req() req: RequestWithUser) {
     this.logger.log('[CREATE_COMPANY] Request received');
     this.logger.debug(
       `[CREATE_COMPANY] Payload: ${JSON.stringify({
@@ -90,10 +92,8 @@ export class CompaniesController {
     );
 
     try {
-      const result = await this.companiesService.create({
-        ...dto,
-        organizationId,
-      });
+      const actorId = parseInt(req.user.id, 10);
+      const result = await this.companiesService.create({ ...dto, organizationId }, actorId);
       this.logger.log(`[CREATE_COMPANY] Success - Company ID: ${result.id}`);
       return result;
     } catch (error: unknown) {
@@ -140,8 +140,10 @@ export class CompaniesController {
     @OrgId() organizationId: number,
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateCompanyDto,
+    @Req() req: RequestWithUser,
   ) {
-    return this.companiesService.update(id, organizationId, dto);
+    const actorId = parseInt(req.user.id, 10);
+    return this.companiesService.update(id, organizationId, dto, actorId);
   }
 
   @Delete(':id')
@@ -166,13 +168,10 @@ export class CompaniesController {
     @OrgId() organizationId: number,
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: AddOwnerDto,
+    @Req() req: RequestWithUser,
   ) {
-    return this.companiesService.addOwner(
-      id,
-      organizationId,
-      dto.userId,
-      dto.isPrimary,
-    );
+    const actorId = parseInt(req.user.id, 10);
+    return this.companiesService.addOwner(id, organizationId, dto.userId, dto.isPrimary, actorId);
   }
 
   @Delete(':id/owners/:userId')
@@ -181,8 +180,10 @@ export class CompaniesController {
     @OrgId() organizationId: number,
     @Param('id', ParseIntPipe) id: number,
     @Param('userId', ParseIntPipe) userId: number,
+    @Req() req: RequestWithUser,
   ) {
-    await this.companiesService.removeOwner(id, organizationId, userId);
+    const actorId = parseInt(req.user.id, 10);
+    await this.companiesService.removeOwner(id, organizationId, userId, actorId);
   }
 
   @Post(':id/owners/:userId/set-primary')
@@ -219,17 +220,15 @@ export class CompaniesController {
     @OrgId() organizationId: number,
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: AddContactDto,
+    @Req() req: RequestWithUser,
   ) {
     this.logger.log(
       `[ADD_CONTACT_TO_COMPANY] Company: ${id}, Contact: ${dto.contactId}`,
     );
 
     try {
-      const result = await this.companiesService.addContact(
-        id,
-        organizationId,
-        dto,
-      );
+      const actorId = parseInt(req.user.id, 10);
+      const result = await this.companiesService.addContact(id, organizationId, dto, actorId);
       this.logger.log(
         `[ADD_CONTACT_TO_COMPANY] Success - Contact ${dto.contactId} added to Company ${id}`,
       );
@@ -267,8 +266,10 @@ export class CompaniesController {
     @OrgId() organizationId: number,
     @Param('id', ParseIntPipe) id: number,
     @Param('contactId', ParseIntPipe) contactId: number,
+    @Req() req: RequestWithUser,
   ) {
-    await this.companiesService.removeContact(id, organizationId, contactId);
+    const actorId = parseInt(req.user.id, 10);
+    await this.companiesService.removeContact(id, organizationId, contactId, actorId);
   }
 
   @Get(':id/contacts')

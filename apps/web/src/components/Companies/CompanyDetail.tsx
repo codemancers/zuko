@@ -51,6 +51,7 @@ export default function CompanyDetail({
     onSuccess: async () => {
       await queryClient.refetchQueries({ queryKey: ['company', companyId] });
       await queryClient.invalidateQueries({ queryKey: ['companies'] });
+      await queryClient.invalidateQueries({ queryKey: ['timeline', 'company', companyId] });
     },
   });
 
@@ -67,6 +68,7 @@ export default function CompanyDetail({
     onSuccess: async () => {
       await queryClient.refetchQueries({ queryKey: ['company', companyId] });
       await queryClient.invalidateQueries({ queryKey: ['companies'] });
+      await queryClient.invalidateQueries({ queryKey: ['timeline', 'company', companyId] });
       setEditingContactId(null);
     },
   });

@@ -87,6 +87,7 @@ export default function DealForm({ deal, mode, currentUserId }: DealFormProps) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['deals'] });
       queryClient.invalidateQueries({ queryKey: ['deal', deal!.id] });
+      queryClient.invalidateQueries({ queryKey: ['timeline', 'deal', deal!.id] });
       router.push(`/deals/${deal!.id}`);
     },
     onError: (error: any) => {

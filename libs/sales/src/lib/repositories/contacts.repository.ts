@@ -193,6 +193,9 @@ export class ContactsRepository {
         userId,
         isPrimary,
       },
+      include: {
+        user: { select: { id: true, name: true } },
+      },
     });
   }
 
@@ -203,6 +206,9 @@ export class ContactsRepository {
           contactId,
           userId,
         },
+      },
+      include: {
+        user: { select: { id: true, name: true } },
       },
     });
   }
