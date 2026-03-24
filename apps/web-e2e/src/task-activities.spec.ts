@@ -36,7 +36,7 @@ test.describe("Task Activity Timeline - Comments", () => {
   }) => {
     await taskDetailPage.goto(taskId);
     await page
-      .getByRole("heading", { name: /Activity/i })
+      .getByRole("heading", { name: "Activity", exact: true })
       .scrollIntoViewIfNeeded();
     await expect(taskDetailPage.commentInput).toBeVisible({ timeout: 10000 });
   });
