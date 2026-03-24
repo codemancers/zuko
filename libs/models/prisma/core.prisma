@@ -114,6 +114,7 @@ model Chat {
 
   createdBy    User              @relation("ChatCreator", fields: [createdById], references: [id], onDelete: Cascade)
   participants ChatParticipant[]
+  sandboxes    Sandbox[]
 
   @@map("chat")
   @@schema("public")
@@ -268,5 +269,18 @@ model TaskOwner {
   @@index([userId])
   @@index([taskId])
   @@map("task_owner")
+  @@schema("public")
+}
+
+model Sandbox {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  url       String
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  chats Chat[]
+
+  @@map("sandbox")
   @@schema("public")
 }

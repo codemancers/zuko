@@ -5,8 +5,6 @@ import { Tool } from "langchain";
 import { createPersistentContextMiddleware } from "../middleware";
 import { SYSTEM_PROMPT } from "../shared/prompts";
 
-import { getCheckpointer } from "../shared/checkpointer";
-
 import { companyTools } from "./tools/company.tools";
 import { contactTools } from "./tools/contacts.tools";
 import { contextTools } from "./tools/context.tools";
@@ -26,13 +24,10 @@ export async function initializeAgent(
     model: OPENAI_MODEL,
   });
 
-  const checkpointer = await getCheckpointer();
-
   const agent = createDeepAgent({
     model,
     systemPrompt,
     tools,
-    checkpointer,
     middleware: [createPersistentContextMiddleware() as any],
     subagents: subAgents,
   });

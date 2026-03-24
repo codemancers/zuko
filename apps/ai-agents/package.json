@@ -44,7 +44,7 @@
       "dev": {
         "executor": "nx:run-commands",
         "options": {
-          "command": "bunx @langchain/langgraph-cli dev",
+          "command": "bunx @langchain/langgraph-cli dev -p 8080",
           "cwd": "apps/ai-agents"
         }
       },
