@@ -14,9 +14,9 @@ import {
   ListChecks,
   FileCode2,
 } from 'lucide-react';
-import { RichContent } from './RichContent';
+import { MarkdownContent } from './MarkdownContent';
 
-export interface RichCommentBoxProps {
+export interface CommentBoxProps {
   onSubmit: (content: string) => void;
   isSubmitting: boolean;
   placeholder?: string;
@@ -139,7 +139,7 @@ function ToolbarDivider() {
 
 type ActiveTab = 'write' | 'preview';
 
-export function RichCommentBox({
+export function CommentBox({
   onSubmit,
   isSubmitting,
   placeholder = 'Add a comment...',
@@ -150,7 +150,7 @@ export function RichCommentBox({
   avatarSrc,
   avatarInitials,
   title,
-}: RichCommentBoxProps) {
+}: CommentBoxProps) {
   const [text, setText] = useState(() => getInitialText(initialContent));
   const [activeTab, setActiveTab] = useState<ActiveTab>('write');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -251,7 +251,7 @@ export function RichCommentBox({
           {activeTab === 'preview' && (
             <div className="min-h-[150px] px-3 py-3">
               {text.trim() ? (
-                <RichContent content={text} />
+                <MarkdownContent content={text} />
               ) : (
                 <p className="text-sm text-zinc-400 dark:text-zinc-500 italic">
                   Nothing to preview

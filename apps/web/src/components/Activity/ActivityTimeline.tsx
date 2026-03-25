@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import { RichCommentBox } from './RichCommentBox';
-import { RichContent } from './RichContent';
+import { CommentBox } from './CommentBox';
+import { MarkdownContent } from './MarkdownContent';
 
 const ACTIVITY_SOURCES = { AI: 'ai' } as const;
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -258,7 +258,7 @@ export default function ActivityTimeline({
                         <>
                           {editingActivityId === activity.id ? (
                             <div className="mt-2">
-                              <RichCommentBox
+                              <CommentBox
                                 initialContent={activity.content ?? undefined}
                                 onSubmit={handleEditSubmit}
                                 isSubmitting={updateActivityMutation.isPending}
@@ -268,7 +268,7 @@ export default function ActivityTimeline({
                             </div>
                           ) : (
                             <div className="mt-1">
-                              <RichContent content={activity.content} />
+                              <MarkdownContent content={activity.content} />
                             </div>
                           )}
                         </>
@@ -306,7 +306,7 @@ export default function ActivityTimeline({
       {currentUserId && (
         <>
           <Divider />
-          <RichCommentBox
+          <CommentBox
             title="Add a comment"
             onSubmit={(content) => createCommentMutation.mutate(content)}
             isSubmitting={createCommentMutation.isPending}

@@ -29,7 +29,7 @@ function editorJsonToMarkdown(content: string): string | null {
   }
 }
 
-export function RichContent({ content }: { content: string | null | undefined }) {
+export function MarkdownContent({ content }: { content: string | null | undefined }) {
   const [html, setHtml] = useState<string | null>(null);
 
   useEffect(() => {
