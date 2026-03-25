@@ -142,7 +142,7 @@ type ActiveTab = 'write' | 'preview';
 export function RichCommentBox({
   onSubmit,
   isSubmitting,
-  placeholder = 'Add your comment here...',
+  placeholder = 'Add a comment...',
   initialContent,
   submitLabel = 'Comment',
   onCancel,
