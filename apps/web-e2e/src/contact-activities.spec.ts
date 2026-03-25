@@ -10,7 +10,7 @@ test.describe("Contact Activity Timeline - Authenticated", () => {
   test.beforeEach(async ({ contactsPage, page }) => {
     if (contactId !== undefined) return;
 
-    const contactName = `Activity Timeline Contact ${Date.now()}`;
+    const contactName = `E2E Comment Test Contact ${Date.now()}`;
     await contactsPage.createContact({
       name: contactName,
       email: `activity-test-${Date.now()}@example.com`,
@@ -39,7 +39,7 @@ test.describe("Contact Activity Timeline - Authenticated", () => {
   }) => {
     await contactDetailPage.goto(contactId);
     await page
-      .getByRole("heading", { name: /Activity/i })
+      .getByRole("heading", { name: "Activity", exact: true })
       .scrollIntoViewIfNeeded();
     await expect(contactDetailPage.commentInput).toBeVisible({
       timeout: 10000,
@@ -52,7 +52,7 @@ test.describe("Contact Activity Timeline - Authenticated", () => {
   }) => {
     await contactDetailPage.goto(contactId);
     await page
-      .getByRole("heading", { name: /Activity/i })
+      .getByRole("heading", { name: "Activity", exact: true })
       .scrollIntoViewIfNeeded();
 
     await expect(
