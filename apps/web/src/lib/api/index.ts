@@ -6,3 +6,8 @@
 export { apiClient, ApiError } from '../api-client';
 export * from './github';
 export * from './contacts';
+export * from './companies';
+export * from './deals';
+export * from './tasks';
+export * from './activities';
+export * from './tables';

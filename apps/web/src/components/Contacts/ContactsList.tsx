@@ -12,6 +12,7 @@ import { useQuery } from '@tanstack/react-query';
 import { getTableViewContacts } from '@/server/query-options';
 import { useRouter } from 'next/navigation';
 import { BaseTable, createColumnsFromMetadata, type BaseRow } from '../Table';
+import { useAddColumn } from '@/hooks/use-add-column';
 
 const ContactsList = () => {
   const router = useRouter();
@@ -19,6 +20,8 @@ const ContactsList = () => {
   const { data: contactsData, isLoading } = useQuery(
     getTableViewContacts({ search: searchTerm || undefined }),
   );
+
+  const { mutate: addColumn } = useAddColumn('contacts');
 
   const contacts = contactsData?.data || [];
   const metadata = contactsData?.metadata || [];
@@ -36,8 +39,13 @@ const ContactsList = () => {
     router.push('/contacts/new');
   };
 
-  const handleNewColumn = (name: string, type: string) => {
-    // TODO: Implement add column functionality
+  const handleNewContactRow = () => {
+    // Todo: addRow();
+    router.push('/contacts/new');
+  };
+
+  const handleNewColumn = (name: string, key: string, type: string) => {
+    addColumn({ label: name, columnKey: key, fieldType: type });
   };
 
   return (
@@ -76,7 +84,7 @@ const ContactsList = () => {
         totalCount={contactsData?.pagination?.total}
         entityName="contacts"
         showAddRow
-        onAddRow={handleNewContact}
+        onAddRow={handleNewContactRow}
         showAddColumn
         onAddColumn={handleNewColumn}
         emptyStateConfig={{

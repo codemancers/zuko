@@ -86,7 +86,7 @@ export interface CreateDealDto {
   expectedCloseDate?: string;
   source?: string;
   priority?: number;
-  ownerIds: number[];
+  ownerIds?: number[];
   primaryOwnerId?: number;
 }
 

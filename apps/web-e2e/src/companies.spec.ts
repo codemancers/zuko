@@ -300,3 +300,85 @@ test.describe("Contact Association Constraints", () => {
     ).toBeVisible();
   });
 });
+
+test.describe.serial("Column Creation Flow", () => {
+  const columnName = "Source";
+  const columnKey = `source`;
+
+  test("Creates new column from column creation dialog", async ({
+    companiesPage,
+    page,
+  }) => {
+    await companiesPage.goto();
+
+    const addColumnButton = page.getByRole("button", { name: /Add column/i });
+    await addColumnButton.click();
+
+    await expect(page.getByText(/Add new field/i)).toBeVisible();
+
+    await page.getByPlaceholder("Field name").fill(columnName);
+    await page.getByPlaceholder(/Unique column key/i).fill(columnKey);
+    await page.locator("select").selectOption("text");
+
+    await page.getByRole("button", { name: "Create field" }).click();
+
+    await expect(page.getByText("Column created successfully")).toBeVisible();
+    await expect(
+      page.getByRole("columnheader", { name: columnName })
+    ).toBeVisible();
+  });
+
+  test("Shows error toast when creating column with existing default column key (website)", async ({
+    companiesPage,
+    page,
+  }) => {
+    await companiesPage.goto();
+
+    const addColumnButton = page.getByRole("button", { name: /Add column/i });
+    await addColumnButton.click();
+
+    await page.getByPlaceholder("Field name").fill("Column New");
+    await page.getByPlaceholder(/Unique column key/i).fill("website");
+    await page.getByRole("button", { name: "Create field" }).click();
+
+    await expect(page.getByText("Column key already exists")).toBeVisible();
+  });
+
+  test("Shows error toast when creating column with existing column key", async ({
+    companiesPage,
+    page,
+  }) => {
+    await companiesPage.goto();
+
+    const addColumnButton = page.getByRole("button", { name: /Add column/i });
+    await addColumnButton.click();
+
+    await page.getByPlaceholder("Field name").fill("Column New");
+    await page.getByPlaceholder(/Unique column key/i).fill(columnKey);
+    await page.getByRole("button", { name: "Create field" }).click();
+
+    await expect(page.getByText("Column key already exists")).toBeVisible();
+  });
+
+  test("Shows field level validation when submitting empty form", async ({
+    companiesPage,
+    page,
+  }) => {
+    await companiesPage.goto();
+
+    const addColumnButton = page.getByRole("button", { name: /Add column/i });
+    await addColumnButton.click();
+
+    await page.getByRole("button", { name: "Create field" }).click();
+
+    await expect(page.getByText("Field name is required")).toBeVisible();
+    await expect(page.getByText("Column key is required")).toBeVisible();
+
+    const invalidKey = 'column Key';
+    await page.getByPlaceholder("Field name").fill("Column New");
+    await page.getByPlaceholder(/Unique column key/i).fill(invalidKey);
+    await page.getByRole("button", { name: "Create field" }).click();
+
+    await expect(page.getByText("Column key must contain only lowercase letters, numbers, and underscores")).toBeVisible();
+  });
+});

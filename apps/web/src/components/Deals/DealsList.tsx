@@ -12,6 +12,7 @@ import { getTableViewDeals } from '@/server/query-options';
 import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { BaseTable, createColumnsFromMetadata, type BaseRow } from '../Table';
+import { useAddColumn } from '@/hooks/use-add-column';
 
 const DealsList = () => {
   const router = useRouter();
@@ -19,6 +20,8 @@ const DealsList = () => {
   const { data: dealsData, isLoading } = useQuery(
     getTableViewDeals({ search: searchTerm || undefined }),
   );
+
+  const { mutate: addColumn } = useAddColumn('deals');
 
   const deals = dealsData?.data || [];
   const metadata = dealsData?.metadata || [];
@@ -32,12 +35,17 @@ const DealsList = () => {
     router.push(`/deals/${dealId}`);
   };
 
+  const handleNewDealRow = () => {
+    // ToDo: addRow();
+    router.push('/deals/new');
+  };
+
   const handleNewDeal = () => {
     router.push('/deals/new');
   };
 
-  const handleNewColumn = (name: string, type: string) => {
-    // TODO: Implement add column functionality
+  const handleNewColumn = (name: string, key: string, type: string) => {
+    addColumn({ label: name, columnKey: key, fieldType: type });
   };
 
   return (
@@ -76,7 +84,7 @@ const DealsList = () => {
         totalCount={dealsData?.pagination?.total}
         entityName="deals"
         showAddRow
-        onAddRow={handleNewDeal}
+        onAddRow={handleNewDealRow}
         showAddColumn
         onAddColumn={handleNewColumn}
         emptyStateConfig={{

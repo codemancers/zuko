@@ -158,6 +158,7 @@ export const OrgTeams = ({
         data={teams}
         loading={isLoading}
         entityName="teams"
+        showEmptyState={true}
         emptyStateConfig={{
           icon: UserGroupIcon,
           title: 'No teams found',

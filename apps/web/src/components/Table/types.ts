@@ -57,8 +57,9 @@ export interface BaseTableProps<TData> {
   showAddRow?: boolean;
   onAddRow?: () => void;
   showAddColumn?: boolean;
-  onAddColumn?: (name: string, type: string) => void;
-  emptyStateConfig: {
+  onAddColumn?: (name: string, key: string, type: string) => void;
+  showEmptyState?: boolean;
+  emptyStateConfig?: {
     icon: React.ElementType;
     title: string;
     description: string;

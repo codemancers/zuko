@@ -181,7 +181,7 @@ describe('TasksList', () => {
     vi.clearAllMocks();
   });
 
-  it('displays empty state when no tasks exist', async () => {
+  it('displays empty table when no tasks exist', async () => {
     mockGetTasks.mockResolvedValue({
       tasks: [],
       pagination: { page: 1, limit: 50, total: 0, totalPages: 0 },
@@ -190,9 +190,23 @@ describe('TasksList', () => {
     render(<TasksList />, { wrapper });
 
     await waitFor(() => {
-      expect(screen.getByText(/no tasks/i)).toBeInTheDocument();
-      expect(screen.getByText(/get started by creating a new task/i)).toBeInTheDocument();
+      expect(screen.getByRole('table')).toBeInTheDocument();
+      // Headers should still be there
+      expect(screen.getByText('Title')).toBeInTheDocument();
+      expect(screen.getByText('Subtasks')).toBeInTheDocument();
+      expect(screen.getByText('Status')).toBeInTheDocument();
+      expect(screen.getByText('Assignee')).toBeInTheDocument();
+      expect(screen.getByText('Actions')).toBeInTheDocument();
+      expect(screen.getByText('Created By')).toBeInTheDocument();
+      expect(screen.getByText('Completed At')).toBeInTheDocument();
     });
+    
+    // The table body should have no data rows
+    const tbody = screen.getByRole('table').querySelector('tbody');
+    expect(tbody?.children.length).toBe(0);
+
+    // button with add row label should be present
+    expect(screen.getByRole('button', { name: /add row/i })).toBeInTheDocument();
   });
 
   it('displays tasks with subtasks in table', async () => {

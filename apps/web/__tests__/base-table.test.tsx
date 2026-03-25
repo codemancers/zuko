@@ -54,7 +54,7 @@ describe('BaseTable', () => {
     expect(screen.getByText(/Loading items.../i)).toBeInTheDocument();
   });
 
-  it('renders empty state when data is empty', () => {
+  it('renders table structure even when data is empty', () => {
     render(
       <BaseTable
         columns={mockColumns}
@@ -64,24 +64,11 @@ describe('BaseTable', () => {
       />
     );
 
-    expect(screen.getByText('No Data')).toBeInTheDocument();
-    expect(screen.getByText('Nothing to see here.')).toBeInTheDocument();
-    expect(screen.getByTestId('empty-icon')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Add New/i })).toBeInTheDocument();
-  });
-
-  it('calls action onClick in empty state', () => {
-    render(
-      <BaseTable
-        columns={mockColumns}
-        data={[]}
-        loading={false}
-        emptyStateConfig={mockEmptyStateConfig}
-      />
-    );
-
-    fireEvent.click(screen.getByRole('button', { name: /Add New/i }));
-    expect(mockEmptyStateConfig.action.onClick).toHaveBeenCalled();
+    expect(screen.getByRole('table')).toBeInTheDocument();
+    
+    // Check for empty body
+    const tbody = screen.getByRole('table').querySelector('tbody');
+    expect(tbody?.children.length).toBe(0);
   });
 
   it('renders data table correctly', () => {

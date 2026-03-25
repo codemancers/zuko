@@ -63,7 +63,7 @@ export interface CreateCompanyDto {
   website?: string;
   linkedinUrl?: string;
   summary?: string;
-  ownerIds: number[];
+  ownerIds?: number[];
   primaryOwnerId?: number;
 }
 
