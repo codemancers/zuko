@@ -310,7 +310,7 @@ export default function ActivityTimeline({
             title="Add a comment"
             onSubmit={(content) => createCommentMutation.mutate(content)}
             isSubmitting={createCommentMutation.isPending}
-            submitLabel={createCommentMutation.isPending ? 'Posting...' : 'Comment'}
+            submitLabel={createCommentMutation.isPending ? 'Posting...' : 'Post Comment'}
             onReady={(api) => { clearNewCommentRef.current = api; }}
           />
         </>
