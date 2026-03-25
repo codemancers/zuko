@@ -9,8 +9,9 @@ export interface CreateCompanyInput {
   website?: string;
   linkedinUrl?: string;
   summary?: string;
-  ownerIds: number[];
+  ownerIds?: number[];
   primaryOwnerId?: number;
+  fields?: Record<string, unknown>;
 }
 
 export interface UpdateCompanyInput {
@@ -19,6 +20,7 @@ export interface UpdateCompanyInput {
   linkedinUrl?: string;
   summary?: string;
   isHidden?: boolean;
+  fields?: Record<string, unknown>;
 }
 
 export interface CompanyFilters {
@@ -46,20 +48,34 @@ export class CompaniesRepository {
   constructor(private readonly prisma: PrismaService) {}
 
   async create(input: CreateCompanyInput) {
-    const { ownerIds, primaryOwnerId, organizationId, ...companyData } = input;
+    const {
+      ownerIds,
+      primaryOwnerId,
+      organizationId,
+      fields: inputFields,
+      ...otherData
+    } = input;
+
+    const fields = (inputFields || {}) as Prisma.InputJsonValue;
+
+    const actualPrimaryId =
+      primaryOwnerId ?? (ownerIds && ownerIds.length > 0 ? ownerIds[0] : undefined);
 
     return this.prisma.company.create({
       data: {
-        ...companyData,
+        ...otherData,
         organizationId,
-        owners: {
-          create: ownerIds.map((userId) => ({
-            userId,
-            isPrimary: primaryOwnerId
-              ? userId === primaryOwnerId
-              : userId === ownerIds[0],
-          })),
-        },
+        fields,
+        ...(ownerIds && ownerIds.length > 0
+          ? {
+              owners: {
+                create: ownerIds.map((userId) => ({
+                  userId,
+                  isPrimary: userId === actualPrimaryId,
+                })),
+              },
+            }
+          : {}),
       },
       include: {
         owners: {
@@ -122,9 +138,19 @@ export class CompaniesRepository {
   }
 
   async update(id: number, input: UpdateCompanyInput) {
+    const {
+      fields: existingFields,
+      ...otherData
+    } = input;
+
+    const fields = existingFields || {};
+
     return this.prisma.company.update({
       where: { id },
-      data: input,
+      data: {
+        ...otherData,
+        ...(Object.keys(fields).length > 0 ? { fields: fields as Prisma.InputJsonValue } : {}),
+      },
       include: {
         owners: {
           include: {
@@ -175,23 +201,36 @@ export class CompaniesRepository {
             },
           }
         : {}),
-      ...(search
-        ? {
-            OR: [
-              { companyName: { contains: search, mode: 'insensitive' } },
-              { website: { contains: search, mode: 'insensitive' } },
-              { linkedinUrl: { contains: search, mode: 'insensitive' } },
-            ],
-          }
-        : {}),
     };
+
+    if (search) {
+      // Get dynamic field keys to include them in the OR search for precise value matching
+      const customColumns = await this.prisma.tableColumn.findMany({
+        where: { organizationId, tableName: 'companies' },
+        select: { columnKey: true },
+      });
+
+      where.OR = [
+        { companyName: { contains: search, mode: 'insensitive' } },
+        { website: { contains: search, mode: 'insensitive' } },
+        { linkedinUrl: { contains: search, mode: 'insensitive' } },
+        ...customColumns.map((col) => ({
+          fields: {
+            path: [col.columnKey],
+            string_contains: search,
+          },
+        })),
+        // Fallback global search across the entire JSON blob
+        { fields: { string_contains: search } },
+      ];
+    }
 
     const [companies, total] = await Promise.all([
       this.prisma.company.findMany({
         where,
         skip,
         take: limit,
-        orderBy: { createdAt: 'desc' },
+        orderBy: { createdAt: 'asc' },
         include: {
           owners: {
             include: {

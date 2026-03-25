@@ -4,7 +4,9 @@ import {
   Get,
   Param,
   Patch,
+  Post,
   Query,
+  Req,
   UseGuards,
 } from '@nestjs/common';
 import { AuthGuard } from '@thallesp/nestjs-better-auth';
@@ -14,6 +16,16 @@ import { OrganizationGuard } from '../../../common/auth/organization.guard';
 import { CompanyListQueryDto } from '../companies.controller';
 import { ContactListQueryDto } from '../contacts.controller';
 import { DealListQueryDto } from '../deals.controller';
+import { ColumnConfig, ColumnType } from '@zuko/sales';
+import type { RequestWithUser } from '@zuko/core';
+
+export class CreateColumnDto {
+  label!: string;
+  columnKey!: string;
+  fieldType!: ColumnType;
+  config?: ColumnConfig;
+  isRequired?: boolean;
+}
 
 export class UpdateCellDto {
   columnId!: string;
@@ -47,6 +59,21 @@ export class TableController {
     @Query() query: DealListQueryDto,
   ) {
     return this.tableService.getDealsTable(organizationId, query);
+  }
+
+  @Post(':entity/columns')
+  async createColumn(
+    @Param('entity') entity: string,
+    @OrgId() organizationId: number,
+    @Req() req: RequestWithUser,
+    @Body() dto: CreateColumnDto,
+  ) {
+    return this.tableService.createColumn(
+      entity,
+      organizationId,
+      parseInt(req.user.id, 10),
+      dto,
+    );
   }
 
   @Patch(':entity/:rowId/cell')

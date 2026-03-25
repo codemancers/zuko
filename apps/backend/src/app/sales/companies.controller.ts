@@ -34,8 +34,9 @@ export class CreateCompanyDto
   website?: string;
   linkedinUrl?: string;
   summary?: string;
-  ownerIds!: number[];
+  ownerIds?: number[];
   primaryOwnerId?: number;
+  fields?: Record<string, unknown>;
 }
 
 export class UpdateCompanyDto implements Partial<UpdateCompanyInput> {
@@ -43,6 +44,7 @@ export class UpdateCompanyDto implements Partial<UpdateCompanyInput> {
   website?: string;
   linkedinUrl?: string;
   summary?: string;
+  fields?: Record<string, unknown>;
 }
 
 export class CompanyListQueryDto {

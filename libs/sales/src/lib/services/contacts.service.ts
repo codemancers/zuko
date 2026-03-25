@@ -25,21 +25,6 @@ function isValidE164Phone(phone: string): boolean {
   return e164Regex.test(phone);
 }
 
-/**
- * Validates that at least one contact method is provided
- */
-function validateContactMethods(
-  email?: string,
-  phone?: string,
-  linkedinId?: string,
-): void {
-  if (!email && !phone && !linkedinId) {
-    throw new BadRequestException(
-      'At least one of email, phone, or linkedinId must be provided',
-    );
-  }
-}
-
 const FIELD_UPDATE_EXCLUDED = new Set<keyof UpdateContactInput>([
   'isHidden', // handled by hide/unhide methods
 ]);
@@ -56,18 +41,9 @@ export class ContactsService {
   async create(input: CreateContactInput, actorId?: number, source?: ActivitySource) {
     this.logger.log('[SERVICE] Starting contact creation');
 
-    // Validate at least one contact method
-    this.logger.debug('[SERVICE] Validating contact methods');
-    try {
-      validateContactMethods(input.email, input.phone, input.linkedinId);
-      this.logger.debug('[SERVICE] Contact methods validation passed');
-    } catch (error: unknown) {
-      const errorMessage =
-        error instanceof Error ? error.message : String(error);
-      this.logger.warn(
-        `[SERVICE] Contact methods validation failed: ${errorMessage}`,
-      );
-      throw error;
+    // Default Name Support: If no name provided, use "New Contact"
+    if (!input.name || input.name.trim() === '') {
+      input.name = 'New Contact';
     }
 
     // Validate phone format if provided
@@ -81,18 +57,6 @@ export class ContactsService {
       }
       this.logger.debug('[SERVICE] Phone format validation passed');
     }
-
-    // Validate at least one owner
-    this.logger.debug(
-      `[SERVICE] Validating owners: ${JSON.stringify(input.ownerIds)}`,
-    );
-    if (!input.ownerIds || input.ownerIds.length === 0) {
-      this.logger.warn('[SERVICE] No owners provided');
-      throw new BadRequestException('At least one owner must be assigned');
-    }
-    this.logger.debug(
-      `[SERVICE] Owner validation passed - ${input.ownerIds.length} owner(s)`,
-    );
 
     // Check for duplicate email (within same organization)
     if (input.email) {
@@ -152,20 +116,6 @@ export class ContactsService {
       throw new NotFoundException(`Contact with ID ${id} not found`);
     }
 
-    const updatedEmail =
-      input.email !== undefined ? input.email : existingContact.email;
-    const updatedPhone =
-      input.phone !== undefined ? input.phone : existingContact.phone;
-    const updatedLinkedinId =
-      input.linkedinId !== undefined ? input.linkedinId : existingContact.linkedinId;
-
-    validateContactMethods(
-      updatedEmail ?? undefined,
-      updatedPhone ?? undefined,
-      updatedLinkedinId ?? undefined,
-    );
-
-    // Validate phone format if being updated
     if (input.phone && !isValidE164Phone(input.phone)) {
       throw new BadRequestException(
         'Phone number must be in E.164 format (e.g., +14155552671)',
@@ -174,10 +124,10 @@ export class ContactsService {
 
     // Check for duplicate email if being updated (within same organization)
     if (input.email && input.email !== existingContact.email) {
-      const duplicate = await this.findByEmail(organizationId, input.email);
-      if (duplicate && duplicate.id !== id) {
+      const duplicateContact = await this.findByEmail(organizationId, input.email);
+      if (duplicateContact && duplicateContact.id !== id) {
         throw new BadRequestException(
-          `A contact with email ${input.email} already exists (ID: ${duplicate.id})`,
+          `A contact with email ${input.email} already exists (ID: ${duplicateContact.id})`,
         );
       }
     }

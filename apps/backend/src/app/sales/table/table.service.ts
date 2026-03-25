@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import {
   CompaniesService,
   ContactsService,
@@ -6,12 +6,20 @@ import {
   COMPANY_TABLE_METADATA,
   CONTACT_TABLE_METADATA,
   DEAL_TABLE_METADATA,
+  ColumnMetadata,
+  TableColumnRepository,
+  mapTableColumnsToMetadata,
+  FlattenedContact,
+  FlattenedCompany,
+  FlattenedDeal,
+  COLUMN_TYPES,
 } from '@zuko/sales';
 import { TableRowBuilder } from './row-builder/table-row.builder';
 import { CompanyListQueryDto } from '../companies.controller';
 import { ContactListQueryDto } from '../contacts.controller';
 import { DealListQueryDto } from '../deals.controller';
-import { UpdateCellDto } from './table.controller';
+import { CreateColumnDto, UpdateCellDto } from './table.controller';
+import { TableColumn } from '@prisma/client';
 
 @Injectable()
 export class TableService {
@@ -20,6 +28,7 @@ export class TableService {
     private readonly contactsService: ContactsService,
     private readonly dealsService: DealsService,
     private readonly rowBuilder: TableRowBuilder,
+    private readonly tableColumnRepository: TableColumnRepository,
   ) {}
 
   async getCompaniesTable(organizationId: number, query: CompanyListQueryDto) {
@@ -37,11 +46,20 @@ export class TableService {
       limit: query.limit ? Number(query.limit) : 50,
     };
 
-    const result = await this.companiesService.findAll(filters, pagination);
+    const [result, dynamicColumnMetadata] = await Promise.all([
+      this.companiesService.findAll(filters, pagination),
+      this.tableColumnRepository.findByTable(organizationId, 'companies'),
+    ]);
+
+    const { metadata, data } = this.buildMergedTable<FlattenedCompany>(
+      result.companies, //data
+      COMPANY_TABLE_METADATA, //default column metadata
+      dynamicColumnMetadata, //dynamic column metadata
+    );
 
     return {
-      metadata: COMPANY_TABLE_METADATA,
-      data: this.rowBuilder.buildRows(result.companies, COMPANY_TABLE_METADATA),
+      metadata,
+      data,
       pagination: result.pagination,
     };
   }
@@ -61,11 +79,20 @@ export class TableService {
       limit: query.limit ? Number(query.limit) : 50,
     };
 
-    const result = await this.contactsService.findAll(filters, pagination);
+    const [result, dynamicColumnMetadata] = await Promise.all([
+      this.contactsService.findAll(filters, pagination),
+      this.tableColumnRepository.findByTable(organizationId, 'contacts'),
+    ]);
+
+    const { metadata, data } = this.buildMergedTable<FlattenedContact>(
+      result.contacts, //data
+      CONTACT_TABLE_METADATA, //default column metadata
+      dynamicColumnMetadata, //dynamic column metadata
+    );
 
     return {
-      metadata: CONTACT_TABLE_METADATA,
-      data: this.rowBuilder.buildRows(result.contacts, CONTACT_TABLE_METADATA),
+      metadata,
+      data,
       pagination: result.pagination,
     };
   }
@@ -100,16 +127,123 @@ export class TableService {
       limit: query.limit ? Number(query.limit) : 50,
     };
 
-    const result = await this.dealsService.findAll(filters, pagination);
+    const [result, dynamicColumnMetadata] = await Promise.all([
+      this.dealsService.findAll(filters, pagination),
+      this.tableColumnRepository.findByTable(organizationId, 'deals'),
+    ]);
+
+    const { metadata, data } = this.buildMergedTable<FlattenedDeal>(
+      result.deals, //data
+      DEAL_TABLE_METADATA, //default column metadata
+      dynamicColumnMetadata, //dynamic column metadata
+    );
 
     return {
-      metadata: DEAL_TABLE_METADATA,
-      data: this.rowBuilder.buildRows(result.deals, DEAL_TABLE_METADATA),
+      metadata,
+      data,
       pagination: result.pagination,
     };
   }
 
+  async createColumn(
+    entity: string,
+    organizationId: number,
+    userId: number,
+    dto: CreateColumnDto,
+  ) {
+    if(!dto || !dto.label || !dto.columnKey || !dto.fieldType) {
+      throw new BadRequestException('Invalid request body');
+    }
+
+    // check if entity is valid
+    const ALLOWED = ['contacts', 'companies', 'deals'];
+    if (!ALLOWED.includes(entity)) {
+      throw new BadRequestException('Invalid entity type');
+    }
+
+    if (dto.fieldType && !COLUMN_TYPES.includes(dto.fieldType)) {
+      throw new BadRequestException('Invalid field type');
+    }
+
+    // build reserved key list from entity metadata
+    let reservedKeys: string[] = [];
+    if (entity === 'companies') {
+      reservedKeys = COMPANY_TABLE_METADATA.map((metadata) => metadata.id);
+    } else if (entity === 'contacts') {
+      reservedKeys = CONTACT_TABLE_METADATA.map((metadata) => metadata.id);
+    } else if (entity === 'deals') {
+      reservedKeys = DEAL_TABLE_METADATA.map((metadata) => metadata.id);
+    }
+
+    const validKeyRegex = /^[a-z0-9_]+$/;
+    if (!validKeyRegex.test(dto.columnKey)) {
+      throw new BadRequestException('Column key must contain only lowercase letters, numbers, and underscores');
+    }
+
+    const columnKey = dto.columnKey;
+
+    const reservedKeysSet = new Set(reservedKeys);
+    if (reservedKeysSet.has(columnKey)) {
+      throw new BadRequestException('Column key already exists');
+    }
+
+    const existing = await this.tableColumnRepository.findByKey(
+      organizationId,
+      entity,
+      columnKey,
+    );
+
+    if (existing) {
+      throw new BadRequestException('Column key already exists');
+    }
+
+    try {
+      return await this.tableColumnRepository.create({
+        organizationId,
+        createdById: userId,
+        tableName: entity,
+        columnKey,
+        label: dto.label,
+        fieldType: dto.fieldType,
+        isRequired: dto.isRequired ?? false,
+        config: dto.config ?? {},
+      });
+    } catch (error: unknown) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      
+      throw new BadRequestException('Failed to create column');
+    }
+  }
+
   async updateCell(entity: string, rowId: number, dto: UpdateCellDto) {
     // cell update logic
+  }
+
+  /**
+   * Merges default metadata with custom columns and build row with formatted data
+   */
+  private buildMergedTable<T>(
+    data: Record<string, unknown>[],
+    defaultMetadata: ColumnMetadata[],
+    customColumns: TableColumn[],
+  ): { metadata: ColumnMetadata[]; data: T[] } {
+    const customMetadata = mapTableColumnsToMetadata(customColumns);
+    const mergedMetadata = [...defaultMetadata, ...customMetadata];
+    
+    // flatten data
+    const flattenedData = data.map((item) => {
+      const { fields, ...rest } = item;
+      return {
+        ...rest,
+        ...(typeof fields === 'object' && fields !== null ? fields : {}),
+      } as T;
+    });
+
+    return {
+      metadata: mergedMetadata,
+      data: this.rowBuilder.buildRows<T>(flattenedData, mergedMetadata),
+    };
   }
 }

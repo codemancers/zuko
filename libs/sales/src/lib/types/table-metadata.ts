@@ -1,12 +1,15 @@
-export type ColumnType =
-  | 'text'
-  | 'number'
-  | 'date'
-  | 'currency'
-  | 'select'
-  | 'multiselect'
-  | 'relation'
-  | 'entity';
+export const COLUMN_TYPES = [
+  'text',
+  'number',
+  'date',
+  'currency',
+  'select',
+  'multiselect',
+  'relation',
+  'entity',
+] as const;
+
+export type ColumnType = (typeof COLUMN_TYPES)[number];
 
 export type DataType = 'text' | 'number' | 'boolean' | 'date' | 'json';
 
@@ -30,6 +33,7 @@ export interface RelationConfig {
 }
 
 export interface ColumnConfig {
+  [key: string]: any;
   entityType?: 'company' | 'contact' | 'deal' | 'team' | 'member';
   useAvatar?: boolean;
   avatarSrcField?: string;
@@ -57,6 +61,7 @@ export interface ColumnMetadata {
   isVisible?: boolean;
   width?: number;
   default?: boolean;
+  isRequired?: boolean;
   config?: ColumnConfig;
 }
 
