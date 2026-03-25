@@ -33,8 +33,9 @@ export class CreateContactDto
   phone?: string;
   linkedinId?: string;
   notes?: string;
-  ownerIds!: number[];
+  ownerIds?: number[];
   primaryOwnerId?: number;
+  fields?: Record<string, unknown>; // for custom fields
 }
 
 export class UpdateContactDto implements Partial<UpdateContactInput> {
@@ -43,6 +44,7 @@ export class UpdateContactDto implements Partial<UpdateContactInput> {
   phone?: string;
   linkedinId?: string;
   notes?: string;
+  fields?: Record<string, unknown>; // for custom fields
 }
 
 export class ContactListQueryDto {

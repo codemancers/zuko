@@ -61,6 +61,11 @@ export class CompaniesService {
   async create(input: CreateCompanyInput, actorId?: number, source?: ActivitySource) {
     this.logger.log('[SERVICE] Starting company creation');
 
+    // Default Name Support: If no name provided, use "New Company"
+    if (!input.companyName || input.companyName.trim() === '') {
+      input.companyName = 'New Company';
+    }
+
     // Validate company name
     if (!input.companyName || !input.companyName.trim()) {
       throw new BadRequestException('Company name is required');
@@ -93,18 +98,6 @@ export class CompaniesService {
       }
       this.logger.debug('[SERVICE] LinkedIn URL validation passed');
     }
-
-    // Validate at least one owner
-    this.logger.debug(
-      `[SERVICE] Validating owners: ${JSON.stringify(input.ownerIds)}`,
-    );
-    if (!input.ownerIds || input.ownerIds.length === 0) {
-      this.logger.warn('[SERVICE] No owners provided');
-      throw new BadRequestException('At least one owner must be assigned');
-    }
-    this.logger.debug(
-      `[SERVICE] Owner validation passed - ${input.ownerIds.length} owner(s)`,
-    );
 
     // Check for duplicate company name (warning only, not blocking)
     const duplicate = await this.findByCompanyName(

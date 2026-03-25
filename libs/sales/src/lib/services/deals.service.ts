@@ -41,6 +41,11 @@ export class DealsService {
   async create(input: CreateDealInput, actorId?: number, source?: ActivitySource) {
     this.logger.log('[SERVICE] Starting deal creation');
 
+    // Default Title Support: If no title provided, use "New Deal"
+    if (!input.title || input.title.trim() === '') {
+      input.title = 'New Deal';
+    }
+
     // Validate title
     if (!input.title || !input.title.trim()) {
       throw new BadRequestException('Deal title is required');
@@ -66,18 +71,6 @@ export class DealsService {
     ) {
       throw new BadRequestException('Priority must be between 0 and 4');
     }
-
-    // Validate at least one owner
-    this.logger.debug(
-      `[SERVICE] Validating owners: ${JSON.stringify(input.ownerIds)}`,
-    );
-    if (!input.ownerIds || input.ownerIds.length === 0) {
-      this.logger.warn('[SERVICE] No owners provided');
-      throw new BadRequestException('At least one owner must be assigned');
-    }
-    this.logger.debug(
-      `[SERVICE] Owner validation passed - ${input.ownerIds.length} owner(s)`,
-    );
 
     this.logger.log(
       '[SERVICE] All validations passed, creating deal in database',

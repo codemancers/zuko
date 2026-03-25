@@ -38,8 +38,9 @@ export class CreateDealDto implements Omit<CreateDealInput, 'organizationId'> {
   expectedCloseDate?: Date;
   source?: string;
   priority?: number;
-  ownerIds!: number[];
+  ownerIds?: number[];
   primaryOwnerId?: number;
+  fields?: Record<string, unknown>;
 }
 
 export class UpdateDealDto implements Partial<UpdateDealInput> {
@@ -54,6 +55,7 @@ export class UpdateDealDto implements Partial<UpdateDealInput> {
   lostReason?: string;
   source?: string;
   priority?: number;
+  fields?: Record<string, unknown>;
 }
 
 export class DealListQueryDto {

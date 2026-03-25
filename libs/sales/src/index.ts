@@ -9,3 +9,4 @@ export * from './lib/events/company-events';
 export * from './lib/listeners/deal-activity.listener';
 export * from './lib/listeners/contact-activity.listener';
 export * from './lib/listeners/company-activity.listener';
+export * from './lib/mappers/column-metadata.mapper';
