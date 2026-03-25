@@ -40,6 +40,9 @@ test.describe('Team Management', () => {
     await expect(page.getByText(`Team "${updatedTeamName}" updated successfully`)).toBeVisible();
     await expect(page.locator('table')).toContainText(updatedTeamName);
 
+    // Wait for the update dialog to fully close before interacting with the table
+    await page.locator('[role="dialog"]').waitFor({ state: 'hidden', timeout: 10000 });
+
     // 6. Remove the team
     await page.locator('tr').filter({ hasText: updatedTeamName })
       .getByRole('button', { name: /more options/i }).click();
