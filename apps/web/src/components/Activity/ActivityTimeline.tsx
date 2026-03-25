@@ -57,6 +57,22 @@ function renderSystemEventText(activity: { activityType: string; metadata?: Reco
       return 'created this company';
     case 'contact_created':
       return 'created this contact';
+    case 'task_created':
+      return 'created this task';
+    case 'subtask_added':
+      return `added subtask "${m.subtaskTitle}"`;
+
+    case 'task_status_changed': {
+      const TASK_STATUS_LABELS: Record<string, string> = {
+        TODO: 'To Do',
+        IN_PROGRESS: 'In Progress',
+        DONE: 'Done',
+        CANCELLED: 'Cancelled',
+      };
+      const fromLabel = TASK_STATUS_LABELS[String(m.from)] ?? String(m.from);
+      const toLabel = TASK_STATUS_LABELS[String(m.to)] ?? String(m.to);
+      return `moved task from ${fromLabel} to ${toLabel}`;
+    }
     case 'stage_change':
       return `moved deal from ${formatStage(String(m.from))} to ${formatStage(String(m.to))}`;
     case 'field_update': {

@@ -1,7 +1,9 @@
 import TaskDetail from '@/components/Tasks/TaskDetail';
 import { getQueryClient } from '@/lib/react-query/get-query-client';
 import { getTask } from '@/server/query-options';
+import { authClient } from '@/lib/auth-client';
 import { dehydrate, HydrationBoundary } from '@tanstack/react-query';
+import { headers } from 'next/headers';
 
 export const dynamic = 'force-dynamic';
 
@@ -27,9 +29,16 @@ const TaskPage = async ({ params }: TaskPageProps) => {
   const queryClient = getQueryClient();
   await queryClient.prefetchQuery(getTask(taskId));
 
+  const session = await authClient.getSession({
+    fetchOptions: { headers: Object.fromEntries((await headers()).entries()) },
+  });
+  const currentUserId = session?.data?.user?.id
+    ? parseInt(session.data.user.id, 10)
+    : null;
+
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
-      <TaskDetail taskId={taskId} />
+      <TaskDetail taskId={taskId} currentUserId={currentUserId} />
     </HydrationBoundary>
   );
 };

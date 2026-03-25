@@ -57,7 +57,7 @@ describe('TasksController', () => {
   });
 
   describe('create', () => {
-    it('should call createTask with orgId and dto', async () => {
+    it('should call createTask with orgId, dto and actorId', async () => {
       (mockTaskService.createTask as jest.Mock).mockResolvedValue(
         mockTask as never,
       );
@@ -71,6 +71,7 @@ describe('TasksController', () => {
           ...dto,
           createdByUserId: 1,
         }),
+        1,
       );
       expect(result).toEqual(mockTask);
     });
@@ -95,6 +96,7 @@ describe('TasksController', () => {
           ...dto,
           createdByUserId: 1,
         }),
+        1,
       );
     });
   });
@@ -184,16 +186,16 @@ describe('TasksController', () => {
   });
 
   describe('update', () => {
-    it('should call updateTask with correct args', async () => {
+    it('should call updateTask with correct args including actorId', async () => {
       const dto = { title: 'Updated', status: TaskStatus.IN_PROGRESS };
       const updated = { ...mockTask, ...dto };
       (mockTaskService.updateTask as jest.Mock).mockResolvedValue(
         updated as never,
       );
 
-      const result = await controller.update(ORG_ID, 1, dto);
+      const result = await controller.update(ORG_ID, 1, dto, mockReq);
 
-      expect(mockTaskService.updateTask).toHaveBeenCalledWith(ORG_ID, 1, dto);
+      expect(mockTaskService.updateTask).toHaveBeenCalledWith(ORG_ID, 1, dto, 1);
       expect(result).toEqual(updated);
     });
 
@@ -203,7 +205,7 @@ describe('TasksController', () => {
       );
 
       await expect(
-        controller.update(ORG_ID, 99, { title: 'x' }),
+        controller.update(ORG_ID, 99, { title: 'x' }, mockReq),
       ).rejects.toThrow(NotFoundException);
     });
   });

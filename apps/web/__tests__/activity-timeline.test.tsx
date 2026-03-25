@@ -222,6 +222,23 @@ describe('ActivityTimeline - system event text', () => {
     ).toBeInTheDocument();
   });
 
+  it('renders "created this task" for task_created', async () => {
+    renderTimeline([makeActivity({ activityType: 'task_created' })]);
+    expect(await screen.findByText('created this task')).toBeInTheDocument();
+  });
+
+  it('renders "moved task from X to Y" for task_status_changed', async () => {
+    renderTimeline([
+      makeActivity({
+        activityType: 'task_status_changed',
+        metadata: { from: 'TODO', to: 'IN_PROGRESS' },
+      }),
+    ]);
+    expect(
+      await screen.findByText('moved task from To Do to In Progress'),
+    ).toBeInTheDocument();
+  });
+
   it('renders multiple events in the timeline', async () => {
     renderTimeline([
       makeActivity({ id: 1, activityType: 'deal_created' }),

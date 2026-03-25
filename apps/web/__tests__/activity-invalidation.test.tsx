@@ -13,6 +13,7 @@ import CompanyForm from '@/components/Companies/CompanyForm';
 import CompanyDetail from '@/components/Companies/CompanyDetail';
 import ContactForm from '@/components/Contacts/ContactForm';
 import AddContactDialog from '@/components/Companies/AddContactDialog';
+import TaskForm from '@/components/Tasks/TaskForm';
 
 // ── Router ────────────────────────────────────────────────────────────────────
 const mockPush = vi.fn();
@@ -48,6 +49,15 @@ vi.mock('@/lib/api/contacts', () => ({
 
 vi.mock('@/lib/api/deals', () => ({
   dealsApi: { getDealsByCompany: vi.fn(() => Promise.resolve({ deals: [] })) },
+}));
+
+const mockUpdateTask = vi.fn();
+const mockGetTasks = vi.fn();
+vi.mock('@/lib/api/tasks', () => ({
+  tasksApi: {
+    updateTask: (...args: unknown[]) => mockUpdateTask(...args),
+    getTasks: (...args: unknown[]) => mockGetTasks(...args),
+  },
 }));
 
 vi.mock('@/components/Activity/ActivityTimeline', () => ({
@@ -93,6 +103,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   mockGetCompany.mockResolvedValue(mockCompany);
   mockGetContacts.mockResolvedValue({ contacts: [{ id: 10, name: 'Free Contact', email: 'free@test.com' }] });
+  mockGetTasks.mockResolvedValue({ tasks: [] });
 });
 
 // ── CompanyForm ───────────────────────────────────────────────────────────────
@@ -196,6 +207,47 @@ describe('CompanyDetail – updateContact timeline invalidation', () => {
     await waitFor(() => {
       expect(invalidateSpy).toHaveBeenCalledWith(
         expect.objectContaining({ queryKey: ['timeline', 'company', 42] }),
+      );
+    });
+  });
+});
+
+// ── TaskForm ──────────────────────────────────────────────────────────────────
+
+const mockTask = {
+  id: 7,
+  organizationId: 1,
+  title: 'Fix bug',
+  description: 'A bug to fix',
+  status: 'TODO' as const,
+  assignee: null,
+  parentId: null,
+  completedAt: null,
+  createdAt: '2025-01-01T00:00:00Z',
+  updatedAt: '2025-01-02T00:00:00Z',
+  owners: [],
+  subtasks: [],
+};
+
+describe('TaskForm – timeline invalidation', () => {
+  it('invalidates timeline query after a successful update', async () => {
+    mockUpdateTask.mockResolvedValue({ ...mockTask, title: 'Fix bug updated' });
+    const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
+    const user = userEvent.setup();
+
+    render(
+      <TaskForm mode="edit" task={mockTask} />,
+      { wrapper: createWrapper() },
+    );
+
+    const titleInput = screen.getByPlaceholderText(/task title/i);
+    await user.clear(titleInput);
+    await user.type(titleInput, 'Fix bug updated');
+    await user.click(screen.getByRole('button', { name: /save changes/i }));
+
+    await waitFor(() => {
+      expect(invalidateSpy).toHaveBeenCalledWith(
+        expect.objectContaining({ queryKey: ['timeline', 'task', 7] }),
       );
     });
   });

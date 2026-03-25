@@ -11,6 +11,7 @@ import Link from 'next/link';
 import type { TaskStatus } from '@/lib/api/tasks';
 import { useState } from 'react';
 import ConfirmDialog from '@/components/shared/ConfirmDialog';
+import ActivityTimeline from '@/components/Activity/ActivityTimeline';
 import { toast } from 'sonner';
 
 const statusConfig: Record<
@@ -25,9 +26,10 @@ const statusConfig: Record<
 
 interface TaskDetailProps {
   taskId: number;
+  currentUserId?: number | null;
 }
 
-const TaskDetail = ({ taskId }: TaskDetailProps) => {
+const TaskDetail = ({ taskId, currentUserId }: TaskDetailProps) => {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { data: task, isLoading } = useQuery(getTask(taskId));
@@ -203,6 +205,20 @@ const TaskDetail = ({ taskId }: TaskDetailProps) => {
           </Button>
         </div>
       )}
+
+      {/* Activity Timeline */}
+      <div className="mt-8">
+        <h2 className="text-base font-semibold text-zinc-950 dark:text-white">
+          Activity
+        </h2>
+        <div className="mt-4">
+          <ActivityTimeline
+            entityType="task"
+            entityId={taskId}
+            currentUserId={currentUserId ?? undefined}
+          />
+        </div>
+      </div>
     </>
   );
 };

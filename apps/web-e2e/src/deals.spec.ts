@@ -269,7 +269,7 @@ test.describe("Deal Detail", () => {
     await dealDetailPage.goto(1);
 
     await expect(page.getByRole("heading", { name: /Details/i })).toBeVisible();
-    await expect(page.getByText(/Created/i)).toBeVisible();
+    await expect(page.getByText("Created", { exact: true })).toBeVisible();
     await expect(page.getByText(/Last Updated/i)).toBeVisible();
   });
 });

@@ -57,4 +57,15 @@ export class ContactsPage extends BasePage {
   async clickContact(name: string) {
     await this.page.getByText(name, { exact: false }).click();
   }
+
+  /**
+   * Create a new contact by navigating to the creation form
+   */
+  async createContact({ name, email }: { name: string; email: string }) {
+    await this.page.goto('/contacts/new');
+    await this.page.getByLabel(/Name/i).fill(name);
+    await this.page.getByLabel(/Email/i).fill(email);
+    await this.page.getByRole('button', { name: /Create Contact/i }).click();
+    await this.page.waitForURL('**/contacts', { timeout: 10000 });
+  }
 }

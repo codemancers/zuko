@@ -23,8 +23,9 @@ const TasksList = () => {
   const { mutate: updateTask } = useMutation({
     mutationFn: ({ id, data }: { id: number; data: UpdateTaskDto }) =>
       tasksApi.updateTask(id, data),
-    onSuccess: (_, { data: updateData }) => {
+    onSuccess: (_, { id, data: updateData }) => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      queryClient.invalidateQueries({ queryKey: ['timeline', 'task', id] });
       if (updateData.status === 'DONE') {
         toast.success('Task marked as complete');
       } else {
