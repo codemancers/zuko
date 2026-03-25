@@ -36,7 +36,8 @@ function getInitialText(raw: string | undefined): string {
     if (Array.isArray(parsed?.blocks)) {
       return parsed.blocks
         .map((b: { type: string; data: Record<string, unknown> }) => {
-          if (b.type === 'paragraph' || b.type === 'header') return String(b.data.text ?? '');
+          if (b.type === 'paragraph' || b.type === 'header')
+            return String(b.data.text ?? '');
           if (b.type === 'code') return `\`\`\`\n${b.data.code}\n\`\`\``;
           if (b.type === 'quote') return `> ${b.data.text}`;
           if (b.type === 'list') {
@@ -52,7 +53,9 @@ function getInitialText(raw: string | undefined): string {
         .filter(Boolean)
         .join('\n\n');
     }
-  } catch { /* fall through */ }
+  } catch {
+    /* fall through */
+  }
   return raw;
 }
 
@@ -66,11 +69,19 @@ function makeInsertHelpers(
     const start = el.selectionStart;
     const end = el.selectionEnd;
     const selected = el.value.slice(start, end) || placeholder;
-    const newValue = el.value.slice(0, start) + before + selected + after + el.value.slice(end);
+    const newValue =
+      el.value.slice(0, start) +
+      before +
+      selected +
+      after +
+      el.value.slice(end);
     setText(newValue);
     requestAnimationFrame(() => {
       el.focus();
-      el.setSelectionRange(start + before.length, start + before.length + selected.length);
+      el.setSelectionRange(
+        start + before.length,
+        start + before.length + selected.length,
+      );
     });
   };
 
@@ -79,7 +90,8 @@ function makeInsertHelpers(
     if (!el) return;
     const start = el.selectionStart;
     const lineStart = el.value.lastIndexOf('\n', start - 1) + 1;
-    const newValue = el.value.slice(0, lineStart) + prefix + el.value.slice(lineStart);
+    const newValue =
+      el.value.slice(0, lineStart) + prefix + el.value.slice(lineStart);
     setText(newValue);
     requestAnimationFrame(() => {
       el.focus();
@@ -93,7 +105,12 @@ function makeInsertHelpers(
     const start = el.selectionStart;
     const before = el.value.slice(0, start);
     const after = el.value.slice(start);
-    const prefix = before.length && !before.endsWith('\n\n') ? (before.endsWith('\n') ? '\n' : '\n\n') : '';
+    const prefix =
+      before.length && !before.endsWith('\n\n')
+        ? before.endsWith('\n')
+          ? '\n'
+          : '\n\n'
+        : '';
     const newValue = before + prefix + snippet + '\n\n' + after;
     setText(newValue);
     const pos = before.length + prefix.length + snippet.length + 2;
@@ -134,7 +151,9 @@ function ToolbarBtn({
 }
 
 function ToolbarDivider() {
-  return <span className="mx-0.5 h-4 w-px shrink-0 bg-zinc-200 dark:bg-zinc-700" />;
+  return (
+    <span className="mx-0.5 h-4 w-px shrink-0 bg-zinc-200 dark:bg-zinc-700" />
+  );
 }
 
 type ActiveTab = 'write' | 'preview';
@@ -144,7 +163,7 @@ export function CommentBox({
   isSubmitting,
   placeholder = 'Add a comment...',
   initialContent,
-  submitLabel = 'Comment',
+  submitLabel = 'Post Comment',
   onCancel,
   onReady,
   avatarSrc,
@@ -161,7 +180,10 @@ export function CommentBox({
     onReady?.({ clear: () => setText('') });
   }
 
-  const { wrap, linePrefix, insertBlock } = makeInsertHelpers(textareaRef, setText);
+  const { wrap, linePrefix, insertBlock } = makeInsertHelpers(
+    textareaRef,
+    setText,
+  );
 
   const handleSubmit = () => {
     if (isSubmitting || !text.trim()) return;
@@ -175,7 +197,12 @@ export function CommentBox({
       {/* Avatar column */}
       {showAvatar && (
         <div className="flex-shrink-0 pt-0.5">
-          <Avatar src={avatarSrc} initials={avatarInitials} className="size-8" alt="" />
+          <Avatar
+            src={avatarSrc}
+            initials={avatarInitials}
+            className="size-8"
+            alt=""
+          />
         </div>
       )}
 
@@ -190,10 +217,8 @@ export function CommentBox({
 
         {/* Editor box */}
         <div className="overflow-hidden rounded-lg border border-zinc-300 dark:border-zinc-700 focus-within:border-indigo-500 dark:focus-within:border-indigo-500 focus-within:ring-1 focus-within:ring-indigo-500 transition-colors">
-
           {/* ── Tab bar + toolbar ─────────────────────────────────── */}
           <div className="flex items-center border-b border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-900/60 pl-1 pr-2">
-
             {/* Tabs */}
             <div className="flex shrink-0">
               {(['write', 'preview'] as const).map((tab) => (
@@ -217,21 +242,66 @@ export function CommentBox({
 
             {/* Inline format tools — only active on Write tab */}
             <div className="flex items-center">
-              <ToolbarBtn icon={<Heading2 />} label="Heading" disabled={activeTab !== 'write'} onAction={() => linePrefix('## ')} />
-              <ToolbarBtn icon={<Bold />} label="Bold (Ctrl+B)" disabled={activeTab !== 'write'} onAction={() => wrap('**', '**', 'bold text')} />
-              <ToolbarBtn icon={<Italic />} label="Italic (Ctrl+I)" disabled={activeTab !== 'write'} onAction={() => wrap('_', '_', 'italic text')} />
-              <ToolbarBtn icon={<Quote />} label="Quote" disabled={activeTab !== 'write'} onAction={() => linePrefix('> ')} />
-              <ToolbarBtn icon={<Code />} label="Code block" disabled={activeTab !== 'write'} onAction={() => insertBlock('```\n\n```')} />
-              <ToolbarBtn icon={<Link2 />} label="Link" disabled={activeTab !== 'write'} onAction={() => wrap('[', '](url)', 'link text')} />
+              <ToolbarBtn
+                icon={<Heading2 />}
+                label="Heading"
+                disabled={activeTab !== 'write'}
+                onAction={() => linePrefix('## ')}
+              />
+              <ToolbarBtn
+                icon={<Bold />}
+                label="Bold (Ctrl+B)"
+                disabled={activeTab !== 'write'}
+                onAction={() => wrap('**', '**', 'bold text')}
+              />
+              <ToolbarBtn
+                icon={<Italic />}
+                label="Italic (Ctrl+I)"
+                disabled={activeTab !== 'write'}
+                onAction={() => wrap('_', '_', 'italic text')}
+              />
+              <ToolbarBtn
+                icon={<Quote />}
+                label="Quote"
+                disabled={activeTab !== 'write'}
+                onAction={() => linePrefix('> ')}
+              />
+              <ToolbarBtn
+                icon={<Code />}
+                label="Code block"
+                disabled={activeTab !== 'write'}
+                onAction={() => insertBlock('```\n\n```')}
+              />
+              <ToolbarBtn
+                icon={<Link2 />}
+                label="Link"
+                disabled={activeTab !== 'write'}
+                onAction={() => wrap('[', '](url)', 'link text')}
+              />
             </div>
 
             <ToolbarDivider />
 
             {/* Block format tools */}
             <div className="flex items-center">
-              <ToolbarBtn icon={<ListOrdered />} label="Ordered list" disabled={activeTab !== 'write'} onAction={() => linePrefix('1. ')} />
-              <ToolbarBtn icon={<List />} label="Unordered list" disabled={activeTab !== 'write'} onAction={() => linePrefix('- ')} />
-              <ToolbarBtn icon={<ListChecks />} label="Task list" disabled={activeTab !== 'write'} onAction={() => linePrefix('- [ ] ')} />
+              <ToolbarBtn
+                icon={<ListOrdered />}
+                label="Ordered list"
+                disabled={activeTab !== 'write'}
+                onAction={() => linePrefix('1. ')}
+              />
+              <ToolbarBtn
+                icon={<List />}
+                label="Unordered list"
+                disabled={activeTab !== 'write'}
+                onAction={() => linePrefix('- ')}
+              />
+              <ToolbarBtn
+                icon={<ListChecks />}
+                label="Task list"
+                disabled={activeTab !== 'write'}
+                onAction={() => linePrefix('- [ ] ')}
+              />
             </div>
           </div>
 
@@ -272,11 +342,16 @@ export function CommentBox({
         {/* ── Action row ────────────────────────────────────────────── */}
         <div className="mt-3 flex items-center justify-end gap-2">
           {onCancel && (
-            <Button type="button" plain onClick={onCancel} disabled={isSubmitting}>
+            <Button
+              type="button"
+              plain
+              onClick={onCancel}
+              disabled={isSubmitting}
+            >
               Cancel
             </Button>
           )}
-          <Button type="button" onClick={handleSubmit} disabled={isSubmitting}>
+          <Button type="button" onClick={handleSubmit} disabled={isSubmitting || !text.trim()}>
             {isSubmitting ? 'Saving...' : submitLabel}
           </Button>
         </div>
