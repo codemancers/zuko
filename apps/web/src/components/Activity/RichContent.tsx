@@ -1,111 +1,61 @@
 'use client';
 
-import type { ReactNode } from 'react';
+import { useEffect, useState } from 'react';
 
-interface EditorBlock {
-  type: string;
-  data: Record<string, unknown>;
-}
-
-interface EditorData {
-  blocks: EditorBlock[];
-}
-
-function parseEditorContent(content: string): EditorData | null {
+// Convert legacy Editor.js JSON to a markdown string
+function editorJsonToMarkdown(content: string): string | null {
   try {
     const parsed = JSON.parse(content);
-    if (Array.isArray(parsed?.blocks)) return parsed as EditorData;
-  } catch { /* not JSON */ }
-  return null;
-}
-
-function renderBlock(block: EditorBlock, index: number): ReactNode {
-  const { type, data } = block;
-
-  switch (type) {
-    case 'paragraph':
-      return (
-        <p
-          key={index}
-          className="text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed"
-          dangerouslySetInnerHTML={{ __html: String(data.text ?? '') }}
-        />
-      );
-
-    case 'header': {
-      const level = Number(data.level ?? 2);
-      const Tag = `h${level}` as 'h2' | 'h3';
-      return (
-        <Tag
-          key={index}
-          className={`${level === 2 ? 'text-base' : 'text-sm'} font-semibold text-zinc-950 dark:text-white mt-2 first:mt-0`}
-          dangerouslySetInnerHTML={{ __html: String(data.text ?? '') }}
-        />
-      );
-    }
-
-    case 'list': {
-      const items = (Array.isArray(data.items) ? data.items : []) as string[];
-      const Tag = data.style === 'ordered' ? 'ol' : 'ul';
-      return (
-        <Tag
-          key={index}
-          className={`${data.style === 'ordered' ? 'list-decimal' : 'list-disc'} list-inside text-sm text-zinc-700 dark:text-zinc-300 space-y-0.5`}
-        >
-          {items.map((item, i) => (
-            <li key={i} dangerouslySetInnerHTML={{ __html: item }} />
-          ))}
-        </Tag>
-      );
-    }
-
-    case 'quote':
-      return (
-        <blockquote
-          key={index}
-          className="border-l-4 border-zinc-300 dark:border-zinc-600 pl-3 py-0.5 text-sm text-zinc-600 dark:text-zinc-400 italic"
-        >
-          <p dangerouslySetInnerHTML={{ __html: String(data.text ?? '') }} />
-          {Boolean(data.caption) && (
-            <cite className="mt-1 block text-xs not-italic text-zinc-500">
-              — <span dangerouslySetInnerHTML={{ __html: String(data.caption) }} />
-            </cite>
-          )}
-        </blockquote>
-      );
-
-    case 'code':
-      return (
-        <pre
-          key={index}
-          className="rounded-md bg-zinc-100 dark:bg-zinc-800 px-3 py-2 text-xs font-mono text-zinc-800 dark:text-zinc-200 overflow-x-auto whitespace-pre-wrap"
-        >
-          <code>{String(data.code ?? '')}</code>
-        </pre>
-      );
-
-    default:
-      return null;
+    if (!Array.isArray(parsed?.blocks)) return null;
+    return parsed.blocks
+      .map((b: { type: string; data: Record<string, unknown> }) => {
+        if (b.type === 'paragraph' || b.type === 'header') return String(b.data.text ?? '');
+        if (b.type === 'code') return `\`\`\`\n${b.data.code}\n\`\`\``;
+        if (b.type === 'quote') return `> ${b.data.text}`;
+        if (b.type === 'list') {
+          const items = Array.isArray(b.data.items) ? b.data.items : [];
+          return items
+            .map((item: unknown, i: number) =>
+              b.data.style === 'ordered' ? `${i + 1}. ${item}` : `- ${item}`,
+            )
+            .join('\n');
+        }
+        return '';
+      })
+      .filter(Boolean)
+      .join('\n\n');
+  } catch {
+    return null;
   }
 }
 
 export function RichContent({ content }: { content: string | null | undefined }) {
-  if (!content) return null;
+  const [html, setHtml] = useState<string | null>(null);
 
-  const editorData = parseEditorContent(content);
+  useEffect(() => {
+    if (!content) { setHtml(null); return; }
 
-  // Legacy plain-text fallback
-  if (!editorData) {
-    return (
-      <pre className="text-sm text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap font-sans leading-relaxed">
-        {content}
-      </pre>
-    );
-  }
+    const markdown = editorJsonToMarkdown(content) ?? content;
+
+    import('marked').then(({ marked }) => {
+      const result = marked.parse(markdown);
+      // marked.parse returns string | Promise<string>; resolve either
+      Promise.resolve(result).then(setHtml);
+    });
+  }, [content]);
+
+  if (!html) return null;
 
   return (
-    <div className="space-y-1.5">
-      {editorData.blocks.map(renderBlock)}
-    </div>
+    <div
+      className="prose prose-sm dark:prose-invert max-w-none
+        prose-p:text-zinc-700 dark:prose-p:text-zinc-300 prose-p:my-1
+        prose-headings:text-zinc-950 dark:prose-headings:text-white prose-headings:my-1
+        prose-code:text-zinc-800 dark:prose-code:text-zinc-200
+        prose-pre:bg-zinc-100 dark:prose-pre:bg-zinc-800 prose-pre:my-1.5
+        prose-blockquote:border-zinc-300 dark:prose-blockquote:border-zinc-600 prose-blockquote:my-1
+        prose-ul:my-1 prose-ol:my-1 prose-li:my-0"
+      dangerouslySetInnerHTML={{ __html: html }}
+    />
   );
 }

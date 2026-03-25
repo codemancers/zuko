@@ -1,7 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState, type ReactNode } from 'react';
-import type EditorJS from '@editorjs/editorjs';
+import { useRef, useState, useEffect, useCallback, type ReactNode } from 'react';
 import { Avatar, Button } from '@zuko/ui-kit';
 import {
   Heading2,
@@ -13,14 +12,9 @@ import {
   ListOrdered,
   List,
   ListChecks,
-  Paperclip,
-  AtSign,
-  Undo2,
-  Maximize2,
   FileCode2,
   Image,
 } from 'lucide-react';
-import { RichContent } from './RichContent';
 
 export interface RichCommentBoxProps {
   onSubmit: (content: string) => void;
@@ -33,23 +27,6 @@ export interface RichCommentBoxProps {
   avatarSrc?: string | null;
   avatarInitials?: string;
   title?: string;
-}
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function parseInitialData(raw: string | undefined): any {
-  if (!raw) return undefined;
-  try {
-    const parsed = JSON.parse(raw);
-    if (Array.isArray(parsed?.blocks)) return parsed;
-  } catch { /* fall through */ }
-  if (raw.trim()) {
-    return {
-      time: Date.now(),
-      blocks: [{ type: 'paragraph', data: { text: raw.trim() } }],
-      version: '2.30.7',
-    };
-  }
-  return undefined;
 }
 
 function ToolbarBtn({
@@ -68,9 +45,6 @@ function ToolbarBtn({
       type="button"
       title={label}
       disabled={disabled}
-      // onMouseDown + preventDefault keeps focus inside the contenteditable so
-      // inline commands (bold, italic) act on the current selection, and block
-      // insertions still have an active editor context.
       onMouseDown={(e) => {
         e.preventDefault();
         onAction?.();
@@ -88,11 +62,52 @@ function ToolbarDivider() {
 
 type ActiveTab = 'write' | 'preview';
 
+// Returns helpers that modify React state directly (avoids execCommand issues with controlled textarea)
+function makeInsertHelpers(
+  textareaRef: React.RefObject<HTMLTextAreaElement | null>,
+  setText: (updater: (prev: string) => string) => void,
+) {
+  // Schedule cursor placement after React re-renders
+  const setCursor = (start: number, end: number) => {
+    requestAnimationFrame(() => {
+      textareaRef.current?.setSelectionRange(start, end);
+      textareaRef.current?.focus();
+    });
+  };
+
+  const wrapSelection = (before: string, after: string, placeholder: string) => {
+    const ta = textareaRef.current;
+    if (!ta) return;
+    const { selectionStart: start, selectionEnd: end, value } = ta;
+    const hasSelection = start !== end;
+    const selected = hasSelection ? value.slice(start, end) : placeholder;
+    const newText = value.slice(0, start) + before + selected + after + value.slice(end);
+    setText(() => newText);
+    if (hasSelection) {
+      setCursor(start + before.length + selected.length + after.length, start + before.length + selected.length + after.length);
+    } else {
+      setCursor(start + before.length, start + before.length + placeholder.length);
+    }
+  };
+
+  const insertLinePrefix = (prefix: string) => {
+    const ta = textareaRef.current;
+    if (!ta) return;
+    const { selectionStart: start, value } = ta;
+    const lineStart = value.lastIndexOf('\n', start - 1) + 1;
+    const newText = value.slice(0, lineStart) + prefix + value.slice(lineStart);
+    setText(() => newText);
+    setCursor(lineStart + prefix.length, lineStart + prefix.length);
+  };
+
+  return { wrapSelection, insertLinePrefix };
+}
+
 export function RichCommentBox({
   onSubmit,
   isSubmitting,
   placeholder = 'Add your comment here...',
-  initialContent,
+  initialContent = '',
   submitLabel = 'Comment',
   onCancel,
   onReady,
@@ -100,95 +115,68 @@ export function RichCommentBox({
   avatarInitials,
   title,
 }: RichCommentBoxProps) {
-  const editorRef = useRef<EditorJS | null>(null);
-  const holderRef = useRef<HTMLDivElement>(null);
-  const isInitialized = useRef(false);
+  // Normalise legacy Editor.js JSON to plain text on mount
+  const [text, setText] = useState<string>(() => {
+    if (!initialContent) return '';
+    try {
+      const parsed = JSON.parse(initialContent);
+      if (Array.isArray(parsed?.blocks)) {
+        return parsed.blocks
+          .map((b: { type: string; data: Record<string, unknown> }) => {
+            if (b.type === 'paragraph' || b.type === 'header') return String(b.data.text ?? '');
+            if (b.type === 'code') return `\`\`\`\n${b.data.code}\n\`\`\``;
+            if (b.type === 'quote') return `> ${b.data.text}`;
+            if (b.type === 'list') {
+              const items = Array.isArray(b.data.items) ? b.data.items : [];
+              return items
+                .map((item: unknown, i: number) =>
+                  b.data.style === 'ordered' ? `${i + 1}. ${item}` : `- ${item}`,
+                )
+                .join('\n');
+            }
+            return '';
+          })
+          .filter(Boolean)
+          .join('\n\n');
+      }
+    } catch { /* not JSON */ }
+    return initialContent;
+  });
+
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [activeTab, setActiveTab] = useState<ActiveTab>('write');
-  const [previewContent, setPreviewContent] = useState<string | null>(null);
+  const [previewHtml, setPreviewHtml] = useState<string | null>(null);
+
+  const { wrapSelection, insertLinePrefix } = makeInsertHelpers(textareaRef, setText);
+
+  // Expose clear() to parent
+  const clearRef = useCallback(() => {
+    setText('');
+    textareaRef.current?.focus();
+  }, []);
 
   useEffect(() => {
-    if (!holderRef.current || isInitialized.current) return;
-    isInitialized.current = true;
-
-    // cancelled flag prevents a second EditorJS instance being created if React
-    // StrictMode fires the cleanup before the async Promise.all resolves
-    let cancelled = false;
-    let instance: EditorJS | null = null;
-
-    const init = async () => {
-      const [
-        { default: EditorJSClass },
-        { default: Header },
-        { default: List },
-        { default: Quote },
-        { default: Code },
-        { default: InlineCode },
-        { default: Marker },
-      ] = await Promise.all([
-        import('@editorjs/editorjs'),
-        import('@editorjs/header'),
-        import('@editorjs/list'),
-        import('@editorjs/quote'),
-        import('@editorjs/code'),
-        import('@editorjs/inline-code'),
-        import('@editorjs/marker'),
-      ]);
-
-      if (cancelled || !holderRef.current) return;
-
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const config: any = {
-        holder: holderRef.current,
-        placeholder,
-        data: parseInitialData(initialContent),
-        logLevel: 'ERROR',
-        tools: {
-          header: { class: Header, config: { levels: [2, 3], defaultLevel: 2 } },
-          list: { class: List, inlineToolbar: true },
-          quote: { class: Quote, inlineToolbar: true },
-          code: Code,
-          inlineCode: { class: InlineCode, shortcut: 'CMD+SHIFT+M' },
-          marker: { class: Marker, shortcut: 'CMD+SHIFT+H' },
-        },
-      };
-
-      instance = new EditorJSClass(config);
-      editorRef.current = instance;
-      onReady?.({ clear: () => instance?.clear() });
-    };
-
-    init();
-
-    return () => {
-      cancelled = true;
-      instance?.destroy();
-      editorRef.current = null;
-      isInitialized.current = false;
-    };
-    // placeholder and initialContent intentionally omitted — editor is initialized once
+    onReady?.({ clear: clearRef });
+    // onReady is intentionally run only once on mount
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const handleSubmit = async () => {
-    if (!editorRef.current || isSubmitting) return;
-    const data = await editorRef.current.save();
-    if (!data.blocks.length) return;
-    onSubmit(JSON.stringify(data));
-  };
-
   const handleTabChange = async (tab: ActiveTab) => {
-    if (tab === 'preview' && editorRef.current) {
-      const data = await editorRef.current.save();
-      setPreviewContent(data.blocks.length ? JSON.stringify(data) : null);
+    if (tab === 'preview') {
+      const trimmed = text.trim();
+      if (trimmed) {
+        const { marked } = await import('marked');
+        setPreviewHtml(await marked(trimmed));
+      } else {
+        setPreviewHtml(null);
+      }
     }
     setActiveTab(tab);
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const insertBlock = (type: string, data?: Record<string, any>) => {
-    if (!editorRef.current) return;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (editorRef.current as any).blocks.insert(type, data ?? {});
+  const handleSubmit = () => {
+    if (isSubmitting || !text.trim()) return;
+    onSubmit(text);
   };
 
   const showAvatar = avatarSrc !== undefined || avatarInitials !== undefined;
@@ -240,110 +228,50 @@ export function RichCommentBox({
 
             {/* Inline format tools */}
             <div className="flex items-center">
-              <ToolbarBtn icon={<Heading2 />} label="Heading" onAction={() => insertBlock('header', { text: '', level: 2 })} />
-              <ToolbarBtn icon={<Bold />} label="Bold (Ctrl+B)" onAction={() => document.execCommand('bold', false)} />
-              <ToolbarBtn icon={<Italic />} label="Italic (Ctrl+I)" onAction={() => document.execCommand('italic', false)} />
-              <ToolbarBtn icon={<Quote />} label="Quote" onAction={() => insertBlock('quote', { text: '' })} />
-              <ToolbarBtn icon={<Code />} label="Code block" onAction={() => insertBlock('code', { code: '' })} />
-              <ToolbarBtn icon={<Link2 />} label="Link" />
+              <ToolbarBtn icon={<Heading2 />} label="Heading" onAction={() => insertLinePrefix('## ')} />
+              <ToolbarBtn icon={<Bold />} label="Bold (Ctrl+B)" onAction={() => wrapSelection('**', '**', 'bold text')} />
+              <ToolbarBtn icon={<Italic />} label="Italic (Ctrl+I)" onAction={() => wrapSelection('_', '_', 'italic text')} />
+              <ToolbarBtn icon={<Quote />} label="Quote" onAction={() => insertLinePrefix('> ')} />
+              <ToolbarBtn icon={<Code />} label="Code block" onAction={() => wrapSelection('```\n', '\n```', 'code')} />
+              <ToolbarBtn icon={<Link2 />} label="Link" onAction={() => wrapSelection('[', '](url)', 'link text')} />
             </div>
 
             <ToolbarDivider />
 
             {/* Block format tools */}
             <div className="flex items-center">
-              <ToolbarBtn icon={<ListOrdered />} label="Ordered list" onAction={() => insertBlock('list', { style: 'ordered', items: [''] })} />
-              <ToolbarBtn icon={<List />} label="Unordered list" onAction={() => insertBlock('list', { style: 'unordered', items: [''] })} />
-              <ToolbarBtn icon={<ListChecks />} label="Task list" />
+              <ToolbarBtn icon={<ListOrdered />} label="Ordered list" onAction={() => insertLinePrefix('1. ')} />
+              <ToolbarBtn icon={<List />} label="Unordered list" onAction={() => insertLinePrefix('- ')} />
+              <ToolbarBtn icon={<ListChecks />} label="Task list" onAction={() => insertLinePrefix('- [ ] ')} />
             </div>
 
-            <ToolbarDivider />
-
-            {/* Utility tools */}
-            <div className="flex items-center">
-              <ToolbarBtn icon={<Paperclip />} label="Attach files" />
-              <ToolbarBtn icon={<AtSign />} label="Mention a user" />
-              <ToolbarBtn icon={<Undo2 />} label="Undo" onAction={() => document.execCommand('undo', false)} />
-              <ToolbarBtn icon={<Maximize2 />} label="Expand editor" />
-            </div>
           </div>
 
           {/* ── Write area ────────────────────────────────────────── */}
-          <div className={activeTab === 'write' ? undefined : 'hidden'}>
-            {/* Scoped overrides for Editor.js injected styles */}
-            <style>{`
-              /* Layout fixes */
-              .zuko-editor .codex-editor__redactor { padding-bottom: 1rem !important; }
-              .zuko-editor .codex-editor[data-placeholder]::before { display: none !important; }
-              .zuko-editor .ce-toolbar { display: none !important; }
-              .zuko-editor .ce-block__content { max-width: 100% !important; margin: 0 !important; }
-
-              /* Inline toolbar — light mode */
-              .zuko-editor .ce-inline-toolbar {
-                background-color: #ffffff;
-                border: 1px solid #e4e4e7;
-                border-radius: 6px;
-                box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
-                color: #18181b;
-              }
-              .zuko-editor .ce-inline-tool,
-              .zuko-editor .ce-inline-toolbar__dropdown {
-                color: #52525b;
-              }
-              .zuko-editor .ce-inline-tool:hover {
-                background-color: #f4f4f5;
-                color: #18181b;
-              }
-              .zuko-editor .ce-inline-tool--active { color: #6366f1; }
-
-              /* Inline toolbar — dark mode */
-              .dark .zuko-editor .ce-inline-toolbar {
-                background-color: #27272a;
-                border-color: #3f3f46;
-                box-shadow: 0 4px 6px -1px rgba(0,0,0,0.5);
-                color: #d4d4d8;
-              }
-              .dark .zuko-editor .ce-inline-tool,
-              .dark .zuko-editor .ce-inline-toolbar__dropdown {
-                color: #a1a1aa;
-              }
-              .dark .zuko-editor .ce-inline-tool:hover {
-                background-color: #3f3f46;
-                color: #f4f4f5;
-              }
-              .dark .zuko-editor .ce-inline-tool--active { color: #818cf8; }
-
-              /* Conversion toolbar (T ▾ dropdown) */
-              .dark .zuko-editor .ce-conversion-toolbar {
-                background-color: #27272a;
-                border-color: #3f3f46;
-              }
-              .dark .zuko-editor .ce-conversion-tool {
-                color: #a1a1aa;
-              }
-              .dark .zuko-editor .ce-conversion-tool:hover {
-                background-color: #3f3f46;
-                color: #f4f4f5;
-              }
-              .dark .zuko-editor .ce-conversion-tool__icon {
-                background-color: #3f3f46;
-              }
-            `}</style>
-            <div
-              ref={holderRef}
-              className="zuko-editor min-h-[120px] px-3 py-3 text-sm text-zinc-950 dark:text-white
-                [&_.ce-block]:py-0.5
-                [&_.ce-paragraph]:text-sm
-                [&_.codex-editor]:outline-none
-                [&_.ce-inline-toolbar]:z-50"
+          {activeTab === 'write' && (
+            <textarea
+              ref={textareaRef}
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              placeholder={placeholder}
+              rows={6}
+              className="w-full resize-none bg-white dark:bg-zinc-950 px-3 py-3 text-sm text-zinc-950 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-500 outline-none font-mono leading-relaxed"
             />
-          </div>
+          )}
 
           {/* ── Preview area ──────────────────────────────────────── */}
           {activeTab === 'preview' && (
             <div className="min-h-[150px] px-3 py-3">
-              {previewContent ? (
-                <RichContent content={previewContent} />
+              {previewHtml ? (
+                <div
+                  className="prose prose-sm dark:prose-invert max-w-none
+                    prose-p:text-zinc-700 dark:prose-p:text-zinc-300
+                    prose-headings:text-zinc-950 dark:prose-headings:text-white
+                    prose-code:text-zinc-800 dark:prose-code:text-zinc-200
+                    prose-pre:bg-zinc-100 dark:prose-pre:bg-zinc-800
+                    prose-blockquote:border-zinc-300 dark:prose-blockquote:border-zinc-600"
+                  dangerouslySetInnerHTML={{ __html: previewHtml }}
+                />
               ) : (
                 <p className="text-sm text-zinc-400 dark:text-zinc-500 italic">
                   Nothing to preview
@@ -368,11 +296,11 @@ export function RichCommentBox({
         {/* ── Action row ────────────────────────────────────────────── */}
         <div className="mt-3 flex items-center justify-end gap-2">
           {onCancel && (
-            <Button plain onClick={onCancel} disabled={isSubmitting}>
+            <Button type="button" plain onClick={onCancel} disabled={isSubmitting}>
               Cancel
             </Button>
           )}
-          <Button color="green" onClick={handleSubmit} disabled={isSubmitting}>
+          <Button type="button" onClick={handleSubmit} disabled={isSubmitting}>
             {isSubmitting ? 'Saving...' : submitLabel}
           </Button>
         </div>

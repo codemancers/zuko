@@ -1,6 +1,7 @@
 @import 'tailwindcss';
 @source '../**/*.{js,ts,jsx,tsx}';
 @import 'tw-animate-css';
+@plugin "@tailwindcss/typography";
 
 @theme inline {
   --radius-lg: var(--radius);

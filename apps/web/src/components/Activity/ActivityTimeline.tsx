@@ -8,6 +8,7 @@ const ACTIVITY_SOURCES = { AI: 'ai' } as const;
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { PencilIcon } from '@heroicons/react/24/outline';
 import { Divider } from '@zuko/ui-kit';
+import { toast } from 'sonner';
 import { getTimeline } from '@/server/query-options';
 import { activitiesApi } from '@/lib/api/activities';
 import dayjs from 'dayjs';
@@ -143,6 +144,9 @@ export default function ActivityTimeline({
       });
       clearNewCommentRef.current?.clear();
     },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to post comment');
+    },
   });
 
   const updateActivityMutation = useMutation({
@@ -166,6 +170,9 @@ export default function ActivityTimeline({
         queryKey: ['timeline', entityType, entityId],
       });
       setEditingActivityId(null);
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to update comment');
     },
   });
 
