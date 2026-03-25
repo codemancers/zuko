@@ -55,9 +55,12 @@ test.describe("Contacts - Authenticated", () => {
     page,
   }) => {
     await contactsPage.goto();
-    const contacts = await contactsPage.getContactItems();
 
-    await contacts[0].locator("td:first-child").click();
+    const testContactRow = page
+      .getByRole("row")
+      .filter({ hasText: "TEST E2E CONTACT" })
+      .first();
+    await testContactRow.locator("td:first-child").click();
     await page.waitForURL("**/contacts/**", { timeout: 10000 });
 
     await expect(

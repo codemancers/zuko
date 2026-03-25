@@ -2,19 +2,23 @@ import { test, expect } from "./fixtures";
 
 /**
  * Contact Activity Timeline Tests.
- * Uses the contact created in data.spec.ts (e2e project runs after data).
+ * Creates a fresh contact per describe block to ensure a clean activity state.
  */
 test.describe("Contact Activity Timeline - Authenticated", () => {
   let contactId!: number;
 
   test.beforeEach(async ({ contactsPage, page }) => {
     if (contactId !== undefined) return;
+
+    const contactName = `Activity Timeline Contact ${Date.now()}`;
+    await contactsPage.createContact({
+      name: contactName,
+      email: `activity-test-${Date.now()}@example.com`,
+    });
+
     await contactsPage.goto();
-
-    // get the TEST CONTACT row
-    const testContactRow = page.getByText("TEST CONTACT");
-    await testContactRow.click();
-
+    const contactLink = page.getByText(contactName).first();
+    await contactLink.click();
     await page.waitForURL(/\/contacts\/\d+/, { timeout: 10000 });
     contactId = parseInt(page.url().match(/\/contacts\/(\d+)/)?.[1] ?? "0", 10);
   });
@@ -42,7 +46,7 @@ test.describe("Contact Activity Timeline - Authenticated", () => {
     });
   });
 
-  test('should show "No activity yet" when there are no activities', async ({
+  test("should show 'created this contact' system event for a new contact", async ({
     contactDetailPage,
     page,
   }) => {
@@ -50,15 +54,13 @@ test.describe("Contact Activity Timeline - Authenticated", () => {
     await page
       .getByRole("heading", { name: /Activity/i })
       .scrollIntoViewIfNeeded();
-    // Wait for timeline to finish loading (then either "No activity yet" or items appear)
-    await page
-      .locator('[data-testid="activity-item"]')
-      .or(page.getByText("No activity yet"))
-      .first()
-      .waitFor({ state: "visible", timeout: 10000 });
 
-    const hasNoActivity = await contactDetailPage.hasNoActivityMessage();
-    expect(hasNoActivity).toBeTruthy();
+    await expect(
+      page
+        .locator('[data-testid="activity-item"]')
+        .filter({ hasText: /created this contact/i })
+        .first(),
+    ).toBeVisible({ timeout: 10000 });
   });
 
   test("should disable post button when comment is empty", async ({
