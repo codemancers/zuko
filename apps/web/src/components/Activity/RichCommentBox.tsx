@@ -1,7 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState, type ReactNode } from 'react';
-import type EditorJS from '@editorjs/editorjs';
+import { useRef, useState, type ReactNode } from 'react';
 import { Avatar, Button } from '@zuko/ui-kit';
 import {
   Heading2,
@@ -14,7 +13,6 @@ import {
   List,
   ListChecks,
   FileCode2,
-  Image,
 } from 'lucide-react';
 import { RichContent } from './RichContent';
 
@@ -31,21 +29,81 @@ export interface RichCommentBoxProps {
   title?: string;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function parseInitialData(raw: string | undefined): any {
-  if (!raw) return undefined;
+function getInitialText(raw: string | undefined): string {
+  if (!raw) return '';
   try {
     const parsed = JSON.parse(raw);
-    if (Array.isArray(parsed?.blocks)) return parsed;
+    if (Array.isArray(parsed?.blocks)) {
+      return parsed.blocks
+        .map((b: { type: string; data: Record<string, unknown> }) => {
+          if (b.type === 'paragraph' || b.type === 'header') return String(b.data.text ?? '');
+          if (b.type === 'code') return `\`\`\`\n${b.data.code}\n\`\`\``;
+          if (b.type === 'quote') return `> ${b.data.text}`;
+          if (b.type === 'list') {
+            const items = Array.isArray(b.data.items) ? b.data.items : [];
+            return items
+              .map((item: unknown, i: number) =>
+                b.data.style === 'ordered' ? `${i + 1}. ${item}` : `- ${item}`,
+              )
+              .join('\n');
+          }
+          return '';
+        })
+        .filter(Boolean)
+        .join('\n\n');
+    }
   } catch { /* fall through */ }
-  if (raw.trim()) {
-    return {
-      time: Date.now(),
-      blocks: [{ type: 'paragraph', data: { text: raw.trim() } }],
-      version: '2.30.7',
-    };
-  }
-  return undefined;
+  return raw;
+}
+
+function makeInsertHelpers(
+  textareaRef: React.RefObject<HTMLTextAreaElement | null>,
+  setText: React.Dispatch<React.SetStateAction<string>>,
+) {
+  const wrap = (before: string, after: string, placeholder: string) => {
+    const el = textareaRef.current;
+    if (!el) return;
+    const start = el.selectionStart;
+    const end = el.selectionEnd;
+    const selected = el.value.slice(start, end) || placeholder;
+    const newValue = el.value.slice(0, start) + before + selected + after + el.value.slice(end);
+    setText(newValue);
+    requestAnimationFrame(() => {
+      el.focus();
+      el.setSelectionRange(start + before.length, start + before.length + selected.length);
+    });
+  };
+
+  const linePrefix = (prefix: string) => {
+    const el = textareaRef.current;
+    if (!el) return;
+    const start = el.selectionStart;
+    const lineStart = el.value.lastIndexOf('\n', start - 1) + 1;
+    const newValue = el.value.slice(0, lineStart) + prefix + el.value.slice(lineStart);
+    setText(newValue);
+    requestAnimationFrame(() => {
+      el.focus();
+      el.setSelectionRange(start + prefix.length, start + prefix.length);
+    });
+  };
+
+  const insertBlock = (snippet: string) => {
+    const el = textareaRef.current;
+    if (!el) return;
+    const start = el.selectionStart;
+    const before = el.value.slice(0, start);
+    const after = el.value.slice(start);
+    const prefix = before.length && !before.endsWith('\n\n') ? (before.endsWith('\n') ? '\n' : '\n\n') : '';
+    const newValue = before + prefix + snippet + '\n\n' + after;
+    setText(newValue);
+    const pos = before.length + prefix.length + snippet.length + 2;
+    requestAnimationFrame(() => {
+      el.focus();
+      el.setSelectionRange(pos, pos);
+    });
+  };
+
+  return { wrap, linePrefix, insertBlock };
 }
 
 function ToolbarBtn({
@@ -93,96 +151,21 @@ export function RichCommentBox({
   avatarInitials,
   title,
 }: RichCommentBoxProps) {
-  const editorRef = useRef<EditorJS | null>(null);
-  const holderRef = useRef<HTMLDivElement>(null);
-  const isInitialized = useRef(false);
+  const [text, setText] = useState(() => getInitialText(initialContent));
   const [activeTab, setActiveTab] = useState<ActiveTab>('write');
-  const [previewContent, setPreviewContent] = useState<string | null>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  useEffect(() => {
-    if (!holderRef.current || isInitialized.current) return;
-    isInitialized.current = true;
+  const readyRef = useRef(false);
+  if (!readyRef.current) {
+    readyRef.current = true;
+    onReady?.({ clear: () => setText('') });
+  }
 
-    let cancelled = false;
-    let instance: EditorJS | null = null;
+  const { wrap, linePrefix, insertBlock } = makeInsertHelpers(textareaRef, setText);
 
-    const init = async () => {
-      const [
-        { default: EditorJSClass },
-        { default: Header },
-        { default: List },
-        { default: Quote },
-        { default: Code },
-        { default: InlineCode },
-        { default: Marker },
-      ] = await Promise.all([
-        import('@editorjs/editorjs'),
-        import('@editorjs/header'),
-        import('@editorjs/list'),
-        import('@editorjs/quote'),
-        import('@editorjs/code'),
-        import('@editorjs/inline-code'),
-        import('@editorjs/marker'),
-      ]);
-
-      if (cancelled || !holderRef.current) return;
-
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const config: any = {
-        holder: holderRef.current,
-        placeholder,
-        data: parseInitialData(initialContent),
-        logLevel: 'ERROR',
-        tools: {
-          header: { class: Header, config: { levels: [2, 3], defaultLevel: 2 } },
-          list: { class: List, inlineToolbar: true },
-          quote: { class: Quote, inlineToolbar: true },
-          code: Code,
-          inlineCode: { class: InlineCode, shortcut: 'CMD+SHIFT+M' },
-          marker: { class: Marker, shortcut: 'CMD+SHIFT+H' },
-        },
-      };
-
-      instance = new EditorJSClass(config);
-      editorRef.current = instance;
-    };
-
-    init();
-
-    return () => {
-      cancelled = true;
-      instance?.destroy();
-      editorRef.current = null;
-      isInitialized.current = false;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  useEffect(() => {
-    onReady?.({ clear: () => { editorRef.current?.clear(); } });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const handleSubmit = async () => {
-    if (!editorRef.current || isSubmitting) return;
-    const data = await editorRef.current.save();
-    if (!data.blocks.length) return;
-    onSubmit(JSON.stringify(data));
-  };
-
-  const handleTabChange = async (tab: ActiveTab) => {
-    if (tab === 'preview' && editorRef.current) {
-      const data = await editorRef.current.save();
-      setPreviewContent(data.blocks.length ? JSON.stringify(data) : null);
-    }
-    setActiveTab(tab);
-  };
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const insertBlock = (type: string, data?: Record<string, any>) => {
-    if (!editorRef.current) return;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (editorRef.current as any).blocks.insert(type, data ?? {});
+  const handleSubmit = () => {
+    if (isSubmitting || !text.trim()) return;
+    onSubmit(text);
   };
 
   const showAvatar = avatarSrc !== undefined || avatarInitials !== undefined;
@@ -217,7 +200,7 @@ export function RichCommentBox({
                 <button
                   key={tab}
                   type="button"
-                  onClick={() => handleTabChange(tab)}
+                  onClick={() => setActiveTab(tab)}
                   className={[
                     'px-3 py-2 text-sm font-medium capitalize transition-colors',
                     activeTab === tab
@@ -232,77 +215,43 @@ export function RichCommentBox({
 
             <ToolbarDivider />
 
-            {/* Inline format tools */}
+            {/* Inline format tools — only active on Write tab */}
             <div className="flex items-center">
-              <ToolbarBtn icon={<Heading2 />} label="Heading" onAction={() => insertBlock('header', { text: '', level: 2 })} />
-              <ToolbarBtn icon={<Bold />} label="Bold (Ctrl+B)" onAction={() => document.execCommand('bold', false)} />
-              <ToolbarBtn icon={<Italic />} label="Italic (Ctrl+I)" onAction={() => document.execCommand('italic', false)} />
-              <ToolbarBtn icon={<Quote />} label="Quote" onAction={() => insertBlock('quote', { text: '' })} />
-              <ToolbarBtn icon={<Code />} label="Code block" onAction={() => insertBlock('code', { code: '' })} />
-              <ToolbarBtn icon={<Link2 />} label="Link" />
+              <ToolbarBtn icon={<Heading2 />} label="Heading" disabled={activeTab !== 'write'} onAction={() => linePrefix('## ')} />
+              <ToolbarBtn icon={<Bold />} label="Bold (Ctrl+B)" disabled={activeTab !== 'write'} onAction={() => wrap('**', '**', 'bold text')} />
+              <ToolbarBtn icon={<Italic />} label="Italic (Ctrl+I)" disabled={activeTab !== 'write'} onAction={() => wrap('_', '_', 'italic text')} />
+              <ToolbarBtn icon={<Quote />} label="Quote" disabled={activeTab !== 'write'} onAction={() => linePrefix('> ')} />
+              <ToolbarBtn icon={<Code />} label="Code block" disabled={activeTab !== 'write'} onAction={() => insertBlock('```\n\n```')} />
+              <ToolbarBtn icon={<Link2 />} label="Link" disabled={activeTab !== 'write'} onAction={() => wrap('[', '](url)', 'link text')} />
             </div>
 
             <ToolbarDivider />
 
             {/* Block format tools */}
             <div className="flex items-center">
-              <ToolbarBtn icon={<ListOrdered />} label="Ordered list" onAction={() => insertBlock('list', { style: 'ordered', items: [''] })} />
-              <ToolbarBtn icon={<List />} label="Unordered list" onAction={() => insertBlock('list', { style: 'unordered', items: [''] })} />
-              <ToolbarBtn icon={<ListChecks />} label="Task list" />
+              <ToolbarBtn icon={<ListOrdered />} label="Ordered list" disabled={activeTab !== 'write'} onAction={() => linePrefix('1. ')} />
+              <ToolbarBtn icon={<List />} label="Unordered list" disabled={activeTab !== 'write'} onAction={() => linePrefix('- ')} />
+              <ToolbarBtn icon={<ListChecks />} label="Task list" disabled={activeTab !== 'write'} onAction={() => linePrefix('- [ ] ')} />
             </div>
           </div>
 
           {/* ── Write area ────────────────────────────────────────── */}
-          <div className={activeTab === 'write' ? undefined : 'hidden'}>
-            <style>{`
-              .zuko-editor .codex-editor__redactor { padding-bottom: 1rem !important; }
-              .zuko-editor .codex-editor[data-placeholder]::before { display: none !important; }
-              .zuko-editor .ce-toolbar { display: none !important; }
-              .zuko-editor .ce-block__content { max-width: 100% !important; margin: 0 !important; }
-
-              .zuko-editor .ce-inline-toolbar {
-                background-color: #ffffff;
-                border: 1px solid #e4e4e7;
-                border-radius: 6px;
-                box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
-                color: #18181b;
-              }
-              .zuko-editor .ce-inline-tool,
-              .zuko-editor .ce-inline-toolbar__dropdown { color: #52525b; }
-              .zuko-editor .ce-inline-tool:hover { background-color: #f4f4f5; color: #18181b; }
-              .zuko-editor .ce-inline-tool--active { color: #6366f1; }
-
-              .dark .zuko-editor .ce-inline-toolbar {
-                background-color: #27272a;
-                border-color: #3f3f46;
-                box-shadow: 0 4px 6px -1px rgba(0,0,0,0.5);
-                color: #d4d4d8;
-              }
-              .dark .zuko-editor .ce-inline-tool,
-              .dark .zuko-editor .ce-inline-toolbar__dropdown { color: #a1a1aa; }
-              .dark .zuko-editor .ce-inline-tool:hover { background-color: #3f3f46; color: #f4f4f5; }
-              .dark .zuko-editor .ce-inline-tool--active { color: #818cf8; }
-
-              .dark .zuko-editor .ce-conversion-toolbar { background-color: #27272a; border-color: #3f3f46; }
-              .dark .zuko-editor .ce-conversion-tool { color: #a1a1aa; }
-              .dark .zuko-editor .ce-conversion-tool:hover { background-color: #3f3f46; color: #f4f4f5; }
-              .dark .zuko-editor .ce-conversion-tool__icon { background-color: #3f3f46; }
-            `}</style>
-            <div
-              ref={holderRef}
-              className="zuko-editor min-h-[120px] px-3 py-3 text-sm text-zinc-950 dark:text-white
-                [&_.ce-block]:py-0.5
-                [&_.ce-paragraph]:text-sm
-                [&_.codex-editor]:outline-none
-                [&_.ce-inline-toolbar]:z-50"
+          {activeTab === 'write' && (
+            <textarea
+              ref={textareaRef}
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              placeholder={placeholder}
+              rows={5}
+              className="w-full resize-none bg-white dark:bg-zinc-950 px-3 py-3 text-sm text-zinc-950 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:outline-none font-mono"
             />
-          </div>
+          )}
 
           {/* ── Preview area ──────────────────────────────────────── */}
           {activeTab === 'preview' && (
             <div className="min-h-[150px] px-3 py-3">
-              {previewContent ? (
-                <RichContent content={previewContent} />
+              {text.trim() ? (
+                <RichContent content={text} />
               ) : (
                 <p className="text-sm text-zinc-400 dark:text-zinc-500 italic">
                   Nothing to preview
@@ -316,10 +265,6 @@ export function RichCommentBox({
             <span className="flex items-center gap-1.5 text-xs text-zinc-400 dark:text-zinc-500">
               <FileCode2 className="h-3.5 w-3.5 shrink-0" />
               Markdown is supported
-            </span>
-            <span className="flex items-center gap-1.5 text-xs text-zinc-400 dark:text-zinc-500">
-              <Image className="h-3.5 w-3.5 shrink-0" />
-              Paste, drop, or click to add files
             </span>
           </div>
         </div>
