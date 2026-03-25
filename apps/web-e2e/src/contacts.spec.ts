@@ -182,3 +182,4 @@ test.describe.serial("Column Creation Flow", () => {
     await expect(page.getByText("Column key must contain only lowercase letters, numbers, and underscores")).toBeVisible();
   });
 });
+
