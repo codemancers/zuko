@@ -92,7 +92,12 @@ bun nx run @zuko/ai-agents:build
 
 - **Unit tests:** `bun nx run @zuko/backend:test`, `bun nx run @zuko/web:test`  
   Or for affected projects: `bun nx affected -t test`
-- **E2E (web):** `bun nx run @zuko/web-e2e:e2e`
+- **E2E (web):** Run Playwright against the web app locally with the test environment (see [apps/web-e2e/README.md](apps/web-e2e/README.md) for setup):
+
+  ```sh
+  NODE_ENV=test bunx nx run web-e2e:e2e
+  ```
+
 - **Lint / typecheck:** `bun nx affected -t lint`, `bun nx affected -t typecheck`
 
 ## Project structure

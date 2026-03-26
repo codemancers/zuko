@@ -31,52 +31,52 @@ apps/web-e2e/
 
 ## Running Tests
 
-### Run all tests
+### Run E2E tests
 ```bash
-npx nx e2e web-e2e
+NODE_ENV=test bunx nx run web-e2e:e2e
 ````
 
 ### Run tests in UI mode (watch mode)
 
 ```bash
-npx nx e2e web-e2e --ui
+NODE_ENV=test bunx nx e2e web-e2e --ui
 ```
 
 ### Run specific test file
 
 ```bash
-npx nx e2e web-e2e -- src/auth.spec.ts
+NODE_ENV=test bunx nx run web-e2e:e2e -- src/auth.spec.ts
 ```
 
 ### Run tests in a specific browser
 
 ```bash
 # Chromium (default)
-npx nx e2e web-e2e -- --project=chromium
+NODE_ENV=test bunx nx e2e web-e2e -- --project=chromium
 
 # Firefox
-npx nx e2e web-e2e -- --project=firefox
+NODE_ENV=test bunx nx e2e web-e2e -- --project=firefox
 
 # WebKit (Safari)
-npx nx e2e web-e2e -- --project=webkit
+NODE_ENV=test bunx nx e2e web-e2e -- --project=webkit
 ```
 
 ### Run tests in headed mode (see browser)
 
 ```bash
-npx nx e2e web-e2e -- --headed
+NODE_ENV=test bunx nx e2e web-e2e -- --headed
 ```
 
 ### Debug tests
 
 ```bash
-npx nx e2e web-e2e -- --debug
+NODE_ENV=test bunx nx e2e web-e2e -- --debug
 ```
 
 ### Run tests in CI mode
 
 ```bash
-npx nx e2e-ci web-e2e
+NODE_ENV=test bunx nx e2e-ci web-e2e
 ```
 
 ## Test Reports
@@ -276,10 +276,10 @@ For CI/CD pipelines:
 
 ```bash
 # Run all e2e tests with CI optimizations
-npx nx e2e-ci web-e2e
+bunx nx e2e-ci web-e2e
 
 # Run with specific configuration
-CI=true npx nx e2e web-e2e
+CI=true bunx nx e2e web-e2e
 ```
 
 CI mode enables:
@@ -305,7 +305,7 @@ CI mode enables:
 
 ### Can't find elements
 
-- Use Playwright Inspector: `npx nx e2e web-e2e -- --debug`
+- Use Playwright Inspector: `bunx nx e2e web-e2e -- --debug`
 - Check selectors in page objects
 - Verify element is visible before interaction
 

@@ -61,6 +61,8 @@ export default defineConfig({
           process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000',
         NEXT_PUBLIC_BACKEND_URL:
           process.env.NEXT_PUBLIC_BACKEND_URL ?? 'http://localhost:3001',
+        NODE_ENV: 'test',
+        SPRITES_API_BASE_URL: "https://api.sprites.dev",
       },
     },
   ],
