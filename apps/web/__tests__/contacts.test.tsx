@@ -2,7 +2,7 @@
  * @vitest-environment jsdom
  */
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -585,11 +585,21 @@ describe('ContactsList', () => {
     expect(search).toHaveValue('john');
   });
 
-  it('shows empty state when no contacts', async () => {
+  it('renders empty table when no contacts', async () => {
     render(<ContactsList />, { wrapper });
     await vi.waitFor(() => {
-      expect(screen.getByText('No Contacts')).toBeInTheDocument();
+      expect(screen.getByRole('table')).toBeInTheDocument();
+      // Headers should still be there
+      expect(screen.getByText('Name')).toBeInTheDocument();
+      expect(screen.getByText('Email')).toBeInTheDocument();
     });
+    
+    // The table body should have no data rows
+    const tbody = screen.getByRole('table').querySelector('tbody');
+    expect(tbody?.children.length).toBe(0);
+
+    // button with add row label should be present
+    expect(screen.getByRole('button', { name: /add row/i })).toBeInTheDocument();
   });
 
   it('shows table with contact when data is returned', async () => {
@@ -657,6 +667,29 @@ describe('ContactsList', () => {
     expect(
       screen.getByText(/showing 1 of 42 contacts/i)
     ).toBeInTheDocument();
+  });
+
+  it('opens column creation modal when add column button is clicked', async () => {
+    mockGetTableViewContacts.mockResolvedValue({
+      data: [mockContact],
+      metadata: mockMetadata,
+      pagination: { page: 1, limit: 10, total: 1, totalPages: 1 },
+    });
+    const user = userEvent.setup();
+    render(<ContactsList />, { wrapper });
+    await waitFor(() => {
+      expect(screen.getByText('John Doe')).toBeInTheDocument();
+    });
+    
+    // Click the "Add column" button in the table header
+    await user.click(screen.getByLabelText('Add column'));
+    
+    // Verify the dialog title and input fields
+    expect(screen.getByText('Add new field')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('Field name')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText(/unique column key/i)).toBeInTheDocument();
+    expect(screen.getByText('Field Type')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /create field/i })).toBeInTheDocument();
   });
 });
 

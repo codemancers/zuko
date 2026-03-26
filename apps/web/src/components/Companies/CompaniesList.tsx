@@ -12,6 +12,7 @@ import { getTableViewCompanies } from '@/server/query-options';
 import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { BaseTable, createColumnsFromMetadata, type BaseRow } from '../Table';
+import { useAddColumn } from '@/hooks/use-add-column';
 
 const CompaniesList = () => {
   const router = useRouter();
@@ -19,6 +20,8 @@ const CompaniesList = () => {
   const { data: companiesData, isLoading } = useQuery(
     getTableViewCompanies({ search: searchTerm || undefined }),
   );
+
+  const { mutate: addColumn } = useAddColumn('companies');
 
    const companies = companiesData?.data || [];
   const metadata = companiesData?.metadata || [];
@@ -32,12 +35,17 @@ const CompaniesList = () => {
     router.push(`/companies/${companyId}`);
   };
 
+  const handleNewCompanyRow = () => {
+    // Todo: addRow();
+    router.push('/companies/new');
+  };
+
   const handleNewCompany = () => {
     router.push('/companies/new');
   };
 
-  const handleNewColumn = (name: string, type: string) => {
-    // TODO: Implement add column functionality
+  const handleNewColumn = (name: string, key: string, type: string) => {
+    addColumn({ label: name, columnKey: key, fieldType: type });
   };
 
   return (
@@ -76,7 +84,7 @@ const CompaniesList = () => {
         totalCount={companiesData?.pagination?.total}
         entityName="companies"
         showAddRow
-        onAddRow={handleNewCompany}
+        onAddRow={handleNewCompanyRow}
         showAddColumn
         onAddColumn={handleNewColumn}
         emptyStateConfig={{

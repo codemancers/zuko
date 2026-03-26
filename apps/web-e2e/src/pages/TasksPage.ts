@@ -15,14 +15,9 @@ export class TasksPage extends BasePage {
   }
 
   async waitForTasksToLoad() {
-    await Promise.race([
-      this.page
-        .waitForSelector('table tbody tr', { timeout: 5000 })
-        .catch(() => null),
-      this.page
-        .waitForSelector('text=No Tasks', { timeout: 5000 })
-        .catch(() => null),
-    ]);
+    await this.page
+      .waitForSelector('table', { timeout: 5000 })
+      .catch(() => null);
   }
 
   async getTaskRows() {

@@ -37,12 +37,12 @@ export function BaseTable<TData>(props: BaseTableProps<TData>) {
     loading,
     className,
     onRowClick,
-    data,
-    emptyStateConfig,
     showAddRow,
     onAddRow,
     showAddColumn,
-    onAddColumn
+    onAddColumn,
+    showEmptyState,
+    emptyStateConfig
   } = props;
   const [hasMounted, setHasMounted] = useState(false);
 
@@ -64,7 +64,7 @@ export function BaseTable<TData>(props: BaseTableProps<TData>) {
     );
   }
 
-  if (data.length === 0) {
+  if (showEmptyState && props.data.length === 0 && emptyStateConfig) {
     return (
       <div className="mt-8">
         <div className="mt-40 text-center">
@@ -107,9 +107,10 @@ export function BaseTable<TData>(props: BaseTableProps<TData>) {
         {showAddRow && (
           <div className="pl-2 py-1 h-10 border-zinc-200 dark:border-zinc-800 flex items-center bg-zinc-50/50 dark:bg-zinc-900/50">
             <Button
+              plain
               onClick={onAddRow}
               aria-label="Add row"
-              className="flex h-8 w-8 items-center justify-center"
+              className="flex h-8 w-8 items-center justify-center !bg-transparent !border-none hover:!bg-transparent focus:!ring-0 shadow-none"
             >
               <PlusIcon className="h-4 w-4 text-zinc-400 cursor-pointer" />
             </Button>
@@ -120,8 +121,8 @@ export function BaseTable<TData>(props: BaseTableProps<TData>) {
       <AddColumnDialog
         isOpen={isAddColumnDialogOpen}
         onClose={closeAddColumnDialog}
-        onAdd={(name: string, type: string) => {
-          onAddColumn?.(name, type);
+        onAdd={(name: string, key: string, type: string) => {
+          onAddColumn?.(name, key, type);
         }}
       />
 

@@ -101,6 +101,7 @@ const TasksList = () => {
         data={flatTasks}
         loading={isLoading}
         onRowClick={(task) => router.push(`/tasks/${task.id}`)}
+        onAddRow={() => router.push('/tasks/new')}
         totalCount={flatTasks.length}
         entityName="tasks"
         emptyStateConfig={{
@@ -112,6 +113,7 @@ const TasksList = () => {
             onClick: () => router.push('/tasks/new'),
           },
         }}
+        showAddRow
       />
 
       <ConfirmDialog

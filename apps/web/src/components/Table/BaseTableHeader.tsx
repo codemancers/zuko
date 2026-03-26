@@ -36,9 +36,10 @@ export function BaseTableHeader<TData>({ headerGroups, showAddColumn, onAddColum
           {showAddColumn && (
             <TableHeader className="w-10 !p-0">
               <Button 
+                plain
                 onClick={onAddColumn}
                 aria-label="Add column"
-                className="flex h-10 w-full items-center justify-center border-l border-zinc-950/5 dark:border-white/5 bg-zinc-50/50 dark:bg-zinc-900/50 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+                className="flex h-10 w-full items-center justify-center !bg-transparent !border-none hover:!bg-transparent focus:!ring-0 shadow-none"
               >
                 <PlusIcon className="h-4 w-4 text-zinc-400 cursor-pointer" />
               </Button>

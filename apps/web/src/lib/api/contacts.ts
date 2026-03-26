@@ -47,7 +47,7 @@ export interface CreateContactDto {
   phone?: string;
   linkedinId?: string;
   notes?: string;
-  ownerIds: number[];
+  ownerIds?: number[];
   primaryOwnerId?: number;
 }
 

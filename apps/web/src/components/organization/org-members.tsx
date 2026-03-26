@@ -220,6 +220,7 @@ export const OrgMembers = ({
         data={members}
         loading={isLoading}
         entityName="members"
+        showEmptyState={true}
         emptyStateConfig={{
           icon: UserGroupIcon,
           title: 'No members found',

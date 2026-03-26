@@ -522,11 +522,21 @@ describe('DealsList', () => {
     expect(mockPush).toHaveBeenCalledWith('/deals/new');
   });
 
-  it('shows empty state when no deals', async () => {
+  it('renders empty table even when no deals', async () => {
     render(<DealsList />, { wrapper });
     await waitFor(() => {
-      expect(screen.getByText('No Deals')).toBeInTheDocument();
+      expect(screen.getByRole('table')).toBeInTheDocument();
+      // Headers should still be there
+      expect(screen.getByText('Title')).toBeInTheDocument();
+      expect(screen.getByText('Stage')).toBeInTheDocument();
     });
+    
+    // The table body should have no data rows
+    const tbody = screen.getByRole('table').querySelector('tbody');
+    expect(tbody?.children.length).toBe(0);
+
+    // button with add row label should be present
+    expect(screen.getByRole('button', { name: /add row/i })).toBeInTheDocument();
   });
 
   it('shows table with deal when data is returned', async () => {
@@ -596,6 +606,29 @@ describe('DealsList', () => {
     expect(
       screen.getByText(/showing 1 of 50 deals/i)
     ).toBeInTheDocument();
+  });
+
+  it('opens column creation modal when add column button is clicked', async () => {
+    mockGetTableViewDeals.mockResolvedValue({
+      data: [mockDeal],
+      metadata: mockMetadata,
+      pagination: { page: 1, limit: 10, total: 1, totalPages: 1 },
+    });
+    const user = userEvent.setup();
+    render(<DealsList />, { wrapper });
+    await waitFor(() => {
+      expect(screen.getByText('Enterprise Deal')).toBeInTheDocument();
+    });
+    
+    // Click the "Add column" button in the table header
+    await user.click(screen.getByLabelText('Add column'));
+    
+    // Verify the dialog title and input fields
+    expect(screen.getByText('Add new field')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('Field name')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText(/unique column key/i)).toBeInTheDocument();
+    expect(screen.getByText('Field Type')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /create field/i })).toBeInTheDocument();
   });
 });
 
