@@ -8,22 +8,15 @@ import {
   Param,
   Req,
   UseGuards,
-  ForbiddenException,
 } from "@nestjs/common";
 import { AuthGuard } from "@thallesp/nestjs-better-auth";
 import { ChatsService } from "./chats.service";
 import type { RequestWithUser } from "@zuko/core";
-import { LangsmithService } from "../langsmith/langsmith.service";
-import { SpritesService } from "../sprites/sprites.service";
 
 @Controller("chats")
 @UseGuards(AuthGuard)
 export class ChatsController {
-  constructor(
-    private chatsService: ChatsService,
-    private readonly langsmithService: LangsmithService,
-    private readonly spritesService: SpritesService,
-  ) {}
+  constructor(private chatsService: ChatsService) {}
 
   /**
    * Create a new chat
@@ -85,13 +78,7 @@ export class ChatsController {
   async findOne(@Req() req: RequestWithUser, @Param("id") id: string) {
     const userId = parseInt(req.user.id, 10);
     const chatId = parseInt(id, 10);
-    const chat = await this.chatsService.findOne(chatId);
-
-    // Verify user is a participant
-    const isParticipant = await this.chatsService.isParticipant(chatId, userId);
-    if (!isParticipant) {
-      throw new ForbiddenException("Not a participant in this chat");
-    }
+    const chat = await this.chatsService.getChatForUser(chatId, userId);
 
     return {
       id: chat.id,
@@ -118,69 +105,7 @@ export class ChatsController {
   async getMessages(@Req() req: RequestWithUser, @Param("id") id: string) {
     const userId = parseInt(req.user.id, 10);
     const chatId = parseInt(id, 10);
-
-    // Verify user is a participant
-    const isParticipant = await this.chatsService.isParticipant(chatId, userId);
-    if (!isParticipant) {
-      throw new ForbiddenException("Not a participant in this chat");
-    }
-
-    // Get the chat to extract threadId
-    const chat = await this.chatsService.findOne(chatId);
-
-    const threadId = chat.threadId;
-    const sandboxUrl = chat.sandboxes[0]?.url ?? "";
-
-    let values: { messages: any[], contextEntities: any[] };
-    if (!sandboxUrl) {
-      values = { messages: [], contextEntities: [] };
-    }else{
-      let spriteName;
-      if (process.env.NODE_ENV === "test"){
-        spriteName = process.env.E2E_SANDBOX ?? "";
-      }else{
-        spriteName = `${chatId}-${threadId}`;
-      }
-      await this.spritesService.startServer(spriteName);
-      const state: any = await this.langsmithService.getThreadState(threadId, sandboxUrl);
-      values = state?.values ?? { messages: [], contextEntities: [] };
-    }
-
-    // Expect messages array and optional contextEntities in thread state values
-    const rawMessages: any[] = Array.isArray(values.messages)
-      ? values.messages
-      : [];
-
-    const messages = rawMessages
-      .map((msg) => {
-        const role =
-          msg.type === "human"
-            ? "user"
-            : msg.type === "ai"
-              ? "assistant"
-              : msg.type ?? "system";
-
-        const content =
-          typeof msg.content === "string"
-            ? msg.content
-            : typeof msg.text === "string"
-              ? msg.text
-              : "";
-
-        if (!content || !content.trim()) {
-          return null;
-        }
-
-        return { role, content };
-      })
-      .filter((m): m is { role: string; content: string } => m !== null);
-
-    const contextEntities =
-      Array.isArray(values.contextEntities) && values.contextEntities.length > 0
-        ? values.contextEntities
-        : [];
-
-    return { messages, contextEntities };
+    return this.chatsService.getMessagesForUser(chatId, userId);
   }
 
   /**
@@ -195,12 +120,7 @@ export class ChatsController {
   ) {
     const userId = parseInt(req.user.id, 10);
     const chatId = parseInt(id, 10);
-
-    // Verify user is a participant
-    const isParticipant = await this.chatsService.isParticipant(chatId, userId);
-    if (!isParticipant) {
-      throw new ForbiddenException("Not a participant in this chat");
-    }
+    await this.chatsService.ensureUserIsParticipant(chatId, userId);
 
     const chat = await this.chatsService.updateTitle(chatId, body.title);
 
@@ -219,12 +139,7 @@ export class ChatsController {
   async delete(@Req() req: RequestWithUser, @Param("id") id: string) {
     const userId = parseInt(req.user.id, 10);
     const chatId = parseInt(id, 10);
-
-    // Verify user is a participant
-    const isParticipant = await this.chatsService.isParticipant(chatId, userId);
-    if (!isParticipant) {
-      throw new ForbiddenException("Not a participant in this chat");
-    }
+    await this.chatsService.ensureUserIsParticipant(chatId, userId);
 
     await this.chatsService.delete(chatId);
 
@@ -243,15 +158,7 @@ export class ChatsController {
   ) {
     const currentUserId = parseInt(req.user.id, 10);
     const chatId = parseInt(id, 10);
-
-    // Verify current user is a participant
-    const isParticipant = await this.chatsService.isParticipant(
-      chatId,
-      currentUserId,
-    );
-    if (!isParticipant) {
-      throw new ForbiddenException("Not a participant in this chat");
-    }
+    await this.chatsService.ensureUserIsParticipant(chatId, currentUserId);
 
     const participant = await this.chatsService.addParticipant(
       chatId,
@@ -280,15 +187,7 @@ export class ChatsController {
     const currentUserId = parseInt(req.user.id, 10);
     const chatId = parseInt(id, 10);
     const targetUserId = parseInt(userIdParam, 10);
-
-    // Verify current user is a participant
-    const isParticipant = await this.chatsService.isParticipant(
-      chatId,
-      currentUserId,
-    );
-    if (!isParticipant) {
-      throw new ForbiddenException("Not a participant in this chat");
-    }
+    await this.chatsService.ensureUserIsParticipant(chatId, currentUserId);
 
     await this.chatsService.removeParticipant(chatId, targetUserId);
 
