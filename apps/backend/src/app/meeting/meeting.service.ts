@@ -11,7 +11,6 @@ import {
   generateUtcCronExpression,
 } from "../../utils/meeting";
 import { PrismaService } from "../../prisma/prisma.service";
-import { MeetingGateway } from "./meeting.gateway";
 import { MeetingNotifyService } from "./meeting-notify.service";
 import { MeetingTranscriptIngestService } from "./meeting-transcript-ingest.service";
 import { MeetingStatus, MeetingPlatform } from "@prisma/client";
@@ -46,7 +45,6 @@ export class MeetingService {
 
   constructor(
     private readonly prisma: PrismaService,
-    private readonly meetingGateway: MeetingGateway,
     private readonly meetingTranscriptIngestService: MeetingTranscriptIngestService,
     private readonly meetingNotifyService: MeetingNotifyService
   ) {}

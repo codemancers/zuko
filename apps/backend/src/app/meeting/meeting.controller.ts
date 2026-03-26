@@ -14,14 +14,8 @@ import {
 import { AuthGuard } from "@thallesp/nestjs-better-auth";
 import type { RequestWithUser } from "@zuko/core";
 import { MeetingService } from "./meeting.service";
-import {
-  CallbackDto,
-  CallbackSchema,
-  MeetingDto,
-  MeetingSchema,
-  TranscriptChunkDto,
-  TranscriptChunkSchema,
-} from "./dto/meeting.dto";
+import { CallbackSchema, MeetingSchema, TranscriptChunkSchema } from "./dto/meeting.dto";
+import type { CallbackDto, MeetingDto, TranscriptChunkDto } from "./dto/meeting.dto";
 import { OrganizationGuard } from "../../common/auth/organization.guard";
 import { AgentGuard } from "../../common/auth/agent.guard";
 import { OrgId } from "../../common/auth/org-id.decorator";

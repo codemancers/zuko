@@ -18,7 +18,7 @@ export class MeetingGateway
   implements OnGatewayConnection, OnGatewayDisconnect
 {
   @WebSocketServer()
-  server: Server;
+  server!: Server;
 
   private readonly logger = new Logger(MeetingGateway.name);
   private bots = new Map<string, string>(); // meetingId -> socketId
