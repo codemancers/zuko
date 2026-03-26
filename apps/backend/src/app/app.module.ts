@@ -14,6 +14,7 @@ import { SalesModule } from './sales/sales.module';
 import { TasksModule } from './tasks/tasks.module';
 import { AgentsWrapperModule } from './agents/agents.module';
 import { AdminModule } from './admin/admin.module';
+import { MeetingModule } from './meeting/meeting.module';
 import { auth } from '../libs/better-auth/auth';
 
 const authModule = AuthModule.forRoot({ auth, disableGlobalAuthGuard: true });
@@ -36,6 +37,7 @@ const authModule = AuthModule.forRoot({ auth, disableGlobalAuthGuard: true });
     TasksModule,
     ChatsModule,
     AdminModule,
+    MeetingModule,
   ],
   controllers: [AppController, ChatController],
   providers: [AppService, LangsmithService, SpritesService],

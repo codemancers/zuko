@@ -1,0 +1,81 @@
+// ============================================
+// MEETING MODELS
+// ============================================
+
+enum MeetingStatus {
+  PENDING     @map("pending")
+  IN_PROGRESS @map("in_progress")
+  PROCESSING  @map("processing")
+  COMPLETED   @map("completed")
+  FAILED      @map("failed")
+  REJECTED    @map("rejected")
+
+  @@schema("public")
+}
+
+enum MeetingPlatform {
+  GOOGLE_MEET @map("google_meet")
+  ZOOM        @map("zoom")
+  MS_TEAMS    @map("ms_teams")
+
+  @@schema("public")
+}
+
+model Meeting {
+  id             Int             @id @default(autoincrement())
+  organizationId Int             @map("organization_id")
+  name           String?
+  description    String?
+  url            String
+  platform       MeetingPlatform
+  scheduledAt    DateTime?       @map("scheduled_at")
+  timezone       String?         @default("Asia/Kolkata")
+  schedulerId    String?         @map("scheduler_id")
+  createdBy      Int             @map("created_by")
+  recording      String?
+  transcript     String?
+  status         MeetingStatus   @default(PENDING)
+  deletedAt      DateTime?       @map("deleted_at")
+  flyMachineId   String?         @map("fly_machine_id")
+
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime? @updatedAt @map("updated_at")
+
+  organization Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user         User                @relation(fields: [createdBy], references: [id], onDelete: Cascade)
+  summaries    MeetingSummary[]
+  actionItems  MeetingActionItem[]
+
+  @@index([organizationId])
+  @@map("meetings")
+  @@schema("public")
+}
+
+
+model MeetingSummary {
+  id        Int      @id @default(autoincrement())
+  meetingId Int      @map("meeting_id")
+  meeting   Meeting  @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  content   String   @db.Text
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
+
+  @@index([meetingId, createdAt])
+  @@map("meeting_summaries")
+  @@schema("public")
+}
+
+model MeetingActionItem {
+  id          Int      @id @default(autoincrement())
+  meetingId   Int      @map("meeting_id")
+  taskId      String?  @map("task_id")
+  meeting     Meeting  @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  title       String
+  description String?  @db.Text
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at")
+
+  @@index([meetingId, createdAt])
+  @@map("meeting_action_items")
+  @@schema("public")
+}
