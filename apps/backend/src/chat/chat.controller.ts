@@ -1,7 +1,6 @@
 import {
   Body,
   Controller,
-  ForbiddenException,
   Post,
   Req,
   Res,
@@ -10,25 +9,20 @@ import {
 import { AuthGuard } from "@thallesp/nestjs-better-auth";
 import type { Response } from "express";
 import { Readable } from "node:stream";
-import { ContextEntityReference, MessageMetadata } from "../types/chat";
-import { toBaseMessages, toUIMessageStream } from "@ai-sdk/langchain";
+import { ContextEntityReference } from "../types/chat";
+import { toUIMessageStream } from "@ai-sdk/langchain";
 import type { UIMessage } from "ai";
 import type { RequestWithUser } from "@zuko/core";
 import { ChatsService } from "../chats/chats.service";
-import { PrismaService } from "../prisma/prisma.service";
-import { getActiveOrganizationId } from "../common/auth/get-organization-id";
 import { LangsmithService } from "../langsmith/langsmith.service";
 import { transformSSEToLangChainStreamFromNode } from "../langsmith/langsmith-stream.util";
-import { SpritesService } from "../sprites/sprites.service";
 
 
 @Controller("v1")
 export class ChatController {
   constructor(
     private readonly chatsService: ChatsService,
-    private readonly prisma: PrismaService,
     private readonly langsmithService: LangsmithService,
-    private readonly spritesService: SpritesService,
   ) {}
 
   @Post("chat")
@@ -44,115 +38,31 @@ export class ChatController {
     @Res({ passthrough: true }) response: Response,
   ) {
     const { messages, chatId: rawChatId } = body;
-    const lastMessage = messages[messages.length - 1];
-    // Prefer last message metadata; fallback to top-level body (AI SDK useChat may send body.contextEntities)
-    const contextEntities =
-      (lastMessage?.metadata as MessageMetadata)?.contextEntities ??
-      body.contextEntities ??
-      [];
-
     const chatId =
       typeof rawChatId === "string" ? parseInt(rawChatId, 10) : rawChatId;
-
     const userId = parseInt(req.user.id, 10);
-    const organizationId = await getActiveOrganizationId(req, this.prisma);
-
-    // Verify user is a participant in this chat
-    const isParticipant = await this.chatsService.isParticipant(chatId, userId);
-    if (!isParticipant) {
-      throw new ForbiddenException("Not a participant in this chat");
-    }
-
-    // Get the chat to extract threadId
-    const chat = await this.chatsService.findOne(chatId);
-    const threadId = chat.threadId;
-    const spriteName = `${chatId}-${threadId}`;
-
-    // There will be only one sandbox per chat
-    const sandboxes = chat.sandboxes;
-    let sandbox;
-    if (process.env.NODE_ENV === "test"){
-      sandbox = await this.prisma.sandbox.create({
-        data: {
-          name: process.env.E2E_SANDBOX ?? "",
-          url: process.env.E2E_SANDBOX_URL ?? "",
-          chats: {
-            connect: {
-              id: chat.id,
-            },
-          },
-        },
-      });
-    }else{
-      if (sandboxes.length === 0) {
-        // create a new sandbox
-        const sprite = await this.spritesService.createSprite(spriteName);
-        await this.spritesService.setupSprite(spriteName);
-        // store in database
-        const sandboxUrl = sprite.url;
-        sandbox = await this.prisma.sandbox.create({
-          data: {
-            name: spriteName,
-            url: sandboxUrl,
-            chats: {
-              connect: {
-                id: chat.id,
-              },
-            },
-          },
-        });
-      }else{
-        sandbox = sandboxes[0];
-      }
-    }
-
-    const sandboxUrl = sandbox?.url ?? "";
-
-    // Auto-generate title from first message if chat has no title
-    if (!chat.title && messages.length === 1) {
-      const firstMessage = messages[0];
-      // Extract text from parts array (AI SDK v6 format)
-      const text =
-        firstMessage.parts
-          ?.filter((part: any) => part.type === "text")
-          .map((part: any) => part.text)
-          .join("") || ((firstMessage as any).content as string);
-
-      if (text?.trim()) {
-        // Don't await - let it run in background
-        this.chatsService
-          .autoGenerateTitle(chatId, text.trim())
-          .catch((error) => {
-            console.error("Error auto-generating title", error);
-          });
-      }
-    }
-
-    // Convert AI SDK UIMessages to LangChain base messages
-    // Filter out messages with unsupported roles (e.g., 'tool') that cause conversion errors
-    const supportedRoles = new Set(["user", "assistant", "system"]);
-    const filteredMessages = messages.filter((msg) =>
-      supportedRoles.has(msg.role),
-    );
-
-    const langchainMessages = await toBaseMessages(filteredMessages);
+    const organizationId = await this.chatsService.getOrganizationId(req);
+    const preparedRun = await this.chatsService.prepareChatRun({
+      chatId,
+      userId,
+      messages,
+      contextEntities: body.contextEntities,
+    });
 
     // Set SSE headers for the client
     response.setHeader("Content-Type", "text/event-stream; charset=utf-8");
     response.setHeader("Cache-Control", "no-cache");
     response.setHeader("Connection", "keep-alive");
-    response.setHeader("X-Thread-Id", threadId);
+    response.setHeader("X-Thread-Id", preparedRun.threadId);
     response.setHeader("X-Chat-Id", chatId);
 
-    await this.spritesService.startServer(spriteName);
-
     const upstreamBody = await this.langsmithService.createRunStream({
-      threadId,
-      messages: langchainMessages,
-      contextEntities,
+      threadId: preparedRun.threadId,
+      messages: preparedRun.langchainMessages,
+      contextEntities: preparedRun.contextEntities,
       userId,
       organizationId,
-      sandboxUrl,
+      sandboxUrl: preparedRun.sandboxUrl,
     });
 
     const nodeStream = Readable.fromWeb(
