@@ -2,27 +2,45 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { contactsApi } from '@/lib/api/contacts';
 import { companiesApi } from '@/lib/api/companies';
 import { dealsApi } from '@/lib/api/deals';
+import { authClient } from '@/lib/auth-client';
 import { toast } from 'sonner';
 
 export type EntityType = 'contacts' | 'companies' | 'deals';
 const entityNames = {
-  contacts: 'Contact',
-  companies: 'Company',
-  deals: 'Deal',
+  contacts: 'contact',
+  companies: 'company',
+  deals: 'deal',
 };
 
-export function useAddRow(entity: EntityType, totalCount = 0) {
+export function useAddRow(entity: EntityType) {
   const queryClient = useQueryClient();
+  const session = authClient.useSession();
 
   const mutation = useMutation({
     mutationFn: async () => {
+      const currentUserId = session.data?.user.id
+        ? parseInt(session.data.user.id, 10)
+        : undefined;
+
       switch (entity) {
         case 'contacts':
-          return contactsApi.createContact({ name: 'New Contact' });
+          return contactsApi.createContact({
+            name: 'New Contact',
+            ownerIds: currentUserId ? [currentUserId] : undefined,
+            primaryOwnerId: currentUserId,
+          });
         case 'companies':
-          return companiesApi.createCompany({ companyName: 'New Company' });
+          return companiesApi.createCompany({
+            companyName: 'New Company',
+            ownerIds: currentUserId ? [currentUserId] : undefined,
+            primaryOwnerId: currentUserId,
+          });
         case 'deals':
-          return dealsApi.createDeal({ title: 'New Deal' });
+          return dealsApi.createDeal({
+            title: 'New Deal',
+            ownerIds: currentUserId ? [currentUserId] : undefined,
+            primaryOwnerId: currentUserId,
+          });
         default:
           throw new Error('Invalid entity type');
       }

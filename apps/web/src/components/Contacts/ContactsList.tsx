@@ -13,6 +13,7 @@ import { getTableViewContacts } from '@/server/query-options';
 import { useRouter } from 'next/navigation';
 import { BaseTable, createColumnsFromMetadata, type BaseRow } from '../Table';
 import { useAddColumn } from '@/hooks/use-add-column';
+import { useAddRow } from '@/hooks/use-add-row';
 
 const ContactsList = () => {
   const router = useRouter();
@@ -22,6 +23,8 @@ const ContactsList = () => {
   );
 
   const { mutate: addColumn } = useAddColumn('contacts');
+
+  const { addRow } = useAddRow('contacts');
 
   const contacts = contactsData?.data || [];
   const metadata = contactsData?.metadata || [];
@@ -40,8 +43,7 @@ const ContactsList = () => {
   };
 
   const handleNewContactRow = () => {
-    // Todo: addRow();
-    router.push('/contacts/new');
+    addRow();
   };
 
   const handleNewColumn = (name: string, key: string, type: string) => {

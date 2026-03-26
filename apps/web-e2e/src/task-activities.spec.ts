@@ -54,6 +54,14 @@ test.describe('Task Activity Timeline - Comments', () => {
     page,
   }) => {
     await taskDetailPage.goto(taskId);
+
+    // Wait for activity section to stabilize before capturing baseline count
+    await page
+      .locator('[data-testid="activity-item"]')
+      .or(page.getByText("No activity yet"))
+      .first()
+      .waitFor({ state: "visible", timeout: 10000 });
+
     const initialCount = await taskDetailPage.getActivityCount();
 
     await page.getByPlaceholder('Add a comment...').fill('   ');

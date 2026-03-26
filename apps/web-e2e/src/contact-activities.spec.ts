@@ -78,6 +78,13 @@ test.describe("Contact Activity Timeline - Authenticated", () => {
   }) => {
     await contactDetailPage.goto(contactId);
 
+    // Wait for activity section to stabilize before capturing baseline count
+    await page
+      .locator('[data-testid="activity-item"]')
+      .or(page.getByText("No activity yet"))
+      .first()
+      .waitFor({ state: "visible", timeout: 10000 });
+
     const initialCount = await contactDetailPage.getActivityCount();
 
     await page.getByPlaceholder("Add a comment...").fill("   ");

@@ -13,6 +13,7 @@ import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { BaseTable, createColumnsFromMetadata, type BaseRow } from '../Table';
 import { useAddColumn } from '@/hooks/use-add-column';
+import { useAddRow } from '@/hooks/use-add-row';
 
 const DealsList = () => {
   const router = useRouter();
@@ -22,6 +23,8 @@ const DealsList = () => {
   );
 
   const { mutate: addColumn } = useAddColumn('deals');
+
+  const { addRow } = useAddRow('deals');
 
   const deals = dealsData?.data || [];
   const metadata = dealsData?.metadata || [];
@@ -36,8 +39,7 @@ const DealsList = () => {
   };
 
   const handleNewDealRow = () => {
-    // ToDo: addRow();
-    router.push('/deals/new');
+   addRow();
   };
 
   const handleNewDeal = () => {

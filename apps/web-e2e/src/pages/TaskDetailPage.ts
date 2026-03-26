@@ -38,6 +38,7 @@ export class TaskDetailPage extends BasePage {
   }
 
   async getActivityCount(): Promise<number> {
+    await this.waitForActivityItem().catch(() => null);
     return this.activityItems.count();
   }
 
