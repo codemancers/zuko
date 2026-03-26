@@ -71,16 +71,11 @@ export class ChatController {
     // There will be only one sandbox per chat
     const sandboxes = chat.sandboxes;
     let sandbox;
-    if (sandboxes.length === 0) {
-      // create a new sandbox
-      const sprite = await this.spritesService.createSprite(spriteName);
-      await this.spritesService.setupSprite(spriteName);
-      // store in database
-      const sandboxUrl = sprite.url;
+    if (process.env.NODE_ENV === "test"){
       sandbox = await this.prisma.sandbox.create({
         data: {
-          name: spriteName,
-          url: sandboxUrl,
+          name: process.env.E2E_SANDBOX ?? "",
+          url: process.env.E2E_SANDBOX_URL ?? "",
           chats: {
             connect: {
               id: chat.id,
@@ -89,7 +84,26 @@ export class ChatController {
         },
       });
     }else{
-      sandbox = sandboxes[0];
+      if (sandboxes.length === 0) {
+        // create a new sandbox
+        const sprite = await this.spritesService.createSprite(spriteName);
+        await this.spritesService.setupSprite(spriteName);
+        // store in database
+        const sandboxUrl = sprite.url;
+        sandbox = await this.prisma.sandbox.create({
+          data: {
+            name: spriteName,
+            url: sandboxUrl,
+            chats: {
+              connect: {
+                id: chat.id,
+              },
+            },
+          },
+        });
+      }else{
+        sandbox = sandboxes[0];
+      }
     }
 
     const sandboxUrl = sandbox?.url ?? "";

@@ -215,8 +215,6 @@ export class SpritesService {
     return true
   }
 
-
-
   private getEnvironmentVariables(): Record<string, string> {
     return {
       OPENAI_API_KEY: process.env.OPENAI_API_KEY ?? "",

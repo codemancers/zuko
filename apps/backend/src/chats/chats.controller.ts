@@ -131,15 +131,17 @@ export class ChatsController {
     const threadId = chat.threadId;
     const sandboxUrl = chat.sandboxes[0]?.url ?? "";
 
-    const spriteName = `${chatId}-${threadId}`;
-
     let values: { messages: any[], contextEntities: any[] };
     if (!sandboxUrl) {
       values = { messages: [], contextEntities: [] };
     }else{
-      
+      let spriteName;
+      if (process.env.NODE_ENV === "test"){
+        spriteName = process.env.E2E_SANDBOX ?? "";
+      }else{
+        spriteName = `${chatId}-${threadId}`;
+      }
       await this.spritesService.startServer(spriteName);
-      
       const state: any = await this.langsmithService.getThreadState(threadId, sandboxUrl);
       values = state?.values ?? { messages: [], contextEntities: [] };
     }
