@@ -24,7 +24,7 @@ interface AudioData {
 @Injectable()
 export class TranscriptionService extends BaseService {
   private currentSpeaker: string | null = null;
-  private currentTranscriptData: TranscriptData;
+  private currentTranscriptData: TranscriptData | null = null;
   private deepgram = createClient(process.env.DEEPGRAM_API_KEY || "");
   private keepAliveInterval: NodeJS.Timeout | null = null;
 
@@ -85,7 +85,7 @@ export class TranscriptionService extends BaseService {
           }
         }, 3000);
 
-        connection.on(LiveTranscriptionEvents.Transcript, (data) => {
+        connection.on(LiveTranscriptionEvents.Transcript, (data: Record<string, any>) => {
           try {
             if (
               data.channel &&
@@ -141,7 +141,7 @@ export class TranscriptionService extends BaseService {
           }
         });
 
-        connection.on(LiveTranscriptionEvents.UtteranceEnd, (data) => {
+        connection.on(LiveTranscriptionEvents.UtteranceEnd, (_data: unknown) => {
           if (!this.currentTranscriptData) return;
 
           transcriptEmitter.emit("transcript", this.currentTranscriptData);
@@ -149,7 +149,7 @@ export class TranscriptionService extends BaseService {
           this.currentTranscriptData = null;
         });
 
-        connection.on(LiveTranscriptionEvents.Error, (error) => {
+        connection.on(LiveTranscriptionEvents.Error, (error: unknown) => {
           this.logger.error(
             `[Meeting - ${meetingId}] Transcription error:`,
             error

@@ -1,7 +1,6 @@
 import { BaseService } from "../../common/base/base.service";
-import { Page } from "puppeteer";
+import type { Page } from "puppeteer-core";
 import { Injectable } from "@nestjs/common";
-import { AGENTS } from "../../const/agents";
 import axios from "axios";
 
 declare global {
@@ -12,7 +11,7 @@ declare global {
 
 @Injectable()
 export class GoogleMeetHelper extends BaseService {
-  private thread: string;
+  private thread!: string;
 
   constructor() {
     super("GoogleMeetHelper");
@@ -36,7 +35,7 @@ export class GoogleMeetHelper extends BaseService {
 
       return false;
     } catch (error) {
-      this.logger.error(`Failed to check status: ${error.message}`);
+      this.logger.error(`Failed to check status: ${(error as Error).message}`);
       return false;
     }
   }
@@ -50,7 +49,7 @@ export class GoogleMeetHelper extends BaseService {
         const nameSpan = await element.$("span.notranslate");
         if (nameSpan) {
           const speakerName = await page.evaluate(
-            (el) => el.textContent,
+            (el: Element) => el.textContent,
             nameSpan
           );
           if (speakerName && speakerName.trim()) {
@@ -70,8 +69,8 @@ export class GoogleMeetHelper extends BaseService {
   }
 
   async sendMessageToMeetChat(page: Page, message: string) {
-    await page.evaluate((message) => {
-      window.sendChatMessage?.(message);
+    await page.evaluate((msg: string) => {
+      window.sendChatMessage?.(msg);
     }, message);
   }
 
@@ -190,7 +189,8 @@ export class GoogleMeetHelper extends BaseService {
                 (b.getAttribute("aria-label") || "")
                   .toLowerCase()
                   .includes("got it")
-              );
+              ) ??
+              null;
           }
           if (btn && !btn.disabled) {
             btn.click();

@@ -17,7 +17,6 @@ import { GoogleMeetHelper } from "./google-meet-helper";
 import { AudioService } from "../audio/audio.service";
 import { WebSocketService } from "../websocket/websocket.service";
 import * as path from "path";
-import { runFFmpeg } from "../../utils/ffmpeg";
 import { TranscriptBuffer } from "../../utils/transcript-buffer";
 
 declare global {
@@ -56,16 +55,16 @@ export class GoogleMeetService extends BaseService {
   private static readonly JOIN_REJECTED_ERROR = "JOIN_REJECTED_BY_HOST";
   private browser: any;
   private page: any;
-  private transcriptEmitter: EventEmitter;
-  private websocketEmitter: EventEmitter;
+  private transcriptEmitter: EventEmitter | null = null;
+  private websocketEmitter: EventEmitter | null = null;
   private liveTranscripts: TranscriptData[] = [];
   private chatMessages: ChatMessage[] = [];
   private videoStream: any;
   private audioStream: any;
-  private recordingWriteStream: fs.WriteStream;
-  private recordingFilePath: string;
-  private recordingKey: string;
-  private speakerPolling: boolean;
+  private recordingWriteStream!: fs.WriteStream;
+  private recordingFilePath!: string;
+  private recordingKey!: string;
+  private speakerPolling!: boolean;
   private maxAttempt = 15;
   private transcriptBuffer = new TranscriptBuffer({
     thresholdChars: 600,
@@ -73,7 +72,7 @@ export class GoogleMeetService extends BaseService {
   });
   private transcriptChunkSequence = 0;
 
-  private meetingDetails: MeetingSchema;
+  private meetingDetails!: MeetingSchema;
   private shutdownCallback: (() => Promise<void>) | null = null;
 
   constructor(
@@ -154,7 +153,7 @@ export class GoogleMeetService extends BaseService {
     // Don't launch fly worker in development mode
     if (process.env.NODE_ENV === "development") {
       setTimeout(async () => {
-        this.joinMeeting(meetingSchema).catch((error) => {
+        this.joinMeeting(meetingSchema).catch((error: unknown) => {
           this.logger.error(
             `[Meeting - ${meetingSchema.meetingId}] Failed to join`,
             error
@@ -186,7 +185,7 @@ export class GoogleMeetService extends BaseService {
     };
   }
 
-  async joinMeeting(meetingSchema: MeetingSchema, attempt = 1) {
+  async joinMeeting(meetingSchema: MeetingSchema, attempt = 1): Promise<void> {
     const { meetingId, meetingUrl, callbackUrl, metadata } = meetingSchema;
 
     if (attempt > this.maxAttempt) {
@@ -486,7 +485,7 @@ export class GoogleMeetService extends BaseService {
         this.videoStream
       );
 
-      this.videoStream.on("data", (chunk) => {
+      this.videoStream.on("data", (chunk: Buffer) => {
         this.recordingWriteStream.write(chunk);
       });
 
@@ -494,11 +493,11 @@ export class GoogleMeetService extends BaseService {
         this.logger.log(`[Recording] VideoStream ended`);
       });
 
-      this.videoStream.on("error", (err) => {
+      this.videoStream.on("error", (err: Error) => {
         this.logger.error(`[Recording] VideoStream error`, err);
       });
 
-      this.audioStream.stdout.on("data", (audioChunk) => {
+      this.audioStream.stdout.on("data", (audioChunk: Buffer) => {
         if (this.transcriptEmitter) {
           const currentTime = Date.now() / 1000;
           const relativeTimestamp = currentTime - meetingStartTime;
@@ -523,7 +522,7 @@ export class GoogleMeetService extends BaseService {
         this.logger.log(`[Audio] AudioStream stdout ended`);
       });
 
-      this.audioStream.stderr.on("data", (err) => {
+      this.audioStream.stderr.on("data", (err: Buffer) => {
         this.logger.error(`[Audio] ffmpeg stderr`, err.toString());
       });
 
@@ -559,7 +558,7 @@ export class GoogleMeetService extends BaseService {
     } catch (error) {
       this.logger.error(
         `[Meeting - ${meetingId}] Callback error:`,
-        JSON.stringify(error?.response?.data, null, 2)
+        JSON.stringify((error as { response?: { data?: unknown } })?.response?.data, null, 2)
       );
     }
   }
@@ -754,7 +753,7 @@ export class GoogleMeetService extends BaseService {
       // 1) Upload transcript first so we never lose it even if video upload fails.
       const transcriptKey = `meetings/${this.meetingDetails.meetingId}/transcript.json`;
       await this.awsService.uploadToS3(
-        process.env.AWS_BUCKET_NAME,
+        process.env.AWS_BUCKET_NAME ?? "",
         transcriptKey,
         JSON.stringify({
           transcripts: this.liveTranscripts,
@@ -776,7 +775,7 @@ export class GoogleMeetService extends BaseService {
       if (fs.existsSync(this.recordingFilePath)) {
         const fileBuffer = fs.readFileSync(this.recordingFilePath);
         await this.awsService.uploadToS3(
-          process.env.AWS_BUCKET_NAME,
+          process.env.AWS_BUCKET_NAME ?? "",
           this.recordingKey,
           fileBuffer
         );

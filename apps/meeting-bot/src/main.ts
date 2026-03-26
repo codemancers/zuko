@@ -92,9 +92,9 @@ async function bootstrap() {
     await googleMeetService.joinMeeting({
       meetingId: meetingId,
       meetingUrl,
-      callbackUrl,
+      callbackUrl: callbackUrl ?? "",
       metadata: {
-        projectId,
+        projectId: projectId ?? "",
       },
     });
 

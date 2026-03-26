@@ -4,6 +4,7 @@
     "outDir": "../../dist/out-tsc",
     "module": "nodenext",
     "types": ["node"],
+    "lib": ["es2021", "dom"],
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
     "target": "es2021"
