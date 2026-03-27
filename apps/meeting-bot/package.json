@@ -1,5 +1,5 @@
 {
-  "name": "@gather/meeting-bot",
+  "name": "@zuko/meeting-bot",
   "version": "0.1.0",
   "private": true,
   "scripts": {},
@@ -50,15 +50,15 @@
           "build"
         ],
         "options": {
-          "buildTarget": "@gather/meeting-bot:build",
+          "buildTarget": "@zuko/meeting-bot:build",
           "runBuildTargetDependencies": false
         },
         "configurations": {
           "development": {
-            "buildTarget": "@gather/meeting-bot:build:development"
+            "buildTarget": "@zuko/meeting-bot:build:development"
           },
           "production": {
-            "buildTarget": "@gather/meeting-bot:build:production"
+            "buildTarget": "@zuko/meeting-bot:build:production"
           }
         }
       },
@@ -75,7 +75,7 @@
       "copy-workspace-modules": {
         "executor": "@nx/js:copy-workspace-modules",
         "options": {
-          "buildTarget": "@gather/meeting-bot:build"
+          "buildTarget": "@zuko/meeting-bot:build"
         },
         "dependsOn": [
           "build"
