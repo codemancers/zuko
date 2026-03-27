@@ -218,7 +218,7 @@ export function ApplicationLayout({ children }: { children: React.ReactNode }) {
                   <Cog8ToothIcon />
                   <DropdownLabel>Settings</DropdownLabel>
                 </DropdownItem>
-                <DropdownDivider />
+                {organizations.length > 0 && <DropdownDivider />}
                 {organizations.map((org) => (
                   <DropdownItem
                     key={org.id}
