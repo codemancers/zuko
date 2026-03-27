@@ -78,7 +78,7 @@ export class WebSocketService extends BaseService {
         //TODO: Handle ENCODED_MP4_CHUNK data
         break;
       case 5: // PER_PARTICIPANT_AUDIO
-        // this.handlePerParticipantAudioFrame(data);
+        this.handlePerParticipantAudioFrame(data);
         break;
       default:
         this.logger.warn(`Unknown message type: ${messageType}`);
