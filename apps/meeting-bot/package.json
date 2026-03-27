@@ -63,13 +63,8 @@
         }
       },
       "test": {
-        "executor": "@nx/jest:jest",
-        "outputs": [
-          "{workspaceRoot}/coverage/apps/meeting-bot"
-        ],
         "options": {
-          "passWithNoTests": true,
-          "jestConfig": "apps/meeting-bot/jest.config.ts"
+          "passWithNoTests": true
         }
       },
       "copy-workspace-modules": {
