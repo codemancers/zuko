@@ -2,12 +2,6 @@
 
 import type { ReactNode } from 'react';
 import { Badge, Link, Avatar } from '@zuko/ui-kit';
-import { 
-  BuildingOfficeIcon, 
-  UserIcon, 
-  BriefcaseIcon,
-  UserGroupIcon,
-} from '@heroicons/react/24/outline';
 import { type ColumnMetadata, type BaseRow } from './types';
 
 type RowWithEntityFields = BaseRow & {
@@ -71,29 +65,23 @@ export function TextField({ value, display, metadata, row }: FieldProps<BaseRow>
 export function EntityField<T extends BaseRow>({ value, display, metadata, row }: FieldProps<T>) {
   const rowWithEntityField = row as T & RowWithEntityFields;
   const entityType = metadata.config?.entityType;
-  
-  let Icon = BuildingOfficeIcon;
+
   let linkTarget: string | undefined = '#';
   let displayText = display ?? value ?? rowWithEntityField.name;
 
   if(entityType === 'company') {
-    Icon = BuildingOfficeIcon;
     linkTarget = `/companies/${row.id}`;
     displayText = display ?? value ?? rowWithEntityField.companyName;
   } else if (entityType === 'contact') {
-    Icon = UserIcon;
     linkTarget = `/contacts/${row.id}`;
     displayText = display ?? value ?? rowWithEntityField.name;
   } else if (entityType === 'deal') {
-    Icon = BriefcaseIcon;
     linkTarget = `/deals/${row.id}`;
     displayText = display ?? value ?? rowWithEntityField.title;
   } else if (entityType === 'team') {
-    Icon = UserGroupIcon;
     linkTarget = undefined; // Team names are simple text
     displayText = display ?? (value as string);
   } else if (entityType === 'member') {
-    Icon = UserIcon; // Fallback icon
     linkTarget = undefined; // Member names are simple text
     displayText = display ?? (value as string);
   }
@@ -117,11 +105,7 @@ export function EntityField<T extends BaseRow>({ value, display, metadata, row }
               .slice(0, 2)}
             className="size-6 bg-zinc-200 dark:bg-zinc-700 text-xs text-zinc-900 dark:text-zinc-100 ring-1 ring-white dark:ring-zinc-900"
           />
-        ) : (
-          <div className="flex h-6 w-6 items-center justify-center rounded-full bg-zinc-100 dark:bg-zinc-800">
-            <Icon className="h-3.5 w-3.5 text-zinc-600 dark:text-zinc-400" />
-          </div>
-        )}
+        ) : null}
       </div>
       <div className="text-sm font-medium text-zinc-950 dark:text-white">
         {linkTarget && linkTarget !== '#' ? (
