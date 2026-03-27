@@ -1,6 +1,9 @@
+import { describe, it, expect, beforeEach, jest } from "@jest/globals";
 import { Test, TestingModule } from "@nestjs/testing";
 import { MeetingController } from "./meeting.controller";
 import { MeetingService } from "./meeting.service";
+import { AuthGuard } from "@thallesp/nestjs-better-auth";
+import { OrganizationGuard } from "../../common/auth/organization.guard";
 
 describe("MeetingController", () => {
   let controller: MeetingController;
@@ -22,7 +25,12 @@ describe("MeetingController", () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [MeetingController],
       providers: [{ provide: MeetingService, useValue: mockMeetingService }],
-    }).compile();
+    })
+      .overrideGuard(AuthGuard)
+      .useValue({ canActivate: () => true })
+      .overrideGuard(OrganizationGuard)
+      .useValue({ canActivate: () => true })
+      .compile();
 
     controller = module.get<MeetingController>(MeetingController);
   });
