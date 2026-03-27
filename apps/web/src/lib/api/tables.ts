@@ -27,4 +27,11 @@ export const tablesApi = {
   async createColumn(entity: string, data: CreateColumnDto): Promise<TableColumn> {
     return apiClient.post(`/tables/${entity}/columns`, data);
   },
+
+  /**
+   * Update a cell value for an entity
+   */
+  async updateCell(entity: string, rowId: number | string, columnId: string, value: unknown): Promise<void> {
+    return apiClient.patch(`/tables/${entity}/${rowId}/cell`, { columnId, value });
+  },
 };

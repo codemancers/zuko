@@ -1,22 +1,84 @@
 import { Cell, flexRender } from '@tanstack/react-table';
 import { TableCell } from '@zuko/ui-kit';
+import { useState, useEffect } from 'react';
+import type { ColumnMetadata, BaseRow } from './types';
+import { EditorRegistry } from './CellEditors';
 
 interface BaseTableCellProps<TData> {
-  cell: Cell<TData, any>;
+  cell: Cell<TData, unknown>;
   onCellUpdate?: (rowId: string | number, columnId: string, value: unknown) => void;
 }
 
-export function BaseTableCell<TData>({ cell, onCellUpdate }: BaseTableCellProps<TData>) {
+export function BaseTableCell<TData extends BaseRow>({ cell, onCellUpdate }: BaseTableCellProps<TData>) {
+  const [isEditing, setIsEditing] = useState(false);
+  const metadata = (cell.column.columnDef as any).meta?.metadata as ColumnMetadata;
+  const isEditable = metadata?.editable !== false && EditorRegistry[metadata?.fieldType];
+  
+  const Editor = metadata?.fieldType ? EditorRegistry[metadata.fieldType] : null;
+
+  // Get raw value for editing
+  const rawData = cell.getValue();
+  const initialValue = typeof rawData === 'object' && rawData !== null && 'value' in rawData 
+    ? (rawData as { value: unknown }).value 
+    : rawData;
+
+  const [value, setValue] = useState<unknown>(initialValue ?? '');
+
+  useEffect(() => {
+    if (!isEditing) {
+      setValue(initialValue ?? '');
+    }
+  }, [initialValue, isEditing]);
+
+  const handleBlur = () => {
+    setIsEditing(false);
+    const isEmpty = value === null || value === undefined || (typeof value === 'string' && value.trim() === '');
+    if (value !== initialValue && !isEmpty) {
+      onCellUpdate?.(cell.row.original.id, cell.column.id, value);
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      setIsEditing(false);
+      const isEmpty = value === null || value === undefined || (typeof value === 'string' && value.trim() === '');
+      if (value !== initialValue && !isEmpty) {
+        onCellUpdate?.(cell.row.original.id, cell.column.id, value);
+      }
+    } else if (e.key === 'Escape') {
+      setIsEditing(false);
+      setValue(initialValue ?? '');
+    }
+  };
+
   return (
     <TableCell 
-      className="align-middle"
+      className={isEditable ? "align-middle cursor-text" : "align-middle"}
       style={{ 
         width: cell.column.id === 'sno' ? cell.column.getSize() : undefined,
         minWidth: cell.column.id === 'sno' ? cell.column.getSize() : cell.column.columnDef.minSize,
         maxWidth: cell.column.id === 'sno' ? cell.column.getSize() : cell.column.columnDef.maxSize,
       }}
+      onClick={(e) => {
+        if (isEditable) {
+          e.stopPropagation();
+          setIsEditing(true);
+        }
+      }}
     >
-      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+      {isEditable && isEditing && Editor ? (
+        <Editor
+          autoFocus
+          value={value}
+          metadata={metadata}
+          onChange={(v) => setValue(v)}
+          onBlur={handleBlur}
+          onKeyDown={handleKeyDown}
+        />
+      ) : (
+        flexRender(cell.column.columnDef.cell, cell.getContext())
+      )}
     </TableCell>
   );
 }

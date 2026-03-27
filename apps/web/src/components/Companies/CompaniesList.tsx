@@ -14,6 +14,7 @@ import { useRouter } from 'next/navigation';
 import { BaseTable, createColumnsFromMetadata, type BaseRow } from '../Table';
 import { useAddColumn } from '@/hooks/use-add-column';
 import { useAddRow } from '@/hooks/use-add-row';
+import { useCellUpdate } from '@/hooks/use-cell-update';
 
 const CompaniesList = () => {
   const router = useRouter();
@@ -25,6 +26,7 @@ const CompaniesList = () => {
   const { mutate: addColumn } = useAddColumn('companies');
 
   const { addRow } = useAddRow('companies');
+  const { updateCell } = useCellUpdate('companies');
 
    const companies = companiesData?.data || [];
   const metadata = companiesData?.metadata || [];
@@ -83,6 +85,7 @@ const CompaniesList = () => {
         data={companies}
         loading={isLoading}
         onRowClick={(company) => handleCompanyClick(Number(company.id))}
+        onCellUpdate={(rowId, columnId, value) => updateCell({ rowId, columnId, value })}
         totalCount={companiesData?.pagination?.total}
         entityName="companies"
         showAddRow
