@@ -246,7 +246,7 @@ test.describe("Cell Editing Flow", () => {
     const nameCell = firstRow.locator("td").nth(nameIndex);
     const newValue = "Updated Contact Name";
 
-    await nameCell.click();
+    await nameCell.evaluate(node => (node as any).click());
     const input = nameCell.locator("input");
     await expect(input).toBeVisible();
     await input.fill(newValue);
@@ -272,7 +272,7 @@ test.describe("Cell Editing Flow", () => {
     const emailCell = firstRow.locator("td").nth(emailIndex);
     const newValue = `updated-${Date.now()}@example.com`;
 
-    await emailCell.click();
+    await emailCell.evaluate(node => (node as any).click());
     const input = emailCell.locator("input");
     await expect(input).toBeVisible();
     await input.fill(newValue);

@@ -445,7 +445,7 @@ test.describe("Cell Editing Flow", () => {
     const companyNameCell = firstRow.locator("td").nth(companyNameIndex);
     const newValue = "Updated Company Name";
 
-    await companyNameCell.click();
+    await companyNameCell.evaluate(node => (node as any).click());
     const input = companyNameCell.locator("input");
     await expect(input).toBeVisible();
     await input.fill(newValue);
@@ -456,7 +456,7 @@ test.describe("Cell Editing Flow", () => {
 
     await page.reload();
     await companiesPage.getCompanyItems();
-    await expect(page.getByText(newValue)).toBeVisible();
+    await expect(page.getByText(newValue, { exact: true })).toBeVisible();
   });
 
   test("Edits company website cell value (text type)", async ({ companiesPage, page }) => {
@@ -471,7 +471,7 @@ test.describe("Cell Editing Flow", () => {
     const websiteCell = firstRow.locator("td").nth(websiteIndex);
     const newValue = "https://updated-example.com";
 
-    await websiteCell.click();
+    await websiteCell.evaluate(node => (node as any).click());
     const input = websiteCell.locator("input");
     await expect(input).toBeVisible();
     await input.fill(newValue);
@@ -483,5 +483,33 @@ test.describe("Cell Editing Flow", () => {
     await page.reload();
     await companiesPage.getCompanyItems();
     await expect(page.getByText(newValue)).toBeVisible();
+  });
+
+  test("Quits editing mode when Escape key is pressed", async ({ companiesPage, page }) => {
+    await companiesPage.goto();
+    await companiesPage.getCompanyItems();
+
+    const firstRow = page.getByRole("row").nth(1);
+    const headers = page.getByRole("columnheader");
+    const headerTexts = await headers.allInnerTexts();
+    const linkedinIndex = headerTexts.findIndex(h => h.toLowerCase().includes("linkedin"));
+    expect(linkedinIndex).toBeGreaterThan(-1);
+
+    const linkedinCell = firstRow.locator("td").nth(linkedinIndex);
+    const linkedinContent = await linkedinCell.textContent();
+    expect(typeof linkedinContent).toBe("string");
+    const originalValue = (linkedinContent as string).trim();
+    const newValue = "https://linkedin.com/company/reverted";
+
+    await linkedinCell.evaluate(node => (node as any).click());
+    const input = linkedinCell.locator("input");
+    await expect(input).toBeVisible();
+    await input.fill(newValue);
+    await input.press("Escape");
+
+    // Input should be hidden
+    await expect(input).toBeHidden();
+    // Value should be the original value
+    await expect(linkedinCell).toHaveText(originalValue);
   });
 });

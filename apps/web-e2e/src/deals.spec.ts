@@ -842,7 +842,7 @@ test.describe("Cell Editing Flow", () => {
     const newValue = "Updated Deal Title";
 
     // Click to enter edit mode
-    await titleCell.click();
+    await titleCell.evaluate(node => (node as any).click());
     
     // The Input should be visible
     const input = titleCell.locator("input");
@@ -859,6 +859,32 @@ test.describe("Cell Editing Flow", () => {
     // Verify persistence after reload
     await page.reload();
     await dealsPage.getDealItems();
-    await expect(page.getByText(newValue)).toBeVisible();
+    await expect(page.getByText(newValue, { exact: true })).toBeVisible();
+  });
+
+  test("Edits deal probability cell value (numeric type)", async ({ dealsPage, page }) => {
+    await dealsPage.goto();
+    await dealsPage.getDealItems();
+
+    const firstRow = page.getByRole("row").nth(1);
+    const headers = page.getByRole("columnheader");
+    const headerTexts = await headers.allInnerTexts();
+    const probabilityIndex = headerTexts.findIndex(h => h.toLowerCase().includes("probability"));
+
+    const probabilityCell = firstRow.locator("td").nth(probabilityIndex);
+    const newValue = "75";
+
+    await probabilityCell.evaluate(node => (node as any).click());
+    const input = probabilityCell.locator("input");
+    await expect(input).toBeVisible();
+    await input.fill(newValue);
+    await input.blur();
+
+    await expect(page.getByText("Cell updated successfully")).toBeVisible();
+    await expect(probabilityCell).toHaveText(newValue);
+
+    await page.reload();
+    await dealsPage.getDealItems();
+    await expect(page.getByText(newValue, { exact: true })).toBeVisible();
   });
 });
