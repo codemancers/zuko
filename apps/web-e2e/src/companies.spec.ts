@@ -77,7 +77,10 @@ test.describe("Companies - Authenticated", () => {
     await companiesPage.goto();
     const companies = await companiesPage.getCompanyItems();
     if (companies.length > 0) {
-      await companies[0].locator("td:first-child").click();
+      // Find the specific company link within the row to trigger navigation
+      const companyLink = companies[0].locator('a[href^="/companies/"]');
+      await companyLink.click();
+
       await page.waitForURL(/\/companies\/\d+$/, { timeout: 10000 });
       expect(page.url()).toMatch(/\/companies\/\d+$/);
     } else {

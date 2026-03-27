@@ -52,7 +52,7 @@ export const COMPANY_TABLE_METADATA: ColumnMetadata[] = [
   {
     id: 'owners',
     header: 'Owner',
-    fieldType: 'text',
+    fieldType: 'relation',
     dataType: 'json',
     sortable: false,
     filterable: true,
@@ -133,7 +133,7 @@ export const CONTACT_TABLE_METADATA: ColumnMetadata[] = [
   {
     id: 'owners',
     header: 'Owner',
-    fieldType: 'text',
+    fieldType: 'relation',
     dataType: 'json',
     sortable: false,
     filterable: true,
@@ -245,7 +245,7 @@ export const DEAL_TABLE_METADATA: ColumnMetadata[] = [
   {
     id: 'owners',
     header: 'Owner',
-    fieldType: 'text',
+    fieldType: 'relation',
     dataType: 'json',
     sortable: false,
     filterable: true,

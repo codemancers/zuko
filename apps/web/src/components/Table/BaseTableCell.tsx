@@ -3,9 +3,10 @@ import { TableCell } from '@zuko/ui-kit';
 
 interface BaseTableCellProps<TData> {
   cell: Cell<TData, any>;
+  onCellUpdate?: (rowId: string | number, columnId: string, value: unknown) => void;
 }
 
-export function BaseTableCell<TData>({ cell }: BaseTableCellProps<TData>) {
+export function BaseTableCell<TData>({ cell, onCellUpdate }: BaseTableCellProps<TData>) {
   return (
     <TableCell 
       className="align-middle"

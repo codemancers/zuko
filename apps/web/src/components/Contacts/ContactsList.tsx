@@ -89,6 +89,7 @@ const ContactsList = () => {
         onAddRow={handleNewContactRow}
         showAddColumn
         onAddColumn={handleNewColumn}
+        disableRowClick={true}
         emptyStateConfig={{
           icon: UserIcon,
           title: 'No Contacts',

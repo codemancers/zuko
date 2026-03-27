@@ -17,6 +17,21 @@ vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: mockPush }),
 }));
 
+vi.mock('next/link', () => ({
+  default: ({ children, href, onClick }: any) => (
+    <a
+      href={href}
+      onClick={(e) => {
+        e.preventDefault();
+        onClick?.(e);
+        mockPush(href);
+      }}
+    >
+      {children}
+    </a>
+  ),
+}));
+
 // Mock contacts API
 const mockCreateContact = vi.fn();
 const mockUpdateContact = vi.fn();
@@ -616,7 +631,7 @@ describe('ContactsList', () => {
     expect(screen.getByText('Alice')).toBeInTheDocument();
   });
 
-  it('navigates to contact detail when row is clicked', async () => {
+  it('navigates to contact detail when contact name link is clicked', async () => {
     mockGetTableViewContacts.mockResolvedValue({
       data: [mockContact],
       metadata: mockMetadata,
@@ -627,8 +642,8 @@ describe('ContactsList', () => {
     await vi.waitFor(() => {
       expect(screen.getByText('John Doe')).toBeInTheDocument();
     });
-    // Click a non-link cell to bubble up to the row's onClick
-    await user.click(screen.getByText('Alice'));
+    // Click a contact name link cell to navigate to contact details page
+    await user.click(screen.getByText('John Doe'));
     expect(mockPush).toHaveBeenCalledWith('/contacts/1');
   });
 

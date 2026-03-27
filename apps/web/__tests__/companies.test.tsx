@@ -16,6 +16,21 @@ vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: mockPush }),
 }));
 
+vi.mock('next/link', () => ({
+  default: ({ children, href, onClick }: any) => (
+    <a
+      href={href}
+      onClick={(e) => {
+        e.preventDefault();
+        onClick?.(e);
+        mockPush(href);
+      }}
+    >
+      {children}
+    </a>
+  ),
+}));
+
 const mockCreateCompany = vi.fn();
 const mockUpdateCompany = vi.fn();
 const mockGetCompanies = vi.fn();
@@ -508,7 +523,7 @@ describe('CompaniesList', () => {
     expect(screen.getByText('Alice')).toBeInTheDocument();
   });
 
-  it('navigates to company detail when row is clicked', async () => {
+  it('navigates to company detail when company name link is clicked', async () => {
     mockGetTableViewCompanies.mockResolvedValue({
       data: [mockCompany],
       metadata: mockMetadata,
@@ -519,7 +534,7 @@ describe('CompaniesList', () => {
     await waitFor(() => {
       expect(screen.getByText('Acme Inc')).toBeInTheDocument();
     });
-    await user.click(screen.getByText('Alice'));
+    await user.click(screen.getByText('Acme Inc'));
     expect(mockPush).toHaveBeenCalledWith('/companies/1');
   });
 
