@@ -693,84 +693,132 @@ test.describe("Deal Activity Timeline - Comments", () => {
   });
 });
 
-  test.describe.serial("Column Creation Flow", () => {
-    const columnName = "Source";
-    const columnKey = `source`;
+test.describe.serial("Column Creation Flow", () => {
+  const columnName = "Source";
+  const columnKey = `source`;
 
-    test("Creates new column from column creation dialog", async ({
-      dealsPage,
-      page,
-    }) => {
-      await dealsPage.goto();
+  test("Creates new column from column creation dialog", async ({
+    dealsPage,
+    page,
+  }) => {
+    await dealsPage.goto();
 
-      const addColumnButton = page.getByRole("button", { name: /Add column/i });
-      await addColumnButton.click();
+    const addColumnButton = page.getByRole("button", { name: /Add column/i });
+    await addColumnButton.click();
 
-      await expect(page.getByText(/Add new field/i)).toBeVisible();
+    await expect(page.getByText(/Add new field/i)).toBeVisible();
 
-      await page.getByPlaceholder("Field name").fill(columnName);
-      await page.getByPlaceholder(/Unique column key/i).fill(columnKey);
-      await page.locator("select").selectOption("text");
+    await page.getByPlaceholder("Field name").fill(columnName);
+    await page.getByPlaceholder(/Unique column key/i).fill(columnKey);
+    await page.locator("select").selectOption("text");
 
-      await page.getByRole("button", { name: "Create field" }).click();
+    await page.getByRole("button", { name: "Create field" }).click();
 
-      await expect(page.getByText("Column created successfully")).toBeVisible();
-      await expect(
-        page.getByRole("columnheader", { name: columnName })
-      ).toBeVisible();
-    });
-
-    test("Shows error toast when creating column with existing default column key (title)", async ({
-      dealsPage,
-      page,
-    }) => {
-      await dealsPage.goto();
-
-      const addColumnButton = page.getByRole("button", { name: /Add column/i });
-      await addColumnButton.click();
-
-      await page.getByPlaceholder("Field name").fill("Column New");
-      await page.getByPlaceholder(/Unique column key/i).fill("title");
-      await page.getByRole("button", { name: "Create field" }).click();
-
-      await expect(page.getByText("Column key already exists")).toBeVisible();
-    });
-
-    test("Shows error toast when creating column with existing column key", async ({
-      dealsPage,
-      page,
-    }) => {
-      await dealsPage.goto();
-
-      const addColumnButton = page.getByRole("button", { name: /Add column/i });
-      await addColumnButton.click();
-
-      await page.getByPlaceholder("Field name").fill("Column New");
-      await page.getByPlaceholder(/Unique column key/i).fill(columnKey);
-      await page.getByRole("button", { name: "Create field" }).click();
-
-      await expect(page.getByText("Column key already exists")).toBeVisible();
-    });
-
-    test("Shows field level validation when submitting empty form", async ({
-      dealsPage,
-      page,
-    }) => {
-      await dealsPage.goto();
-
-      const addColumnButton = page.getByRole("button", { name: /Add column/i });
-      await addColumnButton.click();
-
-      await page.getByRole("button", { name: "Create field" }).click();
-
-      await expect(page.getByText("Field name is required")).toBeVisible();
-      await expect(page.getByText("Column key is required")).toBeVisible();
-
-      const invalidKey = "column key";
-      await page.getByPlaceholder("Field name").fill(columnName);
-      await page.getByPlaceholder(/Unique column key/i).fill(invalidKey);
-      await page.getByRole("button", { name: "Create field" }).click();
-      
-      await expect(page.getByText("Column key must contain only lowercase letters, numbers, and underscores")).toBeVisible();
-    });
+    await expect(page.getByText("Column created successfully")).toBeVisible();
+    await expect(
+      page.getByRole("columnheader", { name: columnName })
+    ).toBeVisible();
   });
+
+  test("Shows error toast when creating column with existing default column key (title)", async ({
+    dealsPage,
+    page,
+  }) => {
+    await dealsPage.goto();
+
+    const addColumnButton = page.getByRole("button", { name: /Add column/i });
+    await addColumnButton.click();
+
+    await page.getByPlaceholder("Field name").fill("Column New");
+    await page.getByPlaceholder(/Unique column key/i).fill("title");
+    await page.getByRole("button", { name: "Create field" }).click();
+
+    await expect(page.getByText("Column key already exists")).toBeVisible();
+  });
+
+  test("Shows error toast when creating column with existing column key", async ({
+    dealsPage,
+    page,
+  }) => {
+    await dealsPage.goto();
+
+    const addColumnButton = page.getByRole("button", { name: /Add column/i });
+    await addColumnButton.click();
+
+    await page.getByPlaceholder("Field name").fill("Column New");
+    await page.getByPlaceholder(/Unique column key/i).fill(columnKey);
+    await page.getByRole("button", { name: "Create field" }).click();
+
+    await expect(page.getByText("Column key already exists")).toBeVisible();
+  });
+
+  test("Shows field level validation when submitting empty form", async ({
+    dealsPage,
+    page,
+  }) => {
+    await dealsPage.goto();
+
+    const addColumnButton = page.getByRole("button", { name: /Add column/i });
+    await addColumnButton.click();
+
+    await page.getByRole("button", { name: "Create field" }).click();
+
+    await expect(page.getByText("Field name is required")).toBeVisible();
+    await expect(page.getByText("Column key is required")).toBeVisible();
+
+    const invalidKey = "column key";
+    await page.getByPlaceholder("Field name").fill(columnName);
+    await page.getByPlaceholder(/Unique column key/i).fill(invalidKey);
+    await page.getByRole("button", { name: "Create field" }).click();
+    
+    await expect(page.getByText("Column key must contain only lowercase letters, numbers, and underscores")).toBeVisible();
+  });
+});
+
+test.describe("Row Creation Flow", () => {
+  test("Creates new deal row using add row button", async ({ dealsPage, page }) => {
+    await dealsPage.goto();
+    await dealsPage.getDealItems();
+
+    const initialRowCount = await page.getByRole("row").count();
+
+    const addRowButton = page.getByRole("button", { name: /Add row/i });
+    await addRowButton.click();
+
+    // validate success toast message
+    await expect(page.getByText(/New deal added/i)).toBeVisible();
+
+    // validate if new row is created
+    await expect(page.getByRole("row")).toHaveCount(initialRowCount + 1);
+    const updatedRowCount = initialRowCount + 1;
+
+    // Get the headers to find column indices
+    const headers = page.getByRole("columnheader");
+    const headerTexts = await headers.allInnerTexts();
+    
+    // Find expected column indices
+    const sNoIndex = headerTexts.findIndex(h => h.toLowerCase().includes("s.no"));
+    const dealTitleIndex = headerTexts.findIndex(h => h.toLowerCase().includes("title"));
+    const ownerIndex = headerTexts.findIndex(h => h.toLowerCase().includes("owner"));
+    const stageIndex = headerTexts.findIndex(h => h.toLowerCase().includes("stage"));
+    const probabilityIndex = headerTexts.findIndex(h => h.toLowerCase().includes("probability"));
+
+    // nth() is 0-indexed, and initialRowCount counts the header + existing data rows.
+    const newDealRow = page.getByRole("row").nth(initialRowCount);
+
+    // Validate S.No field to be equal to the {updatedRowCount - 1} (row count also includes the header)
+    await expect(newDealRow.locator("td").nth(sNoIndex)).toHaveText((updatedRowCount-1).toString());
+
+    // Validate deal title field
+    await expect(newDealRow.locator("td").nth(dealTitleIndex)).toHaveText("New Deal");
+
+    // Validate Owner field (current user name)
+    await expect(newDealRow.locator("td").nth(ownerIndex)).toContainText("E2E Test User");
+
+    // Validate probability field to have default value as 50
+    await expect(newDealRow.locator("td").nth(probabilityIndex)).toHaveText("50");
+
+    // Validate stage field to have default value as Prospecting
+    await expect(newDealRow.locator("td").nth(stageIndex)).toHaveText("Prospecting");
+  });
+});

@@ -1,3 +1,4 @@
+import dayjs from "dayjs";
 import { test, expect } from "./fixtures";
 
 /**
@@ -112,7 +113,7 @@ test.describe("Companies - Authenticated", () => {
   });
 });
 
-test.describe("Company Detail - Contact Management", () => {
+test.describe.serial("Company Detail - Contact Management", () => {
   test("displays company detail page with associated contacts section", async ({
     page,
     companyDetailPage,
@@ -380,5 +381,50 @@ test.describe.serial("Column Creation Flow", () => {
     await page.getByRole("button", { name: "Create field" }).click();
 
     await expect(page.getByText("Column key must contain only lowercase letters, numbers, and underscores")).toBeVisible();
+  });
+});
+
+test.describe("Row Creation Flow", () => {
+  test("Creates new company row using add row button", async ({ companiesPage, page }) => {
+    await companiesPage.goto();
+    await companiesPage.getCompanyItems();
+
+    const initialRowCount = await page.getByRole("row").count();
+
+    const addRowButton = page.getByRole("button", { name: /Add row/i });
+    await addRowButton.click();
+
+    // validate success toast message
+    await expect(page.getByText(/New company added/i)).toBeVisible();
+
+    // validate if new row is created
+    await expect(page.getByRole("row")).toHaveCount(initialRowCount + 1);
+    const updatedRowCount = initialRowCount + 1;
+
+    // Get the headers to find column indices
+    const headers = page.getByRole("columnheader");
+    const headerTexts = await headers.allInnerTexts();
+    
+    // Find expected column indices
+    const sNoIndex = headerTexts.findIndex(h => h.toLowerCase().includes("s.no"));
+    const companyNameIndex = headerTexts.findIndex(h => h.toLowerCase().includes("company"));
+    const ownerIndex = headerTexts.findIndex(h => h.toLowerCase().includes("owner"));
+    const createdIndex = headerTexts.findIndex(h => h.toLowerCase().includes("created"));
+
+    // nth() is 0-indexed, and initialRowCount counts the header + existing data rows.
+    const newCompanyRow = page.getByRole("row").nth(initialRowCount);
+
+    // Validate S.No field to be equal to the {updatedRowCount - 1} (row count also includes the header)
+    await expect(newCompanyRow.locator("td").nth(sNoIndex)).toHaveText((updatedRowCount-1).toString());
+
+    // Validate Company name field
+    await expect(newCompanyRow.locator("td").nth(companyNameIndex)).toHaveText("New Company");
+
+    // Validate Owner field (current user name)
+    await expect(newCompanyRow.locator("td").nth(ownerIndex)).toContainText("E2E Test User");
+
+    // Validate Created Date field (DD MMM YYYY)
+    const formattedDate = dayjs().format('DD MMM YYYY');
+    await expect(newCompanyRow.locator("td").nth(createdIndex)).toContainText(formattedDate);
   });
 });

@@ -13,6 +13,7 @@ import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { BaseTable, createColumnsFromMetadata, type BaseRow } from '../Table';
 import { useAddColumn } from '@/hooks/use-add-column';
+import { useAddRow } from '@/hooks/use-add-row';
 
 const CompaniesList = () => {
   const router = useRouter();
@@ -22,6 +23,8 @@ const CompaniesList = () => {
   );
 
   const { mutate: addColumn } = useAddColumn('companies');
+
+  const { addRow } = useAddRow('companies');
 
    const companies = companiesData?.data || [];
   const metadata = companiesData?.metadata || [];
@@ -36,8 +39,7 @@ const CompaniesList = () => {
   };
 
   const handleNewCompanyRow = () => {
-    // Todo: addRow();
-    router.push('/companies/new');
+    addRow();
   };
 
   const handleNewCompany = () => {
