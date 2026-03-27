@@ -77,7 +77,6 @@ export class GoogleMeetHelper extends BaseService {
   async handleHeyZuko(
     page: Page,
     query: string,
-    metaData: { projectId: string },
     meetingId: string,
     requestorName?: string
   ): Promise<string> {
@@ -88,7 +87,7 @@ export class GoogleMeetHelper extends BaseService {
 
     try {
       this.logger.log(
-        `[HeyZuko] Starting run for meetingId=${meetingId}, projectId=${metaData.projectId}, query="${query}"`
+        `[HeyZuko] Starting run for meetingId=${meetingId}, query="${query}"`
       );
 
       if (!this.thread) {
@@ -114,7 +113,6 @@ export class GoogleMeetHelper extends BaseService {
         },
         context: {
           userContext: {
-            projectId: metaData.projectId,
             meetingId,
             provider: "google-meet",
           },

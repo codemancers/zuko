@@ -71,9 +71,6 @@ export class MeetingService {
       meetingId: String(meeting.id),
       meetingUrl: meeting.url,
       callbackUrl: `${process.env.BACKEND_URL}/api/meetings/webhook`,
-      metadata: {
-        projectId: String(organizationId),
-      },
     };
 
     switch (meeting.platform) {

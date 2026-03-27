@@ -12,7 +12,6 @@ import { io, Socket } from "socket.io-client";
 async function bootstrap() {
   const meetingId = process.env.MEETING_ID;
   const meetingUrl = process.env.MEETING_URL;
-  const projectId = process.env.PROJECT_ID;
   const callbackUrl = process.env.CALLBACK_URL || null;
   const backendWsUrl = process.env.BACKEND_URL || "http://localhost:3001";
 
@@ -93,9 +92,6 @@ async function bootstrap() {
       meetingId: meetingId,
       meetingUrl,
       callbackUrl: callbackUrl ?? "",
-      metadata: {
-        projectId: projectId ?? "",
-      },
     });
 
     return;

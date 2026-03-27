@@ -24,7 +24,6 @@ export class FlyService extends BaseService {
           MEETING_ID: String(meetingSchema.meetingId),
           MEETING_URL: meetingSchema.meetingUrl,
           CALLBACK_URL: meetingSchema.callbackUrl,
-          PROJECT_ID: String(meetingSchema.metadata.projectId),
           NODE_ENV: "production",
           PLATFORM: "linux",
         },

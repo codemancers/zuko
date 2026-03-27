@@ -186,7 +186,7 @@ export class GoogleMeetService extends BaseService {
   }
 
   async joinMeeting(meetingSchema: MeetingSchema, attempt = 1): Promise<void> {
-    const { meetingId, meetingUrl, callbackUrl, metadata } = meetingSchema;
+    const { meetingId, meetingUrl, callbackUrl } = meetingSchema;
 
     if (attempt > this.maxAttempt) {
       this.logger.error("Failed to join the call after max attempts");
@@ -206,7 +206,6 @@ export class GoogleMeetService extends BaseService {
       meetingId,
       meetingUrl,
       callbackUrl,
-      metadata,
     });
 
     this.recordingFilePath = `${meetingId}_recording.webm`;
@@ -640,7 +639,6 @@ export class GoogleMeetService extends BaseService {
         await this.googleMeetHelper.handleHeyZuko(
           this.page,
           data.text,
-          this.meetingDetails.metadata,
           String(this.meetingDetails.meetingId)
         );
       }
@@ -683,7 +681,6 @@ export class GoogleMeetService extends BaseService {
         const zukoReply = await this.googleMeetHelper.handleHeyZuko(
           this.page,
           data.text,
-          this.meetingDetails.metadata,
           String(this.meetingDetails.meetingId),
           requestorName
         );
