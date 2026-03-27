@@ -232,3 +232,57 @@ test.describe("Row Creation Flow", () => {
     await expect(newContactRow.locator("td").nth(createdIndex)).toContainText(formattedDate);
   });
 });
+
+test.describe("Cell Editing Flow", () => {
+  test("Edits contact name cell value (entity type)", async ({ contactsPage, page }) => {
+    await contactsPage.goto();
+    await contactsPage.getContactItems();
+
+    const firstRow = page.getByRole("row").nth(1);
+    const headers = page.getByRole("columnheader");
+    const headerTexts = await headers.allInnerTexts();
+    const nameIndex = headerTexts.findIndex(h => h.toLowerCase().includes("name"));
+
+    const nameCell = firstRow.locator("td").nth(nameIndex);
+    const newValue = "Updated Contact Name";
+
+    await nameCell.click();
+    const input = nameCell.locator("input");
+    await expect(input).toBeVisible();
+    await input.fill(newValue);
+    await input.press("Enter");
+
+    await expect(page.getByText("Cell updated successfully")).toBeVisible();
+    await expect(nameCell).toHaveText(newValue);
+
+    await page.reload();
+    await contactsPage.getContactItems();
+    await expect(page.getByText(newValue)).toBeVisible();
+  });
+
+  test("Edits contact email cell value (text type)", async ({ contactsPage, page }) => {
+    await contactsPage.goto();
+    await contactsPage.getContactItems();
+
+    const firstRow = page.getByRole("row").nth(1);
+    const headers = page.getByRole("columnheader");
+    const headerTexts = await headers.allInnerTexts();
+    const emailIndex = headerTexts.findIndex(h => h.toLowerCase().includes("email"));
+
+    const emailCell = firstRow.locator("td").nth(emailIndex);
+    const newValue = `updated-${Date.now()}@example.com`;
+
+    await emailCell.click();
+    const input = emailCell.locator("input");
+    await expect(input).toBeVisible();
+    await input.fill(newValue);
+    await input.press("Enter");
+
+    await expect(page.getByText("Cell updated successfully")).toBeVisible();
+    await expect(emailCell).toHaveText(newValue);
+
+    await page.reload();
+    await contactsPage.getContactItems();
+    await expect(page.getByText(newValue)).toBeVisible();
+  });
+});
