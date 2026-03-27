@@ -89,6 +89,7 @@ const DealsList = () => {
         onAddRow={handleNewDealRow}
         showAddColumn
         onAddColumn={handleNewColumn}
+        disableRowClick={true}
         emptyStateConfig={{
           icon: BriefcaseIcon,
           title: 'No Deals',

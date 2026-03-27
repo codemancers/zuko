@@ -10,6 +10,11 @@ import {
 } from '@heroicons/react/24/outline';
 import { type ColumnMetadata, type BaseRow } from './types';
 
+type RowWithEntityFields = BaseRow & {
+  name?: string;
+  companyName?: string;
+  title?: string;
+};
 
 export interface FieldProps<T extends BaseRow = BaseRow> {
   value: unknown; 
@@ -63,29 +68,30 @@ export function TextField({ value, display, metadata, row }: FieldProps<BaseRow>
   );
 }
 
-export function EntityField({ value, display, metadata, row }: FieldProps<BaseRow>) {
+export function EntityField<T extends BaseRow>({ value, display, metadata, row }: FieldProps<T>) {
+  const rowWithEntityField = row as T & RowWithEntityFields;
   const entityType = metadata.config?.entityType;
   
   let Icon = BuildingOfficeIcon;
   let linkTarget: string | undefined = '#';
-  let displayText = display ?? value ?? row.name;
+  let displayText = display ?? value ?? rowWithEntityField.name;
 
   if(entityType === 'company') {
     Icon = BuildingOfficeIcon;
     linkTarget = `/companies/${row.id}`;
-    displayText = display ?? value ?? row.companyName;
+    displayText = display ?? value ?? rowWithEntityField.companyName;
   } else if (entityType === 'contact') {
     Icon = UserIcon;
     linkTarget = `/contacts/${row.id}`;
-    displayText = display ?? value ?? row.name;
+    displayText = display ?? value ?? rowWithEntityField.name;
   } else if (entityType === 'deal') {
     Icon = BriefcaseIcon;
     linkTarget = `/deals/${row.id}`;
-    displayText = display ?? value ?? row.title;
+    displayText = display ?? value ?? rowWithEntityField.title;
   } else if (entityType === 'team') {
     Icon = UserGroupIcon;
     linkTarget = undefined; // Team names are simple text
-    displayText = display ?? value;
+    displayText = display ?? (value as string);
   } else if (entityType === 'member') {
     Icon = UserIcon; // Fallback icon
     linkTarget = undefined; // Member names are simple text

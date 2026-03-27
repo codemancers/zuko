@@ -13,14 +13,14 @@ export type { ColumnType, ColumnMetadata, TableViewResponse, CellValue } from '@
 
 export interface BaseRow {
   id: string | number;
-  [key: string]: unknown;
 }
 
-export interface BaseTableProps<TData> {
+export interface BaseTableProps<TData extends BaseRow> {
   columns: ColumnDef<TData, any>[];
   data: TData[];
   loading?: boolean;
   className?: string;
+  disableRowClick?: boolean;
 
   // Pagination
   pagination?: PaginationState;
@@ -58,6 +58,7 @@ export interface BaseTableProps<TData> {
   onAddRow?: () => void;
   showAddColumn?: boolean;
   onAddColumn?: (name: string, key: string, type: string) => void;
+  onCellUpdate?: (rowId: string | number, columnId: string, value: any) => void;
   showEmptyState?: boolean;
   emptyStateConfig?: {
     icon: React.ElementType;

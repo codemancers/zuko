@@ -8,9 +8,9 @@ import {
   getFacetedUniqueValues,
   useReactTable,
 } from '@tanstack/react-table';
-import { BaseTableProps } from '@/components/Table/types';
+import { BaseTableProps, BaseRow } from '@/components/Table/types';
 
-export function useBaseTable<TData>({
+export function useBaseTable<TData extends BaseRow>({
   columns,
   data,
   pagination,

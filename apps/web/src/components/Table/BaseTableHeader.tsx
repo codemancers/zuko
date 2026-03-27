@@ -1,14 +1,15 @@
 import { HeaderGroup, flexRender } from '@tanstack/react-table';
 import { TableHead, TableHeader, TableRow, Button } from '@zuko/ui-kit';
 import { PlusIcon } from '@heroicons/react/24/outline';
+import { BaseRow } from './types';
 
-interface BaseTableHeaderProps<TData> {
+interface BaseTableHeaderProps<TData extends BaseRow> {
   headerGroups: HeaderGroup<TData>[];
   showAddColumn?: boolean;
   onAddColumn?: () => void;
 }
 
-export function BaseTableHeader<TData>({ headerGroups, showAddColumn, onAddColumn }: BaseTableHeaderProps<TData>) {
+export function BaseTableHeader<TData extends BaseRow>({ headerGroups, showAddColumn, onAddColumn }: BaseTableHeaderProps<TData>) {
   return (
     <TableHead className="bg-zinc-50 dark:bg-zinc-900/50">
       {headerGroups.map((headerGroup) => (

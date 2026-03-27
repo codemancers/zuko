@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useBaseTable } from '@/hooks/use-base-table';
-import { BaseTableProps } from './types';
+import { BaseTableProps, BaseRow } from './types';
 import { BaseTableHeader } from './BaseTableHeader';
 import { BaseTableBody } from './BaseTableBody';
 import { Table, Button } from '@zuko/ui-kit';
@@ -14,7 +14,7 @@ import React from 'react';
 const ChevronLeftIcon = '/icons/chevron-left.svg';
 const ChevronRightIcon = '/icons/chevron-right.svg';
 
-export function BaseTable<TData>(props: BaseTableProps<TData>) {
+export function BaseTable<TData extends BaseRow>(props: BaseTableProps<TData>) {
   const [internalPagination, setInternalPagination] = React.useState<PaginationState>({
     pageIndex: 0,
     pageSize: 10,
@@ -36,11 +36,13 @@ export function BaseTable<TData>(props: BaseTableProps<TData>) {
   const {
     loading,
     className,
+    disableRowClick,
     onRowClick,
     showAddRow,
     onAddRow,
     showAddColumn,
     onAddColumn,
+    onCellUpdate,
     showEmptyState,
     emptyStateConfig
   } = props;
@@ -92,15 +94,17 @@ export function BaseTable<TData>(props: BaseTableProps<TData>) {
     <div className={`mt-8 ${className ?? ''}`}>
       <div className="flow-root overflow-hidden border border-zinc-200 dark:border-zinc-800 rounded-lg shadow-sm bg-white dark:bg-zinc-950">
         <Table grid dense className="[--gutter:--spacing(6)] lg:[--gutter:--spacing(10)] text-sm">
-          <BaseTableHeader
+          <BaseTableHeader<TData>
             headerGroups={table.getHeaderGroups()}
             showAddColumn={showAddColumn}
             onAddColumn={openAddColumnDialog}
           />
-          <BaseTableBody
+          <BaseTableBody<TData>
             rowModel={table.getRowModel()}
+            disableRowClick={disableRowClick}
             onRowClick={onRowClick}
             showAddColumn={showAddColumn}
+            onCellUpdate={onCellUpdate}
           />
         </Table>
 

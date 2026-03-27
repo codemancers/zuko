@@ -80,9 +80,11 @@ test.describe("Deals - Authenticated", () => {
 
     const deals = await dealsPage.getDealItems();
     if (deals.length > 0) {
-      await deals[0].locator("td:first-child").click();
+      // Find the specific deal link within the row to trigger navigation
+      const dealLink = deals[0].locator('a[href^="/deals/"]');
+      await dealLink.click();
 
-      await page.waitForURL("**/deals/**");
+      await page.waitForURL("**/deals/**", { timeout: 10000 });
       expect(page.url()).toMatch(/\/deals\/\d+$/);
     } else {
       test.skip();

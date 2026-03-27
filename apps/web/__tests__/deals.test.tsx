@@ -16,6 +16,21 @@ vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: mockPush }),
 }));
 
+vi.mock('next/link', () => ({
+  default: ({ children, href, onClick }: any) => (
+    <a
+      href={href}
+      onClick={(e) => {
+        e.preventDefault();
+        onClick?.(e);
+        mockPush(href);
+      }}
+    >
+      {children}
+    </a>
+  ),
+}));
+
 const mockCreateDeal = vi.fn();
 const mockUpdateDeal = vi.fn();
 const mockGetDeals = vi.fn();
@@ -555,7 +570,7 @@ describe('DealsList', () => {
     expect(screen.getByText('Alice')).toBeInTheDocument();
   });
 
-  it('navigates to deal detail when row is clicked', async () => {
+  it('navigates to deal detail when deal title link is clicked', async () => {
     mockGetTableViewDeals.mockResolvedValue({
       data: [mockDeal],
       metadata: mockMetadata,
@@ -566,8 +581,8 @@ describe('DealsList', () => {
     await waitFor(() => {
       expect(screen.getByText('Enterprise Deal')).toBeInTheDocument();
     });
-    // Click a non-link cell to bubble up to the row's onClick
-    await user.click(screen.getByText('Alice'));
+    // Click a deal title link cell to navigate to deal details page
+    await user.click(screen.getByText('Enterprise Deal'));
     expect(mockPush).toHaveBeenCalledWith('/deals/1');
   });
 

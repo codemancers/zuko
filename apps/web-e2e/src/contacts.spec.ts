@@ -61,7 +61,11 @@ test.describe("Contacts - Authenticated", () => {
       .getByRole("row")
       .filter({ hasText: "TEST E2E CONTACT" })
       .first();
-    await testContactRow.locator("td:first-child").click();
+    
+    // Find the specific contact link within the row to trigger navigation
+    const contactLink = testContactRow.locator('a[href^="/contacts/"]');
+    await contactLink.click();
+
     await page.waitForURL("**/contacts/**", { timeout: 10000 });
 
     await expect(

@@ -89,6 +89,7 @@ const CompaniesList = () => {
         onAddRow={handleNewCompanyRow}
         showAddColumn
         onAddColumn={handleNewColumn}
+        disableRowClick={true}
         emptyStateConfig={{
           icon: BuildingOfficeIcon,
           title: 'No Companies',
