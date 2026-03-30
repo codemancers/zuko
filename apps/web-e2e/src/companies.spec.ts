@@ -431,3 +431,85 @@ test.describe("Row Creation Flow", () => {
     await expect(newCompanyRow.locator("td").nth(createdIndex)).toContainText(formattedDate);
   });
 });
+
+test.describe("Cell Editing Flow", () => {
+  test("Edits company name cell value (entity type)", async ({ companiesPage, page }) => {
+    await companiesPage.goto();
+    await companiesPage.getCompanyItems();
+
+    const firstRow = page.getByRole("row").nth(1);
+    const headers = page.getByRole("columnheader");
+    const headerTexts = await headers.allInnerTexts();
+    const companyNameIndex = headerTexts.findIndex(h => h.toLowerCase().includes("company"));
+
+    const companyNameCell = firstRow.locator("td").nth(companyNameIndex);
+    const newValue = "Updated Company Name";
+
+    await companyNameCell.evaluate(node => (node as any).click());
+    const input = companyNameCell.locator("input");
+    await expect(input).toBeVisible();
+    await input.fill(newValue);
+    await input.press("Enter");
+
+    await expect(page.getByText("Cell updated successfully")).toBeVisible();
+    await expect(companyNameCell).toHaveText(newValue);
+
+    await page.reload();
+    await companiesPage.getCompanyItems();
+    await expect(page.getByText(newValue, { exact: true })).toBeVisible();
+  });
+
+  test("Edits company website cell value (text type)", async ({ companiesPage, page }) => {
+    await companiesPage.goto();
+    await companiesPage.getCompanyItems();
+
+    const firstRow = page.getByRole("row").nth(1);
+    const headers = page.getByRole("columnheader");
+    const headerTexts = await headers.allInnerTexts();
+    const websiteIndex = headerTexts.findIndex(h => h.toLowerCase().includes("website"));
+
+    const websiteCell = firstRow.locator("td").nth(websiteIndex);
+    const newValue = "https://updated-example.com";
+
+    await websiteCell.evaluate(node => (node as any).click());
+    const input = websiteCell.locator("input");
+    await expect(input).toBeVisible();
+    await input.fill(newValue);
+    await input.press("Enter");
+
+    await expect(page.getByText("Cell updated successfully")).toBeVisible();
+    await expect(websiteCell).toHaveText(newValue);
+
+    await page.reload();
+    await companiesPage.getCompanyItems();
+    await expect(page.getByText(newValue)).toBeVisible();
+  });
+
+  test("Quits editing mode when Escape key is pressed", async ({ companiesPage, page }) => {
+    await companiesPage.goto();
+    await companiesPage.getCompanyItems();
+
+    const firstRow = page.getByRole("row").nth(1);
+    const headers = page.getByRole("columnheader");
+    const headerTexts = await headers.allInnerTexts();
+    const linkedinIndex = headerTexts.findIndex(h => h.toLowerCase().includes("linkedin"));
+    expect(linkedinIndex).toBeGreaterThan(-1);
+
+    const linkedinCell = firstRow.locator("td").nth(linkedinIndex);
+    const linkedinContent = await linkedinCell.textContent();
+    expect(typeof linkedinContent).toBe("string");
+    const originalValue = (linkedinContent as string).trim();
+    const newValue = "https://linkedin.com/company/reverted";
+
+    await linkedinCell.evaluate(node => (node as any).click());
+    const input = linkedinCell.locator("input");
+    await expect(input).toBeVisible();
+    await input.fill(newValue);
+    await input.press("Escape");
+
+    // Input should be hidden
+    await expect(input).toBeHidden();
+    // Value should be the original value
+    await expect(linkedinCell).toHaveText(originalValue);
+  });
+});

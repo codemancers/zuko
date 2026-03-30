@@ -26,6 +26,7 @@ export function createColumnsFromMetadata<TData extends BaseRow>(
     id: col.id,
     accessorKey: col.config?.accessorKey || col.id,
     header: col.header,
+    meta: { metadata: col },
     cell: (info) => {
       const { row, getValue } = info;
       const data = getValue();

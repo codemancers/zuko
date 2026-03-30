@@ -14,6 +14,7 @@ import { useRouter } from 'next/navigation';
 import { BaseTable, createColumnsFromMetadata, type BaseRow } from '../Table';
 import { useAddColumn } from '@/hooks/use-add-column';
 import { useAddRow } from '@/hooks/use-add-row';
+import { useCellUpdate } from '@/hooks/use-cell-update';
 
 const ContactsList = () => {
   const router = useRouter();
@@ -25,6 +26,7 @@ const ContactsList = () => {
   const { mutate: addColumn } = useAddColumn('contacts');
 
   const { addRow } = useAddRow('contacts');
+  const { updateCell } = useCellUpdate('contacts');
 
   const contacts = contactsData?.data || [];
   const metadata = contactsData?.metadata || [];
@@ -83,6 +85,7 @@ const ContactsList = () => {
         data={contacts}
         loading={isLoading}
         onRowClick={(contact) => handleRowClick(Number(contact.id))}
+        onCellUpdate={(rowId, columnId, value) => updateCell({ rowId, columnId, value })}
         totalCount={contactsData?.pagination?.total}
         entityName="contacts"
         showAddRow

@@ -7,6 +7,7 @@ import {
   Post,
   Query,
   Req,
+  ParseIntPipe,
   UseGuards,
 } from '@nestjs/common';
 import { AuthGuard } from '@thallesp/nestjs-better-auth';
@@ -79,9 +80,12 @@ export class TableController {
   @Patch(':entity/:rowId/cell')
   async updateCell(
     @Param('entity') entity: string,
-    @Param('rowId') rowId: number,
+    @Param('rowId', ParseIntPipe) rowId: number,
+    @OrgId() organizationId: number,
+    @Req() req: RequestWithUser,
     @Body() dto: UpdateCellDto,
   ) {
-    return this.tableService.updateCell(entity, rowId, dto);
+    const actorId = parseInt(req.user.id, 10);
+    return this.tableService.updateCell(entity, rowId, organizationId, actorId, dto);
   }
 }

@@ -15,7 +15,7 @@ import {
 import { TableRowBuilder } from './row-builder/table-row.builder';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { Contact, Company, Organization, TableColumn, User, Deal } from '@prisma/client';
-import { CreateColumnDto } from './table.controller';
+import { CreateColumnDto, UpdateCellDto } from './table.controller';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { CompanyListQueryDto } from '../companies.controller';
 import { ContactListQueryDto } from '../contacts.controller';
@@ -706,6 +706,184 @@ describe('TableService', () => {
       });
 
       await service.getContactsTable(testOrg.id, {});
+    });
+  });
+
+  describe('updateCell', () => {
+    it('updates a default column for a contact', async () => {
+      const contact = await prisma.contact.create({
+        data: {
+          organizationId: testOrg.id,
+          name: 'Original Name',
+          email: `test-${Date.now()}@test.com`,
+          createdAt: new Date(),
+        },
+      });
+
+      const dto: UpdateCellDto = {
+        columnId: 'name',
+        value: 'Updated Name',
+      };
+
+      await service.updateCell('contacts', contact.id, testOrg.id, testUser.id, dto);
+
+      const dbContact = await prisma.contact.findUnique({ where: { id: contact.id } });
+      expect(dbContact?.name).toBe('Updated Name');
+    });
+
+    it('updates a custom column for a contact', async () => {
+      const columnKey = `source_${Date.now()}`;
+      await service.createColumn('contacts', testOrg.id, testUser.id, {
+        label: 'Source',
+        columnKey,
+        fieldType: 'text' as ColumnType,
+      });
+
+      const contact = await prisma.contact.create({
+        data: {
+          organizationId: testOrg.id,
+          name: 'Contact With Custom Field',
+          email: `test-${Date.now()}@test.com`,
+          fields: { [columnKey]: 'Old Source' },
+          createdAt: new Date(),
+        },
+      });
+
+      const dto: UpdateCellDto = {
+        columnId: columnKey,
+        value: 'New Source',
+      };
+
+      await service.updateCell('contacts', contact.id, testOrg.id, testUser.id, dto);
+
+      const dbContact = await prisma.contact.findUnique({ where: { id: contact.id } });
+      expect((dbContact?.fields as Record<string, unknown>)[columnKey]).toBe('New Source');
+    });
+
+    it('updates a default column for a company', async () => {
+      const company = await prisma.company.create({
+        data: {
+          organizationId: testOrg.id,
+          companyName: 'Original Company',
+          createdAt: new Date(),
+        },
+      });
+
+      const dto: UpdateCellDto = {
+        columnId: 'companyName',
+        value: 'Updated Company',
+      };
+
+      await service.updateCell('companies', company.id, testOrg.id, testUser.id, dto);
+
+      const dbCompany = await prisma.company.findUnique({ where: { id: company.id } });
+      expect(dbCompany?.companyName).toBe('Updated Company');
+    });
+
+    it('updates a custom column for a company', async () => {
+      const columnKey = `industry_${Date.now()}`;
+      await service.createColumn('companies', testOrg.id, testUser.id, {
+        label: 'Industry',
+        columnKey,
+        fieldType: 'text' as ColumnType,
+      });
+
+      const company = await prisma.company.create({
+        data: {
+          organizationId: testOrg.id,
+          companyName: 'Company With Custom Field',
+          fields: { [columnKey]: 'Old Industry' },
+          createdAt: new Date(),
+        },
+      });
+
+      const dto: UpdateCellDto = {
+        columnId: columnKey,
+        value: 'New Industry',
+      };
+
+      await service.updateCell('companies', company.id, testOrg.id, testUser.id, dto);
+
+      const dbCompany = await prisma.company.findUnique({ where: { id: company.id } });
+      expect((dbCompany?.fields as Record<string, unknown>)[columnKey]).toBe('New Industry');
+    });
+
+    it('updates a default column for a deal', async () => {
+      const deal = await prisma.deal.create({
+        data: {
+          organizationId: testOrg.id,
+          title: 'Original Deal',
+          value: 100,
+          stage: 'prospecting',
+          createdAt: new Date(),
+        },
+      });
+
+      const dto: UpdateCellDto = {
+        columnId: 'title',
+        value: 'Updated Deal',
+      };
+
+      await service.updateCell('deals', deal.id, testOrg.id, testUser.id, dto);
+
+      const dbDeal = await prisma.deal.findUnique({ where: { id: deal.id } });
+      expect(dbDeal?.title).toBe('Updated Deal');
+    });
+
+    it('updates a custom column for a deal', async () => {
+      const columnKey = `score_${Date.now()}`;
+      await service.createColumn('deals', testOrg.id, testUser.id, {
+        label: 'Score',
+        columnKey,
+        fieldType: 'number' as ColumnType,
+      });
+
+      const deal = await prisma.deal.create({
+        data: {
+          organizationId: testOrg.id,
+          title: 'Deal With Custom Field',
+          fields: { [columnKey]: 10 },
+          stage: 'prospecting',
+          createdAt: new Date(),
+        },
+      });
+
+      const dto: UpdateCellDto = {
+        columnId: columnKey,
+        value: 20,
+      };
+
+      await service.updateCell('deals', deal.id, testOrg.id, testUser.id, dto);
+
+      const dbDeal = await prisma.deal.findUnique({ where: { id: deal.id } });
+      expect((dbDeal?.fields as Record<string, unknown>)[columnKey]).toBe(20);
+    });
+
+    it('throws error when updating a custom column that does not exist', async () => {
+      const contact = await prisma.contact.create({
+        data: {
+          organizationId: testOrg.id,
+          name: 'Test Contact',
+          email: `test-${Date.now()}@test.com`,
+          createdAt: new Date(),
+        },
+      });
+
+      await expect(
+        service.updateCell('contacts', contact.id, testOrg.id, testUser.id, {
+          columnId: 'non_existent_column',
+          value: 'value',
+        }),
+      ).rejects.toThrow('Column not found');
+    });
+
+    it('throws error for unsupported entity', async () => {
+      await expect(
+        service.updateCell('unsupported', 1, testOrg.id, testUser.id, {
+          columnId: 'any',
+          value: 'any',
+        }),
+      ).rejects.toThrow('Entity unsupported not supported for cell update');
     });
   });
 });

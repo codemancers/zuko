@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import {
   CompaniesService,
   ContactsService,
@@ -23,6 +23,8 @@ import { TableColumn } from '@prisma/client';
 
 @Injectable()
 export class TableService {
+  private readonly logger = new Logger(TableService.name);
+
   constructor(
     private readonly companiesService: CompaniesService,
     private readonly contactsService: ContactsService,
@@ -217,8 +219,130 @@ export class TableService {
     }
   }
 
-  async updateCell(entity: string, rowId: number, dto: UpdateCellDto) {
-    // cell update logic
+  async updateCell(
+    entity: string,
+    rowId: number,
+    organizationId: number,
+    actorId: number,
+    dto: UpdateCellDto,
+  ) {
+    const { columnId, value } = dto;
+
+    try {
+      let result: unknown;
+      
+      switch (entity) {
+        case 'contacts': {
+          const isDefaultColumn = CONTACT_TABLE_METADATA.find((m) => m.id === columnId);
+          if (isDefaultColumn) {
+            result = await this.contactsService.update(
+              rowId,
+              organizationId,
+              { [columnId]: value },
+              actorId,
+            );
+          } else {
+            const contact = await this.contactsService.findById(rowId, organizationId);
+            const columnMetadata = await this.tableColumnRepository.findByKey(
+              organizationId,
+              'contacts',
+              columnId
+            );
+            if (!columnMetadata) {
+              throw new BadRequestException('Column not found');
+            }
+            // Todo: Value type casting based on columnMetadata.fieldType and columnMetadata.config
+            const fields = (contact.fields as Record<string, unknown>) || {};
+            result = await this.contactsService.update(
+              rowId,
+              organizationId,
+              {
+                fields: { ...fields, [columnId]: value },
+              },
+              actorId,
+            );
+          }
+          break;
+        }
+
+        case 'companies': {
+          const isDefaultColumn = COMPANY_TABLE_METADATA.find((m) => m.id === columnId);
+          if (isDefaultColumn) {
+            result = await this.companiesService.update(
+              rowId,
+              organizationId,
+              { [columnId]: value },
+              actorId,
+            );
+          } else {
+            const company = await this.companiesService.findById(rowId, organizationId);
+            const columnMetadata = await this.tableColumnRepository.findByKey(
+              organizationId,
+              'companies',
+              columnId
+            );
+            if (!columnMetadata) {
+              throw new BadRequestException('Column not found');
+            }
+            // Todo: Value type casting based on columnMetadata.fieldType and columnMetadata.config
+            const fields = (company.fields as Record<string, unknown>) || {};
+            result = await this.companiesService.update(
+              rowId,
+              organizationId,
+              {
+                fields: { ...fields, [columnId]: value },
+              },
+              actorId,
+            );
+          }
+          break;
+        }
+
+        case 'deals': {
+          const isDefaultColumn = DEAL_TABLE_METADATA.find((m) => m.id === columnId);
+          if (isDefaultColumn) {
+            result = await this.dealsService.update(
+              rowId,
+              organizationId,
+              { [columnId]: value },
+              actorId,
+            );
+          } else {
+            const deal = await this.dealsService.findById(rowId, organizationId);
+            const columnMetadata = await this.tableColumnRepository.findByKey(
+              organizationId,
+              'deals',
+              columnId
+            );
+            if (!columnMetadata) {
+              throw new BadRequestException('Column not found');
+            }
+            // Todo: Value type casting based on columnMetadata.fieldType and columnMetadata.config
+            const fields = (deal.fields as Record<string, unknown>) || {};
+            result = await this.dealsService.update(
+              rowId,
+              organizationId,
+              {
+                fields: { ...fields, [columnId]: value },
+              },
+              actorId,
+            );
+          }
+          break;
+        }
+
+        default:
+          throw new BadRequestException(`Entity ${entity} not supported for cell update`);
+      }
+
+      this.logger.log(`[TableService] Update successful for ${entity} ID: ${rowId}`);
+      return result;
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorStack = error instanceof Error ? error.stack : undefined;
+      this.logger.error(`[TableService] Failed to update cell: ${errorMessage}`, errorStack);
+      throw error;
+    }
   }
 
   /**
