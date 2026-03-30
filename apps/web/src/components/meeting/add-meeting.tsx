@@ -21,6 +21,9 @@ import {
   Switch,
 } from '@zuko/ui-kit';
 import z from 'zod';
+import { useMutation } from '@tanstack/react-query';
+import { meetingsApi } from '@/lib/api/meetings';
+import { toast } from 'sonner';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -30,49 +33,35 @@ export const MeetingFormSchema = z.object({
     .string()
     .min(1, 'Meeting URL is required')
     .refine((url) => {
-      // Check if URL starts with https://
       return url.startsWith('https://');
     }, 'Please enter a valid URL'),
   name: z.string().min(1, 'Meeting name is required'),
   description: z.string().optional(),
   scheduledAt: z.string().optional(),
   timezone: z.string().optional(),
-  projectId: z
-    .number({
-      error: 'Project is required',
-    })
-    .min(1, 'Project is required'),
-});
-
-export const meetingPostDataSchema = z.object({
-  name: z.string(),
-  description: z.string(),
-  url: z.string(),
-  scheduledAt: z.string().optional(),
-  timezone: z.string().optional(),
-  projectId: z.number(),
 });
 
 export type MeetingFormSchemaType = z.infer<typeof MeetingFormSchema>;
-export type MeetingPostDataSchemaType = z.infer<typeof meetingPostDataSchema>;
 
 const AddMeeting = () => {
-  // Dummy Data
-  const projects = [
-    { id: 1, name: 'Zuko AI' },
-    { id: 2, name: 'Growth' },
-  ];
-
   const timezones = [
     { tzCode: 'Asia/Kolkata' },
     { tzCode: 'UTC' },
     { tzCode: 'America/New_York' },
   ];
 
-  const isMutating = false;
   const defaultTimezone = 'Asia/Kolkata';
-  const { replace } = useRouter();
+  const router = useRouter();
   const [isJoinNow, setIsJoinNow] = useState(false);
+
+  const createMutation = useMutation({
+    mutationFn: meetingsApi.createMeeting,
+    onSuccess: (response) => {
+      toast.success('Meeting created successfully');
+      router.push(`/meeting/${response.meeting.id}`);
+    },
+    onError: () => toast.error('Failed to create meeting'),
+  });
 
   const {
     handleSubmit,
@@ -86,27 +75,26 @@ const AddMeeting = () => {
     },
   });
 
-  const onMeetingFormSubmit: SubmitHandler<MeetingFormSchemaType> = async (
+  const onMeetingFormSubmit: SubmitHandler<MeetingFormSchemaType> = (
     formData,
   ) => {
-    const meetingPostData: MeetingPostDataSchemaType = {
+    const scheduledDate =
+      !isJoinNow && formData.scheduledAt
+        ? dayjs(formData.scheduledAt).tz(formData.timezone).utc().toDate().toISOString()
+        : undefined;
+
+    createMutation.mutate({
       url: formData.url,
       name: formData.name,
-      description: formData.description || '',
-      projectId: formData.projectId,
-    };
-
-    if (!isJoinNow) {
-      meetingPostData.scheduledAt = dayjs(formData.scheduledAt)
-        .tz(formData.timezone)
-        .utc()
-        .format();
-      meetingPostData.timezone = formData.timezone;
-    }
+      description: formData.description,
+      ...(scheduledDate
+        ? { scheduledAt: scheduledDate, timezone: formData.timezone }
+        : {}),
+    });
   };
 
   const handleCancel = () => {
-    replace('/meetings');
+    router.replace('/meetings');
   };
 
   return (
@@ -120,36 +108,6 @@ const AddMeeting = () => {
             className="flex flex-col gap-6 rounded-lg lg:p-0"
             onSubmit={handleSubmit(onMeetingFormSubmit)}
           >
-            <section className="flex w-full flex-col items-start justify-between gap-6 lg:flex-row lg:gap-14">
-              <section
-                className="flex w-full flex-col gap-2"
-                data-testid="project-dropdown"
-              >
-                <Field data-error-id="projectId">
-                  <Label>Project</Label>
-                  <Combobox
-                    name="projectId"
-                    options={projects || []}
-                    displayValue={(project) => project?.name}
-                    onChange={(project) => {
-                      setValue('projectId', Number(project?.id) || 1);
-                    }}
-                  >
-                    {(project) => (
-                      <ComboboxOption value={project}>
-                        <ComboboxLabel>{project.name}</ComboboxLabel>
-                      </ComboboxOption>
-                    )}
-                  </Combobox>
-                  {errors.projectId && (
-                    <small className="text-red-400">
-                      {errors.projectId.message}
-                    </small>
-                  )}
-                </Field>
-              </section>
-            </section>
-
             <section className="flex w-full flex-col items-start justify-between gap-6 lg:flex-row lg:gap-14">
               <section className="flex w-full flex-col gap-2">
                 <Field data-error-id="name">
@@ -255,14 +213,14 @@ const AddMeeting = () => {
             )}
 
             <section className="flex items-center justify-end gap-6">
-              <Button type="submit" disabled={isMutating}>
-                Submit
+              <Button type="submit" disabled={createMutation.isPending}>
+                {createMutation.isPending ? 'Submitting...' : 'Submit'}
               </Button>
               <Button
                 type="button"
                 onClick={handleCancel}
                 color="white"
-                disabled={isMutating}
+                disabled={createMutation.isPending}
               >
                 Cancel
               </Button>

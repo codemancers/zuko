@@ -27,6 +27,9 @@ import {
   Divider,
 } from '@zuko/ui-kit';
 import { toast } from 'sonner';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { getMeetings } from '@/server/query-options';
+import { meetingsApi } from '@/lib/api/meetings';
 
 const ReusableDialog = ({
   showDialog,
@@ -85,48 +88,35 @@ const MEETING_STATUS_COLOR_MAP: Record<string, BadgeColor> = {
 
 export const MeetingList = () => {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
   const [sort, setSort] = useState('date');
   const [isOpenDeleteDialog, setIsOpenDeleteDialog] = useState(false);
-  const [meetingToDelete, setMeetingToDelete] = useState<string | null>(null);
+  const [meetingToDelete, setMeetingToDelete] = useState<number | null>(null);
 
-  // Dummy Data
-  const meetings = [
-    {
-      id: '1',
-      name: 'Weekly Product Sync',
-      platform: 'ZOOM',
-      status: 'COMPLETED',
-      scheduledAt: dayjs().toISOString(),
-      timezone: 'UTC',
-      createdAt: dayjs().subtract(1, 'day').toISOString(),
-    },
-    {
-      id: '2',
-      name: 'Q1 Roadmap Planning',
-      platform: 'GOOGLE_MEET',
-      status: 'IN_PROGRESS',
-      scheduledAt: dayjs().add(2, 'hours').toISOString(),
-      timezone: 'UTC',
-      createdAt: dayjs().subtract(2, 'days').toISOString(),
-    },
-    {
-      id: '3',
-      name: 'Frontend Performance Review',
-      platform: 'MICROSOFT_TEAMS',
-      status: 'PROCESSING',
-      scheduledAt: dayjs().subtract(1, 'hour').toISOString(),
-      timezone: 'UTC',
-      createdAt: dayjs().subtract(3, 'days').toISOString(),
-    },
-  ];
+  const { data: meetings = [], isLoading } = useQuery(getMeetings);
 
-  const deleteMeetingMutation = {
-    mutate: (id: string) => {
-      toast.success('Meeting deleted: ' + id);
+  const deleteMeetingMutation = useMutation({
+    mutationFn: (id: number) => meetingsApi.deleteMeeting(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['meetings'] });
+      toast.success('Meeting deleted');
     },
-    isPending: false,
-  };
+    onError: () => toast.error('Failed to delete meeting'),
+  });
+
+  if (isLoading) {
+    return (
+      <div className="space-y-8">
+        <div className="flex-1">
+          <Heading>Meetings</Heading>
+        </div>
+        <div className="flex h-40 items-center justify-center rounded-lg border border-zinc-200 dark:border-zinc-800">
+          <Text>Loading meetings...</Text>
+        </div>
+      </div>
+    );
+  }
 
   // Handle empty state
   if (meetings?.length === 0) {
@@ -135,8 +125,16 @@ export const MeetingList = () => {
         <div className="flex-1">
           <Heading>Meetings</Heading>
         </div>
-        <div className="flex h-40 items-center justify-center rounded-lg border border-zinc-200 dark:border-zinc-800">
-          <Text>No meetings found</Text>
+        <div className="flex flex-col h-64 items-center justify-center gap-4 rounded-lg border border-zinc-200 dark:border-zinc-800">
+          <PlusIcon className="h-12 w-12 text-zinc-400" />
+          <div className="text-center">
+            <Text className="font-semibold text-lg">No Meetings Found</Text>
+            <Text className="text-zinc-500 mt-1">Get started by adding Zuko to your meetings</Text>
+          </div>
+          <Button href="/meeting/add" className="mt-2">
+            <PlusIcon className="h-4 w-4" />
+            Add to a meeting
+          </Button>
         </div>
       </div>
     );
@@ -144,11 +142,11 @@ export const MeetingList = () => {
 
   const filteredMeetings = (meetings || [])
     .filter((meeting) =>
-      meeting.name.toLowerCase().includes(search.toLowerCase()),
+      (meeting.name ?? '').toLowerCase().includes(search.toLowerCase()),
     )
     .sort((a, b) => {
       if (sort === 'name') {
-        return a.name.localeCompare(b.name);
+        return (a.name ?? '').localeCompare(b.name ?? '');
       } else if (sort === 'date') {
         const dateA = a.scheduledAt || a.createdAt;
         const dateB = b.scheduledAt || b.createdAt;
@@ -157,13 +155,13 @@ export const MeetingList = () => {
       return 0;
     });
 
-  const openDeleteDialog = (meetingId: string) => {
+  const openDeleteDialog = (meetingId: number) => {
     setMeetingToDelete(meetingId);
     setIsOpenDeleteDialog(true);
   };
 
   const handleConfirmDelete = () => {
-    if (meetingToDelete) {
+    if (meetingToDelete !== null) {
       deleteMeetingMutation.mutate(meetingToDelete);
     }
     setIsOpenDeleteDialog(false);
@@ -220,7 +218,7 @@ export const MeetingList = () => {
                   <div className="flex min-w-0 flex-col gap-1">
                     <div className="flex min-w-0 items-center justify-between">
                       <Strong className="truncate text-lg font-semibold">
-                        {meeting.name}
+                        {meeting.name ?? '(Untitled)'}
                       </Strong>
                     </div>
                     <div className="mt-1 flex flex-wrap items-center gap-6 text-sm text-zinc-500">
@@ -268,7 +266,7 @@ export const MeetingList = () => {
                     <DropdownItem
                       onClick={(e: React.MouseEvent) => {
                         e.stopPropagation();
-                        openDeleteDialog(meeting.id.toString());
+                        openDeleteDialog(meeting.id);
                       }}
                       disabled={deleteMeetingMutation.isPending}
                     >

@@ -4,7 +4,7 @@ export const MeetingSchema = z.object({
   url: z.string().min(1, "Meeting URL is required"),
   name: z.string().optional(),
   description: z.string().optional(),
-  scheduledAt: z.string().datetime().optional(),
+  scheduledAt: z.string().datetime({ offset: true }).optional(),
   timezone: z.string().optional(),
 });
 

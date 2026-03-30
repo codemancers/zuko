@@ -147,9 +147,14 @@ export class MeetingService {
       }
     }
 
+    const recordingUrl = meeting.recording
+      ? `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION || "us-east-1"}.amazonaws.com/${meeting.recording}`
+      : null;
+
     return {
       ...meeting,
-      transcript,
+      recordingUrl,
+      transcriptData: transcript,
       chatMessages,
     };
   }

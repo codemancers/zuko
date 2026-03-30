@@ -27,9 +27,8 @@ export class MeetingController {
 
   @Post()
   @UseGuards(AuthGuard, OrganizationGuard)
-  @UsePipes(new ZodPipe(MeetingSchema))
   create(
-    @Body() meetingDto: MeetingDto,
+    @Body(new ZodPipe(MeetingSchema)) meetingDto: MeetingDto,
     @OrgId() organizationId: number,
     @Req() req: RequestWithUser
   ) {
@@ -51,10 +50,9 @@ export class MeetingController {
 
   @Post(":meetingId/transcript-chunks")
   @UseGuards(AgentGuard)
-  @UsePipes(new ZodPipe(TranscriptChunkSchema))
   async addTranscriptChunk(
     @Param("meetingId") meetingId: string,
-    @Body() body: TranscriptChunkDto
+    @Body(new ZodPipe(TranscriptChunkSchema)) body: TranscriptChunkDto
   ) {
     await this.meetingService.addTranscriptChunk(
       meetingId,
