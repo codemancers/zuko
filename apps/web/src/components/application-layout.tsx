@@ -226,6 +226,7 @@ export function ApplicationLayout({ children }: { children: React.ReactNode }) {
                       await authClient.organization.setActive({
                         organizationId: org.id.toString(),
                       });
+                      window.location.reload();
                     }}
                     className="cursor-pointer"
                   >
