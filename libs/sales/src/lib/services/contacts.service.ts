@@ -69,7 +69,7 @@ export class ContactsService {
           `[SERVICE] Duplicate email found: ${input.email} (existing ID: ${duplicate.id})`,
         );
         throw new BadRequestException(
-          `A contact with email ${input.email} already exists (ID: ${duplicate.id})`,
+          `A contact with email ${input.email} already exists`,
         );
       }
       this.logger.debug('[SERVICE] No duplicate email found');

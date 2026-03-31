@@ -30,22 +30,28 @@ export function BaseTableCell<TData extends BaseRow>({ cell, onCellUpdate }: Bas
     }
   }, [initialValue, isEditing]);
 
+  const triggerCellUpdate = (newValue: unknown) => {
+    const isNewValueEmpty = newValue === null || newValue === undefined || (typeof newValue === 'string' && newValue.trim() === '');
+    const isInitialEmpty = initialValue === null || initialValue === undefined || (typeof initialValue === 'string' && initialValue.trim() === '');
+
+    // skip update if both are initial and new value is empty
+    if (isInitialEmpty && isNewValueEmpty) return;
+
+    if (newValue !== initialValue) {
+      onCellUpdate?.(cell.row.original.id, cell.column.id, newValue);
+    }
+  };
+
   const handleBlur = () => {
     setIsEditing(false);
-    const isEmpty = value === null || value === undefined || (typeof value === 'string' && value.trim() === '');
-    if (value !== initialValue && !isEmpty) {
-      onCellUpdate?.(cell.row.original.id, cell.column.id, value);
-    }
+    triggerCellUpdate(value);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       e.preventDefault();
       setIsEditing(false);
-      const isEmpty = value === null || value === undefined || (typeof value === 'string' && value.trim() === '');
-      if (value !== initialValue && !isEmpty) {
-        onCellUpdate?.(cell.row.original.id, cell.column.id, value);
-      }
+      triggerCellUpdate(value);
     } else if (e.key === 'Escape') {
       setIsEditing(false);
       setValue(initialValue ?? '');
