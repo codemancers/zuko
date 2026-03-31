@@ -116,6 +116,12 @@ export class ContactsService {
       throw new NotFoundException(`Contact with ID ${id} not found`);
     }
 
+    if (input.name !== undefined) {
+      if (!input.name || !input.name.trim()) {
+        throw new BadRequestException('Contact name cannot be empty');
+      }
+    }
+
     if (input.phone && !isValidE164Phone(input.phone)) {
       throw new BadRequestException(
         'Phone number must be in E.164 format (e.g., +14155552671)',
