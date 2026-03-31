@@ -12,3 +12,4 @@ export * from './lib/listeners/contact-activity.listener';
 export * from './lib/listeners/company-activity.listener';
 export * from './lib/listeners/task-activity.listener';
 export * from './lib/mappers/column-metadata.mapper';
+export * from './lib/utils/custom-fields';

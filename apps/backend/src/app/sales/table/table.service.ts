@@ -13,6 +13,8 @@ import {
   FlattenedCompany,
   FlattenedDeal,
   COLUMN_TYPES,
+  ColumnType,
+  mergeCustomFieldValue,
 } from '@zuko/sales';
 import { TableRowBuilder } from './row-builder/table-row.builder';
 import { CompanyListQueryDto } from '../companies.controller';
@@ -238,7 +240,7 @@ export class TableService {
             result = await this.contactsService.update(
               rowId,
               organizationId,
-              { [columnId]: value },
+              { [columnId]: value === '' ? null : value },
               actorId,
             );
           } else {
@@ -251,14 +253,18 @@ export class TableService {
             if (!columnMetadata) {
               throw new BadRequestException('Column not found');
             }
-            // Todo: Value type casting based on columnMetadata.fieldType and columnMetadata.config
-            const fields = (contact.fields as Record<string, unknown>) || {};
+
+            const fields = mergeCustomFieldValue(
+              contact.fields as Record<string, unknown>,
+              columnId,
+              value,
+              columnMetadata.fieldType as ColumnType,
+            );
+
             result = await this.contactsService.update(
               rowId,
               organizationId,
-              {
-                fields: { ...fields, [columnId]: value },
-              },
+              { fields },
               actorId,
             );
           }
@@ -271,7 +277,7 @@ export class TableService {
             result = await this.companiesService.update(
               rowId,
               organizationId,
-              { [columnId]: value },
+              { [columnId]: value === '' ? null : value },
               actorId,
             );
           } else {
@@ -284,14 +290,18 @@ export class TableService {
             if (!columnMetadata) {
               throw new BadRequestException('Column not found');
             }
-            // Todo: Value type casting based on columnMetadata.fieldType and columnMetadata.config
-            const fields = (company.fields as Record<string, unknown>) || {};
+
+            const fields = mergeCustomFieldValue(
+              company.fields as Record<string, unknown>,
+              columnId,
+              value,
+              columnMetadata.fieldType as ColumnType,
+            );
+
             result = await this.companiesService.update(
               rowId,
               organizationId,
-              {
-                fields: { ...fields, [columnId]: value },
-              },
+              { fields },
               actorId,
             );
           }
@@ -304,7 +314,7 @@ export class TableService {
             result = await this.dealsService.update(
               rowId,
               organizationId,
-              { [columnId]: value },
+              { [columnId]: value === '' ? null : value },
               actorId,
             );
           } else {
@@ -317,14 +327,18 @@ export class TableService {
             if (!columnMetadata) {
               throw new BadRequestException('Column not found');
             }
-            // Todo: Value type casting based on columnMetadata.fieldType and columnMetadata.config
-            const fields = (deal.fields as Record<string, unknown>) || {};
+
+            const fields = mergeCustomFieldValue(
+              deal.fields as Record<string, unknown>,
+              columnId,
+              value,
+              columnMetadata.fieldType as ColumnType,
+            );
+
             result = await this.dealsService.update(
               rowId,
               organizationId,
-              {
-                fields: { ...fields, [columnId]: value },
-              },
+              { fields },
               actorId,
             );
           }
@@ -370,4 +384,5 @@ export class TableService {
       data: this.rowBuilder.buildRows<T>(flattenedData, mergedMetadata),
     };
   }
+
 }
