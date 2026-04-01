@@ -15,6 +15,7 @@ export interface DateInputProps extends Omit<
   onChange?: (value: string) => void;
   format?: string;
   invalid?: boolean;
+  type?: 'date' | 'text';
 }
 
 /**
@@ -32,6 +33,7 @@ export const DateInput = forwardRef<HTMLInputElement, DateInputProps>(
       placeholder,
       invalid,
       disabled,
+      type,
       ...props
     },
     ref,
@@ -129,8 +131,8 @@ export const DateInput = forwardRef<HTMLInputElement, DateInputProps>(
     return (
       <Input
         ref={ref}
-        type="date"
-        value={value ? dayjs(value).format('YYYY-MM-DD') : ''}
+        type={type || 'text'}
+        value={type === 'date' ? (value ? dayjs(value).format('YYYY-MM-DD') : '') : displayValue}
         onChange={handleChange}
         onBlur={handleBlur}
         placeholder={placeholder || format.toLowerCase()}

@@ -48,6 +48,7 @@ export function DateEditor({ value, onChange, onBlur, autoFocus }: EditorProps) 
       onChange={onChange}
       onBlur={onBlur}
       className="w-full !min-w-0"
+      type='date'
     />
   );
 }
