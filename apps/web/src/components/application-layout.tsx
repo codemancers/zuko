@@ -45,12 +45,12 @@ import {
   Cog8ToothIcon,
   UserGroupIcon,
 } from '@heroicons/react/20/solid';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { authClient } from '@/lib/auth-client';
 import { apiClient } from '@/lib/api-client';
 import { useEffect, useState } from 'react';
 import { useChats } from '@/hooks/use-chats';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { getOrganizations } from '@/server/query-options';
 import { CalendarIcon } from '@heroicons/react/24/outline';
 
@@ -99,6 +99,8 @@ const navigation = [
 
 export function ApplicationLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
+  const queryClient = useQueryClient();
   const [user, setUser] = useState<{
     name?: string;
     email?: string;
@@ -226,7 +228,9 @@ export function ApplicationLayout({ children }: { children: React.ReactNode }) {
                       await authClient.organization.setActive({
                         organizationId: org.id.toString(),
                       });
-                      window.location.reload();
+                      apiClient.setOrganizationId(org.id.toString());
+                      queryClient.clear();
+                      router.refresh();
                     }}
                     className="cursor-pointer"
                   >
