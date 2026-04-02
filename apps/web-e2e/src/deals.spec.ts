@@ -1,3 +1,4 @@
+import dayjs from "dayjs";
 import { test, expect } from "./fixtures";
 
 /**
@@ -886,5 +887,46 @@ test.describe("Cell Editing Flow", () => {
     await page.reload();
     await dealsPage.getDealItems();
     await expect(page.getByText(newValue, { exact: true })).toBeVisible();
+  });
+
+  test("Edits deal expected close date cell value (date type)", async ({ dealsPage, page }) => {
+    await dealsPage.goto();
+    await dealsPage.getDealItems();
+
+    const firstRow = page.getByRole("row").nth(1);
+    const headers = page.getByRole("columnheader");
+    const headerTexts = await headers.allInnerTexts();
+    const expectedCloseDateIndex = headerTexts.findIndex(h => h.toLowerCase().includes("expected close"));
+
+    const expectedCloseDateCell = firstRow.locator("td").nth(expectedCloseDateIndex);
+    const newValue = "2025-12-31";
+    const formattedValue = dayjs(newValue).format('DD MMM YYYY');
+
+    await expectedCloseDateCell.evaluate(node => (node as any).click());
+    const input = expectedCloseDateCell.locator("input");
+    await expect(input).toBeVisible();
+    await input.fill(newValue);
+    await input.blur();
+
+    await expect(page.getByText("Cell updated successfully")).toBeVisible();
+    await expect(expectedCloseDateCell).toHaveText(formattedValue);
+
+    await page.reload();
+    await dealsPage.getDealItems();
+    await expect(page.getByText(formattedValue, { exact: true })).toBeVisible();
+
+    // test clearing date type field
+    await expectedCloseDateCell.evaluate(node => (node as any).click());
+    const input2 = expectedCloseDateCell.locator("input");
+    await expect(input2).toBeVisible();
+    await input2.fill("");
+    await input2.blur();
+
+    await expect(page.getByText("Cell updated successfully")).toBeVisible();
+    await expect(expectedCloseDateCell).toHaveText("");
+
+    await page.reload();
+    await dealsPage.getDealItems();
+    await expect(page.getByText(formattedValue, { exact: true })).toBeHidden();
   });
 });
