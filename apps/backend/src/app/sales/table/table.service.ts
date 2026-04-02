@@ -15,6 +15,7 @@ import {
   COLUMN_TYPES,
   ColumnType,
   mergeCustomFieldValue,
+  castFieldValue,
 } from '@zuko/sales';
 import { TableRowBuilder } from './row-builder/table-row.builder';
 import { CompanyListQueryDto } from '../companies.controller';
@@ -240,7 +241,7 @@ export class TableService {
             result = await this.contactsService.update(
               rowId,
               organizationId,
-              { [columnId]: value === '' ? null : value },
+              { [columnId]: castFieldValue(value, isDefaultColumn.fieldType as ColumnType) },
               actorId,
             );
           } else {
@@ -277,7 +278,7 @@ export class TableService {
             result = await this.companiesService.update(
               rowId,
               organizationId,
-              { [columnId]: value === '' ? null : value },
+              { [columnId]: castFieldValue(value, isDefaultColumn.fieldType as ColumnType) },
               actorId,
             );
           } else {
@@ -314,7 +315,7 @@ export class TableService {
             result = await this.dealsService.update(
               rowId,
               organizationId,
-              { [columnId]: value === '' ? null : value },
+              { [columnId]: castFieldValue(value, isDefaultColumn.fieldType as ColumnType) },
               actorId,
             );
           } else {

@@ -4,7 +4,7 @@ import { ColumnType } from '../types/table-metadata';
 /**
  * Normalizes a raw value based on its ColumnType (e.g., handles date/number casting)
  */
-export function castCustomFieldValue(value: unknown, fieldType: ColumnType): unknown {
+export function castFieldValue(value: unknown, fieldType: ColumnType): unknown {
   if (value === null || value === undefined || (typeof value === 'string' && value.trim() === '')) {
     return null;
   }
@@ -43,7 +43,7 @@ export function mergeCustomFieldValue(
   if (isEmpty) {
     delete fields[columnId];
   } else {
-    fields[columnId] = castCustomFieldValue(value, fieldType);
+    fields[columnId] = castFieldValue(value, fieldType);
   }
 
   return fields;
