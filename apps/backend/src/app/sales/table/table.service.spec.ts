@@ -412,7 +412,7 @@ describe('TableService', () => {
           title: `Big Deal ${uniqueId}`,
           value: 10000,
           stage: 'prospecting',
-          fields: { priority_score: '85' },
+          fields: { priority_score: 'SCORE_HIGH' },
           createdAt: new Date(),
         },
       });
@@ -471,7 +471,7 @@ describe('TableService', () => {
 
       expect(result.data.length).toBe(2);
       const bigDeal = result.data.find((d) => d.title.startsWith('Big Deal'));
-      expect(bigDeal?.priority_score).toBe("85");
+      expect(bigDeal?.priority_score).toBe("SCORE_HIGH");
     });
 
     it('filters deals by stage and value', async () => {
@@ -495,7 +495,7 @@ describe('TableService', () => {
 
     it('searches deals by custom field value', async () => {
       const result = await service.getDealsTable(testOrg.id, {
-        search: '85',
+        search: 'SCORE_HIGH',
       } as unknown as DealListQueryDto);
 
       expect(result.data.length).toBe(1);

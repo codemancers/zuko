@@ -33,6 +33,7 @@ model User {
 
   teammembers TeamMember[]
   taskOwners  TaskOwner[]
+  meetings    Meeting[]
 
   @@unique([email])
   @@map("user")
@@ -152,6 +153,7 @@ model Organization {
   companies Company[]  @relation("OrganizationCompanies")
   deals     Deal[]     @relation("OrganizationDeals")
   tableColumns TableColumn[] @relation("OrganizationTableColumns")
+  meetings     Meeting[]
 
   @@unique([slug])
   @@map("organization")
@@ -286,3 +288,4 @@ model Sandbox {
   @@map("sandbox")
   @@schema("public")
 }
+

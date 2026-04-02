@@ -28,7 +28,8 @@
       "group": "Guides",
       "pages": [
         "guides/agentic-crm-chat",
-        "guides/ai-agents"
+        "guides/ai-agents",
+        "guides/meeting-bot"
       ]
     }
   ],

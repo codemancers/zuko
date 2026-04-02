@@ -32,6 +32,9 @@
     },
     {
       "path": "./apps/ai-agents"
+    },
+    {
+      "path": "./apps/meeting-bot"
     }
   ]
 }

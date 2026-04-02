@@ -1,0 +1,112 @@
+{
+  "name": "@zuko/meeting-bot",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {},
+  "nx": {
+    "sourceRoot": "apps/meeting-bot/src",
+    "projectType": "application",
+"tags": ["type:app", "scope:backend"],
+    "targets": {
+      "build": {
+        "executor": "@nx/esbuild:esbuild",
+        "outputs": [
+          "{options.outputPath}"
+        ],
+        "options": {
+          "outputPath": "apps/meeting-bot/dist",
+          "main": "apps/meeting-bot/src/main.ts",
+          "tsConfig": "apps/meeting-bot/tsconfig.app.json",
+          "assets": [
+            {
+              "input": "apps/meeting-bot/src/utils",
+              "glob": "google-meet-chrome-driver.js",
+              "output": "utils"
+            }
+          ],
+          "generatePackageJson": true,
+          "platform": "node",
+          "bundle": true,
+          "format": [
+            "cjs"
+          ],
+          "esbuildConfig": "apps/meeting-bot/esbuild.config.js"
+        },
+        "configurations": {
+          "development": {
+            "minify": false,
+            "sourcemap": true
+          },
+          "production": {
+            "minify": true,
+            "sourcemap": false
+          }
+        }
+      },
+      "dev": {
+        "executor": "@nx/js:node",
+        "defaultConfiguration": "development",
+        "dependsOn": [
+          "build"
+        ],
+        "options": {
+          "buildTarget": "@zuko/meeting-bot:build",
+          "runBuildTargetDependencies": false
+        },
+        "configurations": {
+          "development": {
+            "buildTarget": "@zuko/meeting-bot:build:development"
+          },
+          "production": {
+            "buildTarget": "@zuko/meeting-bot:build:production"
+          }
+        }
+      },
+      "test": {
+        "options": {
+          "passWithNoTests": true
+        }
+      },
+      "copy-workspace-modules": {
+        "executor": "@nx/js:copy-workspace-modules",
+        "options": {
+          "buildTarget": "@zuko/meeting-bot:build"
+        },
+        "dependsOn": [
+          "build"
+        ]
+      },
+      "docker:build:push": {
+        "executor": "nx:run-commands",
+        "options": {
+          "command": "FLY_API_TOKEN=$FLY_API_TOKEN_MEETING_BOT flyctl auth docker && IMAGE_TAG=\"registry.fly.io/meeting-bot:$(echo ${GITHUB_SHA:-$(git rev-parse HEAD)})\" && pnpm exec nx docker:build meeting-bot -t \"$IMAGE_TAG\" && docker push \"$IMAGE_TAG\" && echo \"Successfully pushed Docker image: $IMAGE_TAG\""
+        }
+      },
+      "deploy": {
+        "executor": "nx:run-commands",
+        "options": {
+          "command": "FLY_API_TOKEN=$FLY_API_TOKEN_MEETING_BOT flyctl deploy -a meeting-bot --image registry.fly.io/meeting-bot:$(echo ${GITHUB_SHA:-$(git rev-parse HEAD)}) --config apps/meeting-bot/fly.toml"
+        },
+        "dependsOn": [
+          "docker:build:push"
+        ]
+      },
+      "docker:build": {
+        "dependsOn": [
+          "build",
+          "prune"
+        ]
+      }
+    }
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.962.0",
+    "@deepgram/sdk": "^4.11.3",
+    "axios": "^1.13.2",
+    "puppeteer-extra": "^3.3.6",
+    "puppeteer-extra-plugin-stealth": "^2.11.2",
+    "puppeteer-stream": "^2.3.0",
+    "socket.io-client": "^4.8.0",
+    "ws": "^8.18.2"
+  }
+}
