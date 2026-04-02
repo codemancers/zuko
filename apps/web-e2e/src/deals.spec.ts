@@ -831,6 +831,11 @@ test.describe("Cell Editing Flow", () => {
     await dealsPage.goto();
     await dealsPage.getDealItems();
 
+    const initialRowCount = await page.getByRole("row").count();
+    if (initialRowCount === 1) {
+      await dealsPage.addRow();
+    }
+
     // The first data row is index 1 because index 0 is the header
     const firstRow = page.getByRole("row").nth(1);
     
@@ -867,6 +872,11 @@ test.describe("Cell Editing Flow", () => {
     await dealsPage.goto();
     await dealsPage.getDealItems();
 
+    const initialRowCount = await page.getByRole("row").count();
+    if (initialRowCount === 1) {
+      await dealsPage.addRow();
+    }
+
     const firstRow = page.getByRole("row").nth(1);
     const headers = page.getByRole("columnheader");
     const headerTexts = await headers.allInnerTexts();
@@ -892,6 +902,11 @@ test.describe("Cell Editing Flow", () => {
   test("Edits deal expected close date cell value (date type)", async ({ dealsPage, page }) => {
     await dealsPage.goto();
     await dealsPage.getDealItems();
+
+    const initialRowCount = await page.getByRole("row").count();
+    if (initialRowCount === 1) {
+      await dealsPage.addRow();
+    }
 
     const firstRow = page.getByRole("row").nth(1);
     const headers = page.getByRole("columnheader");
@@ -933,6 +948,11 @@ test.describe("Cell Editing Flow", () => {
   test("Edits deal stage cell value (select type)", async ({ dealsPage, page }) => {
     await dealsPage.goto();
     await dealsPage.getDealItems();
+
+    const initialRowCount = await page.getByRole("row").count();
+    if (initialRowCount === 1) {
+      await dealsPage.addRow();
+    }
 
     const firstRow = page.getByRole("row").nth(1);
     const headers = page.getByRole("columnheader");
