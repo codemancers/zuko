@@ -1,4 +1,5 @@
 import { ColumnMetadata } from '../types/table-metadata';
+import { DEAL_STAGES } from './deals';
 
 export const COMPANY_TABLE_METADATA: ColumnMetadata[] = [
   {
@@ -209,14 +210,7 @@ export const DEAL_TABLE_METADATA: ColumnMetadata[] = [
     config: {
       render: 'badge',
       format: 'stage',
-      options: [
-        { label: 'Negotiation', value: 'negotiation' },
-        { label: 'Proposal', value: 'proposal' },
-        { label: 'Qualification', value: 'qualification' },
-        { label: 'Prospecting', value: 'prospecting' },
-        { label: 'Closed Won', value: 'closed_won' },
-        { label: 'Closed Lost', value: 'closed_lost' },
-      ],
+      options: [...DEAL_STAGES],
       colorMap: {
         prospecting: 'zinc',
         qualification: 'blue',

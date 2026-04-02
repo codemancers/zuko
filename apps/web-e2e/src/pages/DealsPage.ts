@@ -36,4 +36,9 @@ export class DealsPage extends BasePage {
       .waitForSelector("table", { timeout: 5000 })
       .catch(() => null);
   }
+
+  async addRow() {
+    const addRowButton = this.page.getByRole("button", { name: /Add row/i });
+    await addRowButton.click();
+  }
 }
