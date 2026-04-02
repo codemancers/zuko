@@ -929,4 +929,37 @@ test.describe("Cell Editing Flow", () => {
     await dealsPage.getDealItems();
     await expect(page.getByText(formattedValue, { exact: true })).toBeHidden();
   });
+
+  test("Edits deal stage cell value (select type)", async ({ dealsPage, page }) => {
+    await dealsPage.goto();
+    await dealsPage.getDealItems();
+
+    const firstRow = page.getByRole("row").nth(1);
+    const headers = page.getByRole("columnheader");
+    const headerTexts = await headers.allInnerTexts();
+    const stageIndex = headerTexts.findIndex(h => h.toLowerCase().includes("stage"));
+
+    const stageCell = firstRow.locator("td").nth(stageIndex);
+    const newValue = "qualification";
+    const labelValue = "Qualification";
+
+    // Click to enter edit mode
+    await stageCell.evaluate(node => (node as any).click());
+    
+    // The Select should be visible
+    const select = stageCell.locator("select");
+    await expect(select).toBeVisible();
+    await select.selectOption({ value: newValue });
+
+    // Success toast should appear
+    await expect(page.getByText("Cell updated successfully")).toBeVisible();
+
+    // Value should be updated in the cell (showing the label)
+    await expect(stageCell).toHaveText(labelValue);
+
+    // Verify persistence after reload
+    await page.reload();
+    await dealsPage.getDealItems();
+    await expect(page.getByText(labelValue, { exact: true })).toBeVisible();
+  });
 });
