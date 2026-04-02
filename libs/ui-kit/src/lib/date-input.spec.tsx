@@ -126,16 +126,4 @@ describe("DateInput", () => {
     const input = screen.getByRole("textbox");
     expect(input).toBeDisabled();
   });
-
-  it("should support type='date' for native date picker", () => {
-    const handleChange = jest.fn();
-    render(<DateInput type="date" value="2026-12-20" onChange={handleChange} />);
-    const input = screen.getByDisplayValue("2026-12-20") as HTMLInputElement;
-
-    expect(input.type).toBe("date");
-    expect(input.value).toBe("2026-12-20");
-
-    fireEvent.change(input, { target: { value: "2026-03-05" } });
-    expect(handleChange).toHaveBeenCalledWith("2026-03-05");
-  });
 });

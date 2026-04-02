@@ -15,7 +15,6 @@ export interface DateInputProps extends Omit<
   onChange?: (value: string) => void;
   format?: string;
   invalid?: boolean;
-  type?: 'date' | 'text';
 }
 
 /**
@@ -33,7 +32,6 @@ export const DateInput = forwardRef<HTMLInputElement, DateInputProps>(
       placeholder,
       invalid,
       disabled,
-      type,
       ...props
     },
     ref,
@@ -44,8 +42,7 @@ export const DateInput = forwardRef<HTMLInputElement, DateInputProps>(
     // Initialize display value from ISO value
     useEffect(() => {
       if (value) {
-        // Allow flexible parsing of existing values (handles both YYYY-MM-DD and full ISO strings)
-        const parsed = dayjs(value);
+        const parsed = dayjs(value, 'YYYY-MM-DD', true);
         if (parsed.isValid()) {
           setDisplayValue(parsed.format(format));
         } else {
@@ -91,10 +88,10 @@ export const DateInput = forwardRef<HTMLInputElement, DateInputProps>(
       // If invalid, just keep the display value as-is (don't update parent)
     };
 
-    const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    const handleBlur = () => {
       // On blur, reformat the display value if it's valid
       if (value) {
-        const parsed = dayjs(value);
+        const parsed = dayjs(value, 'YYYY-MM-DD', true);
         if (parsed.isValid()) {
           setDisplayValue(parsed.format(format));
         }
@@ -131,8 +128,8 @@ export const DateInput = forwardRef<HTMLInputElement, DateInputProps>(
     return (
       <Input
         ref={ref}
-        type={type || 'text'}
-        value={type === 'date' ? (value ? dayjs(value).format('YYYY-MM-DD') : '') : displayValue}
+        type="text"
+        value={displayValue}
         onChange={handleChange}
         onBlur={handleBlur}
         placeholder={placeholder || format.toLowerCase()}
