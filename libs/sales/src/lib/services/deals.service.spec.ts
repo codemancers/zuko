@@ -3,6 +3,7 @@ import { DealsService } from './deals.service';
 import { DealsRepository } from '../repositories/deals.repository';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { DEAL_EVENTS } from '../events/deal-events';
+import { BadRequestException } from '@nestjs/common';
 
 const ORG_ID = 1;
 const ACTOR_ID = 42;
@@ -91,6 +92,19 @@ describe('DealsService - activity events', () => {
 
       expect(mockEventEmitter.emitAsync).not.toHaveBeenCalled();
     });
+
+    it('throws BadRequestException when stage is invalid', async () => {
+      await expect(
+        service.create({ 
+          title: 'Test Deal', 
+          stage: 'invalid_stage', 
+          organizationId: ORG_ID 
+        }),
+      ).rejects.toThrow(BadRequestException);
+
+      expect(mockRepo.create).not.toHaveBeenCalled();
+      expect(mockEventEmitter.emitAsync).not.toHaveBeenCalled();
+    });
   });
 
   // ── deal.stage_changed ────────────────────────────────────────────────────
@@ -122,6 +136,15 @@ describe('DealsService - activity events', () => {
 
       const calls = (mockEventEmitter.emitAsync as jest.Mock).mock.calls as Array<[string, unknown]>;
       expect(calls.some(([event]) => event === DEAL_EVENTS.STAGE_CHANGED)).toBe(false);
+    });
+
+    it('throws BadRequestException when updating to an invalid stage', async () => {
+      await expect(
+        service.update(mockDeal.id, ORG_ID, { stage: 'invalid_stage' }, ACTOR_ID),
+      ).rejects.toThrow(BadRequestException);
+
+      expect(mockRepo.update).not.toHaveBeenCalled();
+      expect(mockEventEmitter.emitAsync).not.toHaveBeenCalled();
     });
   });
 

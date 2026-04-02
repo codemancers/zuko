@@ -1,12 +1,58 @@
 import { Cell, flexRender } from '@tanstack/react-table';
 import { TableCell } from '@zuko/ui-kit';
-import { useState, useEffect } from 'react';
+import { useState, useRef } from 'react';
 import type { ColumnMetadata, BaseRow } from './types';
-import { EditorRegistry } from './CellEditors';
+import { EditorRegistry, type EditorProps } from './CellEditors';
 
 interface BaseTableCellProps<TData> {
   cell: Cell<TData, unknown>;
   onCellUpdate?: (rowId: string | number, columnId: string, value: unknown) => void;
+}
+
+/**
+ * Internal component to handle the temporary state of an active editor.
+ * Isolating this state to avoid complex useEffect logic in BaseTableCell.
+ */
+function InlineEditor({ 
+  initialValue, 
+  onCommit, 
+  onCancel, 
+  metadata,
+  Editor 
+}: { 
+  initialValue: unknown;
+  onCommit: (val: unknown) => void;
+  onCancel: () => void;
+  metadata: ColumnMetadata;
+  Editor: (props: EditorProps) => React.ReactNode;
+}) {
+  const [value, setValue] = useState<unknown>(initialValue ?? '');
+  const valueRef = useRef(value);
+
+  const handleCommit = () => onCommit(valueRef.current);
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleCommit();
+    } else if (e.key === 'Escape') {
+      onCancel();
+    }
+  };
+
+  return (
+    <Editor
+      autoFocus
+      value={value}
+      metadata={metadata}
+      onChange={(v) => {
+        setValue(v);
+        valueRef.current = v;
+      }}
+      onBlur={handleCommit}
+      onKeyDown={handleKeyDown}
+    />
+  );
 }
 
 export function BaseTableCell<TData extends BaseRow>({ cell, onCellUpdate }: BaseTableCellProps<TData>) {
@@ -16,21 +62,16 @@ export function BaseTableCell<TData extends BaseRow>({ cell, onCellUpdate }: Bas
   
   const Editor = metadata?.fieldType ? EditorRegistry[metadata.fieldType] : null;
 
-  // Get raw value for editing
+  // Decompose value for editing
   const rawData = cell.getValue();
   const initialValue = typeof rawData === 'object' && rawData !== null && 'value' in rawData 
     ? (rawData as { value: unknown }).value 
     : rawData;
 
-  const [value, setValue] = useState<unknown>(initialValue ?? '');
-
-  useEffect(() => {
-    if (!isEditing) {
-      setValue(initialValue ?? '');
-    }
-  }, [initialValue, isEditing]);
-
-  const triggerCellUpdate = (newValue: unknown) => {
+  const handleCommit = (newValue: unknown) => {
+    setIsEditing(false);
+    
+    // Check if anything actually changed
     const isNewValueEmpty = newValue === null || newValue === undefined || (typeof newValue === 'string' && newValue.trim() === '');
     const isInitialEmpty = initialValue === null || initialValue === undefined || (typeof initialValue === 'string' && initialValue.trim() === '');
 
@@ -39,22 +80,6 @@ export function BaseTableCell<TData extends BaseRow>({ cell, onCellUpdate }: Bas
 
     if (newValue !== initialValue) {
       onCellUpdate?.(cell.row.original.id, cell.column.id, newValue);
-    }
-  };
-
-  const handleBlur = () => {
-    setIsEditing(false);
-    triggerCellUpdate(value);
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      setIsEditing(false);
-      triggerCellUpdate(value);
-    } else if (e.key === 'Escape') {
-      setIsEditing(false);
-      setValue(initialValue ?? '');
     }
   };
 
@@ -74,13 +99,12 @@ export function BaseTableCell<TData extends BaseRow>({ cell, onCellUpdate }: Bas
       }}
     >
       {isEditable && isEditing && Editor ? (
-        <Editor
-          autoFocus
-          value={value}
+        <InlineEditor
+          initialValue={initialValue}
           metadata={metadata}
-          onChange={(v) => setValue(v)}
-          onBlur={handleBlur}
-          onKeyDown={handleKeyDown}
+          Editor={Editor as any}
+          onCommit={handleCommit}
+          onCancel={() => setIsEditing(false)}
         />
       ) : (
         flexRender(cell.column.columnDef.cell, cell.getContext())

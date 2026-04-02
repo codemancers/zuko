@@ -20,6 +20,7 @@ import {
   DealFieldUpdatedEvent,
   ActivitySource,
 } from '../events/deal-events';
+import { DEAL_STAGE_VALUES } from '../constants/deals';
 
 // Fields handled by dedicated events or not user-visible — excluded from generic field_update
 const FIELD_UPDATE_EXCLUDED = new Set<keyof UpdateDealInput>([
@@ -62,6 +63,11 @@ export class DealsService {
       (input.probability < 0 || input.probability > 100)
     ) {
       throw new BadRequestException('Probability must be between 0 and 100');
+    }
+
+    // Validate stage if provided
+    if (input.stage !== undefined && !DEAL_STAGE_VALUES.includes(input.stage)) {
+      throw new BadRequestException(`Invalid deal stage: ${input.stage}`);
     }
 
     // Validate priority if provided
@@ -136,6 +142,11 @@ export class DealsService {
       (input.priority < 0 || input.priority > 4)
     ) {
       throw new BadRequestException('Priority must be between 0 and 4');
+    }
+
+    // Validate stage if provided
+    if (input.stage !== undefined && !DEAL_STAGE_VALUES.includes(input.stage)) {
+      throw new BadRequestException(`Invalid deal stage: ${input.stage}. Must be one of: ${DEAL_STAGE_VALUES.join(', ')}`);
     }
 
     // Validate actualCloseDate is after expectedCloseDate if both are present

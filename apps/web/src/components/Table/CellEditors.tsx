@@ -59,16 +59,19 @@ export function DateEditor({ value, onChange, onBlur, onKeyDown, autoFocus }: Ed
   );
 }
 
-export function SelectEditor({ value, onChange, onBlur, metadata }: EditorProps) {
+export function SelectEditor({ value, onChange, onBlur, onKeyDown, autoFocus, metadata }: EditorProps) {
   const options = metadata.config?.options ?? [];
   
   return (
     <Select
+      autoFocus={autoFocus}
       value={String(value ?? '')}
       onChange={(e) => {
         onChange(e.target.value);
         onBlur();
       }}
+      onBlur={onBlur}
+      onKeyDown={onKeyDown}
       className="!min-w-0 border-0 bg-transparent py-0 focus:ring-0"
     >
       <option value="" disabled>Select...</option>
