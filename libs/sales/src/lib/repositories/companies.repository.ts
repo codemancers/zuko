@@ -143,13 +143,11 @@ export class CompaniesRepository {
       ...otherData
     } = input;
 
-    const fields = existingFields || {};
-
     return this.prisma.company.update({
       where: { id },
       data: {
         ...otherData,
-        ...(Object.keys(fields).length > 0 ? { fields: fields as Prisma.InputJsonValue } : {}),
+        ...(existingFields !== undefined ? { fields: existingFields as Prisma.InputJsonValue } : {}),
       },
       include: {
         owners: {

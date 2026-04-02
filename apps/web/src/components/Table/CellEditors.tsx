@@ -1,7 +1,7 @@
 'use client';
 
 import { ReactNode } from 'react';
-import { Input, Select, DateInput } from '@zuko/ui-kit';
+import { Input, Select } from '@zuko/ui-kit';
 import type { ColumnMetadata } from './types';
 
 export interface EditorProps {
@@ -40,13 +40,20 @@ export function NumberEditor({ value, onChange, onBlur, onKeyDown, autoFocus }: 
   );
 }
 
-export function DateEditor({ value, onChange, onBlur, autoFocus }: EditorProps) {
+export function DateEditor({ value, onChange, onBlur, onKeyDown, autoFocus }: EditorProps) {
+  // Format the date value to YYYY-MM-DD for the native browser date picker
+  const formattedValue = (value && !isNaN(new Date(value as string).getTime()))
+    ? new Date(value as string).toISOString().split('T')[0]
+    : '';
+
   return (
-    <DateInput
+    <Input
       autoFocus={autoFocus}
-      value={value as string ?? ''}
-      onChange={onChange}
+      type="date"
+      value={formattedValue}
+      onChange={(e) => onChange(e.target.value)}
       onBlur={onBlur}
+      onKeyDown={onKeyDown}
       className="w-full !min-w-0"
     />
   );

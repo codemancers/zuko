@@ -69,7 +69,7 @@ export class ContactsService {
           `[SERVICE] Duplicate email found: ${input.email} (existing ID: ${duplicate.id})`,
         );
         throw new BadRequestException(
-          `A contact with email ${input.email} already exists (ID: ${duplicate.id})`,
+          `A contact with email ${input.email} already exists`,
         );
       }
       this.logger.debug('[SERVICE] No duplicate email found');
@@ -114,6 +114,12 @@ export class ContactsService {
     const existingContact = await this.contactsRepository.findById(id, organizationId);
     if (!existingContact) {
       throw new NotFoundException(`Contact with ID ${id} not found`);
+    }
+
+    if (input.name !== undefined) {
+      if (!input.name || !input.name.trim()) {
+        throw new BadRequestException('Contact name cannot be empty');
+      }
     }
 
     if (input.phone && !isValidE164Phone(input.phone)) {

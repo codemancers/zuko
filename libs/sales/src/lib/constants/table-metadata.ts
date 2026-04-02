@@ -265,7 +265,7 @@ export const DEAL_TABLE_METADATA: ColumnMetadata[] = [
     sortable: true,
     filterable: true,
     searchable: true,
-    editable: false,
+    editable: true,
     isVisible: true,
     default: true,
     config: {
