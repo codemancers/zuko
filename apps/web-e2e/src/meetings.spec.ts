@@ -68,11 +68,15 @@ test.describe("Meetings - Authenticated", () => {
     expect(items.length).toBeGreaterThanOrEqual(0);
   });
 
-  test("can navigate to add meeting", async ({ meetingsPage, page }) => {
+  test("can open inline add meeting form", async ({ meetingsPage, page }) => {
     await meetingsPage.goto();
     await meetingsPage.clickAddMeeting();
-    await page.waitForURL("**/meeting/add", { timeout: 10000 });
-    await expect(page.getByRole("heading", { name: /add meeting/i })).toBeVisible();
+    await expect(
+      page.getByPlaceholder(/enter meeting name/i)
+    ).toBeVisible({ timeout: 5000 });
+    await expect(
+      page.getByPlaceholder(/paste meeting url/i)
+    ).toBeVisible({ timeout: 5000 });
   });
 
   test("add meeting form shows validation for empty name", async ({
@@ -81,9 +85,11 @@ test.describe("Meetings - Authenticated", () => {
   }) => {
     await meetingsPage.goto();
     await meetingsPage.clickAddMeeting();
-    await page.waitForURL("**/meeting/add", { timeout: 10000 });
+    await expect(page.getByPlaceholder(/paste meeting url/i)).toBeVisible({
+      timeout: 5000,
+    });
     await page.getByPlaceholder(/paste meeting url/i).fill("https://meet.google.com/abc-defg-hij");
-    await page.getByRole("button", { name: /submit/i }).click();
+    await page.getByRole("button", { name: /^add$/i }).click();
     await expect(page.getByText(/meeting name is required/i)).toBeVisible({
       timeout: 5000,
     });
@@ -95,25 +101,30 @@ test.describe("Meetings - Authenticated", () => {
   }) => {
     await meetingsPage.goto();
     await meetingsPage.clickAddMeeting();
-    await page.waitForURL("**/meeting/add", { timeout: 10000 });
+    await expect(page.getByPlaceholder(/enter meeting name/i)).toBeVisible({
+      timeout: 5000,
+    });
     await page.getByPlaceholder(/enter meeting name/i).fill("E2E Meeting");
     await page.getByPlaceholder(/paste meeting url/i).fill("http://not-https.com");
-    await page.getByRole("button", { name: /submit/i }).click();
+    await page.getByRole("button", { name: /^add$/i }).click();
     await expect(page.getByText(/please enter a valid url/i)).toBeVisible({
       timeout: 5000,
     });
   });
 
-  test("add meeting Cancel redirects to /meetings", async ({
+  test("add meeting Cancel closes inline form", async ({
     meetingsPage,
     page,
   }) => {
     await meetingsPage.goto();
     await meetingsPage.clickAddMeeting();
-    await page.waitForURL("**/meeting/add", { timeout: 10000 });
-    await page.getByRole("button", { name: /cancel/i }).click();
-    await page.waitForURL("**/meetings", { timeout: 10000 });
-    expect(page.url()).toContain("/meetings");
+    await expect(page.getByPlaceholder(/enter meeting name/i)).toBeVisible({
+      timeout: 5000,
+    });
+    await page.getByRole("button", { name: /^cancel$/i }).click();
+    await expect(
+      page.getByPlaceholder(/enter meeting name/i)
+    ).not.toBeVisible();
   });
 
   test("can open meeting detail from list", async ({
