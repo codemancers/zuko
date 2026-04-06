@@ -60,63 +60,37 @@ test.describe("Meetings - Authenticated", () => {
     await expect(page.getByText("Weekly Product Sync")).toBeVisible();
   });
 
-  test("can open inline add meeting form", async ({ meetingsPage, page }) => {
+  test("+ button navigates to add meeting page", async ({ meetingsPage, page }) => {
     await meetingsPage.goto();
-    await meetingsPage.clickAddMeeting();
-    await expect(
-      page.getByPlaceholder(/enter meeting name/i)
-    ).toBeVisible({ timeout: 5000 });
-    await expect(
-      page.getByPlaceholder(/paste meeting url/i)
-    ).toBeVisible({ timeout: 5000 });
+    await page.getByRole("button", { name: /add row/i }).click();
+    await page.waitForURL("**/meeting/add", { timeout: 10000 });
+    expect(page.url()).toContain("/meeting/add");
   });
 
-  test("add meeting form shows validation for empty name", async ({
-    meetingsPage,
-    page,
-  }) => {
-    await meetingsPage.goto();
-    await meetingsPage.clickAddMeeting();
-    await expect(page.getByPlaceholder(/paste meeting url/i)).toBeVisible({
-      timeout: 5000,
-    });
+  test("add meeting form shows validation for empty name", async ({ page }) => {
+    await page.goto("/meeting/add");
     await page.getByPlaceholder(/paste meeting url/i).fill("https://meet.google.com/abc-defg-hij");
-    await page.getByRole("button", { name: /^add$/i }).click();
+    await page.getByRole("button", { name: /submit/i }).click();
     await expect(page.getByText(/meeting name is required/i)).toBeVisible({
       timeout: 5000,
     });
   });
 
-  test("add meeting form shows validation for invalid url", async ({
-    meetingsPage,
-    page,
-  }) => {
-    await meetingsPage.goto();
-    await meetingsPage.clickAddMeeting();
-    await expect(page.getByPlaceholder(/enter meeting name/i)).toBeVisible({
-      timeout: 5000,
-    });
+  test("add meeting form shows validation for invalid url", async ({ page }) => {
+    await page.goto("/meeting/add");
     await page.getByPlaceholder(/enter meeting name/i).fill("E2E Meeting");
     await page.getByPlaceholder(/paste meeting url/i).fill("http://not-https.com");
-    await page.getByRole("button", { name: /^add$/i }).click();
+    await page.getByRole("button", { name: /submit/i }).click();
     await expect(page.getByText(/please enter a valid url/i)).toBeVisible({
       timeout: 5000,
     });
   });
 
-  test("add meeting Cancel closes inline form", async ({
-    meetingsPage,
-    page,
-  }) => {
-    await meetingsPage.goto();
-    await meetingsPage.clickAddMeeting();
-    await expect(page.getByPlaceholder(/enter meeting name/i)).toBeVisible({
-      timeout: 5000,
-    });
-    await page.getByRole("button", { name: /^cancel$/i }).click();
-    await expect(
-      page.getByPlaceholder(/enter meeting name/i)
-    ).not.toBeVisible();
+  test("add meeting Cancel returns to meetings list", async ({ page }) => {
+    await page.goto("/meeting/add");
+    await page.getByRole("button", { name: /cancel/i }).click();
+    await page.waitForURL("**/meetings", { timeout: 10000 });
+    expect(page.url()).toContain("/meetings");
   });
 
   test("can open meeting detail from list", async ({

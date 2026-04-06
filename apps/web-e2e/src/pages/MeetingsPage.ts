@@ -4,24 +4,16 @@ import { BasePage } from "./BasePage";
 export class MeetingsPage extends BasePage {
   readonly heading: Locator;
   readonly searchInput: Locator;
-  readonly addMeetingButton: Locator;
 
   constructor(page: Page) {
     super(page);
     this.heading = page.getByRole("heading", { name: "Meetings", exact: true });
     this.searchInput = page.getByPlaceholder(/Search meetings/i);
-    this.addMeetingButton = page.getByRole("button", {
-      name: /add to a meeting/i,
-    });
   }
 
   override async goto() {
     await super.goto("/meetings");
     await this.waitForMeetingsToLoad();
-  }
-
-  async clickAddMeeting() {
-    await this.addMeetingButton.click();
   }
 
   async searchMeetings(query: string) {
