@@ -1,7 +1,7 @@
 'use client';
 import React, { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { VideoCameraSlashIcon, EyeIcon, TrashIcon } from '@heroicons/react/24/outline';
+import { VideoCameraSlashIcon, EyeIcon, TrashIcon, ArrowTopRightOnSquareIcon } from '@heroicons/react/24/outline';
 import Link from 'next/link';
 import {
   Divider,
@@ -125,9 +125,32 @@ export const MeetingList = () => {
     },
   };
 
+  const joinColumn: ColumnDef<BaseRow> = {
+    id: 'join',
+    header: 'Join',
+    cell: ({ row }) => {
+      const url = (row.original as unknown as Record<string, unknown>)['url'] as string | undefined;
+      if (!url) return null;
+      return (
+        <a
+          href={url}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={(e) => e.stopPropagation()}
+          className="inline-flex items-center gap-1 rounded px-2 py-1 text-xs font-medium text-blue-600 hover:bg-blue-50 hover:text-blue-700 dark:text-blue-400 dark:hover:bg-blue-900/20 dark:hover:text-blue-300"
+        >
+          <ArrowTopRightOnSquareIcon className="h-3.5 w-3.5" />
+          Join
+        </a>
+      );
+    },
+  };
+
   const columns = useMemo(() => {
     const base = createColumnsFromMetadata<BaseRow>(metadata);
-    return base.map((col) => (col.id === 'platform' ? platformColumn : col)).concat(actionsColumn);
+    return base
+      .map((col) => (col.id === 'platform' ? platformColumn : col))
+      .concat(joinColumn, actionsColumn);
   }, [metadata, actionsColumn]);
 
   return (
