@@ -981,9 +981,13 @@ test.describe("Cell Editing Flow", () => {
     // Value should be updated in the cell (showing the label)
     await expect(stageCell).toHaveText(labelValue);
 
-    // Verify persistence after reload
+    // Verify persistence after reload — scope to the first data row to avoid
+    // matching the label across multiple deals
     await page.reload();
     await dealsPage.getDealItems();
-    await expect(page.getByText(labelValue, { exact: true })).toBeVisible();
+    const reloadedHeaders = await page.getByRole("columnheader").allInnerTexts();
+    const reloadedStageIndex = reloadedHeaders.findIndex(h => h.toLowerCase().includes("stage"));
+    const reloadedStageCell = page.getByRole("row").nth(1).locator("td").nth(reloadedStageIndex);
+    await expect(reloadedStageCell).toHaveText(labelValue);
   });
 });

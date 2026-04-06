@@ -114,10 +114,6 @@ test.describe("Company Activity Timeline - System Events", () => {
         return;
       }
 
-      await page
-        .getByRole("heading", { name: "Activity", exact: true })
-        .scrollIntoViewIfNeeded();
-
       // The activity text is "linked contact <name>"
       const baseName = contactName.split('(')[0].trim();
       await expect(
