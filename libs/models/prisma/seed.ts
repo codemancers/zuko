@@ -159,7 +159,7 @@ async function main() {
         create: { userId, isPrimary: true },
       },
     },
-    update: {},
+    update: { stage: "prospecting" },
   });
 
   await prisma.deal.upsert({
@@ -177,7 +177,7 @@ async function main() {
         create: { userId, isPrimary: true },
       },
     },
-    update: {},
+    update: { stage: "prospecting" },
   });
 
   const meeting = await prisma.meeting.upsert({

@@ -140,6 +140,9 @@ test.describe("Contact Activity Timeline - Authenticated", () => {
       timeout: 10000,
     });
 
+    await expect(
+      contactDetailPage.activityItems.filter({ hasText: originalComment })
+    ).toBeVisible({ timeout: 10000 });
     const items = await contactDetailPage.activityItems.all();
     let editIndex = -1;
     for (let i = 0; i < items.length; i++) {

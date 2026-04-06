@@ -82,7 +82,7 @@ test.describe("Meetings - Authenticated", () => {
     await meetingsPage.goto();
     await meetingsPage.clickAddMeeting();
     await page.waitForURL("**/meeting/add", { timeout: 10000 });
-    await page.getByPlaceholder(/paste meeting url/i).fill("https://example.com/meet");
+    await page.getByPlaceholder(/paste meeting url/i).fill("https://meet.google.com/abc-defg-hij");
     await page.getByRole("button", { name: /submit/i }).click();
     await expect(page.getByText(/meeting name is required/i)).toBeVisible({
       timeout: 5000,
