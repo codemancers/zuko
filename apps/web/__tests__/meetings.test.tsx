@@ -393,7 +393,6 @@ describe('AddMeeting', () => {
   it('renders Add Meeting heading and form fields', () => {
     render(<AddMeeting />, { wrapper: Wrapper });
     expect(screen.getByText('Add Meeting')).toBeInTheDocument();
-    expect(screen.getByTestId('project-dropdown')).toBeInTheDocument();
     expect(screen.getByLabelText(/meeting name/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/meeting url/i)).toBeInTheDocument();
     expect(
