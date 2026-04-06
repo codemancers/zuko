@@ -166,7 +166,7 @@ export const CONTACT_TABLE_METADATA: ColumnMetadata[] = [
 export const MEETING_TABLE_METADATA: ColumnMetadata[] = [
   {
     id: 'name',
-    header: 'Name',
+    header: 'Title',
     fieldType: 'entity',
     dataType: 'text',
     sortable: true,
