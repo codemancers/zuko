@@ -298,7 +298,7 @@ function createQueryClient() {
     },
   });
   qc.setQueryData(['meetings'], MOCK_MEETINGS);
-  qc.setQueryData(['meetings', 'table', undefined], MOCK_TABLE_MEETINGS);
+  qc.setQueryData(['meetings', 'table', { search: undefined }], MOCK_TABLE_MEETINGS);
   qc.setQueryData(['meeting', 1], MOCK_MEETING_DETAIL);
   qc.setQueryData(['meeting', 99], { ...MOCK_MEETING_DETAIL, id: 99 });
   return qc;
@@ -335,7 +335,9 @@ describe('MeetingList', () => {
   it('navigates to meeting detail when row is clicked', async () => {
     const user = userEvent.setup();
     render(<MeetingList />, { wrapper: Wrapper });
-    await user.click(screen.getByText('Weekly Product Sync'));
+    // Click the date cell (not a link) on the "Weekly Product Sync" row to trigger row click
+    const dateCells = screen.getAllByText('14 Jan 2024');
+    await user.click(dateCells[0]);
     expect(mockPush).toHaveBeenCalledWith('/meeting/1');
   });
 
