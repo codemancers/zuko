@@ -179,6 +179,49 @@ async function main() {
     },
     update: {},
   });
+
+  const meeting = await prisma.meeting.upsert({
+    where: { id: 1 },
+    create: {
+      organizationId: org.id,
+      name: "Weekly Product Sync",
+      url: "https://zoom.us/j/123456789",
+      platform: "ZOOM",
+      status: "COMPLETED",
+      timezone: "UTC",
+      scheduledAt: new Date("2024-01-14T10:00:00Z"),
+      createdBy: userId,
+    },
+    update: {},
+  });
+
+  await prisma.meetingSummary.upsert({
+    where: { id: 1 },
+    create: {
+      meetingId: meeting.id,
+      content:
+        "The team discussed the ongoing UI refactor and API documentation needs.",
+    },
+    update: {},
+  });
+
+  await prisma.meetingActionItem.upsert({
+    where: { id: 1 },
+    create: {
+      meetingId: meeting.id,
+      title: "Review UI refactor components",
+    },
+    update: {},
+  });
+
+  await prisma.meetingActionItem.upsert({
+    where: { id: 2 },
+    create: {
+      meetingId: meeting.id,
+      title: "Review API documentation",
+    },
+    update: {},
+  });
 }
 
 main()
