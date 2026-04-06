@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { VideoCameraSlashIcon, EyeIcon, TrashIcon, ArrowTopRightOnSquareIcon } from '@heroicons/react/24/outline';
 import Link from 'next/link';
 import {
+  Badge,
   Divider,
   Heading,
   Input,
@@ -137,10 +138,11 @@ export const MeetingList = () => {
           target="_blank"
           rel="noopener noreferrer"
           onClick={(e) => e.stopPropagation()}
-          className="inline-flex items-center gap-1 rounded px-2 py-1 text-xs font-medium text-blue-600 hover:bg-blue-50 hover:text-blue-700 dark:text-blue-400 dark:hover:bg-blue-900/20 dark:hover:text-blue-300"
         >
-          <ArrowTopRightOnSquareIcon className="h-3.5 w-3.5" />
-          Join
+          <Badge color="blue" className="inline-flex items-center gap-1 cursor-pointer">
+            <ArrowTopRightOnSquareIcon className="h-3 w-3" />
+            Join
+          </Badge>
         </a>
       );
     },
