@@ -1,10 +1,9 @@
 'use client';
 import React, { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { PlusIcon, VideoCameraSlashIcon, EyeIcon, TrashIcon } from '@heroicons/react/24/outline';
+import { VideoCameraSlashIcon, EyeIcon, TrashIcon } from '@heroicons/react/24/outline';
 import Link from 'next/link';
 import {
-  Button,
   Divider,
   Heading,
   Input,
@@ -59,93 +58,12 @@ import { getTableViewMeetings } from '@/server/query-options';
 import { meetingsApi } from '@/lib/api/meetings';
 import { BaseTable, createColumnsFromMetadata, type BaseRow } from '@/components/Table';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { MeetingFormSchema, type MeetingFormSchemaType } from './add-meeting';
-
-// Inline add row rendered inside the table body
-function InlineAddMeetingRow({
-  onCancel,
-  onSuccess,
-}: {
-  onCancel: () => void;
-  onSuccess: () => void;
-}) {
-  const queryClient = useQueryClient();
-
-  const createMutation = useMutation({
-    mutationFn: meetingsApi.createMeeting,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['meetings'] });
-      toast.success('Meeting created successfully');
-      onSuccess();
-    },
-    onError: () => toast.error('Failed to create meeting'),
-  });
-
-  const {
-    handleSubmit,
-    register,
-    formState: { errors },
-  } = useForm<MeetingFormSchemaType>({
-    resolver: zodResolver(MeetingFormSchema),
-  });
-
-  const onSubmit = (data: MeetingFormSchemaType) => {
-    createMutation.mutate({
-      url: data.url,
-      name: data.name,
-      description: data.description,
-    });
-  };
-
-  return (
-    <tr className="border-t border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/30">
-      <td colSpan={99} className="px-3 py-2">
-        <form onSubmit={handleSubmit(onSubmit)}>
-          <div className="flex items-start gap-3">
-            <div className="flex-1">
-              <Input
-                placeholder="Enter meeting name"
-                {...register('name')}
-                autoFocus
-                autoComplete="off"
-              />
-              {errors.name && (
-                <p className="mt-1 text-xs text-red-500">{errors.name.message}</p>
-              )}
-            </div>
-            <div className="flex-1">
-              <Input
-                placeholder="Paste meeting URL"
-                {...register('url')}
-                autoComplete="off"
-              />
-              {errors.url && (
-                <p className="mt-1 text-xs text-red-500">{errors.url.message}</p>
-              )}
-            </div>
-            <div className="flex shrink-0 gap-2">
-              <Button type="submit" disabled={createMutation.isPending}>
-                {createMutation.isPending ? 'Adding…' : 'Add'}
-              </Button>
-              <Button type="button" plain onClick={onCancel} disabled={createMutation.isPending}>
-                Cancel
-              </Button>
-            </div>
-          </div>
-        </form>
-      </td>
-    </tr>
-  );
-}
 
 export const MeetingList = () => {
   const router = useRouter();
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState('');
   const [meetingToDelete, setMeetingToDelete] = useState<number | null>(null);
-  const [isAddingMeeting, setIsAddingMeeting] = useState(false);
 
   const { data: meetingsData, isLoading } = useQuery(
     getTableViewMeetings({ search: searchTerm || undefined }),
@@ -221,10 +139,6 @@ export const MeetingList = () => {
             Manage your meeting recordings and transcripts
           </p>
         </div>
-        <Button onClick={() => setIsAddingMeeting(true)}>
-          <PlusIcon className="h-4 w-4" />
-          Add to a meeting
-        </Button>
       </div>
 
       <Divider className="mt-6" />
@@ -247,24 +161,16 @@ export const MeetingList = () => {
         disableRowClick={false}
         onRowClick={(meeting) => router.push(`/meeting/${meeting.id}`)}
         totalCount={meetingsData?.pagination?.total}
-        showAddRow={!isAddingMeeting}
-        onAddRow={() => setIsAddingMeeting(true)}
-        addRowContent={
-          isAddingMeeting ? (
-            <InlineAddMeetingRow
-              onCancel={() => setIsAddingMeeting(false)}
-              onSuccess={() => setIsAddingMeeting(false)}
-            />
-          ) : undefined
-        }
-        showEmptyState={!isAddingMeeting && meetings.length === 0}
+        showAddRow
+        onAddRow={() => router.push('/meeting/add')}
+        showEmptyState={meetings.length === 0}
         emptyStateConfig={{
           icon: VideoCameraSlashIcon,
           title: 'No Meetings Found',
           description: 'Get started by adding Zuko to your meetings.',
           action: {
             label: 'Add to a meeting',
-            onClick: () => setIsAddingMeeting(true),
+            onClick: () => router.push('/meeting/add'),
           },
         }}
       />

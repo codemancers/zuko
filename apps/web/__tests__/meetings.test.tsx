@@ -318,11 +318,10 @@ describe('MeetingList', () => {
     mockGetTableViewMeetings.mockResolvedValue(MOCK_TABLE_MEETINGS);
   });
 
-  it('renders Meetings heading, search input, and Add to a meeting button', () => {
+  it('renders Meetings heading and search input', () => {
     render(<MeetingList />, { wrapper: Wrapper });
     expect(screen.getByText('Meetings')).toBeInTheDocument();
     expect(screen.getByPlaceholderText('Search meetings...')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /add to a meeting/i })).toBeInTheDocument();
   });
 
   it('shows meeting names from table data', () => {
@@ -341,12 +340,11 @@ describe('MeetingList', () => {
     expect(mockPush).toHaveBeenCalledWith('/meeting/1');
   });
 
-  it('Add to a meeting button opens inline add form', async () => {
+  it('+ button navigates to add meeting page', async () => {
     const user = userEvent.setup();
     render(<MeetingList />, { wrapper: Wrapper });
-    await user.click(screen.getByRole('button', { name: /add to a meeting/i }));
-    expect(screen.getByPlaceholderText(/enter meeting name/i)).toBeInTheDocument();
-    expect(screen.getByPlaceholderText(/paste meeting url/i)).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /add row/i }));
+    expect(mockPush).toHaveBeenCalledWith('/meeting/add');
   });
 
   it('View link has correct href', async () => {
