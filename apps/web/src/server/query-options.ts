@@ -4,7 +4,7 @@ import { companiesApi, CompanyFilters } from '@/lib/api/companies';
 import { dealsApi, DealFilters } from '@/lib/api/deals';
 import { tasksApi, TaskFilters } from '@/lib/api/tasks';
 import { activitiesApi } from '@/lib/api/activities';
-import { meetingsApi } from '@/lib/api/meetings';
+import { meetingsApi, type MeetingFilters } from '@/lib/api/meetings';
 import { authClient } from '@/lib/auth-client';
 
 export const getContacts = (filters?: ContactFilters) =>
@@ -200,6 +200,12 @@ export const getMeetings = queryOptions({
   queryKey: ['meetings'],
   queryFn: () => meetingsApi.getMeetings(),
 });
+
+export const getTableViewMeetings = (filters?: MeetingFilters) =>
+  queryOptions({
+    queryKey: ['meetings', 'table', filters],
+    queryFn: () => meetingsApi.getTableViewMeetings(filters),
+  });
 
 export const getMeeting = (id: number) =>
   queryOptions({

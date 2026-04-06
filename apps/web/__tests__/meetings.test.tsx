@@ -2,7 +2,7 @@
  * @vitest-environment jsdom
  */
 import React, { useState } from 'react';
-import { render, screen, within } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -124,6 +124,7 @@ vi.mock('@/components/shared/ConfirmDialog', () => ({
 const mockDeleteMeeting = vi.fn();
 const mockEndMeeting = vi.fn();
 const mockCreateMeeting = vi.fn();
+const mockGetTableViewMeetings = vi.fn();
 vi.mock('@/lib/api/meetings', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/lib/api/meetings')>();
   return {
@@ -131,6 +132,7 @@ vi.mock('@/lib/api/meetings', async (importOriginal) => {
     meetingsApi: {
       getMeetings: vi.fn().mockResolvedValue([]),
       getMeeting: vi.fn().mockResolvedValue(null),
+      getTableViewMeetings: (...args: unknown[]) => mockGetTableViewMeetings(...args),
       deleteMeeting: (...args: unknown[]) => mockDeleteMeeting(...args),
       endMeeting: (...args: unknown[]) => mockEndMeeting(...args),
       createMeeting: (...args: unknown[]) => mockCreateMeeting(...args),
@@ -197,6 +199,21 @@ const MOCK_MEETINGS: Meeting[] = [
     chatMessages: null,
   },
 ];
+
+const MOCK_TABLE_MEETINGS = {
+  data: [
+    { id: 2, name: 'Q1 Roadmap Planning', platform: { value: 'ZOOM', display: 'Zoom' }, status: { value: 'COMPLETED', display: 'Completed' }, scheduledAt: { value: '2024-01-15T10:00:00Z', display: '15 Jan 2024' } },
+    { id: 1, name: 'Weekly Product Sync', platform: { value: 'ZOOM', display: 'Zoom' }, status: { value: 'COMPLETED', display: 'Completed' }, scheduledAt: { value: '2024-01-14T10:00:00Z', display: '14 Jan 2024' } },
+    { id: 3, name: 'Frontend Performance Review', platform: { value: 'ZOOM', display: 'Zoom' }, status: { value: 'COMPLETED', display: 'Completed' }, scheduledAt: { value: '2024-01-13T10:00:00Z', display: '13 Jan 2024' } },
+  ],
+  metadata: [
+    { id: 'name', header: 'Name', fieldType: 'entity', dataType: 'text', sortable: true, editable: false, isVisible: true, default: true, config: { hrefTemplate: '/meeting/{id}' } },
+    { id: 'platform', header: 'Platform', fieldType: 'select', dataType: 'text', sortable: false, editable: false, isVisible: true, default: true, config: { format: 'stage' } },
+    { id: 'scheduledAt', header: 'Date', fieldType: 'date', dataType: 'date', sortable: true, editable: false, isVisible: true, default: true, config: { format: 'date' } },
+    { id: 'status', header: 'Status', fieldType: 'select', dataType: 'text', sortable: false, editable: false, isVisible: true, default: true, config: { format: 'stage', render: 'badge' } },
+  ],
+  pagination: { total: 3, page: 1, limit: 3, totalPages: 1 },
+};
 
 const MOCK_MEETING_DETAIL: Meeting = {
   id: 1,
@@ -281,6 +298,7 @@ function createQueryClient() {
     },
   });
   qc.setQueryData(['meetings'], MOCK_MEETINGS);
+  qc.setQueryData(['meetings', 'table', undefined], MOCK_TABLE_MEETINGS);
   qc.setQueryData(['meeting', 1], MOCK_MEETING_DETAIL);
   qc.setQueryData(['meeting', 99], { ...MOCK_MEETING_DETAIL, id: 99 });
   return qc;
@@ -297,50 +315,21 @@ describe('MeetingList', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockDeleteMeeting.mockResolvedValue(undefined);
+    mockGetTableViewMeetings.mockResolvedValue(MOCK_TABLE_MEETINGS);
   });
 
-  it('renders Meetings heading, search, sort, and Add to a meeting button', () => {
+  it('renders Meetings heading, search input, and Add to a meeting button', () => {
     render(<MeetingList />, { wrapper: Wrapper });
     expect(screen.getByText('Meetings')).toBeInTheDocument();
-    expect(
-      screen.getByPlaceholderText('Search meetings...')
-    ).toBeInTheDocument();
-    expect(screen.getByRole('combobox')).toHaveValue('date');
-    expect(
-      screen.getByRole('link', { name: /add to a meeting/i })
-    ).toHaveAttribute('href', '/meeting/add');
+    expect(screen.getByPlaceholderText('Search meetings...')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /add to a meeting/i })).toBeInTheDocument();
   });
 
-  it('shows meeting names from default data', () => {
+  it('shows meeting names from table data', () => {
     render(<MeetingList />, { wrapper: Wrapper });
     expect(screen.getByText('Weekly Product Sync')).toBeInTheDocument();
     expect(screen.getByText('Q1 Roadmap Planning')).toBeInTheDocument();
     expect(screen.getByText('Frontend Performance Review')).toBeInTheDocument();
-  });
-
-  it('filters meetings by search (case-insensitive)', async () => {
-    const user = userEvent.setup();
-    render(<MeetingList />, { wrapper: Wrapper });
-    const search = screen.getByPlaceholderText('Search meetings...');
-    await user.type(search, 'product');
-    expect(screen.getByText('Weekly Product Sync')).toBeInTheDocument();
-    expect(screen.queryByText('Q1 Roadmap Planning')).not.toBeInTheDocument();
-  });
-
-  it('sorts by name when sort select is name', async () => {
-    const user = userEvent.setup();
-    render(<MeetingList />, { wrapper: Wrapper });
-    await user.selectOptions(screen.getByRole('combobox'), 'name');
-    const items = screen.getAllByRole('listitem');
-    const firstHeading = within(items[0]).getByText(/Frontend Performance Review/);
-    expect(firstHeading).toBeInTheDocument();
-  });
-
-  it('sorts by date when sort select is date', async () => {
-    const user = userEvent.setup();
-    render(<MeetingList />, { wrapper: Wrapper });
-    await user.selectOptions(screen.getByRole('combobox'), 'date');
-    expect(screen.getByRole('combobox')).toHaveValue('date');
   });
 
   it('navigates to meeting detail when row is clicked', async () => {
@@ -350,10 +339,12 @@ describe('MeetingList', () => {
     expect(mockPush).toHaveBeenCalledWith('/meeting/1');
   });
 
-  it('Add to a meeting link goes to /meeting/add', () => {
+  it('Add to a meeting button opens inline add form', async () => {
+    const user = userEvent.setup();
     render(<MeetingList />, { wrapper: Wrapper });
-    const link = screen.getByRole('link', { name: /add to a meeting/i });
-    expect(link).toHaveAttribute('href', '/meeting/add');
+    await user.click(screen.getByRole('button', { name: /add to a meeting/i }));
+    expect(screen.getByPlaceholderText(/enter meeting name/i)).toBeInTheDocument();
+    expect(screen.getByPlaceholderText(/paste meeting url/i)).toBeInTheDocument();
   });
 
   it('opens dropdown and View link has correct href', async () => {

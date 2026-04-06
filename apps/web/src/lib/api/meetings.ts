@@ -1,4 +1,6 @@
 import { apiClient } from '../api-client';
+import type { TableViewResponse } from '@/types/table-metadata';
+import type { BaseRow } from '@/components/Table';
 
 export type MeetingStatus =
   | 'PENDING'
@@ -69,6 +71,12 @@ export interface Meeting {
   projectName?: string | null;
 }
 
+export type TableViewMeetingsResponse = TableViewResponse<BaseRow>;
+
+export interface MeetingFilters {
+  search?: string;
+}
+
 export interface CreateMeetingDto {
   url: string;
   name?: string;
@@ -79,6 +87,15 @@ export interface CreateMeetingDto {
 
 export const meetingsApi = {
   getMeetings: (): Promise<Meeting[]> => apiClient.get('/meetings'),
+
+  getTableViewMeetings: (
+    filters?: MeetingFilters,
+  ): Promise<TableViewMeetingsResponse> => {
+    const params = new URLSearchParams();
+    if (filters?.search) params.append('search', filters.search);
+    const queryString = params.toString();
+    return apiClient.get(`/tables/meetings${queryString ? `?${queryString}` : ''}`);
+  },
 
   getMeeting: (id: number): Promise<Meeting> =>
     apiClient.get(`/meetings/${id}`),

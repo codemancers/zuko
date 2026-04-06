@@ -60,14 +60,6 @@ test.describe("Meetings - Authenticated", () => {
     await expect(page.getByText("Weekly Product Sync")).toBeVisible();
   });
 
-  test("can change sort to name", async ({ meetingsPage, page }) => {
-    await meetingsPage.goto();
-    await meetingsPage.sortSelect.selectOption("name");
-    await page.waitForLoadState("load", { timeout: 5000 });
-    const items = await meetingsPage.getMeetingItems();
-    expect(items.length).toBeGreaterThanOrEqual(0);
-  });
-
   test("can open inline add meeting form", async ({ meetingsPage, page }) => {
     await meetingsPage.goto();
     await meetingsPage.clickAddMeeting();

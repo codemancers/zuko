@@ -163,6 +163,91 @@ export const CONTACT_TABLE_METADATA: ColumnMetadata[] = [
   },
 ];
 
+export const MEETING_TABLE_METADATA: ColumnMetadata[] = [
+  {
+    id: 'name',
+    header: 'Name',
+    fieldType: 'entity',
+    dataType: 'text',
+    sortable: true,
+    filterable: false,
+    searchable: true,
+    editable: false,
+    isVisible: true,
+    default: true,
+    config: {
+      hrefTemplate: '/meeting/{id}',
+    },
+  },
+  {
+    id: 'platform',
+    header: 'Platform',
+    fieldType: 'select',
+    dataType: 'text',
+    sortable: false,
+    filterable: false,
+    searchable: false,
+    editable: false,
+    isVisible: true,
+    default: true,
+    config: {
+      format: 'stage',
+      options: [
+        { label: 'Google Meet', value: 'GOOGLE_MEET' },
+        { label: 'Zoom', value: 'ZOOM' },
+        { label: 'MS Teams', value: 'MS_TEAMS' },
+      ],
+    },
+  },
+  {
+    id: 'scheduledAt',
+    header: 'Date',
+    fieldType: 'date',
+    dataType: 'date',
+    sortable: true,
+    filterable: false,
+    searchable: false,
+    editable: false,
+    isVisible: true,
+    default: true,
+    config: {
+      format: 'date',
+    },
+  },
+  {
+    id: 'status',
+    header: 'Status',
+    fieldType: 'select',
+    dataType: 'text',
+    sortable: false,
+    filterable: false,
+    searchable: false,
+    editable: false,
+    isVisible: true,
+    default: true,
+    config: {
+      render: 'badge',
+      format: 'stage',
+      options: [
+        { label: 'Pending', value: 'PENDING' },
+        { label: 'In Progress', value: 'IN_PROGRESS' },
+        { label: 'Processing', value: 'PROCESSING' },
+        { label: 'Completed', value: 'COMPLETED' },
+        { label: 'Failed', value: 'FAILED' },
+        { label: 'Rejected', value: 'REJECTED' },
+      ],
+      colorMap: {
+        pending: 'zinc',
+        in_progress: 'blue',
+        processing: 'blue',
+        completed: 'green',
+        failed: 'red',
+        rejected: 'red',
+      },
+    },
+  },
+];
+
 export const DEAL_TABLE_METADATA: ColumnMetadata[] = [
   {
     id: 'title',

@@ -62,6 +62,14 @@ export class TableController {
     return this.tableService.getDealsTable(organizationId, query);
   }
 
+  @Get('meetings')
+  async getMeetingsTable(
+    @OrgId() organizationId: number,
+    @Query('search') search?: string,
+  ) {
+    return this.tableService.getMeetingsTable(organizationId, search);
+  }
+
   @Post(':entity/columns')
   async createColumn(
     @Param('entity') entity: string,

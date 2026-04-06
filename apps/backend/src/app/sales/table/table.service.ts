@@ -6,6 +6,7 @@ import {
   COMPANY_TABLE_METADATA,
   CONTACT_TABLE_METADATA,
   DEAL_TABLE_METADATA,
+  MEETING_TABLE_METADATA,
   ColumnMetadata,
   TableColumnRepository,
   mapTableColumnsToMetadata,
@@ -23,6 +24,7 @@ import { ContactListQueryDto } from '../contacts.controller';
 import { DealListQueryDto } from '../deals.controller';
 import { CreateColumnDto, UpdateCellDto } from './table.controller';
 import { TableColumn } from '@prisma/client';
+import { PrismaService } from '../../../prisma/prisma.service';
 
 @Injectable()
 export class TableService {
@@ -34,6 +36,7 @@ export class TableService {
     private readonly dealsService: DealsService,
     private readonly rowBuilder: TableRowBuilder,
     private readonly tableColumnRepository: TableColumnRepository,
+    private readonly prisma: PrismaService,
   ) {}
 
   async getCompaniesTable(organizationId: number, query: CompanyListQueryDto) {
@@ -147,6 +150,36 @@ export class TableService {
       metadata,
       data,
       pagination: result.pagination,
+    };
+  }
+
+  async getMeetingsTable(organizationId: number, search?: string) {
+    const meetings = await this.prisma.meeting.findMany({
+      where: {
+        organizationId,
+        deletedAt: null,
+        ...(search
+          ? { name: { contains: search, mode: 'insensitive' } }
+          : {}),
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    const { metadata, data } = this.buildMergedTable(
+      meetings as unknown as Record<string, unknown>[],
+      MEETING_TABLE_METADATA,
+      [],
+    );
+
+    return {
+      metadata,
+      data,
+      pagination: {
+        total: meetings.length,
+        page: 1,
+        limit: meetings.length,
+        totalPages: 1,
+      },
     };
   }
 

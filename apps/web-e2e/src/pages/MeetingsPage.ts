@@ -4,14 +4,12 @@ import { BasePage } from "./BasePage";
 export class MeetingsPage extends BasePage {
   readonly heading: Locator;
   readonly searchInput: Locator;
-  readonly sortSelect: Locator;
   readonly addMeetingButton: Locator;
 
   constructor(page: Page) {
     super(page);
     this.heading = page.getByRole("heading", { name: "Meetings", exact: true });
     this.searchInput = page.getByPlaceholder(/Search meetings/i);
-    this.sortSelect = page.getByRole("combobox");
     this.addMeetingButton = page.getByRole("button", {
       name: /add to a meeting/i,
     });
