@@ -2,6 +2,7 @@
 import React, { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { PlusIcon, VideoCameraSlashIcon, EyeIcon, TrashIcon } from '@heroicons/react/24/outline';
+import Link from 'next/link';
 import {
   Button,
   Divider,
@@ -169,16 +170,16 @@ export const MeetingList = () => {
   const actionsColumn: ColumnDef<BaseRow> = useMemo(
     () => ({
       id: 'actions',
-      header: '',
+      header: 'Actions',
       cell: ({ row }) => (
         <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
-          <a
+          <Link
             href={`/meeting/${row.original.id}`}
             className="rounded p-1.5 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
             aria-label="View"
           >
             <EyeIcon className="h-4 w-4" />
-          </a>
+          </Link>
           <button
             type="button"
             onClick={() => setMeetingToDelete(Number(row.original.id))}
