@@ -499,13 +499,13 @@ const MeetingDetail = ({ meetingId, meetingOverride }: MeetingDetailProps) => {
                   </ZukoText>
                 </div>
               ) : (
-                <ul className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                   {filtered.map((it) => {
                     const hasTask = !!it.taskId;
                     const isCompleted = !!it.completed;
 
                     return (
-                      <li
+                      <div
                         key={it.id}
                         className={[
                           'group relative rounded-xl border p-4 transition',
@@ -585,10 +585,10 @@ const MeetingDetail = ({ meetingId, meetingOverride }: MeetingDetailProps) => {
                             </button>
                           </div>
                         </div>
-                      </li>
+                      </div>
                     );
                   })}
-                </ul>
+                </div>
               )}
             </div>
           );
