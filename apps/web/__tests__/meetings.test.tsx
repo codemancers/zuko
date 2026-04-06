@@ -2,7 +2,7 @@
  * @vitest-environment jsdom
  */
 import React, { useState } from 'react';
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -349,56 +349,41 @@ describe('MeetingList', () => {
     expect(screen.getByPlaceholderText(/paste meeting url/i)).toBeInTheDocument();
   });
 
-  it('opens dropdown and View link has correct href', async () => {
-    const user = userEvent.setup();
+  it('View link has correct href', async () => {
     render(<MeetingList />, { wrapper: Wrapper });
-    const moreButtons = screen.getAllByRole('button', { name: /more options/i });
-    await user.click(moreButtons[1]);
-    const viewItem = await screen.findByRole('menuitem', { name: /view/i }, { timeout: 3000 });
-    expect(viewItem).toHaveAttribute('href', '/meeting/1');
+    const viewLinks = screen.getAllByRole('link', { name: /view/i });
+    expect(viewLinks[1]).toHaveAttribute('href', '/meeting/1');
   });
 
-  it('opens delete dialog when Delete is clicked', async () => {
+  it('opens delete dialog when trash button is clicked', async () => {
     const user = userEvent.setup();
     render(<MeetingList />, { wrapper: Wrapper });
-    const moreButtons = screen.getAllByRole('button', { name: /more options/i });
-    await user.click(moreButtons[0]);
-    const deleteItem = await screen.findByRole('menuitem', { name: /delete/i });
-    await user.click(deleteItem);
-    expect(
-      screen.getByText('Are you sure you want to delete this meeting?')
-    ).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /^cancel$/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /^delete$/i })).toBeInTheDocument();
+    const deleteButtons = screen.getAllByRole('button', { name: /^delete$/i });
+    await user.click(deleteButtons[0]);
+    const dialog = screen.getByRole('dialog');
+    expect(within(dialog).getByText('Are you sure you want to delete this meeting?')).toBeInTheDocument();
+    expect(within(dialog).getByRole('button', { name: /^cancel$/i })).toBeInTheDocument();
+    expect(within(dialog).getByRole('button', { name: /^delete$/i })).toBeInTheDocument();
   });
 
   it('Cancel in delete dialog closes without calling delete', async () => {
     const user = userEvent.setup();
     render(<MeetingList />, { wrapper: Wrapper });
-    const moreButtons = screen.getAllByRole('button', { name: /more options/i });
-    await user.click(moreButtons[0]);
-    const deleteItem = await screen.findByRole('menuitem', { name: /delete/i });
-    await user.click(deleteItem);
-    await user.click(screen.getByRole('button', { name: /^cancel$/i }));
+    const deleteButtons = screen.getAllByRole('button', { name: /^delete$/i });
+    await user.click(deleteButtons[0]);
+    await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: /^cancel$/i }));
     expect(mockToastSuccess).not.toHaveBeenCalled();
-    expect(
-      screen.queryByText('Are you sure you want to delete this meeting?')
-    ).not.toBeInTheDocument();
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 
   it('Confirm Delete calls toast and closes dialog', async () => {
     const user = userEvent.setup();
     render(<MeetingList />, { wrapper: Wrapper });
-    const moreButtons = screen.getAllByRole('button', { name: /more options/i });
-    await user.click(moreButtons[1]);
-    const deleteItem = await screen.findByRole('menuitem', { name: /delete/i });
-    await user.click(deleteItem);
-    const deleteBtn = screen.getByRole('button', { name: /^delete$/i });
-    await user.click(deleteBtn);
+    const deleteButtons = screen.getAllByRole('button', { name: /^delete$/i });
+    await user.click(deleteButtons[1]);
+    await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: /^delete$/i }));
     expect(mockToastSuccess).toHaveBeenCalledWith('Meeting deleted: 1');
-    expect(
-      screen.queryByText('Are you sure you want to delete this meeting?')
-    ).not.toBeInTheDocument();
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 });
 

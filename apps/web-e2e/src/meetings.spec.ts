@@ -208,9 +208,8 @@ test.describe("Meetings - Authenticated", () => {
     page,
   }) => {
     await meetingsPage.goto();
-    const moreButtons = page.getByRole("button", { name: /more options/i });
-    await moreButtons.first().click();
-    await page.getByRole("menuitem", { name: /delete/i }).click();
+    const deleteButtons = page.getByRole("button", { name: /^delete$/i });
+    await deleteButtons.first().click();
     await expect(
       page.getByText("Are you sure you want to delete this meeting?")
     ).toBeVisible({ timeout: 5000 });

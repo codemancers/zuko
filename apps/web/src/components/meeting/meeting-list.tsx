@@ -1,14 +1,10 @@
 'use client';
 import React, { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { PlusIcon, VideoCameraSlashIcon, EllipsisVerticalIcon } from '@heroicons/react/24/outline';
+import { PlusIcon, VideoCameraSlashIcon, EyeIcon, TrashIcon } from '@heroicons/react/24/outline';
 import {
   Button,
   Divider,
-  Dropdown,
-  DropdownButton,
-  DropdownItem,
-  DropdownMenu,
   Heading,
   Input,
 } from '@zuko/ui-kit';
@@ -175,23 +171,23 @@ export const MeetingList = () => {
       id: 'actions',
       header: '',
       cell: ({ row }) => (
-        <div onClick={(e) => e.stopPropagation()}>
-          <Dropdown>
-            <DropdownButton plain aria-label="More options">
-              <EllipsisVerticalIcon className="h-5 w-5 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200" />
-            </DropdownButton>
-            <DropdownMenu anchor="bottom end">
-              <DropdownItem href={`/meeting/${row.original.id}`}>
-                View
-              </DropdownItem>
-              <DropdownItem
-                onClick={() => setMeetingToDelete(Number(row.original.id))}
-                disabled={deleteMeetingMutation.isPending}
-              >
-                Delete
-              </DropdownItem>
-            </DropdownMenu>
-          </Dropdown>
+        <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+          <a
+            href={`/meeting/${row.original.id}`}
+            className="rounded p-1.5 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
+            aria-label="View"
+          >
+            <EyeIcon className="h-4 w-4" />
+          </a>
+          <button
+            type="button"
+            onClick={() => setMeetingToDelete(Number(row.original.id))}
+            disabled={deleteMeetingMutation.isPending}
+            className="rounded p-1.5 text-zinc-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20 dark:hover:text-red-400 disabled:opacity-50"
+            aria-label="Delete"
+          >
+            <TrashIcon className="h-4 w-4" />
+          </button>
         </div>
       ),
     }),
