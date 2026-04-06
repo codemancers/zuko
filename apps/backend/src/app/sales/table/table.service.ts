@@ -165,8 +165,13 @@ export class TableService {
       orderBy: { createdAt: 'desc' },
     });
 
+    const meetingsWithDateFallback = meetings.map((m) => ({
+      ...m,
+      scheduledAt: m.scheduledAt ?? m.createdAt,
+    }));
+
     const { metadata, data } = this.buildMergedTable(
-      meetings as unknown as Record<string, unknown>[],
+      meetingsWithDateFallback as unknown as Record<string, unknown>[],
       MEETING_TABLE_METADATA,
       [],
     );
