@@ -140,13 +140,9 @@ test.describe.serial("Company Detail - Contact Management", () => {
       false
     );
     const nameToFind = selectedName.replace(/\s*\([^)]*\)$/, "").trim();
-    const section = page
-      .getByRole("heading", { name: "Associated Contacts" })
-      .locator("..")
-      .locator("..");
-    await expect(section.getByText(nameToFind, { exact: false })).toBeVisible({
-      timeout: 10000,
-    });
+    await expect(
+      page.locator('a[href^="/contacts/"]', { hasText: nameToFind })
+    ).toBeVisible({ timeout: 10000 });
     const newContacts = await companyDetailPage.getAssociatedContacts();
     expect(newContacts.length).toBeGreaterThan(initialContacts.length);
   });

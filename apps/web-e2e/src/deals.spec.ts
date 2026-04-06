@@ -960,15 +960,19 @@ test.describe("Cell Editing Flow", () => {
     const stageIndex = headerTexts.findIndex(h => h.toLowerCase().includes("stage"));
 
     const stageCell = firstRow.locator("td").nth(stageIndex);
-    const newValue = "qualification";
-    const labelValue = "Qualification";
 
     // Click to enter edit mode
     await stageCell.evaluate(node => (node as any).click());
-    
+
     // The Select should be visible
     const select = stageCell.locator("select");
     await expect(select).toBeVisible();
+
+    // Read current value and pick a different one so the update always fires
+    const currentValue = await select.inputValue();
+    const newValue = currentValue === "qualification" ? "prospecting" : "qualification";
+    const labelValue = newValue === "qualification" ? "Qualification" : "Prospecting";
+
     await select.selectOption({ value: newValue });
 
     // Success toast should appear
