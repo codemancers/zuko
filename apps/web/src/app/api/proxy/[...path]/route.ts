@@ -5,7 +5,6 @@
  * Browser → Next.js /api/proxy → Backend API
  */
 
-import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
 
 const BACKEND_URL =
@@ -61,9 +60,8 @@ async function proxyRequest(
   // Don't add /api prefix here - the client already includes it in the path
   const url = `${BACKEND_URL}/${path}${searchParams ? `?${searchParams}` : ''}`;
 
-  // Get cookies from the request to forward session
-  const cookieStore = await cookies();
-  const cookieHeader = cookieStore.toString();
+  // Forward the raw cookie header from the browser request to preserve session
+  const cookieHeader = request.headers.get('cookie') || '';
 
   // Prepare headers
   const headers: HeadersInit = {

@@ -1,60 +1,36 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
 import {
   PlusIcon,
-  EllipsisVerticalIcon,
   CalendarIcon,
   VideoCameraIcon,
   MagnifyingGlassIcon,
+  VideoCameraSlashIcon,
+  EllipsisVerticalIcon,
 } from '@heroicons/react/24/outline';
 import {
-  Button,
   Badge,
-  Heading,
-  Text,
-  Strong,
+  Button,
   Dropdown,
   DropdownButton,
   DropdownItem,
   DropdownMenu,
+  Heading,
   Input,
   InputGroup,
   Select,
-  Divider,
 } from '@zuko/ui-kit';
 import { toast } from 'sonner';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getMeetings } from '@/server/query-options';
-import { meetingsApi } from '@/lib/api/meetings';
-
-const ReusableDialog = ({
-  showDialog,
-  title,
-  setIsOpen,
-  nextActionClick,
-  nextActionText,
-}: any) => {
-  if (!showDialog) return null;
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="rounded-lg bg-white p-6 shadow-xl dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
-        <Heading className="mb-4">{title}</Heading>
-        <div className="flex justify-end gap-3">
-          <Button onClick={() => setIsOpen(false)} plain>
-            Cancel
-          </Button>
-          <Button onClick={nextActionClick} color="red">
-            {nextActionText}
-          </Button>
-        </div>
-      </div>
-    </div>
-  );
-};
+import { meetingsApi, type Meeting } from '@/lib/api/meetings';
+import { BaseTable } from '@/components/Table';
+import type { ColumnDef } from '@tanstack/react-table';
+import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -91,7 +67,6 @@ export const MeetingList = () => {
   const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
   const [sort, setSort] = useState('date');
-  const [isOpenDeleteDialog, setIsOpenDeleteDialog] = useState(false);
   const [meetingToDelete, setMeetingToDelete] = useState<number | null>(null);
 
   const { data: meetings = [], isLoading } = useQuery(getMeetings);
@@ -105,191 +80,171 @@ export const MeetingList = () => {
     onError: () => toast.error('Failed to delete meeting'),
   });
 
-  if (isLoading) {
-    return (
-      <div className="space-y-8">
-        <div className="flex-1">
-          <Heading>Meetings</Heading>
-        </div>
-        <div className="flex h-40 items-center justify-center rounded-lg border border-zinc-200 dark:border-zinc-800">
-          <Text>Loading meetings...</Text>
-        </div>
-      </div>
-    );
-  }
+  const filteredMeetings = useMemo(
+    () =>
+      (meetings || [])
+        .filter((meeting) =>
+          (meeting.name ?? '').toLowerCase().includes(search.toLowerCase()),
+        )
+        .sort((a, b) => {
+          if (sort === 'name') {
+            return (a.name ?? '').localeCompare(b.name ?? '');
+          } else if (sort === 'date') {
+            const dateA = a.scheduledAt || a.createdAt;
+            const dateB = b.scheduledAt || b.createdAt;
+            return new Date(dateB).getTime() - new Date(dateA).getTime();
+          }
+          return 0;
+        }),
+    [meetings, search, sort],
+  );
 
-  // Handle empty state
-  if (meetings?.length === 0) {
-    return (
-      <div className="space-y-8">
-        <div className="flex-1">
-          <Heading>Meetings</Heading>
-        </div>
-        <div className="flex flex-col h-64 items-center justify-center gap-4 rounded-lg border border-zinc-200 dark:border-zinc-800">
-          <PlusIcon className="h-12 w-12 text-zinc-400" />
-          <div className="text-center">
-            <Text className="font-semibold text-lg">No Meetings Found</Text>
-            <Text className="text-zinc-500 mt-1">Get started by adding Zuko to your meetings</Text>
+  const columns = useMemo<ColumnDef<Meeting, any>[]>(
+    () => [
+      {
+        id: 'name',
+        accessorKey: 'name',
+        header: 'Name',
+        cell: ({ row }) => (
+          <span className="font-medium text-zinc-900 dark:text-white">
+            {row.original.name ?? '(Untitled)'}
+          </span>
+        ),
+      },
+      {
+        id: 'platform',
+        accessorKey: 'platform',
+        header: 'Platform',
+        cell: ({ row }) => (
+          <div className="flex items-center gap-2">
+            <VideoCameraIcon className="h-4 w-4 text-zinc-400" />
+            <span>{row.original.platform.replace(/_/g, ' ')}</span>
           </div>
-          <Button href="/meeting/add" className="mt-2">
-            <PlusIcon className="h-4 w-4" />
-            Add to a meeting
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
-  const filteredMeetings = (meetings || [])
-    .filter((meeting) =>
-      (meeting.name ?? '').toLowerCase().includes(search.toLowerCase()),
-    )
-    .sort((a, b) => {
-      if (sort === 'name') {
-        return (a.name ?? '').localeCompare(b.name ?? '');
-      } else if (sort === 'date') {
-        const dateA = a.scheduledAt || a.createdAt;
-        const dateB = b.scheduledAt || b.createdAt;
-        return new Date(dateB).getTime() - new Date(dateA).getTime();
-      }
-      return 0;
-    });
-
-  const openDeleteDialog = (meetingId: number) => {
-    setMeetingToDelete(meetingId);
-    setIsOpenDeleteDialog(true);
-  };
-
-  const handleConfirmDelete = () => {
-    if (meetingToDelete !== null) {
-      deleteMeetingMutation.mutate(meetingToDelete);
-    }
-    setIsOpenDeleteDialog(false);
-    setMeetingToDelete(null);
-  };
-
-  const handleCancelDelete = () => {
-    setIsOpenDeleteDialog(false);
-    setMeetingToDelete(null);
-  };
+        ),
+      },
+      {
+        id: 'scheduledAt',
+        accessorKey: 'scheduledAt',
+        header: 'Date',
+        cell: ({ row }) => {
+          const { scheduledAt, createdAt, timezone: tz } = row.original;
+          return (
+            <div className="flex items-center gap-2">
+              <CalendarIcon className="h-4 w-4 text-zinc-400" />
+              <span>
+                {scheduledAt
+                  ? dayjs(scheduledAt).tz(tz).format('MMM D, YYYY [at] h:mm A')
+                  : dayjs(createdAt).format('MMM D, YYYY [at] h:mm A')}
+              </span>
+            </div>
+          );
+        },
+      },
+      {
+        id: 'status',
+        accessorKey: 'status',
+        header: 'Status',
+        cell: ({ row }) => (
+          <Badge
+            color={
+              MEETING_STATUS_COLOR_MAP[row.original.status.toLowerCase()] ??
+              'zinc'
+            }
+            className="text-xs font-semibold uppercase"
+          >
+            {row.original.status.replace(/_/g, ' ')}
+          </Badge>
+        ),
+      },
+      {
+        id: 'actions',
+        header: '',
+        enableSorting: false,
+        cell: ({ row }) => (
+          <div className="flex justify-end" onClick={(e) => e.stopPropagation()}>
+            <Dropdown>
+              <DropdownButton plain aria-label="More options">
+                <EllipsisVerticalIcon className="h-5 w-5 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200" />
+              </DropdownButton>
+              <DropdownMenu anchor="bottom end">
+                <DropdownItem href={`/meeting/${row.original.id}`}>View</DropdownItem>
+                <DropdownItem
+                  onClick={() => setMeetingToDelete(row.original.id)}
+                  disabled={deleteMeetingMutation.isPending}
+                >
+                  Delete
+                </DropdownItem>
+              </DropdownMenu>
+            </Dropdown>
+          </div>
+        ),
+      },
+    ],
+    [deleteMeetingMutation.isPending],
+  );
 
   return (
-    <div className="space-y-8">
-      <div className="flex-1">
+    <div className="space-y-6">
+      <div className="flex items-start justify-between">
         <Heading>Meetings</Heading>
+        <Button href="/meeting/add">
+          <PlusIcon className="h-4 w-4" />
+          Add to a meeting
+        </Button>
       </div>
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between">
-        <div className="flex flex-1 gap-3">
-          <InputGroup className="flex-1">
-            <MagnifyingGlassIcon className="h-5 w-5" data-slot="icon" />
-            <Input
-              placeholder="Search meetings..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="min-w-96"
-            ></Input>
-          </InputGroup>
-          <Select
-            value={sort}
-            onChange={(e) => setSort(e.target.value)}
-            className="max-w-40"
-          >
-            <option value="name">Sort by name</option>
-            <option value="date">Sort by date</option>
-          </Select>
-        </div>
-        <div className="flex max-w-xl flex-1 gap-3 md:justify-end">
-          <Button href="/meeting/add" className="whitespace-nowrap shadow-sm">
-            <PlusIcon className="h-5 w-5" aria-hidden="true" />
-            Add to a meeting
-          </Button>
-        </div>
-      </div>
-      <ul className="mt-4 space-y-4">
-        <Divider />
-        {filteredMeetings.map((meeting) => (
-          <li key={meeting.id} className="group">
-            <div className="flex items-center justify-between">
-              <div className="flex gap-6 py-6">
-                <div
-                  className="min-w-0 flex-1 cursor-pointer"
-                  onClick={() => router.push(`/meeting/${meeting.id}`)}
-                >
-                  <div className="flex min-w-0 flex-col gap-1">
-                    <div className="flex min-w-0 items-center justify-between">
-                      <Strong className="truncate text-lg font-semibold">
-                        {meeting.name ?? '(Untitled)'}
-                      </Strong>
-                    </div>
-                    <div className="mt-1 flex flex-wrap items-center gap-6 text-sm text-zinc-500">
-                      <div className="flex items-center gap-2">
-                        <VideoCameraIcon className="h-4 w-4" />
-                        <Text className="text-sm">
-                          {meeting.platform.replace(/_/g, ' ')}
-                        </Text>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <CalendarIcon className="h-4 w-4" />
-                        <Text className="text-sm">
-                          {meeting.scheduledAt
-                            ? dayjs(meeting.scheduledAt)
-                                .tz(meeting.timezone)
-                                .format('MMM D, YYYY [at] h:mm A')
-                            : dayjs(meeting.createdAt).format(
-                                'MMM D, YYYY [at] h:mm A',
-                              )}
-                        </Text>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
 
-              <div className="flex items-center gap-4">
-                <Badge
-                  color={
-                    MEETING_STATUS_COLOR_MAP[meeting.status.toLowerCase()] ??
-                    'zinc'
-                  }
-                  className="text-xs font-semibold uppercase"
-                >
-                  {meeting.status.replace(/_/g, ' ')}
-                </Badge>
-                <Dropdown>
-                  <DropdownButton plain aria-label="More options">
-                    <EllipsisVerticalIcon className="h-5 w-5 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200" />
-                  </DropdownButton>
-                  <DropdownMenu anchor="bottom end">
-                    <DropdownItem href={`/meeting/${meeting.id}`}>
-                      View
-                    </DropdownItem>
-                    <DropdownItem
-                      onClick={(e: React.MouseEvent) => {
-                        e.stopPropagation();
-                        openDeleteDialog(meeting.id);
-                      }}
-                      disabled={deleteMeetingMutation.isPending}
-                    >
-                      Delete
-                    </DropdownItem>
-                  </DropdownMenu>
-                </Dropdown>
-              </div>
-            </div>
-            <Divider />
-          </li>
-        ))}
-      </ul>
-      <ReusableDialog
-        setIsOpen={setIsOpenDeleteDialog}
-        cancelActionText="Cancel"
-        showDialog={isOpenDeleteDialog}
-        title="Are you sure you want to delete this meeting?"
-        nextActionClick={handleConfirmDelete}
-        nextActionText={'Delete'}
-        nextActionLoadingText="Deleting..."
-        isPending={deleteMeetingMutation.isPending}
-        cancelAction={handleCancelDelete}
+      <div className="flex gap-3">
+        <InputGroup className="flex-1">
+          <MagnifyingGlassIcon className="h-5 w-5" data-slot="icon" />
+          <Input
+            placeholder="Search meetings..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="max-w-md"
+          />
+        </InputGroup>
+        <Select
+          value={sort}
+          onChange={(e) => setSort(e.target.value)}
+          className="max-w-40"
+        >
+          <option value="name">Sort by name</option>
+          <option value="date">Sort by date</option>
+        </Select>
+      </div>
+
+      <BaseTable<Meeting>
+        columns={columns}
+        data={filteredMeetings}
+        loading={isLoading}
+        onRowClick={(meeting) => router.push(`/meeting/${meeting.id}`)}
+        entityName="meetings"
+        showEmptyState
+        emptyStateConfig={{
+          icon: VideoCameraSlashIcon,
+          title: 'No Meetings Found',
+          description: 'Get started by adding Zuko to your meetings.',
+          action: {
+            label: 'Add to a meeting',
+            onClick: () => router.push('/meeting/add'),
+          },
+        }}
+      />
+
+      <ConfirmDialog
+        open={meetingToDelete !== null}
+        title="Delete Meeting"
+        description="Are you sure you want to delete this meeting?"
+        confirmText="Delete"
+        confirmColor="red"
+        onConfirm={() => {
+          if (meetingToDelete !== null) {
+            deleteMeetingMutation.mutate(meetingToDelete);
+          }
+          setMeetingToDelete(null);
+        }}
+        onClose={() => setMeetingToDelete(null)}
+        isLoading={deleteMeetingMutation.isPending}
       />
     </div>
   );
