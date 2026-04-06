@@ -63,8 +63,8 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { MeetingFormSchema, type MeetingFormSchemaType } from './add-meeting';
 
-// Inline form shown below the table when user clicks the + button
-function InlineAddMeetingForm({
+// Inline add row rendered inside the table body
+function InlineAddMeetingRow({
   onCancel,
   onSuccess,
 }: {
@@ -100,47 +100,43 @@ function InlineAddMeetingForm({
   };
 
   return (
-    <form
-      onSubmit={handleSubmit(onSubmit)}
-      className="mt-2 rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950"
-    >
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:gap-4">
-        <div className="flex-1">
-          <Input
-            placeholder="Enter meeting name"
-            {...register('name')}
-            autoFocus
-            autoComplete="off"
-          />
-          {errors.name && (
-            <p className="mt-1 text-xs text-red-500">{errors.name.message}</p>
-          )}
-        </div>
-        <div className="flex-1">
-          <Input
-            placeholder="Paste meeting URL"
-            {...register('url')}
-            autoComplete="off"
-          />
-          {errors.url && (
-            <p className="mt-1 text-xs text-red-500">{errors.url.message}</p>
-          )}
-        </div>
-        <div className="flex shrink-0 gap-2 pt-0.5">
-          <Button type="submit" disabled={createMutation.isPending}>
-            {createMutation.isPending ? 'Adding…' : 'Add'}
-          </Button>
-          <Button
-            type="button"
-            plain
-            onClick={onCancel}
-            disabled={createMutation.isPending}
-          >
-            Cancel
-          </Button>
-        </div>
-      </div>
-    </form>
+    <tr className="border-t border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/30">
+      <td colSpan={99} className="px-3 py-2">
+        <form onSubmit={handleSubmit(onSubmit)}>
+          <div className="flex items-start gap-3">
+            <div className="flex-1">
+              <Input
+                placeholder="Enter meeting name"
+                {...register('name')}
+                autoFocus
+                autoComplete="off"
+              />
+              {errors.name && (
+                <p className="mt-1 text-xs text-red-500">{errors.name.message}</p>
+              )}
+            </div>
+            <div className="flex-1">
+              <Input
+                placeholder="Paste meeting URL"
+                {...register('url')}
+                autoComplete="off"
+              />
+              {errors.url && (
+                <p className="mt-1 text-xs text-red-500">{errors.url.message}</p>
+              )}
+            </div>
+            <div className="flex shrink-0 gap-2">
+              <Button type="submit" disabled={createMutation.isPending}>
+                {createMutation.isPending ? 'Adding…' : 'Add'}
+              </Button>
+              <Button type="button" plain onClick={onCancel} disabled={createMutation.isPending}>
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </form>
+      </td>
+    </tr>
   );
 }
 
@@ -251,8 +247,16 @@ export const MeetingList = () => {
         disableRowClick={false}
         onRowClick={(meeting) => router.push(`/meeting/${meeting.id}`)}
         totalCount={meetingsData?.pagination?.total}
-        showAddRow={meetings.length > 0 && !isAddingMeeting}
+        showAddRow={!isAddingMeeting}
         onAddRow={() => setIsAddingMeeting(true)}
+        addRowContent={
+          isAddingMeeting ? (
+            <InlineAddMeetingRow
+              onCancel={() => setIsAddingMeeting(false)}
+              onSuccess={() => setIsAddingMeeting(false)}
+            />
+          ) : undefined
+        }
         showEmptyState={!isAddingMeeting && meetings.length === 0}
         emptyStateConfig={{
           icon: VideoCameraSlashIcon,
@@ -264,13 +268,6 @@ export const MeetingList = () => {
           },
         }}
       />
-
-      {isAddingMeeting && (
-        <InlineAddMeetingForm
-          onCancel={() => setIsAddingMeeting(false)}
-          onSuccess={() => setIsAddingMeeting(false)}
-        />
-      )}
 
       <ConfirmDialog
         open={meetingToDelete !== null}

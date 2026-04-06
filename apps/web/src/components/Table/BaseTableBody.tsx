@@ -1,3 +1,4 @@
+import React from 'react';
 import { RowModel } from '@tanstack/react-table';
 import { BaseTableRow } from './BaseTableRow';
 import { TableBody } from '@zuko/ui-kit';
@@ -9,27 +10,30 @@ interface BaseTableBodyProps<TData extends BaseRow> {
   onRowClick?: (row: TData) => void;
   showAddColumn?: boolean;
   onCellUpdate?: (rowId: string | number, columnId: string, value: any) => void;
+  addRowContent?: React.ReactNode;
 }
 
-export function BaseTableBody<TData extends BaseRow>({ 
-  rowModel, 
+export function BaseTableBody<TData extends BaseRow>({
+  rowModel,
   disableRowClick = false,
   onRowClick,
   showAddColumn,
-  onCellUpdate
+  onCellUpdate,
+  addRowContent,
 }: BaseTableBodyProps<TData>) {
   return (
     <TableBody>
       {rowModel.rows.map((row) => (
         <BaseTableRow<TData>
-          key={row.id} 
-          row={row} 
+          key={row.id}
+          row={row}
           disableRowClick={disableRowClick}
-          onRowClick={onRowClick} 
+          onRowClick={onRowClick}
           showAddColumn={showAddColumn}
           onCellUpdate={onCellUpdate}
         />
       ))}
+      {addRowContent}
     </TableBody>
   );
 }
