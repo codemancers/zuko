@@ -191,6 +191,9 @@ async function main() {
       timezone: "UTC",
       scheduledAt: new Date("2024-01-14T10:00:00Z"),
       createdBy: userId,
+      // Points to the Next.js fixture endpoint so NestJS can fetch transcript
+      // data during SSR without needing an external storage service in e2e.
+      transcript: "http://localhost:3000/api/fixtures/transcript",
     },
     update: {},
   });

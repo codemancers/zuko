@@ -126,7 +126,7 @@ test.describe("Meetings - Authenticated", () => {
     await page.waitForURL("**/meeting/**", { timeout: 10000 });
     expect(page.url()).toMatch(/\/meeting\/\d+/);
     await expect(
-      page.getByRole("heading", { name: /Weekly Sync - Product & Engineering/i })
+      page.getByRole("heading", { name: /Weekly Product Sync/i })
     ).toBeVisible({ timeout: 10000 });
   });
 

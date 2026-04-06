@@ -152,9 +152,12 @@ const MeetingDetail = ({ meetingId, meetingOverride }: MeetingDetailProps) => {
       : apiMeeting
     : null;
 
-  const actionItems: ActionItem[] = (
-    meetingOverride?.actionItems ?? meeting?.actionItems ?? []
-  ).map((it) => ({ ...it, completed: completedItems.has(it.id) }));
+  const [localActionItems, setLocalActionItems] = useState<ActionItem[]>([]);
+
+  const actionItems: ActionItem[] = [
+    ...(meetingOverride?.actionItems ?? meeting?.actionItems ?? []),
+    ...localActionItems,
+  ].map((it) => ({ ...it, completed: completedItems.has(it.id) }));
 
   const [isAddingTask, setIsAddingTask] = useState(false);
   const [newTask, setNewTask] = useState<NewActionItem>({
@@ -164,7 +167,20 @@ const MeetingDetail = ({ meetingId, meetingOverride }: MeetingDetailProps) => {
 
   const handleAddTask = (e: React.FormEvent) => {
     e.preventDefault();
-    toast.error('Adding action items is not yet supported');
+    if (!newTask.title.trim()) return;
+    setLocalActionItems((prev) => [
+      ...prev,
+      {
+        id: Date.now(),
+        meetingId: numericId,
+        title: newTask.title,
+        description: newTask.description || null,
+        taskId: null,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      },
+    ]);
+    setNewTask({ title: '', description: '' });
     setIsAddingTask(false);
   };
 

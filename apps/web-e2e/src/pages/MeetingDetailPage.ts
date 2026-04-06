@@ -22,50 +22,6 @@ export class MeetingDetailPage extends BasePage {
   }
 
   override async goto(id: string) {
-    // Intercept the meeting API response and inject transcript data so e2e tests
-    // don't depend on an external transcript storage URL being accessible.
-    await this.page.route(`**/api/proxy/meetings/${id}`, async (route) => {
-      const response = await route.fetch();
-      let meeting: Record<string, unknown> = {};
-      try {
-        meeting = await response.json();
-      } catch {
-        // fall through with empty object
-      }
-      await route.fulfill({
-        contentType: "application/json",
-        body: JSON.stringify({
-          ...meeting,
-          recordingUrl:
-            (meeting.recordingUrl as string | null) ??
-            "https://example.com/test-recording.mp4",
-          transcriptData: [
-            {
-              text: "Hello everyone, let's start the sync",
-              speaker_name: "Alice",
-              formatted_duration: "00:00:05",
-              is_final: true,
-              speech_final: true,
-              confidence: 1,
-              timestamp: "00:00:05",
-              speaker: 0,
-              duration_seconds: 5,
-            },
-            {
-              text: "I have some updates on the UI refactor",
-              speaker_name: "Bob",
-              formatted_duration: "00:00:30",
-              is_final: true,
-              speech_final: true,
-              confidence: 1,
-              timestamp: "00:00:30",
-              speaker: 1,
-              duration_seconds: 30,
-            },
-          ],
-        }),
-      });
-    });
     await super.goto(`/meeting/${id}`);
   }
 
