@@ -13,7 +13,49 @@ import {
   Input,
 } from '@zuko/ui-kit';
 import type { ColumnDef } from '@tanstack/react-table';
+import type { ReactNode } from 'react';
 import { toast } from 'sonner';
+
+function GoogleMeetIcon() {
+  return (
+    <svg viewBox="0 0 48 48" className="h-4 w-4 shrink-0" aria-hidden="true">
+      <path fill="#00832d" d="M27.5 24l5.6-6.4 1.9 6.4-1.9 6.4z"/>
+      <path fill="#0066da" d="M0 31.5v5c0 1.93 1.57 3.5 3.5 3.5H8.5l1-8.9-1-8.1H3.5C1.57 23 0 24.57 0 26.5z"/>
+      <path fill="#e94235" d="M8.5 40H21L22 31.5 21 23H8.5z"/>
+      <path fill="#2684fc" d="M21 23l-2.09-8.67L21 6h13.8c1.45 0 2.7 1 3.07 2.42L40 12l-2.4 11z"/>
+      <path fill="#00ac47" d="M21 40h13.8c1.45 0 2.7-1 3.07-2.42L40 36l-2.4-11H21z"/>
+      <path fill="#ffba00" d="M37.13 5.58L33.87 2.42A3.49 3.49 0 0 0 31.3 1.5H21v21.5h16.6V9C37.6 7.55 37.55 6.6 37.13 5.58z"/>
+    </svg>
+  );
+}
+
+function ZoomIcon() {
+  return (
+    <svg viewBox="0 0 48 48" className="h-4 w-4 shrink-0" aria-hidden="true">
+      <rect width="48" height="48" rx="10" fill="#2D8CFF"/>
+      <path fill="#fff" d="M8 16a4 4 0 0 1 4-4h16a4 4 0 0 1 4 4v10l8-5v10l-8-5v2a4 4 0 0 1-4 4H12a4 4 0 0 1-4-4V16z"/>
+    </svg>
+  );
+}
+
+function MSTeamsIcon() {
+  return (
+    <svg viewBox="0 0 48 48" className="h-4 w-4 shrink-0" aria-hidden="true">
+      <path fill="#5059C9" d="M29.5 17a5.5 5.5 0 1 0 0-11 5.5 5.5 0 0 0 0 11z"/>
+      <path fill="#7B83EB" d="M18 19a7 7 0 1 0 0-14 7 7 0 0 0 0 14z"/>
+      <path fill="#5059C9" d="M31 20h10a3 3 0 0 1 3 3v10a9 9 0 0 1-9 9 9 9 0 0 1-9-9V23a3 3 0 0 1 3-3h2z"/>
+      <path fill="#7B83EB" d="M4 23a3 3 0 0 1 3-3h22a3 3 0 0 1 3 3v14a11 11 0 0 1-11 11A11 11 0 0 1 4 37V23z"/>
+      <path fill="#fff" fillOpacity=".8" d="M18 26v9.5a6.5 6.5 0 0 1-6.5 6.5H11a9 9 0 0 0 7 3 9 9 0 0 0 9-9V26h-9z"/>
+      <rect fill="#fff" fillOpacity=".9" x="14" y="26" width="8" height="3" rx="1.5"/>
+    </svg>
+  );
+}
+
+const PLATFORM_ICONS: Record<string, ReactNode> = {
+  GOOGLE_MEET: <GoogleMeetIcon />,
+  ZOOM: <ZoomIcon />,
+  MS_TEAMS: <MSTeamsIcon />,
+};
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getTableViewMeetings } from '@/server/query-options';
 import { meetingsApi } from '@/lib/api/meetings';
@@ -155,10 +197,26 @@ export const MeetingList = () => {
     [deleteMeetingMutation.isPending],
   );
 
-  const columns = useMemo(
-    () => [...createColumnsFromMetadata<BaseRow>(metadata), actionsColumn],
-    [metadata, actionsColumn],
-  );
+  const platformColumn: ColumnDef<BaseRow> = {
+    id: 'platform',
+    header: 'Platform',
+    cell: ({ row }) => {
+      const raw = (row.original as unknown as Record<string, unknown>)['platform'] as { value?: string; display?: string } | string | undefined;
+      const value = typeof raw === 'object' && raw !== null ? (raw.value ?? '') : (raw ?? '');
+      const display = typeof raw === 'object' && raw !== null ? (raw.display ?? value) : value;
+      return (
+        <div className="flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-400">
+          {PLATFORM_ICONS[value] ?? null}
+          <span>{display as string}</span>
+        </div>
+      );
+    },
+  };
+
+  const columns = useMemo(() => {
+    const base = createColumnsFromMetadata<BaseRow>(metadata);
+    return base.map((col) => (col.id === 'platform' ? platformColumn : col)).concat(actionsColumn);
+  }, [metadata, actionsColumn]);
 
   return (
     <div className="space-y-6">
