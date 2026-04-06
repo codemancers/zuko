@@ -9,7 +9,7 @@ export class MeetingsPage extends BasePage {
 
   constructor(page: Page) {
     super(page);
-    this.heading = page.getByRole("heading", { name: /meetings/i });
+    this.heading = page.getByRole("heading", { name: "Meetings", exact: true });
     this.searchInput = page.getByPlaceholder(/Search meetings/i);
     this.sortSelect = page.getByRole("combobox");
     this.addMeetingLink = page.getByRole("link", { name: /add to a meeting/i });

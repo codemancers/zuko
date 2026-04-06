@@ -156,7 +156,7 @@ export const MeetingList = () => {
           {filteredMeetings.map((meeting: Meeting) => (
             <li
               key={meeting.id}
-              className="flex items-center justify-between px-4 py-3 hover:bg-zinc-50 dark:hover:bg-zinc-900"
+              className="group flex items-center justify-between px-4 py-3 hover:bg-zinc-50 dark:hover:bg-zinc-900"
             >
               <div
                 className="flex min-w-0 flex-1 cursor-pointer items-center gap-4"
