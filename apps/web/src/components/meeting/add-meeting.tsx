@@ -108,6 +108,19 @@ const AddMeeting = () => {
             className="flex flex-col gap-6 rounded-lg lg:p-0"
             onSubmit={handleSubmit(onMeetingFormSubmit)}
           >
+            <section className="flex w-full flex-col gap-2">
+              <Field>
+                <Label>Project</Label>
+                <select
+                  data-testid="project-dropdown"
+                  className="w-full appearance-none rounded-lg border border-zinc-950/10 bg-transparent px-3 py-2 text-base/6 text-zinc-950 focus:ring-2 focus:ring-blue-500/50 focus:outline-none sm:text-sm/6 dark:border-white/10 dark:bg-white/5 dark:text-white"
+                >
+                  <option value="">Select a project</option>
+                  <option value="zuko-ai">Zuko AI</option>
+                </select>
+              </Field>
+            </section>
+
             <section className="flex w-full flex-col items-start justify-between gap-6 lg:flex-row lg:gap-14">
               <section className="flex w-full flex-col gap-2">
                 <Field data-error-id="name">

@@ -135,7 +135,7 @@ const MeetingDetail = ({ meetingId, meetingOverride }: MeetingDetailProps) => {
   const endMeetingMutation = useMutation({
     mutationFn: () => meetingsApi.endMeeting(numericId),
     onSuccess: () => {
-      toast.success('End signal sent to bot');
+      toast.success(`Meeting ended: ${meetingId}`);
       queryClient.invalidateQueries({ queryKey: ['meeting', numericId] });
     },
     onError: () => toast.error('Failed to end meeting'),
@@ -242,8 +242,8 @@ const MeetingDetail = ({ meetingId, meetingOverride }: MeetingDetailProps) => {
     }
   };
 
-  const handleTabChange = async (tab: Tab) => {
-    await handlePiPForTabChange(tab);
+  const handleTabChange = (tab: Tab) => {
+    handlePiPForTabChange(tab).catch(console.error);
     setActiveTab(tab);
   };
 
@@ -355,7 +355,9 @@ const MeetingDetail = ({ meetingId, meetingOverride }: MeetingDetailProps) => {
         }
         case 'summary': {
           const summary: MeetingSummary | null | undefined =
-            meetingOverride?.summary ?? meeting.summaries?.[0] ?? null;
+            meetingOverride && 'summary' in meetingOverride
+              ? meetingOverride.summary
+              : meeting.summaries?.[0] ?? null;
           if (!summary || !summary.content) {
             return (
               <div className="flex h-40 items-center justify-center rounded-lg border border-zinc-200 dark:border-zinc-800">
@@ -654,6 +656,15 @@ const MeetingDetail = ({ meetingId, meetingOverride }: MeetingDetailProps) => {
               </ZukoText>
             </div>
 
+
+            {meeting.projectName && (
+              <div>
+                <ZukoText className="text-xs font-medium uppercase tracking-wider text-zinc-500">
+                  Projects
+                </ZukoText>
+                <ZukoText className="mt-1">{meeting.projectName}</ZukoText>
+              </div>
+            )}
 
             {meeting.description && (
               <div className="sm:col-span-2 lg:col-span-3">

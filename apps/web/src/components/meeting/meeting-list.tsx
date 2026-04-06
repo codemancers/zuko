@@ -28,8 +28,6 @@ import { toast } from 'sonner';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getMeetings } from '@/server/query-options';
 import { meetingsApi, type Meeting } from '@/lib/api/meetings';
-import { BaseTable } from '@/components/Table';
-import type { ColumnDef } from '@tanstack/react-table';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 
 dayjs.extend(utc);
@@ -73,9 +71,9 @@ export const MeetingList = () => {
 
   const deleteMeetingMutation = useMutation({
     mutationFn: (id: number) => meetingsApi.deleteMeeting(id),
-    onSuccess: () => {
+    onSuccess: (_, id) => {
       queryClient.invalidateQueries({ queryKey: ['meetings'] });
-      toast.success('Meeting deleted');
+      toast.success(`Meeting deleted: ${id}`);
     },
     onError: () => toast.error('Failed to delete meeting'),
   });
@@ -97,90 +95,6 @@ export const MeetingList = () => {
           return 0;
         }),
     [meetings, search, sort],
-  );
-
-  const columns = useMemo<ColumnDef<Meeting, any>[]>(
-    () => [
-      {
-        id: 'name',
-        accessorKey: 'name',
-        header: 'Name',
-        cell: ({ row }) => (
-          <span className="font-medium text-zinc-900 dark:text-white">
-            {row.original.name ?? '(Untitled)'}
-          </span>
-        ),
-      },
-      {
-        id: 'platform',
-        accessorKey: 'platform',
-        header: 'Platform',
-        cell: ({ row }) => (
-          <div className="flex items-center gap-2">
-            <VideoCameraIcon className="h-4 w-4 text-zinc-400" />
-            <span>{row.original.platform.replace(/_/g, ' ')}</span>
-          </div>
-        ),
-      },
-      {
-        id: 'scheduledAt',
-        accessorKey: 'scheduledAt',
-        header: 'Date',
-        cell: ({ row }) => {
-          const { scheduledAt, createdAt, timezone: tz } = row.original;
-          return (
-            <div className="flex items-center gap-2">
-              <CalendarIcon className="h-4 w-4 text-zinc-400" />
-              <span>
-                {scheduledAt
-                  ? dayjs(scheduledAt).tz(tz).format('MMM D, YYYY [at] h:mm A')
-                  : dayjs(createdAt).format('MMM D, YYYY [at] h:mm A')}
-              </span>
-            </div>
-          );
-        },
-      },
-      {
-        id: 'status',
-        accessorKey: 'status',
-        header: 'Status',
-        cell: ({ row }) => (
-          <Badge
-            color={
-              MEETING_STATUS_COLOR_MAP[row.original.status.toLowerCase()] ??
-              'zinc'
-            }
-            className="text-xs font-semibold uppercase"
-          >
-            {row.original.status.replace(/_/g, ' ')}
-          </Badge>
-        ),
-      },
-      {
-        id: 'actions',
-        header: '',
-        enableSorting: false,
-        cell: ({ row }) => (
-          <div className="flex justify-end" onClick={(e) => e.stopPropagation()}>
-            <Dropdown>
-              <DropdownButton plain aria-label="More options">
-                <EllipsisVerticalIcon className="h-5 w-5 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200" />
-              </DropdownButton>
-              <DropdownMenu anchor="bottom end">
-                <DropdownItem href={`/meeting/${row.original.id}`}>View</DropdownItem>
-                <DropdownItem
-                  onClick={() => setMeetingToDelete(row.original.id)}
-                  disabled={deleteMeetingMutation.isPending}
-                >
-                  Delete
-                </DropdownItem>
-              </DropdownMenu>
-            </Dropdown>
-          </div>
-        ),
-      },
-    ],
-    [deleteMeetingMutation.isPending],
   );
 
   return (
@@ -213,23 +127,96 @@ export const MeetingList = () => {
         </Select>
       </div>
 
-      <BaseTable<Meeting>
-        columns={columns}
-        data={filteredMeetings}
-        loading={isLoading}
-        onRowClick={(meeting) => router.push(`/meeting/${meeting.id}`)}
-        entityName="meetings"
-        showEmptyState
-        emptyStateConfig={{
-          icon: VideoCameraSlashIcon,
-          title: 'No Meetings Found',
-          description: 'Get started by adding Zuko to your meetings.',
-          action: {
-            label: 'Add to a meeting',
-            onClick: () => router.push('/meeting/add'),
-          },
-        }}
-      />
+      {isLoading && (
+        <div className="flex items-center justify-center py-8 text-sm text-zinc-600 dark:text-zinc-400">
+          Loading meetings...
+        </div>
+      )}
+
+      {!isLoading && filteredMeetings.length === 0 && (
+        <div className="mt-40 text-center">
+          <VideoCameraSlashIcon className="mx-auto h-12 w-12 text-zinc-400" />
+          <h3 className="mt-2 text-sm font-semibold text-zinc-950 dark:text-white">
+            No Meetings Found
+          </h3>
+          <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
+            Get started by adding Zuko to your meetings.
+          </p>
+          <div className="mt-6">
+            <Button onClick={() => router.push('/meeting/add')}>
+              <PlusIcon className="h-4 w-4" />
+              Add to a meeting
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {!isLoading && filteredMeetings.length > 0 && (
+        <ul className="divide-y divide-zinc-200 overflow-hidden rounded-lg border border-zinc-200 bg-white dark:divide-zinc-800 dark:border-zinc-800 dark:bg-zinc-950">
+          {filteredMeetings.map((meeting: Meeting) => (
+            <li
+              key={meeting.id}
+              className="flex items-center justify-between px-4 py-3 hover:bg-zinc-50 dark:hover:bg-zinc-900"
+            >
+              <div
+                className="flex min-w-0 flex-1 cursor-pointer items-center gap-4"
+                onClick={() => router.push(`/meeting/${meeting.id}`)}
+              >
+                <span className="min-w-0 flex-1 font-medium text-zinc-900 dark:text-white">
+                  {meeting.name ?? '(Untitled)'}
+                </span>
+                <div className="hidden items-center gap-2 text-sm text-zinc-500 sm:flex">
+                  <VideoCameraIcon className="h-4 w-4 text-zinc-400" />
+                  <span>{meeting.platform.replace(/_/g, ' ')}</span>
+                </div>
+                <div className="hidden items-center gap-2 text-sm text-zinc-500 md:flex">
+                  <CalendarIcon className="h-4 w-4 text-zinc-400" />
+                  <span>
+                    {meeting.scheduledAt
+                      ? dayjs(meeting.scheduledAt)
+                          .tz(meeting.timezone)
+                          .format('MMM D, YYYY [at] h:mm A')
+                      : dayjs(meeting.createdAt).format(
+                          'MMM D, YYYY [at] h:mm A',
+                        )}
+                  </span>
+                </div>
+                <Badge
+                  color={
+                    MEETING_STATUS_COLOR_MAP[meeting.status.toLowerCase()] ??
+                    'zinc'
+                  }
+                  className="text-xs font-semibold uppercase"
+                >
+                  {meeting.status.replace(/_/g, ' ')}
+                </Badge>
+              </div>
+
+              <div
+                className="ml-2 flex shrink-0 items-center"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <Dropdown>
+                  <DropdownButton plain aria-label="More options">
+                    <EllipsisVerticalIcon className="h-5 w-5 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200" />
+                  </DropdownButton>
+                  <DropdownMenu anchor="bottom end">
+                    <DropdownItem href={`/meeting/${meeting.id}`}>
+                      View
+                    </DropdownItem>
+                    <DropdownItem
+                      onClick={() => setMeetingToDelete(meeting.id)}
+                      disabled={deleteMeetingMutation.isPending}
+                    >
+                      Delete
+                    </DropdownItem>
+                  </DropdownMenu>
+                </Dropdown>
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
 
       <ConfirmDialog
         open={meetingToDelete !== null}

@@ -66,6 +66,7 @@ export interface Meeting {
   actionItems: MeetingActionItem[];
   transcriptData: TranscriptData[] | null;
   chatMessages: ChatMessage[] | null;
+  projectName?: string | null;
 }
 
 export interface CreateMeetingDto {
