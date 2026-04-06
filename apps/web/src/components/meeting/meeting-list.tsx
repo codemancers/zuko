@@ -96,7 +96,6 @@ function InlineAddMeetingForm({
       url: data.url,
       name: data.name,
       description: data.description,
-      scheduledAt: data.scheduledAt || undefined,
     });
   };
 
@@ -126,12 +125,6 @@ function InlineAddMeetingForm({
           {errors.url && (
             <p className="mt-1 text-xs text-red-500">{errors.url.message}</p>
           )}
-        </div>
-        <div className="flex-1">
-          <Input
-            type="datetime-local"
-            {...register('scheduledAt')}
-          />
         </div>
         <div className="flex shrink-0 gap-2 pt-0.5">
           <Button type="submit" disabled={createMutation.isPending}>
