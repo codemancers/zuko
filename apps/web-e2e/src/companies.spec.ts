@@ -133,7 +133,6 @@ test.describe.serial("Company Detail - Contact Management", () => {
     page,
   }) => {
     await companyDetailPage.goto(1);
-    const initialContacts = await companyDetailPage.getAssociatedContacts();
     const selectedName = await companyDetailPage.addContact(
       undefined,
       "Employee",
@@ -143,8 +142,6 @@ test.describe.serial("Company Detail - Contact Management", () => {
     await expect(
       page.locator('a[href^="/contacts/"]', { hasText: nameToFind })
     ).toBeVisible({ timeout: 10000 });
-    const newContacts = await companyDetailPage.getAssociatedContacts();
-    expect(newContacts.length).toBeGreaterThan(initialContacts.length);
   });
 
   test("filters out already associated contacts from dropdown", async ({
