@@ -192,11 +192,32 @@ export const MEETING_TABLE_METADATA: ColumnMetadata[] = [
     default: true,
     config: {
       format: 'stage',
+      render: 'platform-icon',
       options: [
         { label: 'Google Meet', value: 'GOOGLE_MEET' },
         { label: 'Zoom', value: 'ZOOM' },
         { label: 'MS Teams', value: 'MS_TEAMS' },
       ],
+      iconMap: {
+        GOOGLE_MEET: '/icons/google-meet.svg',
+        ZOOM: '/icons/zoom.svg',
+        MS_TEAMS: '/icons/ms-teams.svg',
+      },
+    },
+  },
+  {
+    id: 'url',
+    header: 'Join',
+    fieldType: 'text',
+    dataType: 'text',
+    sortable: false,
+    filterable: false,
+    searchable: false,
+    editable: false,
+    isVisible: true,
+    default: true,
+    config: {
+      render: 'join-button',
     },
   },
   {

@@ -1,23 +1,15 @@
 'use client';
 import React, { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { VideoCameraSlashIcon, EyeIcon, TrashIcon, ArrowTopRightOnSquareIcon } from '@heroicons/react/24/outline';
+import { VideoCameraSlashIcon, EyeIcon, TrashIcon } from '@heroicons/react/24/outline';
 import Link from 'next/link';
-import Image from 'next/image';
 import {
-  Badge,
   Divider,
   Heading,
   Input,
 } from '@zuko/ui-kit';
 import type { ColumnDef } from '@tanstack/react-table';
 import { toast } from 'sonner';
-
-const PLATFORM_ICON_PATHS: Record<string, string> = {
-  GOOGLE_MEET: '/icons/google-meet.svg',
-  ZOOM: '/icons/zoom.svg',
-  MS_TEAMS: '/icons/ms-teams.svg',
-};
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getTableViewMeetings } from '@/server/query-options';
@@ -75,51 +67,8 @@ export const MeetingList = () => {
     [deleteMeetingMutation.isPending],
   );
 
-  const platformColumn: ColumnDef<BaseRow> = {
-    id: 'platform',
-    header: 'Platform',
-    cell: ({ row }) => {
-      const raw = (row.original as unknown as Record<string, unknown>)['platform'] as { value?: string; display?: string } | string | undefined;
-      const value = typeof raw === 'object' && raw !== null ? (raw.value ?? '') : (raw ?? '');
-      const display = typeof raw === 'object' && raw !== null ? (raw.display ?? value) : value;
-      return (
-        <div className="flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-400">
-          {PLATFORM_ICON_PATHS[value] && (
-            <Image src={PLATFORM_ICON_PATHS[value]} alt={display as string} width={16} height={16} className="shrink-0 grayscale" />
-          )}
-          <span>{display as string}</span>
-        </div>
-      );
-    },
-  };
-
-  const joinColumn: ColumnDef<BaseRow> = {
-    id: 'join',
-    header: 'Join',
-    cell: ({ row }) => {
-      const url = (row.original as unknown as Record<string, unknown>)['url'] as string | undefined;
-      if (!url) return null;
-      return (
-        <a
-          href={url}
-          target="_blank"
-          rel="noopener noreferrer"
-          onClick={(e) => e.stopPropagation()}
-        >
-          <Badge color="blue" className="inline-flex items-center gap-1 cursor-pointer">
-            <ArrowTopRightOnSquareIcon className="h-3 w-3" />
-            Join
-          </Badge>
-        </a>
-      );
-    },
-  };
-
   const columns = useMemo(() => {
-    const base = createColumnsFromMetadata<BaseRow>(metadata);
-    return base
-      .map((col) => (col.id === 'platform' ? platformColumn : col))
-      .concat(joinColumn, actionsColumn);
+    return createColumnsFromMetadata<BaseRow>(metadata).concat(actionsColumn);
   }, [metadata, actionsColumn]);
 
   return (

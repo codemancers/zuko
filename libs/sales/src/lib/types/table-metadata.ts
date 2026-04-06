@@ -13,7 +13,7 @@ export type ColumnType = (typeof COLUMN_TYPES)[number];
 
 export type DataType = 'text' | 'number' | 'boolean' | 'date' | 'json';
 
-export type ColumnRender = 'link' | 'badge' | 'email' | 'phone' | 'entity';
+export type ColumnRender = 'link' | 'badge' | 'email' | 'phone' | 'entity' | 'platform-icon' | 'join-button';
 
 export type ColumnFormat = 'date' | 'currency' | 'owner' | 'stage';
 
@@ -42,6 +42,7 @@ export interface ColumnConfig {
   currency?: string;
   dateFormat?: string;
   icon?: string;
+  iconMap?: Record<string, string>; // maps values to icon paths (e.g. for platform-icon)
   colorMap?: Record<string, string>; // for badges
   format?: ColumnFormat;
   options?: SelectOption[]; // for select dropdown fields

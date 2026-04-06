@@ -1,6 +1,8 @@
 'use client';
 
 import type { ReactNode } from 'react';
+import Image from 'next/image';
+import { ArrowTopRightOnSquareIcon } from '@heroicons/react/24/outline';
 import { Badge, Link, Avatar } from '@zuko/ui-kit';
 import { type ColumnMetadata, type BaseRow } from './types';
 
@@ -52,6 +54,35 @@ export function TextField({ value, display, metadata, row }: FieldProps<BaseRow>
       <Badge color={color as any} className="text-xs">
         {content}
       </Badge>
+    );
+  }
+
+  if (renderConfig === 'platform-icon') {
+    const iconSrc = metadata.config?.iconMap?.[String(value)];
+    return (
+      <div className="flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-400">
+        {iconSrc && (
+          <Image src={iconSrc} alt={String(content)} width={16} height={16} className="shrink-0 grayscale" />
+        )}
+        <span>{content}</span>
+      </div>
+    );
+  }
+
+  if (renderConfig === 'join-button') {
+    if (!value) return null;
+    return (
+      <a
+        href={String(value)}
+        target="_blank"
+        rel="noopener noreferrer"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <Badge color="blue" className="inline-flex items-center gap-1 cursor-pointer">
+          <ArrowTopRightOnSquareIcon className="h-3 w-3" />
+          Join
+        </Badge>
+      </a>
     );
   }
 
