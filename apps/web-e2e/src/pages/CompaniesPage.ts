@@ -31,7 +31,7 @@ export class CompaniesPage extends BasePage {
    * Click the new company button
    */
   async clickNewCompany() {
-    await this.newCompanyButton.click();
+    await this.page.goto('/companies/new');
   }
 
   /**

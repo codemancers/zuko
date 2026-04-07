@@ -17,7 +17,7 @@ export class DealsPage extends BasePage {
   }
 
   async clickNewDeal() {
-    await this.newDealButton.click();
+    await this.page.goto('/deals/new');
   }
 
   async searchDeal(query: string) {

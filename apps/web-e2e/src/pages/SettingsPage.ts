@@ -59,20 +59,24 @@ export class SettingsPage extends BasePage {
   }
 
   async inviteMember(email: string, role = 'Member') {
-    await this.inviteToOrgButton.click();
-    await this.addMemberEmailInput.fill(email);
-    // Select role if provided
+    // Members are invited via "Add row" + inline email input + Enter
+    const addRowButton = this.page.getByRole('button', { name: /add row/i });
+    await addRowButton.click();
+    const emailInput = this.page.getByPlaceholder(/email.*enter to invite/i);
+    await emailInput.waitFor({ state: 'visible', timeout: 5000 });
+    await emailInput.fill(email);
+    // Select role if provided via the inline Select
     if (role !== 'Member') {
-      await this.addMemberRoleCombobox.click();
-      await this.page.getByRole('option', { name: role }).click();
+      const roleSelect = this.page.locator('tr').last().locator('select');
+      await roleSelect.selectOption({ label: role });
     }
-    await this.sendInvitationButton.click();
+    await emailInput.press('Enter');
   }
 
   async acceptInvitation() {
     await this.switchTab('invitations');
     await this.page
-      .getByRole('button', { name: 'Accept', exact: true })
+      .getByRole('button', { name: /accept invitation/i })
       .first()
       .click();
   }

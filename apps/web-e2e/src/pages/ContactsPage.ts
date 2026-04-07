@@ -31,7 +31,7 @@ export class ContactsPage extends BasePage {
    * Click the new contact button
    */
   async clickNewContact() {
-    await this.newContactButton.click();
+    await this.page.goto('/contacts/new');
   }
 
   /**

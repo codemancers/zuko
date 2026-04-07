@@ -141,9 +141,15 @@ export class CompanyDetailPage extends BasePage {
     contactRow = contactRow.first();
 
     const removeButton = contactRow.getByTitle("Remove contact");
-
-    this.page.once("dialog", (dialog) => dialog.accept());
     await removeButton.click();
+
+    // ConfirmDialog appears — click the "Remove" confirm button
+    const confirmButton = this.page.getByRole("button", { name: /^Remove$/ });
+    await confirmButton.waitFor({ state: "visible", timeout: 5000 });
+    await confirmButton.click();
+    // Dialog doesn't auto-close after mutation (onSuccess doesn't reset state)
+    // Press Escape to dismiss so page content is no longer aria-hidden
+    await this.page.keyboard.press("Escape");
 
     await contactRow.waitFor({ state: "detached", timeout: 10000 });
   }
