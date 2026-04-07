@@ -69,7 +69,7 @@ function AddToTeamDropdown({
 
   if (teams.length === 0) {
     return (
-      <TableActionButton onClick={() => {}} label="No teams available" disabled>
+      <TableActionButton onClick={Function.prototype as () => void} label="No teams available" disabled>
         <UserGroupIcon className="h-4 w-4" />
       </TableActionButton>
     );
