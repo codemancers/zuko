@@ -56,6 +56,7 @@ export interface BaseTableProps<TData extends BaseRow> {
   entityName?: string; // e.g. 'contacts', 'deals'
   showAddRow?: boolean;
   onAddRow?: () => void;
+  addRowContent?: React.ReactNode;
   showAddColumn?: boolean;
   onAddColumn?: (name: string, key: string, type: string) => void;
   onCellUpdate?: (rowId: string | number, columnId: string, value: any) => void;

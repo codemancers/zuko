@@ -40,6 +40,7 @@ export function BaseTable<TData extends BaseRow>(props: BaseTableProps<TData>) {
     onRowClick,
     showAddRow,
     onAddRow,
+    addRowContent,
     showAddColumn,
     onAddColumn,
     onCellUpdate,
@@ -105,6 +106,7 @@ export function BaseTable<TData extends BaseRow>(props: BaseTableProps<TData>) {
             onRowClick={onRowClick}
             showAddColumn={showAddColumn}
             onCellUpdate={onCellUpdate}
+            addRowContent={addRowContent}
           />
         </Table>
 

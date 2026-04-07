@@ -11,13 +11,19 @@ test.describe('Task Activity Timeline - Comments', () => {
     if (taskId !== undefined) return;
 
     const taskTitle = `Activity Timeline Task ${Date.now()}`;
+    // Intercept the create API response to get the task ID directly,
+    // avoiding pagination issues when searching the task list.
+    const responsePromise = page.waitForResponse(
+      (resp) =>
+        resp.url().includes('/tasks') &&
+        resp.request().method() === 'POST' &&
+        resp.ok(),
+      { timeout: 15000 },
+    );
     await tasksPage.createTask({ title: taskTitle });
-
-    await tasksPage.goto();
-    const taskLink = page.getByText(taskTitle).first();
-    await taskLink.click();
-    await page.waitForURL(/\/tasks\/\d+/, { timeout: 10000 });
-    taskId = parseInt(page.url().match(/\/tasks\/(\d+)/)?.[1] ?? '0', 10);
+    const response = await responsePromise;
+    const createdTask = await response.json();
+    taskId = createdTask.id;
   });
 
   // ── 1. Empty states ───────────────────────────────────────────────────────

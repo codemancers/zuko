@@ -1,4 +1,6 @@
 import { test, expect } from "./fixtures";
+import type { Page } from "@playwright/test";
+import type { TasksPage } from "./pages/TasksPage";
 
 /**
  * Task Activity Timeline - System Events
@@ -6,6 +8,26 @@ import { test, expect } from "./fixtures";
  * Verifies that task lifecycle actions produce the correct system events
  * in the activity timeline: task_created, task_status_changed, field_update.
  */
+
+/** Wait for the POST /tasks response and return the created task's ID */
+async function createAndGetTaskId(
+  page: Page,
+  tasksPage: TasksPage,
+  opts: Parameters<TasksPage["createTask"]>[0],
+): Promise<number> {
+  const responsePromise = page.waitForResponse(
+    (resp) =>
+      resp.url().includes("/tasks") &&
+      resp.request().method() === "POST" &&
+      resp.ok(),
+    { timeout: 15000 },
+  );
+  await tasksPage.createTask(opts);
+  const response = await responsePromise;
+  const createdTask = await response.json();
+  return createdTask.id;
+}
+
 test.describe("Task Activity Timeline - System Events", () => {
   // ── task_created ──────────────────────────────────────────────────────────
 
@@ -15,16 +37,10 @@ test.describe("Task Activity Timeline - System Events", () => {
       taskDetailPage,
       page,
     }) => {
-      const taskTitle = `Activity Event Task ${Date.now()}`;
-      await tasksPage.createTask({ title: taskTitle });
-
-      await tasksPage.goto();
-      await page.getByText(taskTitle).first().click();
-      await page.waitForURL(/\/tasks\/\d+/, { timeout: 10000 });
-
-      await page
-        .getByRole("heading", { name: "Activity", exact: true })
-        .scrollIntoViewIfNeeded();
+      const taskId = await createAndGetTaskId(page, tasksPage, {
+        title: `Activity Event Task ${Date.now()}`,
+      });
+      await taskDetailPage.goto(taskId);
 
       await expect(
         page
@@ -43,12 +59,11 @@ test.describe("Task Activity Timeline - System Events", () => {
       taskDetailPage,
       page,
     }) => {
-      const taskTitle = `Status Change Task ${Date.now()}`;
-      await tasksPage.createTask({ title: taskTitle, status: "TODO" });
-
-      await tasksPage.goto();
-      await page.getByText(taskTitle).first().click();
-      await page.waitForURL(/\/tasks\/\d+/, { timeout: 10000 });
+      const taskId = await createAndGetTaskId(page, tasksPage, {
+        title: `Status Change Task ${Date.now()}`,
+        status: "TODO",
+      });
+      await taskDetailPage.goto(taskId);
 
       // Edit task to change status
       await page.getByRole("button", { name: /edit/i }).click();
@@ -57,10 +72,6 @@ test.describe("Task Activity Timeline - System Events", () => {
       await page.getByLabel(/status/i).selectOption("IN_PROGRESS");
       await page.getByRole("button", { name: /save changes/i }).click();
       await page.waitForURL(/\/tasks\/\d+$/, { timeout: 10000 });
-
-      await page
-        .getByRole("heading", { name: "Activity", exact: true })
-        .scrollIntoViewIfNeeded();
 
       await expect(
         page
@@ -79,13 +90,11 @@ test.describe("Task Activity Timeline - System Events", () => {
       taskDetailPage,
       page,
     }) => {
-      const originalTitle = `Field Update Task ${Date.now()}`;
       const updatedTitle = `Updated Task ${Date.now()}`;
-      await tasksPage.createTask({ title: originalTitle });
-
-      await tasksPage.goto();
-      await page.getByText(originalTitle).first().click();
-      await page.waitForURL(/\/tasks\/\d+/, { timeout: 10000 });
+      const taskId = await createAndGetTaskId(page, tasksPage, {
+        title: `Field Update Task ${Date.now()}`,
+      });
+      await taskDetailPage.goto(taskId);
 
       await page.getByRole("button", { name: /edit/i }).click();
       await page.waitForURL(/\/tasks\/\d+\/edit/, { timeout: 10000 });
@@ -94,10 +103,6 @@ test.describe("Task Activity Timeline - System Events", () => {
       await titleInput.fill(updatedTitle);
       await page.getByRole("button", { name: /save changes/i }).click();
       await page.waitForURL(/\/tasks\/\d+$/, { timeout: 10000 });
-
-      await page
-        .getByRole("heading", { name: "Activity", exact: true })
-        .scrollIntoViewIfNeeded();
 
       await expect(
         page

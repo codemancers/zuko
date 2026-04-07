@@ -159,7 +159,7 @@ async function main() {
         create: { userId, isPrimary: true },
       },
     },
-    update: {},
+    update: { stage: "prospecting" },
   });
 
   await prisma.deal.upsert({
@@ -176,6 +176,52 @@ async function main() {
       owners: {
         create: { userId, isPrimary: true },
       },
+    },
+    update: { stage: "prospecting" },
+  });
+
+  const meeting = await prisma.meeting.upsert({
+    where: { id: 1 },
+    create: {
+      organizationId: org.id,
+      name: "Weekly Product Sync",
+      url: "https://zoom.us/j/123456789",
+      platform: "ZOOM",
+      status: "COMPLETED",
+      timezone: "UTC",
+      scheduledAt: new Date("2024-01-14T10:00:00Z"),
+      createdBy: userId,
+      // Points to the Next.js fixture endpoint so NestJS can fetch transcript
+      // data during SSR without needing an external storage service in e2e.
+      transcript: "http://localhost:3000/api/fixtures/transcript",
+    },
+    update: {},
+  });
+
+  await prisma.meetingSummary.upsert({
+    where: { id: 1 },
+    create: {
+      meetingId: meeting.id,
+      content:
+        "The team discussed the ongoing UI refactor and API documentation needs.",
+    },
+    update: {},
+  });
+
+  await prisma.meetingActionItem.upsert({
+    where: { id: 1 },
+    create: {
+      meetingId: meeting.id,
+      title: "Review UI refactor components",
+    },
+    update: {},
+  });
+
+  await prisma.meetingActionItem.upsert({
+    where: { id: 2 },
+    create: {
+      meetingId: meeting.id,
+      title: "Review API documentation",
     },
     update: {},
   });

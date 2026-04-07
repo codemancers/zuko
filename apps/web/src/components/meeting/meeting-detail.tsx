@@ -17,6 +17,9 @@ import {
   Copy,
 } from 'lucide-react';
 import { Badge, Button, Heading, Text, Text as ZukoText } from '@zuko/ui-kit';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { getMeeting } from '@/server/query-options';
+import { meetingsApi } from '@/lib/api/meetings';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -113,95 +116,49 @@ const MeetingDetail = ({ meetingId, meetingOverride }: MeetingDetailProps) => {
   const [activeTab, setActiveTab] = useState<Tab>('recording');
   const [actionItemSearch, setActionItemSearch] = useState('');
   const [supportsPiP, setSupportsPiP] = useState(false);
+  const [completedItems, setCompletedItems] = useState<Set<number>>(new Set());
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const router = useRouter();
+  const queryClient = useQueryClient();
 
-  // Dummy Data
-  // TODO: Remove this and use the actual data from the API
-  const defaultMeeting = {
-    id: meetingId,
-    name: 'Weekly Sync - Product & Engineering',
-    status: 'COMPLETED',
-    platform: 'ZOOM',
-    scheduledAt: dayjs().toISOString(),
-    createdAt: dayjs().subtract(1, 'hour').toISOString(),
-    timezone: 'UTC',
-    recordingUrl: 'https://www.w3schools.com/html/mov_bbb.mp4',
-    description:
-      'Weekly sync to discuss progress, blockers, and upcoming features.',
-    projects: [{ id: 1, name: 'Zuko AI' }],
-    transcript: [
-      {
-        text: 'Hello everyone, let’s start the sync.',
-        speaker_name: 'Alice',
-        formatted_duration: '00:00:05',
-        is_final: true,
-        speech_final: true,
-        confidence: 0.99,
-        timestamp: '5000',
-        speaker: 1,
-        duration_seconds: 5,
-      },
-      {
-        text: 'I have some updates on the UI refactor.',
-        speaker_name: 'Bob',
-        formatted_duration: '00:00:12',
-        is_final: true,
-        speech_final: true,
-        confidence: 0.98,
-        timestamp: '12000',
-        speaker: 2,
-        duration_seconds: 7,
-      },
-    ],
-    chatMessages: [
-      {
-        user: {
-          fullName: 'Alice',
-          profilePicture: 'https://avatar.vercel.sh/alice',
-        },
-        text: 'Starting now!',
-      },
-      {
-        user: {
-          fullName: 'Bob',
-          profilePicture: 'https://avatar.vercel.sh/bob',
-        },
-        text: 'I will be 2 mins late.',
-      },
-    ],
-    summary: {
-      id: 1,
-      meetingId: Number(meetingId),
-      createdAt: dayjs().toISOString(),
-      updatedAt: dayjs().toISOString(),
-      content:
-        'The team discussed the ongoing UI refactor. Bob mentioned that the core components are ready. Alice will review the implementation plan by EOD tomorrow.',
+  const numericId = parseInt(meetingId, 10);
+
+  const { data: apiMeeting, isLoading } = useQuery({
+    ...getMeeting(numericId),
+    refetchInterval: (query) =>
+      query.state.data?.status === 'IN_PROGRESS' ||
+      query.state.data?.status === 'PROCESSING'
+        ? 5000
+        : false,
+  });
+
+  const endMeetingMutation = useMutation({
+    mutationFn: () => meetingsApi.endMeeting(numericId),
+    onSuccess: () => {
+      toast.success(`Meeting ended: ${meetingId}`);
+      queryClient.invalidateQueries({ queryKey: ['meeting', numericId] });
     },
-    actionItems: [
-      {
-        id: 1,
-        title: 'Review UI refactor components',
-        description: 'Alice to review Bob’s PR by tomorrow.',
-        taskId: null,
-        meetingId: Number(meetingId),
-        createdAt: dayjs().toISOString(),
-        updatedAt: dayjs().toISOString(),
-      },
-      {
-        id: 2,
-        title: 'Review API documentation',
-        description: 'Bob to check the API docs.',
-        taskId: null,
-        meetingId: Number(meetingId),
-        createdAt: dayjs().toISOString(),
-        updatedAt: dayjs().toISOString(),
-      },
-    ],
-  };
-  const [actionItems, setActionItems] = useState<ActionItem[]>(
-    meetingOverride?.actionItems || defaultMeeting.actionItems,
-  );
+    onError: () => toast.error('Failed to end meeting'),
+  });
+
+  // Merge API data with any test override
+  const meeting = apiMeeting
+    ? meetingOverride
+      ? {
+          ...apiMeeting,
+          ...meetingOverride,
+          actionItems: meetingOverride.actionItems ?? apiMeeting.actionItems,
+        }
+      : apiMeeting
+    : null;
+
+  const [localActionItems, setLocalActionItems] = useState<ActionItem[]>([]);
+
+  const actionItems: ActionItem[] = [
+    ...(meetingOverride?.actionItems ?? meeting?.actionItems ?? []),
+    ...localActionItems,
+  ].map((it) => ({ ...it, completed: completedItems.has(it.id) }));
+
   const [isAddingTask, setIsAddingTask] = useState(false);
   const [newTask, setNewTask] = useState<NewActionItem>({
     title: '',
@@ -210,41 +167,38 @@ const MeetingDetail = ({ meetingId, meetingOverride }: MeetingDetailProps) => {
 
   const handleAddTask = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newTask.title.trim()) {
-      toast.error('Task title is required');
-      return;
-    }
-
-    const newItem: ActionItem = {
-      id: Math.max(0, ...actionItems.map((it) => it.id)) + 1,
-      title: newTask.title,
-      description: newTask.description || null,
-      taskId: null,
-      meetingId: Number(meetingId),
-      createdAt: dayjs().toISOString(),
-      updatedAt: dayjs().toISOString(),
-      completed: false,
-    };
-
-    setActionItems((prev) => [newItem, ...prev]);
+    if (!newTask.title.trim()) return;
+    setLocalActionItems((prev) => [
+      ...prev,
+      {
+        id: Date.now(),
+        meetingId: numericId,
+        title: newTask.title,
+        description: newTask.description || null,
+        taskId: null,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      },
+    ]);
     setNewTask({ title: '', description: '' });
     setIsAddingTask(false);
-    toast.success('Task added successfully');
   };
 
   const toggleTaskCompletion = (id: number) => {
-    setActionItems((prev) =>
-      prev.map((it) => (it.id === id ? { ...it, completed: !it.completed } : it)),
-    );
+    setCompletedItems((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
     toast.success('Task status updated');
   };
 
-  const meeting = meetingOverride
-    ? { ...defaultMeeting, ...meetingOverride, actionItems }
-    : { ...defaultMeeting, actionItems };
-
-  const onEndMeeting = (id: string) => {
-    toast.success('Meeting ended: ' + id);
+  const onEndMeeting = () => {
+    endMeetingMutation.mutate();
   };
 
   useEffect(() => {
@@ -304,14 +258,15 @@ const MeetingDetail = ({ meetingId, meetingOverride }: MeetingDetailProps) => {
     }
   };
 
-  const handleTabChange = async (tab: Tab) => {
-    await handlePiPForTabChange(tab);
+  const handleTabChange = (tab: Tab) => {
+    handlePiPForTabChange(tab).catch(console.error);
     setActiveTab(tab);
   };
 
   const renderRecordingPanel = () => {
     if (meeting) {
-      if (!meeting.recordingUrl) {
+      const recordingUrl = meeting.recordingUrl ?? null;
+      if (!recordingUrl) {
         return (
           <div className="flex h-40 items-center justify-center rounded-lg border border-zinc-200 dark:border-zinc-800">
             <Text>No recording available for this meeting</Text>
@@ -322,8 +277,8 @@ const MeetingDetail = ({ meetingId, meetingOverride }: MeetingDetailProps) => {
         <div className="space-y-4">
           <div className="flex justify-end gap-2">
             <a
-              href={meeting.recordingUrl}
-              download={`${meeting.name}.mp4`}
+              href={recordingUrl}
+              download={`${meeting.name ?? 'recording'}.webm`}
               className="inline-flex items-center gap-2 rounded-lg border border-zinc-200 bg-white px-4 py-2 text-sm font-medium text-zinc-900 transition-colors hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800"
             >
               <Download className="size-4" />
@@ -333,7 +288,7 @@ const MeetingDetail = ({ meetingId, meetingOverride }: MeetingDetailProps) => {
           <div className="aspect-video w-full overflow-hidden rounded-lg bg-black">
             <video
               ref={videoRef}
-              src={meeting.recordingUrl}
+              src={recordingUrl}
               controls
               preload="auto"
               className="h-full w-full"
@@ -349,7 +304,9 @@ const MeetingDetail = ({ meetingId, meetingOverride }: MeetingDetailProps) => {
     if (meeting) {
       switch (activeTab) {
         case 'transcript': {
-          if (!meeting.transcript || meeting.transcript.length === 0) {
+          const transcriptLines =
+            meetingOverride?.transcript ?? meeting.transcriptData ?? [];
+          if (!transcriptLines || transcriptLines.length === 0) {
             return (
               <div className="flex h-40 items-center justify-center rounded-lg border border-zinc-200 dark:border-zinc-800">
                 <ZukoText>No transcript available for this meeting</ZukoText>
@@ -359,7 +316,7 @@ const MeetingDetail = ({ meetingId, meetingOverride }: MeetingDetailProps) => {
 
           const vtt = ['WEBVTT\n'];
 
-          meeting.transcript.forEach((line: TranscriptData) => {
+          transcriptLines.forEach((line: TranscriptData) => {
             const message = line.text;
             const speaker = line.speaker_name;
             const timestamp = line.formatted_duration;
@@ -376,7 +333,8 @@ const MeetingDetail = ({ meetingId, meetingOverride }: MeetingDetailProps) => {
           );
         }
         case 'chat': {
-          const messages: ChatMessage[] = meeting.chatMessages || [];
+          const messages: ChatMessage[] =
+            meetingOverride?.chatMessages ?? meeting.chatMessages ?? [];
           if (!messages || messages.length === 0) {
             return (
               <div className="flex h-40 items-center justify-center rounded-lg border border-zinc-200 dark:border-zinc-800">
@@ -412,7 +370,10 @@ const MeetingDetail = ({ meetingId, meetingOverride }: MeetingDetailProps) => {
           );
         }
         case 'summary': {
-          const summary: MeetingSummary | null | undefined = meeting.summary;
+          const summary: MeetingSummary | null | undefined =
+            meetingOverride && 'summary' in meetingOverride
+              ? meetingOverride.summary
+              : meeting.summaries?.[0] ?? null;
           if (!summary || !summary.content) {
             return (
               <div className="flex h-40 items-center justify-center rounded-lg border border-zinc-200 dark:border-zinc-800">
@@ -538,13 +499,13 @@ const MeetingDetail = ({ meetingId, meetingOverride }: MeetingDetailProps) => {
                   </ZukoText>
                 </div>
               ) : (
-                <ul className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                   {filtered.map((it) => {
                     const hasTask = !!it.taskId;
                     const isCompleted = !!it.completed;
 
                     return (
-                      <li
+                      <div
                         key={it.id}
                         className={[
                           'group relative rounded-xl border p-4 transition',
@@ -624,10 +585,10 @@ const MeetingDetail = ({ meetingId, meetingOverride }: MeetingDetailProps) => {
                             </button>
                           </div>
                         </div>
-                      </li>
+                      </div>
                     );
                   })}
-                </ul>
+                </div>
               )}
             </div>
           );
@@ -646,11 +607,18 @@ const MeetingDetail = ({ meetingId, meetingOverride }: MeetingDetailProps) => {
         <span>&lt;&nbsp;&nbsp;Meetings</span>
       </button>
 
-      {/* Loading Meeting Details */}
+      {isLoading && (
+        <div className="flex h-40 items-center justify-center rounded-lg border border-zinc-200 dark:border-zinc-800">
+          <Text>Loading meeting...</Text>
+        </div>
+      )}
 
-      {/* Failed To Load The Meeting Details */}
+      {!isLoading && !meeting && (
+        <div className="flex h-40 items-center justify-center rounded-lg border border-zinc-200 dark:border-zinc-800">
+          <Text>Meeting not found</Text>
+        </div>
+      )}
 
-      {/* Meeting Details */}
       {meeting && (
         <>
           <div className="flex items-center justify-between">
@@ -658,11 +626,10 @@ const MeetingDetail = ({ meetingId, meetingOverride }: MeetingDetailProps) => {
             {meeting.status === 'IN_PROGRESS' && (
               <Button
                 color="red"
-                onClick={() => {
-                  onEndMeeting(meetingId);
-                }}
+                onClick={onEndMeeting}
+                disabled={endMeetingMutation.isPending}
               >
-                End Meeting
+                {endMeetingMutation.isPending ? 'Ending...' : 'End Meeting'}
               </Button>
             )}
           </div>
@@ -705,16 +672,13 @@ const MeetingDetail = ({ meetingId, meetingOverride }: MeetingDetailProps) => {
               </ZukoText>
             </div>
 
-            {meeting.projects && meeting.projects.length > 0 && (
-              <div className="sm:col-span-2 lg:col-span-3">
+
+            {meeting.projectName && (
+              <div>
                 <ZukoText className="text-xs font-medium uppercase tracking-wider text-zinc-500">
                   Projects
                 </ZukoText>
-                <ZukoText className="mt-1">
-                  {meeting.projects
-                    .map((project: { name: string }) => project.name)
-                    .join(', ')}
-                </ZukoText>
+                <ZukoText className="mt-1">{meeting.projectName}</ZukoText>
               </div>
             )}
 

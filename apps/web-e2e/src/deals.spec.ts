@@ -960,15 +960,19 @@ test.describe("Cell Editing Flow", () => {
     const stageIndex = headerTexts.findIndex(h => h.toLowerCase().includes("stage"));
 
     const stageCell = firstRow.locator("td").nth(stageIndex);
-    const newValue = "qualification";
-    const labelValue = "Qualification";
 
     // Click to enter edit mode
     await stageCell.evaluate(node => (node as any).click());
-    
+
     // The Select should be visible
     const select = stageCell.locator("select");
     await expect(select).toBeVisible();
+
+    // Read current value and pick a different one so the update always fires
+    const currentValue = await select.inputValue();
+    const newValue = currentValue === "qualification" ? "prospecting" : "qualification";
+    const labelValue = newValue === "qualification" ? "Qualification" : "Prospecting";
+
     await select.selectOption({ value: newValue });
 
     // Success toast should appear
@@ -977,9 +981,13 @@ test.describe("Cell Editing Flow", () => {
     // Value should be updated in the cell (showing the label)
     await expect(stageCell).toHaveText(labelValue);
 
-    // Verify persistence after reload
+    // Verify persistence after reload — scope to the first data row to avoid
+    // matching the label across multiple deals
     await page.reload();
     await dealsPage.getDealItems();
-    await expect(page.getByText(labelValue, { exact: true })).toBeVisible();
+    const reloadedHeaders = await page.getByRole("columnheader").allInnerTexts();
+    const reloadedStageIndex = reloadedHeaders.findIndex(h => h.toLowerCase().includes("stage"));
+    const reloadedStageCell = page.getByRole("row").nth(1).locator("td").nth(reloadedStageIndex);
+    await expect(reloadedStageCell).toHaveText(labelValue);
   });
 });
