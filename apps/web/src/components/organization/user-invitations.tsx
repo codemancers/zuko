@@ -149,6 +149,22 @@ export const UserInvitations = () => {
     [isProcessing],
   );
 
+  if (!isLoading && rows.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 text-center">
+        <div className="rounded-2xl border border-zinc-200 p-4 dark:border-white/10">
+          <EnvelopeOpenIcon className="size-8 text-zinc-400" />
+        </div>
+        <div className="mt-6 text-base font-semibold text-zinc-950 dark:text-white">
+          No invitations
+        </div>
+        <div className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
+          You don't have any pending invitations at the moment.
+        </div>
+      </div>
+    );
+  }
+
   return (
     <BaseTable<InvitationRow>
       columns={columns}
@@ -156,11 +172,6 @@ export const UserInvitations = () => {
       loading={isLoading}
       entityName="invitations"
       disableRowClick
-      emptyStateConfig={{
-        icon: EnvelopeOpenIcon,
-        title: 'No invitations',
-        description: "You don't have any pending invitations at the moment.",
-      }}
     />
   );
 };

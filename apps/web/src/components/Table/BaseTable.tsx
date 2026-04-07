@@ -87,27 +87,6 @@ export function BaseTable<TData extends BaseRow>(props: BaseTableProps<TData>) {
           />
         </Table>
 
-        {!loading && props.data.length === 0 && emptyStateConfig && (
-          <div className="flex flex-col items-center justify-center py-16 text-center">
-            {emptyStateConfig.icon && (
-              <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 p-4">
-                <emptyStateConfig.icon className="size-8 text-zinc-400" />
-              </div>
-            )}
-            <p className="mt-4 text-base font-semibold text-zinc-950 dark:text-white">
-              {emptyStateConfig.title}
-            </p>
-            <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
-              {emptyStateConfig.description}
-            </p>
-            {emptyStateConfig.action && (
-              <Button className="mt-4" onClick={emptyStateConfig.action.onClick}>
-                {emptyStateConfig.action.label}
-              </Button>
-            )}
-          </div>
-        )}
-
         {showAddRow && (
           <div className="pl-2 py-1 h-10 border-zinc-200 dark:border-zinc-800 flex items-center bg-zinc-50/50 dark:bg-zinc-900/50">
             <Button
