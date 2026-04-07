@@ -5,7 +5,6 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 import { DEAL_EVENTS } from '../events/deal-events';
 import { BadRequestException } from '@nestjs/common';
 import { TableColumnRepository } from '../repositories/table-column.repository';
-import { validateCellValue, castFieldValue } from '../utils/custom-fields';
 
 const ORG_ID = 1;
 const ACTOR_ID = 42;
