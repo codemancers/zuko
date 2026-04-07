@@ -99,7 +99,6 @@ export const OrgTeams = ({
       const { error } = await authClient.organization.updateTeam({
         teamId: team.id,
         data: { name: newName },
-        organizationId: activeOrg.id,
       });
       if (error) { toast.error(error.message || 'Failed to rename team'); return; }
       toast.success(`Team renamed to "${newName}"`);
@@ -120,7 +119,7 @@ export const OrgTeams = ({
             className="inline-flex items-center gap-2 text-sm/6 text-zinc-500 dark:text-zinc-400"
           >
             <ChevronLeftIcon className="size-4 fill-zinc-400 dark:fill-zinc-500" />
-            Back to {activeOrg.name}
+            Back to {activeOrg?.name}
           </Link>
         </div>
       )}

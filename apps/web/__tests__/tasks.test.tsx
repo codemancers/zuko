@@ -80,6 +80,7 @@ const mockTask: Task = {
   parentId: null,
   assignee: 'john@example.com',
   subtasks: [],
+  owners: [],
   createdAt: '2026-03-12T00:00:00Z',
   updatedAt: '2026-03-12T00:00:00Z',
 };
@@ -366,7 +367,7 @@ function renderCell(columns: ColumnDef<FlatTask>[], colId: string, task: FlatTas
 
   const args: CellArgs = {
     row: { original: task },
-    getValue: () => (task as Record<string, unknown>)[colId],
+    getValue: () => (task as unknown as Record<string, unknown>)[colId],
   };
 
   const Cell = () => <>{col.cell!(args)}</>;

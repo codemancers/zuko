@@ -45,7 +45,7 @@ export function BaseTable<TData extends BaseRow>(props: BaseTableProps<TData>) {
     showAddColumn,
     onAddColumn,
     onCellUpdate,
-    showEmptyState: _showEmptyState,
+    showEmptyState,
     emptyStateConfig
   } = props;
   const [hasMounted, setHasMounted] = useState(false);
@@ -86,6 +86,26 @@ export function BaseTable<TData extends BaseRow>(props: BaseTableProps<TData>) {
             addRowContent={addRowContent}
           />
         </Table>
+
+        {showEmptyState && emptyStateConfig && props.data.length === 0 && !loading && (
+          <div className="flex flex-col items-center justify-center py-16 text-center">
+            <div className="rounded-2xl border border-zinc-200 p-4 dark:border-white/10">
+              <emptyStateConfig.icon className="size-8 text-zinc-400" />
+            </div>
+            <div className="mt-6 text-base font-semibold text-zinc-950 dark:text-white">
+              {emptyStateConfig.title}
+            </div>
+            <div className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
+              {emptyStateConfig.description}
+            </div>
+            <Button
+              className="mt-6"
+              onClick={emptyStateConfig.action.onClick}
+            >
+              {emptyStateConfig.action.label}
+            </Button>
+          </div>
+        )}
 
         {showAddRow && (
           <div className="pl-2 py-1 h-10 border-zinc-200 dark:border-zinc-800 flex items-center bg-zinc-50/50 dark:bg-zinc-900/50">

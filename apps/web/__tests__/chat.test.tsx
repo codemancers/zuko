@@ -357,6 +357,10 @@ describe('ChatInput mentions', () => {
       id: 10,
       companyName: 'Acme Inc',
       website: 'https://acme.com',
+      isHidden: false,
+      createdAt: '',
+      updatedAt: '',
+      owners: [],
     },
   ];
   const mockDeals = [
