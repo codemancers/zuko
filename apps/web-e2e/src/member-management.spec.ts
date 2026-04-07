@@ -100,10 +100,10 @@ test.describe('Member Management', () => {
     await settingsPage.switchTab('members');
 
     // Find an active member row with role "Member" (not Owner/Admin, not Invited)
-    // Use select[value] filter to target role specifically; avoid matching "Remove member" button label
     const memberRows = page.locator('tr')
-      .filter({ has: page.locator('select').filter({ hasValue: 'member' }) })
-      .filter({ hasText: /Active/ });
+      .filter({ has: page.locator('select[value="member"], select option[value="member"]:checked') })
+      .filter({ hasText: /Active/ })
+      .filter({ hasNot: page.locator('select[value="owner"], select[value="admin"]') });
     const count = await memberRows.count();
     if (count === 0) {
       test.skip();
@@ -117,8 +117,10 @@ test.describe('Member Management', () => {
       .getByRole('button', { name: /remove member/i })
       .click();
 
-    // Confirm in dialog (button text is "Remove")
-    await page.getByRole('button', { name: /^remove$/i }).click();
+    // Wait for confirm dialog to appear, then click Remove
+    const confirmButton = page.getByRole('button', { name: /^remove$/i });
+    await expect(confirmButton).toBeVisible();
+    await confirmButton.click();
 
     await expect(page.getByText(/member removed/i)).toBeVisible();
   });

@@ -137,20 +137,21 @@ export const OrgMembers = ({
           memberIdOrEmail: memberToRemove.memberId,
           organizationId: activeOrg.id,
         });
-        if (error) { toast.error(error.message || 'Failed to remove member'); return; }
+        if (error) { toast.error(error.message || 'Failed to remove member'); setMemberToRemove(null); return; }
+        setMemberToRemove(null);
         toast.success('Member removed');
         queryClient.invalidateQueries({ queryKey: ['organization', activeOrg.id, 'members'] });
       } else if (memberToRemove.type === 'invitation' && memberToRemove.invitationId) {
         const { error } = await authClient.organization.cancelInvitation({
           invitationId: memberToRemove.invitationId,
         });
-        if (error) { toast.error(error.message || 'Failed to cancel invitation'); return; }
+        if (error) { toast.error(error.message || 'Failed to cancel invitation'); setMemberToRemove(null); return; }
+        setMemberToRemove(null);
         toast.success('Invitation cancelled');
         queryClient.invalidateQueries({ queryKey: ['organization', activeOrg.id, 'invitations'] });
       }
     } catch {
       toast.error('An error occurred');
-    } finally {
       setMemberToRemove(null);
     }
   };
