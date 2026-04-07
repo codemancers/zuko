@@ -168,7 +168,7 @@ export function AddColumnDialog({ isOpen, onClose, onAdd }: AddColumnDialogProps
                   <Button
                     plain
                     onClick={() => handleRemoveOption(index)}
-                    className="p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                    className="p-1"
                   >
                     <XMarkIcon className="h-4 w-4 text-zinc-400" />
                   </Button>
