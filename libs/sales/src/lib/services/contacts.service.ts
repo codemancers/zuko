@@ -12,8 +12,11 @@ import {
   UpdateContactInput,
   ContactFilters,
 } from '../repositories/contacts.repository';
+import { TableColumnRepository } from '../repositories/table-column.repository';
 import { CONTACT_EVENTS, ContactFieldUpdatedEvent } from '../events/contact-events';
 import type { ActivitySource } from '../events/deal-events';
+import { ColumnConfig, ColumnType } from '../types/table-metadata';
+import { validateCellValue, castFieldValue } from '../utils/custom-fields';
 
 /**
  * Validates E.164 phone number format
@@ -36,6 +39,7 @@ export class ContactsService {
   constructor(
     private readonly contactsRepository: ContactsRepository,
     private readonly eventEmitter: EventEmitter2,
+    private readonly tableColumnRepository: TableColumnRepository,
   ) {}
 
   async create(input: CreateContactInput, actorId?: number, source?: ActivitySource) {
@@ -135,6 +139,26 @@ export class ContactsService {
         throw new BadRequestException(
           `A contact with email ${input.email} already exists (ID: ${duplicateContact.id})`,
         );
+      }
+    }
+
+    // Validate custom fields if provided
+    if (input.fields) {
+      const customColumns = await this.tableColumnRepository.findByTable(
+        organizationId,
+        'contacts',
+      );
+
+      for (const [key, value] of Object.entries(input.fields)) {
+        const column = customColumns.find((c) => c.columnKey === key);
+        if (column) {
+          validateCellValue(
+            value,
+            column.fieldType as ColumnType,
+            column.config as ColumnConfig,
+          );
+          input.fields[key] = castFieldValue(value, column.fieldType as ColumnType);
+        }
       }
     }
 

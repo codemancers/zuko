@@ -4,6 +4,8 @@ import { DealsRepository } from '../repositories/deals.repository';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { DEAL_EVENTS } from '../events/deal-events';
 import { BadRequestException } from '@nestjs/common';
+import { TableColumnRepository } from '../repositories/table-column.repository';
+import { validateCellValue, castFieldValue } from '../utils/custom-fields';
 
 const ORG_ID = 1;
 const ACTOR_ID = 42;
@@ -55,11 +57,16 @@ describe('DealsService - activity events', () => {
   const mockEventEmitter = {
     emitAsync: jest.fn().mockImplementation(() => Promise.resolve([])),
   };
+  
+  const mockTableColumnRepository = {
+    findByTable: jest.fn(),
+  }
 
   beforeEach(() => {
     service = new DealsService(
       mockRepo as unknown as DealsRepository,
       mockEventEmitter as unknown as EventEmitter2,
+      mockTableColumnRepository as unknown as TableColumnRepository,
     );
     jest.clearAllMocks();
     // Default: findById returns the mock deal

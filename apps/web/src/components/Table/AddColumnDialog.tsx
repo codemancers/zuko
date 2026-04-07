@@ -14,17 +14,23 @@ import {
   Label,
   ErrorMessage,
 } from '@zuko/ui-kit';
+import {
+  PlusIcon,
+  XMarkIcon,
+} from '@heroicons/react/20/solid';
+import { ColumnConfig } from '@/types/table-metadata';
 
 interface AddColumnDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  onAdd: (name: string, key: string, type: string) => void;
+  onAdd: (name: string, key: string, type: string, config?: ColumnConfig) => void;
 }
 
 export function AddColumnDialog({ isOpen, onClose, onAdd }: AddColumnDialogProps) {
   const [fieldName, setFieldName] = useState('');
   const [columnKey, setColumnKey] = useState('');
   const [fieldType, setFieldType] = useState('text');
+  const [options, setOptions] = useState<string[]>(['']);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const validKeyRegex = /^[a-z0-9_]+$/;
 
@@ -50,16 +56,48 @@ export function AddColumnDialog({ isOpen, onClose, onAdd }: AddColumnDialogProps
     setFieldName('');
     setColumnKey('');
     setFieldType('text');
+    setOptions(['']);
     setErrors({});
     onClose();
   };
 
+  const handleAddOption = () => {
+    setOptions([...options, '']);
+  };
+
+  const handleRemoveOption = (index: number) => {
+    if (options.length > 1) {
+      setOptions(options.filter((_, i) => i !== index));
+    } else {
+      setOptions(['']);
+    }
+  };
+
+  const handleOptionChange = (index: number, value: string) => {
+    const newOptions = [...options];
+    newOptions[index] = value;
+    setOptions(newOptions);
+  };
+
   const handleAdd = () => {
     if (validate()) {
-      onAdd(fieldName, columnKey, fieldType);
+      let config: ColumnConfig | undefined = undefined;
+      
+      if (fieldType === 'select') {
+        const validOptions = options
+          .filter((opt) => opt.trim() !== '')
+          .map((opt) => ({ label: opt.trim(), value: opt.trim() }));
+        
+        if (validOptions.length > 0) {
+          config = { options: validOptions };
+        }
+      }
+
+      onAdd(fieldName, columnKey, fieldType, config);
       setFieldName('');
       setColumnKey('');
       setFieldType('text');
+      setOptions(['']);
       setErrors({});
       onClose();
     }
@@ -110,10 +148,39 @@ export function AddColumnDialog({ isOpen, onClose, onAdd }: AddColumnDialogProps
             <option value="text">Single line text</option>
             <option value="number">Number</option>
             <option value="date">Date</option>
-            <option value="boolean">Checkbox</option>
+            <option value="select">Select</option>
           </Select>
           {errors.fieldType && <ErrorMessage>{errors.fieldType}</ErrorMessage>}
         </Field>
+
+        {fieldType === 'select' && (
+          <Field>
+            <Label>Options</Label>
+            <div data-slot="control" className="space-y-2">
+              {options.map((option, index) => (
+                <div key={index} className="flex items-center gap-2 group">
+                  <Input
+                    placeholder="Option value"
+                    value={option}
+                    onChange={(e) => handleOptionChange(index, e.target.value)}
+                    className="flex-1"
+                  />
+                  <Button
+                    plain
+                    onClick={() => handleRemoveOption(index)}
+                    className="p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    <XMarkIcon className="h-4 w-4 text-zinc-400" />
+                  </Button>
+                </div>
+              ))}
+              <Button plain onClick={handleAddOption} className="mt-1 !h-8 text-xs !flex !items-center">
+                <PlusIcon className="h-4 w-4 mr-1" />
+                <span>Add option</span>
+              </Button>
+            </div>
+          </Field>
+        )}
       </DialogBody>
       <DialogActions>
         <Button plain onClick={onCloseDialog}>Cancel</Button>

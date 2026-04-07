@@ -1,3 +1,4 @@
+import { ColumnConfig } from '@/types/table-metadata';
 import {
   ColumnDef,
   PaginationState,
@@ -58,7 +59,7 @@ export interface BaseTableProps<TData extends BaseRow> {
   onAddRow?: () => void;
   addRowContent?: React.ReactNode;
   showAddColumn?: boolean;
-  onAddColumn?: (name: string, key: string, type: string) => void;
+  onAddColumn?: (name: string, key: string, type: string, config?: ColumnConfig) => void;
   onCellUpdate?: (rowId: string | number, columnId: string, value: any) => void;
   showEmptyState?: boolean;
   emptyStateConfig?: {

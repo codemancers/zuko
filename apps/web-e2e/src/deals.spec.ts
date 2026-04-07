@@ -991,3 +991,93 @@ test.describe("Cell Editing Flow", () => {
     await expect(reloadedStageCell).toHaveText(labelValue);
   });
 });
+
+test.describe.serial("Custom Column Flow - Select Type", () => {
+  const identifier = Date.now();
+  const columnName = `Priority Level ${identifier}`;
+  const columnKey = `priority_level_${identifier}`;
+
+  test("Creates a column with type select and options", async ({
+    dealsPage,
+    page,
+  }) => {
+    await dealsPage.goto();
+
+    // Ensure at least one row exists
+    const deals = await dealsPage.getDealItems();
+    if (deals.length === 0) {
+      await dealsPage.addRow();
+      await expect(page.getByText(/New deal added/i)).toBeVisible();
+    }
+
+    // Open add column dialog
+    const addColumnButton = page.getByRole("button", { name: /Add column/i });
+    await addColumnButton.click();
+    await expect(page.getByText(/Add new field/i)).toBeVisible();
+
+    // Fill column details
+    await page.getByPlaceholder("Field name").fill(columnName);
+    await page.getByPlaceholder(/Unique column key/i).fill(columnKey);
+    await page.locator("select").selectOption("select");
+
+    // Test option management: add and remove
+    const addOptionButton = page.getByRole("button", { name: /Add option/i });
+    
+    // Default 1 option exists
+    await expect(page.getByPlaceholder("Option value")).toHaveCount(1);
+    
+    await addOptionButton.click();
+    await expect(page.getByPlaceholder("Option value")).toHaveCount(2);
+
+    // Remove the newly added option
+    const secondOptionContainer = page.locator("div.group").nth(1);
+    await secondOptionContainer.hover();
+    await secondOptionContainer.locator("button").click();
+    await expect(page.getByPlaceholder("Option value")).toHaveCount(1);
+
+    // Add final options
+    await page.getByPlaceholder("Option value").nth(0).fill("High");
+    await addOptionButton.click();
+    await page.getByPlaceholder("Option value").nth(1).fill("Low");
+
+    // Create the field
+    await page.getByRole("button", { name: "Create field" }).click();
+
+    // Verify creation
+    await expect(page.getByText("Column created successfully")).toBeVisible();
+    await expect(
+      page.getByRole("columnheader", { name: columnName })
+    ).toBeVisible();
+  });
+
+  test("Updates a cell value for the new select type column", async ({
+    dealsPage,
+    page,
+  }) => {
+    await dealsPage.goto();
+
+    // Find the dynamic column index
+    const headers = page.getByRole("columnheader");
+    const headerTexts = await headers.allInnerTexts();
+    const columnIndex = headerTexts.findIndex((h) => h.includes(columnName));
+    expect(columnIndex).toBeGreaterThan(-1);
+
+    const firstRow = page.getByRole("row").nth(1);
+    const cell = firstRow.locator("td").nth(columnIndex);
+
+    // Click to view options
+    await cell.click();
+
+    // Validate select dropdown and its options
+    const select = cell.locator("select");
+    await expect(select).toBeVisible();
+    const options = await select.locator("option").allInnerTexts();
+    expect(options).toContain("High");
+    expect(options).toContain("Low");
+
+    // Select an option and verify update
+    await select.selectOption("High");
+    await expect(page.getByText("Cell updated successfully")).toBeVisible();
+    await expect(cell).toHaveText("High");
+  });
+});

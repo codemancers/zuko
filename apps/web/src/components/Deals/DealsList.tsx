@@ -15,6 +15,7 @@ import { BaseTable, createColumnsFromMetadata, type BaseRow } from '../Table';
 import { useAddColumn } from '@/hooks/use-add-column';
 import { useAddRow } from '@/hooks/use-add-row';
 import { useCellUpdate } from '@/hooks/use-cell-update';
+import { ColumnConfig } from '@/types/table-metadata';
 
 const DealsList = () => {
   const router = useRouter();
@@ -48,8 +49,8 @@ const DealsList = () => {
     router.push('/deals/new');
   };
 
-  const handleNewColumn = (name: string, key: string, type: string) => {
-    addColumn({ label: name, columnKey: key, fieldType: type });
+  const handleNewColumn = (name: string, key: string, type: string, config?: ColumnConfig) => {
+    addColumn({ label: name, columnKey: key, fieldType: type, config });
   };
 
   return (

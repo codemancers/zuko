@@ -49,6 +49,8 @@ class CompanyUpdateDto {
   website?: string;
   linkedinUrl?: string;
   summary?: string;
+  isHidden?: boolean;
+  fields?: Record<string, unknown>;
 }
 
 class ContactQueryDto {
