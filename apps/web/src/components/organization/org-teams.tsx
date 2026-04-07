@@ -6,7 +6,6 @@ import {
   Avatar,
   Link,
   Text,
-  Input,
   Alert,
   AlertActions,
   AlertDescription,
@@ -15,12 +14,10 @@ import {
   TooltipTrigger,
   TooltipContent,
   TooltipProvider,
-  TableRow,
-  TableCell,
 } from '@zuko/ui-kit';
 import { ChevronLeftIcon } from '@heroicons/react/20/solid';
 import { UserGroupIcon } from '@heroicons/react/24/outline';
-import { TableActions, EditAction, DeleteAction } from '../Table';
+import { TableActions, DeleteAction } from '../Table';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   getOrganizations,
@@ -28,9 +25,7 @@ import {
   getTeamMembers,
   getMembers,
 } from '@/server/query-options';
-import { useRouter } from 'next/navigation';
-import { useRef, useState } from 'react';
-import { CreateTeamDialog } from './create-team-dialog';
+import { useState } from 'react';
 import { authClient } from '@/lib/auth-client';
 import { toast } from 'sonner';
 import { BaseTable } from '../Table';
@@ -43,17 +38,7 @@ export const OrgTeams = ({
   slug: string;
   hideHeader?: boolean;
 }) => {
-  const router = useRouter();
   const queryClient = useQueryClient();
-  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-  const [isAddingRow, setIsAddingRow] = useState(false);
-  const [newTeamName, setNewTeamName] = useState('');
-  const [isSaving, setIsSaving] = useState(false);
-  const newTeamInputRef = useRef<HTMLInputElement>(null);
-  const [teamToEdit, setTeamToEdit] = useState<{
-    id: string;
-    name: string;
-  } | null>(null);
   const [teamToRemove, setTeamToRemove] = useState<{
     id: string;
     name: string;
@@ -93,34 +78,35 @@ export const OrgTeams = ({
     }
   };
 
-  const handleSaveNewTeam = async () => {
-    if (!newTeamName.trim() || !activeOrg) return;
-    setIsSaving(true);
+  const handleAddTeam = async () => {
+    if (!activeOrg) return;
     try {
       const { error } = await authClient.organization.createTeam({
-        name: newTeamName.trim(),
+        name: 'New Team',
         organizationId: activeOrg.id,
       });
-      if (error) {
-        toast.error(error.message || 'Failed to create team');
-        return;
-      }
-      toast.success(`Team "${newTeamName.trim()}" created`);
-      queryClient.invalidateQueries({
-        queryKey: ['organization', activeOrg.id, 'teams'],
-      });
-      setNewTeamName('');
-      setIsAddingRow(false);
+      if (error) { toast.error(error.message || 'Failed to create team'); return; }
+      toast.success('Team created');
+      queryClient.invalidateQueries({ queryKey: ['organization', activeOrg.id, 'teams'] });
     } catch {
       toast.error('An error occurred');
-    } finally {
-      setIsSaving(false);
     }
   };
 
-  const handleCancelNewTeam = () => {
-    setNewTeamName('');
-    setIsAddingRow(false);
+  const handleRenameTeam = async (team: { id: string; name: string }, newName: string) => {
+    if (!activeOrg) return;
+    try {
+      const { error } = await authClient.organization.updateTeam({
+        teamId: team.id,
+        data: { name: newName },
+        organizationId: activeOrg.id,
+      });
+      if (error) { toast.error(error.message || 'Failed to rename team'); return; }
+      toast.success(`Team renamed to "${newName}"`);
+      queryClient.invalidateQueries({ queryKey: ['organization', activeOrg.id, 'teams'] });
+    } catch {
+      toast.error('An error occurred');
+    }
   };
 
   const isLoading = isLoadingOrgs || (!!activeOrg && isLoadingTeams);
@@ -143,16 +129,14 @@ export const OrgTeams = ({
         <div className="flex items-center justify-between mb-8">
           <div>
             <Heading>Teams</Heading>
-            <Text className="mt-1">Manage teams within {activeOrg.name}.</Text>
+            <Text className="mt-1">Manage teams within {activeOrg?.name}.</Text>
           </div>
-          <Button onClick={() => setIsCreateDialogOpen(true)}>
-            Create Team
-          </Button>
         </div>
       )}
 
       <BaseTable
         columns={createTeamColumns({
+          onRename: handleRenameTeam,
           renderMembersCell: (team: OrgTeam) =>
             activeOrg ? (
               <TeamMemberAvatars
@@ -162,67 +146,17 @@ export const OrgTeams = ({
             ) : null,
           renderActionsCell: (team: OrgTeam) =>
             activeOrg ? (
-              <div className="flex justify-end pr-2">
-                <TeamActions
-                  onEdit={() => setTeamToEdit(team)}
-                  onRemove={() => setTeamToRemove(team)}
-                />
-              </div>
+              <TableActions>
+                <DeleteAction onClick={() => setTeamToRemove(team)} label="Remove team" />
+              </TableActions>
             ) : null,
         })}
         data={teams}
         loading={isLoading}
         entityName="teams"
         disableRowClick
-        showAddRow={!isAddingRow}
-        onAddRow={() => {
-          setIsAddingRow(true);
-          setTimeout(() => newTeamInputRef.current?.focus(), 0);
-        }}
-        addRowContent={
-          isAddingRow ? (
-            <TableRow
-              onBlur={(e) => {
-                if (!e.currentTarget.contains(e.relatedTarget as Node)) {
-                  handleCancelNewTeam();
-                }
-              }}
-            >
-              {/* sno */}
-              <TableCell className="w-16 align-middle" />
-              {/* team name input */}
-              <TableCell className="align-middle py-2">
-                <Input
-                  ref={newTeamInputRef}
-                  value={newTeamName}
-                  onChange={(e) => setNewTeamName(e.target.value)}
-                  placeholder="Team name"
-                  disabled={isSaving}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') handleSaveNewTeam();
-                    if (e.key === 'Escape') handleCancelNewTeam();
-                  }}
-                />
-              </TableCell>
-              {/* members — empty */}
-              <TableCell className="align-middle" />
-              {/* actions */}
-              <TableCell className="align-middle">
-                <div className="flex items-center justify-end gap-2 pr-2">
-                  <Button
-                    onClick={handleSaveNewTeam}
-                    disabled={isSaving || !newTeamName.trim()}
-                  >
-                    {isSaving ? 'Saving...' : 'Save'}
-                  </Button>
-                  <Button plain onClick={handleCancelNewTeam} disabled={isSaving}>
-                    Cancel
-                  </Button>
-                </div>
-              </TableCell>
-            </TableRow>
-          ) : null
-        }
+        showAddRow
+        onAddRow={handleAddTeam}
         showEmptyState={true}
         emptyStateConfig={{
           icon: UserGroupIcon,
@@ -230,27 +164,8 @@ export const OrgTeams = ({
           description: 'Create a team to organize members in your organization.',
           action: {
             label: 'Create Team',
-            onClick: () => {
-              setIsAddingRow(true);
-              setTimeout(() => newTeamInputRef.current?.focus(), 0);
-            },
+            onClick: handleAddTeam,
           },
-        }}
-      />
-
-      <CreateTeamDialog
-        organizationId={activeOrg?.id ?? ''}
-        isOpen={!!activeOrg && (isCreateDialogOpen || !!teamToEdit)}
-        onClose={() => {
-          setIsCreateDialogOpen(false);
-          setTeamToEdit(null);
-        }}
-        initialData={teamToEdit || undefined}
-        onSuccess={() => {
-          if (!teamToEdit) {
-            router.push('/settings?tab=teams');
-            router.refresh();
-          }
         }}
       />
 
@@ -272,19 +187,6 @@ export const OrgTeams = ({
     </div>
   );
 };
-
-const TeamActions = ({
-  onEdit,
-  onRemove,
-}: {
-  onEdit: () => void;
-  onRemove: () => void;
-}) => (
-  <TableActions>
-    <EditAction onClick={onEdit} label="Edit team" />
-    <DeleteAction onClick={onRemove} label="Remove team" />
-  </TableActions>
-);
 
 // Sub-component to fetch and render team member avatars
 const TeamMemberAvatars = ({

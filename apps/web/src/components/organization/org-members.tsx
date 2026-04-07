@@ -21,6 +21,7 @@ import {
   getOrganizations,
   getMembers,
   getInvitations,
+  getTeams,
 } from '@/server/query-options';
 import { authClient } from '@/lib/auth-client';
 import { toast } from 'sonner';
@@ -58,6 +59,11 @@ export const OrgMembers = ({
 
   const { data: allInvitations = [], isLoading: isLoadingInvitations } = useQuery({
     ...getInvitations(activeOrg?.id || ''),
+    enabled: !!activeOrg?.id,
+  });
+
+  const { data: teams = [] } = useQuery({
+    ...getTeams(activeOrg?.id || ''),
     enabled: !!activeOrg?.id,
   });
 
@@ -178,9 +184,14 @@ export const OrgMembers = ({
   };
 
   const columns = useMemo(
-    () => createMemberColumns({ onRoleChange: handleRoleChange, onRemove: handleRemove }),
+    () => createMemberColumns({
+      onRoleChange: handleRoleChange,
+      onRemove: handleRemove,
+      organizationId: activeOrg?.id ?? '',
+      teams,
+    }),
     // eslint-disable-next-line
-    [activeOrg?.id],
+    [activeOrg?.id, teams],
   );
 
   const isLoading = isLoadingOrgs || (!!activeOrg && (isLoadingMembers || isLoadingInvitations));
@@ -224,7 +235,11 @@ export const OrgMembers = ({
             <TableRow
               onBlur={(e) => {
                 if (!e.currentTarget.contains(e.relatedTarget as Node)) {
-                  handleCancelNewMember();
+                  if (newEmail.trim()) {
+                    handleSaveNewMember();
+                  } else {
+                    handleCancelNewMember();
+                  }
                 }
               }}
             >
@@ -239,7 +254,7 @@ export const OrgMembers = ({
                   type="email"
                   value={newEmail}
                   onChange={(e) => setNewEmail(e.target.value)}
-                  placeholder="email@example.com"
+                  placeholder="email@example.com · Enter to invite"
                   disabled={isSaving}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') handleSaveNewMember();
@@ -267,19 +282,11 @@ export const OrgMembers = ({
               <TableCell className="align-middle" />
               {/* joined at — empty */}
               <TableCell className="align-middle" />
-              {/* actions */}
+              {/* actions — empty, Enter to submit / Escape or blur to cancel */}
               <TableCell className="align-middle">
-                <div className="flex items-center gap-2">
-                  <Button
-                    onClick={handleSaveNewMember}
-                    disabled={isSaving || !newEmail.trim()}
-                  >
-                    {isSaving ? 'Sending...' : 'Invite'}
-                  </Button>
-                  <Button plain onClick={handleCancelNewMember} disabled={isSaving}>
-                    Cancel
-                  </Button>
-                </div>
+                {isSaving && (
+                  <span className="text-xs text-zinc-400">Sending...</span>
+                )}
               </TableCell>
             </TableRow>
           ) : null

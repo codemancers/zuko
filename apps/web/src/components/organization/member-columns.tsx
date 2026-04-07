@@ -1,9 +1,12 @@
 'use client';
 
 import type { ColumnDef } from '@tanstack/react-table';
-import { Badge, Select } from '@zuko/ui-kit';
-import { UserMinusIcon } from '@heroicons/react/24/outline';
+import { Badge, Select, Dropdown, DropdownButton, DropdownItem, DropdownMenu } from '@zuko/ui-kit';
+import { UserMinusIcon, UserGroupIcon } from '@heroicons/react/24/outline';
 import { DeleteAction, TableActionButton, TableActions, EMPTY_VALUE } from '../Table';
+import { authClient } from '@/lib/auth-client';
+import { toast } from 'sonner';
+import { useQueryClient } from '@tanstack/react-query';
 
 export type MemberTableRow = {
   id: string;
@@ -34,7 +37,70 @@ function formatDate(d?: Date): string {
 type MemberColumnHandlers = {
   onRoleChange: (row: MemberTableRow, role: string) => void;
   onRemove: (row: MemberTableRow) => void;
+  organizationId: string;
+  teams: { id: string; name: string }[];
 };
+
+function AddToTeamDropdown({
+  row,
+  organizationId,
+  teams,
+}: {
+  row: MemberTableRow;
+  organizationId: string;
+  teams: { id: string; name: string }[];
+}) {
+  const queryClient = useQueryClient();
+
+  const handleAddToTeam = async (teamId: string, teamName: string) => {
+    if (!row.userId) return;
+    try {
+      const { error } = await authClient.organization.addTeamMember({
+        userId: row.userId,
+        teamId,
+      });
+      if (error) { toast.error(error.message || 'Failed to add to team'); return; }
+      toast.success(`${row.name} added to ${teamName}`);
+      queryClient.invalidateQueries({ queryKey: ['organization', organizationId, 'teams'] });
+    } catch {
+      toast.error('An error occurred');
+    }
+  };
+
+  if (teams.length === 0) {
+    return (
+      <TableActionButton onClick={() => {}} label="No teams available" disabled>
+        <UserGroupIcon className="h-4 w-4" />
+      </TableActionButton>
+    );
+  }
+
+  return (
+    <Dropdown>
+      <DropdownButton
+        plain
+        aria-label="Add to team"
+        className="!text-zinc-400 data-hover:!text-zinc-600 dark:data-hover:!text-zinc-200 group rounded p-1.5"
+        onClick={(e: React.MouseEvent) => e.stopPropagation()}
+      >
+        <UserGroupIcon className="h-4 w-4" />
+      </DropdownButton>
+      <DropdownMenu>
+        {teams.map((team) => (
+          <DropdownItem
+            key={team.id}
+            onClick={(e: React.MouseEvent) => {
+              e.stopPropagation();
+              handleAddToTeam(team.id, team.name);
+            }}
+          >
+            {team.name}
+          </DropdownItem>
+        ))}
+      </DropdownMenu>
+    </Dropdown>
+  );
+}
 
 export function createMemberColumns(
   handlers: MemberColumnHandlers,
@@ -110,9 +176,16 @@ export function createMemberColumns(
     {
       id: 'actions',
       header: 'Actions',
-      size: 80,
+      size: 100,
       cell: ({ row }) => (
         <TableActions>
+          {row.original.type === 'member' && (
+            <AddToTeamDropdown
+              row={row.original}
+              organizationId={handlers.organizationId}
+              teams={handlers.teams}
+            />
+          )}
           {row.original.type === 'member' ? (
             <DeleteAction
               onClick={() => handlers.onRemove(row.original)}
