@@ -23,7 +23,7 @@ describe('CompaniesService', () => {
     const connectionString = process.env.DATABASE_URL;
     pool = new Pool({ connectionString });
     prisma = new PrismaClient({
-      adapter: new PrismaPg(pool),
+      adapter: new PrismaPg(pool as any),
     });
     await prisma.$connect();
 
