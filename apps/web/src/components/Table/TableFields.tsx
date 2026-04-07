@@ -72,7 +72,7 @@ export function TextField({ value, display, metadata, row }: FieldProps<BaseRow>
   if (renderConfig === 'join-button') {
     if (!value) return null;
     return (
-      <a
+      <Link
         href={String(value)}
         target="_blank"
         rel="noopener noreferrer"
@@ -82,7 +82,7 @@ export function TextField({ value, display, metadata, row }: FieldProps<BaseRow>
           <ArrowTopRightOnSquareIcon className="h-3 w-3" />
           Join
         </Badge>
-      </a>
+      </Link>
     );
   }
 
