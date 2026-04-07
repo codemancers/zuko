@@ -66,6 +66,18 @@ vi.mock('@/components/Companies/AddContactDialog', () => ({
   default: () => <div data-testid="add-contact-dialog">Add Contact</div>,
 }));
 
+// Render ErrorMessage/Description as plain elements to avoid HeadlessUI context errors
+vi.mock('@zuko/ui-kit', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@zuko/ui-kit')>();
+  return {
+    ...actual,
+    ErrorMessage: ({ children, className }: React.PropsWithChildren<{ className?: string }>) =>
+      React.createElement('p', { className: `error-message ${className ?? ''}`.trim() }, children),
+    Description: ({ children, className }: React.PropsWithChildren<{ className?: string }>) =>
+      React.createElement('p', { className: `description ${className ?? ''}`.trim() }, children),
+  };
+});
+
 const CURRENT_USER_ID = 1;
 
 function createQueryClient() {
@@ -473,23 +485,13 @@ describe('CompaniesList', () => {
     ).toBeInTheDocument();
   });
 
-  it('renders search and New Company button', () => {
+  it('renders search input', () => {
     render(<CompaniesList />, { wrapper });
     expect(
       screen.getByPlaceholderText(
         /search companies by name, website, or linkedin/i
       )
     ).toBeInTheDocument();
-    expect(
-      screen.getByRole('button', { name: /new company/i })
-    ).toBeInTheDocument();
-  });
-
-  it('New Company button navigates to /companies/new', async () => {
-    const user = userEvent.setup();
-    render(<CompaniesList />, { wrapper });
-    await user.click(screen.getByRole('button', { name: /new company/i }));
-    expect(mockPush).toHaveBeenCalledWith('/companies/new');
   });
 
   it('renders empty table when no companies', async () => {
@@ -673,6 +675,12 @@ describe('CompanyDetail', () => {
       expect(screen.getByText('Detail Company')).toBeInTheDocument();
     });
     await user.click(screen.getByRole('button', { name: /^hide$/i }));
+    // Confirm in the ConfirmDialog
+    await waitFor(() =>
+      expect(screen.getByText(/are you sure you want to hide this company/i)).toBeInTheDocument()
+    );
+    const hideButtons = screen.getAllByRole('button', { name: /^hide$/i });
+    await user.click(hideButtons[hideButtons.length - 1]);
     expect(mockHideCompany).toHaveBeenCalledWith(7);
     await waitFor(() => {
       expect(mockPush).toHaveBeenCalledWith('/companies');

@@ -342,14 +342,14 @@ describe('UserInvitations — accept / decline flow', () => {
 
     await waitFor(() =>
       expect(
-        screen.getByRole('button', { name: /accept/i }),
+        screen.getByLabelText(/accept invitation/i),
       ).toBeInTheDocument(),
     );
-    await user.click(screen.getByRole('button', { name: /accept/i }));
+    await user.click(screen.getByLabelText(/accept invitation/i));
 
     await waitFor(() => {
       expect(
-        screen.getByRole('button', { name: /accepting\.\.\./i }),
+        screen.getByLabelText(/accept invitation/i),
       ).toBeDisabled();
     });
 

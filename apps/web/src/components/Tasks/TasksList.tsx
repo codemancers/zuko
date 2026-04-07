@@ -117,7 +117,6 @@ const TasksList = () => {
         onRowClick={(task) => router.push(`/tasks/${task.id}`)}
         totalCount={flatTasks.length}
         entityName="tasks"
-        disableRowClick={true}
         emptyStateConfig={{
           icon: ClipboardDocumentListIcon,
           title: 'No Tasks',

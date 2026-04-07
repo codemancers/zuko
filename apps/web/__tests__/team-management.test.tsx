@@ -208,11 +208,8 @@ describe('OrgTeams', () => {
 
     await waitFor(() => expect(screen.getByText('Engineering')).toBeInTheDocument());
 
-    // Click three-dot menu
-    await user.click(screen.getByLabelText(/more options/i));
-    
-    // Click Remove Team
-    await user.click(screen.getByText(/remove team/i));
+    // Click Remove team icon button
+    await user.click(screen.getByLabelText(/remove team/i));
 
     // Confirm in Alert
     expect(screen.getByText(/are you sure you want to remove the team "engineering"/i)).toBeInTheDocument();

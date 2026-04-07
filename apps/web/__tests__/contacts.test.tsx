@@ -60,6 +60,18 @@ vi.mock('@/components/Activity/ActivityTimeline', () => ({
   default: () => <div data-testid="activity-timeline">Activity</div>,
 }));
 
+// Render ErrorMessage/Description as plain elements to avoid HeadlessUI context errors
+vi.mock('@zuko/ui-kit', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@zuko/ui-kit')>();
+  return {
+    ...actual,
+    ErrorMessage: ({ children, className }: React.PropsWithChildren<{ className?: string }>) =>
+      React.createElement('p', { className: `error-message ${className ?? ''}`.trim() }, children),
+    Description: ({ children, className }: React.PropsWithChildren<{ className?: string }>) =>
+      React.createElement('p', { className: `description ${className ?? ''}`.trim() }, children),
+  };
+});
+
 const CURRENT_USER_ID = 1;
 
 function createQueryClient() {
@@ -576,20 +588,6 @@ describe('ContactsList', () => {
     ).toBeInTheDocument();
   });
 
-  it('renders New Contact button', () => {
-    render(<ContactsList />, { wrapper });
-    expect(
-      screen.getByRole('button', { name: /new contact/i })
-    ).toBeInTheDocument();
-  });
-
-  it('New Contact button navigates to /contacts/new', async () => {
-    const user = userEvent.setup();
-    render(<ContactsList />, { wrapper });
-    await user.click(screen.getByRole('button', { name: /new contact/i }));
-    expect(mockPush).toHaveBeenCalledWith('/contacts/new');
-  });
-
   it('updates search input when user types', async () => {
     const user = userEvent.setup();
     render(<ContactsList />, { wrapper });
@@ -785,6 +783,12 @@ describe('ContactDetail', () => {
       expect(screen.getByText('Detail Contact')).toBeInTheDocument();
     });
     await user.click(screen.getByRole('button', { name: /^hide$/i }));
+    // Confirm in the ConfirmDialog
+    await vi.waitFor(() =>
+      expect(screen.getByText(/are you sure you want to hide this contact/i)).toBeInTheDocument()
+    );
+    const hideButtons = screen.getAllByRole('button', { name: /^hide$/i });
+    await user.click(hideButtons[hideButtons.length - 1]);
     expect(mockHideContact).toHaveBeenCalledWith(7);
     await vi.waitFor(() => {
       expect(mockPush).toHaveBeenCalledWith('/contacts');

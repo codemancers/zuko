@@ -176,6 +176,12 @@ describe('CompanyDetail – removeContact timeline invalidation', () => {
     const user = userEvent.setup();
     await user.click(screen.getByTitle('Remove contact'));
 
+    // Confirm the removal in the ConfirmDialog
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: /^remove$/i })).toBeInTheDocument()
+    );
+    await user.click(screen.getByRole('button', { name: /^remove$/i }));
+
     await waitFor(() => {
       expect(invalidateSpy).toHaveBeenCalledWith(
         expect.objectContaining({ queryKey: ['timeline', 'company', 42] }),

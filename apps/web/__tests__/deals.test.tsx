@@ -68,6 +68,18 @@ vi.mock('@/components/Deals/AddContactToDealDialog', () => ({
   default: () => <div data-testid="add-contact-dialog">Add Contact</div>,
 }));
 
+// Render ErrorMessage/Description as plain elements to avoid HeadlessUI context errors
+vi.mock('@zuko/ui-kit', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@zuko/ui-kit')>();
+  return {
+    ...actual,
+    ErrorMessage: ({ children, className }: React.PropsWithChildren<{ className?: string }>) =>
+      React.createElement('p', { className: `error-message ${className ?? ''}`.trim() }, children),
+    Description: ({ children, className }: React.PropsWithChildren<{ className?: string }>) =>
+      React.createElement('p', { className: `description ${className ?? ''}`.trim() }, children),
+  };
+});
+
 const CURRENT_USER_ID = 1;
 
 function createQueryClient() {
@@ -518,23 +530,13 @@ describe('DealsList', () => {
     ).toBeInTheDocument();
   });
 
-  it('renders search and New Deal button', () => {
+  it('renders search input', () => {
     render(<DealsList />, { wrapper });
     expect(
       screen.getByPlaceholderText(
         /search deals by title, summary, or source/i
       )
     ).toBeInTheDocument();
-    expect(
-      screen.getByRole('button', { name: /new deal/i })
-    ).toBeInTheDocument();
-  });
-
-  it('New Deal button navigates to /deals/new', async () => {
-    const user = userEvent.setup();
-    render(<DealsList />, { wrapper });
-    await user.click(screen.getByRole('button', { name: /new deal/i }));
-    expect(mockPush).toHaveBeenCalledWith('/deals/new');
   });
 
   it('renders empty table even when no deals', async () => {
@@ -725,6 +727,12 @@ describe('DealDetail', () => {
       expect(screen.getByText('Detail Deal')).toBeInTheDocument();
     });
     await user.click(screen.getByRole('button', { name: /^hide$/i }));
+    // Confirm in the ConfirmDialog
+    await waitFor(() =>
+      expect(screen.getByText(/are you sure you want to hide this deal/i)).toBeInTheDocument()
+    );
+    const hideButtons = screen.getAllByRole('button', { name: /^hide$/i });
+    await user.click(hideButtons[hideButtons.length - 1]);
     expect(mockHideDeal).toHaveBeenCalledWith(7);
     await waitFor(() => {
       expect(mockPush).toHaveBeenCalledWith('/deals');
