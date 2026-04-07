@@ -1,11 +1,10 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { UserIcon, PlusIcon } from '@heroicons/react/24/outline';
+import { UserIcon } from '@heroicons/react/24/outline';
 import {
   Divider,
   Heading,
-  Button,
   Input,
 } from '@zuko/ui-kit';
 import { useQuery } from '@tanstack/react-query';
@@ -55,17 +54,11 @@ const ContactsList = () => {
 
   return (
     <>
-      <div className="flex items-start justify-between">
-        <div className="flex flex-col">
-          <Heading>Contacts</Heading>
-          <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
-            Manage your sales contacts and relationships
-          </p>
-        </div>
-        <Button onClick={handleNewContact}>
-          <PlusIcon className="h-4 w-4" />
-          New Contact
-        </Button>
+      <div className="flex flex-col">
+        <Heading>Contacts</Heading>
+        <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
+          Manage your sales contacts and relationships
+        </p>
       </div>
 
       <Divider className="mt-6" />

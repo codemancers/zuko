@@ -24,7 +24,8 @@ import { UpdateTaskDto } from './dto/update-task.dto';
 export class TaskListQueryDto {
   page?: number;
   limit?: number;
-  parentId?: string; // numeric string or 'null'
+  parentId?: string;
+  search?: string;
 }
 
 @Controller('tasks')
@@ -61,7 +62,7 @@ export class TasksController {
           : Number(query.parentId)
         : undefined;
 
-    return this.taskService.getTasks(organizationId, { page, limit, parentId });
+    return this.taskService.getTasks(organizationId, { page, limit, parentId, search: query.search });
   }
 
   @Get(':id')

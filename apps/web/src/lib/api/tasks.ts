@@ -62,6 +62,7 @@ export interface TaskFilters {
   page?: number;
   limit?: number;
   parentId?: number | null;
+  search?: string;
 }
 
 export const tasksApi = {
@@ -73,6 +74,7 @@ export const tasksApi = {
       if (filters.parentId !== undefined) {
         params.append('parentId', filters.parentId === null ? 'null' : String(filters.parentId));
       }
+      if (filters.search) params.append('search', filters.search);
     }
     const qs = params.toString();
     return apiClient.get<TasksListResponse>(`/tasks${qs ? `?${qs}` : ''}`);

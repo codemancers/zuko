@@ -1,11 +1,13 @@
 'use client';
 
+import { useState } from 'react';
 import {
   UserIcon,
   PencilIcon,
   EyeSlashIcon,
+  ChevronLeftIcon,
 } from '@heroicons/react/24/outline';
-import { Badge, Divider, Heading, Button } from '@zuko/ui-kit';
+import { Badge, Divider, Heading, Button, Subheading } from '@zuko/ui-kit';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getContact, getDealsByContact } from '@/server/query-options';
 import { contactsApi } from '@/lib/api/contacts';
@@ -13,6 +15,8 @@ import dayjs from 'dayjs';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import ActivityTimeline from '@/components/Activity/ActivityTimeline';
+import { EMPTY_VALUE } from '@/components/Table';
+import ConfirmDialog from '@/components/shared/ConfirmDialog';
 
 interface ContactDetailProps {
   contactId: number;
@@ -27,6 +31,7 @@ export default function ContactDetail({
   const queryClient = useQueryClient();
   const { data: contact, isLoading } = useQuery(getContact(contactId));
   const { data: dealsData } = useQuery(getDealsByContact(contactId));
+  const [showHideDialog, setShowHideDialog] = useState(false);
 
   const hideMutation = useMutation({
     mutationFn: () => contactsApi.hideContact(contactId),
@@ -61,13 +66,11 @@ export default function ContactDetail({
   };
 
   const handleHide = () => {
-    if (confirm('Are you sure you want to hide this contact?')) {
-      hideMutation.mutate();
-    }
+    setShowHideDialog(true);
   };
 
   const formatCurrency = (value?: number, currency?: string) => {
-    if (value === undefined || value === null) return '-';
+    if (value === undefined || value === null) return EMPTY_VALUE;
     const curr = currency || 'USD';
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -103,7 +106,12 @@ export default function ContactDetail({
 
   return (
     <>
-      <div className="flex items-start justify-between">
+      <Link href="/contacts" className="inline-flex items-center gap-2 text-sm/6 text-zinc-500 dark:text-zinc-400">
+        <ChevronLeftIcon className="size-4" />
+        Contacts
+      </Link>
+
+      <div className="mt-4 flex items-start justify-between">
         <div className="flex items-center gap-4">
           <div className="flex h-16 w-16 items-center justify-center rounded-full bg-zinc-100 dark:bg-zinc-800">
             <UserIcon className="h-8 w-8 text-zinc-600 dark:text-zinc-400" />
@@ -129,11 +137,19 @@ export default function ContactDetail({
 
       <Divider className="mt-6" />
 
+      <ConfirmDialog
+        open={showHideDialog}
+        onClose={() => setShowHideDialog(false)}
+        onConfirm={() => hideMutation.mutate()}
+        title="Hide Contact"
+        description="Are you sure you want to hide this contact?"
+        confirmText="Hide"
+        isLoading={hideMutation.isPending}
+      />
+
       {/* Contact Information */}
       <div className="mt-8">
-        <h2 className="text-base font-semibold text-zinc-950 dark:text-white">
-          Contact Information
-        </h2>
+        <Subheading>Contact Information</Subheading>
         <dl className="mt-4 space-y-4">
           {contact.email && (
             <div className="grid grid-cols-3">
@@ -180,9 +196,9 @@ export default function ContactDetail({
 
       {/* Ownership */}
       <div className="mt-8">
-        <h2 className="text-base font-semibold text-zinc-950 dark:text-white">
+        <Subheading>
           Owners
-        </h2>
+        </Subheading>
         <div className="mt-4 space-y-2">
           {contact.owners.map((owner) => (
             <div key={owner.id} className="flex items-center gap-3">
@@ -205,9 +221,9 @@ export default function ContactDetail({
       {/* Notes */}
       {contact.notes && (
         <div className="mt-8">
-          <h2 className="text-base font-semibold text-zinc-950 dark:text-white">
+          <Subheading>
             Notes
-          </h2>
+          </Subheading>
           <div className="mt-4 whitespace-pre-wrap rounded-lg bg-zinc-50 p-4 text-sm text-zinc-950 dark:bg-zinc-900 dark:text-white">
             {contact.notes}
           </div>
@@ -217,9 +233,9 @@ export default function ContactDetail({
       {/* Associated Deals */}
       {dealsData && dealsData.deals && dealsData.deals.length > 0 && (
         <div className="mt-8">
-          <h2 className="text-base font-semibold text-zinc-950 dark:text-white">
+          <Subheading>
             Associated Deals
-          </h2>
+          </Subheading>
           <div className="mt-4 space-y-3">
             {dealsData.deals.map((deal: any) => {
               const dealContact = deal.contacts?.find(
@@ -260,9 +276,9 @@ export default function ContactDetail({
 
       {/* Metadata */}
       <div className="mt-8">
-        <h2 className="text-base font-semibold text-zinc-950 dark:text-white">
+        <Subheading>
           Details
-        </h2>
+        </Subheading>
         <dl className="mt-4 space-y-4">
           <div className="grid grid-cols-3">
             <dt className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
@@ -285,9 +301,9 @@ export default function ContactDetail({
 
       {/* Activity Timeline */}
       <div className="mt-8">
-        <h2 className="text-base font-semibold text-zinc-950 dark:text-white">
+        <Subheading>
           Activity
-        </h2>
+        </Subheading>
         <div className="mt-4">
           <ActivityTimeline
             entityType="contact"

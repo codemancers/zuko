@@ -12,6 +12,7 @@ import { toast } from 'sonner';
 import { getTimeline } from '@/server/query-options';
 import { activitiesApi } from '@/lib/api/activities';
 import dayjs from 'dayjs';
+import { EMPTY_VALUE } from '@/components/Table';
 import relativeTime from 'dayjs/plugin/relativeTime';
 
 dayjs.extend(relativeTime);
@@ -42,7 +43,7 @@ function formatFieldName(field: string) {
 }
 
 function formatFieldValue(field: string, val: unknown): string {
-  if (val === null || val === undefined) return '—';
+  if (val === null || val === undefined) return EMPTY_VALUE;
   if (field === 'expectedCloseDate' || field === 'actualCloseDate') {
     return dayjs(String(val)).format('MMM D, YYYY');
   }

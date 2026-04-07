@@ -1,12 +1,13 @@
 'use client';
 
 import dayjs from 'dayjs';
-import { useRouter } from 'next/navigation';
-import { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
 import Image from 'next/image';
 import { toast } from 'sonner';
+import Link from 'next/link';
+import { ChevronLeftIcon } from '@heroicons/react/24/outline';
 import {
   Download,
   PlayCircle,
@@ -16,7 +17,7 @@ import {
   CheckCircle,
   Copy,
 } from 'lucide-react';
-import { Badge, Button, Heading, Text, Text as ZukoText } from '@zuko/ui-kit';
+import { Badge, Button, Divider, Heading } from '@zuko/ui-kit';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getMeeting } from '@/server/query-options';
 import { meetingsApi } from '@/lib/api/meetings';
@@ -52,6 +53,8 @@ const MEETING_STATUS_COLOR_MAP: Record<string, BadgeColor> = {
 };
 
 type Tab = 'recording' | 'transcript' | 'chat' | 'summary' | 'actionItems';
+
+const TAB_LIST: Tab[] = ['recording', 'transcript', 'chat', 'summary', 'actionItems'];
 
 export interface TranscriptData {
   text: string;
@@ -118,7 +121,6 @@ const MeetingDetail = ({ meetingId, meetingOverride }: MeetingDetailProps) => {
   const [supportsPiP, setSupportsPiP] = useState(false);
   const [completedItems, setCompletedItems] = useState<Set<number>>(new Set());
   const videoRef = useRef<HTMLVideoElement | null>(null);
-  const router = useRouter();
   const queryClient = useQueryClient();
 
   const numericId = parseInt(meetingId, 10);
@@ -269,7 +271,7 @@ const MeetingDetail = ({ meetingId, meetingOverride }: MeetingDetailProps) => {
       if (!recordingUrl) {
         return (
           <div className="flex h-40 items-center justify-center rounded-lg border border-zinc-200 dark:border-zinc-800">
-            <Text>No recording available for this meeting</Text>
+            <p>No recording available for this meeting</p>
           </div>
         );
       }
@@ -309,7 +311,7 @@ const MeetingDetail = ({ meetingId, meetingOverride }: MeetingDetailProps) => {
           if (!transcriptLines || transcriptLines.length === 0) {
             return (
               <div className="flex h-40 items-center justify-center rounded-lg border border-zinc-200 dark:border-zinc-800">
-                <ZukoText>No transcript available for this meeting</ZukoText>
+                <p>No transcript available for this meeting</p>
               </div>
             );
           }
@@ -327,9 +329,9 @@ const MeetingDetail = ({ meetingId, meetingOverride }: MeetingDetailProps) => {
           });
 
           return (
-            <ZukoText className="overflow-x-auto p-4 font-mono whitespace-pre-wrap">
+            <p className="overflow-x-auto p-4 font-mono whitespace-pre-wrap">
               {vtt.join('\n')}
-            </ZukoText>
+            </p>
           );
         }
         case 'chat': {
@@ -338,7 +340,7 @@ const MeetingDetail = ({ meetingId, meetingOverride }: MeetingDetailProps) => {
           if (!messages || messages.length === 0) {
             return (
               <div className="flex h-40 items-center justify-center rounded-lg border border-zinc-200 dark:border-zinc-800">
-                <ZukoText>No chat messages available for this meeting</ZukoText>
+                <p>No chat messages available for this meeting</p>
               </div>
             );
           }
@@ -377,7 +379,7 @@ const MeetingDetail = ({ meetingId, meetingOverride }: MeetingDetailProps) => {
           if (!summary || !summary.content) {
             return (
               <div className="flex h-40 items-center justify-center rounded-lg border border-zinc-200 dark:border-zinc-800">
-                <ZukoText>No summary available for this meeting</ZukoText>
+                <p>No summary available for this meeting</p>
               </div>
             );
           }
@@ -398,7 +400,7 @@ const MeetingDetail = ({ meetingId, meetingOverride }: MeetingDetailProps) => {
           if (!items || (items.length === 0 && !isAddingTask)) {
             return (
               <div className="flex h-40 flex-col items-center justify-center gap-4 rounded-lg border border-zinc-200 dark:border-zinc-800">
-                <ZukoText>No action items for this meeting</ZukoText>
+                <p>No action items for this meeting</p>
                 <Button onClick={() => setIsAddingTask(true)}>
                   Create New Task
                 </Button>
@@ -450,9 +452,9 @@ const MeetingDetail = ({ meetingId, meetingOverride }: MeetingDetailProps) => {
                   className="space-y-3 rounded-xl border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-800 dark:bg-zinc-900/50"
                 >
                   <div className="space-y-1">
-                    <ZukoText className="text-xs font-medium text-zinc-500">
+                    <p className="text-xs font-medium text-zinc-500">
                       Title
-                    </ZukoText>
+                    </p>
                     <input
                       value={newTask.title}
                       onChange={(e) =>
@@ -464,9 +466,9 @@ const MeetingDetail = ({ meetingId, meetingOverride }: MeetingDetailProps) => {
                     />
                   </div>
                   <div className="space-y-1">
-                    <ZukoText className="text-xs font-medium text-zinc-500">
+                    <p className="text-xs font-medium text-zinc-500">
                       Description
-                    </ZukoText>
+                    </p>
                     <textarea
                       value={newTask.description}
                       onChange={(e) =>
@@ -494,9 +496,9 @@ const MeetingDetail = ({ meetingId, meetingOverride }: MeetingDetailProps) => {
 
               {filtered.length === 0 && actionItemSearch.trim() ? (
                 <div className="flex h-40 items-center justify-center rounded-lg border border-zinc-200 dark:border-zinc-800">
-                  <ZukoText className="text-zinc-500 dark:text-zinc-400">
+                  <p className="text-zinc-500 dark:text-zinc-400">
                     No results found
-                  </ZukoText>
+                  </p>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
@@ -537,7 +539,7 @@ const MeetingDetail = ({ meetingId, meetingOverride }: MeetingDetailProps) => {
                               )}
                             </button>
                             <div className="min-w-0 flex-1">
-                              <ZukoText
+                              <p
                                 className={[
                                   'text-base md:text-lg font-semibold md:font-bold tracking-tight',
                                   isCompleted
@@ -548,7 +550,7 @@ const MeetingDetail = ({ meetingId, meetingOverride }: MeetingDetailProps) => {
                                 ].join(' ')}
                               >
                                 {it.title}
-                              </ZukoText>
+                              </p>
 
                               {it.description && (
                                 <div
@@ -599,29 +601,27 @@ const MeetingDetail = ({ meetingId, meetingOverride }: MeetingDetailProps) => {
   };
 
   return (
-    <div className="space-y-6">
-      <button
-        onClick={() => router.back()}
-        className="flex items-center gap-2 text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
-      >
-        <span>&lt;&nbsp;&nbsp;Meetings</span>
-      </button>
+    <>
+      <Link href="/meetings" className="inline-flex items-center gap-2 text-sm/6 text-zinc-500 dark:text-zinc-400">
+        <ChevronLeftIcon className="size-4" />
+        Meetings
+      </Link>
 
       {isLoading && (
-        <div className="flex h-40 items-center justify-center rounded-lg border border-zinc-200 dark:border-zinc-800">
-          <Text>Loading meeting...</Text>
+        <div className="mt-4 flex h-40 items-center justify-center rounded-lg border border-zinc-200 dark:border-zinc-800">
+          <p>Loading meeting...</p>
         </div>
       )}
 
       {!isLoading && !meeting && (
-        <div className="flex h-40 items-center justify-center rounded-lg border border-zinc-200 dark:border-zinc-800">
-          <Text>Meeting not found</Text>
+        <div className="mt-4 flex h-40 items-center justify-center rounded-lg border border-zinc-200 dark:border-zinc-800">
+          <p>Meeting not found</p>
         </div>
       )}
 
       {meeting && (
         <>
-          <div className="flex items-center justify-between">
+          <div className="mt-4 flex items-center justify-between">
             <Heading>{meeting.name}</Heading>
             {meeting.status === 'IN_PROGRESS' && (
               <Button
@@ -633,20 +633,23 @@ const MeetingDetail = ({ meetingId, meetingOverride }: MeetingDetailProps) => {
               </Button>
             )}
           </div>
-          <div className="grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-2 lg:grid-cols-3">
+
+          <Divider className="mt-6" />
+
+          <div className="mt-6 grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-2 lg:grid-cols-3">
             <div>
-              <ZukoText className="text-xs font-medium uppercase tracking-wider text-zinc-500">
+              <p className="text-xs font-medium uppercase tracking-wider text-zinc-500">
                 Platform
-              </ZukoText>
-              <ZukoText className="mt-1">
+              </p>
+              <p className="mt-1">
                 {meeting.platform.replace(/_/g, ' ')}
-              </ZukoText>
+              </p>
             </div>
 
             <div>
-              <ZukoText className="text-xs font-medium uppercase tracking-wider text-zinc-500">
+              <p className="text-xs font-medium uppercase tracking-wider text-zinc-500">
                 Status
-              </ZukoText>
+              </p>
               <div className="mt-1">
                 <Badge
                   color={
@@ -660,107 +663,68 @@ const MeetingDetail = ({ meetingId, meetingOverride }: MeetingDetailProps) => {
             </div>
 
             <div>
-              <ZukoText className="text-xs font-medium uppercase tracking-wider text-zinc-500">
+              <p className="text-xs font-medium uppercase tracking-wider text-zinc-500">
                 {meeting.scheduledAt ? 'Scheduled At' : 'Created At'}
-              </ZukoText>
-              <ZukoText className="mt-1">
+              </p>
+              <p className="mt-1">
                 {meeting.scheduledAt
                   ? dayjs(meeting.scheduledAt)
                       .tz(meeting.timezone)
                       .format('MMM D, YYYY [at] h:mm A')
                   : dayjs(meeting.createdAt).format('MMM D, YYYY [at] h:mm A')}
-              </ZukoText>
+              </p>
             </div>
-
 
             {meeting.projectName && (
               <div>
-                <ZukoText className="text-xs font-medium uppercase tracking-wider text-zinc-500">
+                <p className="text-xs font-medium uppercase tracking-wider text-zinc-500">
                   Projects
-                </ZukoText>
-                <ZukoText className="mt-1">{meeting.projectName}</ZukoText>
+                </p>
+                <p className="mt-1">{meeting.projectName}</p>
               </div>
             )}
 
             {meeting.description && (
               <div className="sm:col-span-2 lg:col-span-3">
-                <ZukoText className="text-xs font-medium uppercase tracking-wider text-zinc-500">
+                <p className="text-xs font-medium uppercase tracking-wider text-zinc-500">
                   Description
-                </ZukoText>
-                <ZukoText className="mt-1">{meeting.description}</ZukoText>
+                </p>
+                <p className="mt-1">{meeting.description}</p>
               </div>
             )}
           </div>
 
-          <div className="border-b border-zinc-200 dark:border-zinc-800">
-            <nav className="-mb-px flex space-x-4 overflow-x-auto md:space-x-8">
-              <button
-                onClick={() => handleTabChange('recording')}
-                className={`flex shrink-0 items-center space-x-1.5 border-b-2 px-2 py-3 text-xs font-medium md:space-x-2 md:px-1 md:py-4 md:text-sm ${
-                  activeTab === 'recording'
-                    ? 'border-zinc-500 text-zinc-900 dark:border-zinc-400 dark:text-white'
-                    : 'border-transparent text-zinc-500 hover:border-zinc-300 hover:text-zinc-700 dark:text-zinc-400 dark:hover:border-zinc-700 dark:hover:text-zinc-300'
-                }`}
-              >
-                <PlayCircle className="h-4 w-4 md:h-5 md:w-5" />
-                <span>Recording</span>
-              </button>
-              <button
-                onClick={() => handleTabChange('transcript')}
-                className={`flex shrink-0 items-center space-x-1.5 border-b-2 px-2 py-3 text-xs font-medium md:space-x-2 md:px-1 md:py-4 md:text-sm ${
-                  activeTab === 'transcript'
-                    ? 'border-zinc-500 text-zinc-900 dark:border-zinc-400 dark:text-white'
-                    : 'border-transparent text-zinc-500 hover:border-zinc-300 hover:text-zinc-700 dark:text-zinc-400 dark:hover:border-zinc-700 dark:hover:text-zinc-300'
-                }`}
-              >
-                <FileText className="h-4 w-4 md:h-5 md:w-5" />
-                <span>Transcript</span>
-              </button>
-              <button
-                onClick={() => handleTabChange('chat')}
-                className={`flex shrink-0 items-center space-x-1.5 border-b-2 px-2 py-3 text-xs font-medium md:space-x-2 md:px-1 md:py-4 md:text-sm ${
-                  activeTab === 'chat'
-                    ? 'border-zinc-500 text-zinc-900 dark:border-zinc-400 dark:text-white'
-                    : 'border-transparent text-zinc-500 hover:border-zinc-300 hover:text-zinc-700 dark:text-zinc-400 dark:hover:border-zinc-700 dark:hover:text-zinc-300'
-                }`}
-              >
-                <Lightbulb className="h-4 w-4 md:h-5 md:w-5" />
-                <span>Chat</span>
-              </button>
-              <button
-                onClick={() => handleTabChange('summary')}
-                className={`flex shrink-0 items-center space-x-1.5 border-b-2 px-2 py-3 text-xs font-medium md:space-x-2 md:px-1 md:py-4 md:text-sm ${
-                  activeTab === 'summary'
-                    ? 'border-zinc-500 text-zinc-900 dark:border-zinc-400 dark:text-white'
-                    : 'border-transparent text-zinc-500 hover:border-zinc-300 hover:text-zinc-700 dark:text-zinc-400 dark:hover:border-zinc-700 dark:hover:text-zinc-300'
-                }`}
-              >
-                <ScrollText className="h-4 w-4 md:h-5 md:w-5" />
-                <span>Summary</span>
-              </button>
-              <button
-                onClick={() => handleTabChange('actionItems')}
-                className={`flex shrink-0 items-center space-x-1.5 border-b-2 px-2 py-3 text-xs font-medium md:space-x-2 md:px-1 md:py-4 md:text-sm ${
-                  activeTab === 'actionItems'
-                    ? 'border-zinc-500 text-zinc-900 dark:border-zinc-400 dark:text-white'
-                    : 'border-transparent text-zinc-500 hover:border-zinc-300 hover:text-zinc-700 dark:text-zinc-400 dark:hover:border-zinc-700 dark:hover:text-zinc-300'
-                }`}
-              >
-                <CheckCircle className="h-4 w-4 md:h-5 md:w-5" />
-                <span>Action Items</span>
-              </button>
+          <div className="mt-8 border-b border-zinc-200 dark:border-zinc-800">
+            <nav className="-mb-px flex gap-1">
+              {([
+                { id: 'recording', label: 'Recording', icon: PlayCircle },
+                { id: 'transcript', label: 'Transcript', icon: FileText },
+                { id: 'chat', label: 'Chat', icon: Lightbulb },
+                { id: 'summary', label: 'Summary', icon: ScrollText },
+                { id: 'actionItems', label: 'Action Items', icon: CheckCircle },
+              ] as { id: Tab; label: string; icon: React.ElementType }[]).map(({ id, label, icon: Icon }) => (
+                <button
+                  key={id}
+                  onClick={() => handleTabChange(id)}
+                  className={`flex shrink-0 items-center gap-1.5 border-b-2 px-3 py-3 text-sm font-medium transition-colors ${
+                    activeTab === id
+                      ? 'border-zinc-950 text-zinc-950 dark:border-white dark:text-white'
+                      : 'border-transparent text-zinc-500 hover:border-zinc-300 hover:text-zinc-700 dark:text-zinc-400 dark:hover:border-zinc-700 dark:hover:text-zinc-300'
+                  }`}
+                >
+                  <Icon className="h-4 w-4" />
+                  {label}
+                </button>
+              ))}
             </nav>
           </div>
 
-          <div className="mt-6 space-y-6">
-            <div className={activeTab === 'recording' ? 'block' : 'hidden'}>
-              {renderRecordingPanel()}
-            </div>
-            {activeTab !== 'recording' && renderTabContent()}
+          <div className="mt-6">
+            {activeTab === 'recording' ? renderRecordingPanel() : renderTabContent()}
           </div>
         </>
       )}
-    </div>
+    </>
   );
 };
 

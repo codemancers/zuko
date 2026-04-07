@@ -47,7 +47,7 @@ export class TaskService {
 
   async getTasks(
     organizationId: number,
-    query: PaginationOptions & { parentId?: number | null } = {},
+    query: PaginationOptions & { parentId?: number | null; search?: string } = {},
   ) {
     return this.taskRepository.findAll(organizationId, query);
   }

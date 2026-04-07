@@ -1,7 +1,7 @@
 'use client';
 
-import { ClipboardDocumentListIcon, PlusIcon } from '@heroicons/react/24/outline';
-import { Divider, Heading, Button } from '@zuko/ui-kit';
+import { ClipboardDocumentListIcon } from '@heroicons/react/24/outline';
+import { Divider, Heading, Input } from '@zuko/ui-kit';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { getTasks } from '@/server/query-options';
 import { useRouter } from 'next/navigation';
@@ -16,9 +16,10 @@ const TasksList = () => {
   const router = useRouter();
   const queryClient = useQueryClient();
   const [taskToDelete, setTaskToDelete] = useState<FlatTask | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
 
   // Fetch all top-level tasks in one go; client-side pagination handles 10-per-page
-  const { data, isLoading } = useQuery(getTasks({ limit: 100 }));
+  const { data, isLoading } = useQuery(getTasks({ limit: 100, search: searchTerm || undefined }));
 
   const { mutate: updateTask } = useMutation({
     mutationFn: ({ id, data }: { id: number; data: UpdateTaskDto }) =>
@@ -47,6 +48,15 @@ const TasksList = () => {
     onError: (err: Error) => {
       toast.error(err.message || 'Failed to delete task');
     },
+  });
+
+  const { mutate: addTask } = useMutation({
+    mutationFn: () => tasksApi.createTask({ title: 'New Task' }),
+    onSuccess: () => {
+      toast.success('Task created');
+      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+    },
+    onError: () => toast.error('Failed to create task'),
   });
 
   const columns = useMemo(
@@ -81,39 +91,44 @@ const TasksList = () => {
 
   return (
     <>
-      <div className="flex items-start justify-between">
-        <div className="flex flex-col">
-          <Heading>Tasks</Heading>
-          <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
-            Manage and track your team's work
-          </p>
-        </div>
-        <Button onClick={() => router.push('/tasks/new')}>
-          <PlusIcon className="h-4 w-4" />
-          New Task
-        </Button>
+      <div className="flex flex-col">
+        <Heading>Tasks</Heading>
+        <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
+          Manage and track your team's work
+        </p>
       </div>
 
       <Divider className="mt-6" />
+
+      <div className="mt-6">
+        <Input
+          type="search"
+          placeholder="Search tasks by title, description, or assignee..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="max-w-md"
+        />
+      </div>
 
       <BaseTable
         columns={columns}
         data={flatTasks}
         loading={isLoading}
         onRowClick={(task) => router.push(`/tasks/${task.id}`)}
-        onAddRow={() => router.push('/tasks/new')}
         totalCount={flatTasks.length}
         entityName="tasks"
+        disableRowClick={true}
         emptyStateConfig={{
           icon: ClipboardDocumentListIcon,
           title: 'No Tasks',
           description: 'Get started by creating a new task.',
           action: {
             label: 'New Task',
-            onClick: () => router.push('/tasks/new'),
+            onClick: () => addTask(),
           },
         }}
         showAddRow
+        onAddRow={() => addTask()}
       />
 
       <ConfirmDialog

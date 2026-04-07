@@ -69,17 +69,27 @@ export class TaskRepository {
 
   async findAll(
     organizationId: number,
-    options: PaginationOptions & { parentId?: number | null } = {},
+    options: PaginationOptions & { parentId?: number | null; search?: string } = {},
   ) {
-    const { page = 1, limit = 50, parentId } = options;
+    const { page = 1, limit = 50, parentId, search } = options;
     const skip = (page - 1) * limit;
 
-    // When parentId is explicitly null, return top-level tasks with subtasks.
-    // When parentId is a number, return children of that parent.
-    const where =
+    const parentFilter =
       parentId === undefined
-        ? { organizationId, parentId: null }
-        : { organizationId, parentId };
+        ? { parentId: null }
+        : { parentId };
+
+    const searchFilter = search
+      ? {
+          OR: [
+            { title: { contains: search, mode: 'insensitive' as const } },
+            { description: { contains: search, mode: 'insensitive' as const } },
+            { assignee: { contains: search, mode: 'insensitive' as const } },
+          ],
+        }
+      : {};
+
+    const where = { organizationId, ...parentFilter, ...searchFilter };
 
     const [tasks, total] = await Promise.all([
       this.prisma.task.findMany({

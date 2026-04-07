@@ -7,8 +7,9 @@ import {
   EyeSlashIcon,
   XMarkIcon,
   CheckIcon,
+  ChevronLeftIcon,
 } from '@heroicons/react/24/outline';
-import { Badge, Divider, Heading, Button } from '@zuko/ui-kit';
+import { Badge, Divider, Heading, Button, Subheading } from '@zuko/ui-kit';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getCompany, getDealsByCompany } from '@/server/query-options';
 import { companiesApi } from '@/lib/api/companies';
@@ -17,6 +18,8 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import ActivityTimeline from '@/components/Activity/ActivityTimeline';
 import AddContactDialog from './AddContactDialog';
+import { EMPTY_VALUE } from '@/components/Table';
+import ConfirmDialog from '@/components/shared/ConfirmDialog';
 
 interface CompanyDetailProps {
   companyId: number;
@@ -36,6 +39,8 @@ export default function CompanyDetail({
   const [editingContactId, setEditingContactId] = useState<number | null>(null);
   const [editedRole, setEditedRole] = useState('');
   const [editedIsPrimary, setEditedIsPrimary] = useState(false);
+  const [showHideDialog, setShowHideDialog] = useState(false);
+  const [contactToRemove, setContactToRemove] = useState<{ id: number; name: string } | null>(null);
 
   const hideMutation = useMutation({
     mutationFn: () => companiesApi.hideCompany(companyId),
@@ -98,19 +103,11 @@ export default function CompanyDetail({
   };
 
   const handleHide = () => {
-    if (confirm('Are you sure you want to hide this company?')) {
-      hideMutation.mutate();
-    }
+    setShowHideDialog(true);
   };
 
   const handleRemoveContact = (contactId: number, contactName: string) => {
-    if (
-      confirm(
-        `Are you sure you want to remove ${contactName} from this company?`,
-      )
-    ) {
-      removeContactMutation.mutate(contactId);
-    }
+    setContactToRemove({ id: contactId, name: contactName });
   };
 
   const handleEditContact = (
@@ -138,7 +135,7 @@ export default function CompanyDetail({
   };
 
   const formatCurrency = (value?: number, currency?: string) => {
-    if (value === undefined || value === null) return '-';
+    if (value === undefined || value === null) return EMPTY_VALUE;
     const curr = currency || 'USD';
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -174,7 +171,12 @@ export default function CompanyDetail({
 
   return (
     <>
-      <div className="flex items-start justify-between">
+      <Link href="/companies" className="inline-flex items-center gap-2 text-sm/6 text-zinc-500 dark:text-zinc-400">
+        <ChevronLeftIcon className="size-4" />
+        Companies
+      </Link>
+
+      <div className="mt-4 flex items-start justify-between">
         <div className="flex items-center gap-4">
           <div className="flex h-16 w-16 items-center justify-center rounded-full bg-zinc-100 dark:bg-zinc-800">
             <BuildingOfficeIcon className="h-8 w-8 text-zinc-600 dark:text-zinc-400" />
@@ -200,11 +202,31 @@ export default function CompanyDetail({
 
       <Divider className="mt-6" />
 
+      <ConfirmDialog
+        open={showHideDialog}
+        onClose={() => setShowHideDialog(false)}
+        onConfirm={() => hideMutation.mutate()}
+        title="Hide Company"
+        description="Are you sure you want to hide this company?"
+        confirmText="Hide"
+        isLoading={hideMutation.isPending}
+      />
+      <ConfirmDialog
+        open={!!contactToRemove}
+        onClose={() => setContactToRemove(null)}
+        onConfirm={() => contactToRemove && removeContactMutation.mutate(contactToRemove.id)}
+        title="Remove Contact"
+        description={contactToRemove ? `Are you sure you want to remove ${contactToRemove.name} from this company?` : ''}
+        confirmText="Remove"
+        confirmColor="red"
+        isLoading={removeContactMutation.isPending}
+      />
+
       {/* Company Information */}
       <div className="mt-8">
-        <h2 className="text-base font-semibold text-zinc-950 dark:text-white">
+        <Subheading>
           Company Information
-        </h2>
+        </Subheading>
         <dl className="mt-4 space-y-4">
           {company.website && (
             <div className="grid grid-cols-3">
@@ -245,9 +267,9 @@ export default function CompanyDetail({
 
       {/* Ownership */}
       <div className="mt-8">
-        <h2 className="text-base font-semibold text-zinc-950 dark:text-white">
+        <Subheading>
           Owners
-        </h2>
+        </Subheading>
         <div className="mt-4 space-y-2">
           {company.owners.map((owner) => (
             <div key={owner.id} className="flex items-center gap-3">
@@ -270,9 +292,9 @@ export default function CompanyDetail({
       {/* Summary */}
       {company.summary && (
         <div className="mt-8">
-          <h2 className="text-base font-semibold text-zinc-950 dark:text-white">
+          <Subheading>
             Summary
-          </h2>
+          </Subheading>
           <div className="mt-4 whitespace-pre-wrap rounded-lg bg-zinc-50 p-4 text-sm text-zinc-950 dark:bg-zinc-900 dark:text-white">
             {company.summary}
           </div>
@@ -282,9 +304,9 @@ export default function CompanyDetail({
       {/* Associated Contacts */}
       <div className="mt-8">
         <div className="flex items-center justify-between">
-          <h2 className="text-base font-semibold text-zinc-950 dark:text-white">
+          <Subheading>
             Associated Contacts
-          </h2>
+          </Subheading>
           <AddContactDialog
             companyId={companyId}
             existingContactIds={
@@ -407,9 +429,9 @@ export default function CompanyDetail({
       {/* Associated Deals */}
       {dealsData && dealsData.deals && dealsData.deals.length > 0 && (
         <div className="mt-8">
-          <h2 className="text-base font-semibold text-zinc-950 dark:text-white">
+          <Subheading>
             Associated Deals
-          </h2>
+          </Subheading>
           <div className="mt-4 space-y-3">
             {dealsData.deals.map((deal: any) => {
               const dealCompany = deal.companies?.find(
@@ -445,9 +467,9 @@ export default function CompanyDetail({
 
       {/* Metadata */}
       <div className="mt-8">
-        <h2 className="text-base font-semibold text-zinc-950 dark:text-white">
+        <Subheading>
           Details
-        </h2>
+        </Subheading>
         <dl className="mt-4 space-y-4">
           <div className="grid grid-cols-3">
             <dt className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
@@ -470,9 +492,9 @@ export default function CompanyDetail({
 
       {/* Activity Timeline */}
       <div className="mt-8">
-        <h2 className="text-base font-semibold text-zinc-950 dark:text-white">
+        <Subheading>
           Activity
-        </h2>
+        </Subheading>
         <div className="mt-4">
           <ActivityTimeline
             entityType="company"

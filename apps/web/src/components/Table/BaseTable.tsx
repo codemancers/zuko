@@ -68,30 +68,6 @@ export function BaseTable<TData extends BaseRow>(props: BaseTableProps<TData>) {
     );
   }
 
-  if (showEmptyState && props.data.length === 0 && emptyStateConfig) {
-    return (
-      <div className="mt-8">
-        <div className="mt-40 text-center">
-          <emptyStateConfig.icon className="mx-auto h-12 w-12 text-zinc-400" />
-          <h3 className="mt-2 text-sm font-semibold text-zinc-950 dark:text-white">
-            {emptyStateConfig.title}
-          </h3>
-          <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
-            {emptyStateConfig.description}
-          </p>
-          {emptyStateConfig.action && (
-            <div className="mt-6">
-              <Button onClick={emptyStateConfig.action.onClick}>
-                <PlusIcon className="h-4 w-4" />
-                {emptyStateConfig.action.label}
-              </Button>
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className={`mt-8 ${className ?? ''}`}>
       <div className="flow-root overflow-hidden border border-zinc-200 dark:border-zinc-800 rounded-lg shadow-sm bg-white dark:bg-zinc-950">
@@ -110,6 +86,27 @@ export function BaseTable<TData extends BaseRow>(props: BaseTableProps<TData>) {
             addRowContent={addRowContent}
           />
         </Table>
+
+        {!loading && props.data.length === 0 && emptyStateConfig && (
+          <div className="flex flex-col items-center justify-center py-16 text-center">
+            {emptyStateConfig.icon && (
+              <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 p-4">
+                <emptyStateConfig.icon className="size-8 text-zinc-400" />
+              </div>
+            )}
+            <p className="mt-4 text-base font-semibold text-zinc-950 dark:text-white">
+              {emptyStateConfig.title}
+            </p>
+            <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+              {emptyStateConfig.description}
+            </p>
+            {emptyStateConfig.action && (
+              <Button className="mt-4" onClick={emptyStateConfig.action.onClick}>
+                {emptyStateConfig.action.label}
+              </Button>
+            )}
+          </div>
+        )}
 
         {showAddRow && (
           <div className="pl-2 py-1 h-10 border-zinc-200 dark:border-zinc-800 flex items-center bg-zinc-50/50 dark:bg-zinc-900/50">

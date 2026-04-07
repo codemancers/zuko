@@ -3,10 +3,22 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { getUserInvitations } from '@/server/query-options';
 import { authClient } from '@/lib/auth-client';
-import { Button, Heading, Text, Badge } from '@zuko/ui-kit';
+import { Badge } from '@zuko/ui-kit';
 import { toast } from 'sonner';
-import { useState } from 'react';
-import { MailOpen } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { EnvelopeOpenIcon, CheckIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import { BaseTable, TableActions, TableActionButton, EMPTY_VALUE } from '@/components/Table';
+import type { ColumnDef } from '@tanstack/react-table';
+import type { BaseRow } from '@/components/Table/types';
+import dayjs from 'dayjs';
+
+type InvitationRow = BaseRow & {
+  organizationName: string;
+  organizationId: string;
+  role: string;
+  status: string;
+  invitedAt: string | null;
+};
 
 export const UserInvitations = () => {
   const queryClient = useQueryClient();
@@ -14,34 +26,15 @@ export const UserInvitations = () => {
 
   const { data: invitations = [], isLoading } = useQuery(getUserInvitations());
 
-  const handleAccept = async (invitationId: string) => {
+  const handleAccept = async (invitationId: string, organizationId: string) => {
     setIsProcessing(invitationId);
     try {
-      const { error } = await authClient.organization.acceptInvitation({
-        invitationId,
-      });
-
-      if (error) {
-        toast.error(error.message || 'Failed to accept invitation');
-        return;
-      }
-
+      const { error } = await authClient.organization.acceptInvitation({ invitationId });
+      if (error) { toast.error(error.message || 'Failed to accept invitation'); return; }
       toast.success('Invitation accepted');
-
-      // Set the accepted organization as active
-      // We find the invitation details to get the organizationId
-      const acceptedInvite = invitations.find((i) => i.id === invitationId);
-      if (acceptedInvite) {
-        await authClient.organization.setActive({
-          organizationId: acceptedInvite.organizationId,
-        });
-      }
-
-      // Invalidate queries to refresh organization list and user status
+      await authClient.organization.setActive({ organizationId });
       queryClient.invalidateQueries({ queryKey: ['organizations'] });
       queryClient.invalidateQueries({ queryKey: ['user', 'invitations'] });
-
-      // Optionally reload to ensure all organization-specific state is fresh
       window.location.reload();
     } catch {
       toast.error('An error occurred');
@@ -53,16 +46,9 @@ export const UserInvitations = () => {
   const handleReject = async (invitationId: string) => {
     setIsProcessing(invitationId);
     try {
-      const { error } = await authClient.organization.rejectInvitation({
-        invitationId,
-      });
-
-      if (error) {
-        toast.error(error.message || 'Failed to reject invitation');
-        return;
-      }
-
-      toast.success('Invitation rejected');
+      const { error } = await authClient.organization.rejectInvitation({ invitationId });
+      if (error) { toast.error(error.message || 'Failed to reject invitation'); return; }
+      toast.success('Invitation declined');
       queryClient.invalidateQueries({ queryKey: ['user', 'invitations'] });
     } catch {
       toast.error('An error occurred');
@@ -71,74 +57,110 @@ export const UserInvitations = () => {
     }
   };
 
-  if (isLoading) {
-    return (
-      <div className="py-4 text-sm text-zinc-500">Loading invitations...</div>
-    );
-  }
+  const rows: InvitationRow[] = useMemo(
+    () =>
+      invitations.map((inv: any) => ({
+        id: inv.id,
+        organizationName: inv.organizationName ?? EMPTY_VALUE,
+        organizationId: inv.organizationId,
+        role: inv.role,
+        status: inv.status,
+        invitedAt: inv.createdAt ?? null,
+      })),
+    [invitations],
+  );
 
-  if (invitations.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center py-20 text-center">
-        <div className="rounded-2xl border border-zinc-200 p-4 dark:border-white/10">
-          <MailOpen className="size-8 text-zinc-400" />
-        </div>
-        <div className="mt-6 text-base font-semibold text-zinc-950 dark:text-white">
-          No invitations
-        </div>
-        <div className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
-          You don't have any pending invitations at the moment.
-        </div>
-      </div>
-    );
-  }
+  const columns = useMemo(
+    (): ColumnDef<InvitationRow>[] => [
+      {
+        id: 'organization',
+        header: 'Organization',
+        accessorKey: 'organizationName',
+        cell: ({ row }) => (
+          <span className="font-medium text-zinc-900 dark:text-zinc-100">
+            {row.original.organizationName}
+          </span>
+        ),
+      },
+      {
+        id: 'role',
+        header: 'Role',
+        accessorKey: 'role',
+        size: 140,
+        cell: ({ row }) => (
+          <Badge color="zinc" className="capitalize">
+            {row.original.role}
+          </Badge>
+        ),
+      },
+      {
+        id: 'status',
+        header: 'Status',
+        accessorKey: 'status',
+        size: 120,
+        cell: ({ row }) => (
+          <Badge color="amber" className="capitalize">
+            {row.original.status}
+          </Badge>
+        ),
+      },
+      {
+        id: 'invitedAt',
+        header: 'Invited At',
+        accessorKey: 'invitedAt',
+        size: 180,
+        cell: ({ row }) => (
+          <span className="text-sm text-zinc-600 dark:text-zinc-400">
+            {row.original.invitedAt
+              ? dayjs(row.original.invitedAt).format('MMM D, YYYY h:mm A')
+              : EMPTY_VALUE}
+          </span>
+        ),
+      },
+      {
+        id: 'actions',
+        header: () => <div className="text-center">Actions</div>,
+        size: 120,
+        cell: ({ row }) => (
+          <div className="flex justify-center">
+            <TableActions>
+              <TableActionButton
+                onClick={() => handleAccept(row.original.id as string, row.original.organizationId)}
+                label="Accept invitation"
+                disabled={!!isProcessing}
+                variant="success"
+              >
+                <CheckIcon className="h-4 w-4 text-zinc-400 group-data-[hover]:text-green-500 dark:group-data-[hover]:text-green-400" />
+              </TableActionButton>
+              <TableActionButton
+                onClick={() => handleReject(row.original.id as string)}
+                label="Decline invitation"
+                disabled={!!isProcessing}
+                variant="danger"
+              >
+                <XMarkIcon className="h-4 w-4 text-zinc-400 group-data-[hover]:text-red-500 dark:group-data-[hover]:text-red-400" />
+              </TableActionButton>
+            </TableActions>
+          </div>
+        ),
+      },
+    ],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [isProcessing],
+  );
 
   return (
-    <section className="mt-8 rounded-2xl border border-blue-200 bg-blue-50/50 p-6 dark:border-blue-900/30 dark:bg-blue-900/10">
-      <div className="mb-6">
-        <div className="flex items-center gap-2">
-          <Heading level={3}>Incoming Invitations</Heading>
-          <Badge color="blue">{invitations.length}</Badge>
-        </div>
-        <Text className="mt-1 text-zinc-600 dark:text-zinc-400">
-          You have been invited to join the following organizations.
-        </Text>
-      </div>
-
-      <div className="space-y-4">
-        {invitations.map((invitation, index) => (
-          <div
-            key={invitation.id}
-            className="flex items-center justify-between rounded-xl border border-zinc-200/50 bg-white p-4 shadow-sm dark:border-white/5 dark:bg-zinc-900"
-          >
-            <div className="flex flex-col gap-0.5">
-              <div className="text-base font-semibold text-zinc-950 dark:text-white">
-                {invitation.organizationName}
-              </div>
-              <div className="text-sm text-zinc-500">
-                Invited as <span className="capitalize">{invitation.role}</span>
-              </div>
-            </div>
-            <div className="flex items-center gap-3">
-              <Button
-                plain
-                onClick={() => handleReject(invitation.id)}
-                disabled={!!isProcessing}
-                className="text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-200"
-              >
-                Decline
-              </Button>
-              <Button
-                onClick={() => handleAccept(invitation.id)}
-                disabled={!!isProcessing}
-                color="blue"
-              >
-                {isProcessing === invitation.id ? 'Accepting...' : 'Accept'}
-              </Button>
-            </div>
-          </div>
-        ))}
-      </div>
-    </section>
+    <BaseTable<InvitationRow>
+      columns={columns}
+      data={rows}
+      loading={isLoading}
+      entityName="invitations"
+      disableRowClick
+      emptyStateConfig={{
+        icon: EnvelopeOpenIcon,
+        title: 'No invitations',
+        description: "You don't have any pending invitations at the moment.",
+      }}
+    />
   );
 };

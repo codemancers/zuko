@@ -15,6 +15,8 @@ import {
   Label,
   Description,
   ErrorMessage,
+  Select,
+  Input,
 } from '@zuko/ui-kit';
 import { PlusIcon } from '@heroicons/react/24/outline';
 
@@ -119,10 +121,9 @@ export default function AddContactDialog({
               {/* Contact Selection */}
               <Field>
                 <Label>Contact *</Label>
-                <select
+                <Select
                   value={selectedContactId || ''}
                   onChange={(e) => setSelectedContactId(Number(e.target.value))}
-                  className="mt-1 block w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-white"
                   disabled={addContactMutation.isPending}
                 >
                   <option value="">Select a contact...</option>
@@ -131,7 +132,7 @@ export default function AddContactDialog({
                       {contact.name} {contact.email && `(${contact.email})`}
                     </option>
                   ))}
-                </select>
+                </Select>
                 {availableContacts.length === 0 && (
                   <Description className="text-amber-600">
                     All contacts are already associated with this company.
@@ -145,12 +146,11 @@ export default function AddContactDialog({
               {/* Role */}
               <Field>
                 <Label>Role</Label>
-                <input
+                <Input
                   type="text"
                   value={role}
                   onChange={(e) => setRole(e.target.value)}
                   placeholder="e.g., Employee, Contractor, Advisor"
-                  className="mt-1 block w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-white"
                   disabled={addContactMutation.isPending}
                 />
                 <Description>
@@ -178,13 +178,7 @@ export default function AddContactDialog({
               </Field>
 
               {/* Submit Error */}
-              {errors.submit && (
-                <div className="rounded-md bg-red-50 p-3 dark:bg-red-900/20">
-                  <p className="text-sm text-red-800 dark:text-red-200">
-                    {errors.submit}
-                  </p>
-                </div>
-              )}
+              {errors.submit && <ErrorMessage>{errors.submit}</ErrorMessage>}
             </div>
           </DialogBody>
 
