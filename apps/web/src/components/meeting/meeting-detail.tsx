@@ -54,8 +54,6 @@ const MEETING_STATUS_COLOR_MAP: Record<string, BadgeColor> = {
 
 type Tab = 'recording' | 'transcript' | 'chat' | 'summary' | 'actionItems';
 
-const TAB_LIST: Tab[] = ['recording', 'transcript', 'chat', 'summary', 'actionItems'];
-
 export interface TranscriptData {
   text: string;
   is_final: boolean;

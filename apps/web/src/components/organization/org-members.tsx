@@ -179,7 +179,7 @@ export const OrgMembers = ({
 
   const columns = useMemo(
     () => createMemberColumns({ onRoleChange: handleRoleChange, onRemove: handleRemove }),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line
     [activeOrg?.id],
   );
 

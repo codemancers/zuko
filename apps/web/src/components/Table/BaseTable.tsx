@@ -45,7 +45,7 @@ export function BaseTable<TData extends BaseRow>(props: BaseTableProps<TData>) {
     showAddColumn,
     onAddColumn,
     onCellUpdate,
-    showEmptyState,
+    showEmptyState: _showEmptyState,
     emptyStateConfig
   } = props;
   const [hasMounted, setHasMounted] = useState(false);
