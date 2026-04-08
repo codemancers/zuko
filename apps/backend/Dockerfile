@@ -1,10 +1,10 @@
-# Build the docker image with `npx nx docker:build @zuko/backend`.
-# This expects the build output from `npx nx run @zuko/backend:build` and `npx nx run @zuko/backend:prune`
+# Build the docker image with `bunx nx docker:build @zuko/backend`.
+# This expects the build output from `bunx nx run @zuko/backend:build` and `bunx nx run @zuko/backend:prune`
 #
-FROM docker.io/node:lts-alpine
+FROM oven/bun:1.3.10-alpine AS base
 
-# Install git for repository cloning
-RUN apk add --no-cache git
+# Install openssl for Prisma and build tools for potential native modules
+RUN apk add --no-cache openssl
 
 ENV HOST=0.0.0.0
 ENV PORT=3000
@@ -14,19 +14,19 @@ WORKDIR /app
 
 # Copy the entire dist folder which includes:
 # - main.js (bundled application)
-# - package.json and package-lock.json (pruned dependencies)
+# - package.json (pruned dependencies)
 # - workspace_modules (internal workspace dependencies including @zuko/models with prisma schemas)
 COPY apps/backend/dist .
 
-# Install production dependencies
-# This includes @prisma/client and prisma CLI
-RUN npm --omit=dev -f install
+EXPOSE 3001
+
+# Install production dependencies using Bun
+RUN bun install --production
 
 # Generate Prisma Client from the schemas in workspace_modules/@zuko/models/prisma
 # Point to directory (not file) for multi-file schema support
 # Use dummy DATABASE_URL since generate doesn't connect to database
 RUN DATABASE_URL="postgresql://dummy:dummy@localhost:5432/dummy" \
-    npx prisma generate --config=./workspace_modules/@zuko/models/prisma.config.ts
+    bunx prisma generate --config=./workspace_modules/@zuko/models/prisma.config.ts
 
-
-CMD [ "node", "main.js" ]
+CMD [ "bun", "run", "main.js" ]
