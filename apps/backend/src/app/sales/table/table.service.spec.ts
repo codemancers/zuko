@@ -76,8 +76,8 @@ describe('TableService', () => {
         },
         {
           provide: CompaniesService,
-          useFactory: (r: CompaniesRepository, e: EventEmitter2) => new CompaniesService(r, e),
-          inject: [CompaniesRepository, EventEmitter2],
+          useFactory: (r: CompaniesRepository, e: EventEmitter2, t: TableColumnRepository) => new CompaniesService(r, e, t),
+          inject: [CompaniesRepository, EventEmitter2, TableColumnRepository],
         },
         {
           provide: ContactsRepository,
@@ -86,8 +86,8 @@ describe('TableService', () => {
         },
         {
           provide: ContactsService,
-          useFactory: (r: ContactsRepository, e: EventEmitter2) => new ContactsService(r, e),
-          inject: [ContactsRepository, EventEmitter2],
+          useFactory: (r: ContactsRepository, e: EventEmitter2, t: TableColumnRepository) => new ContactsService(r, e, t),
+          inject: [ContactsRepository, EventEmitter2, TableColumnRepository],
         },
         {
           provide: DealsRepository,
@@ -96,8 +96,8 @@ describe('TableService', () => {
         },
         {
           provide: DealsService,
-          useFactory: (r: DealsRepository, e: EventEmitter2) => new DealsService(r, e),
-          inject: [DealsRepository, EventEmitter2],
+          useFactory: (r: DealsRepository, e: EventEmitter2, t: TableColumnRepository) => new DealsService(r, e, t),
+          inject: [DealsRepository, EventEmitter2, TableColumnRepository],
         },
         {
           provide: TableColumnRepository,

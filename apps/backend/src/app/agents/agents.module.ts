@@ -13,6 +13,7 @@ import {
   CompaniesRepository,
   DealsRepository,
   ActivityRepository,
+  TableColumnRepository
 } from '@zuko/sales';
 
 @Module({
@@ -28,8 +29,8 @@ import {
     },
     {
       provide: ContactsService,
-      useFactory: (contactsRepository: ContactsRepository, eventEmitter: EventEmitter2) => {
-        return new ContactsService(contactsRepository, eventEmitter);
+      useFactory: (contactsRepository: ContactsRepository, eventEmitter: EventEmitter2, tableColumnRepository: TableColumnRepository) => {
+        return new ContactsService(contactsRepository, eventEmitter, tableColumnRepository);
       },
       inject: [ContactsRepository, EventEmitter2],
     },
@@ -42,8 +43,8 @@ import {
     },
     {
       provide: CompaniesService,
-      useFactory: (companiesRepository: CompaniesRepository, eventEmitter: EventEmitter2) => {
-        return new CompaniesService(companiesRepository, eventEmitter);
+      useFactory: (companiesRepository: CompaniesRepository, eventEmitter: EventEmitter2, tableColumnRepository: TableColumnRepository) => {
+        return new CompaniesService(companiesRepository, eventEmitter, tableColumnRepository);
       },
       inject: [CompaniesRepository, EventEmitter2],
     },
@@ -70,8 +71,8 @@ import {
     },
     {
       provide: DealsService,
-      useFactory: (dealsRepository: DealsRepository, eventEmitter: EventEmitter2) => {
-        return new DealsService(dealsRepository, eventEmitter);
+      useFactory: (dealsRepository: DealsRepository, eventEmitter: EventEmitter2, tableColumnRepository: TableColumnRepository) => {
+        return new DealsService(dealsRepository, eventEmitter, tableColumnRepository);
       },
       inject: [DealsRepository, EventEmitter2],
     },

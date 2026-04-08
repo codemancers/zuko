@@ -14,8 +14,11 @@ import {
   AddContactToCompanyInput,
   UpdateContactCompanyInput,
 } from '../repositories/companies.repository';
+import { TableColumnRepository } from '../repositories/table-column.repository';
 import { COMPANY_EVENTS, CompanyFieldUpdatedEvent } from '../events/company-events';
 import type { ActivitySource } from '../events/deal-events';
+import { ColumnConfig, ColumnType } from '../types/table-metadata';
+import { validateCellValue, castFieldValue } from '../utils/custom-fields';
 
 /**
  * Validates URL format
@@ -56,6 +59,7 @@ export class CompaniesService {
   constructor(
     private readonly companiesRepository: CompaniesRepository,
     private readonly eventEmitter: EventEmitter2,
+    private readonly tableColumnRepository: TableColumnRepository,
   ) {}
 
   async create(input: CreateCompanyInput, actorId?: number, source?: ActivitySource) {
@@ -170,6 +174,26 @@ export class CompaniesService {
         throw new BadRequestException(
           'LinkedIn URL must be a valid LinkedIn URL (e.g., https://www.linkedin.com/company/example)',
         );
+      }
+    }
+
+    // Validate custom fields if provided
+    if (input.fields) {
+      const customColumns = await this.tableColumnRepository.findByTable(
+        organizationId,
+        'companies',
+      );
+
+      for (const [key, value] of Object.entries(input.fields)) {
+        const column = customColumns.find((c) => c.columnKey === key);
+        if (column) {
+          validateCellValue(
+            value,
+            column.fieldType as ColumnType,
+            column.config as ColumnConfig,
+          );
+          input.fields[key] = castFieldValue(value, column.fieldType as ColumnType);
+        }
       }
     }
 

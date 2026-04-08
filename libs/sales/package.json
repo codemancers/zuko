@@ -21,5 +21,8 @@
     "pg": "^8.16.3",
     "tslib": "^2.3.0",
     "dayjs": "^1.11.19"
+  },
+  "devDependencies": {
+    "@prisma/adapter-pg": "^7.2.0"
   }
 }

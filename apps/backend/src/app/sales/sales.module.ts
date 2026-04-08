@@ -59,10 +59,11 @@ import { TableRowBuilder } from './table/row-builder/table-row.builder';
       useFactory: (
         contactsRepository: ContactsRepository,
         eventEmitter: EventEmitter2,
+        tableColumnRepository: TableColumnRepository,
       ) => {
-        return new ContactsService(contactsRepository, eventEmitter);
+        return new ContactsService(contactsRepository, eventEmitter, tableColumnRepository);
       },
-      inject: [ContactsRepository, EventEmitter2],
+      inject: [ContactsRepository, EventEmitter2, TableColumnRepository],
     },
     {
       provide: CompaniesRepository,
@@ -76,10 +77,11 @@ import { TableRowBuilder } from './table/row-builder/table-row.builder';
       useFactory: (
         companiesRepository: CompaniesRepository,
         eventEmitter: EventEmitter2,
+        tableColumnRepository: TableColumnRepository,
       ) => {
-        return new CompaniesService(companiesRepository, eventEmitter);
+        return new CompaniesService(companiesRepository, eventEmitter, tableColumnRepository);
       },
-      inject: [CompaniesRepository, EventEmitter2],
+      inject: [CompaniesRepository, EventEmitter2, TableColumnRepository],
     },
     {
       provide: ActivityRepository,
@@ -107,10 +109,11 @@ import { TableRowBuilder } from './table/row-builder/table-row.builder';
       useFactory: (
         dealsRepository: DealsRepository,
         eventEmitter: EventEmitter2,
+        tableColumnRepository: TableColumnRepository,
       ) => {
-        return new DealsService(dealsRepository, eventEmitter);
+        return new DealsService(dealsRepository, eventEmitter, tableColumnRepository);
       },
-      inject: [DealsRepository, EventEmitter2],
+      inject: [DealsRepository, EventEmitter2, TableColumnRepository],
     },
     {
       provide: DealActivityListener,

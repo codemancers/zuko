@@ -12,15 +12,18 @@ import {
   UpdateDealInput,
   DealFilters,
   AddCompanyToDealInput,
-  AddContactToDealInput,
   UpdateContactDealInput,
+  AddContactToDealInput,
 } from '../repositories/deals.repository';
+import { TableColumnRepository } from '../repositories/table-column.repository';
 import {
   DEAL_EVENTS,
   DealFieldUpdatedEvent,
   ActivitySource,
 } from '../events/deal-events';
 import { DEAL_STAGE_VALUES } from '../constants/deals';
+import { ColumnConfig, ColumnType } from '../types/table-metadata';
+import { validateCellValue, castFieldValue } from '../utils/custom-fields';
 
 // Fields handled by dedicated events or not user-visible — excluded from generic field_update
 const FIELD_UPDATE_EXCLUDED = new Set<keyof UpdateDealInput>([
@@ -37,6 +40,7 @@ export class DealsService {
   constructor(
     private readonly dealsRepository: DealsRepository,
     private readonly eventEmitter: EventEmitter2,
+    private readonly tableColumnRepository: TableColumnRepository,
   ) {}
 
   async create(input: CreateDealInput, actorId?: number, source?: ActivitySource) {
@@ -155,6 +159,29 @@ export class DealsService {
         this.logger.warn(
           '[SERVICE] Actual close date is before expected close date',
         );
+      }
+    }
+
+    // Validate custom fields if provided
+    if (input.fields) {
+      const customColumns = await this.tableColumnRepository.findByTable(
+        organizationId,
+        'deals',
+      );
+
+      for (const [key, value] of Object.entries(input.fields)) {
+        const column = customColumns.find((c) => c.columnKey === key);
+        if (column) {
+          validateCellValue(
+            value,
+            column.fieldType as ColumnType,
+            column.config as ColumnConfig,
+          );
+
+          // We should also ensure the value is casted correctly if it's not already
+          // although typically the caller should handle this, doing it here ensures consistency.
+          input.fields[key] = castFieldValue(value, column.fieldType as ColumnType);
+        }
       }
     }
 

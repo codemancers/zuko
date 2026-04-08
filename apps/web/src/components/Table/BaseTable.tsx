@@ -10,6 +10,7 @@ import { PlusIcon } from '@heroicons/react/24/outline';
 import type { PaginationState } from '@tanstack/react-table';
 import { AddColumnDialog } from './AddColumnDialog';
 import React from 'react';
+import { ColumnConfig } from '@/types/table-metadata';
 
 const ChevronLeftIcon = '/icons/chevron-left.svg';
 const ChevronRightIcon = '/icons/chevron-right.svg';
@@ -127,8 +128,8 @@ export function BaseTable<TData extends BaseRow>(props: BaseTableProps<TData>) {
       <AddColumnDialog
         isOpen={isAddColumnDialogOpen}
         onClose={closeAddColumnDialog}
-        onAdd={(name: string, key: string, type: string) => {
-          onAddColumn?.(name, key, type);
+        onAdd={(name: string, key: string, type: string, config?: ColumnConfig) => {
+          onAddColumn?.(name, key, type, config);
         }}
       />
 

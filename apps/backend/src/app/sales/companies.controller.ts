@@ -44,6 +44,7 @@ export class UpdateCompanyDto implements Partial<UpdateCompanyInput> {
   website?: string;
   linkedinUrl?: string;
   summary?: string;
+  isHidden?: boolean;
   fields?: Record<string, unknown>;
 }
 
