@@ -86,7 +86,7 @@
         ],
         "executor": "nx:run-commands",
         "options": {
-          "command": "LIBS=(agents core models sales); for lib in \"${LIBS[@]}\"; do sed -i '' \"s|\\\"resolved\\\": \\\"libs/${lib}\\\"|\\\"resolved\\\": \\\"workspace_modules/@zuko/${lib}\\\"|g\" dist/package-lock.json; sed -i '' \"s|\\\"libs/${lib}\\\":|\\\"workspace_modules/@zuko/${lib}\\\":|g\" dist/package-lock.json; done",
+          "command": "LIBS=(agents core models sales); for lib in \"${LIBS[@]}\"; do [ -f dist/package-lock.json ] && sed -i '' \"s|\\\"resolved\\\": \\\"libs/${lib}\\\"|\\\"resolved\\\": \\\"workspace_modules/@zuko/${lib}\\\"|g\" dist/package-lock.json && sed -i '' \"s|\\\"libs/${lib}\\\":|\\\"workspace_modules/@zuko/${lib}\\\":|g\" dist/package-lock.json; [ -f dist/package.json ] && sed -i '' \"s|\\\"@zuko/${lib}\\\": \\\"[^,}]*\\\"|\\\"@zuko/${lib}\\\": \\\"file:./workspace_modules/@zuko/${lib}\\\"|g\" dist/package.json; done",
           "cwd": "apps/backend"
         }
       },
