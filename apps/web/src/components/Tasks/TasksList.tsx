@@ -7,6 +7,7 @@ import { getTasks } from '@/server/query-options';
 import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
 import { tasksApi, UpdateTaskDto } from '@/lib/api/tasks';
+import { useAddRow } from '@/hooks/use-add-row';
 import { createTaskColumns, FlatTask } from './columns';
 import { BaseTable } from '../Table';
 import ConfirmDialog from '@/components/shared/ConfirmDialog';
@@ -50,14 +51,7 @@ const TasksList = () => {
     },
   });
 
-  const { mutate: addTask } = useMutation({
-    mutationFn: () => tasksApi.createTask({ title: 'New Task' }),
-    onSuccess: () => {
-      toast.success('Task created');
-      queryClient.invalidateQueries({ queryKey: ['tasks'] });
-    },
-    onError: () => toast.error('Failed to create task'),
-  });
+  const { addRow: addTask } = useAddRow('tasks');
 
   const columns = useMemo(
     () =>
