@@ -176,7 +176,9 @@ export function CurrencyField({ value, display }: FieldProps<BaseRow>) {
 }
 
 export function SelectField({ value, display, metadata }: FieldProps<BaseRow>) {
-  const content = display ?? (value as ReactNode) ?? '';
+  const options = metadata.config?.options ?? [];
+  const label = options.find((o) => o.value === String(value))?.label;
+  const content = display ?? label ?? (value as ReactNode) ?? '';
   const renderConfig = metadata.config?.render;
 
   if (renderConfig === 'badge') {
