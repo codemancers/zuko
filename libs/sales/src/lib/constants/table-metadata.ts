@@ -269,6 +269,94 @@ export const MEETING_TABLE_METADATA: ColumnMetadata[] = [
   },
 ];
 
+export const TASK_TABLE_METADATA: ColumnMetadata[] = [
+  {
+    id: 'title',
+    header: 'Title',
+    fieldType: 'entity',
+    dataType: 'text',
+    sortable: true,
+    filterable: true,
+    searchable: true,
+    editable: true,
+    isVisible: true,
+    default: true,
+    config: {
+      hrefTemplate: '/tasks/{id}',
+    },
+  },
+  {
+    id: 'status',
+    header: 'Status',
+    fieldType: 'select',
+    dataType: 'text',
+    sortable: true,
+    filterable: true,
+    searchable: false,
+    editable: true,
+    isVisible: true,
+    default: true,
+    config: {
+      render: 'badge',
+      format: 'stage',
+      options: [
+        { label: 'To Do', value: 'TODO' },
+        { label: 'In Progress', value: 'IN_PROGRESS' },
+        { label: 'Done', value: 'DONE' },
+        { label: 'Cancelled', value: 'CANCELLED' },
+      ],
+      colorMap: {
+        TODO: 'zinc',
+        IN_PROGRESS: 'blue',
+        DONE: 'green',
+        CANCELLED: 'red',
+      },
+    },
+  },
+  {
+    id: 'assignee',
+    header: 'Assignee',
+    fieldType: 'text',
+    dataType: 'text',
+    sortable: false,
+    filterable: true,
+    searchable: true,
+    editable: true,
+    isVisible: true,
+    default: true,
+  },
+  {
+    id: 'completedAt',
+    header: 'Completed At',
+    fieldType: 'date',
+    dataType: 'date',
+    sortable: true,
+    filterable: false,
+    searchable: false,
+    editable: true,
+    isVisible: true,
+    default: true,
+    config: {
+      format: 'date',
+    },
+  },
+  {
+    id: 'createdAt',
+    header: 'Created',
+    fieldType: 'date',
+    dataType: 'date',
+    sortable: true,
+    filterable: false,
+    searchable: false,
+    editable: false,
+    isVisible: true,
+    default: true,
+    config: {
+      format: 'date',
+    },
+  },
+];
+
 export const DEAL_TABLE_METADATA: ColumnMetadata[] = [
   {
     id: 'title',

@@ -62,6 +62,14 @@ export class TableController {
     return this.tableService.getDealsTable(organizationId, query);
   }
 
+  @Get('tasks')
+  async getTasksTable(
+    @OrgId() organizationId: number,
+    @Query('search') search?: string,
+  ) {
+    return this.tableService.getTasksTable(organizationId, search);
+  }
+
   @Get('meetings')
   async getMeetingsTable(
     @OrgId() organizationId: number,

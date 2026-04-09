@@ -32,7 +32,7 @@ export function createColumnsFromMetadata<TData extends BaseRow>(
       const data = getValue();
       
       let value: unknown = data;
-      let display = typeof data === 'object' ? undefined : data?.toString();
+      let display: string | undefined = undefined;
 
       // Handle decomposed values (standard for our API responses)
       if (isCellValue(data)) {

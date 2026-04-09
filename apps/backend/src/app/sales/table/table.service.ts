@@ -7,6 +7,7 @@ import {
   CONTACT_TABLE_METADATA,
   DEAL_TABLE_METADATA,
   MEETING_TABLE_METADATA,
+  TASK_TABLE_METADATA,
   ColumnMetadata,
   TableColumnRepository,
   mapTableColumnsToMetadata,
@@ -150,6 +151,37 @@ export class TableService {
       metadata,
       data,
       pagination: result.pagination,
+    };
+  }
+
+  async getTasksTable(organizationId: number, search?: string) {
+    const tasks = await this.prisma.task.findMany({
+      where: {
+        organizationId,
+        parentId: null,
+        ...(search ? { title: { contains: search, mode: 'insensitive' } } : {}),
+      },
+      include: {
+        owners: { include: { user: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    const { metadata, data } = this.buildMergedTable(
+      tasks as unknown as Record<string, unknown>[],
+      TASK_TABLE_METADATA,
+      [],
+    );
+
+    return {
+      metadata,
+      data,
+      pagination: {
+        total: tasks.length,
+        page: 1,
+        limit: tasks.length,
+        totalPages: 1,
+      },
     };
   }
 
@@ -381,6 +413,16 @@ export class TableService {
               actorId,
             );
           }
+          break;
+        }
+
+        case 'tasks': {
+          const col = TASK_TABLE_METADATA.find((m) => m.id === columnId);
+          if (!col) throw new BadRequestException('Column not found');
+          result = await this.prisma.task.update({
+            where: { id: rowId, organizationId },
+            data: { [columnId]: castFieldValue(value, col.fieldType as ColumnType) },
+          });
           break;
         }
 

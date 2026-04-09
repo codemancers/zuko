@@ -74,6 +74,12 @@ export const getTasks = (filters?: TaskFilters) =>
     queryFn: () => tasksApi.getTasks(filters),
   });
 
+export const getTableViewTasks = (filters?: { search?: string }) =>
+  queryOptions({
+    queryKey: ['tasks', 'table', filters],
+    queryFn: () => tasksApi.getTableViewTasks(filters),
+  });
+
 export const getTask = (id: number) =>
   queryOptions({
     queryKey: ['task', id],
