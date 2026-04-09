@@ -2,14 +2,12 @@
 
 import {
   Heading,
-  Link,
   Text,
   Input,
   Select,
   TableRow,
   TableCell,
 } from '@zuko/ui-kit';
-import { ChevronLeftIcon } from '@heroicons/react/20/solid';
 import { UserMinusIcon } from '@heroicons/react/24/outline';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
@@ -36,6 +34,7 @@ import {
   type MemberTableRow,
 } from './member-columns';
 import { ConfirmDialog } from '@/components/shared';
+import { BackLink } from '@/components/shared';
 
 const ROLES = ['owner', 'admin', 'member'] as const;
 
@@ -261,13 +260,9 @@ export const OrgMembers = ({
     <div>
       {!hideHeader && (
         <div className="flex items-center justify-between mb-10">
-          <Link
-            href={`/organization/${slug}`}
-            className="inline-flex items-center gap-2 text-sm/6 text-zinc-500 dark:text-zinc-400"
-          >
-            <ChevronLeftIcon className="size-4 fill-zinc-400 dark:fill-zinc-500" />
+          <BackLink href={`/organization/${slug}`}>
             Back to {activeOrg?.name}
-          </Link>
+          </BackLink>
         </div>
       )}
 

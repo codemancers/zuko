@@ -3,14 +3,12 @@
 import {
   Heading,
   Avatar,
-  Link,
   Text,
   Tooltip,
   TooltipTrigger,
   TooltipContent,
   TooltipProvider,
 } from '@zuko/ui-kit';
-import { ChevronLeftIcon } from '@heroicons/react/20/solid';
 import {
   TableActions,
   DeleteAction,
@@ -31,6 +29,7 @@ import { BaseTable } from '../Table';
 import type { ColumnDef } from '@tanstack/react-table';
 import { TEAM_TABLE_METADATA, type OrgTeam } from './team-columns';
 import { ConfirmDialog } from '@/components/shared';
+import { BackLink } from '@/components/shared';
 
 export const OrgTeams = ({
   slug,
@@ -158,13 +157,9 @@ export const OrgTeams = ({
     <div>
       {!hideHeader && (
         <div className="flex items-center justify-between mb-10">
-          <Link
-            href={`/organization/${slug}`}
-            className="inline-flex items-center gap-2 text-sm/6 text-zinc-500 dark:text-zinc-400"
-          >
-            <ChevronLeftIcon className="size-4 fill-zinc-400 dark:fill-zinc-500" />
+          <BackLink href={`/organization/${slug}`}>
             Back to {activeOrg?.name}
-          </Link>
+          </BackLink>
         </div>
       )}
 
