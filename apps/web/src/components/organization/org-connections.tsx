@@ -1,9 +1,10 @@
 'use client';
 
 import Image from 'next/image';
-import { Badge, Button, Divider, Subheading, Text } from '@zuko/ui-kit';
-import { BaseTable, EMPTY_VALUE } from '@/components/Table';
-import { ColumnDef } from '@tanstack/react-table';
+import { Button, Divider, Subheading, Text } from '@zuko/ui-kit';
+import { BaseTable, createColumnsFromMetadata, type BaseRow } from '@/components/Table';
+import type { ColumnDef } from '@tanstack/react-table';
+import type { ColumnMetadata } from '@/types/table-metadata';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { authClient } from '@/lib/auth-client';
 import {
@@ -44,19 +45,44 @@ const GoogleCalendarIcon = () => (
 );
 
 // ---------------------------------------------------------------------------
-// Helpers
+// Metadata
 // ---------------------------------------------------------------------------
 
-function formatDate(d?: Date): string {
-  if (!d) return EMPTY_VALUE;
-  return new Intl.DateTimeFormat('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-    hour: 'numeric',
-    minute: '2-digit',
-  }).format(d);
-}
+const CONNECTION_TABLE_METADATA: ColumnMetadata[] = [
+  {
+    id: 'status',
+    header: 'Status',
+    fieldType: 'select',
+    dataType: 'text',
+    editable: false,
+    isVisible: true,
+    config: {
+      render: 'badge',
+      colorMap: { connected: 'lime', 'not-connected': 'zinc' },
+      options: [
+        { label: 'Connected', value: 'connected' },
+        { label: 'Disconnected', value: 'not-connected' },
+      ],
+    },
+  },
+  {
+    id: 'connectedBy',
+    header: 'Connected By',
+    fieldType: 'text',
+    dataType: 'text',
+    editable: false,
+    isVisible: true,
+  },
+  {
+    id: 'connectedAt',
+    header: 'Date/Time',
+    fieldType: 'date',
+    dataType: 'date',
+    editable: false,
+    isVisible: true,
+    config: { format: 'date' },
+  },
+];
 
 // ---------------------------------------------------------------------------
 // Component
@@ -167,123 +193,73 @@ export const OrgConnections = () => {
   // Column definitions (inside component so handlers are in scope)
   // -------------------------------------------------------------------------
 
-  const columns = useMemo(
-    (): ColumnDef<ConnectionRow>[] => [
-      {
-        id: 'name',
-        header: 'Name',
-        accessorKey: 'name',
-        size: 220,
-        cell: ({ row }) => (
+  const nameColumn: ColumnDef<BaseRow> = useMemo(
+    () => ({
+      id: 'name',
+      header: 'Name',
+      accessorKey: 'name',
+      cell: ({ row }) => {
+        const conn = row.original as ConnectionRow;
+        return (
           <div className="flex items-center gap-3 py-0.5">
             <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-zinc-100 dark:bg-zinc-800">
-              {row.original.icon}
+              {conn.icon}
             </div>
-            <span className="font-medium text-zinc-900 dark:text-zinc-100">
-              {row.original.name}
-            </span>
+            <span className="font-medium text-zinc-900 dark:text-zinc-100">{conn.name}</span>
           </div>
-        ),
+        );
       },
-      {
-        id: 'status',
-        header: 'Status',
-        accessorKey: 'status',
-        size: 130,
-        cell: ({ row }) => {
-          const connected = row.original.status === 'connected';
-          return (
-            <Badge color={connected ? 'lime' : 'zinc'}>
-              {connected ? 'Connected' : 'Disconnected'}
-            </Badge>
-          );
-        },
-      },
-      {
-        id: 'connectedBy',
-        header: 'Connected By',
-        accessorKey: 'connectedBy',
-        size: 200,
-        cell: ({ row }) => (
-          <Text className="text-sm text-zinc-600 dark:text-zinc-400">
-            {row.original.connectedBy ?? EMPTY_VALUE}
-          </Text>
-        ),
-      },
-      {
-        id: 'connectedAt',
-        header: 'Date/Time',
-        accessorKey: 'connectedAt',
-        size: 200,
-        cell: ({ row }) => (
-          <Text className="text-sm text-zinc-600 dark:text-zinc-400">
-            {formatDate(row.original.connectedAt)}
-          </Text>
-        ),
-      },
-      {
-        id: 'actions',
-        header: 'Actions',
-        size: 200,
-        cell: ({ row }) => {
-          const { id, status } = row.original;
-          const connected = status === 'connected';
-          const isIntegration = id === 'github-app';
-          const provider = id as 'github' | 'google';
-          const isPending = pendingAction === id || pendingAction === `disconnect-${id}`;
+    }),
+    [],
+  );
 
-          if (isIntegration) {
-            return (
-              <div className="flex items-center gap-1">
-                <Button
-                  plain
-                  disabled={isPending}
-                  onClick={handleInstallApp}
-                  className="!text-blue-500 dark:!text-blue-400"
-                >
-                  {connected ? 'Re-install' : 'Install'}
-                </Button>
-              </div>
-            );
-          }
+  const actionsColumn: ColumnDef<BaseRow> = useMemo(
+    () => ({
+      id: 'actions',
+      header: 'Actions',
+      cell: ({ row }) => {
+        const { id, status } = row.original as ConnectionRow;
+        const connected = status === 'connected';
+        const isIntegration = id === 'github-app';
+        const provider = id as 'github' | 'google';
+        const isPending = pendingAction === id || pendingAction === `disconnect-${id}`;
 
+        if (isIntegration) {
           return (
             <div className="flex items-center gap-1">
-              {connected ? (
-                <>
-                  <Button
-                    plain
-                    disabled={pendingAction === `disconnect-${id}`}
-                    onClick={() => handleDisconnect(id)}
-                    className="!text-red-500 dark:!text-red-400"
-                  >
-                    Disconnect
-                  </Button>
-                  <Button
-                    plain
-                    disabled={pendingAction === provider}
-                    onClick={() => handleConnect(provider)}
-                    className="!text-blue-500 dark:!text-blue-400"
-                  >
-                    Reconnect
-                  </Button>
-                </>
-              ) : (
-                <Button
-                  plain
-                  disabled={pendingAction === provider}
-                  onClick={() => handleConnect(provider)}
-                  className="!text-blue-500 dark:!text-blue-400"
-                >
-                  {pendingAction === provider ? 'Connecting...' : 'Connect'}
-                </Button>
-              )}
+              <Button plain disabled={isPending} onClick={handleInstallApp} className="!text-blue-500 dark:!text-blue-400">
+                {connected ? 'Re-install' : 'Install'}
+              </Button>
             </div>
           );
-        },
+        }
+
+        return (
+          <div className="flex items-center gap-1">
+            {connected ? (
+              <>
+                <Button plain disabled={pendingAction === `disconnect-${id}`} onClick={() => handleDisconnect(id)} className="!text-red-500 dark:!text-red-400">
+                  Disconnect
+                </Button>
+                <Button plain disabled={pendingAction === provider} onClick={() => handleConnect(provider)} className="!text-blue-500 dark:!text-blue-400">
+                  Reconnect
+                </Button>
+              </>
+            ) : (
+              <Button plain disabled={pendingAction === provider} onClick={() => handleConnect(provider)} className="!text-blue-500 dark:!text-blue-400">
+                {pendingAction === provider ? 'Connecting...' : 'Connect'}
+              </Button>
+            )}
+          </div>
+        );
       },
-    ],
+    }),
     [pendingAction, handleConnect, handleDisconnect, handleInstallApp],
+  );
+
+  const columns = useMemo(
+    () => [nameColumn, ...createColumnsFromMetadata<BaseRow>(CONNECTION_TABLE_METADATA), actionsColumn],
+    [nameColumn, actionsColumn],
   );
 
   // -------------------------------------------------------------------------
@@ -352,7 +328,7 @@ export const OrgConnections = () => {
           </Text>
         </div>
 
-        <BaseTable<ConnectionRow>
+        <BaseTable<BaseRow>
           columns={columns}
           data={integrationRows}
           loading={loadingApp}
@@ -377,7 +353,7 @@ export const OrgConnections = () => {
           </Text>
         </div>
 
-        <BaseTable<ConnectionRow>
+        <BaseTable<BaseRow>
           columns={columns}
           data={connectionRows}
           loading={loadingAccounts}

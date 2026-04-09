@@ -16,7 +16,7 @@ import {
   TooltipProvider,
 } from '@zuko/ui-kit';
 import { ChevronLeftIcon } from '@heroicons/react/20/solid';
-import { TableActions, DeleteAction } from '../Table';
+import { TableActions, DeleteAction, createColumnsFromMetadata, type BaseRow } from '../Table';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   getOrganizations,
@@ -24,11 +24,12 @@ import {
   getTeamMembers,
   getMembers,
 } from '@/server/query-options';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { authClient } from '@/lib/auth-client';
 import { toast } from 'sonner';
 import { BaseTable } from '../Table';
-import { createTeamColumns, OrgTeam } from './team-columns';
+import type { ColumnDef } from '@tanstack/react-table';
+import { TEAM_TABLE_METADATA, type OrgTeam } from './team-columns';
 
 export const OrgTeams = ({
   slug,
@@ -38,13 +39,9 @@ export const OrgTeams = ({
   hideHeader?: boolean;
 }) => {
   const queryClient = useQueryClient();
-  const [teamToRemove, setTeamToRemove] = useState<{
-    id: string;
-    name: string;
-  } | null>(null);
+  const [teamToRemove, setTeamToRemove] = useState<OrgTeam | null>(null);
 
-  const { data: organizations, isLoading: isLoadingOrgs } =
-    useQuery(getOrganizations());
+  const { data: organizations, isLoading: isLoadingOrgs } = useQuery(getOrganizations());
   const activeOrg = organizations?.find((o) => o.slug === slug);
 
   const { data: teams = [], isLoading: isLoadingTeams } = useQuery({
@@ -54,22 +51,14 @@ export const OrgTeams = ({
 
   const handleRemoveTeam = async () => {
     if (!teamToRemove || !activeOrg) return;
-
     try {
       const { error } = await authClient.organization.removeTeam({
         teamId: teamToRemove.id,
         organizationId: activeOrg.id,
       });
-
-      if (error) {
-        toast.error(error.message || 'Failed to remove team');
-        return;
-      }
-
+      if (error) { toast.error(error.message || 'Failed to remove team'); return; }
       toast.success(`Team "${teamToRemove.name}" removed`);
-      queryClient.invalidateQueries({
-        queryKey: ['organization', activeOrg.id, 'teams'],
-      });
+      queryClient.invalidateQueries({ queryKey: ['organization', activeOrg.id, 'teams'] });
     } catch {
       toast.error('An error occurred');
     } finally {
@@ -92,11 +81,11 @@ export const OrgTeams = ({
     }
   };
 
-  const handleRenameTeam = async (team: { id: string; name: string }, newName: string) => {
+  const handleRenameTeam = async (teamId: string, newName: string) => {
     if (!activeOrg) return;
     try {
       const { error } = await authClient.organization.updateTeam({
-        teamId: team.id,
+        teamId,
         data: { name: newName },
       });
       if (error) { toast.error(error.message || 'Failed to rename team'); return; }
@@ -106,6 +95,42 @@ export const OrgTeams = ({
       toast.error('An error occurred');
     }
   };
+
+  const membersColumn: ColumnDef<BaseRow> = useMemo(
+    () => ({
+      id: 'members',
+      header: 'Members',
+      cell: ({ row }) =>
+        activeOrg ? (
+          <TeamMemberAvatars teamId={String(row.original.id)} organizationId={activeOrg.id} />
+        ) : null,
+    }),
+    [activeOrg],
+  );
+
+  const actionsColumn: ColumnDef<BaseRow> = useMemo(
+    () => ({
+      id: 'actions',
+      header: 'Actions',
+      cell: ({ row }) => (
+        <TableActions>
+          <DeleteAction
+            onClick={() => setTeamToRemove(row.original as OrgTeam)}
+            label="Remove team"
+          />
+        </TableActions>
+      ),
+    }),
+    [],
+  );
+
+  const columns = useMemo(
+    () =>
+      createColumnsFromMetadata<BaseRow>(TEAM_TABLE_METADATA)
+        .concat(membersColumn)
+        .concat(actionsColumn),
+    [membersColumn, actionsColumn],
+  );
 
   const isLoading = isLoadingOrgs || (!!activeOrg && isLoadingTeams);
 
@@ -133,26 +158,16 @@ export const OrgTeams = ({
       )}
 
       <BaseTable
-        columns={createTeamColumns({
-          onRename: handleRenameTeam,
-          renderMembersCell: (team: OrgTeam) =>
-            activeOrg ? (
-              <TeamMemberAvatars
-                teamId={team.id}
-                organizationId={activeOrg.id}
-              />
-            ) : null,
-          renderActionsCell: (team: OrgTeam) =>
-            activeOrg ? (
-              <TableActions>
-                <DeleteAction onClick={() => setTeamToRemove(team)} label="Remove team" />
-              </TableActions>
-            ) : null,
-        })}
+        columns={columns}
         data={teams}
         loading={isLoading}
         entityName="teams"
         disableRowClick
+        onCellUpdate={(rowId, columnId, value) => {
+          if (columnId === 'name') {
+            handleRenameTeam(String(rowId), value as string);
+          }
+        }}
         showAddRow
         onAddRow={handleAddTeam}
         showEmptyState={false}
@@ -161,8 +176,8 @@ export const OrgTeams = ({
       <Alert open={!!teamToRemove} onClose={() => setTeamToRemove(null)}>
         <AlertTitle>Remove Team</AlertTitle>
         <AlertDescription>
-          Are you sure you want to remove the team "{teamToRemove?.name}"? This
-          will not remove members from the organization.
+          Are you sure you want to remove the team "{teamToRemove?.name}"? This will not remove
+          members from the organization.
         </AlertDescription>
         <AlertActions>
           <Button plain onClick={() => setTeamToRemove(null)}>
@@ -177,7 +192,6 @@ export const OrgTeams = ({
   );
 };
 
-// Sub-component to fetch and render team member avatars
 const TeamMemberAvatars = ({
   teamId,
   organizationId,

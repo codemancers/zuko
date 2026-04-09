@@ -15,7 +15,7 @@ import {
   TableCell,
 } from '@zuko/ui-kit';
 import { ChevronLeftIcon } from '@heroicons/react/20/solid';
-import { UsersIcon } from '@heroicons/react/24/outline';
+import { UserMinusIcon } from '@heroicons/react/24/outline';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   getOrganizations,
@@ -26,8 +26,13 @@ import {
 import { authClient } from '@/lib/auth-client';
 import { toast } from 'sonner';
 import { useMemo, useRef, useState } from 'react';
-import { BaseTable } from '../Table';
-import { createMemberColumns, type MemberTableRow } from './member-columns';
+import { BaseTable, createColumnsFromMetadata, TableActions, DeleteAction, TableActionButton, type BaseRow } from '../Table';
+import type { ColumnDef } from '@tanstack/react-table';
+import {
+  MEMBER_TABLE_METADATA,
+  AddToTeamDropdown,
+  type MemberTableRow,
+} from './member-columns';
 
 const ROLES = ['owner', 'admin', 'member'] as const;
 
@@ -48,8 +53,7 @@ export const OrgMembers = ({
 
   const [memberToRemove, setMemberToRemove] = useState<MemberTableRow | null>(null);
 
-  const { data: organizations, isLoading: isLoadingOrgs } =
-    useQuery(getOrganizations());
+  const { data: organizations, isLoading: isLoadingOrgs } = useQuery(getOrganizations());
   const activeOrg = organizations?.find((o) => o.slug === slug);
 
   const { data: members = [], isLoading: isLoadingMembers } = useQuery({
@@ -68,10 +72,6 @@ export const OrgMembers = ({
   });
 
   const pendingInvitations = allInvitations.filter((i) => i.status === 'pending');
-
-  // -------------------------------------------------------------------------
-  // Unified rows: active members + pending invitations
-  // -------------------------------------------------------------------------
 
   const rows = useMemo((): MemberTableRow[] => {
     const memberRows: MemberTableRow[] = members.map((m: any) => ({
@@ -100,10 +100,6 @@ export const OrgMembers = ({
     return [...memberRows, ...invitationRows];
   }, [members, pendingInvitations]);
 
-  // -------------------------------------------------------------------------
-  // Handlers
-  // -------------------------------------------------------------------------
-
   const handleRoleChange = async (row: MemberTableRow, role: string) => {
     if (!activeOrg || row.type !== 'member' || !row.memberId) return;
     try {
@@ -112,21 +108,12 @@ export const OrgMembers = ({
         role: role as any,
         organizationId: activeOrg.id,
       });
-      if (error) {
-        toast.error(error.message || 'Failed to update role');
-        return;
-      }
+      if (error) { toast.error(error.message || 'Failed to update role'); return; }
       toast.success('Role updated');
-      queryClient.invalidateQueries({
-        queryKey: ['organization', activeOrg.id, 'members'],
-      });
+      queryClient.invalidateQueries({ queryKey: ['organization', activeOrg.id, 'members'] });
     } catch {
       toast.error('An error occurred');
     }
-  };
-
-  const handleRemove = (row: MemberTableRow) => {
-    setMemberToRemove(row);
   };
 
   const confirmRemove = async () => {
@@ -184,15 +171,45 @@ export const OrgMembers = ({
     setIsAddingRow(false);
   };
 
-  const columns = useMemo(
-    () => createMemberColumns({
-      onRoleChange: handleRoleChange,
-      onRemove: handleRemove,
-      organizationId: activeOrg?.id ?? '',
-      teams,
+  const actionsColumn: ColumnDef<BaseRow> = useMemo(
+    () => ({
+      id: 'actions',
+      header: 'Actions',
+      cell: ({ row }) => {
+        const member = row.original as MemberTableRow;
+        return (
+          <TableActions>
+            {member.type === 'member' && activeOrg && (
+              <AddToTeamDropdown
+                row={member}
+                organizationId={activeOrg.id}
+                teams={teams}
+              />
+            )}
+            {member.type === 'member' ? (
+              <DeleteAction
+                onClick={() => setMemberToRemove(member)}
+                label="Remove member"
+              />
+            ) : (
+              <TableActionButton
+                onClick={() => setMemberToRemove(member)}
+                label="Cancel invitation"
+                variant="danger"
+              >
+                <UserMinusIcon className="h-4 w-4" />
+              </TableActionButton>
+            )}
+          </TableActions>
+        );
+      },
     }),
-    // eslint-disable-next-line
-    [activeOrg?.id, teams],
+    [activeOrg, teams],
+  );
+
+  const columns = useMemo(
+    () => createColumnsFromMetadata<BaseRow>(MEMBER_TABLE_METADATA).concat(actionsColumn),
+    [actionsColumn],
   );
 
   const isLoading = isLoadingOrgs || (!!activeOrg && (isLoadingMembers || isLoadingInvitations));
@@ -220,12 +237,18 @@ export const OrgMembers = ({
         </div>
       )}
 
-      <BaseTable<MemberTableRow>
+      <BaseTable<BaseRow>
         columns={columns}
         data={rows}
         loading={isLoading}
         entityName="members"
         disableRowClick
+        onCellUpdate={(rowId, columnId, value) => {
+          if (columnId === 'role') {
+            const row = rows.find((r) => r.id === rowId);
+            if (row) handleRoleChange(row, value as string);
+          }
+        }}
         showAddRow={!isAddingRow}
         onAddRow={() => {
           setIsAddingRow(true);
@@ -244,11 +267,8 @@ export const OrgMembers = ({
                 }
               }}
             >
-              {/* sno */}
               <TableCell className="w-16 align-middle" />
-              {/* name — empty for invite */}
               <TableCell className="align-middle" />
-              {/* email */}
               <TableCell className="align-middle py-2">
                 <Input
                   ref={emailInputRef}
@@ -263,13 +283,10 @@ export const OrgMembers = ({
                   }}
                 />
               </TableCell>
-              {/* role select */}
               <TableCell className="align-middle py-2">
                 <Select
                   value={newRole}
-                  onChange={(e) =>
-                    setNewRole(e.target.value as 'owner' | 'admin' | 'member')
-                  }
+                  onChange={(e) => setNewRole(e.target.value as 'owner' | 'admin' | 'member')}
                   disabled={isSaving}
                 >
                   {ROLES.map((r) => (
@@ -279,22 +296,17 @@ export const OrgMembers = ({
                   ))}
                 </Select>
               </TableCell>
-              {/* status — empty */}
               <TableCell className="align-middle" />
-              {/* joined at — empty */}
               <TableCell className="align-middle" />
-              {/* actions — empty, Enter to submit / Escape or blur to cancel */}
               <TableCell className="align-middle">
-                {isSaving && (
-                  <span className="text-xs text-zinc-400">Sending...</span>
-                )}
+                {isSaving && <span className="text-xs text-zinc-400">Sending...</span>}
               </TableCell>
             </TableRow>
           ) : null
         }
         showEmptyState
         emptyStateConfig={{
-          icon: UsersIcon,
+          icon: () => null,
           title: 'No members yet',
           description: 'Invite someone to your organization to give them access.',
           action: {
@@ -308,9 +320,9 @@ export const OrgMembers = ({
       />
 
       <p className="mt-3 text-xs text-zinc-500 dark:text-zinc-400">
-        {rows.filter((r) => r.status === 'active').length} active ·{' '}
-        {rows.filter((r) => r.status === 'invited').length} pending invitation
-        {rows.filter((r) => r.status === 'invited').length !== 1 ? 's' : ''}
+        {rows.filter((r) => (r as MemberTableRow).status === 'active').length} active ·{' '}
+        {rows.filter((r) => (r as MemberTableRow).status === 'invited').length} pending invitation
+        {rows.filter((r) => (r as MemberTableRow).status === 'invited').length !== 1 ? 's' : ''}
       </p>
 
       <Alert open={!!memberToRemove} onClose={() => setMemberToRemove(null)}>

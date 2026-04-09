@@ -158,15 +158,59 @@ export function EntityField<T extends BaseRow>({ value, display, metadata, row }
 };
 
 export function DateField({ value, display }: FieldProps<BaseRow>) {
+  let content: ReactNode = '';
+  if (display) {
+    content = display;
+  } else if (value instanceof Date) {
+    content = value.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' });
+  } else if (value !== null && value !== undefined) {
+    content = value as ReactNode;
+  }
   return (
-    <span className="text-sm text-zinc-600 dark:text-zinc-400">
-      {(display ?? (value as ReactNode)) ?? ''}
-    </span>
+    <span className="text-sm text-zinc-600 dark:text-zinc-400">{content}</span>
   );
 };
 
 export function CurrencyField({ value, display }: FieldProps<BaseRow>) {
   return <span className="text-sm text-zinc-600 dark:text-zinc-400">{(display ?? (value as ReactNode)) ?? ''}</span>;
+}
+
+export function SelectField({ value, display, metadata }: FieldProps<BaseRow>) {
+  const content = display ?? (value as ReactNode) ?? '';
+  const renderConfig = metadata.config?.render;
+
+  if (renderConfig === 'badge') {
+    const color = metadata.config?.colorMap?.[String(value)] || 'zinc';
+    return (
+      <Badge color={color as any} className="text-xs">
+        {content}
+      </Badge>
+    );
+  }
+
+  return <span className="text-sm text-zinc-600 dark:text-zinc-400">{content}</span>;
+}
+
+export function MultiSelectField({ value, metadata }: FieldProps<BaseRow>) {
+  const values = Array.isArray(value) ? (value as string[]) : value ? [String(value)] : [];
+  const options = metadata.config?.options ?? [];
+
+  const getLabel = (val: string) => options.find((o) => o.value === val)?.label ?? val;
+  const getColor = (val: string): string => metadata.config?.colorMap?.[val] ?? 'zinc';
+
+  if (values.length === 0) {
+    return <span className="text-sm text-zinc-400">{EMPTY_VALUE}</span>;
+  }
+
+  return (
+    <div className="flex flex-wrap gap-1">
+      {values.map((val) => (
+        <Badge key={val} color={getColor(val) as any} className="text-xs">
+          {getLabel(val)}
+        </Badge>
+      ))}
+    </div>
+  );
 }
 
 // Registry of field components
@@ -175,6 +219,8 @@ export const FieldRegistry: Record<string, (props: FieldProps<BaseRow>) => React
   date: DateField,
   currency: CurrencyField,
   entity: EntityField,
+  select: SelectField,
+  multiselect: MultiSelectField,
 };
 
 export function DataField(props: FieldProps) {

@@ -1,4 +1,5 @@
 import { apiClient } from '../api-client';
+import type { TableViewResponse } from '@/types/table-metadata';
 
 export type TaskStatus = 'TODO' | 'IN_PROGRESS' | 'DONE' | 'CANCELLED';
 
@@ -94,5 +95,12 @@ export const tasksApi = {
 
   async deleteTask(id: number): Promise<void> {
     return apiClient.delete(`/tasks/${id}`);
+  },
+
+  async getTableViewTasks(filters?: { search?: string }): Promise<TableViewResponse<Record<string, unknown> & { id: string | number }>> {
+    const params = new URLSearchParams();
+    if (filters?.search) params.append('search', filters.search);
+    const qs = params.toString();
+    return apiClient.get(`/tables/tasks${qs ? `?${qs}` : ''}`);
   },
 };

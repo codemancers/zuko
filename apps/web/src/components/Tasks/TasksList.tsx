@@ -1,48 +1,42 @@
 'use client';
 
-import { ClipboardDocumentListIcon } from '@heroicons/react/24/outline';
+import { ClipboardDocumentListIcon, CheckCircleIcon } from '@heroicons/react/24/outline';
 import { Divider, Heading, Input } from '@zuko/ui-kit';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { getTasks } from '@/server/query-options';
+import { getTableViewTasks } from '@/server/query-options';
 import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
-import { tasksApi, UpdateTaskDto } from '@/lib/api/tasks';
+import { tasksApi } from '@/lib/api/tasks';
 import { useAddRow } from '@/hooks/use-add-row';
-import { createTaskColumns, FlatTask } from './columns';
-import { BaseTable } from '../Table';
-import ConfirmDialog from '@/components/shared/ConfirmDialog';
+import { useCellUpdate } from '@/hooks/use-cell-update';
+import {
+  BaseTable,
+  createColumnsFromMetadata,
+  type BaseRow,
+  TableActions,
+  DeleteAction,
+  TableActionButton,
+} from '../Table';
+import type { ColumnDef } from '@tanstack/react-table';
+import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { toast } from 'sonner';
+
+type TaskRow = BaseRow & { status?: string };
 
 const TasksList = () => {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const [taskToDelete, setTaskToDelete] = useState<FlatTask | null>(null);
+  const [taskToDelete, setTaskToDelete] = useState<TaskRow | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
 
-  // Fetch all top-level tasks in one go; client-side pagination handles 10-per-page
-  const { data, isLoading } = useQuery(getTasks({ limit: 100, search: searchTerm || undefined }));
-
-  const { mutate: updateTask } = useMutation({
-    mutationFn: ({ id, data }: { id: number; data: UpdateTaskDto }) =>
-      tasksApi.updateTask(id, data),
-    onSuccess: (_, { id, data: updateData }) => {
-      queryClient.invalidateQueries({ queryKey: ['tasks'] });
-      queryClient.invalidateQueries({ queryKey: ['timeline', 'task', id] });
-      if (updateData.status === 'DONE') {
-        toast.success('Task marked as complete');
-      } else {
-        toast.success('Task updated successfully');
-      }
-    },
-    onError: (err: Error) => {
-      toast.error(err.message || 'Failed to update task');
-    },
-  });
+  const { data, isLoading } = useQuery(getTableViewTasks({ search: searchTerm || undefined }));
+  const { addRow: addTask } = useAddRow('tasks');
+  const { updateCell } = useCellUpdate('tasks');
 
   const { mutate: deleteTask, isPending: isDeleting } = useMutation({
     mutationFn: (id: number) => tasksApi.deleteTask(id),
     onSuccess: () => {
-      toast.success('Task deleted successfully');
+      toast.success('Task deleted');
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
       setTaskToDelete(null);
     },
@@ -51,37 +45,54 @@ const TasksList = () => {
     },
   });
 
-  const { addRow: addTask } = useAddRow('tasks');
+  const { mutate: completeTask } = useMutation({
+    mutationFn: (id: number) =>
+      tasksApi.updateTask(id, { status: 'DONE', completedAt: new Date().toISOString() }),
+    onSuccess: () => {
+      toast.success('Task marked as complete');
+      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+    },
+    onError: (err: Error) => {
+      toast.error(err.message || 'Failed to complete task');
+    },
+  });
 
-  const columns = useMemo(
-    () =>
-      createTaskColumns({
-        onUpdate: (id, data) => updateTask({ id, data }),
-        onEdit: (task) => router.push(`/tasks/${task.id}/edit`),
-        onDelete: (task) => setTaskToDelete(task),
-        onComplete: (task) =>
-          updateTask({
-            id: task.id,
-            data: {
-              status: 'DONE',
-              completedAt: new Date().toISOString(),
-            },
-          }),
-      }),
-    [updateTask, router],
+  const metadata = data?.metadata || [];
+  const tasks = data?.data || [];
+
+  const actionsColumn: ColumnDef<BaseRow> = useMemo(
+    () => ({
+      id: 'actions',
+      header: 'Actions',
+      cell: ({ row }) => {
+        const task = row.original as TaskRow;
+        const isComplete = task.status === 'DONE';
+        return (
+          <TableActions>
+            {!isComplete && (
+              <TableActionButton
+                onClick={() => completeTask(Number(task.id))}
+                label="Mark complete"
+                variant="success"
+              >
+                <CheckCircleIcon className="h-4 w-4 text-zinc-400 group-data-[hover]:text-green-500 dark:group-data-[hover]:text-green-400" />
+              </TableActionButton>
+            )}
+            <DeleteAction
+              onClick={() => setTaskToDelete(task)}
+              label="Delete task"
+            />
+          </TableActions>
+        );
+      },
+    }),
+    [completeTask],
   );
 
-  // Flatten: parent task followed immediately by its subtasks
-  const flatTasks = useMemo<FlatTask[]>(() => {
-    const rows: FlatTask[] = [];
-    for (const task of data?.tasks ?? []) {
-      rows.push(task);
-      for (const sub of task.subtasks) {
-        rows.push({ ...sub, parentTitle: task.title });
-      }
-    }
-    return rows;
-  }, [data?.tasks]);
+  const columns = useMemo(
+    () => createColumnsFromMetadata<BaseRow>(metadata).concat(actionsColumn),
+    [metadata, actionsColumn],
+  );
 
   return (
     <>
@@ -97,7 +108,7 @@ const TasksList = () => {
       <div className="mt-6">
         <Input
           type="search"
-          placeholder="Search tasks by title, description, or assignee..."
+          placeholder="Search tasks..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className="max-w-md"
@@ -106,11 +117,12 @@ const TasksList = () => {
 
       <BaseTable
         columns={columns}
-        data={flatTasks}
+        data={tasks}
         loading={isLoading}
         onRowClick={(task) => router.push(`/tasks/${task.id}`)}
-        totalCount={flatTasks.length}
+        totalCount={tasks.length}
         entityName="tasks"
+        onCellUpdate={(rowId, columnId, value) => updateCell({ rowId, columnId, value })}
         emptyStateConfig={{
           icon: ClipboardDocumentListIcon,
           title: 'No Tasks',
@@ -127,11 +139,11 @@ const TasksList = () => {
       <ConfirmDialog
         open={!!taskToDelete}
         onClose={() => setTaskToDelete(null)}
-        onConfirm={() => taskToDelete && deleteTask(taskToDelete.id)}
+        onConfirm={() => taskToDelete && deleteTask(Number(taskToDelete.id))}
         title="Delete Task"
         description={
           taskToDelete
-            ? `Are you sure you want to delete "${taskToDelete.title}"? This action cannot be undone.`
+            ? `Are you sure you want to delete this task? This action cannot be undone.`
             : ''
         }
         confirmText="Delete"
