@@ -299,8 +299,9 @@ test.describe("Contact Association Constraints", () => {
 });
 
 test.describe.serial("Column Creation Flow", () => {
-  const columnName = "Source";
-  const columnKey = `source`;
+  const identifier = Date.now();
+  const columnName = `Source ${identifier}`;
+  const columnKey = `source_${identifier}`;
 
   test("Creates new column from column creation dialog", async ({
     companiesPage,
