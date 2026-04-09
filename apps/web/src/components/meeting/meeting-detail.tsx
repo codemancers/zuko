@@ -17,10 +17,19 @@ import {
   CheckCircle,
   Copy,
 } from 'lucide-react';
-import { Badge, Button, Divider, Heading, Input, Text, Textarea } from '@zuko/ui-kit';
+import {
+  Badge,
+  Button,
+  Divider,
+  Heading,
+  Input,
+  Text,
+  Textarea,
+} from '@zuko/ui-kit';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getMeeting } from '@/server/query-options';
 import { meetingsApi } from '@/lib/api/meetings';
+import { LoadingState } from '@/components/shared';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -373,7 +382,7 @@ const MeetingDetail = ({ meetingId, meetingOverride }: MeetingDetailProps) => {
           const summary: MeetingSummary | null | undefined =
             meetingOverride && 'summary' in meetingOverride
               ? meetingOverride.summary
-              : meeting.summaries?.[0] ?? null;
+              : (meeting.summaries?.[0] ?? null);
           if (!summary || !summary.content) {
             return (
               <div className="flex h-40 items-center justify-center rounded-lg border border-zinc-200 dark:border-zinc-800">
@@ -485,9 +494,7 @@ const MeetingDetail = ({ meetingId, meetingOverride }: MeetingDetailProps) => {
                     >
                       Cancel
                     </Button>
-                    <Button type="submit">
-                      Save Task
-                    </Button>
+                    <Button type="submit">Save Task</Button>
                   </div>
                 </form>
               )}
@@ -512,8 +519,8 @@ const MeetingDetail = ({ meetingId, meetingOverride }: MeetingDetailProps) => {
                           isCompleted
                             ? 'border-zinc-100 bg-zinc-50/30 opacity-60 dark:border-zinc-800/50 dark:bg-zinc-900/10'
                             : hasTask
-                            ? 'border-zinc-200/50 bg-zinc-50/50 dark:border-zinc-800/50 dark:bg-zinc-900/50'
-                            : 'border-zinc-200 bg-white hover:shadow-sm dark:border-zinc-800 dark:bg-zinc-900',
+                              ? 'border-zinc-200/50 bg-zinc-50/50 dark:border-zinc-800/50 dark:bg-zinc-900/50'
+                              : 'border-zinc-200 bg-white hover:shadow-sm dark:border-zinc-800 dark:bg-zinc-900',
                         ].join(' ')}
                       >
                         <div className="flex flex-col gap-3">
@@ -528,7 +535,12 @@ const MeetingDetail = ({ meetingId, meetingOverride }: MeetingDetailProps) => {
                               ].join(' ')}
                             >
                               {isCompleted && (
-                                <Image src="/icons/checkmark.svg" alt="" width={14} height={14} />
+                                <Image
+                                  src="/icons/checkmark.svg"
+                                  alt=""
+                                  width={14}
+                                  height={14}
+                                />
                               )}
                             </button>
                             <div className="min-w-0 flex-1">
@@ -538,8 +550,8 @@ const MeetingDetail = ({ meetingId, meetingOverride }: MeetingDetailProps) => {
                                   isCompleted
                                     ? 'text-zinc-400 dark:text-zinc-600 line-through'
                                     : hasTask
-                                    ? 'text-zinc-600 dark:text-zinc-400'
-                                    : 'text-zinc-950 dark:text-zinc-50',
+                                      ? 'text-zinc-600 dark:text-zinc-400'
+                                      : 'text-zinc-950 dark:text-zinc-50',
                                 ].join(' ')}
                               >
                                 {it.title}
@@ -552,8 +564,8 @@ const MeetingDetail = ({ meetingId, meetingOverride }: MeetingDetailProps) => {
                                     isCompleted
                                       ? 'text-zinc-400 dark:text-zinc-600'
                                       : hasTask
-                                      ? 'text-zinc-500 dark:text-zinc-500'
-                                      : 'text-zinc-700 dark:text-zinc-300',
+                                        ? 'text-zinc-500 dark:text-zinc-500'
+                                        : 'text-zinc-700 dark:text-zinc-300',
                                   ].join(' ')}
                                 >
                                   {it.description}
@@ -594,22 +606,17 @@ const MeetingDetail = ({ meetingId, meetingOverride }: MeetingDetailProps) => {
 
   return (
     <>
-      <Link href="/meetings" className="inline-flex items-center gap-2 text-sm/6 text-zinc-500 dark:text-zinc-400">
+      <Link
+        href="/meetings"
+        className="inline-flex items-center gap-2 text-sm/6 text-zinc-500 dark:text-zinc-400"
+      >
         <ChevronLeftIcon className="size-4" />
         Meetings
       </Link>
 
-      {isLoading && (
-        <div className="mt-4 flex h-40 items-center justify-center rounded-lg border border-zinc-200 dark:border-zinc-800">
-          <Text>Loading meeting...</Text>
-        </div>
-      )}
+      {isLoading && <LoadingState message="Loading meeting..." />}
 
-      {!isLoading && !meeting && (
-        <div className="mt-4 flex h-40 items-center justify-center rounded-lg border border-zinc-200 dark:border-zinc-800">
-          <Text>Meeting not found</Text>
-        </div>
-      )}
+      {!isLoading && !meeting && <LoadingState message="Meeting not found" />}
 
       {meeting && (
         <>
@@ -688,13 +695,19 @@ const MeetingDetail = ({ meetingId, meetingOverride }: MeetingDetailProps) => {
 
           <div className="mt-8 border-b border-zinc-200 dark:border-zinc-800">
             <nav className="-mb-px flex gap-1">
-              {([
-                { id: 'recording', label: 'Recording', icon: PlayCircle },
-                { id: 'transcript', label: 'Transcript', icon: FileText },
-                { id: 'chat', label: 'Chat', icon: Lightbulb },
-                { id: 'summary', label: 'Summary', icon: ScrollText },
-                { id: 'actionItems', label: 'Action Items', icon: CheckCircle },
-              ] as { id: Tab; label: string; icon: React.ElementType }[]).map(({ id, label, icon: Icon }) => (
+              {(
+                [
+                  { id: 'recording', label: 'Recording', icon: PlayCircle },
+                  { id: 'transcript', label: 'Transcript', icon: FileText },
+                  { id: 'chat', label: 'Chat', icon: Lightbulb },
+                  { id: 'summary', label: 'Summary', icon: ScrollText },
+                  {
+                    id: 'actionItems',
+                    label: 'Action Items',
+                    icon: CheckCircle,
+                  },
+                ] as { id: Tab; label: string; icon: React.ElementType }[]
+              ).map(({ id, label, icon: Icon }) => (
                 <button
                   key={id}
                   onClick={() => handleTabChange(id)}
@@ -712,7 +725,9 @@ const MeetingDetail = ({ meetingId, meetingOverride }: MeetingDetailProps) => {
           </div>
 
           <div className="mt-6">
-            {activeTab === 'recording' ? renderRecordingPanel() : renderTabContent()}
+            {activeTab === 'recording'
+              ? renderRecordingPanel()
+              : renderTabContent()}
           </div>
         </>
       )}

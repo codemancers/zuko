@@ -6,11 +6,16 @@ import { tasksApi } from '@/lib/api/tasks';
 import { useRouter } from 'next/navigation';
 import { Badge, Button, Divider, Heading, Subheading } from '@zuko/ui-kit';
 import dayjs from 'dayjs';
-import { ChevronLeftIcon, PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
+import {
+  ChevronLeftIcon,
+  PencilIcon,
+  TrashIcon,
+} from '@heroicons/react/24/outline';
 import Link from 'next/link';
 import type { TaskStatus } from '@/lib/api/tasks';
 import { useState } from 'react';
 import ConfirmDialog from '@/components/shared/ConfirmDialog';
+import { LoadingState } from '@/components/shared';
 import ActivityTimeline from '@/components/Activity/ActivityTimeline';
 import { toast } from 'sonner';
 
@@ -48,17 +53,11 @@ const TaskDetail = ({ taskId, currentUserId }: TaskDetailProps) => {
   });
 
   if (isLoading) {
-    return (
-      <div className="py-12 text-center text-sm text-zinc-500">Loading...</div>
-    );
+    return <LoadingState message="Loading..." />;
   }
 
   if (!task) {
-    return (
-      <div className="py-12 text-center text-sm text-zinc-500">
-        Task not found.
-      </div>
-    );
+    return <LoadingState message="Task not found." />;
   }
 
   const statusCfg = statusConfig[task.status] ?? {
@@ -73,7 +72,10 @@ const TaskDetail = ({ taskId, currentUserId }: TaskDetailProps) => {
 
   return (
     <>
-      <Link href="/tasks" className="inline-flex items-center gap-2 text-sm/6 text-zinc-500 dark:text-zinc-400">
+      <Link
+        href="/tasks"
+        className="inline-flex items-center gap-2 text-sm/6 text-zinc-500 dark:text-zinc-400"
+      >
         <ChevronLeftIcon className="size-4" />
         Tasks
       </Link>
@@ -130,9 +132,11 @@ const TaskDetail = ({ taskId, currentUserId }: TaskDetailProps) => {
           },
           {
             label: 'Completed',
-            value: task.completedAt
-              ? dayjs(task.completedAt).format('MMM D, YYYY')
-              : <span className="text-zinc-400">—</span>,
+            value: task.completedAt ? (
+              dayjs(task.completedAt).format('MMM D, YYYY')
+            ) : (
+              <span className="text-zinc-400">—</span>
+            ),
           },
           {
             label: 'Created',
@@ -184,9 +188,7 @@ const TaskDetail = ({ taskId, currentUserId }: TaskDetailProps) => {
             <div className="mt-4">
               <Button
                 outline
-                onClick={() =>
-                  router.push(`/tasks/new?parentId=${task.id}`)
-                }
+                onClick={() => router.push(`/tasks/new?parentId=${task.id}`)}
               >
                 Add subtask
               </Button>
@@ -208,9 +210,7 @@ const TaskDetail = ({ taskId, currentUserId }: TaskDetailProps) => {
 
       {/* Activity Timeline */}
       <div className="mt-8">
-        <Subheading>
-          Activity
-        </Subheading>
+        <Subheading>Activity</Subheading>
         <div className="mt-4">
           <ActivityTimeline
             entityType="task"

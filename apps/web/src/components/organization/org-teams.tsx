@@ -2,21 +2,21 @@
 
 import {
   Heading,
-  Button,
   Avatar,
   Link,
   Text,
-  Alert,
-  AlertActions,
-  AlertDescription,
-  AlertTitle,
   Tooltip,
   TooltipTrigger,
   TooltipContent,
   TooltipProvider,
 } from '@zuko/ui-kit';
 import { ChevronLeftIcon } from '@heroicons/react/20/solid';
-import { TableActions, DeleteAction, createColumnsFromMetadata, type BaseRow } from '../Table';
+import {
+  TableActions,
+  DeleteAction,
+  createColumnsFromMetadata,
+  type BaseRow,
+} from '../Table';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   getOrganizations,
@@ -30,6 +30,7 @@ import { toast } from 'sonner';
 import { BaseTable } from '../Table';
 import type { ColumnDef } from '@tanstack/react-table';
 import { TEAM_TABLE_METADATA, type OrgTeam } from './team-columns';
+import { ConfirmDialog } from '@/components/shared';
 
 export const OrgTeams = ({
   slug,
@@ -41,7 +42,8 @@ export const OrgTeams = ({
   const queryClient = useQueryClient();
   const [teamToRemove, setTeamToRemove] = useState<OrgTeam | null>(null);
 
-  const { data: organizations, isLoading: isLoadingOrgs } = useQuery(getOrganizations());
+  const { data: organizations, isLoading: isLoadingOrgs } =
+    useQuery(getOrganizations());
   const activeOrg = organizations?.find((o) => o.slug === slug);
 
   const { data: teams = [], isLoading: isLoadingTeams } = useQuery({
@@ -56,9 +58,14 @@ export const OrgTeams = ({
         teamId: teamToRemove.id,
         organizationId: activeOrg.id,
       });
-      if (error) { toast.error(error.message || 'Failed to remove team'); return; }
+      if (error) {
+        toast.error(error.message || 'Failed to remove team');
+        return;
+      }
       toast.success(`Team "${teamToRemove.name}" removed`);
-      queryClient.invalidateQueries({ queryKey: ['organization', activeOrg.id, 'teams'] });
+      queryClient.invalidateQueries({
+        queryKey: ['organization', activeOrg.id, 'teams'],
+      });
     } catch {
       toast.error('An error occurred');
     } finally {
@@ -73,9 +80,14 @@ export const OrgTeams = ({
         name: 'New Team',
         organizationId: activeOrg.id,
       });
-      if (error) { toast.error(error.message || 'Failed to create team'); return; }
+      if (error) {
+        toast.error(error.message || 'Failed to create team');
+        return;
+      }
       toast.success('Team created');
-      queryClient.invalidateQueries({ queryKey: ['organization', activeOrg.id, 'teams'] });
+      queryClient.invalidateQueries({
+        queryKey: ['organization', activeOrg.id, 'teams'],
+      });
     } catch {
       toast.error('An error occurred');
     }
@@ -88,9 +100,14 @@ export const OrgTeams = ({
         teamId,
         data: { name: newName },
       });
-      if (error) { toast.error(error.message || 'Failed to rename team'); return; }
+      if (error) {
+        toast.error(error.message || 'Failed to rename team');
+        return;
+      }
       toast.success(`Team renamed to "${newName}"`);
-      queryClient.invalidateQueries({ queryKey: ['organization', activeOrg.id, 'teams'] });
+      queryClient.invalidateQueries({
+        queryKey: ['organization', activeOrg.id, 'teams'],
+      });
     } catch {
       toast.error('An error occurred');
     }
@@ -102,7 +119,10 @@ export const OrgTeams = ({
       header: 'Members',
       cell: ({ row }) =>
         activeOrg ? (
-          <TeamMemberAvatars teamId={String(row.original.id)} organizationId={activeOrg.id} />
+          <TeamMemberAvatars
+            teamId={String(row.original.id)}
+            organizationId={activeOrg.id}
+          />
         ) : null,
     }),
     [activeOrg],
@@ -173,21 +193,15 @@ export const OrgTeams = ({
         showEmptyState={false}
       />
 
-      <Alert open={!!teamToRemove} onClose={() => setTeamToRemove(null)}>
-        <AlertTitle>Remove Team</AlertTitle>
-        <AlertDescription>
-          Are you sure you want to remove the team "{teamToRemove?.name}"? This will not remove
-          members from the organization.
-        </AlertDescription>
-        <AlertActions>
-          <Button plain onClick={() => setTeamToRemove(null)}>
-            Cancel
-          </Button>
-          <Button color="red" onClick={handleRemoveTeam}>
-            Remove
-          </Button>
-        </AlertActions>
-      </Alert>
+      <ConfirmDialog
+        open={!!teamToRemove}
+        onClose={() => setTeamToRemove(null)}
+        onConfirm={handleRemoveTeam}
+        title="Remove Team"
+        description={`Are you sure you want to remove the team "${teamToRemove?.name}"? This will not remove members from the organization.`}
+        confirmText="Remove"
+        confirmColor="red"
+      />
     </div>
   );
 };

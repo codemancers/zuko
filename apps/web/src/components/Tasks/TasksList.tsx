@@ -1,7 +1,10 @@
 'use client';
 
-import { ClipboardDocumentListIcon, CheckCircleIcon } from '@heroicons/react/24/outline';
-import { Divider, Heading, Input } from '@zuko/ui-kit';
+import {
+  ClipboardDocumentListIcon,
+  CheckCircleIcon,
+} from '@heroicons/react/24/outline';
+import { PageHeader, SearchBar } from '@/components/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { getTableViewTasks } from '@/server/query-options';
 import { useRouter } from 'next/navigation';
@@ -29,7 +32,9 @@ const TasksList = () => {
   const [taskToDelete, setTaskToDelete] = useState<TaskRow | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
 
-  const { data, isLoading } = useQuery(getTableViewTasks({ search: searchTerm || undefined }));
+  const { data, isLoading } = useQuery(
+    getTableViewTasks({ search: searchTerm || undefined }),
+  );
   const { addRow: addTask } = useAddRow('tasks');
   const { updateCell } = useCellUpdate('tasks');
 
@@ -47,7 +52,10 @@ const TasksList = () => {
 
   const { mutate: completeTask } = useMutation({
     mutationFn: (id: number) =>
-      tasksApi.updateTask(id, { status: 'DONE', completedAt: new Date().toISOString() }),
+      tasksApi.updateTask(id, {
+        status: 'DONE',
+        completedAt: new Date().toISOString(),
+      }),
     onSuccess: () => {
       toast.success('Task marked as complete');
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
@@ -96,24 +104,16 @@ const TasksList = () => {
 
   return (
     <>
-      <div className="flex flex-col">
-        <Heading>Tasks</Heading>
-        <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
-          Manage and track your team's work
-        </p>
-      </div>
+      <PageHeader
+        title="Tasks"
+        description="Manage and track your team's work"
+      />
 
-      <Divider className="mt-6" />
-
-      <div className="mt-6">
-        <Input
-          type="search"
-          placeholder="Search tasks..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="max-w-md"
-        />
-      </div>
+      <SearchBar
+        value={searchTerm}
+        onChange={setSearchTerm}
+        placeholder="Search tasks..."
+      />
 
       <BaseTable
         columns={columns}
@@ -122,7 +122,9 @@ const TasksList = () => {
         onRowClick={(task) => router.push(`/tasks/${task.id}`)}
         totalCount={tasks.length}
         entityName="tasks"
-        onCellUpdate={(rowId, columnId, value) => updateCell({ rowId, columnId, value })}
+        onCellUpdate={(rowId, columnId, value) =>
+          updateCell({ rowId, columnId, value })
+        }
         emptyStateConfig={{
           icon: ClipboardDocumentListIcon,
           title: 'No Tasks',

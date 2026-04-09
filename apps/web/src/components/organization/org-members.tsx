@@ -2,15 +2,10 @@
 
 import {
   Heading,
-  Button,
   Link,
   Text,
   Input,
   Select,
-  Alert,
-  AlertActions,
-  AlertDescription,
-  AlertTitle,
   TableRow,
   TableCell,
 } from '@zuko/ui-kit';
@@ -26,13 +21,21 @@ import {
 import { authClient } from '@/lib/auth-client';
 import { toast } from 'sonner';
 import { useMemo, useRef, useState } from 'react';
-import { BaseTable, createColumnsFromMetadata, TableActions, DeleteAction, TableActionButton, type BaseRow } from '../Table';
+import {
+  BaseTable,
+  createColumnsFromMetadata,
+  TableActions,
+  DeleteAction,
+  TableActionButton,
+  type BaseRow,
+} from '../Table';
 import type { ColumnDef } from '@tanstack/react-table';
 import {
   MEMBER_TABLE_METADATA,
   AddToTeamDropdown,
   type MemberTableRow,
 } from './member-columns';
+import { ConfirmDialog } from '@/components/shared';
 
 const ROLES = ['owner', 'admin', 'member'] as const;
 
@@ -47,13 +50,18 @@ export const OrgMembers = ({
 
   const [isAddingRow, setIsAddingRow] = useState(false);
   const [newEmail, setNewEmail] = useState('');
-  const [newRole, setNewRole] = useState<'owner' | 'admin' | 'member'>('member');
+  const [newRole, setNewRole] = useState<'owner' | 'admin' | 'member'>(
+    'member',
+  );
   const [isSaving, setIsSaving] = useState(false);
   const emailInputRef = useRef<HTMLInputElement>(null);
 
-  const [memberToRemove, setMemberToRemove] = useState<MemberTableRow | null>(null);
+  const [memberToRemove, setMemberToRemove] = useState<MemberTableRow | null>(
+    null,
+  );
 
-  const { data: organizations, isLoading: isLoadingOrgs } = useQuery(getOrganizations());
+  const { data: organizations, isLoading: isLoadingOrgs } =
+    useQuery(getOrganizations());
   const activeOrg = organizations?.find((o) => o.slug === slug);
 
   const { data: members = [], isLoading: isLoadingMembers } = useQuery({
@@ -61,17 +69,20 @@ export const OrgMembers = ({
     enabled: !!activeOrg?.id,
   });
 
-  const { data: allInvitations = [], isLoading: isLoadingInvitations } = useQuery({
-    ...getInvitations(activeOrg?.id || ''),
-    enabled: !!activeOrg?.id,
-  });
+  const { data: allInvitations = [], isLoading: isLoadingInvitations } =
+    useQuery({
+      ...getInvitations(activeOrg?.id || ''),
+      enabled: !!activeOrg?.id,
+    });
 
   const { data: teams = [] } = useQuery({
     ...getTeams(activeOrg?.id || ''),
     enabled: !!activeOrg?.id,
   });
 
-  const pendingInvitations = allInvitations.filter((i) => i.status === 'pending');
+  const pendingInvitations = allInvitations.filter(
+    (i) => i.status === 'pending',
+  );
 
   const rows = useMemo((): MemberTableRow[] => {
     const memberRows: MemberTableRow[] = members.map((m: any) => ({
@@ -86,16 +97,18 @@ export const OrgMembers = ({
       userId: m.userId,
     }));
 
-    const invitationRows: MemberTableRow[] = pendingInvitations.map((inv: any) => ({
-      id: `inv-${inv.id}`,
-      type: 'invitation' as const,
-      name: inv.email,
-      email: inv.email,
-      role: inv.role,
-      status: 'invited' as const,
-      joinedAt: undefined,
-      invitationId: inv.id,
-    }));
+    const invitationRows: MemberTableRow[] = pendingInvitations.map(
+      (inv: any) => ({
+        id: `inv-${inv.id}`,
+        type: 'invitation' as const,
+        name: inv.email,
+        email: inv.email,
+        role: inv.role,
+        status: 'invited' as const,
+        joinedAt: undefined,
+        invitationId: inv.id,
+      }),
+    );
 
     return [...memberRows, ...invitationRows];
   }, [members, pendingInvitations]);
@@ -108,9 +121,14 @@ export const OrgMembers = ({
         role: role as any,
         organizationId: activeOrg.id,
       });
-      if (error) { toast.error(error.message || 'Failed to update role'); return; }
+      if (error) {
+        toast.error(error.message || 'Failed to update role');
+        return;
+      }
       toast.success('Role updated');
-      queryClient.invalidateQueries({ queryKey: ['organization', activeOrg.id, 'members'] });
+      queryClient.invalidateQueries({
+        queryKey: ['organization', activeOrg.id, 'members'],
+      });
     } catch {
       toast.error('An error occurred');
     }
@@ -124,18 +142,33 @@ export const OrgMembers = ({
           memberIdOrEmail: memberToRemove.memberId,
           organizationId: activeOrg.id,
         });
-        if (error) { toast.error(error.message || 'Failed to remove member'); setMemberToRemove(null); return; }
+        if (error) {
+          toast.error(error.message || 'Failed to remove member');
+          setMemberToRemove(null);
+          return;
+        }
         setMemberToRemove(null);
         toast.success('Member removed');
-        queryClient.invalidateQueries({ queryKey: ['organization', activeOrg.id, 'members'] });
-      } else if (memberToRemove.type === 'invitation' && memberToRemove.invitationId) {
+        queryClient.invalidateQueries({
+          queryKey: ['organization', activeOrg.id, 'members'],
+        });
+      } else if (
+        memberToRemove.type === 'invitation' &&
+        memberToRemove.invitationId
+      ) {
         const { error } = await authClient.organization.cancelInvitation({
           invitationId: memberToRemove.invitationId,
         });
-        if (error) { toast.error(error.message || 'Failed to cancel invitation'); setMemberToRemove(null); return; }
+        if (error) {
+          toast.error(error.message || 'Failed to cancel invitation');
+          setMemberToRemove(null);
+          return;
+        }
         setMemberToRemove(null);
         toast.success('Invitation cancelled');
-        queryClient.invalidateQueries({ queryKey: ['organization', activeOrg.id, 'invitations'] });
+        queryClient.invalidateQueries({
+          queryKey: ['organization', activeOrg.id, 'invitations'],
+        });
       }
     } catch {
       toast.error('An error occurred');
@@ -152,9 +185,14 @@ export const OrgMembers = ({
         role: newRole,
         organizationId: activeOrg.id,
       });
-      if (error) { toast.error(error.message || 'Failed to send invitation'); return; }
+      if (error) {
+        toast.error(error.message || 'Failed to send invitation');
+        return;
+      }
       toast.success('Invitation sent');
-      queryClient.invalidateQueries({ queryKey: ['organization', activeOrg.id, 'invitations'] });
+      queryClient.invalidateQueries({
+        queryKey: ['organization', activeOrg.id, 'invitations'],
+      });
       setNewEmail('');
       setNewRole('member');
       setIsAddingRow(false);
@@ -208,11 +246,16 @@ export const OrgMembers = ({
   );
 
   const columns = useMemo(
-    () => createColumnsFromMetadata<BaseRow>(MEMBER_TABLE_METADATA).concat(actionsColumn),
+    () =>
+      createColumnsFromMetadata<BaseRow>(MEMBER_TABLE_METADATA).concat(
+        actionsColumn,
+      ),
     [actionsColumn],
   );
 
-  const isLoading = isLoadingOrgs || (!!activeOrg && (isLoadingMembers || isLoadingInvitations));
+  const isLoading =
+    isLoadingOrgs ||
+    (!!activeOrg && (isLoadingMembers || isLoadingInvitations));
 
   return (
     <div>
@@ -232,7 +275,9 @@ export const OrgMembers = ({
         <div className="flex items-center justify-between mb-8">
           <div>
             <Heading>Members</Heading>
-            <Text className="mt-1">Manage who has access to {activeOrg?.name}.</Text>
+            <Text className="mt-1">
+              Manage who has access to {activeOrg?.name}.
+            </Text>
           </div>
         </div>
       )}
@@ -286,7 +331,9 @@ export const OrgMembers = ({
               <TableCell className="align-middle py-2">
                 <Select
                   value={newRole}
-                  onChange={(e) => setNewRole(e.target.value as 'owner' | 'admin' | 'member')}
+                  onChange={(e) =>
+                    setNewRole(e.target.value as 'owner' | 'admin' | 'member')
+                  }
                   disabled={isSaving}
                 >
                   {ROLES.map((r) => (
@@ -299,7 +346,9 @@ export const OrgMembers = ({
               <TableCell className="align-middle" />
               <TableCell className="align-middle" />
               <TableCell className="align-middle">
-                {isSaving && <span className="text-xs text-zinc-400">Sending...</span>}
+                {isSaving && (
+                  <span className="text-xs text-zinc-400">Sending...</span>
+                )}
               </TableCell>
             </TableRow>
           ) : null
@@ -308,7 +357,8 @@ export const OrgMembers = ({
         emptyStateConfig={{
           icon: () => null,
           title: 'No members yet',
-          description: 'Invite someone to your organization to give them access.',
+          description:
+            'Invite someone to your organization to give them access.',
           action: {
             label: 'Invite Member',
             onClick: () => {
@@ -320,29 +370,35 @@ export const OrgMembers = ({
       />
 
       <p className="mt-3 text-xs text-zinc-500 dark:text-zinc-400">
-        {rows.filter((r) => (r as MemberTableRow).status === 'active').length} active ·{' '}
-        {rows.filter((r) => (r as MemberTableRow).status === 'invited').length} pending invitation
-        {rows.filter((r) => (r as MemberTableRow).status === 'invited').length !== 1 ? 's' : ''}
+        {rows.filter((r) => (r as MemberTableRow).status === 'active').length}{' '}
+        active ·{' '}
+        {rows.filter((r) => (r as MemberTableRow).status === 'invited').length}{' '}
+        pending invitation
+        {rows.filter((r) => (r as MemberTableRow).status === 'invited')
+          .length !== 1
+          ? 's'
+          : ''}
       </p>
 
-      <Alert open={!!memberToRemove} onClose={() => setMemberToRemove(null)}>
-        <AlertTitle>
-          {memberToRemove?.type === 'member' ? 'Remove Member' : 'Cancel Invitation'}
-        </AlertTitle>
-        <AlertDescription>
-          {memberToRemove?.type === 'member'
+      <ConfirmDialog
+        open={!!memberToRemove}
+        onClose={() => setMemberToRemove(null)}
+        onConfirm={confirmRemove}
+        title={
+          memberToRemove?.type === 'member'
+            ? 'Remove Member'
+            : 'Cancel Invitation'
+        }
+        description={
+          memberToRemove?.type === 'member'
             ? `Are you sure you want to remove ${memberToRemove?.name} from the organization? They will lose all access.`
-            : `Cancel the invitation sent to ${memberToRemove?.email}?`}
-        </AlertDescription>
-        <AlertActions>
-          <Button plain onClick={() => setMemberToRemove(null)}>
-            Cancel
-          </Button>
-          <Button color="red" onClick={confirmRemove}>
-            {memberToRemove?.type === 'member' ? 'Remove' : 'Cancel Invitation'}
-          </Button>
-        </AlertActions>
-      </Alert>
+            : `Cancel the invitation sent to ${memberToRemove?.email}?`
+        }
+        confirmText={
+          memberToRemove?.type === 'member' ? 'Remove' : 'Cancel Invitation'
+        }
+        confirmColor="red"
+      />
     </div>
   );
 };

@@ -2,18 +2,20 @@
 import React, { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { VideoCameraSlashIcon } from '@heroicons/react/24/outline';
-import {
-  Divider,
-  Heading,
-  Input,
-} from '@zuko/ui-kit';
+import { PageHeader, SearchBar } from '@/components/shared';
 import type { ColumnDef } from '@tanstack/react-table';
 import { toast } from 'sonner';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getTableViewMeetings } from '@/server/query-options';
 import { meetingsApi } from '@/lib/api/meetings';
-import { BaseTable, createColumnsFromMetadata, type BaseRow, TableActions, DeleteAction } from '@/components/Table';
+import {
+  BaseTable,
+  createColumnsFromMetadata,
+  type BaseRow,
+  TableActions,
+  DeleteAction,
+} from '@/components/Table';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 
 export const MeetingList = () => {
@@ -60,24 +62,16 @@ export const MeetingList = () => {
 
   return (
     <>
-      <div className="flex flex-col">
-        <Heading>Meetings</Heading>
-        <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
-          Manage your meeting recordings and transcripts
-        </p>
-      </div>
+      <PageHeader
+        title="Meetings"
+        description="Manage your meeting recordings and transcripts"
+      />
 
-      <Divider className="mt-6" />
-
-      <div className="mt-6">
-        <Input
-          type="search"
-          placeholder="Search meetings..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="max-w-md"
-        />
-      </div>
+      <SearchBar
+        value={searchTerm}
+        onChange={setSearchTerm}
+        placeholder="Search meetings..."
+      />
 
       <BaseTable<BaseRow>
         columns={columns}

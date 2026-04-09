@@ -7,7 +7,14 @@ import {
   EyeSlashIcon,
   ChevronLeftIcon,
 } from '@heroicons/react/24/outline';
-import { Badge, Divider, Heading, Button, Input, Subheading } from '@zuko/ui-kit';
+import {
+  Badge,
+  Divider,
+  Heading,
+  Button,
+  Input,
+  Subheading,
+} from '@zuko/ui-kit';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getDeal } from '@/server/query-options';
 import { dealsApi } from '@/lib/api/deals';
@@ -17,9 +24,14 @@ import Link from 'next/link';
 import ActivityTimeline from '@/components/Activity/ActivityTimeline';
 import AddCompanyToDealDialog from './AddCompanyToDealDialog';
 import AddContactToDealDialog from './AddContactToDealDialog';
-import { EMPTY_VALUE } from '@/components/Table';
+
 import ConfirmDialog from '@/components/shared/ConfirmDialog';
-import { InlineSaveCancel, InlineEditRemove } from '@/components/shared/InlineEditActions';
+import {
+  InlineSaveCancel,
+  InlineEditRemove,
+} from '@/components/shared/InlineEditActions';
+import { LoadingState } from '@/components/shared';
+import { formatCurrency, getStageColor, formatStage } from '@/lib/format-utils';
 
 interface DealDetailProps {
   dealId: number;
@@ -42,8 +54,14 @@ export default function DealDetail({ dealId, currentUserId }: DealDetailProps) {
 
   // Confirm dialog state
   const [showHideDialog, setShowHideDialog] = useState(false);
-  const [companyToRemove, setCompanyToRemove] = useState<{ id: number; name: string } | null>(null);
-  const [contactToRemove, setContactToRemove] = useState<{ id: number; name: string } | null>(null);
+  const [companyToRemove, setCompanyToRemove] = useState<{
+    id: number;
+    name: string;
+  } | null>(null);
+  const [contactToRemove, setContactToRemove] = useState<{
+    id: number;
+    name: string;
+  } | null>(null);
 
   const hideMutation = useMutation({
     mutationFn: () => dealsApi.hideDeal(dealId),
@@ -59,7 +77,9 @@ export default function DealDetail({ dealId, currentUserId }: DealDetailProps) {
     onSuccess: async () => {
       await queryClient.refetchQueries({ queryKey: ['deal', dealId] });
       await queryClient.invalidateQueries({ queryKey: ['deals'] });
-      await queryClient.invalidateQueries({ queryKey: ['timeline', 'deal', dealId] });
+      await queryClient.invalidateQueries({
+        queryKey: ['timeline', 'deal', dealId],
+      });
     },
   });
 
@@ -84,7 +104,9 @@ export default function DealDetail({ dealId, currentUserId }: DealDetailProps) {
     onSuccess: async () => {
       await queryClient.refetchQueries({ queryKey: ['deal', dealId] });
       await queryClient.invalidateQueries({ queryKey: ['deals'] });
-      await queryClient.invalidateQueries({ queryKey: ['timeline', 'deal', dealId] });
+      await queryClient.invalidateQueries({
+        queryKey: ['timeline', 'deal', dealId],
+      });
     },
   });
 
@@ -106,23 +128,11 @@ export default function DealDetail({ dealId, currentUserId }: DealDetailProps) {
   });
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <div className="text-sm text-zinc-600 dark:text-zinc-400">
-          Loading deal...
-        </div>
-      </div>
-    );
+    return <LoadingState message="Loading deal..." />;
   }
 
   if (!deal) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <div className="text-sm text-zinc-600 dark:text-zinc-400">
-          Deal not found
-        </div>
-      </div>
-    );
+    return <LoadingState message="Deal not found" />;
   }
 
   const handleEdit = () => {
@@ -182,41 +192,6 @@ export default function DealDetail({ dealId, currentUserId }: DealDetailProps) {
     setEditedContactIsPrimary(false);
   };
 
-  const formatCurrency = (value?: number, currency?: string) => {
-    if (value === undefined || value === null) return EMPTY_VALUE;
-    const curr = currency || 'USD';
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: curr,
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(value);
-  };
-
-  const getStageColor = (
-    stage: string,
-  ): 'zinc' | 'blue' | 'yellow' | 'green' | 'red' => {
-    const stageColors: Record<
-      string,
-      'zinc' | 'blue' | 'yellow' | 'green' | 'red'
-    > = {
-      prospecting: 'zinc',
-      qualification: 'blue',
-      proposal: 'yellow',
-      negotiation: 'yellow',
-      closed_won: 'green',
-      closed_lost: 'red',
-    };
-    return stageColors[stage] || 'zinc';
-  };
-
-  const formatStage = (stage: string) => {
-    return stage
-      .split('_')
-      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(' ');
-  };
-
   const getPriorityLabel = (priority?: number) => {
     const labels: Record<number, string> = {
       0: 'P0 - Critical',
@@ -230,7 +205,10 @@ export default function DealDetail({ dealId, currentUserId }: DealDetailProps) {
 
   return (
     <>
-      <Link href="/deals" className="inline-flex items-center gap-2 text-sm/6 text-zinc-500 dark:text-zinc-400">
+      <Link
+        href="/deals"
+        className="inline-flex items-center gap-2 text-sm/6 text-zinc-500 dark:text-zinc-400"
+      >
         <ChevronLeftIcon className="size-4" />
         Deals
       </Link>
@@ -278,9 +256,15 @@ export default function DealDetail({ dealId, currentUserId }: DealDetailProps) {
       <ConfirmDialog
         open={!!companyToRemove}
         onClose={() => setCompanyToRemove(null)}
-        onConfirm={() => companyToRemove && removeCompanyMutation.mutate(companyToRemove.id)}
+        onConfirm={() =>
+          companyToRemove && removeCompanyMutation.mutate(companyToRemove.id)
+        }
         title="Remove Company"
-        description={companyToRemove ? `Are you sure you want to remove ${companyToRemove.name} from this deal?` : ''}
+        description={
+          companyToRemove
+            ? `Are you sure you want to remove ${companyToRemove.name} from this deal?`
+            : ''
+        }
         confirmText="Remove"
         confirmColor="red"
         isLoading={removeCompanyMutation.isPending}
@@ -288,9 +272,15 @@ export default function DealDetail({ dealId, currentUserId }: DealDetailProps) {
       <ConfirmDialog
         open={!!contactToRemove}
         onClose={() => setContactToRemove(null)}
-        onConfirm={() => contactToRemove && removeContactMutation.mutate(contactToRemove.id)}
+        onConfirm={() =>
+          contactToRemove && removeContactMutation.mutate(contactToRemove.id)
+        }
         title="Remove Contact"
-        description={contactToRemove ? `Are you sure you want to remove ${contactToRemove.name} from this deal?` : ''}
+        description={
+          contactToRemove
+            ? `Are you sure you want to remove ${contactToRemove.name} from this deal?`
+            : ''
+        }
         confirmText="Remove"
         confirmColor="red"
         isLoading={removeContactMutation.isPending}
@@ -298,9 +288,7 @@ export default function DealDetail({ dealId, currentUserId }: DealDetailProps) {
 
       {/* Deal Information */}
       <div className="mt-8">
-        <Subheading>
-          Deal Information
-        </Subheading>
+        <Subheading>Deal Information</Subheading>
         <dl className="mt-4 space-y-4">
           <div className="grid grid-cols-3">
             <dt className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
@@ -383,9 +371,7 @@ export default function DealDetail({ dealId, currentUserId }: DealDetailProps) {
 
       {/* Ownership */}
       <div className="mt-8">
-        <Subheading>
-          Owners
-        </Subheading>
+        <Subheading>Owners</Subheading>
         <div className="mt-4 space-y-2">
           {deal.owners.map((owner) => (
             <div key={owner.id} className="flex items-center gap-3">
@@ -408,9 +394,7 @@ export default function DealDetail({ dealId, currentUserId }: DealDetailProps) {
       {/* Summary */}
       {deal.summary && (
         <div className="mt-8">
-          <Subheading>
-            Summary
-          </Subheading>
+          <Subheading>Summary</Subheading>
           <div className="mt-4 whitespace-pre-wrap rounded-lg bg-zinc-50 p-4 text-sm text-zinc-950 dark:bg-zinc-900 dark:text-white">
             {deal.summary}
           </div>
@@ -420,9 +404,7 @@ export default function DealDetail({ dealId, currentUserId }: DealDetailProps) {
       {/* Associated Companies */}
       <div className="mt-8">
         <div className="flex items-center justify-between">
-          <Subheading>
-            Associated Companies
-          </Subheading>
+          <Subheading>Associated Companies</Subheading>
           <AddCompanyToDealDialog
             dealId={dealId}
             existingCompanyIds={deal.companies?.map((da) => da.companyId) || []}
@@ -472,9 +454,19 @@ export default function DealDetail({ dealId, currentUserId }: DealDetailProps) {
                       </Badge>
                     )}
                     <InlineEditRemove
-                      onEdit={() => handleEditCompany(da.companyId, da.isPrimary)}
-                      onRemove={() => handleRemoveCompany(da.companyId, da.company.companyName)}
-                      disabled={updateCompanyMutation.isPending || removeCompanyMutation.isPending}
+                      onEdit={() =>
+                        handleEditCompany(da.companyId, da.isPrimary)
+                      }
+                      onRemove={() =>
+                        handleRemoveCompany(
+                          da.companyId,
+                          da.company.companyName,
+                        )
+                      }
+                      disabled={
+                        updateCompanyMutation.isPending ||
+                        removeCompanyMutation.isPending
+                      }
                       removeTitle="Remove company"
                     />
                   </>
@@ -492,9 +484,7 @@ export default function DealDetail({ dealId, currentUserId }: DealDetailProps) {
       {/* Associated Contacts */}
       <div className="mt-8">
         <div className="flex items-center justify-between">
-          <Subheading>
-            Associated Contacts
-          </Subheading>
+          <Subheading>Associated Contacts</Subheading>
           <AddContactToDealDialog
             dealId={dealId}
             existingContactIds={deal.contacts?.map((dc) => dc.contactId) || []}
@@ -556,9 +546,16 @@ export default function DealDetail({ dealId, currentUserId }: DealDetailProps) {
                       </Badge>
                     )}
                     <InlineEditRemove
-                      onEdit={() => handleEditContact(dc.contactId, dc.role, dc.isPrimary)}
-                      onRemove={() => handleRemoveContact(dc.contactId, dc.contact.name)}
-                      disabled={updateContactMutation.isPending || removeContactMutation.isPending}
+                      onEdit={() =>
+                        handleEditContact(dc.contactId, dc.role, dc.isPrimary)
+                      }
+                      onRemove={() =>
+                        handleRemoveContact(dc.contactId, dc.contact.name)
+                      }
+                      disabled={
+                        updateContactMutation.isPending ||
+                        removeContactMutation.isPending
+                      }
                       removeTitle="Remove contact"
                     />
                   </>
@@ -575,9 +572,7 @@ export default function DealDetail({ dealId, currentUserId }: DealDetailProps) {
 
       {/* Metadata */}
       <div className="mt-8">
-        <Subheading>
-          Details
-        </Subheading>
+        <Subheading>Details</Subheading>
         <dl className="mt-4 space-y-4">
           <div className="grid grid-cols-3">
             <dt className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
@@ -600,9 +595,7 @@ export default function DealDetail({ dealId, currentUserId }: DealDetailProps) {
 
       {/* Activity Timeline */}
       <div className="mt-8">
-        <Subheading>
-          Activity
-        </Subheading>
+        <Subheading>Activity</Subheading>
         <div className="mt-4">
           <ActivityTimeline
             entityType="deal"
