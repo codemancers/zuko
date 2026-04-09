@@ -52,11 +52,10 @@ vi.mock('next/image', () => ({
 vi.mock('@zuko/ui-kit', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@zuko/ui-kit')>();
   const React = await import('react');
-  // eslint-disable-next-line @typescript-eslint/no-empty-function
-  const DropdownCtx = React.createContext<{
-    open: boolean;
-    toggle: () => void;
-  }>({ open: false, toggle: (): void => {} });
+  const DropdownCtx = React.createContext<{ open: boolean; toggle: () => void }>(
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
+    { open: false, toggle: (): void => {} },
+  );
 
   function Dropdown({ children }: { children: React.ReactNode }) {
     const [open, setOpen] = React.useState(false);
