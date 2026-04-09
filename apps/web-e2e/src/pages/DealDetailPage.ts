@@ -57,7 +57,12 @@ export class DealDetailPage extends BasePage {
   }
 
   async isActivitySectionVisible(): Promise<boolean> {
-    return this.activitySection.isVisible();
+    try {
+      await this.activitySection.waitFor({ state: 'visible', timeout: 10000 });
+      return true;
+    } catch {
+      return false;
+    }
   }
 
   async getActivityItems() {

@@ -96,7 +96,7 @@ export type ToolHeaderProps = {
       toolName: string;
     }
 ) &
-  Omit<ComponentProps<'button'>, 'title' | 'type'>;
+  Omit<ComponentProps<'button'>, 'title' | 'type' | 'color'>;
 
 export const ToolHeader = ({
   className = '',
