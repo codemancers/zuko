@@ -6,19 +6,25 @@ import {
   Heading,
   Input,
 } from '@zuko/ui-kit';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getTableViewDeals } from '@/server/query-options';
 import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { BaseTable, createColumnsFromMetadata, type BaseRow } from '../Table';
+import type { ColumnDef } from '@tanstack/react-table';
+import { toast } from 'sonner';
+import { BaseTable, createColumnsFromMetadata, type BaseRow, TableActions, DeleteAction } from '../Table';
 import { useAddColumn } from '@/hooks/use-add-column';
 import { useAddRow } from '@/hooks/use-add-row';
 import { useCellUpdate } from '@/hooks/use-cell-update';
 import { ColumnConfig } from '@/types/table-metadata';
+import { dealsApi } from '@/lib/api/deals';
+import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 
 const DealsList = () => {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState('');
+  const [dealToDelete, setDealToDelete] = useState<number | null>(null);
   const { data: dealsData, isLoading } = useQuery(
     getTableViewDeals({ search: searchTerm || undefined }),
   );
@@ -28,12 +34,37 @@ const DealsList = () => {
   const { addRow } = useAddRow('deals');
   const { updateCell } = useCellUpdate('deals');
 
+  const hideDealMutation = useMutation({
+    mutationFn: (id: number) => dealsApi.hideDeal(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['deals'] });
+      toast.success('Deal removed');
+    },
+    onError: () => toast.error('Failed to remove deal'),
+  });
+
   const deals = dealsData?.data || [];
   const metadata = dealsData?.metadata || [];
 
+  const actionsColumn: ColumnDef<BaseRow> = useMemo(
+    () => ({
+      id: 'actions',
+      header: 'Actions',
+      cell: ({ row }) => (
+        <TableActions>
+          <DeleteAction
+            onClick={() => setDealToDelete(Number(row.original.id))}
+            disabled={hideDealMutation.isPending}
+          />
+        </TableActions>
+      ),
+    }),
+    [hideDealMutation.isPending],
+  );
+
   const columns = useMemo(
-    () => createColumnsFromMetadata<BaseRow>(metadata),
-    [metadata]
+    () => createColumnsFromMetadata<BaseRow>(metadata).concat(actionsColumn),
+    [metadata, actionsColumn]
   );
 
   const handleDealClick = (dealId: number) => {
@@ -96,6 +127,22 @@ const DealsList = () => {
             onClick: handleNewDeal,
           },
         }}
+      />
+
+      <ConfirmDialog
+        open={dealToDelete !== null}
+        title="Remove Deal"
+        description="Are you sure you want to remove this deal? It will be hidden from your list."
+        confirmText="Remove"
+        confirmColor="red"
+        onConfirm={() => {
+          if (dealToDelete !== null) {
+            hideDealMutation.mutate(dealToDelete);
+          }
+          setDealToDelete(null);
+        }}
+        onClose={() => setDealToDelete(null)}
+        isLoading={hideDealMutation.isPending}
       />
     </>
   );

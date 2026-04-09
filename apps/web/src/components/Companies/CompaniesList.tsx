@@ -6,19 +6,25 @@ import {
   Heading,
   Input,
 } from '@zuko/ui-kit';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getTableViewCompanies } from '@/server/query-options';
 import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { BaseTable, createColumnsFromMetadata, type BaseRow } from '../Table';
+import type { ColumnDef } from '@tanstack/react-table';
+import { toast } from 'sonner';
+import { BaseTable, createColumnsFromMetadata, type BaseRow, TableActions, DeleteAction } from '../Table';
 import { useAddColumn } from '@/hooks/use-add-column';
 import { useAddRow } from '@/hooks/use-add-row';
 import { useCellUpdate } from '@/hooks/use-cell-update';
 import { ColumnConfig } from '@/types/table-metadata';
+import { companiesApi } from '@/lib/api/companies';
+import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 
 const CompaniesList = () => {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState('');
+  const [companyToDelete, setCompanyToDelete] = useState<number | null>(null);
   const { data: companiesData, isLoading } = useQuery(
     getTableViewCompanies({ search: searchTerm || undefined }),
   );
@@ -28,12 +34,37 @@ const CompaniesList = () => {
   const { addRow } = useAddRow('companies');
   const { updateCell } = useCellUpdate('companies');
 
-   const companies = companiesData?.data || [];
+  const hideCompanyMutation = useMutation({
+    mutationFn: (id: number) => companiesApi.hideCompany(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['companies'] });
+      toast.success('Company removed');
+    },
+    onError: () => toast.error('Failed to remove company'),
+  });
+
+  const companies = companiesData?.data || [];
   const metadata = companiesData?.metadata || [];
 
+  const actionsColumn: ColumnDef<BaseRow> = useMemo(
+    () => ({
+      id: 'actions',
+      header: 'Actions',
+      cell: ({ row }) => (
+        <TableActions>
+          <DeleteAction
+            onClick={() => setCompanyToDelete(Number(row.original.id))}
+            disabled={hideCompanyMutation.isPending}
+          />
+        </TableActions>
+      ),
+    }),
+    [hideCompanyMutation.isPending],
+  );
+
   const columns = useMemo(
-    () => createColumnsFromMetadata<BaseRow>(metadata),
-    [metadata]
+    () => createColumnsFromMetadata<BaseRow>(metadata).concat(actionsColumn),
+    [metadata, actionsColumn]
   );
 
   const handleCompanyClick = (companyId: number) => {
@@ -96,6 +127,22 @@ const CompaniesList = () => {
             onClick: handleNewCompany,
           },
         }}
+      />
+
+      <ConfirmDialog
+        open={companyToDelete !== null}
+        title="Remove Company"
+        description="Are you sure you want to remove this company? It will be hidden from your list."
+        confirmText="Remove"
+        confirmColor="red"
+        onConfirm={() => {
+          if (companyToDelete !== null) {
+            hideCompanyMutation.mutate(companyToDelete);
+          }
+          setCompanyToDelete(null);
+        }}
+        onClose={() => setCompanyToDelete(null)}
+        isLoading={hideCompanyMutation.isPending}
       />
     </>
   );

@@ -7,18 +7,24 @@ import {
   Heading,
   Input,
 } from '@zuko/ui-kit';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getTableViewContacts } from '@/server/query-options';
 import { useRouter } from 'next/navigation';
-import { BaseTable, createColumnsFromMetadata, type BaseRow } from '../Table';
+import type { ColumnDef } from '@tanstack/react-table';
+import { toast } from 'sonner';
+import { BaseTable, createColumnsFromMetadata, type BaseRow, TableActions, DeleteAction } from '../Table';
 import { useAddColumn } from '@/hooks/use-add-column';
 import { useAddRow } from '@/hooks/use-add-row';
 import { useCellUpdate } from '@/hooks/use-cell-update';
 import { ColumnConfig } from '@/types/table-metadata';
+import { contactsApi } from '@/lib/api/contacts';
+import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 
 const ContactsList = () => {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState('');
+  const [contactToDelete, setContactToDelete] = useState<number | null>(null);
   const { data: contactsData, isLoading } = useQuery(
     getTableViewContacts({ search: searchTerm || undefined }),
   );
@@ -28,12 +34,37 @@ const ContactsList = () => {
   const { addRow } = useAddRow('contacts');
   const { updateCell } = useCellUpdate('contacts');
 
+  const hideContactMutation = useMutation({
+    mutationFn: (id: number) => contactsApi.hideContact(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['contacts'] });
+      toast.success('Contact removed');
+    },
+    onError: () => toast.error('Failed to remove contact'),
+  });
+
   const contacts = contactsData?.data || [];
   const metadata = contactsData?.metadata || [];
 
+  const actionsColumn: ColumnDef<BaseRow> = useMemo(
+    () => ({
+      id: 'actions',
+      header: 'Actions',
+      cell: ({ row }) => (
+        <TableActions>
+          <DeleteAction
+            onClick={() => setContactToDelete(Number(row.original.id))}
+            disabled={hideContactMutation.isPending}
+          />
+        </TableActions>
+      ),
+    }),
+    [hideContactMutation.isPending],
+  );
+
   const columns = useMemo(
-    () => createColumnsFromMetadata<BaseRow>(metadata),
-    [metadata]
+    () => createColumnsFromMetadata<BaseRow>(metadata).concat(actionsColumn),
+    [metadata, actionsColumn]
   );
 
   const handleRowClick = (contactId: number) => {
@@ -96,6 +127,22 @@ const ContactsList = () => {
             onClick: handleNewContact,
           },
         }}
+      />
+
+      <ConfirmDialog
+        open={contactToDelete !== null}
+        title="Remove Contact"
+        description="Are you sure you want to remove this contact? It will be hidden from your list."
+        confirmText="Remove"
+        confirmColor="red"
+        onConfirm={() => {
+          if (contactToDelete !== null) {
+            hideContactMutation.mutate(contactToDelete);
+          }
+          setContactToDelete(null);
+        }}
+        onClose={() => setContactToDelete(null)}
+        isLoading={hideContactMutation.isPending}
       />
     </>
   );
