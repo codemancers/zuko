@@ -17,7 +17,7 @@ import {
   CheckCircle,
   Copy,
 } from 'lucide-react';
-import { Badge, Button, Divider, Heading, Text } from '@zuko/ui-kit';
+import { Badge, Button, Divider, Heading, Input, Text, Textarea } from '@zuko/ui-kit';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getMeeting } from '@/server/query-options';
 import { meetingsApi } from '@/lib/api/meetings';
@@ -435,11 +435,11 @@ const MeetingDetail = ({ meetingId, meetingOverride }: MeetingDetailProps) => {
                   </Button>
                 </div>
                 <div className="flex w-full gap-2 sm:w-auto">
-                  <input
+                  <Input
                     value={actionItemSearch}
                     onChange={(e) => setActionItemSearch(e.target.value)}
                     placeholder="Search action items…"
-                    className="w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm ring-0 outline-none focus:border-zinc-400 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-100"
+                    className="text-sm"
                   />
                 </div>
               </div>
@@ -453,13 +453,13 @@ const MeetingDetail = ({ meetingId, meetingOverride }: MeetingDetailProps) => {
                     <Text className="text-xs font-medium text-zinc-500">
                       Title
                     </Text>
-                    <input
+                    <Input
                       value={newTask.title}
                       onChange={(e) =>
                         setNewTask({ ...newTask, title: e.target.value })
                       }
                       placeholder="Task title..."
-                      className="w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm outline-none focus:border-zinc-400 dark:border-zinc-800 dark:bg-zinc-900"
+                      className="text-sm"
                       autoFocus
                     />
                   </div>
@@ -467,14 +467,14 @@ const MeetingDetail = ({ meetingId, meetingOverride }: MeetingDetailProps) => {
                     <Text className="text-xs font-medium text-zinc-500">
                       Description
                     </Text>
-                    <textarea
+                    <Textarea
                       value={newTask.description}
                       onChange={(e) =>
                         setNewTask({ ...newTask, description: e.target.value })
                       }
                       placeholder="Add more details..."
                       rows={2}
-                      className="w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm outline-none focus:border-zinc-400 dark:border-zinc-800 dark:bg-zinc-900"
+                      className="text-sm"
                     />
                   </div>
                   <div className="flex justify-end gap-2">
@@ -563,7 +563,8 @@ const MeetingDetail = ({ meetingId, meetingOverride }: MeetingDetailProps) => {
                           </div>
 
                           <div className="flex items-center justify-end gap-2">
-                            <button
+                            <Button
+                              outline
                               onClick={() =>
                                 copyText(
                                   `${it.title}${
@@ -571,13 +572,11 @@ const MeetingDetail = ({ meetingId, meetingOverride }: MeetingDetailProps) => {
                                   }`,
                                 )
                               }
-                              className={
-                                'inline-flex items-center justify-center rounded-md border border-zinc-200 bg-white p-1.5 text-xs text-zinc-700 transition hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700'
-                              }
+                              className="p-1.5"
                               aria-label="Copy action item"
                             >
                               <Copy className="h-3.5 w-3.5" />
-                            </button>
+                            </Button>
                           </div>
                         </div>
                       </div>

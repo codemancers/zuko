@@ -9,7 +9,7 @@ import {
   CheckIcon,
   ChevronLeftIcon,
 } from '@heroicons/react/24/outline';
-import { Badge, Divider, Heading, Button, Subheading } from '@zuko/ui-kit';
+import { Badge, Divider, Heading, Button, Input, Subheading } from '@zuko/ui-kit';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getCompany, getDealsByCompany } from '@/server/query-options';
 import { companiesApi } from '@/lib/api/companies';
@@ -330,12 +330,12 @@ export default function CompanyDetail({
                 {editingContactId === ac.contactId ? (
                   // Edit mode
                   <>
-                    <input
+                    <Input
                       type="text"
                       value={editedRole}
                       onChange={(e) => setEditedRole(e.target.value)}
                       placeholder="Role"
-                      className="rounded-md border border-zinc-300 bg-white px-2 py-1 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-white"
+                      className="h-auto py-1 text-sm"
                     />
                     <label className="flex items-center gap-1.5">
                       <input

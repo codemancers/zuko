@@ -4,6 +4,7 @@ import { useState, useCallback, useMemo, type ReactElement } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { UserIcon, BuildingIcon, Briefcase } from 'lucide-react';
 import {
+  Button,
   ContextChip,
   EntityItem,
   usePromptInputReferencedSources,
@@ -327,30 +328,30 @@ export const EntitySelectorTrigger = ({
 }: EntitySelectorTriggerProps) => {
   return (
     <>
-      <button
-        type="button"
+      <Button
+        plain
         onClick={() => onSelectType('contact')}
-        className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-md transition-colors"
+        className="w-full justify-start gap-2 px-3 py-2 text-sm font-normal"
       >
         <UserIcon className="size-4" />
         Add contact
-      </button>
-      <button
-        type="button"
+      </Button>
+      <Button
+        plain
         onClick={() => onSelectType('company')}
-        className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-md transition-colors"
+        className="w-full justify-start gap-2 px-3 py-2 text-sm font-normal"
       >
         <BuildingIcon className="size-4" />
         Add company
-      </button>
-      <button
-        type="button"
+      </Button>
+      <Button
+        plain
         onClick={() => onSelectType('deal')}
-        className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-md transition-colors"
+        className="w-full justify-start gap-2 px-3 py-2 text-sm font-normal"
       >
         <Briefcase className="size-4" />
         Add deal
-      </button>
+      </Button>
     </>
   );
 };

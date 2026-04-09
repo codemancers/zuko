@@ -1,7 +1,7 @@
 'use client';
 
 import { ColumnDef } from '@tanstack/react-table';
-import { Badge } from '@zuko/ui-kit';
+import { Badge, Input } from '@zuko/ui-kit';
 import dayjs from 'dayjs';
 import { useRef, useState } from 'react';
 import { CheckIcon, CheckCircleIcon } from '@heroicons/react/24/outline';
@@ -120,7 +120,7 @@ function AssigneeCell({ task, onUpdate }: { task: FlatTask; onUpdate: (id: numbe
   }
 
   return (
-    <input
+    <Input
       ref={inputRef}
       autoFocus
       type="text"
@@ -139,7 +139,7 @@ function AssigneeCell({ task, onUpdate }: { task: FlatTask; onUpdate: (id: numbe
         }
       }}
       placeholder="Unassigned"
-      className="rounded-lg border border-zinc-600 bg-zinc-800/60 px-3 py-1.5 text-sm text-zinc-100 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+      className="h-auto py-1.5 text-sm"
     />
   );
 }
