@@ -76,7 +76,9 @@ export const CreateOrg = () => {
     <form onSubmit={form.handleSubmit(onSubmit)} className="">
       <Heading>Create Organization</Heading>
       {form.formState.errors.root && (
-        <ErrorMessage>{form.formState.errors.root.message}</ErrorMessage>
+        <Field>
+          <ErrorMessage>{form.formState.errors.root.message}</ErrorMessage>
+        </Field>
       )}
       <Divider className="my-10 mt-6" />
 

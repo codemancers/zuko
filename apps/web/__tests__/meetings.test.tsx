@@ -52,7 +52,10 @@ vi.mock('next/image', () => ({
 vi.mock('@zuko/ui-kit', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@zuko/ui-kit')>();
   const React = await import('react');
-  const DropdownCtx = React.createContext<{ open: boolean; toggle: () => void }>(
+  const DropdownCtx = React.createContext<{
+    open: boolean;
+    toggle: () => void;
+  }>(
     // eslint-disable-next-line @typescript-eslint/no-empty-function
     { open: false, toggle: (): void => {} },
   );
@@ -625,11 +628,9 @@ describe('MeetingDetail', () => {
 
   it('Recording tab shows video and Download link by default', () => {
     render(<MeetingDetail meetingId="1" />, { wrapper: Wrapper });
+    expect(screen.getByRole('tab', { name: /recording/i })).toBeInTheDocument();
     expect(
-      screen.getByRole('button', { name: /recording/i }),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole('button', { name: /transcript/i }),
+      screen.getByRole('tab', { name: /transcript/i }),
     ).toBeInTheDocument();
     const video = document.querySelector('video');
     expect(video).toBeInTheDocument();
@@ -650,7 +651,7 @@ describe('MeetingDetail', () => {
   it('Transcript tab shows content', async () => {
     const user = userEvent.setup();
     render(<MeetingDetail meetingId="1" />, { wrapper: Wrapper });
-    await user.click(screen.getByRole('button', { name: /transcript/i }));
+    await user.click(screen.getByRole('tab', { name: /transcript/i }));
     expect(
       screen.getByText(/Hello everyone.*start the sync/i),
     ).toBeInTheDocument();
@@ -665,7 +666,7 @@ describe('MeetingDetail', () => {
       <MeetingDetail meetingId="1" meetingOverride={{ transcript: [] }} />,
       { wrapper: Wrapper },
     );
-    await user.click(screen.getByRole('button', { name: /transcript/i }));
+    await user.click(screen.getByRole('tab', { name: /transcript/i }));
     expect(
       screen.getByText('No transcript available for this meeting'),
     ).toBeInTheDocument();
@@ -674,7 +675,7 @@ describe('MeetingDetail', () => {
   it('Chat tab shows messages', async () => {
     const user = userEvent.setup();
     render(<MeetingDetail meetingId="1" />, { wrapper: Wrapper });
-    await user.click(screen.getByRole('button', { name: /^chat$/i }));
+    await user.click(screen.getByRole('tab', { name: /^chat$/i }));
     expect(screen.getByText('Alice')).toBeInTheDocument();
     expect(screen.getByText('Starting now!')).toBeInTheDocument();
     expect(screen.getByText('Bob')).toBeInTheDocument();
@@ -687,7 +688,7 @@ describe('MeetingDetail', () => {
       <MeetingDetail meetingId="1" meetingOverride={{ chatMessages: [] }} />,
       { wrapper: Wrapper },
     );
-    await user.click(screen.getByRole('button', { name: /^chat$/i }));
+    await user.click(screen.getByRole('tab', { name: /^chat$/i }));
     expect(
       screen.getByText('No chat messages available for this meeting'),
     ).toBeInTheDocument();
@@ -696,7 +697,7 @@ describe('MeetingDetail', () => {
   it('Summary tab shows content', async () => {
     const user = userEvent.setup();
     render(<MeetingDetail meetingId="1" />, { wrapper: Wrapper });
-    await user.click(screen.getByRole('button', { name: /summary/i }));
+    await user.click(screen.getByRole('tab', { name: /summary/i }));
     expect(
       screen.getByText(/The team discussed the ongoing UI refactor/i),
     ).toBeInTheDocument();
@@ -708,7 +709,7 @@ describe('MeetingDetail', () => {
       <MeetingDetail meetingId="1" meetingOverride={{ summary: null }} />,
       { wrapper: Wrapper },
     );
-    await user.click(screen.getByRole('button', { name: /summary/i }));
+    await user.click(screen.getByRole('tab', { name: /summary/i }));
     expect(
       screen.getByText('No summary available for this meeting'),
     ).toBeInTheDocument();
@@ -717,7 +718,7 @@ describe('MeetingDetail', () => {
   it('Action Items tab shows list and count', async () => {
     const user = userEvent.setup();
     render(<MeetingDetail meetingId="1" />, { wrapper: Wrapper });
-    await user.click(screen.getByRole('button', { name: /action items/i }));
+    await user.click(screen.getByRole('tab', { name: /action items/i }));
     expect(screen.getByText(/2 of 2 items/)).toBeInTheDocument();
     expect(
       screen.getByText('Review UI refactor components'),
@@ -731,7 +732,7 @@ describe('MeetingDetail', () => {
       <MeetingDetail meetingId="1" meetingOverride={{ actionItems: [] }} />,
       { wrapper: Wrapper },
     );
-    await user.click(screen.getByRole('button', { name: /action items/i }));
+    await user.click(screen.getByRole('tab', { name: /action items/i }));
     expect(
       screen.getByText('No action items for this meeting'),
     ).toBeInTheDocument();
@@ -740,7 +741,7 @@ describe('MeetingDetail', () => {
   it('action items search filters and shows No results found when no match', async () => {
     const user = userEvent.setup();
     render(<MeetingDetail meetingId="1" />, { wrapper: Wrapper });
-    await user.click(screen.getByRole('button', { name: /action items/i }));
+    await user.click(screen.getByRole('tab', { name: /action items/i }));
     const search = screen.getByPlaceholderText(/search action items/i);
     await user.type(search, 'nonexistentxyz');
     expect(screen.getByText('No results found')).toBeInTheDocument();
@@ -752,7 +753,7 @@ describe('MeetingDetail', () => {
       clipboard: { writeText: vi.fn().mockResolvedValue(undefined) },
     });
     render(<MeetingDetail meetingId="1" />, { wrapper: Wrapper });
-    await user.click(screen.getByRole('button', { name: /action items/i }));
+    await user.click(screen.getByRole('tab', { name: /action items/i }));
     const copyButtons = screen.getAllByRole('button', {
       name: /copy action item/i,
     });
