@@ -1,7 +1,7 @@
 'use client';
 
 import type { DynamicToolUIPart, ToolUIPart } from 'ai';
-import { Badge, MessageResponse } from '@zuko/ui-kit';
+import { Badge, Button, MessageResponse } from '@zuko/ui-kit';
 import {
   CheckCircleIcon,
   ChevronDownIcon,
@@ -113,10 +113,10 @@ export const ToolHeader = ({
       : String(type).split('-').slice(1).join('-');
 
   return (
-    <button
-      type="button"
+    <Button
+      plain
       onClick={() => setOpen(!open)}
-      className={`flex w-full cursor-pointer items-center justify-between gap-4 p-3 text-left outline-none focus-visible:ring-2 focus-visible:ring-zinc-400 dark:focus-visible:ring-zinc-500 ${className}`}
+      className={`w-full justify-between gap-4 rounded-none rounded-t-md p-3 font-normal ${className}`}
       {...props}
     >
       <div className="flex items-center gap-2">
@@ -127,7 +127,7 @@ export const ToolHeader = ({
       <ChevronDownIcon
         className={`size-4 text-zinc-500 transition-transform dark:text-zinc-400 ${open ? 'rotate-180' : ''}`}
       />
-    </button>
+    </Button>
   );
 };
 

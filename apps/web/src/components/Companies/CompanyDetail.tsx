@@ -5,8 +5,6 @@ import {
   BuildingOfficeIcon,
   PencilIcon,
   EyeSlashIcon,
-  XMarkIcon,
-  CheckIcon,
   ChevronLeftIcon,
 } from '@heroicons/react/24/outline';
 import { Badge, Divider, Heading, Button, Input, Subheading } from '@zuko/ui-kit';
@@ -20,6 +18,7 @@ import ActivityTimeline from '@/components/Activity/ActivityTimeline';
 import AddContactDialog from './AddContactDialog';
 import { EMPTY_VALUE } from '@/components/Table';
 import ConfirmDialog from '@/components/shared/ConfirmDialog';
+import { InlineSaveCancel, InlineEditRemove } from '@/components/shared/InlineEditActions';
 
 interface CompanyDetailProps {
   companyId: number;
@@ -351,24 +350,11 @@ export default function CompanyDetail({
                     <div className="text-xs text-zinc-600 dark:text-zinc-400">
                       Joined {dayjs(ac.joinedAt).format('MMM D, YYYY')}
                     </div>
-                    <div className="ml-auto flex gap-2">
-                      <button
-                        onClick={() => handleSaveContact(ac.contactId)}
-                        disabled={updateContactMutation.isPending}
-                        className="text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300 transition-colors"
-                        title="Save changes"
-                      >
-                        <CheckIcon className="h-4 w-4" />
-                      </button>
-                      <button
-                        onClick={handleCancelEdit}
-                        disabled={updateContactMutation.isPending}
-                        className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors"
-                        title="Cancel"
-                      >
-                        <XMarkIcon className="h-4 w-4" />
-                      </button>
-                    </div>
+                    <InlineSaveCancel
+                      onSave={() => handleSaveContact(ac.contactId)}
+                      onCancel={handleCancelEdit}
+                      disabled={updateContactMutation.isPending}
+                    />
                   </>
                 ) : (
                   // View mode
@@ -386,34 +372,12 @@ export default function CompanyDetail({
                     <div className="text-xs text-zinc-600 dark:text-zinc-400">
                       Joined {dayjs(ac.joinedAt).format('MMM D, YYYY')}
                     </div>
-                    <div className="ml-auto flex gap-2">
-                      <button
-                        onClick={() =>
-                          handleEditContact(ac.contactId, ac.role, ac.isPrimary)
-                        }
-                        disabled={
-                          updateContactMutation.isPending ||
-                          removeContactMutation.isPending
-                        }
-                        className="text-zinc-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
-                        title="Edit association"
-                      >
-                        <PencilIcon className="h-4 w-4" />
-                      </button>
-                      <button
-                        onClick={() =>
-                          handleRemoveContact(ac.contactId, ac.contact.name)
-                        }
-                        disabled={
-                          updateContactMutation.isPending ||
-                          removeContactMutation.isPending
-                        }
-                        className="text-zinc-400 hover:text-red-600 dark:hover:text-red-400 transition-colors"
-                        title="Remove contact"
-                      >
-                        <XMarkIcon className="h-4 w-4" />
-                      </button>
-                    </div>
+                    <InlineEditRemove
+                      onEdit={() => handleEditContact(ac.contactId, ac.role, ac.isPrimary)}
+                      onRemove={() => handleRemoveContact(ac.contactId, ac.contact.name)}
+                      disabled={updateContactMutation.isPending || removeContactMutation.isPending}
+                      removeTitle="Remove contact"
+                    />
                   </>
                 )}
               </div>

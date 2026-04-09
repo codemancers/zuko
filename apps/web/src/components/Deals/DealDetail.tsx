@@ -5,8 +5,6 @@ import {
   BriefcaseIcon,
   PencilIcon,
   EyeSlashIcon,
-  XMarkIcon,
-  CheckIcon,
   ChevronLeftIcon,
 } from '@heroicons/react/24/outline';
 import { Badge, Divider, Heading, Button, Input, Subheading } from '@zuko/ui-kit';
@@ -21,6 +19,7 @@ import AddCompanyToDealDialog from './AddCompanyToDealDialog';
 import AddContactToDealDialog from './AddContactToDealDialog';
 import { EMPTY_VALUE } from '@/components/Table';
 import ConfirmDialog from '@/components/shared/ConfirmDialog';
+import { InlineSaveCancel, InlineEditRemove } from '@/components/shared/InlineEditActions';
 
 interface DealDetailProps {
   dealId: number;
@@ -458,24 +457,11 @@ export default function DealDetail({ dealId, currentUserId }: DealDetailProps) {
                         Primary
                       </span>
                     </label>
-                    <div className="ml-auto flex gap-2">
-                      <button
-                        onClick={() => handleSaveCompany(da.companyId)}
-                        disabled={updateCompanyMutation.isPending}
-                        className="text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300 transition-colors"
-                        title="Save changes"
-                      >
-                        <CheckIcon className="h-4 w-4" />
-                      </button>
-                      <button
-                        onClick={handleCancelEdit}
-                        disabled={updateCompanyMutation.isPending}
-                        className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors"
-                        title="Cancel"
-                      >
-                        <XMarkIcon className="h-4 w-4" />
-                      </button>
-                    </div>
+                    <InlineSaveCancel
+                      onSave={() => handleSaveCompany(da.companyId)}
+                      onCancel={handleCancelEdit}
+                      disabled={updateCompanyMutation.isPending}
+                    />
                   </>
                 ) : (
                   // View mode
@@ -485,37 +471,12 @@ export default function DealDetail({ dealId, currentUserId }: DealDetailProps) {
                         Primary
                       </Badge>
                     )}
-                    <div className="ml-auto flex gap-2">
-                      <button
-                        onClick={() =>
-                          handleEditCompany(da.companyId, da.isPrimary)
-                        }
-                        disabled={
-                          updateCompanyMutation.isPending ||
-                          removeCompanyMutation.isPending
-                        }
-                        className="text-zinc-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
-                        title="Edit association"
-                      >
-                        <PencilIcon className="h-4 w-4" />
-                      </button>
-                      <button
-                        onClick={() =>
-                          handleRemoveCompany(
-                            da.companyId,
-                            da.company.companyName,
-                          )
-                        }
-                        disabled={
-                          updateCompanyMutation.isPending ||
-                          removeCompanyMutation.isPending
-                        }
-                        className="text-zinc-400 hover:text-red-600 dark:hover:text-red-400 transition-colors"
-                        title="Remove company"
-                      >
-                        <XMarkIcon className="h-4 w-4" />
-                      </button>
-                    </div>
+                    <InlineEditRemove
+                      onEdit={() => handleEditCompany(da.companyId, da.isPrimary)}
+                      onRemove={() => handleRemoveCompany(da.companyId, da.company.companyName)}
+                      disabled={updateCompanyMutation.isPending || removeCompanyMutation.isPending}
+                      removeTitle="Remove company"
+                    />
                   </>
                 )}
               </div>
@@ -575,24 +536,11 @@ export default function DealDetail({ dealId, currentUserId }: DealDetailProps) {
                         Primary
                       </span>
                     </label>
-                    <div className="ml-auto flex gap-2">
-                      <button
-                        onClick={() => handleSaveContact(dc.contactId)}
-                        disabled={updateContactMutation.isPending}
-                        className="text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300 transition-colors"
-                        title="Save changes"
-                      >
-                        <CheckIcon className="h-4 w-4" />
-                      </button>
-                      <button
-                        onClick={handleCancelContactEdit}
-                        disabled={updateContactMutation.isPending}
-                        className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors"
-                        title="Cancel"
-                      >
-                        <XMarkIcon className="h-4 w-4" />
-                      </button>
-                    </div>
+                    <InlineSaveCancel
+                      onSave={() => handleSaveContact(dc.contactId)}
+                      onCancel={handleCancelContactEdit}
+                      disabled={updateContactMutation.isPending}
+                    />
                   </>
                 ) : (
                   // View mode
@@ -607,34 +555,12 @@ export default function DealDetail({ dealId, currentUserId }: DealDetailProps) {
                         Primary
                       </Badge>
                     )}
-                    <div className="ml-auto flex gap-2">
-                      <button
-                        onClick={() =>
-                          handleEditContact(dc.contactId, dc.role, dc.isPrimary)
-                        }
-                        disabled={
-                          updateContactMutation.isPending ||
-                          removeContactMutation.isPending
-                        }
-                        className="text-zinc-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
-                        title="Edit association"
-                      >
-                        <PencilIcon className="h-4 w-4" />
-                      </button>
-                      <button
-                        onClick={() =>
-                          handleRemoveContact(dc.contactId, dc.contact.name)
-                        }
-                        disabled={
-                          updateContactMutation.isPending ||
-                          removeContactMutation.isPending
-                        }
-                        className="text-zinc-400 hover:text-red-600 dark:hover:text-red-400 transition-colors"
-                        title="Remove contact"
-                      >
-                        <XMarkIcon className="h-4 w-4" />
-                      </button>
-                    </div>
+                    <InlineEditRemove
+                      onEdit={() => handleEditContact(dc.contactId, dc.role, dc.isPrimary)}
+                      onRemove={() => handleRemoveContact(dc.contactId, dc.contact.name)}
+                      disabled={updateContactMutation.isPending || removeContactMutation.isPending}
+                      removeTitle="Remove contact"
+                    />
                   </>
                 )}
               </div>
