@@ -648,12 +648,23 @@ test.describe("Deal Associations - Contacts", () => {
 });
 
 test.describe("Deal Activity Timeline - Comments", () => {
+  let dealId: number;
+
+  test.beforeEach(async ({ dealsPage, page }) => {
+    await dealsPage.goto();
+    const firstLink = page.locator('a[href^="/deals/"]').first();
+    await firstLink.waitFor({ state: "visible", timeout: 10000 });
+    await firstLink.click();
+    await page.waitForURL(/\/deals\/\d+/, { timeout: 10000 });
+    dealId = parseInt(page.url().match(/\/deals\/(\d+)/)?.[1] ?? "0", 10);
+  });
+
   // ── 1. Empty state ─────────────────────────────────────────────────────
   test("should display comment input form in activity timeline", async ({
     dealDetailPage,
     page,
   }) => {
-    await dealDetailPage.goto(1);
+    await dealDetailPage.goto(dealId);
 
     const commentInput = page.getByPlaceholder("Add a comment...");
     await commentInput.scrollIntoViewIfNeeded();
@@ -667,7 +678,7 @@ test.describe("Deal Activity Timeline - Comments", () => {
     dealDetailPage,
     page,
   }) => {
-    await dealDetailPage.goto(1);
+    await dealDetailPage.goto(dealId);
 
     const commentInput = page.getByPlaceholder("Add a comment...");
     await commentInput.scrollIntoViewIfNeeded();
@@ -682,7 +693,7 @@ test.describe("Deal Activity Timeline - Comments", () => {
     dealDetailPage,
     page,
   }) => {
-    await dealDetailPage.goto(1);
+    await dealDetailPage.goto(dealId);
 
     const commentText = `Deal test comment ${Date.now()}`;
 
