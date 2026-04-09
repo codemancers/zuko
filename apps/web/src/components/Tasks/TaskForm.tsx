@@ -6,7 +6,6 @@ import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import {
-  Button,
   Field,
   FieldGroup,
   Fieldset,
@@ -16,6 +15,7 @@ import {
   Textarea,
   ErrorMessage,
 } from '@zuko/ui-kit';
+import { FormActions } from '@/components/shared';
 import { tasksApi, TaskStatus, type Task } from '@/lib/api/tasks';
 import { toast } from 'sonner';
 import { getTasks } from '@/server/query-options';
@@ -200,25 +200,12 @@ const TaskForm = ({ mode, task, defaultParentId }: TaskFormProps) => {
             <ErrorMessage>{form.formState.errors.root.message}</ErrorMessage>
           )}
 
-          <div className="flex gap-3">
-            <Button type="submit" disabled={mutation.isPending}>
-              {mutation.isPending
-                ? mode === 'create'
-                  ? 'Creating...'
-                  : 'Saving...'
-                : mode === 'create'
-                  ? 'Create Task'
-                  : 'Save Changes'}
-            </Button>
-            <Button
-              type="button"
-              plain
-              onClick={handleCancel}
-              disabled={mutation.isPending}
-            >
-              Cancel
-            </Button>
-          </div>
+          <FormActions
+            isLoading={mutation.isPending}
+            submitLabel={mode === 'create' ? 'Create Task' : 'Save Changes'}
+            loadingLabel={mode === 'create' ? 'Creating...' : 'Saving...'}
+            onCancel={handleCancel}
+          />
         </FieldGroup>
       </Fieldset>
     </form>

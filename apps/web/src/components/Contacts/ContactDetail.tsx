@@ -5,7 +5,6 @@ import {
   UserIcon,
   PencilIcon,
   EyeSlashIcon,
-  ChevronLeftIcon,
 } from '@heroicons/react/24/outline';
 import { Badge, Divider, Heading, Button, Subheading } from '@zuko/ui-kit';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -17,6 +16,7 @@ import Link from 'next/link';
 import ActivityTimeline from '@/components/Activity/ActivityTimeline';
 
 import ConfirmDialog from '@/components/shared/ConfirmDialog';
+import { BackLink, MetadataFooter } from '@/components/shared';
 import { LoadingState } from '@/components/shared';
 import { formatCurrency, getStageColor, formatStage } from '@/lib/format-utils';
 
@@ -61,13 +61,7 @@ export default function ContactDetail({
 
   return (
     <>
-      <Link
-        href="/contacts"
-        className="inline-flex items-center gap-2 text-sm/6 text-zinc-500 dark:text-zinc-400"
-      >
-        <ChevronLeftIcon className="size-4" />
-        Contacts
-      </Link>
+      <BackLink href="/contacts">Contacts</BackLink>
 
       <div className="mt-4 flex items-start justify-between">
         <div className="flex items-center gap-4">
@@ -226,28 +220,10 @@ export default function ContactDetail({
         </div>
       )}
 
-      {/* Metadata */}
-      <div className="mt-8">
-        <Subheading>Details</Subheading>
-        <dl className="mt-4 space-y-4">
-          <div className="grid grid-cols-3">
-            <dt className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
-              Created
-            </dt>
-            <dd className="col-span-2 text-sm text-zinc-950 dark:text-white">
-              {dayjs(contact.createdAt).format('MMMM D, YYYY [at] h:mm A')}
-            </dd>
-          </div>
-          <div className="grid grid-cols-3">
-            <dt className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
-              Last Updated
-            </dt>
-            <dd className="col-span-2 text-sm text-zinc-950 dark:text-white">
-              {dayjs(contact.updatedAt).format('MMMM D, YYYY [at] h:mm A')}
-            </dd>
-          </div>
-        </dl>
-      </div>
+      <MetadataFooter
+        createdAt={contact.createdAt}
+        updatedAt={contact.updatedAt}
+      />
 
       {/* Activity Timeline */}
       <div className="mt-8">

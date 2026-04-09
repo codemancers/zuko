@@ -6,8 +6,6 @@ import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
 import Image from 'next/image';
 import { toast } from 'sonner';
-import Link from 'next/link';
-import { ChevronLeftIcon } from '@heroicons/react/24/outline';
 import {
   Download,
   PlayCircle,
@@ -32,7 +30,7 @@ import {
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getMeeting } from '@/server/query-options';
 import { meetingsApi } from '@/lib/api/meetings';
-import { LoadingState } from '@/components/shared';
+import { LoadingState, BackLink } from '@/components/shared';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -617,13 +615,7 @@ const MeetingDetail = ({ meetingId, meetingOverride }: MeetingDetailProps) => {
 
   return (
     <>
-      <Link
-        href="/meetings"
-        className="inline-flex items-center gap-2 text-sm/6 text-zinc-500 dark:text-zinc-400"
-      >
-        <ChevronLeftIcon className="size-4" />
-        Meetings
-      </Link>
+      <BackLink href="/meetings">Meetings</BackLink>
 
       {isLoading && <LoadingState message="Loading meeting..." />}
 

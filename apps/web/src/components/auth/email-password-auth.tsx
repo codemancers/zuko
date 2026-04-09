@@ -26,6 +26,22 @@ export function EmailPasswordAuth({ mode = 'signin' }: EmailPasswordAuthProps) {
 
   const isSignup = mode === 'signup';
 
+  /** Shared post-auth redirect: org → chat, invitations → settings, else → create org */
+  const redirectAfterAuth = async () => {
+    const { data } = await authClient.organization.list();
+    if (data && data.length > 0) {
+      router.push('/chat');
+    } else {
+      const { data: invitations } =
+        await authClient.organization.listUserInvitations();
+      if (invitations && invitations.length > 0) {
+        router.push('/settings?tab=invitations');
+      } else {
+        router.push('/organization/create');
+      }
+    }
+  };
+
   const handleEmailPasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -45,18 +61,7 @@ export function EmailPasswordAuth({ mode = 'signin' }: EmailPasswordAuthProps) {
               'Failed to create account. Please try again.',
           );
         } else {
-          const { data } = await authClient.organization.list();
-          if (data && data.length > 0) {
-            router.push('/chat');
-          } else {
-            const { data: invitations } =
-              await authClient.organization.listUserInvitations();
-            if (invitations && invitations.length > 0) {
-              router.push('/settings?tab=invitations');
-            } else {
-              router.push('/organization/create');
-            }
-          }
+          await redirectAfterAuth();
         }
       } else {
         const result = await authClient.signIn.email({
@@ -70,18 +75,7 @@ export function EmailPasswordAuth({ mode = 'signin' }: EmailPasswordAuthProps) {
               'Failed to sign in. Please check your credentials.',
           );
         } else {
-          const { data } = await authClient.organization.list();
-          if (data && data.length > 0) {
-            router.push('/chat');
-          } else {
-            const { data: invitations } =
-              await authClient.organization.listUserInvitations();
-            if (invitations && invitations.length > 0) {
-              router.push('/settings?tab=invitations');
-            } else {
-              router.push('/organization/create');
-            }
-          }
+          await redirectAfterAuth();
         }
       }
     } catch (err) {

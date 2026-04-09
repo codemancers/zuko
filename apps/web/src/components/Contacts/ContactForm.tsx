@@ -9,7 +9,6 @@ import {
   type UpdateContactDto,
 } from '@/lib/api/contacts';
 import {
-  Button,
   Input,
   Field,
   Label,
@@ -17,6 +16,7 @@ import {
   Description,
   ErrorMessage,
 } from '@zuko/ui-kit';
+import { FormActions } from '@/components/shared';
 import { useRouter } from 'next/navigation';
 
 interface ContactFormProps {
@@ -204,18 +204,11 @@ export default function ContactForm({
       {errors.submit && <ErrorMessage>{errors.submit}</ErrorMessage>}
 
       {/* Actions */}
-      <div className="flex gap-3">
-        <Button type="submit" disabled={isLoading}>
-          {isLoading
-            ? 'Saving...'
-            : mode === 'create'
-              ? 'Create Contact'
-              : 'Save Changes'}
-        </Button>
-        <Button type="button" plain onClick={handleCancel} disabled={isLoading}>
-          Cancel
-        </Button>
-      </div>
+      <FormActions
+        isLoading={isLoading}
+        submitLabel={mode === 'create' ? 'Create Contact' : 'Save Changes'}
+        onCancel={handleCancel}
+      />
     </form>
   );
 }

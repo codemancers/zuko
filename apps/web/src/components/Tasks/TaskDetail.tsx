@@ -7,14 +7,13 @@ import { useRouter } from 'next/navigation';
 import { Badge, Button, Divider, Heading, Subheading } from '@zuko/ui-kit';
 import dayjs from 'dayjs';
 import {
-  ChevronLeftIcon,
   PencilIcon,
   TrashIcon,
 } from '@heroicons/react/24/outline';
-import Link from 'next/link';
 import type { TaskStatus } from '@/lib/api/tasks';
 import { useState } from 'react';
 import ConfirmDialog from '@/components/shared/ConfirmDialog';
+import { BackLink } from '@/components/shared';
 import { LoadingState } from '@/components/shared';
 import ActivityTimeline from '@/components/Activity/ActivityTimeline';
 import { toast } from 'sonner';
@@ -72,13 +71,7 @@ const TaskDetail = ({ taskId, currentUserId }: TaskDetailProps) => {
 
   return (
     <>
-      <Link
-        href="/tasks"
-        className="inline-flex items-center gap-2 text-sm/6 text-zinc-500 dark:text-zinc-400"
-      >
-        <ChevronLeftIcon className="size-4" />
-        Tasks
-      </Link>
+      <BackLink href="/tasks">Tasks</BackLink>
 
       <div className="mt-4 flex items-start justify-between">
         <div>

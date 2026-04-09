@@ -5,7 +5,6 @@ import {
   BuildingOfficeIcon,
   PencilIcon,
   EyeSlashIcon,
-  ChevronLeftIcon,
 } from '@heroicons/react/24/outline';
 import {
   Badge,
@@ -27,6 +26,7 @@ import ActivityTimeline from '@/components/Activity/ActivityTimeline';
 import AddContactDialog from './AddContactDialog';
 
 import ConfirmDialog from '@/components/shared/ConfirmDialog';
+import { BackLink, MetadataFooter } from '@/components/shared';
 import {
   InlineSaveCancel,
   InlineEditRemove,
@@ -144,13 +144,7 @@ export default function CompanyDetail({
 
   return (
     <>
-      <Link
-        href="/companies"
-        className="inline-flex items-center gap-2 text-sm/6 text-zinc-500 dark:text-zinc-400"
-      >
-        <ChevronLeftIcon className="size-4" />
-        Companies
-      </Link>
+      <BackLink href="/companies">Companies</BackLink>
 
       <div className="mt-4 flex items-start justify-between">
         <div className="flex items-center gap-4">
@@ -406,28 +400,10 @@ export default function CompanyDetail({
         </div>
       )}
 
-      {/* Metadata */}
-      <div className="mt-8">
-        <Subheading>Details</Subheading>
-        <dl className="mt-4 space-y-4">
-          <div className="grid grid-cols-3">
-            <dt className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
-              Created
-            </dt>
-            <dd className="col-span-2 text-sm text-zinc-950 dark:text-white">
-              {dayjs(company.createdAt).format('MMMM D, YYYY [at] h:mm A')}
-            </dd>
-          </div>
-          <div className="grid grid-cols-3">
-            <dt className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
-              Last Updated
-            </dt>
-            <dd className="col-span-2 text-sm text-zinc-950 dark:text-white">
-              {dayjs(company.updatedAt).format('MMMM D, YYYY [at] h:mm A')}
-            </dd>
-          </div>
-        </dl>
-      </div>
+      <MetadataFooter
+        createdAt={company.createdAt}
+        updatedAt={company.updatedAt}
+      />
 
       {/* Activity Timeline */}
       <div className="mt-8">
