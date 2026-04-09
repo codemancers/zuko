@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import { useState, useEffect } from 'react';
 import { useBaseTable } from '@/hooks/use-base-table';
 import { BaseTableProps, BaseRow } from './types';
@@ -12,8 +13,8 @@ import { AddColumnDialog } from './AddColumnDialog';
 import React from 'react';
 import { ColumnConfig } from '@/types/table-metadata';
 
-const ChevronLeftIcon = '/icons/chevron-left.svg';
-const ChevronRightIcon = '/icons/chevron-right.svg';
+const CHEVRON_LEFT = '/icons/chevron-left.svg';
+const CHEVRON_RIGHT = '/icons/chevron-right.svg';
 
 export function BaseTable<TData extends BaseRow>(props: BaseTableProps<TData>) {
   const [internalPagination, setInternalPagination] = React.useState<PaginationState>({
@@ -183,7 +184,7 @@ export function BaseTable<TData extends BaseRow>(props: BaseTableProps<TData>) {
                     className="relative inline-flex items-center px-3 py-2 rounded-l-md border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-sm font-medium text-zinc-500 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-700 disabled:opacity-50 transition-colors"
                   >
                     <span className="sr-only">Previous</span>
-                    <img src={ChevronLeftIcon} className="h-5 w-5" alt="Previous" />
+                    <Image src={CHEVRON_LEFT} width={20} height={20} alt="Previous" />
                   </Button>
                   <Button
                     onClick={() => table.nextPage()}
@@ -191,7 +192,7 @@ export function BaseTable<TData extends BaseRow>(props: BaseTableProps<TData>) {
                     className="relative inline-flex items-center px-3 py-2 rounded-r-md border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-sm font-medium text-zinc-500 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-700 disabled:opacity-50 transition-colors"
                   >
                     <span className="sr-only">Next</span>
-                    <img src={ChevronRightIcon} className="h-5 w-5" alt="Next" />
+                    <Image src={CHEVRON_RIGHT} width={20} height={20} alt="Next" />
                   </Button>
                 </nav>
               </div>

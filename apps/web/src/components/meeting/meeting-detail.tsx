@@ -17,7 +17,7 @@ import {
   CheckCircle,
   Copy,
 } from 'lucide-react';
-import { Badge, Button, Divider, Heading } from '@zuko/ui-kit';
+import { Badge, Button, Divider, Heading, Text } from '@zuko/ui-kit';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getMeeting } from '@/server/query-options';
 import { meetingsApi } from '@/lib/api/meetings';
@@ -269,7 +269,7 @@ const MeetingDetail = ({ meetingId, meetingOverride }: MeetingDetailProps) => {
       if (!recordingUrl) {
         return (
           <div className="flex h-40 items-center justify-center rounded-lg border border-zinc-200 dark:border-zinc-800">
-            <p>No recording available for this meeting</p>
+            <Text>No recording available for this meeting</Text>
           </div>
         );
       }
@@ -309,7 +309,7 @@ const MeetingDetail = ({ meetingId, meetingOverride }: MeetingDetailProps) => {
           if (!transcriptLines || transcriptLines.length === 0) {
             return (
               <div className="flex h-40 items-center justify-center rounded-lg border border-zinc-200 dark:border-zinc-800">
-                <p>No transcript available for this meeting</p>
+                <Text>No transcript available for this meeting</Text>
               </div>
             );
           }
@@ -338,7 +338,7 @@ const MeetingDetail = ({ meetingId, meetingOverride }: MeetingDetailProps) => {
           if (!messages || messages.length === 0) {
             return (
               <div className="flex h-40 items-center justify-center rounded-lg border border-zinc-200 dark:border-zinc-800">
-                <p>No chat messages available for this meeting</p>
+                <Text>No chat messages available for this meeting</Text>
               </div>
             );
           }
@@ -377,7 +377,7 @@ const MeetingDetail = ({ meetingId, meetingOverride }: MeetingDetailProps) => {
           if (!summary || !summary.content) {
             return (
               <div className="flex h-40 items-center justify-center rounded-lg border border-zinc-200 dark:border-zinc-800">
-                <p>No summary available for this meeting</p>
+                <Text>No summary available for this meeting</Text>
               </div>
             );
           }
@@ -398,7 +398,7 @@ const MeetingDetail = ({ meetingId, meetingOverride }: MeetingDetailProps) => {
           if (!items || (items.length === 0 && !isAddingTask)) {
             return (
               <div className="flex h-40 flex-col items-center justify-center gap-4 rounded-lg border border-zinc-200 dark:border-zinc-800">
-                <p>No action items for this meeting</p>
+                <Text>No action items for this meeting</Text>
                 <Button onClick={() => setIsAddingTask(true)}>
                   Create New Task
                 </Button>
@@ -450,9 +450,9 @@ const MeetingDetail = ({ meetingId, meetingOverride }: MeetingDetailProps) => {
                   className="space-y-3 rounded-xl border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-800 dark:bg-zinc-900/50"
                 >
                   <div className="space-y-1">
-                    <p className="text-xs font-medium text-zinc-500">
+                    <Text className="text-xs font-medium text-zinc-500">
                       Title
-                    </p>
+                    </Text>
                     <input
                       value={newTask.title}
                       onChange={(e) =>
@@ -464,9 +464,9 @@ const MeetingDetail = ({ meetingId, meetingOverride }: MeetingDetailProps) => {
                     />
                   </div>
                   <div className="space-y-1">
-                    <p className="text-xs font-medium text-zinc-500">
+                    <Text className="text-xs font-medium text-zinc-500">
                       Description
-                    </p>
+                    </Text>
                     <textarea
                       value={newTask.description}
                       onChange={(e) =>
@@ -494,9 +494,9 @@ const MeetingDetail = ({ meetingId, meetingOverride }: MeetingDetailProps) => {
 
               {filtered.length === 0 && actionItemSearch.trim() ? (
                 <div className="flex h-40 items-center justify-center rounded-lg border border-zinc-200 dark:border-zinc-800">
-                  <p className="text-zinc-500 dark:text-zinc-400">
+                  <Text className="text-zinc-500 dark:text-zinc-400">
                     No results found
-                  </p>
+                  </Text>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
@@ -528,16 +528,11 @@ const MeetingDetail = ({ meetingId, meetingOverride }: MeetingDetailProps) => {
                               ].join(' ')}
                             >
                               {isCompleted && (
-                                <svg
-                                  className="size-3.5 fill-current"
-                                  viewBox="0 0 20 20"
-                                >
-                                  <path d="M0 11l2-2 5 5L18 3l2 2L7 18z" />
-                                </svg>
+                                <Image src="/icons/checkmark.svg" alt="" width={14} height={14} />
                               )}
                             </button>
                             <div className="min-w-0 flex-1">
-                              <p
+                              <Text
                                 className={[
                                   'text-base md:text-lg font-semibold md:font-bold tracking-tight',
                                   isCompleted
@@ -548,7 +543,7 @@ const MeetingDetail = ({ meetingId, meetingOverride }: MeetingDetailProps) => {
                                 ].join(' ')}
                               >
                                 {it.title}
-                              </p>
+                              </Text>
 
                               {it.description && (
                                 <div
@@ -607,13 +602,13 @@ const MeetingDetail = ({ meetingId, meetingOverride }: MeetingDetailProps) => {
 
       {isLoading && (
         <div className="mt-4 flex h-40 items-center justify-center rounded-lg border border-zinc-200 dark:border-zinc-800">
-          <p>Loading meeting...</p>
+          <Text>Loading meeting...</Text>
         </div>
       )}
 
       {!isLoading && !meeting && (
         <div className="mt-4 flex h-40 items-center justify-center rounded-lg border border-zinc-200 dark:border-zinc-800">
-          <p>Meeting not found</p>
+          <Text>Meeting not found</Text>
         </div>
       )}
 
@@ -636,18 +631,18 @@ const MeetingDetail = ({ meetingId, meetingOverride }: MeetingDetailProps) => {
 
           <div className="mt-6 grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-2 lg:grid-cols-3">
             <div>
-              <p className="text-xs font-medium uppercase tracking-wider text-zinc-500">
+              <Text className="text-xs font-medium uppercase tracking-wider text-zinc-500">
                 Platform
-              </p>
-              <p className="mt-1">
+              </Text>
+              <Text className="mt-1">
                 {meeting.platform.replace(/_/g, ' ')}
-              </p>
+              </Text>
             </div>
 
             <div>
-              <p className="text-xs font-medium uppercase tracking-wider text-zinc-500">
+              <Text className="text-xs font-medium uppercase tracking-wider text-zinc-500">
                 Status
-              </p>
+              </Text>
               <div className="mt-1">
                 <Badge
                   color={
@@ -661,33 +656,33 @@ const MeetingDetail = ({ meetingId, meetingOverride }: MeetingDetailProps) => {
             </div>
 
             <div>
-              <p className="text-xs font-medium uppercase tracking-wider text-zinc-500">
+              <Text className="text-xs font-medium uppercase tracking-wider text-zinc-500">
                 {meeting.scheduledAt ? 'Scheduled At' : 'Created At'}
-              </p>
-              <p className="mt-1">
+              </Text>
+              <Text className="mt-1">
                 {meeting.scheduledAt
                   ? dayjs(meeting.scheduledAt)
                       .tz(meeting.timezone)
                       .format('MMM D, YYYY [at] h:mm A')
                   : dayjs(meeting.createdAt).format('MMM D, YYYY [at] h:mm A')}
-              </p>
+              </Text>
             </div>
 
             {meeting.projectName && (
               <div>
-                <p className="text-xs font-medium uppercase tracking-wider text-zinc-500">
+                <Text className="text-xs font-medium uppercase tracking-wider text-zinc-500">
                   Projects
-                </p>
-                <p className="mt-1">{meeting.projectName}</p>
+                </Text>
+                <Text className="mt-1">{meeting.projectName}</Text>
               </div>
             )}
 
             {meeting.description && (
               <div className="sm:col-span-2 lg:col-span-3">
-                <p className="text-xs font-medium uppercase tracking-wider text-zinc-500">
+                <Text className="text-xs font-medium uppercase tracking-wider text-zinc-500">
                   Description
-                </p>
-                <p className="mt-1">{meeting.description}</p>
+                </Text>
+                <Text className="mt-1">{meeting.description}</Text>
               </div>
             )}
           </div>

@@ -9,6 +9,14 @@ const nextConfig: WithNxOptions = {
   // Enable standalone output for Docker deployment
   // This creates a minimal production server in .next/standalone/
   output: "standalone",
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: '**',
+      },
+    ],
+  },
 };
 
 const plugins = [

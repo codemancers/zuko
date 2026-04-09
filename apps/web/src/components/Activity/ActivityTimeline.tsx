@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import { useState, useRef } from 'react';
 import { CommentBox } from './CommentBox';
 import { MarkdownContent } from './MarkdownContent';
@@ -223,10 +224,12 @@ export default function ActivityTimeline({
                 )}
 
                 {activity.actor?.image ? (
-                  <img
+                  <Image
                     src={activity.actor.image}
                     alt={activity.actor.name}
-                    className="relative h-8 w-8 rounded-full border-2 border-white dark:border-zinc-950 bg-zinc-100 dark:bg-zinc-800"
+                    width={32}
+                    height={32}
+                    className="relative rounded-full border-2 border-white dark:border-zinc-950 bg-zinc-100 dark:bg-zinc-800"
                     data-testid="activity-avatar"
                   />
                 ) : (
