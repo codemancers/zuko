@@ -22,6 +22,7 @@ const mockUpdateTask = vi.fn();
 const mockGetTasks = vi.fn();
 const mockGetTask = vi.fn();
 const mockDeleteTask = vi.fn();
+const mockUpdateCell = vi.fn();
 
 vi.mock('@/lib/api/tasks', () => ({
   tasksApi: {
@@ -37,6 +38,12 @@ vi.mock('@/lib/api/tasks', () => ({
     IN_PROGRESS: 'IN_PROGRESS',
     DONE: 'DONE',
     CANCELLED: 'CANCELLED',
+  },
+}));
+
+vi.mock('@/lib/api/tables', () => ({
+  tablesApi: {
+    updateCell: (...args: unknown[]) => mockUpdateCell(...args),
   },
 }));
 
@@ -179,9 +186,9 @@ const mockTableViewResponse = {
   data: [],
   metadata: [
     { id: 'title', header: 'Title', fieldType: 'entity', dataType: 'text', editable: true },
-    { id: 'status', header: 'Status', fieldType: 'select', dataType: 'text', editable: true },
+    { id: 'status', header: 'Status', fieldType: 'select', dataType: 'text', editable: true, config: { options: [{ value: 'TODO', label: 'Todo' }, { value: 'IN_PROGRESS', label: 'In Progress' }, { value: 'DONE', label: 'Done' }] } },
     { id: 'assignee', header: 'Assignee', fieldType: 'text', dataType: 'text', editable: true },
-    { id: 'completedAt', header: 'Completed At', fieldType: 'date', dataType: 'date', editable: false },
+    { id: 'completedAt', header: 'Completed At', fieldType: 'date', dataType: 'date', editable: true },
     { id: 'createdAt', header: 'Created', fieldType: 'date', dataType: 'date', editable: false },
   ],
   pagination: { page: 1, limit: 0, total: 0, totalPages: 1 },
@@ -242,6 +249,137 @@ describe('TasksList', () => {
       await user.click(dataRow);
       expect(mockPush).toHaveBeenCalledWith('/tasks/1');
     }
+  });
+
+  it('opens text editor when clicking assignee cell and commits on blur', async () => {
+    const user = userEvent.setup();
+    mockUpdateCell.mockResolvedValue({});
+    mockGetTasks.mockResolvedValue({
+      ...mockTableViewResponse,
+      data: [{ id: 1, title: 'Test Task', status: 'TODO', assignee: 'alice@example.com' }],
+      pagination: { page: 1, limit: 1, total: 1, totalPages: 1 },
+    });
+
+    render(<TasksList />, { wrapper });
+
+    await waitFor(() => {
+      expect(screen.getByText('alice@example.com')).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByText('alice@example.com'));
+
+    const input = await screen.findByDisplayValue('alice@example.com');
+    expect(input).toBeInTheDocument();
+
+    await user.clear(input);
+    await user.type(input, 'bob@example.com');
+    await user.tab();
+
+    await waitFor(() => {
+      expect(mockUpdateCell).toHaveBeenCalledWith('tasks', 1, 'assignee', 'bob@example.com');
+    });
+  });
+
+  it('clicking assignee cell stops row navigation', async () => {
+    const user = userEvent.setup();
+    mockGetTasks.mockResolvedValue({
+      ...mockTableViewResponse,
+      data: [{ id: 1, title: 'Test Task', status: 'TODO', assignee: 'alice@example.com' }],
+      pagination: { page: 1, limit: 1, total: 1, totalPages: 1 },
+    });
+
+    render(<TasksList />, { wrapper });
+
+    await waitFor(() => {
+      expect(screen.getByText('alice@example.com')).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByText('alice@example.com'));
+
+    expect(mockPush).not.toHaveBeenCalled();
+  });
+
+  it('opens date editor when clicking completedAt cell', async () => {
+    const user = userEvent.setup();
+    mockGetTasks.mockResolvedValue({
+      ...mockTableViewResponse,
+      data: [{ id: 1, title: 'Test Task', status: 'TODO', completedAt: null }],
+      pagination: { page: 1, limit: 1, total: 1, totalPages: 1 },
+    });
+
+    render(<TasksList />, { wrapper });
+
+    await waitFor(() => {
+      expect(screen.getAllByRole('row').length).toBeGreaterThan(1);
+    });
+
+    // Find the Completed At cell (empty) in the data row
+    const rows = screen.getAllByRole('row');
+    const dataRow = rows.find((row) => row.textContent?.includes('Test Task'));
+    expect(dataRow).toBeTruthy();
+
+    const cells = dataRow!.querySelectorAll('td');
+    // completedAt is the 4th data column (title, status, assignee, completedAt)
+    const completedAtCell = cells[4];
+    await user.click(completedAtCell);
+
+    // Should show a date input, not navigate
+    expect(mockPush).not.toHaveBeenCalled();
+    const dateInput = completedAtCell.querySelector('input[type="date"]');
+    expect(dateInput).toBeInTheDocument();
+  });
+
+  it('commits inline edit on Enter key', async () => {
+    const user = userEvent.setup();
+    mockUpdateCell.mockResolvedValue({});
+    mockGetTasks.mockResolvedValue({
+      ...mockTableViewResponse,
+      data: [{ id: 2, title: 'Another Task', status: 'TODO', assignee: 'carol@example.com' }],
+      pagination: { page: 1, limit: 1, total: 1, totalPages: 1 },
+    });
+
+    render(<TasksList />, { wrapper });
+
+    await waitFor(() => {
+      expect(screen.getByText('carol@example.com')).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByText('carol@example.com'));
+
+    const input = await screen.findByDisplayValue('carol@example.com');
+    await user.clear(input);
+    await user.type(input, 'dave@example.com');
+    await user.keyboard('{Enter}');
+
+    await waitFor(() => {
+      expect(mockUpdateCell).toHaveBeenCalledWith('tasks', 2, 'assignee', 'dave@example.com');
+    });
+  });
+
+  it('cancels inline edit on Escape key without calling updateCell', async () => {
+    const user = userEvent.setup();
+    mockGetTasks.mockResolvedValue({
+      ...mockTableViewResponse,
+      data: [{ id: 1, title: 'Test Task', status: 'TODO', assignee: 'alice@example.com' }],
+      pagination: { page: 1, limit: 1, total: 1, totalPages: 1 },
+    });
+
+    render(<TasksList />, { wrapper });
+
+    await waitFor(() => {
+      expect(screen.getByText('alice@example.com')).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByText('alice@example.com'));
+    const input = await screen.findByDisplayValue('alice@example.com');
+    await user.clear(input);
+    await user.type(input, 'changed@example.com');
+    await user.keyboard('{Escape}');
+
+    await waitFor(() => {
+      expect(screen.getByText('alice@example.com')).toBeInTheDocument();
+    });
+    expect(mockUpdateCell).not.toHaveBeenCalled();
   });
 });
 
