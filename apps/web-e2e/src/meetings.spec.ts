@@ -109,11 +109,11 @@ test.describe("Meetings - Authenticated", () => {
 
   test("meeting detail shows tabs", async ({ meetingDetailPage, page }) => {
     await meetingDetailPage.goto("1");
-    await expect(page.getByRole("button", { name: /recording/i })).toBeVisible();
-    await expect(page.getByRole("button", { name: /transcript/i })).toBeVisible();
-    await expect(page.getByRole("button", { name: /^chat$/i })).toBeVisible();
-    await expect(page.getByRole("button", { name: /summary/i })).toBeVisible();
-    await expect(page.getByRole("button", { name: /action items/i })).toBeVisible();
+    await expect(page.getByRole("tab", { name: /recording/i })).toBeVisible();
+    await expect(page.getByRole("tab", { name: /transcript/i })).toBeVisible();
+    await expect(page.getByRole("tab", { name: /^chat$/i })).toBeVisible();
+    await expect(page.getByRole("tab", { name: /summary/i })).toBeVisible();
+    await expect(page.getByRole("tab", { name: /action items/i })).toBeVisible();
   });
 
   test("meeting detail Transcript tab shows content", async ({
@@ -121,7 +121,7 @@ test.describe("Meetings - Authenticated", () => {
     page,
   }) => {
     await meetingDetailPage.goto("1");
-    await page.getByRole("button", { name: /transcript/i }).click();
+    await page.getByRole("tab", { name: /transcript/i }).click();
     await expect(page.getByText(/Hello everyone/i)).toBeVisible({
       timeout: 5000,
     });
@@ -132,7 +132,7 @@ test.describe("Meetings - Authenticated", () => {
     page,
   }) => {
     await meetingDetailPage.goto("1");
-    await page.getByRole("button", { name: /action items/i }).click();
+    await page.getByRole("tab", { name: /action items/i }).click();
     await expect(page.getByText(/of.*items/)).toBeVisible({ timeout: 5000 });
     await expect(
       page.getByPlaceholder(/search action items/i)
@@ -144,7 +144,7 @@ test.describe("Meetings - Authenticated", () => {
     page,
   }) => {
     await meetingDetailPage.goto("1");
-    await page.getByRole("button", { name: /action items/i }).click();
+    await page.getByRole("tab", { name: /action items/i }).click();
     await expect(page.getByRole("button", { name: /add task/i })).toBeVisible({
       timeout: 5000,
     });
@@ -155,7 +155,7 @@ test.describe("Meetings - Authenticated", () => {
     page,
   }) => {
     await meetingDetailPage.goto("1");
-    await page.getByRole("button", { name: /action items/i }).click();
+    await page.getByRole("tab", { name: /action items/i }).click();
     await page.getByRole("button", { name: /add task/i }).click();
     await page.getByPlaceholder(/task title/i).fill("E2E New Task");
     await page.getByPlaceholder(/add more details/i).fill("E2E task description");
