@@ -16,7 +16,6 @@ import {
   TooltipProvider,
 } from '@zuko/ui-kit';
 import { ChevronLeftIcon } from '@heroicons/react/20/solid';
-import { UserGroupIcon } from '@heroicons/react/24/outline';
 import { TableActions, DeleteAction } from '../Table';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
@@ -156,16 +155,7 @@ export const OrgTeams = ({
         disableRowClick
         showAddRow
         onAddRow={handleAddTeam}
-        showEmptyState={true}
-        emptyStateConfig={{
-          icon: UserGroupIcon,
-          title: 'No teams found',
-          description: 'Create a team to organize members in your organization.',
-          action: {
-            label: 'Create Team',
-            onClick: handleAddTeam,
-          },
-        }}
+        showEmptyState={false}
       />
 
       <Alert open={!!teamToRemove} onClose={() => setTeamToRemove(null)}>
