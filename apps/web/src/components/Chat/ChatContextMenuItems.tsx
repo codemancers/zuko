@@ -1,7 +1,7 @@
 'use client';
 
 import { PromptInputActionMenuItem } from '@zuko/ui-kit';
-import { UserIcon, BuildingIcon, Briefcase } from 'lucide-react';
+import { UserIcon, BuildingOfficeIcon, BriefcaseIcon } from '@heroicons/react/24/outline';
 import { useChatContextManager } from './ChatContextWrapper';
 
 /**
@@ -22,13 +22,13 @@ export const ChatContextMenuItems = () => {
       <PromptInputActionMenuItem
         onSelect={() => contextManager.handleOpenDialog('company')}
       >
-        <BuildingIcon className="mr-2 size-4" />
+        <BuildingOfficeIcon className="mr-2 size-4" />
         Add company
       </PromptInputActionMenuItem>
       <PromptInputActionMenuItem
         onSelect={() => contextManager.handleOpenDialog('deal')}
       >
-        <Briefcase className="mr-2 size-4" />
+        <BriefcaseIcon className="mr-2 size-4" />
         Add deal
       </PromptInputActionMenuItem>
     </>

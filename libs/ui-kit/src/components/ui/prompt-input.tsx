@@ -49,12 +49,12 @@ import { Spinner } from './spinner';
 import { Tooltip, TooltipContent, TooltipTrigger } from './tooltip';
 import { cn } from '../../lib/utils';
 import {
-  CornerDownLeftIcon,
-  ImageIcon,
+  ArrowUturnLeftIcon,
+  PhotoIcon,
   PlusIcon,
-  SquareIcon,
-  XIcon,
-} from 'lucide-react';
+  StopIcon,
+  XMarkIcon,
+} from '@heroicons/react/24/outline';
 import { nanoid } from 'nanoid';
 import {
   Children,
@@ -344,7 +344,7 @@ export const PromptInputActionAddAttachments = ({
 
   return (
     <DropdownMenuItem {...props} onSelect={handleSelect}>
-      <ImageIcon className="mr-2 size-4" /> {label}
+      <PhotoIcon className="mr-2 size-4" /> {label}
     </DropdownMenuItem>
   );
 };
@@ -1091,14 +1091,14 @@ export const PromptInputSubmit = ({
 }: PromptInputSubmitProps) => {
   const isGenerating = status === 'submitted' || status === 'streaming';
 
-  let Icon = <CornerDownLeftIcon className="size-4" />;
+  let Icon = <ArrowUturnLeftIcon className="size-4" />;
 
   if (status === 'submitted') {
     Icon = <Spinner />;
   } else if (status === 'streaming') {
-    Icon = <SquareIcon className="size-4" />;
+    Icon = <StopIcon className="size-4" />;
   } else if (status === 'error') {
-    Icon = <XIcon className="size-4" />;
+    Icon = <XMarkIcon className="size-4" />;
   }
 
   const handleClick = useCallback(

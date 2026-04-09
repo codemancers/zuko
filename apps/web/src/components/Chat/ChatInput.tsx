@@ -26,7 +26,7 @@ import {
   PromptInputTools,
   usePromptInputReferencedSources,
 } from '@zuko/ui-kit';
-import { ImageIcon, GlobeIcon, MicIcon } from 'lucide-react';
+import { PhotoIcon, GlobeAltIcon, MicrophoneIcon } from '@heroicons/react/24/outline';
 import {
   ChatContextDisplay,
   type ChatEntity,
@@ -198,7 +198,7 @@ const ChatInputInner = ({
             />
             <PromptInputActionMenuContent>
               <PromptInputActionMenuItem onSelect={handleFileAttachment}>
-                <ImageIcon className="mr-2 size-4" />
+                <PhotoIcon className="mr-2 size-4" />
                 Add photos or files
               </PromptInputActionMenuItem>
               <ChatContextMenuItems />
@@ -214,7 +214,7 @@ const ChatInputInner = ({
             onClick={handleWebSearch}
             size="sm"
           >
-            <GlobeIcon className="mr-1.5 size-4" />
+            <GlobeAltIcon className="mr-1.5 size-4" />
             Search
           </PromptInputButton>
         </PromptInputTools>
@@ -226,7 +226,7 @@ const ChatInputInner = ({
             onClick={handleVoiceInput}
             variant={isRecording ? 'default' : 'ghost'}
           >
-            <MicIcon
+            <MicrophoneIcon
               className={clsx('size-4', isRecording && 'text-red-500')}
             />
           </PromptInputButton>

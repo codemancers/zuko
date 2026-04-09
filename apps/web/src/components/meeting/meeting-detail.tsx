@@ -8,14 +8,14 @@ import Image from 'next/image';
 import { toast } from 'sonner';
 import clsx from 'clsx';
 import {
-  Download,
-  PlayCircle,
-  FileText,
-  Lightbulb,
-  ScrollText,
-  CheckCircle,
-  Copy,
-} from 'lucide-react';
+  ArrowDownTrayIcon as Download,
+  PlayCircleIcon as PlayCircle,
+  DocumentTextIcon as FileText,
+  LightBulbIcon as Lightbulb,
+  DocumentIcon as ScrollText,
+  CheckCircleIcon as CheckCircle,
+  ClipboardDocumentIcon as Copy,
+} from '@heroicons/react/24/outline';
 import {
   Badge,
   Button,

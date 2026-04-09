@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { XIcon } from 'lucide-react';
+import { XMarkIcon } from '@heroicons/react/24/outline';
 import { cn } from '../../lib/utils';
 
 export interface ContextChipProps {
@@ -44,7 +44,7 @@ export const ContextChip = React.forwardRef<HTMLDivElement, ContextChipProps>(
             className="shrink-0 rounded-xs p-0.5 transition-colors hover:bg-black/10 dark:hover:bg-white/10"
             aria-label={`Remove ${label}`}
           >
-            <XIcon className="size-3" />
+            <XMarkIcon className="size-3" />
           </button>
         )}
       </div>
