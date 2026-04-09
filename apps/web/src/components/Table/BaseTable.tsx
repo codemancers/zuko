@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import { useState, useEffect } from 'react';
 import { useBaseTable } from '@/hooks/use-base-table';
 import { BaseTableProps, BaseRow } from './types';
@@ -12,8 +13,8 @@ import { AddColumnDialog } from './AddColumnDialog';
 import React from 'react';
 import { ColumnConfig } from '@/types/table-metadata';
 
-const ChevronLeftIcon = '/icons/chevron-left.svg';
-const ChevronRightIcon = '/icons/chevron-right.svg';
+const CHEVRON_LEFT = '/icons/chevron-left.svg';
+const CHEVRON_RIGHT = '/icons/chevron-right.svg';
 
 export function BaseTable<TData extends BaseRow>(props: BaseTableProps<TData>) {
   const [internalPagination, setInternalPagination] = React.useState<PaginationState>({
@@ -68,30 +69,6 @@ export function BaseTable<TData extends BaseRow>(props: BaseTableProps<TData>) {
     );
   }
 
-  if (showEmptyState && props.data.length === 0 && emptyStateConfig) {
-    return (
-      <div className="mt-8">
-        <div className="mt-40 text-center">
-          <emptyStateConfig.icon className="mx-auto h-12 w-12 text-zinc-400" />
-          <h3 className="mt-2 text-sm font-semibold text-zinc-950 dark:text-white">
-            {emptyStateConfig.title}
-          </h3>
-          <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
-            {emptyStateConfig.description}
-          </p>
-          {emptyStateConfig.action && (
-            <div className="mt-6">
-              <Button onClick={emptyStateConfig.action.onClick}>
-                <PlusIcon className="h-4 w-4" />
-                {emptyStateConfig.action.label}
-              </Button>
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className={`mt-8 ${className ?? ''}`}>
       <div className="flow-root overflow-hidden border border-zinc-200 dark:border-zinc-800 rounded-lg shadow-sm bg-white dark:bg-zinc-950">
@@ -110,6 +87,26 @@ export function BaseTable<TData extends BaseRow>(props: BaseTableProps<TData>) {
             addRowContent={addRowContent}
           />
         </Table>
+
+        {showEmptyState && emptyStateConfig && props.data.length === 0 && !loading && (
+          <div className="flex flex-col items-center justify-center py-16 text-center">
+            <div className="rounded-2xl border border-zinc-200 p-4 dark:border-white/10">
+              <emptyStateConfig.icon className="size-8 text-zinc-400" />
+            </div>
+            <div className="mt-6 text-base font-semibold text-zinc-950 dark:text-white">
+              {emptyStateConfig.title}
+            </div>
+            <div className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
+              {emptyStateConfig.description}
+            </div>
+            <Button
+              className="mt-6"
+              onClick={emptyStateConfig.action.onClick}
+            >
+              {emptyStateConfig.action.label}
+            </Button>
+          </div>
+        )}
 
         {showAddRow && (
           <div className="pl-2 py-1 h-10 border-zinc-200 dark:border-zinc-800 flex items-center bg-zinc-50/50 dark:bg-zinc-900/50">
@@ -187,7 +184,7 @@ export function BaseTable<TData extends BaseRow>(props: BaseTableProps<TData>) {
                     className="relative inline-flex items-center px-3 py-2 rounded-l-md border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-sm font-medium text-zinc-500 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-700 disabled:opacity-50 transition-colors"
                   >
                     <span className="sr-only">Previous</span>
-                    <img src={ChevronLeftIcon} className="h-5 w-5" alt="Previous" />
+                    <Image src={CHEVRON_LEFT} width={20} height={20} alt="Previous" />
                   </Button>
                   <Button
                     onClick={() => table.nextPage()}
@@ -195,7 +192,7 @@ export function BaseTable<TData extends BaseRow>(props: BaseTableProps<TData>) {
                     className="relative inline-flex items-center px-3 py-2 rounded-r-md border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-sm font-medium text-zinc-500 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-700 disabled:opacity-50 transition-colors"
                   >
                     <span className="sr-only">Next</span>
-                    <img src={ChevronRightIcon} className="h-5 w-5" alt="Next" />
+                    <Image src={CHEVRON_RIGHT} width={20} height={20} alt="Next" />
                   </Button>
                 </nav>
               </div>

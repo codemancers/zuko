@@ -2,14 +2,16 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { contactsApi } from '@/lib/api/contacts';
 import { companiesApi } from '@/lib/api/companies';
 import { dealsApi } from '@/lib/api/deals';
+import { tasksApi } from '@/lib/api/tasks';
 import { authClient } from '@/lib/auth-client';
 import { toast } from 'sonner';
 
-export type EntityType = 'contacts' | 'companies' | 'deals';
+export type EntityType = 'contacts' | 'companies' | 'deals' | 'tasks';
 const entityNames = {
   contacts: 'contact',
   companies: 'company',
   deals: 'deal',
+  tasks: 'task',
 };
 
 export function useAddRow(entity: EntityType) {
@@ -41,6 +43,8 @@ export function useAddRow(entity: EntityType) {
             ownerIds: currentUserId ? [currentUserId] : undefined,
             primaryOwnerId: currentUserId,
           });
+        case 'tasks':
+          return tasksApi.createTask({ title: 'New Task' });
         default:
           throw new Error('Invalid entity type');
       }

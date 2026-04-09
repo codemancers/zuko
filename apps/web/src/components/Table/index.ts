@@ -6,3 +6,4 @@ export * from './BaseTableCell';
 export * from './types';
 export * from './ColumnFactory';
 export * from './TableFields';
+export * from './TableActions';

@@ -2,41 +2,34 @@
 
 import {
   Heading,
-  Divider,
   Button,
   Link,
   Text,
-  Dropdown,
-  DropdownButton,
-  DropdownItem,
-  DropdownMenu,
+  Input,
+  Select,
   Alert,
   AlertActions,
   AlertDescription,
   AlertTitle,
-  Badge,
+  TableRow,
+  TableCell,
 } from '@zuko/ui-kit';
-import {
-  ChevronLeftIcon,
-  EllipsisVerticalIcon,
-} from '@heroicons/react/20/solid';
-import { UserGroupIcon } from '@heroicons/react/24/outline';
-import { useQuery, useQueryClient, useQueries } from '@tanstack/react-query';
+import { ChevronLeftIcon } from '@heroicons/react/20/solid';
+import { UsersIcon } from '@heroicons/react/24/outline';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   getOrganizations,
   getMembers,
   getInvitations,
   getTeams,
-  getTeamMembers,
 } from '@/server/query-options';
 import { authClient } from '@/lib/auth-client';
 import { toast } from 'sonner';
-import { useState } from 'react';
-import { AddMemberDialog } from './add-member-dialog';
-import { AddMemberToTeamDialog } from './add-member-to-team-dialog';
-import { RemoveFromTeamsDialog } from './remove-from-teams-dialog';
+import { useMemo, useRef, useState } from 'react';
 import { BaseTable } from '../Table';
-import { createMemberColumns, OrgMember } from './member-columns';
+import { createMemberColumns, type MemberTableRow } from './member-columns';
+
+const ROLES = ['owner', 'admin', 'member'] as const;
 
 export const OrgMembers = ({
   slug,
@@ -46,19 +39,14 @@ export const OrgMembers = ({
   hideHeader?: boolean;
 }) => {
   const queryClient = useQueryClient();
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [addToTeamTarget, setAddToTeamTarget] = useState<{
-    userId: string;
-    name: string;
-  } | null>(null);
-  const [removeFromTeamsTarget, setRemoveFromTeamsTarget] = useState<{
-    userId: string;
-    name: string;
-  } | null>(null);
-  const [memberToRemove, setMemberToRemove] = useState<{
-    id: string;
-    name: string;
-  } | null>(null);
+
+  const [isAddingRow, setIsAddingRow] = useState(false);
+  const [newEmail, setNewEmail] = useState('');
+  const [newRole, setNewRole] = useState<'owner' | 'admin' | 'member'>('member');
+  const [isSaving, setIsSaving] = useState(false);
+  const emailInputRef = useRef<HTMLInputElement>(null);
+
+  const [memberToRemove, setMemberToRemove] = useState<MemberTableRow | null>(null);
 
   const { data: organizations, isLoading: isLoadingOrgs } =
     useQuery(getOrganizations());
@@ -69,116 +57,145 @@ export const OrgMembers = ({
     enabled: !!activeOrg?.id,
   });
 
-  const { data: allInvitations = [], isLoading: isLoadingInvitations } =
-    useQuery({
-      ...getInvitations(activeOrg?.id || ''),
-      enabled: !!activeOrg?.id,
-    });
+  const { data: allInvitations = [], isLoading: isLoadingInvitations } = useQuery({
+    ...getInvitations(activeOrg?.id || ''),
+    enabled: !!activeOrg?.id,
+  });
 
-  const invitations = allInvitations.filter((i) => i.status === 'pending');
+  const { data: teams = [] } = useQuery({
+    ...getTeams(activeOrg?.id || ''),
+    enabled: !!activeOrg?.id,
+  });
 
-  const handleRemoveMember = async () => {
-    if (!memberToRemove || !activeOrg) return;
+  const pendingInvitations = allInvitations.filter((i) => i.status === 'pending');
 
+  // -------------------------------------------------------------------------
+  // Unified rows: active members + pending invitations
+  // -------------------------------------------------------------------------
+
+  const rows = useMemo((): MemberTableRow[] => {
+    const memberRows: MemberTableRow[] = members.map((m: any) => ({
+      id: m.id,
+      type: 'member' as const,
+      name: m.user?.name || m.user?.email || '—',
+      email: m.user?.email || '—',
+      role: m.role,
+      status: 'active' as const,
+      joinedAt: m.createdAt ? new Date(m.createdAt) : undefined,
+      memberId: m.id,
+      userId: m.userId,
+    }));
+
+    const invitationRows: MemberTableRow[] = pendingInvitations.map((inv: any) => ({
+      id: `inv-${inv.id}`,
+      type: 'invitation' as const,
+      name: inv.email,
+      email: inv.email,
+      role: inv.role,
+      status: 'invited' as const,
+      joinedAt: undefined,
+      invitationId: inv.id,
+    }));
+
+    return [...memberRows, ...invitationRows];
+  }, [members, pendingInvitations]);
+
+  // -------------------------------------------------------------------------
+  // Handlers
+  // -------------------------------------------------------------------------
+
+  const handleRoleChange = async (row: MemberTableRow, role: string) => {
+    if (!activeOrg || row.type !== 'member' || !row.memberId) return;
     try {
-      const { error } = await authClient.organization.removeMember({
-        memberIdOrEmail: memberToRemove.id,
+      const { error } = await authClient.organization.updateMemberRole({
+        memberId: row.memberId,
+        role: role as any,
         organizationId: activeOrg.id,
       });
-
       if (error) {
-        toast.error(error.message || 'Failed to remove member');
+        toast.error(error.message || 'Failed to update role');
         return;
       }
-
-      toast.success('Member removed');
+      toast.success('Role updated');
       queryClient.invalidateQueries({
         queryKey: ['organization', activeOrg.id, 'members'],
       });
     } catch {
       toast.error('An error occurred');
-    } finally {
+    }
+  };
+
+  const handleRemove = (row: MemberTableRow) => {
+    setMemberToRemove(row);
+  };
+
+  const confirmRemove = async () => {
+    if (!memberToRemove || !activeOrg) return;
+    try {
+      if (memberToRemove.type === 'member' && memberToRemove.memberId) {
+        const { error } = await authClient.organization.removeMember({
+          memberIdOrEmail: memberToRemove.memberId,
+          organizationId: activeOrg.id,
+        });
+        if (error) { toast.error(error.message || 'Failed to remove member'); setMemberToRemove(null); return; }
+        setMemberToRemove(null);
+        toast.success('Member removed');
+        queryClient.invalidateQueries({ queryKey: ['organization', activeOrg.id, 'members'] });
+      } else if (memberToRemove.type === 'invitation' && memberToRemove.invitationId) {
+        const { error } = await authClient.organization.cancelInvitation({
+          invitationId: memberToRemove.invitationId,
+        });
+        if (error) { toast.error(error.message || 'Failed to cancel invitation'); setMemberToRemove(null); return; }
+        setMemberToRemove(null);
+        toast.success('Invitation cancelled');
+        queryClient.invalidateQueries({ queryKey: ['organization', activeOrg.id, 'invitations'] });
+      }
+    } catch {
+      toast.error('An error occurred');
       setMemberToRemove(null);
     }
   };
 
-  const handleCancelInvitation = async (invitationId: string) => {
-    if (!activeOrg) return;
-
+  const handleSaveNewMember = async () => {
+    if (!newEmail.trim() || !activeOrg) return;
+    setIsSaving(true);
     try {
-      const { error } = await authClient.organization.cancelInvitation({
-        invitationId,
+      const { error } = await authClient.organization.inviteMember({
+        email: newEmail.trim(),
+        role: newRole,
+        organizationId: activeOrg.id,
       });
-
-      if (error) {
-        toast.error(error.message || 'Failed to cancel invitation');
-        return;
-      }
-
-      toast.success('Invitation cancelled');
-      queryClient.invalidateQueries({
-        queryKey: ['organization', activeOrg.id, 'invitations'],
-      });
+      if (error) { toast.error(error.message || 'Failed to send invitation'); return; }
+      toast.success('Invitation sent');
+      queryClient.invalidateQueries({ queryKey: ['organization', activeOrg.id, 'invitations'] });
+      setNewEmail('');
+      setNewRole('member');
+      setIsAddingRow(false);
     } catch {
       toast.error('An error occurred');
+    } finally {
+      setIsSaving(false);
     }
   };
 
-  const isLoading =
-    isLoadingOrgs ||
-    (!!activeOrg && (isLoadingMembers || isLoadingInvitations));
+  const handleCancelNewMember = () => {
+    setNewEmail('');
+    setNewRole('member');
+    setIsAddingRow(false);
+  };
 
-  const memberColumns = activeOrg
-    ? createMemberColumns({
-        renderTeamsCell: (member: OrgMember) => (
-          <MemberTeamBadges
-            userId={member.user.id}
-            organizationId={activeOrg.id}
-          />
-        ),
-        renderActionsCell: (member: OrgMember) => (
-          <div className="flex justify-end pr-2">
-            <MemberDropdownMenu
-              member={member}
-              organizationId={activeOrg.id}
-              slug={slug}
-              onAddToTeam={() =>
-                setAddToTeamTarget({
-                  userId: member.user.id,
-                  name: member.user.name || member.user.email,
-                })
-              }
-              onRemoveFromTeams={() =>
-                setRemoveFromTeamsTarget({
-                  userId: member.user.id,
-                  name: member.user.name || member.user.email,
-                })
-              }
-              onRemoveMember={() =>
-                setMemberToRemove({
-                  id: member.id,
-                  name: member.user.name || member.user.email,
-                })
-              }
-            />
-          </div>
-        ),
-      })
-    : [];
+  const columns = useMemo(
+    () => createMemberColumns({
+      onRoleChange: handleRoleChange,
+      onRemove: handleRemove,
+      organizationId: activeOrg?.id ?? '',
+      teams,
+    }),
+    // eslint-disable-next-line
+    [activeOrg?.id, teams],
+  );
 
-  if (isLoading) {
-    return (
-      <div className="p-8 text-center text-zinc-500">Loading members...</div>
-    );
-  }
-
-  if (!activeOrg) {
-    return (
-      <div className="p-8 text-center text-red-500">
-        Organization not found.
-      </div>
-    );
-  }
+  const isLoading = isLoadingOrgs || (!!activeOrg && (isLoadingMembers || isLoadingInvitations));
 
   return (
     <div>
@@ -189,7 +206,7 @@ export const OrgMembers = ({
             className="inline-flex items-center gap-2 text-sm/6 text-zinc-500 dark:text-zinc-400"
           >
             <ChevronLeftIcon className="size-4 fill-zinc-400 dark:fill-zinc-500" />
-            Back to {activeOrg.name}
+            Back to {activeOrg?.name}
           </Link>
         </div>
       )}
@@ -198,219 +215,122 @@ export const OrgMembers = ({
         <div className="flex items-center justify-between mb-8">
           <div>
             <Heading>Members</Heading>
-            <Text className="mt-1">
-              Manage who has access to {activeOrg.name}.
-            </Text>
-          </div>
-          <div className="flex items-center gap-3">
-            <Button outline onClick={() => setIsAddDialogOpen(true)}>
-              Invite to Org
-            </Button>
-            <Button
-              onClick={() => setAddToTeamTarget({ userId: '', name: '' })}
-            >
-              Add to Team
-            </Button>
+            <Text className="mt-1">Manage who has access to {activeOrg?.name}.</Text>
           </div>
         </div>
       )}
 
-      <BaseTable
-        columns={memberColumns}
-        data={members}
+      <BaseTable<MemberTableRow>
+        columns={columns}
+        data={rows}
         loading={isLoading}
         entityName="members"
-        showEmptyState={true}
+        disableRowClick
+        showAddRow={!isAddingRow}
+        onAddRow={() => {
+          setIsAddingRow(true);
+          setTimeout(() => emailInputRef.current?.focus(), 0);
+        }}
+        addRowContent={
+          isAddingRow ? (
+            <TableRow
+              onBlur={(e) => {
+                if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+                  if (newEmail.trim()) {
+                    handleSaveNewMember();
+                  } else {
+                    handleCancelNewMember();
+                  }
+                }
+              }}
+            >
+              {/* sno */}
+              <TableCell className="w-16 align-middle" />
+              {/* name — empty for invite */}
+              <TableCell className="align-middle" />
+              {/* email */}
+              <TableCell className="align-middle py-2">
+                <Input
+                  ref={emailInputRef}
+                  type="email"
+                  value={newEmail}
+                  onChange={(e) => setNewEmail(e.target.value)}
+                  placeholder="email@example.com · Enter to invite"
+                  disabled={isSaving}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleSaveNewMember();
+                    if (e.key === 'Escape') handleCancelNewMember();
+                  }}
+                />
+              </TableCell>
+              {/* role select */}
+              <TableCell className="align-middle py-2">
+                <Select
+                  value={newRole}
+                  onChange={(e) =>
+                    setNewRole(e.target.value as 'owner' | 'admin' | 'member')
+                  }
+                  disabled={isSaving}
+                >
+                  {ROLES.map((r) => (
+                    <option key={r} value={r} className="capitalize">
+                      {r.charAt(0).toUpperCase() + r.slice(1)}
+                    </option>
+                  ))}
+                </Select>
+              </TableCell>
+              {/* status — empty */}
+              <TableCell className="align-middle" />
+              {/* joined at — empty */}
+              <TableCell className="align-middle" />
+              {/* actions — empty, Enter to submit / Escape or blur to cancel */}
+              <TableCell className="align-middle">
+                {isSaving && (
+                  <span className="text-xs text-zinc-400">Sending...</span>
+                )}
+              </TableCell>
+            </TableRow>
+          ) : null
+        }
+        showEmptyState
         emptyStateConfig={{
-          icon: UserGroupIcon,
-          title: 'No members found',
-          description:
-            'Invite someone to your organization to give them access.',
+          icon: UsersIcon,
+          title: 'No members yet',
+          description: 'Invite someone to your organization to give them access.',
           action: {
-            label: 'Invite to Org',
-            onClick: () => setIsAddDialogOpen(true),
+            label: 'Invite Member',
+            onClick: () => {
+              setIsAddingRow(true);
+              setTimeout(() => emailInputRef.current?.focus(), 0);
+            },
           },
         }}
       />
 
-      {invitations.length > 0 && (
-        <div className="mt-16">
-          <Heading level={3}>Pending Invitations</Heading>
-          <Text className="mt-1">
-            People who have been invited but haven't joined yet.
-          </Text>
-          <ul className="mt-8">
-            {invitations.map((invitation, index) => (
-              <li key={invitation.id}>
-                <Divider soft={index > 0} />
-                <div className="flex items-center justify-between py-6">
-                  <div className="flex flex-col gap-1">
-                    <div className="text-base/6 font-semibold text-zinc-950 dark:text-white">
-                      {invitation.email}
-                    </div>
-                    <div className="text-xs/6 text-zinc-500 flex items-center gap-1.5">
-                      <span className="capitalize">{invitation.role}</span>
-                      <span aria-hidden="true">·</span>
-                      <span className="text-blue-600 dark:text-blue-400">
-                        {invitation.status}
-                      </span>
-                    </div>
-                  </div>
-                  <Button
-                    plain
-                    onClick={() => handleCancelInvitation(invitation.id)}
-                    className="text-red-600 hover:text-red-700 dark:text-red-500 dark:hover:text-red-400"
-                  >
-                    Cancel
-                  </Button>
-                </div>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-
-      <AddMemberDialog
-        organizationId={activeOrg.id}
-        isOpen={isAddDialogOpen}
-        onClose={() => setIsAddDialogOpen(false)}
-        onSuccess={() => {
-          queryClient.invalidateQueries({
-            queryKey: ['organization', activeOrg.id, 'members'],
-          });
-          queryClient.invalidateQueries({
-            queryKey: ['organization', activeOrg.id, 'invitations'],
-          });
-        }}
-      />
-
-      {addToTeamTarget !== null && (
-        <AddMemberToTeamDialog
-          organizationId={activeOrg.id}
-          userId={addToTeamTarget.userId}
-          memberName={addToTeamTarget.name}
-          isOpen={addToTeamTarget !== null}
-          onClose={() => setAddToTeamTarget(null)}
-          onSuccess={() => {
-            queryClient.invalidateQueries({
-              queryKey: ['organization', activeOrg.id, 'teams'],
-            });
-            queryClient.invalidateQueries({
-              queryKey: ['team'],
-            });
-          }}
-        />
-      )}
-
-      {removeFromTeamsTarget !== null && (
-        <RemoveFromTeamsDialog
-          organizationId={activeOrg.id}
-          userId={removeFromTeamsTarget.userId}
-          memberName={removeFromTeamsTarget.name}
-          isOpen={removeFromTeamsTarget !== null}
-          onClose={() => setRemoveFromTeamsTarget(null)}
-          onSuccess={() => {
-            queryClient.invalidateQueries({
-              queryKey: ['organization', activeOrg.id, 'teams'],
-            });
-            queryClient.invalidateQueries({
-              queryKey: ['team'],
-            });
-          }}
-        />
-      )}
+      <p className="mt-3 text-xs text-zinc-500 dark:text-zinc-400">
+        {rows.filter((r) => r.status === 'active').length} active ·{' '}
+        {rows.filter((r) => r.status === 'invited').length} pending invitation
+        {rows.filter((r) => r.status === 'invited').length !== 1 ? 's' : ''}
+      </p>
 
       <Alert open={!!memberToRemove} onClose={() => setMemberToRemove(null)}>
-        <AlertTitle>Remove Member</AlertTitle>
+        <AlertTitle>
+          {memberToRemove?.type === 'member' ? 'Remove Member' : 'Cancel Invitation'}
+        </AlertTitle>
         <AlertDescription>
-          Are you sure you want to remove {memberToRemove?.name} from the
-          organization? They will lose all access.
+          {memberToRemove?.type === 'member'
+            ? `Are you sure you want to remove ${memberToRemove?.name} from the organization? They will lose all access.`
+            : `Cancel the invitation sent to ${memberToRemove?.email}?`}
         </AlertDescription>
         <AlertActions>
           <Button plain onClick={() => setMemberToRemove(null)}>
             Cancel
           </Button>
-          <Button color="red" onClick={handleRemoveMember}>
-            Remove
+          <Button color="red" onClick={confirmRemove}>
+            {memberToRemove?.type === 'member' ? 'Remove' : 'Cancel Invitation'}
           </Button>
         </AlertActions>
       </Alert>
     </div>
-  );
-};
-// Sub-component to show which teams a member belongs to
-const MemberTeamBadges = ({
-  userId,
-  organizationId,
-}: {
-  userId: string;
-  organizationId: string;
-}) => {
-  const { data: teams = [] } = useQuery(getTeams(organizationId));
-
-  const teamMemberResults = useQueries({
-    queries: teams.map((team) => ({
-      ...getTeamMembers(team.id),
-    })),
-  });
-
-  const memberTeams = teams.filter((_, i) =>
-    teamMemberResults[i].data?.some((tm) => tm.userId === userId),
-  );
-
-  if (memberTeams.length === 0) {
-    return null;
-  }
-
-  return (
-    <div className="flex flex-wrap gap-1 mt-0.5">
-      {memberTeams.map((team) => (
-        <Badge key={team.id} color="fuchsia">
-          {team.name}
-        </Badge>
-      ))}
-    </div>
-  );
-};
-
-const MemberDropdownMenu = ({
-  member,
-  organizationId,
-  slug,
-  onAddToTeam,
-  onRemoveFromTeams,
-  onRemoveMember,
-}: {
-  member: {
-    id: string;
-    role: string;
-    user: {
-      id: string;
-      name: string | null;
-      email: string;
-      image?: string | null;
-    };
-  };
-  organizationId: string;
-  slug: string;
-  onAddToTeam: () => void;
-  onRemoveFromTeams: () => void;
-  onRemoveMember: () => void;
-}) => {
-  return (
-    <Dropdown>
-      <DropdownButton plain aria-label="More options">
-        <EllipsisVerticalIcon className="size-5" />
-      </DropdownButton>
-      <DropdownMenu>
-        <DropdownItem onClick={onAddToTeam}>Add to Team</DropdownItem>
-        <DropdownItem onClick={onRemoveFromTeams}>
-          Remove from Teams
-        </DropdownItem>
-        <DropdownItem onClick={onRemoveMember}>
-          <span className="text-red-600 dark:text-red-500">Remove Member</span>
-        </DropdownItem>
-      </DropdownMenu>
-    </Dropdown>
   );
 };

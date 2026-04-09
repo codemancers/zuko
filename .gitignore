@@ -79,3 +79,12 @@ vitest.config.*.timestamp*
 /mentions-*
 /with-*
 /[0-9]*-*
+
+# AI agents and rules files
+.claude/
+.cursorrules
+.windsurfrules
+.mcp.json
+AGENTS.md
+CLAUDE.md
+GEMINI.md

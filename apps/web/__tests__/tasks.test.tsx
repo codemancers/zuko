@@ -80,6 +80,7 @@ const mockTask: Task = {
   parentId: null,
   assignee: 'john@example.com',
   subtasks: [],
+  owners: [],
   createdAt: '2026-03-12T00:00:00Z',
   updatedAt: '2026-03-12T00:00:00Z',
 };
@@ -366,7 +367,7 @@ function renderCell(columns: ColumnDef<FlatTask>[], colId: string, task: FlatTas
 
   const args: CellArgs = {
     row: { original: task },
-    getValue: () => (task as Record<string, unknown>)[colId],
+    getValue: () => (task as unknown as Record<string, unknown>)[colId],
   };
 
   const Cell = () => <>{col.cell!(args)}</>;
@@ -615,7 +616,7 @@ describe('createTaskColumns', () => {
   });
 
   describe('Actions column', () => {
-    it('renders the actions dropdown trigger', () => {
+    it('renders the actions icon buttons', () => {
       const col = columns.find(
         (c) => (c as { id?: string }).id === 'actions'
       ) as ColumnDef<FlatTask> & { cell: (args: CellArgs) => React.ReactNode };
@@ -627,7 +628,7 @@ describe('createTaskColumns', () => {
       );
       render(<Cell />);
 
-      expect(screen.getByLabelText(/task actions/i)).toBeInTheDocument();
+      expect(screen.getByLabelText(/edit task/i)).toBeInTheDocument();
     });
 
     it('calls onEdit when Edit is clicked', async () => {
@@ -643,8 +644,7 @@ describe('createTaskColumns', () => {
       );
       render(<Cell />);
 
-      await user.click(screen.getByLabelText(/task actions/i));
-      await user.click(screen.getByText('Edit'));
+      await user.click(screen.getByLabelText(/edit task/i));
 
       expect(onEdit).toHaveBeenCalledWith(baseTask);
     });
@@ -662,8 +662,7 @@ describe('createTaskColumns', () => {
       );
       render(<Cell />);
 
-      await user.click(screen.getByLabelText(/task actions/i));
-      await user.click(screen.getByText('Delete'));
+      await user.click(screen.getByLabelText(/delete task/i));
 
       expect(onDelete).toHaveBeenCalledWith(baseTask);
     });
@@ -681,14 +680,12 @@ describe('createTaskColumns', () => {
       );
       render(<Cell />);
 
-      await user.click(screen.getByLabelText(/task actions/i));
-      await user.click(screen.getByText('Complete'));
+      await user.click(screen.getByLabelText(/mark complete/i));
 
       expect(onComplete).toHaveBeenCalledWith(baseTask);
     });
 
     it('does not render Complete for tasks with status DONE', async () => {
-      const user = userEvent.setup();
       const col = columns.find(
         (c) => (c as { id?: string }).id === 'actions'
       ) as ColumnDef<FlatTask> & { cell: (args: CellArgs) => React.ReactNode };
@@ -701,8 +698,7 @@ describe('createTaskColumns', () => {
       );
       render(<Cell />);
 
-      await user.click(screen.getByLabelText(/task actions/i));
-      expect(screen.queryByText('Complete')).not.toBeInTheDocument();
+      expect(screen.queryByLabelText(/mark complete/i)).not.toBeInTheDocument();
     });
   });
 });

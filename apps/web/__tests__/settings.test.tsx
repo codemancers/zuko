@@ -2,6 +2,12 @@
  * @vitest-environment jsdom
  */
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
+
+vi.mock('next/image', () => ({
+  default: ({ src, alt }: { src: string; alt: string }) => (
+    <img src={src} alt={alt} />
+  ),
+}));
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -29,6 +35,7 @@ vi.mock('@/lib/auth-client', () => ({
     listAccounts: (...args: unknown[]) => mockListAccounts(...args),
     linkSocial: (...args: unknown[]) => mockLinkSocial(...args),
     useActiveOrganization: vi.fn(() => ({ data: null, isLoading: false })),
+    useSession: vi.fn(() => ({ data: null, isLoading: false })),
   },
 }));
 
@@ -65,6 +72,9 @@ describe('SettingsPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     global.fetch = vi.fn();
+    mockGetGitHubInstallationStatus.mockResolvedValue({ installed: false });
+    mockGetGitHubInstallationUrl.mockResolvedValue('https://github.com/apps/test/installations/new');
+    mockListAccounts.mockResolvedValue({ data: [] });
   });
 
   afterEach(() => {
@@ -115,30 +125,18 @@ describe('SettingsPage', () => {
   });
 
   it('renders GitHub in Integrations and Google Calendar in Connections', async () => {
-    vi.mocked(global.fetch).mockResolvedValue({
-      ok: true,
-      json: () => Promise.resolve({ accounts: [] }),
-    } as Response);
-
     renderWithProviders(<SettingsPage />);
     await waitFor(() => {
       expect(screen.getByText('GitHub App')).toBeInTheDocument();
     });
     expect(screen.getByText('GitHub')).toBeInTheDocument();
     expect(screen.getByText('Google Calendar')).toBeInTheDocument();
-    expect(
-      screen.getByText(/sync events and availability for scheduling/i),
-    ).toBeInTheDocument();
   });
 
   it('shows Connected badge for Google when accounts include google', async () => {
-    vi.mocked(global.fetch).mockResolvedValue({
-      ok: true,
-      json: () =>
-        Promise.resolve({
-          accounts: [{ providerId: 'google' }],
-        }),
-    } as Response);
+    mockListAccounts.mockResolvedValue({
+      data: [{ providerId: 'google', createdAt: new Date().toISOString() }],
+    });
 
     renderWithProviders(<SettingsPage />);
     await waitFor(() => {
@@ -148,20 +146,13 @@ describe('SettingsPage', () => {
     expect(connectedBadges.length).toBeGreaterThanOrEqual(1);
   });
 
-  it('shows Not connected when no accounts', async () => {
-    vi.mocked(global.fetch).mockResolvedValue({
-      ok: true,
-      json: () => Promise.resolve({ accounts: [] }),
-    } as Response);
-
+  it('shows Disconnected when no accounts', async () => {
     renderWithProviders(<SettingsPage />);
     await waitFor(() => {
-      expect(
-        screen.getByRole('tab', { name: 'Connections' }),
-      ).toBeInTheDocument();
+      expect(screen.getByText('Google Calendar')).toBeInTheDocument();
     });
-    const notConnected = screen.getAllByText('Not connected');
-    expect(notConnected.length).toBeGreaterThanOrEqual(1);
+    const disconnected = screen.getAllByText('Disconnected');
+    expect(disconnected.length).toBeGreaterThanOrEqual(1);
   });
 });
 

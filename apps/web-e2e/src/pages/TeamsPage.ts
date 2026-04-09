@@ -19,9 +19,18 @@ export class TeamsPage extends BasePage {
     await this.page.goto(`/organization/${slug}/teams`);
   }
 
-  async createTeam(name: string) {
-    await this.createTeamButton.click();
-    await this.teamNameInput.fill(name);
-    await this.submitButton.click();
+  async createTeam(name?: string) {
+    // Teams are created via "Add row" which creates a "New Team" entry directly
+    const addRowButton = this.page.getByRole('button', { name: /add row/i });
+    await addRowButton.click();
+    // If a name is provided, rename inline by clicking the name cell
+    if (name) {
+      const newTeamRow = this.page.locator('tr').filter({ hasText: 'New Team' }).last();
+      await newTeamRow.locator('span').filter({ hasText: 'New Team' }).click();
+      const input = newTeamRow.locator('input');
+      await input.waitFor({ state: 'visible', timeout: 3000 });
+      await input.fill(name);
+      await input.press('Enter');
+    }
   }
 }

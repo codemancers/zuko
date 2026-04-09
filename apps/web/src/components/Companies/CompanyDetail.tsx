@@ -5,10 +5,9 @@ import {
   BuildingOfficeIcon,
   PencilIcon,
   EyeSlashIcon,
-  XMarkIcon,
-  CheckIcon,
+  ChevronLeftIcon,
 } from '@heroicons/react/24/outline';
-import { Badge, Divider, Heading, Button } from '@zuko/ui-kit';
+import { Badge, Divider, Heading, Button, Input, Subheading } from '@zuko/ui-kit';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getCompany, getDealsByCompany } from '@/server/query-options';
 import { companiesApi } from '@/lib/api/companies';
@@ -17,6 +16,9 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import ActivityTimeline from '@/components/Activity/ActivityTimeline';
 import AddContactDialog from './AddContactDialog';
+import { EMPTY_VALUE } from '@/components/Table';
+import ConfirmDialog from '@/components/shared/ConfirmDialog';
+import { InlineSaveCancel, InlineEditRemove } from '@/components/shared/InlineEditActions';
 
 interface CompanyDetailProps {
   companyId: number;
@@ -36,6 +38,8 @@ export default function CompanyDetail({
   const [editingContactId, setEditingContactId] = useState<number | null>(null);
   const [editedRole, setEditedRole] = useState('');
   const [editedIsPrimary, setEditedIsPrimary] = useState(false);
+  const [showHideDialog, setShowHideDialog] = useState(false);
+  const [contactToRemove, setContactToRemove] = useState<{ id: number; name: string } | null>(null);
 
   const hideMutation = useMutation({
     mutationFn: () => companiesApi.hideCompany(companyId),
@@ -98,19 +102,11 @@ export default function CompanyDetail({
   };
 
   const handleHide = () => {
-    if (confirm('Are you sure you want to hide this company?')) {
-      hideMutation.mutate();
-    }
+    setShowHideDialog(true);
   };
 
   const handleRemoveContact = (contactId: number, contactName: string) => {
-    if (
-      confirm(
-        `Are you sure you want to remove ${contactName} from this company?`,
-      )
-    ) {
-      removeContactMutation.mutate(contactId);
-    }
+    setContactToRemove({ id: contactId, name: contactName });
   };
 
   const handleEditContact = (
@@ -138,7 +134,7 @@ export default function CompanyDetail({
   };
 
   const formatCurrency = (value?: number, currency?: string) => {
-    if (value === undefined || value === null) return '-';
+    if (value === undefined || value === null) return EMPTY_VALUE;
     const curr = currency || 'USD';
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -174,7 +170,12 @@ export default function CompanyDetail({
 
   return (
     <>
-      <div className="flex items-start justify-between">
+      <Link href="/companies" className="inline-flex items-center gap-2 text-sm/6 text-zinc-500 dark:text-zinc-400">
+        <ChevronLeftIcon className="size-4" />
+        Companies
+      </Link>
+
+      <div className="mt-4 flex items-start justify-between">
         <div className="flex items-center gap-4">
           <div className="flex h-16 w-16 items-center justify-center rounded-full bg-zinc-100 dark:bg-zinc-800">
             <BuildingOfficeIcon className="h-8 w-8 text-zinc-600 dark:text-zinc-400" />
@@ -200,11 +201,31 @@ export default function CompanyDetail({
 
       <Divider className="mt-6" />
 
+      <ConfirmDialog
+        open={showHideDialog}
+        onClose={() => setShowHideDialog(false)}
+        onConfirm={() => hideMutation.mutate()}
+        title="Hide Company"
+        description="Are you sure you want to hide this company?"
+        confirmText="Hide"
+        isLoading={hideMutation.isPending}
+      />
+      <ConfirmDialog
+        open={!!contactToRemove}
+        onClose={() => setContactToRemove(null)}
+        onConfirm={() => contactToRemove && removeContactMutation.mutate(contactToRemove.id)}
+        title="Remove Contact"
+        description={contactToRemove ? `Are you sure you want to remove ${contactToRemove.name} from this company?` : ''}
+        confirmText="Remove"
+        confirmColor="red"
+        isLoading={removeContactMutation.isPending}
+      />
+
       {/* Company Information */}
       <div className="mt-8">
-        <h2 className="text-base font-semibold text-zinc-950 dark:text-white">
+        <Subheading>
           Company Information
-        </h2>
+        </Subheading>
         <dl className="mt-4 space-y-4">
           {company.website && (
             <div className="grid grid-cols-3">
@@ -245,9 +266,9 @@ export default function CompanyDetail({
 
       {/* Ownership */}
       <div className="mt-8">
-        <h2 className="text-base font-semibold text-zinc-950 dark:text-white">
+        <Subheading>
           Owners
-        </h2>
+        </Subheading>
         <div className="mt-4 space-y-2">
           {company.owners.map((owner) => (
             <div key={owner.id} className="flex items-center gap-3">
@@ -270,9 +291,9 @@ export default function CompanyDetail({
       {/* Summary */}
       {company.summary && (
         <div className="mt-8">
-          <h2 className="text-base font-semibold text-zinc-950 dark:text-white">
+          <Subheading>
             Summary
-          </h2>
+          </Subheading>
           <div className="mt-4 whitespace-pre-wrap rounded-lg bg-zinc-50 p-4 text-sm text-zinc-950 dark:bg-zinc-900 dark:text-white">
             {company.summary}
           </div>
@@ -282,9 +303,9 @@ export default function CompanyDetail({
       {/* Associated Contacts */}
       <div className="mt-8">
         <div className="flex items-center justify-between">
-          <h2 className="text-base font-semibold text-zinc-950 dark:text-white">
+          <Subheading>
             Associated Contacts
-          </h2>
+          </Subheading>
           <AddContactDialog
             companyId={companyId}
             existingContactIds={
@@ -308,12 +329,12 @@ export default function CompanyDetail({
                 {editingContactId === ac.contactId ? (
                   // Edit mode
                   <>
-                    <input
+                    <Input
                       type="text"
                       value={editedRole}
                       onChange={(e) => setEditedRole(e.target.value)}
                       placeholder="Role"
-                      className="rounded-md border border-zinc-300 bg-white px-2 py-1 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-white"
+                      className="h-auto py-1 text-sm"
                     />
                     <label className="flex items-center gap-1.5">
                       <input
@@ -329,24 +350,11 @@ export default function CompanyDetail({
                     <div className="text-xs text-zinc-600 dark:text-zinc-400">
                       Joined {dayjs(ac.joinedAt).format('MMM D, YYYY')}
                     </div>
-                    <div className="ml-auto flex gap-2">
-                      <button
-                        onClick={() => handleSaveContact(ac.contactId)}
-                        disabled={updateContactMutation.isPending}
-                        className="text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300 transition-colors"
-                        title="Save changes"
-                      >
-                        <CheckIcon className="h-4 w-4" />
-                      </button>
-                      <button
-                        onClick={handleCancelEdit}
-                        disabled={updateContactMutation.isPending}
-                        className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors"
-                        title="Cancel"
-                      >
-                        <XMarkIcon className="h-4 w-4" />
-                      </button>
-                    </div>
+                    <InlineSaveCancel
+                      onSave={() => handleSaveContact(ac.contactId)}
+                      onCancel={handleCancelEdit}
+                      disabled={updateContactMutation.isPending}
+                    />
                   </>
                 ) : (
                   // View mode
@@ -364,34 +372,12 @@ export default function CompanyDetail({
                     <div className="text-xs text-zinc-600 dark:text-zinc-400">
                       Joined {dayjs(ac.joinedAt).format('MMM D, YYYY')}
                     </div>
-                    <div className="ml-auto flex gap-2">
-                      <button
-                        onClick={() =>
-                          handleEditContact(ac.contactId, ac.role, ac.isPrimary)
-                        }
-                        disabled={
-                          updateContactMutation.isPending ||
-                          removeContactMutation.isPending
-                        }
-                        className="text-zinc-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
-                        title="Edit association"
-                      >
-                        <PencilIcon className="h-4 w-4" />
-                      </button>
-                      <button
-                        onClick={() =>
-                          handleRemoveContact(ac.contactId, ac.contact.name)
-                        }
-                        disabled={
-                          updateContactMutation.isPending ||
-                          removeContactMutation.isPending
-                        }
-                        className="text-zinc-400 hover:text-red-600 dark:hover:text-red-400 transition-colors"
-                        title="Remove contact"
-                      >
-                        <XMarkIcon className="h-4 w-4" />
-                      </button>
-                    </div>
+                    <InlineEditRemove
+                      onEdit={() => handleEditContact(ac.contactId, ac.role, ac.isPrimary)}
+                      onRemove={() => handleRemoveContact(ac.contactId, ac.contact.name)}
+                      disabled={updateContactMutation.isPending || removeContactMutation.isPending}
+                      removeTitle="Remove contact"
+                    />
                   </>
                 )}
               </div>
@@ -407,9 +393,9 @@ export default function CompanyDetail({
       {/* Associated Deals */}
       {dealsData && dealsData.deals && dealsData.deals.length > 0 && (
         <div className="mt-8">
-          <h2 className="text-base font-semibold text-zinc-950 dark:text-white">
+          <Subheading>
             Associated Deals
-          </h2>
+          </Subheading>
           <div className="mt-4 space-y-3">
             {dealsData.deals.map((deal: any) => {
               const dealCompany = deal.companies?.find(
@@ -445,9 +431,9 @@ export default function CompanyDetail({
 
       {/* Metadata */}
       <div className="mt-8">
-        <h2 className="text-base font-semibold text-zinc-950 dark:text-white">
+        <Subheading>
           Details
-        </h2>
+        </Subheading>
         <dl className="mt-4 space-y-4">
           <div className="grid grid-cols-3">
             <dt className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
@@ -470,9 +456,9 @@ export default function CompanyDetail({
 
       {/* Activity Timeline */}
       <div className="mt-8">
-        <h2 className="text-base font-semibold text-zinc-950 dark:text-white">
+        <Subheading>
           Activity
-        </h2>
+        </Subheading>
         <div className="mt-4">
           <ActivityTimeline
             entityType="company"

@@ -21,8 +21,8 @@ test.describe('Authentication', () => {
     await expect(githubButton).toBeVisible();
 
     // Verify button has GitHub icon
-    const svg = githubButton.locator('svg');
-    await expect(svg).toBeVisible();
+    const icon = githubButton.locator('img[alt="GitHub"]');
+    await expect(icon).toBeVisible();
   });
 
   test('clicking GitHub sign-in button initiates OAuth flow', async ({

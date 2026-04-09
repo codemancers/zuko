@@ -5,10 +5,9 @@ import {
   BriefcaseIcon,
   PencilIcon,
   EyeSlashIcon,
-  XMarkIcon,
-  CheckIcon,
+  ChevronLeftIcon,
 } from '@heroicons/react/24/outline';
-import { Badge, Divider, Heading, Button } from '@zuko/ui-kit';
+import { Badge, Divider, Heading, Button, Input, Subheading } from '@zuko/ui-kit';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getDeal } from '@/server/query-options';
 import { dealsApi } from '@/lib/api/deals';
@@ -18,6 +17,9 @@ import Link from 'next/link';
 import ActivityTimeline from '@/components/Activity/ActivityTimeline';
 import AddCompanyToDealDialog from './AddCompanyToDealDialog';
 import AddContactToDealDialog from './AddContactToDealDialog';
+import { EMPTY_VALUE } from '@/components/Table';
+import ConfirmDialog from '@/components/shared/ConfirmDialog';
+import { InlineSaveCancel, InlineEditRemove } from '@/components/shared/InlineEditActions';
 
 interface DealDetailProps {
   dealId: number;
@@ -37,6 +39,11 @@ export default function DealDetail({ dealId, currentUserId }: DealDetailProps) {
   const [editingContactId, setEditingContactId] = useState<number | null>(null);
   const [editedRole, setEditedRole] = useState('');
   const [editedContactIsPrimary, setEditedContactIsPrimary] = useState(false);
+
+  // Confirm dialog state
+  const [showHideDialog, setShowHideDialog] = useState(false);
+  const [companyToRemove, setCompanyToRemove] = useState<{ id: number; name: string } | null>(null);
+  const [contactToRemove, setContactToRemove] = useState<{ id: number; name: string } | null>(null);
 
   const hideMutation = useMutation({
     mutationFn: () => dealsApi.hideDeal(dealId),
@@ -123,17 +130,11 @@ export default function DealDetail({ dealId, currentUserId }: DealDetailProps) {
   };
 
   const handleHide = () => {
-    if (confirm('Are you sure you want to hide this deal?')) {
-      hideMutation.mutate();
-    }
+    setShowHideDialog(true);
   };
 
   const handleRemoveCompany = (companyId: number, companyName: string) => {
-    if (
-      confirm(`Are you sure you want to remove ${companyName} from this deal?`)
-    ) {
-      removeCompanyMutation.mutate(companyId);
-    }
+    setCompanyToRemove({ id: companyId, name: companyName });
   };
 
   const handleEditCompany = (companyId: number, currentIsPrimary: boolean) => {
@@ -154,11 +155,7 @@ export default function DealDetail({ dealId, currentUserId }: DealDetailProps) {
   };
 
   const handleRemoveContact = (contactId: number, contactName: string) => {
-    if (
-      confirm(`Are you sure you want to remove ${contactName} from this deal?`)
-    ) {
-      removeContactMutation.mutate(contactId);
-    }
+    setContactToRemove({ id: contactId, name: contactName });
   };
 
   const handleEditContact = (
@@ -186,7 +183,7 @@ export default function DealDetail({ dealId, currentUserId }: DealDetailProps) {
   };
 
   const formatCurrency = (value?: number, currency?: string) => {
-    if (value === undefined || value === null) return '-';
+    if (value === undefined || value === null) return EMPTY_VALUE;
     const curr = currency || 'USD';
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -233,7 +230,12 @@ export default function DealDetail({ dealId, currentUserId }: DealDetailProps) {
 
   return (
     <>
-      <div className="flex items-start justify-between">
+      <Link href="/deals" className="inline-flex items-center gap-2 text-sm/6 text-zinc-500 dark:text-zinc-400">
+        <ChevronLeftIcon className="size-4" />
+        Deals
+      </Link>
+
+      <div className="mt-4 flex items-start justify-between">
         <div className="flex items-center gap-4">
           <div className="flex h-16 w-16 items-center justify-center rounded-full bg-zinc-100 dark:bg-zinc-800">
             <BriefcaseIcon className="h-8 w-8 text-zinc-600 dark:text-zinc-400" />
@@ -264,11 +266,41 @@ export default function DealDetail({ dealId, currentUserId }: DealDetailProps) {
 
       <Divider className="mt-6" />
 
+      <ConfirmDialog
+        open={showHideDialog}
+        onClose={() => setShowHideDialog(false)}
+        onConfirm={() => hideMutation.mutate()}
+        title="Hide Deal"
+        description="Are you sure you want to hide this deal?"
+        confirmText="Hide"
+        isLoading={hideMutation.isPending}
+      />
+      <ConfirmDialog
+        open={!!companyToRemove}
+        onClose={() => setCompanyToRemove(null)}
+        onConfirm={() => companyToRemove && removeCompanyMutation.mutate(companyToRemove.id)}
+        title="Remove Company"
+        description={companyToRemove ? `Are you sure you want to remove ${companyToRemove.name} from this deal?` : ''}
+        confirmText="Remove"
+        confirmColor="red"
+        isLoading={removeCompanyMutation.isPending}
+      />
+      <ConfirmDialog
+        open={!!contactToRemove}
+        onClose={() => setContactToRemove(null)}
+        onConfirm={() => contactToRemove && removeContactMutation.mutate(contactToRemove.id)}
+        title="Remove Contact"
+        description={contactToRemove ? `Are you sure you want to remove ${contactToRemove.name} from this deal?` : ''}
+        confirmText="Remove"
+        confirmColor="red"
+        isLoading={removeContactMutation.isPending}
+      />
+
       {/* Deal Information */}
       <div className="mt-8">
-        <h2 className="text-base font-semibold text-zinc-950 dark:text-white">
+        <Subheading>
           Deal Information
-        </h2>
+        </Subheading>
         <dl className="mt-4 space-y-4">
           <div className="grid grid-cols-3">
             <dt className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
@@ -351,9 +383,9 @@ export default function DealDetail({ dealId, currentUserId }: DealDetailProps) {
 
       {/* Ownership */}
       <div className="mt-8">
-        <h2 className="text-base font-semibold text-zinc-950 dark:text-white">
+        <Subheading>
           Owners
-        </h2>
+        </Subheading>
         <div className="mt-4 space-y-2">
           {deal.owners.map((owner) => (
             <div key={owner.id} className="flex items-center gap-3">
@@ -376,9 +408,9 @@ export default function DealDetail({ dealId, currentUserId }: DealDetailProps) {
       {/* Summary */}
       {deal.summary && (
         <div className="mt-8">
-          <h2 className="text-base font-semibold text-zinc-950 dark:text-white">
+          <Subheading>
             Summary
-          </h2>
+          </Subheading>
           <div className="mt-4 whitespace-pre-wrap rounded-lg bg-zinc-50 p-4 text-sm text-zinc-950 dark:bg-zinc-900 dark:text-white">
             {deal.summary}
           </div>
@@ -388,9 +420,9 @@ export default function DealDetail({ dealId, currentUserId }: DealDetailProps) {
       {/* Associated Companies */}
       <div className="mt-8">
         <div className="flex items-center justify-between">
-          <h2 className="text-base font-semibold text-zinc-950 dark:text-white">
+          <Subheading>
             Associated Companies
-          </h2>
+          </Subheading>
           <AddCompanyToDealDialog
             dealId={dealId}
             existingCompanyIds={deal.companies?.map((da) => da.companyId) || []}
@@ -425,24 +457,11 @@ export default function DealDetail({ dealId, currentUserId }: DealDetailProps) {
                         Primary
                       </span>
                     </label>
-                    <div className="ml-auto flex gap-2">
-                      <button
-                        onClick={() => handleSaveCompany(da.companyId)}
-                        disabled={updateCompanyMutation.isPending}
-                        className="text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300 transition-colors"
-                        title="Save changes"
-                      >
-                        <CheckIcon className="h-4 w-4" />
-                      </button>
-                      <button
-                        onClick={handleCancelEdit}
-                        disabled={updateCompanyMutation.isPending}
-                        className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors"
-                        title="Cancel"
-                      >
-                        <XMarkIcon className="h-4 w-4" />
-                      </button>
-                    </div>
+                    <InlineSaveCancel
+                      onSave={() => handleSaveCompany(da.companyId)}
+                      onCancel={handleCancelEdit}
+                      disabled={updateCompanyMutation.isPending}
+                    />
                   </>
                 ) : (
                   // View mode
@@ -452,37 +471,12 @@ export default function DealDetail({ dealId, currentUserId }: DealDetailProps) {
                         Primary
                       </Badge>
                     )}
-                    <div className="ml-auto flex gap-2">
-                      <button
-                        onClick={() =>
-                          handleEditCompany(da.companyId, da.isPrimary)
-                        }
-                        disabled={
-                          updateCompanyMutation.isPending ||
-                          removeCompanyMutation.isPending
-                        }
-                        className="text-zinc-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
-                        title="Edit association"
-                      >
-                        <PencilIcon className="h-4 w-4" />
-                      </button>
-                      <button
-                        onClick={() =>
-                          handleRemoveCompany(
-                            da.companyId,
-                            da.company.companyName,
-                          )
-                        }
-                        disabled={
-                          updateCompanyMutation.isPending ||
-                          removeCompanyMutation.isPending
-                        }
-                        className="text-zinc-400 hover:text-red-600 dark:hover:text-red-400 transition-colors"
-                        title="Remove company"
-                      >
-                        <XMarkIcon className="h-4 w-4" />
-                      </button>
-                    </div>
+                    <InlineEditRemove
+                      onEdit={() => handleEditCompany(da.companyId, da.isPrimary)}
+                      onRemove={() => handleRemoveCompany(da.companyId, da.company.companyName)}
+                      disabled={updateCompanyMutation.isPending || removeCompanyMutation.isPending}
+                      removeTitle="Remove company"
+                    />
                   </>
                 )}
               </div>
@@ -498,9 +492,9 @@ export default function DealDetail({ dealId, currentUserId }: DealDetailProps) {
       {/* Associated Contacts */}
       <div className="mt-8">
         <div className="flex items-center justify-between">
-          <h2 className="text-base font-semibold text-zinc-950 dark:text-white">
+          <Subheading>
             Associated Contacts
-          </h2>
+          </Subheading>
           <AddContactToDealDialog
             dealId={dealId}
             existingContactIds={deal.contacts?.map((dc) => dc.contactId) || []}
@@ -522,12 +516,12 @@ export default function DealDetail({ dealId, currentUserId }: DealDetailProps) {
                 {editingContactId === dc.contactId ? (
                   // Edit mode
                   <>
-                    <input
+                    <Input
                       type="text"
                       value={editedRole}
                       onChange={(e) => setEditedRole(e.target.value)}
                       placeholder="Role"
-                      className="rounded-md border border-zinc-300 bg-white px-2 py-1 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-white"
+                      className="h-auto py-1 text-sm"
                     />
                     <label className="flex items-center gap-1.5">
                       <input
@@ -542,24 +536,11 @@ export default function DealDetail({ dealId, currentUserId }: DealDetailProps) {
                         Primary
                       </span>
                     </label>
-                    <div className="ml-auto flex gap-2">
-                      <button
-                        onClick={() => handleSaveContact(dc.contactId)}
-                        disabled={updateContactMutation.isPending}
-                        className="text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300 transition-colors"
-                        title="Save changes"
-                      >
-                        <CheckIcon className="h-4 w-4" />
-                      </button>
-                      <button
-                        onClick={handleCancelContactEdit}
-                        disabled={updateContactMutation.isPending}
-                        className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors"
-                        title="Cancel"
-                      >
-                        <XMarkIcon className="h-4 w-4" />
-                      </button>
-                    </div>
+                    <InlineSaveCancel
+                      onSave={() => handleSaveContact(dc.contactId)}
+                      onCancel={handleCancelContactEdit}
+                      disabled={updateContactMutation.isPending}
+                    />
                   </>
                 ) : (
                   // View mode
@@ -574,34 +555,12 @@ export default function DealDetail({ dealId, currentUserId }: DealDetailProps) {
                         Primary
                       </Badge>
                     )}
-                    <div className="ml-auto flex gap-2">
-                      <button
-                        onClick={() =>
-                          handleEditContact(dc.contactId, dc.role, dc.isPrimary)
-                        }
-                        disabled={
-                          updateContactMutation.isPending ||
-                          removeContactMutation.isPending
-                        }
-                        className="text-zinc-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
-                        title="Edit association"
-                      >
-                        <PencilIcon className="h-4 w-4" />
-                      </button>
-                      <button
-                        onClick={() =>
-                          handleRemoveContact(dc.contactId, dc.contact.name)
-                        }
-                        disabled={
-                          updateContactMutation.isPending ||
-                          removeContactMutation.isPending
-                        }
-                        className="text-zinc-400 hover:text-red-600 dark:hover:text-red-400 transition-colors"
-                        title="Remove contact"
-                      >
-                        <XMarkIcon className="h-4 w-4" />
-                      </button>
-                    </div>
+                    <InlineEditRemove
+                      onEdit={() => handleEditContact(dc.contactId, dc.role, dc.isPrimary)}
+                      onRemove={() => handleRemoveContact(dc.contactId, dc.contact.name)}
+                      disabled={updateContactMutation.isPending || removeContactMutation.isPending}
+                      removeTitle="Remove contact"
+                    />
                   </>
                 )}
               </div>
@@ -616,9 +575,9 @@ export default function DealDetail({ dealId, currentUserId }: DealDetailProps) {
 
       {/* Metadata */}
       <div className="mt-8">
-        <h2 className="text-base font-semibold text-zinc-950 dark:text-white">
+        <Subheading>
           Details
-        </h2>
+        </Subheading>
         <dl className="mt-4 space-y-4">
           <div className="grid grid-cols-3">
             <dt className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
@@ -641,9 +600,9 @@ export default function DealDetail({ dealId, currentUserId }: DealDetailProps) {
 
       {/* Activity Timeline */}
       <div className="mt-8">
-        <h2 className="text-base font-semibold text-zinc-950 dark:text-white">
+        <Subheading>
           Activity
-        </h2>
+        </Subheading>
         <div className="mt-4">
           <ActivityTimeline
             entityType="deal"

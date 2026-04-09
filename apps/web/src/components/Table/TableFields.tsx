@@ -1,5 +1,7 @@
 'use client';
 
+export const EMPTY_VALUE = '—';
+
 import type { ReactNode } from 'react';
 import Image from 'next/image';
 import { ArrowTopRightOnSquareIcon } from '@heroicons/react/24/outline';

@@ -6,10 +6,6 @@ import {
   Avatar,
   Link,
   Text,
-  Dropdown,
-  DropdownButton,
-  DropdownItem,
-  DropdownMenu,
   Alert,
   AlertActions,
   AlertDescription,
@@ -19,11 +15,8 @@ import {
   TooltipContent,
   TooltipProvider,
 } from '@zuko/ui-kit';
-import {
-  ChevronLeftIcon,
-  EllipsisVerticalIcon,
-} from '@heroicons/react/20/solid';
-import { UserGroupIcon } from '@heroicons/react/24/outline';
+import { ChevronLeftIcon } from '@heroicons/react/20/solid';
+import { TableActions, DeleteAction } from '../Table';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   getOrganizations,
@@ -31,9 +24,7 @@ import {
   getTeamMembers,
   getMembers,
 } from '@/server/query-options';
-import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { CreateTeamDialog } from './create-team-dialog';
 import { authClient } from '@/lib/auth-client';
 import { toast } from 'sonner';
 import { BaseTable } from '../Table';
@@ -46,13 +37,7 @@ export const OrgTeams = ({
   slug: string;
   hideHeader?: boolean;
 }) => {
-  const router = useRouter();
   const queryClient = useQueryClient();
-  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-  const [teamToEdit, setTeamToEdit] = useState<{
-    id: string;
-    name: string;
-  } | null>(null);
   const [teamToRemove, setTeamToRemove] = useState<{
     id: string;
     name: string;
@@ -92,21 +77,37 @@ export const OrgTeams = ({
     }
   };
 
+  const handleAddTeam = async () => {
+    if (!activeOrg) return;
+    try {
+      const { error } = await authClient.organization.createTeam({
+        name: 'New Team',
+        organizationId: activeOrg.id,
+      });
+      if (error) { toast.error(error.message || 'Failed to create team'); return; }
+      toast.success('Team created');
+      queryClient.invalidateQueries({ queryKey: ['organization', activeOrg.id, 'teams'] });
+    } catch {
+      toast.error('An error occurred');
+    }
+  };
+
+  const handleRenameTeam = async (team: { id: string; name: string }, newName: string) => {
+    if (!activeOrg) return;
+    try {
+      const { error } = await authClient.organization.updateTeam({
+        teamId: team.id,
+        data: { name: newName },
+      });
+      if (error) { toast.error(error.message || 'Failed to rename team'); return; }
+      toast.success(`Team renamed to "${newName}"`);
+      queryClient.invalidateQueries({ queryKey: ['organization', activeOrg.id, 'teams'] });
+    } catch {
+      toast.error('An error occurred');
+    }
+  };
+
   const isLoading = isLoadingOrgs || (!!activeOrg && isLoadingTeams);
-
-  if (isLoading) {
-    return (
-      <div className="p-8 text-center text-zinc-500">Loading teams...</div>
-    );
-  }
-
-  if (!activeOrg) {
-    return (
-      <div className="p-8 text-center text-red-500">
-        Organization not found.
-      </div>
-    );
-  }
 
   return (
     <div>
@@ -117,7 +118,7 @@ export const OrgTeams = ({
             className="inline-flex items-center gap-2 text-sm/6 text-zinc-500 dark:text-zinc-400"
           >
             <ChevronLeftIcon className="size-4 fill-zinc-400 dark:fill-zinc-500" />
-            Back to {activeOrg.name}
+            Back to {activeOrg?.name}
           </Link>
         </div>
       )}
@@ -126,64 +127,35 @@ export const OrgTeams = ({
         <div className="flex items-center justify-between mb-8">
           <div>
             <Heading>Teams</Heading>
-            <Text className="mt-1">Manage teams within {activeOrg.name}.</Text>
+            <Text className="mt-1">Manage teams within {activeOrg?.name}.</Text>
           </div>
-          <Button onClick={() => setIsCreateDialogOpen(true)}>
-            Create Team
-          </Button>
         </div>
       )}
 
       <BaseTable
-        columns={
-          activeOrg
-            ? createTeamColumns({
-                renderMembersCell: (team: OrgTeam) => (
-                  <TeamMemberAvatars
-                    teamId={team.id}
-                    organizationId={activeOrg.id}
-                  />
-                ),
-                renderActionsCell: (team: OrgTeam) => (
-                  <div className="flex justify-end pr-2">
-                    <TeamDropdownMenu
-                      onEdit={() => setTeamToEdit(team)}
-                      onRemove={() => setTeamToRemove(team)}
-                    />
-                  </div>
-                ),
-              })
-            : []
-        }
+        columns={createTeamColumns({
+          onRename: handleRenameTeam,
+          renderMembersCell: (team: OrgTeam) =>
+            activeOrg ? (
+              <TeamMemberAvatars
+                teamId={team.id}
+                organizationId={activeOrg.id}
+              />
+            ) : null,
+          renderActionsCell: (team: OrgTeam) =>
+            activeOrg ? (
+              <TableActions>
+                <DeleteAction onClick={() => setTeamToRemove(team)} label="Remove team" />
+              </TableActions>
+            ) : null,
+        })}
         data={teams}
         loading={isLoading}
         entityName="teams"
-        showEmptyState={true}
-        emptyStateConfig={{
-          icon: UserGroupIcon,
-          title: 'No teams found',
-          description: 'Create a team to organize members in your organization.',
-          action: {
-            label: 'Create Team',
-            onClick: () => setIsCreateDialogOpen(true),
-          },
-        }}
-      />
-
-      <CreateTeamDialog
-        organizationId={activeOrg.id}
-        isOpen={isCreateDialogOpen || !!teamToEdit}
-        onClose={() => {
-          setIsCreateDialogOpen(false);
-          setTeamToEdit(null);
-        }}
-        initialData={teamToEdit || undefined}
-        onSuccess={() => {
-          if (!teamToEdit) {
-            router.push('/settings?tab=teams');
-            router.refresh();
-          }
-        }}
+        disableRowClick
+        showAddRow
+        onAddRow={handleAddTeam}
+        showEmptyState={false}
       />
 
       <Alert open={!!teamToRemove} onClose={() => setTeamToRemove(null)}>
@@ -202,28 +174,6 @@ export const OrgTeams = ({
         </AlertActions>
       </Alert>
     </div>
-  );
-};
-
-const TeamDropdownMenu = ({
-  onEdit,
-  onRemove,
-}: {
-  onEdit: () => void;
-  onRemove: () => void;
-}) => {
-  return (
-    <Dropdown>
-      <DropdownButton plain aria-label="More options">
-        <EllipsisVerticalIcon className="size-5" />
-      </DropdownButton>
-      <DropdownMenu>
-        <DropdownItem onClick={onEdit}>Update Team</DropdownItem>
-        <DropdownItem onClick={onRemove}>
-          <span className="text-red-600 dark:text-red-500">Remove Team</span>
-        </DropdownItem>
-      </DropdownMenu>
-    </Dropdown>
   );
 };
 

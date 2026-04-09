@@ -1,10 +1,9 @@
 'use client';
 
-import { BuildingOfficeIcon, PlusIcon } from '@heroicons/react/24/outline';
+import { BuildingOfficeIcon } from '@heroicons/react/24/outline';
 import {
   Divider,
   Heading,
-  Button,
   Input,
 } from '@zuko/ui-kit';
 import { useQuery } from '@tanstack/react-query';
@@ -55,17 +54,11 @@ const CompaniesList = () => {
 
   return (
     <>
-      <div className="flex items-start justify-between">
-        <div className="flex flex-col">
-          <Heading>Companies</Heading>
-          <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
-            Manage your sales companies and relationships
-          </p>
-        </div>
-        <Button onClick={handleNewCompany}>
-          <PlusIcon className="h-4 w-4" />
-          New Company
-        </Button>
+      <div className="flex flex-col">
+        <Heading>Companies</Heading>
+        <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
+          Manage your sales companies and relationships
+        </p>
       </div>
 
       <Divider className="mt-6" />

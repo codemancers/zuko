@@ -1,8 +1,7 @@
 'use client';
 import React, { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { VideoCameraSlashIcon, EyeIcon, TrashIcon } from '@heroicons/react/24/outline';
-import Link from 'next/link';
+import { VideoCameraSlashIcon } from '@heroicons/react/24/outline';
 import {
   Divider,
   Heading,
@@ -14,7 +13,7 @@ import { toast } from 'sonner';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getTableViewMeetings } from '@/server/query-options';
 import { meetingsApi } from '@/lib/api/meetings';
-import { BaseTable, createColumnsFromMetadata, type BaseRow } from '@/components/Table';
+import { BaseTable, createColumnsFromMetadata, type BaseRow, TableActions, ViewAction, DeleteAction } from '@/components/Table';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 
 export const MeetingList = () => {
@@ -44,24 +43,13 @@ export const MeetingList = () => {
       id: 'actions',
       header: 'Actions',
       cell: ({ row }) => (
-        <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
-          <Link
-            href={`/meeting/${row.original.id}`}
-            className="rounded p-1.5 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
-            aria-label="View"
-          >
-            <EyeIcon className="h-4 w-4" />
-          </Link>
-          <button
-            type="button"
+        <TableActions>
+          <ViewAction href={`/meeting/${row.original.id}`} />
+          <DeleteAction
             onClick={() => setMeetingToDelete(Number(row.original.id))}
             disabled={deleteMeetingMutation.isPending}
-            className="rounded p-1.5 text-zinc-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20 dark:hover:text-red-400 disabled:opacity-50"
-            aria-label="Delete"
-          >
-            <TrashIcon className="h-4 w-4" />
-          </button>
-        </div>
+          />
+        </TableActions>
       ),
     }),
     [deleteMeetingMutation.isPending],
@@ -72,14 +60,12 @@ export const MeetingList = () => {
   }, [metadata, actionsColumn]);
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-start justify-between">
-        <div className="flex flex-col">
-          <Heading>Meetings</Heading>
-          <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
-            Manage your meeting recordings and transcripts
-          </p>
-        </div>
+    <>
+      <div className="flex flex-col">
+        <Heading>Meetings</Heading>
+        <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
+          Manage your meeting recordings and transcripts
+        </p>
       </div>
 
       <Divider className="mt-6" />
@@ -99,12 +85,10 @@ export const MeetingList = () => {
         data={meetings}
         loading={isLoading}
         entityName="meetings"
-        disableRowClick={false}
         onRowClick={(meeting) => router.push(`/meeting/${meeting.id}`)}
         totalCount={meetingsData?.pagination?.total}
         showAddRow
         onAddRow={() => router.push('/meeting/add')}
-        showEmptyState={meetings.length === 0}
         emptyStateConfig={{
           icon: VideoCameraSlashIcon,
           title: 'No Meetings Found',
@@ -131,6 +115,6 @@ export const MeetingList = () => {
         onClose={() => setMeetingToDelete(null)}
         isLoading={deleteMeetingMutation.isPending}
       />
-    </div>
+    </>
   );
 };

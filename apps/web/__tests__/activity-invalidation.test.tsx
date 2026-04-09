@@ -82,7 +82,7 @@ const mockCompany = {
   updatedAt: '2025-01-02T00:00:00Z',
   owners: [{ id: 1, userId: 1, companyId: 42, isPrimary: true, assignedAt: '', user: { id: 1, name: 'Alice', email: 'a@a.com' } }],
   contacts: [
-    { id: 1, contactId: 5, companyId: 42, role: null, isPrimary: false, joinedAt: '2025-01-01T00:00:00Z', contact: { name: 'Jane Doe' } },
+    { id: 1, contactId: 5, companyId: 42, role: undefined, isPrimary: false, joinedAt: '2025-01-01T00:00:00Z', createdAt: '2025-01-01T00:00:00Z', updatedAt: '2025-01-01T00:00:00Z', contact: { id: 5, name: 'Jane Doe', email: 'jane@example.com', isHidden: false, createdAt: '', updatedAt: '', owners: [] } },
   ],
 };
 
@@ -175,6 +175,12 @@ describe('CompanyDetail – removeContact timeline invalidation', () => {
 
     const user = userEvent.setup();
     await user.click(screen.getByTitle('Remove contact'));
+
+    // Confirm the removal in the ConfirmDialog
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: /^remove$/i })).toBeInTheDocument()
+    );
+    await user.click(screen.getByRole('button', { name: /^remove$/i }));
 
     await waitFor(() => {
       expect(invalidateSpy).toHaveBeenCalledWith(

@@ -172,7 +172,7 @@ test.describe("Meetings - Authenticated", () => {
     await meetingsPage.goto();
     await page.getByText("Weekly Product Sync").click();
     await page.waitForURL("**/meeting/**", { timeout: 10000 });
-    await page.getByRole("button", { name: /meetings/i }).first().click();
+    await page.getByRole("link", { name: /meetings/i }).first().click();
     await page.waitForURL("**/meetings", { timeout: 10000 });
     expect(page.url()).toContain("/meetings");
   });

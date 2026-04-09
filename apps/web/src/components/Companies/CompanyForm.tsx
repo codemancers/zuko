@@ -213,13 +213,7 @@ export default function CompanyForm({
       </Field>
 
       {/* Submit Error */}
-      {errors.submit && (
-        <div className="rounded-md bg-red-50 p-3 dark:bg-red-900/20">
-          <p className="text-sm text-red-800 dark:text-red-200">
-            {errors.submit}
-          </p>
-        </div>
-      )}
+      {errors.submit && <ErrorMessage>{errors.submit}</ErrorMessage>}
 
       {/* Actions */}
       <div className="flex gap-3">

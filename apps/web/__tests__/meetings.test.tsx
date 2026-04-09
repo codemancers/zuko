@@ -502,7 +502,7 @@ describe('MeetingDetail', () => {
   it('renders back button, meeting name, platform, status, and metadata', () => {
     render(<MeetingDetail meetingId="1" />, { wrapper: Wrapper });
     expect(
-      screen.getByRole('button', { name: /meetings/i })
+      screen.getByRole('link', { name: /meetings/i })
     ).toBeInTheDocument();
     expect(
       screen.getByText('Weekly Sync - Product & Engineering')
@@ -514,11 +514,10 @@ describe('MeetingDetail', () => {
     expect(screen.getByText('Description')).toBeInTheDocument();
   });
 
-  it('back button calls router.back', async () => {
-    const user = userEvent.setup();
+  it('back link points to /meetings', () => {
     render(<MeetingDetail meetingId="1" />, { wrapper: Wrapper });
-    await user.click(screen.getByRole('button', { name: /meetings/i }));
-    expect(mockBack).toHaveBeenCalled();
+    const backLink = screen.getByRole('link', { name: /meetings/i });
+    expect(backLink).toHaveAttribute('href', '/meetings');
   });
 
   it('shows End Meeting button when status is IN_PROGRESS', () => {

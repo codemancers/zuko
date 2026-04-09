@@ -19,6 +19,8 @@ import {
   Button,
   Text,
   Switch,
+  Textarea,
+  ErrorMessage,
 } from '@zuko/ui-kit';
 import z from 'zod';
 import { useMutation } from '@tanstack/react-query';
@@ -119,11 +121,7 @@ const AddMeeting = () => {
                     {...register('name')}
                     autoComplete="off"
                   />
-                  {errors.name && (
-                    <small className="text-red-400">
-                      {errors.name.message}
-                    </small>
-                  )}
+                  {errors.name && <ErrorMessage>{errors.name.message}</ErrorMessage>}
                 </Field>
               </section>
 
@@ -137,9 +135,7 @@ const AddMeeting = () => {
                     {...register('url')}
                     autoComplete="off"
                   />
-                  {errors.url && (
-                    <small className="text-red-400">{errors.url.message}</small>
-                  )}
+                  {errors.url && <ErrorMessage>{errors.url.message}</ErrorMessage>}
                 </Field>
               </section>
             </section>
@@ -147,12 +143,12 @@ const AddMeeting = () => {
             <section className="flex w-full flex-col gap-2">
               <Field>
                 <Label htmlFor="description">Meeting Description</Label>
-                <textarea
+                <Textarea
                   id="description"
                   placeholder="Meeting description"
                   {...register('description')}
                   autoComplete="off"
-                  className="min-h-[100px] w-full appearance-none rounded-lg border border-zinc-950/10 bg-transparent px-3 py-2 text-base/6 text-zinc-950 placeholder:text-zinc-500 focus:ring-2 focus:ring-blue-500/50 focus:outline-none data-hover:border-zinc-950/20 sm:text-sm/6 dark:border-white/10 dark:bg-white/5 dark:text-white dark:placeholder:text-zinc-400 dark:data-hover:border-white/20"
+                  rows={4}
                 />
               </Field>
             </section>
@@ -176,11 +172,7 @@ const AddMeeting = () => {
                       id="scheduledAt"
                       {...register('scheduledAt')}
                     />
-                    {errors.scheduledAt && (
-                      <small className="text-red-400">
-                        {errors.scheduledAt.message}
-                      </small>
-                    )}
+                    {errors.scheduledAt && <ErrorMessage>{errors.scheduledAt.message}</ErrorMessage>}
                   </Field>
                 </section>
 

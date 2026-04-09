@@ -1,11 +1,12 @@
 'use client';
 
 import { ColumnDef } from '@tanstack/react-table';
-import { Badge, Dropdown, DropdownButton, DropdownItem, DropdownMenu } from '@zuko/ui-kit';
+import { Badge, Input } from '@zuko/ui-kit';
 import dayjs from 'dayjs';
 import { useRef, useState } from 'react';
-import { EllipsisVerticalIcon, CheckIcon } from '@heroicons/react/24/outline';
+import { CheckIcon, CheckCircleIcon } from '@heroicons/react/24/outline';
 import type { Task, TaskStatus, UpdateTaskDto } from '@/lib/api/tasks';
+import { EMPTY_VALUE, TableActions, EditAction, DeleteAction, TableActionButton } from '@/components/Table';
 
 export type FlatTask = Task & { parentTitle?: string };
 
@@ -119,7 +120,7 @@ function AssigneeCell({ task, onUpdate }: { task: FlatTask; onUpdate: (id: numbe
   }
 
   return (
-    <input
+    <Input
       ref={inputRef}
       autoFocus
       type="text"
@@ -138,7 +139,7 @@ function AssigneeCell({ task, onUpdate }: { task: FlatTask; onUpdate: (id: numbe
         }
       }}
       placeholder="Unassigned"
-      className="rounded-lg border border-zinc-600 bg-zinc-800/60 px-3 py-1.5 text-sm text-zinc-100 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+      className="h-auto py-1.5 text-sm"
     />
   );
 }
@@ -154,22 +155,19 @@ function TaskActionsDropdown({
   const isComplete = task.status === 'DONE';
 
   return (
-    <div className="flex justify-end pr-2" onClick={(e) => e.stopPropagation()}>
-      <Dropdown>
-        <DropdownButton plain aria-label="Task actions">
-          <EllipsisVerticalIcon className="size-5" />
-        </DropdownButton>
-        <DropdownMenu>
-          <DropdownItem onClick={() => onEdit(task)}>Edit</DropdownItem>
-          {!isComplete && (
-            <DropdownItem onClick={() => onComplete(task)}>Complete</DropdownItem>
-          )}
-          <DropdownItem onClick={() => onDelete(task)}>
-            <span className="text-red-600 dark:text-red-500">Delete</span>
-          </DropdownItem>
-        </DropdownMenu>
-      </Dropdown>
-    </div>
+    <TableActions>
+      <EditAction onClick={() => onEdit(task)} label="Edit task" />
+      {!isComplete && (
+        <TableActionButton
+          onClick={() => onComplete(task)}
+          label="Mark complete"
+          variant="success"
+        >
+          <CheckCircleIcon className="h-4 w-4 text-zinc-400 group-data-[hover]:text-green-500 dark:group-data-[hover]:text-green-400" />
+        </TableActionButton>
+      )}
+      <DeleteAction onClick={() => onDelete(task)} label="Delete task" />
+    </TableActions>
   );
 }
 
@@ -232,7 +230,7 @@ export function createTaskColumns(callbacks: TaskColumnCallbacks): ColumnDef<Fla
         const primaryOwner = row.original.owners?.find((o) => o.isPrimary);
         return (
           <span className="text-sm text-zinc-600 dark:text-zinc-400">
-            {primaryOwner?.user.name ?? '—'}
+            {primaryOwner?.user.name ?? EMPTY_VALUE}
           </span>
         );
       },
@@ -251,11 +249,11 @@ export function createTaskColumns(callbacks: TaskColumnCallbacks): ColumnDef<Fla
     },
     {
       id: 'actions',
-      header: () => (
-        <span className="flex w-full justify-end pr-2">Actions</span>
-      ),
+      header: () => <div className="text-center">Actions</div>,
       cell: ({ row }) => (
-        <TaskActionsDropdown task={row.original} callbacks={callbacks} />
+        <div className="flex justify-center">
+          <TaskActionsDropdown task={row.original} callbacks={callbacks} />
+        </div>
       ),
     },
   ];

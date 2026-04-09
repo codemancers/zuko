@@ -18,7 +18,7 @@ test.describe('Tasks - CRUD', () => {
   test('displays tasks page with header', async ({ tasksPage, page }) => {
     await tasksPage.goto();
     await expect(page.getByRole('heading', { name: /^Tasks$/i })).toBeVisible();
-    await expect(page.getByRole('button', { name: /new task/i }).first()).toBeVisible();
+    await expect(page.getByRole('button', { name: /add row/i }).first()).toBeVisible();
   });
 
   test('can create a task and see it in the list', async ({ tasksPage, page }) => {
@@ -157,13 +157,14 @@ test.describe('Task Status Workflow', () => {
     await page.goto(`/tasks/${taskId}/edit`);
     await page.getByLabel(/status/i).selectOption('IN_PROGRESS');
     await page.getByRole('button', { name: /save changes/i }).click();
-    await page.waitForURL('**/tasks/**', { timeout: 10000 });
+    // Wait for redirect to task detail (not edit page) — regex ensures /tasks/123 not /tasks/123/edit
+    await page.waitForURL(/\/tasks\/\d+$/, { timeout: 10000 });
 
     // IN_PROGRESS → DONE
     await page.goto(`/tasks/${taskId}/edit`);
     await page.getByLabel(/status/i).selectOption('DONE');
     await page.getByRole('button', { name: /save changes/i }).click();
-    await page.waitForURL('**/tasks/**', { timeout: 10000 });
+    await page.waitForURL(/\/tasks\/\d+$/, { timeout: 10000 });
 
     await expect(page.getByText('Done', { exact: true }).first()).toBeVisible();
   });

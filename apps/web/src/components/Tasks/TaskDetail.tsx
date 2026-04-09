@@ -88,12 +88,12 @@ const TaskDetail = ({ taskId, currentUserId }: TaskDetailProps) => {
           )}
         </div>
         <div className="flex gap-2">
-          <Button outline onClick={() => router.push(`/tasks/${taskId}/edit`)}>
+          <Button onClick={() => router.push(`/tasks/${taskId}/edit`)}>
             <PencilIcon className="h-4 w-4" />
             Edit
           </Button>
           <Button
-            color="red"
+            plain
             onClick={() => setShowDeleteDialog(true)}
             disabled={deleteMutation.isPending}
           >
@@ -208,9 +208,9 @@ const TaskDetail = ({ taskId, currentUserId }: TaskDetailProps) => {
 
       {/* Activity Timeline */}
       <div className="mt-8">
-        <h2 className="text-base font-semibold text-zinc-950 dark:text-white">
+        <Subheading>
           Activity
-        </h2>
+        </Subheading>
         <div className="mt-4">
           <ActivityTimeline
             entityType="task"

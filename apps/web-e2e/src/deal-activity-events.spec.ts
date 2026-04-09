@@ -164,8 +164,13 @@ test.describe("Deal Activity Timeline - System Events", () => {
         return;
       }
 
-      page.once("dialog", (dialog) => dialog.accept());
       await removeButtons.first().click();
+      // Confirm in ConfirmDialog
+      const confirmRemoveCompany = page.getByRole("button", { name: /^Remove$/ });
+      await confirmRemoveCompany.waitFor({ state: "visible", timeout: 5000 });
+      await confirmRemoveCompany.click();
+      // Dialog doesn't auto-close after mutation; dismiss so aria-hidden is lifted
+      await page.keyboard.press("Escape");
 
       await page
         .getByRole("heading", { name: "Activity", exact: true })
@@ -249,8 +254,13 @@ test.describe("Deal Activity Timeline - System Events", () => {
         return;
       }
 
-      page.once("dialog", (dialog) => dialog.accept());
       await removeButtons.first().click();
+      // Confirm in ConfirmDialog
+      const confirmRemoveContact = page.getByRole("button", { name: /^Remove$/ });
+      await confirmRemoveContact.waitFor({ state: "visible", timeout: 5000 });
+      await confirmRemoveContact.click();
+      // Dialog doesn't auto-close after mutation; dismiss so aria-hidden is lifted
+      await page.keyboard.press("Escape");
 
       await page
         .getByRole("heading", { name: "Activity", exact: true })

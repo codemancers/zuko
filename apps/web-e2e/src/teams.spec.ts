@@ -10,48 +10,42 @@ test.describe('Team Management', () => {
     // 1. Create an organization first
     const orgName = `Org for Team ${Date.now()}`;
     const orgSlug = `org-team-${Date.now()}`;
-    
+
     await createOrgPage.goto();
     await createOrgPage.createOrganization(orgName, orgSlug);
     await page.waitForURL('**/chat');
 
     // 2. Navigate to Teams page
     await teamsPage.goto(orgSlug);
-    
-    // 3. Create a team
-    const teamName = `Engineering ${Date.now()}`;
-    await teamsPage.createTeam(teamName);
 
-    // 4. Verify team is created and redirected to settings
-    await expect(page.getByText(`Team "${teamName}" created successfully`)).toBeVisible();
-    await page.waitForURL('**/settings?tab=teams');
+    // 3. Create a team via "Add row" — creates "New Team" directly
+    const addRowButton = page.getByRole('button', { name: /add row/i });
+    await addRowButton.click();
+    await expect(page.getByText('Team created')).toBeVisible();
+
+    // Wait for the "New Team" row to appear
+    await expect(page.locator('table').getByText('New Team')).toBeVisible({ timeout: 10000 });
+
+    // 4. Rename "New Team" inline — click the name span to enter edit mode
+    await page.locator('table').getByText('New Team').last().click();
+    // After clicking, the span is replaced by an input — find the first input in the table
+    const nameInput = page.locator('table input').first();
+    await nameInput.waitFor({ state: 'visible', timeout: 5000 });
+    const teamName = `Engineering ${Date.now()}`;
+    await nameInput.fill(teamName);
+    await nameInput.press('Enter');
+
+    await expect(page.getByText(`Team renamed to "${teamName}"`)).toBeVisible();
     await expect(page.locator('table')).toContainText(teamName);
 
-    // 5. Update the team
-    const updatedTeamName = `${teamName} Updated`;
-    const teamRow = page.locator('tr').filter({ hasText: teamName });
-    await teamRow.getByRole('button', { name: /more options/i }).click();
-    await page.getByRole('menuitem', { name: /update team/i }).click();
-    
-    const teamNameInput = page.getByLabel(/team name/i);
-    await teamNameInput.fill(updatedTeamName);
-    await page.getByRole('button', { name: /^update team$/i }).click();
+    // 5. Remove the team
+    await page.locator('tr').filter({ hasText: teamName })
+      .getByRole('button', { name: /remove team/i }).click();
 
-    await expect(page.getByText(`Team "${updatedTeamName}" updated successfully`)).toBeVisible();
-    await expect(page.locator('table')).toContainText(updatedTeamName);
-
-    // Wait for the update dialog to fully close before interacting with the table
-    await page.locator('[role="dialog"]').waitFor({ state: 'hidden', timeout: 10000 });
-
-    // 6. Remove the team
-    await page.locator('tr').filter({ hasText: updatedTeamName })
-      .getByRole('button', { name: /more options/i }).click();
-    await page.getByRole('menuitem', { name: /remove team/i }).click();
-    
     // Confirm in Alert
     await page.getByRole('button', { name: /^remove$/i }).click();
 
-    await expect(page.getByText(`Team "${updatedTeamName}" removed`)).toBeVisible();
-    await expect(page.locator('table')).not.toContainText(updatedTeamName);
+    await expect(page.getByText(`Team "${teamName}" removed`)).toBeVisible();
+    await expect(page.locator('table')).not.toContainText(teamName);
   });
 });

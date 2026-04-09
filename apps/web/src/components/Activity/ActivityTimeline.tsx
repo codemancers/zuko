@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import { useState, useRef } from 'react';
 import { CommentBox } from './CommentBox';
 import { MarkdownContent } from './MarkdownContent';
@@ -12,6 +13,7 @@ import { toast } from 'sonner';
 import { getTimeline } from '@/server/query-options';
 import { activitiesApi } from '@/lib/api/activities';
 import dayjs from 'dayjs';
+import { EMPTY_VALUE } from '@/components/Table';
 import relativeTime from 'dayjs/plugin/relativeTime';
 
 dayjs.extend(relativeTime);
@@ -42,7 +44,7 @@ function formatFieldName(field: string) {
 }
 
 function formatFieldValue(field: string, val: unknown): string {
-  if (val === null || val === undefined) return '—';
+  if (val === null || val === undefined) return EMPTY_VALUE;
   if (field === 'expectedCloseDate' || field === 'actualCloseDate') {
     return dayjs(String(val)).format('MMM D, YYYY');
   }
@@ -222,10 +224,12 @@ export default function ActivityTimeline({
                 )}
 
                 {activity.actor?.image ? (
-                  <img
+                  <Image
                     src={activity.actor.image}
                     alt={activity.actor.name}
-                    className="relative h-8 w-8 rounded-full border-2 border-white dark:border-zinc-950 bg-zinc-100 dark:bg-zinc-800"
+                    width={32}
+                    height={32}
+                    className="relative rounded-full border-2 border-white dark:border-zinc-950 bg-zinc-100 dark:bg-zinc-800"
                     data-testid="activity-avatar"
                   />
                 ) : (

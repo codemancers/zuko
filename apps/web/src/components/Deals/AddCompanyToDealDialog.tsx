@@ -15,6 +15,7 @@ import {
   Label,
   Description,
   ErrorMessage,
+  Select,
 } from '@zuko/ui-kit';
 import { PlusIcon } from '@heroicons/react/24/outline';
 
@@ -112,10 +113,9 @@ export default function AddCompanyToDealDialog({
               {/* Company Selection */}
               <Field>
                 <Label>Company *</Label>
-                <select
+                <Select
                   value={selectedCompanyId || ''}
                   onChange={(e) => setSelectedCompanyId(Number(e.target.value))}
-                  className="mt-1 block w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-white"
                   disabled={addCompanyMutation.isPending}
                 >
                   <option value="">Select a company...</option>
@@ -124,7 +124,7 @@ export default function AddCompanyToDealDialog({
                       {company.companyName}
                     </option>
                   ))}
-                </select>
+                </Select>
                 {availableCompanies.length === 0 && (
                   <Description className="text-amber-600">
                     All companies are already associated with this deal.
@@ -155,13 +155,7 @@ export default function AddCompanyToDealDialog({
               </Field>
 
               {/* Submit Error */}
-              {errors.submit && (
-                <div className="rounded-md bg-red-50 p-3 dark:bg-red-900/20">
-                  <p className="text-sm text-red-800 dark:text-red-200">
-                    {errors.submit}
-                  </p>
-                </div>
-              )}
+              {errors.submit && <ErrorMessage>{errors.submit}</ErrorMessage>}
             </div>
           </DialogBody>
 
