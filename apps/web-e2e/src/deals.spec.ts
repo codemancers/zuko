@@ -1,35 +1,35 @@
-import dayjs from "dayjs";
-import { test, expect } from "./fixtures";
+import dayjs from 'dayjs';
+import { test, expect } from './fixtures';
 
 /**
  * Deals Feature E2E Tests
  * Tests deal CRUD, navigation, search, and detail views
  */
 
-test.describe("Deals Page - Unauthenticated", () => {
+test.describe('Deals Page - Unauthenticated', () => {
   test.use({ storageState: { cookies: [], origins: [] } });
 
-  test("redirects to sign-in when not authenticated", async ({ page }) => {
-    await page.goto("/deals");
-    await page.waitForURL("**/sign-in**", { timeout: 10000 });
-    expect(page.url()).toContain("/sign-in");
-    await expect(page.locator("h1")).toContainText("Sign in to Zuko");
+  test('redirects to sign-in when not authenticated', async ({ page }) => {
+    await page.goto('/deals');
+    await page.waitForURL('**/sign-in**', { timeout: 10000 });
+    expect(page.url()).toContain('/sign-in');
+    await expect(page.locator('h1')).toContainText('Sign in to Zuko');
   });
 });
 
-test.describe("Deals - Authenticated", () => {
+test.describe('Deals - Authenticated', () => {
   // ── 1. Empty state ─────────────────────────────────────────────────────
-  test("displays deals page when authenticated", async ({
+  test('displays deals page when authenticated', async ({
     dealsPage,
     page,
   }) => {
     await dealsPage.goto();
 
-    expect(page.url()).toContain("/deals");
+    expect(page.url()).toContain('/deals');
     await dealsPage.waitForDealsToLoad();
   });
 
-  test("can view deal list", async ({ dealsPage }) => {
+  test('can view deal list', async ({ dealsPage }) => {
     await dealsPage.goto();
 
     const deals = await dealsPage.getDealItems();
@@ -37,46 +37,46 @@ test.describe("Deals - Authenticated", () => {
   });
 
   // ── 2. Create ─────────────────────────────────────────────────────────
-  test("can navigate to create new deal", async ({ dealsPage, page }) => {
+  test('can navigate to create new deal', async ({ dealsPage, page }) => {
     await dealsPage.goto();
 
     await dealsPage.clickNewDeal();
 
-    await page.waitForURL("**/deals/new");
-    expect(page.url()).toContain("/deals/new");
+    await page.waitForURL('**/deals/new');
+    expect(page.url()).toContain('/deals/new');
   });
 
-  test("can create a new deal", async ({ dealsPage, page }) => {
+  test('can create a new deal', async ({ dealsPage, page }) => {
     await dealsPage.goto();
     await dealsPage.clickNewDeal();
-    await page.waitForURL("**/deals/new", { timeout: 10000 });
-    await page.getByLabel(/Deal Title/i).fill("TEST E2E DEAL");
-    await page.getByLabel(/Deal Value/i).fill("100000");
-    await page.getByLabel(/Stage/i).selectOption("Prospecting");
-    await page.getByLabel(/Currency/i).selectOption("USD");
-    await page.getByLabel(/Priority/i).selectOption("2"); // value in form; label is "P2 - Medium"
-    await page.getByLabel(/Expected Close Date/i).fill("2026-01-01");
-    await page.getByLabel(/Source/i).fill("Website");
+    await page.waitForURL('**/deals/new', { timeout: 10000 });
+    await page.getByLabel(/Deal Title/i).fill('TEST E2E DEAL');
+    await page.getByLabel(/Deal Value/i).fill('100000');
+    await page.getByLabel(/Stage/i).selectOption('Prospecting');
+    await page.getByLabel(/Currency/i).selectOption('USD');
+    await page.getByLabel(/Priority/i).selectOption('2'); // value in form; label is "P2 - Medium"
+    await page.getByLabel(/Expected Close Date/i).fill('2026-01-01');
+    await page.getByLabel(/Source/i).fill('Website');
     await page
       .getByPlaceholder(/Add notes about this deal/i)
-      .fill("TEST E2E DEAL SUMMARY");
-    await page.getByRole("button", { name: /Create Deal/i }).click();
-    await page.waitForURL("**/deals", { timeout: 10000 });
-    await expect(page.getByText("TEST E2E DEAL")).toBeVisible({
+      .fill('TEST E2E DEAL SUMMARY');
+    await page.getByRole('button', { name: /Create Deal/i }).click();
+    await page.waitForURL('**/deals', { timeout: 10000 });
+    await expect(page.getByText('TEST E2E DEAL')).toBeVisible({
       timeout: 10000,
     });
   });
 
   // ── 3. Check after (list with data) ─────────────────────────────────────
-  test("can search for deals", async ({ dealsPage, page }) => {
+  test('can search for deals', async ({ dealsPage, page }) => {
     await dealsPage.goto();
 
-    await dealsPage.searchDeal("test");
+    await dealsPage.searchDeal('test');
 
-    await page.waitForLoadState("load", { timeout: 5000 });
+    await page.waitForLoadState('load', { timeout: 5000 });
   });
 
-  test("can click on a deal to view details", async ({ dealsPage, page }) => {
+  test('can click on a deal to view details', async ({ dealsPage, page }) => {
     await dealsPage.goto();
 
     const deals = await dealsPage.getDealItems();
@@ -85,17 +85,17 @@ test.describe("Deals - Authenticated", () => {
       const dealLink = deals[0].locator('a[href^="/deals/"]');
       await dealLink.click();
 
-      await page.waitForURL("**/deals/**", { timeout: 10000 });
+      await page.waitForURL('**/deals/**', { timeout: 10000 });
       expect(page.url()).toMatch(/\/deals\/\d+$/);
     } else {
       test.skip();
     }
   });
 
-  test("deal list displays stage badges", async ({ dealsPage, page }) => {
+  test('deal list displays stage badges', async ({ dealsPage, page }) => {
     await dealsPage.goto();
 
-    const stageBadges = page.locator("span").filter({
+    const stageBadges = page.locator('span').filter({
       hasText: /Prospecting|Qualification|Proposal|Negotiation|Closed/i,
     });
     const count = await stageBadges.count();
@@ -106,19 +106,19 @@ test.describe("Deals - Authenticated", () => {
     }
   });
 
-  test("deal list displays currency values", async ({ dealsPage, page }) => {
+  test('deal list displays currency values', async ({ dealsPage, page }) => {
     await dealsPage.goto();
 
     const deals = await dealsPage.getDealItems();
     if (deals.length > 0) {
-      const currencyValues = page.locator("td").filter({ hasText: /[$€£¥₹]/ });
+      const currencyValues = page.locator('td').filter({ hasText: /[$€£¥₹]/ });
       const count = await currencyValues.count();
 
       expect(count).toBeGreaterThanOrEqual(0);
     }
   });
 
-  test("Renders add row button at the bottom of the table", async ({
+  test('Renders add row button at the bottom of the table', async ({
     dealsPage,
     page,
   }) => {
@@ -126,12 +126,12 @@ test.describe("Deals - Authenticated", () => {
     const deals = await dealsPage.getDealItems();
 
     if (deals.length > 0) {
-      const addRowButton = page.getByRole("button", { name: /Add row/i });
+      const addRowButton = page.getByRole('button', { name: /Add row/i });
       await expect(addRowButton).toBeVisible();
     }
   });
 
-  test("Opens add column dialog when header plus icon is clicked", async ({
+  test('Opens add column dialog when header plus icon is clicked', async ({
     dealsPage,
     page,
   }) => {
@@ -139,83 +139,83 @@ test.describe("Deals - Authenticated", () => {
     const deals = await dealsPage.getDealItems();
 
     if (deals.length > 0) {
-      const addColumnButton = page.getByRole("button", { name: /Add column/i });
+      const addColumnButton = page.getByRole('button', { name: /Add column/i });
       await addColumnButton.click();
       await expect(page.getByText(/Add new field/i)).toBeVisible();
     }
   });
 });
 
-test.describe("Deal Creation", () => {
-  test("validates required fields", async ({ page }) => {
-    await page.goto("/deals/new");
+test.describe('Deal Creation', () => {
+  test('validates required fields', async ({ page }) => {
+    await page.goto('/deals/new');
 
-    await page.getByRole("button", { name: /Create Deal/i }).click();
+    await page.getByRole('button', { name: /Create Deal/i }).click();
 
     await expect(page.getByText(/Deal title is required/i)).toBeVisible();
   });
 
-  test("validates value is a positive number", async ({ page }) => {
-    await page.goto("/deals/new");
+  test('validates value is a positive number', async ({ page }) => {
+    await page.goto('/deals/new');
 
-    await page.getByLabel(/Deal Title/i).fill("Test Deal");
-    await page.getByLabel(/Deal Value/i).fill("-100");
-    await page.getByRole("button", { name: /Create Deal/i }).click();
+    await page.getByLabel(/Deal Title/i).fill('Test Deal');
+    await page.getByLabel(/Deal Value/i).fill('-100');
+    await page.getByRole('button', { name: /Create Deal/i }).click();
 
     await expect(
-      page.getByText(/Value must be a positive number/i)
+      page.getByText(/Value must be a positive number/i),
     ).toBeVisible();
   });
 
   // Skipped: Chrome's native HTML5 form validation (max="100") intercepts submission
   // before React's onSubmit fires, so the custom error message never renders.
-  test.skip("validates probability is between 0 and 100", async ({ page }) => {
-    await page.goto("/deals/new");
-    await page.getByLabel(/Deal Title/i).fill("Test Deal");
-    await page.getByLabel(/Win Probability/i).fill("150");
-    await page.getByRole("button", { name: /Create Deal/i }).click();
+  test.skip('validates probability is between 0 and 100', async ({ page }) => {
+    await page.goto('/deals/new');
+    await page.getByLabel(/Deal Title/i).fill('Test Deal');
+    await page.getByLabel(/Win Probability/i).fill('150');
+    await page.getByRole('button', { name: /Create Deal/i }).click();
     await expect(
-      page.getByText(/Probability must be between 0 and 100/i)
+      page.getByText(/Probability must be between 0 and 100/i),
     ).toBeVisible();
   });
 
-  test("displays stage options", async ({ page }) => {
-    await page.goto("/deals/new");
+  test('displays stage options', async ({ page }) => {
+    await page.goto('/deals/new');
 
     const stageSelect = page.getByLabel(/Stage/i);
     await expect(stageSelect).toBeVisible();
 
-    const options = await stageSelect.locator("option").allTextContents();
+    const options = await stageSelect.locator('option').allTextContents();
     expect(options.length).toBeGreaterThan(0);
-    expect(options.some((opt) => opt.includes("Prospecting"))).toBe(true);
+    expect(options.some((opt) => opt.includes('Prospecting'))).toBe(true);
   });
 
-  test("displays currency options", async ({ page }) => {
-    await page.goto("/deals/new");
+  test('displays currency options', async ({ page }) => {
+    await page.goto('/deals/new');
 
     const currencySelect = page.getByLabel(/Currency/i);
     await expect(currencySelect).toBeVisible();
 
-    const options = await currencySelect.locator("option").allTextContents();
+    const options = await currencySelect.locator('option').allTextContents();
     expect(options.length).toBeGreaterThan(0);
-    expect(options.some((opt) => opt.includes("USD"))).toBe(true);
+    expect(options.some((opt) => opt.includes('USD'))).toBe(true);
   });
 
-  test("displays priority options", async ({ page }) => {
-    await page.goto("/deals/new");
+  test('displays priority options', async ({ page }) => {
+    await page.goto('/deals/new');
 
     const prioritySelect = page.getByLabel(/Priority/i);
     await expect(prioritySelect).toBeVisible();
 
-    const options = await prioritySelect.locator("option").allTextContents();
+    const options = await prioritySelect.locator('option').allTextContents();
     expect(options.length).toBeGreaterThan(0);
-    expect(options.some((opt) => opt.includes("P2"))).toBe(true);
+    expect(options.some((opt) => opt.includes('P2'))).toBe(true);
   });
 });
 
-test.describe("Deal Detail", () => {
+test.describe('Deal Detail', () => {
   // ── 1. Empty state (detail sections visible) ────────────────────────────
-  test("displays deal detail page with information", async ({
+  test('displays deal detail page with information', async ({
     page,
     dealDetailPage,
   }) => {
@@ -223,31 +223,31 @@ test.describe("Deal Detail", () => {
 
     await expect(dealDetailPage.dealTitle).toBeVisible();
     await expect(
-      page.getByRole("heading", { name: /Deal Information/i })
+      page.getByRole('heading', { name: /Deal Information/i }),
     ).toBeVisible();
   });
 
   // ── 2. Check after (detail content) ─────────────────────────────────────
-  test("displays deal value and stage", async ({ dealDetailPage }) => {
+  test('displays deal value and stage', async ({ dealDetailPage }) => {
     await dealDetailPage.goto(1);
 
     const stage = await dealDetailPage.getDealStage();
     expect(stage.length).toBeGreaterThan(0);
 
-    const value = await dealDetailPage.getDealValue().catch(() => "");
-    expect(typeof value).toBe("string");
+    const value = await dealDetailPage.getDealValue().catch(() => '');
+    expect(typeof value).toBe('string');
   });
 
-  test("displays owners section", async ({ dealDetailPage, page }) => {
+  test('displays owners section', async ({ dealDetailPage, page }) => {
     await dealDetailPage.goto(1);
 
-    await expect(page.getByRole("heading", { name: /Owners/i })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /Owners/i })).toBeVisible();
   });
 
-  test("displays summary if present", async ({ dealDetailPage, page }) => {
+  test('displays summary if present', async ({ dealDetailPage, page }) => {
     await dealDetailPage.goto(1);
 
-    const summaryHeading = page.getByRole("heading", { name: /Summary/i });
+    const summaryHeading = page.getByRole('heading', { name: /Summary/i });
     const isVisible = await summaryHeading.isVisible().catch(() => false);
 
     if (isVisible) {
@@ -255,7 +255,7 @@ test.describe("Deal Detail", () => {
     }
   });
 
-  test("displays activity timeline section", async ({
+  test('displays activity timeline section', async ({
     dealDetailPage,
     page,
   }) => {
@@ -263,40 +263,40 @@ test.describe("Deal Detail", () => {
 
     // CI can be slower to render this section; the comment input is a more
     // stable signal than the heading text/role.
-    const commentInput = page.getByPlaceholder("Add a comment...");
+    const commentInput = page.getByPlaceholder('Add a comment...');
     await commentInput.scrollIntoViewIfNeeded();
     await expect(commentInput).toBeVisible({ timeout: 30000 });
   });
 
-  test("displays metadata section", async ({ dealDetailPage, page }) => {
+  test('displays metadata section', async ({ dealDetailPage, page }) => {
     await dealDetailPage.goto(1);
 
-    await expect(page.getByRole("heading", { name: /Details/i })).toBeVisible();
-    await expect(page.getByText("Created", { exact: true })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /Details/i })).toBeVisible();
+    await expect(page.getByText('Created', { exact: true })).toBeVisible();
     await expect(page.getByText(/Last Updated/i)).toBeVisible();
   });
 });
 
-test.describe("Deal Edit", () => {
+test.describe('Deal Edit', () => {
   // ── 1. Empty state (edit form) ──────────────────────────────────────────
-  test("can navigate to edit page", async ({ dealDetailPage, page }) => {
+  test('can navigate to edit page', async ({ dealDetailPage, page }) => {
     await dealDetailPage.goto(1);
 
     await dealDetailPage.clickEdit();
 
-    await page.waitForURL("**/deals/**/edit");
-    expect(page.url()).toContain("/edit");
+    await page.waitForURL('**/deals/**/edit');
+    expect(page.url()).toContain('/edit');
   });
 
-  test("edit page displays deal form with existing values", async ({
+  test('edit page displays deal form with existing values', async ({
     page,
   }) => {
-    await page.goto("/deals/1/edit");
+    await page.goto('/deals/1/edit');
 
     await expect(page.getByLabel(/Deal Title/i)).toBeVisible();
     await expect(page.getByLabel(/Stage/i)).toBeVisible();
     await expect(
-      page.getByRole("button", { name: /Save Changes/i })
+      page.getByRole('button', { name: /Save Changes/i }),
     ).toBeVisible();
 
     const titleInput = page.getByLabel(/Deal Title/i);
@@ -304,29 +304,29 @@ test.describe("Deal Edit", () => {
     expect(titleValue.length).toBeGreaterThan(0);
   });
 
-  test("edit form includes save and cancel buttons", async ({ page }) => {
-    await page.goto("/deals/1/edit");
+  test('edit form includes save and cancel buttons', async ({ page }) => {
+    await page.goto('/deals/1/edit');
 
     await expect(
-      page.getByRole("button", { name: /Save Changes/i })
+      page.getByRole('button', { name: /Save Changes/i }),
     ).toBeVisible();
-    await expect(page.getByRole("button", { name: /Cancel/i })).toBeVisible();
+    await expect(page.getByRole('button', { name: /Cancel/i })).toBeVisible();
   });
 });
 
-test.describe("Deal Search and Filters", () => {
+test.describe('Deal Search and Filters', () => {
   // ── 1. Empty state ─────────────────────────────────────────────────────
-  test("empty table is shown when no deals exist", async ({
+  test('empty table is shown when no deals exist', async ({
     dealsPage,
     page,
   }) => {
     await dealsPage.goto();
 
-    await dealsPage.searchDeal("zzzzznonexistent123456789");
+    await dealsPage.searchDeal('zzzzznonexistent123456789');
 
-    await page.waitForLoadState("load", { timeout: 5000 });
+    await page.waitForLoadState('load', { timeout: 5000 });
 
-    const tableRows = page.locator("table tbody tr");
+    const tableRows = page.locator('table tbody tr');
 
     await expect(async () => {
       const rowCount = await tableRows.count();
@@ -335,82 +335,82 @@ test.describe("Deal Search and Filters", () => {
   });
 
   // ── 2. Check after (search behavior) ───────────────────────────────────
-  test("search updates URL or triggers filter", async ({ dealsPage, page }) => {
+  test('search updates URL or triggers filter', async ({ dealsPage, page }) => {
     await dealsPage.goto();
 
-    const searchTerm = "enterprise";
+    const searchTerm = 'enterprise';
     await dealsPage.searchDeal(searchTerm);
 
-    await page.waitForLoadState("load", { timeout: 5000 });
+    await page.waitForLoadState('load', { timeout: 5000 });
   });
 });
 
-test.describe("Deal Associations - Companies", () => {
+test.describe('Deal Associations - Companies', () => {
   // ── 1. Empty state ─────────────────────────────────────────────────────
-  test("displays Associated Companies section", async ({
+  test('displays Associated Companies section', async ({
     dealDetailPage,
     page,
   }) => {
     await dealDetailPage.goto(1);
 
     await expect(
-      page.getByRole("heading", { name: /Associated Companies/i })
+      page.getByRole('heading', { name: /Associated Companies/i }),
     ).toBeVisible();
   });
 
-  test("shows Add Company button", async ({ dealDetailPage, page }) => {
+  test('shows Add Company button', async ({ dealDetailPage, page }) => {
     await dealDetailPage.goto(1);
 
     await expect(
-      page.getByRole("button", { name: /Add Company/i })
+      page.getByRole('button', { name: /Add Company/i }),
     ).toBeVisible();
   });
 
-  test("can open Add Company dialog", async ({ dealDetailPage, page }) => {
+  test('can open Add Company dialog', async ({ dealDetailPage, page }) => {
     await dealDetailPage.goto(1);
 
-    await page.getByRole("button", { name: /Add Company/i }).click();
+    await page.getByRole('button', { name: /Add Company/i }).click();
 
     await expect(
-      page.getByRole("heading", { name: /Add Company to Deal/i })
+      page.getByRole('heading', { name: /Add Company to Deal/i }),
     ).toBeVisible();
     await expect(
-      page.getByText(/Associate a company with this deal/i)
+      page.getByText(/Associate a company with this deal/i),
     ).toBeVisible();
   });
 
-  test("Add Company dialog shows company selection", async ({
+  test('Add Company dialog shows company selection', async ({
     dealDetailPage,
     page,
   }) => {
     await dealDetailPage.goto(1);
 
-    await page.getByRole("button", { name: /Add Company/i }).click();
+    await page.getByRole('button', { name: /Add Company/i }).click();
 
-    const companySelect = page.locator("select").first();
+    const companySelect = page.locator('select').first();
     await expect(companySelect).toBeVisible();
     await expect(
-      page.getByText(/Primary company for this deal/i)
+      page.getByText(/Primary company for this deal/i),
     ).toBeVisible();
 
-    const options = await companySelect.locator("option").count();
+    const options = await companySelect.locator('option').count();
     expect(options).toBeGreaterThan(0);
   });
 
-  test("can close Add Company dialog", async ({ dealDetailPage, page }) => {
+  test('can close Add Company dialog', async ({ dealDetailPage, page }) => {
     await dealDetailPage.goto(1);
 
-    await page.getByRole("button", { name: /Add Company/i }).click();
+    await page.getByRole('button', { name: /Add Company/i }).click();
 
-    await page.getByRole("button", { name: /Cancel/i }).click();
+    await page.getByRole('button', { name: /Cancel/i }).click();
 
     await expect(
-      page.getByRole("heading", { name: /Add Company to Deal/i })
+      page.getByRole('heading', { name: /Add Company to Deal/i }),
     ).toBeHidden();
   });
 
   // ── 2. Check after (when companies are associated) ──────────────────────
-  test("associated companies have clickable links", async ({
+  test('associated companies have clickable links', async ({
     dealDetailPage,
     page,
   }) => {
@@ -425,12 +425,12 @@ test.describe("Deal Associations - Companies", () => {
       await expect(companyLinks.first()).toBeVisible();
 
       // Link should navigate to company page
-      const href = await companyLinks.first().getAttribute("href");
+      const href = await companyLinks.first().getAttribute('href');
       expect(href).toMatch(/\/companies\/\d+/);
     }
   });
 
-  test("associated companies show Primary badge when applicable", async ({
+  test('associated companies show Primary badge when applicable', async ({
     dealDetailPage,
     page,
   }) => {
@@ -438,9 +438,9 @@ test.describe("Deal Associations - Companies", () => {
 
     // Check if any companies are marked as primary
     const companySection = page
-      .locator("text=Associated Companies")
-      .locator("..");
-    const primaryBadges = companySection.locator("text=Primary");
+      .locator('text=Associated Companies')
+      .locator('..');
+    const primaryBadges = companySection.locator('text=Primary');
     const count = await primaryBadges.count();
 
     // If there are primary companies, badges should be visible
@@ -449,7 +449,7 @@ test.describe("Deal Associations - Companies", () => {
     }
   });
 
-  test("associated companies have edit and remove buttons", async ({
+  test('associated companies have edit and remove buttons', async ({
     dealDetailPage,
     page,
   }) => {
@@ -470,7 +470,7 @@ test.describe("Deal Associations - Companies", () => {
 
   // Skipped: page.locator('a[href^="/companies/"]') also matches sidebar nav links,
   // making count > 0 even when no companies are actually associated with the deal.
-  test.skip("shows empty state when no companies associated", async ({
+  test.skip('shows empty state when no companies associated', async ({
     dealDetailPage,
     page,
   }) => {
@@ -489,76 +489,76 @@ test.describe("Deal Associations - Companies", () => {
   });
 });
 
-test.describe("Deal Associations - Contacts", () => {
+test.describe('Deal Associations - Contacts', () => {
   // ── 1. Empty state ─────────────────────────────────────────────────────
-  test("displays Associated Contacts section", async ({
+  test('displays Associated Contacts section', async ({
     dealDetailPage,
     page,
   }) => {
     await dealDetailPage.goto(1);
 
     await expect(
-      page.getByRole("heading", { name: /Associated Contacts/i })
+      page.getByRole('heading', { name: /Associated Contacts/i }),
     ).toBeVisible();
   });
 
-  test("shows Add Contact button", async ({ dealDetailPage, page }) => {
+  test('shows Add Contact button', async ({ dealDetailPage, page }) => {
     await dealDetailPage.goto(1);
 
     await expect(
-      page.getByRole("button", { name: /Add Contact/i })
+      page.getByRole('button', { name: /Add Contact/i }),
     ).toBeVisible();
   });
 
-  test("can open Add Contact dialog", async ({ dealDetailPage, page }) => {
+  test('can open Add Contact dialog', async ({ dealDetailPage, page }) => {
     await dealDetailPage.goto(1);
 
-    await page.getByRole("button", { name: /Add Contact/i }).click();
+    await page.getByRole('button', { name: /Add Contact/i }).click();
 
     await expect(
-      page.getByRole("heading", { name: /Add Contact to Deal/i })
+      page.getByRole('heading', { name: /Add Contact to Deal/i }),
     ).toBeVisible();
     await expect(
-      page.getByText(/Associate a contact person with this deal/i)
+      page.getByText(/Associate a contact person with this deal/i),
     ).toBeVisible();
   });
 
-  test("Add Contact dialog shows contact selection and role", async ({
+  test('Add Contact dialog shows contact selection and role', async ({
     dealDetailPage,
     page,
   }) => {
     await dealDetailPage.goto(1);
 
-    await page.getByRole("button", { name: /Add Contact/i }).click();
+    await page.getByRole('button', { name: /Add Contact/i }).click();
 
-    const contactSelect = page.locator("select").first();
+    const contactSelect = page.locator('select').first();
     await expect(contactSelect).toBeVisible();
 
     const roleInput = page.locator('input[type="text"]').first();
     await expect(roleInput).toBeVisible();
 
     await expect(
-      page.getByText(/Primary contact for this deal/i)
+      page.getByText(/Primary contact for this deal/i),
     ).toBeVisible();
 
-    const options = await contactSelect.locator("option").count();
+    const options = await contactSelect.locator('option').count();
     expect(options).toBeGreaterThan(0);
   });
 
-  test("can close Add Contact dialog", async ({ dealDetailPage, page }) => {
+  test('can close Add Contact dialog', async ({ dealDetailPage, page }) => {
     await dealDetailPage.goto(1);
 
-    await page.getByRole("button", { name: /Add Contact/i }).click();
+    await page.getByRole('button', { name: /Add Contact/i }).click();
 
-    await page.getByRole("button", { name: /Cancel/i }).click();
+    await page.getByRole('button', { name: /Cancel/i }).click();
 
     await expect(
-      page.getByRole("heading", { name: /Add Contact to Deal/i })
+      page.getByRole('heading', { name: /Add Contact to Deal/i }),
     ).toBeHidden();
   });
 
   // ── 2. Check after (when contacts are associated) ───────────────────────
-  test("associated contacts have clickable links", async ({
+  test('associated contacts have clickable links', async ({
     dealDetailPage,
     page,
   }) => {
@@ -573,29 +573,29 @@ test.describe("Deal Associations - Contacts", () => {
       await expect(contactLinks.first()).toBeVisible();
 
       // Link should navigate to contact page
-      const href = await contactLinks.first().getAttribute("href");
+      const href = await contactLinks.first().getAttribute('href');
       expect(href).toMatch(/\/contacts\/\d+/);
     }
   });
 
-  test("associated contacts show role and Primary badges", async ({
+  test('associated contacts show role and Primary badges', async ({
     dealDetailPage,
     page,
   }) => {
     await dealDetailPage.goto(1);
 
     const contactSection = page
-      .locator("text=Associated Contacts")
-      .locator("..");
+      .locator('text=Associated Contacts')
+      .locator('..');
 
     // Check for role badges (they may or may not exist depending on data)
     const roleBadges = contactSection
-      .locator("span")
+      .locator('span')
       .filter({ hasText: /Decision Maker|Influencer|Champion/i });
     const roleCount = await roleBadges.count();
 
     // Check for primary badges
-    const primaryBadges = contactSection.locator("text=Primary");
+    const primaryBadges = contactSection.locator('text=Primary');
     const primaryCount = await primaryBadges.count();
 
     // At least one type of badge should exist if there are contacts
@@ -608,7 +608,7 @@ test.describe("Deal Associations - Contacts", () => {
     }
   });
 
-  test("associated contacts have edit and remove buttons", async ({
+  test('associated contacts have edit and remove buttons', async ({
     dealDetailPage,
     page,
   }) => {
@@ -628,7 +628,7 @@ test.describe("Deal Associations - Contacts", () => {
   });
 
   // Skipped: same nav-link counting issue as the companies empty state test.
-  test.skip("shows empty state when no contacts associated", async ({
+  test.skip('shows empty state when no contacts associated', async ({
     dealDetailPage,
     page,
   }) => {
@@ -647,53 +647,45 @@ test.describe("Deal Associations - Contacts", () => {
   });
 });
 
-test.describe("Deal Activity Timeline - Comments", () => {
+test.describe('Deal Activity Timeline - Comments', () => {
   let dealId: number;
 
-  test.beforeEach(async ({ dealsPage, page }) => {
-    await dealsPage.goto();
-    const firstLink = page.locator('a[href^="/deals/"]').first();
-    const isVisible = await firstLink.isVisible().catch(() => false);
-    if (!isVisible) {
-      test.skip(true, "No deals available to test");
-      return;
-    }
-    await firstLink.click();
-    await page.waitForURL(/\/deals\/\d+/, { timeout: 10000 });
-    dealId = parseInt(page.url().match(/\/deals\/(\d+)/)?.[1] ?? "0", 10);
+  test.beforeEach(async () => {
+    // Rely on predictable Deal ID instead of brittle DOM navigation
+    dealId = 1;
   });
 
   // ── 1. Empty state ─────────────────────────────────────────────────────
-  test("should display comment input form in activity timeline", async ({
+  test('should display comment input form in activity timeline', async ({
     dealDetailPage,
     page,
   }) => {
     await dealDetailPage.goto(dealId);
 
-    const commentInput = page.getByPlaceholder("Add a comment...");
+    const commentInput = page.getByPlaceholder('Add a comment...');
     await commentInput.scrollIntoViewIfNeeded();
     await expect(commentInput).toBeVisible({ timeout: 30000 });
 
-    const postButton = page.getByRole("button", { name: /Post Comment/i });
+    const postButton = page.getByRole('button', { name: /Post Comment/i });
     await expect(postButton).toBeVisible();
   });
 
-  test("should disable post button when comment is empty", async ({
+  test('should disable post button when comment is empty', async ({
     dealDetailPage,
     page,
   }) => {
     await dealDetailPage.goto(dealId);
 
-    const commentInput = page.getByPlaceholder("Add a comment...");
+    const commentInput = page.getByPlaceholder('Add a comment...');
     await commentInput.scrollIntoViewIfNeeded();
     await expect(commentInput).toBeVisible({ timeout: 30000 });
 
-    const postButton = page.getByRole("button", { name: /Post Comment/i });
+    const postButton = page.getByRole('button', { name: /Post Comment/i });
     await expect(postButton).toBeDisabled();
   });
 
   // ── 2. Create ───────────────────────────────────────────────────────────
-  test("should create a new comment successfully on a deal", async ({
+  test('should create a new comment successfully on a deal', async ({
     dealDetailPage,
     page,
   }) => {
@@ -701,180 +693,209 @@ test.describe("Deal Activity Timeline - Comments", () => {
 
     const commentText = `Deal test comment ${Date.now()}`;
 
-    const commentInput = page.getByPlaceholder("Add a comment...");
+    const commentInput = page.getByPlaceholder('Add a comment...');
     await commentInput.scrollIntoViewIfNeeded();
-    await commentInput.waitFor({ state: "visible", timeout: 30000 });
+    await commentInput.waitFor({ state: 'visible', timeout: 30000 });
     await commentInput.fill(commentText);
 
-    await page.getByRole("button", { name: /Post Comment/i }).click();
+    await page.getByRole('button', { name: /Post Comment/i }).click();
 
     await expect(page.getByText(commentText)).toBeVisible({ timeout: 10000 });
   });
 });
 
-test.describe.serial("Column Creation Flow", () => {
+test.describe.serial('Column Creation Flow', () => {
   const identifier = Date.now();
   const columnName = `Source ${identifier}`;
   const columnKey = `source_${identifier}`;
 
-  test("Creates new column from column creation dialog", async ({
+  test('Creates new column from column creation dialog', async ({
     dealsPage,
     page,
   }) => {
     await dealsPage.goto();
 
-    const addColumnButton = page.getByRole("button", { name: /Add column/i });
+    const addColumnButton = page.getByRole('button', { name: /Add column/i });
     await addColumnButton.click();
 
     await expect(page.getByText(/Add new field/i)).toBeVisible();
 
-    await page.getByPlaceholder("Field name").fill(columnName);
+    await page.getByPlaceholder('Field name').fill(columnName);
     await page.getByPlaceholder(/Unique column key/i).fill(columnKey);
-    await page.locator("select").selectOption("text");
+    await page.locator('select').selectOption('text');
 
-    await page.getByRole("button", { name: "Create field" }).click();
+    await page.getByRole('button', { name: 'Create field' }).click();
 
-    await expect(page.getByText("Column created successfully")).toBeVisible();
+    await expect(page.getByText('Column created successfully')).toBeVisible();
     await expect(
-      page.getByRole("columnheader", { name: columnName })
+      page.getByRole('columnheader', { name: columnName }),
     ).toBeVisible();
   });
 
-  test("Shows error toast when creating column with existing default column key (title)", async ({
+  test('Shows error toast when creating column with existing default column key (title)', async ({
     dealsPage,
     page,
   }) => {
     await dealsPage.goto();
 
-    const addColumnButton = page.getByRole("button", { name: /Add column/i });
+    const addColumnButton = page.getByRole('button', { name: /Add column/i });
     await addColumnButton.click();
 
-    await page.getByPlaceholder("Field name").fill("Column New");
-    await page.getByPlaceholder(/Unique column key/i).fill("title");
-    await page.getByRole("button", { name: "Create field" }).click();
+    await page.getByPlaceholder('Field name').fill('Column New');
+    await page.getByPlaceholder(/Unique column key/i).fill('title');
+    await page.getByRole('button', { name: 'Create field' }).click();
 
-    await expect(page.getByText("Column key already exists")).toBeVisible();
+    await expect(page.getByText('Column key already exists')).toBeVisible();
   });
 
-  test("Shows error toast when creating column with existing column key", async ({
+  test('Shows error toast when creating column with existing column key', async ({
     dealsPage,
     page,
   }) => {
     await dealsPage.goto();
 
-    const addColumnButton = page.getByRole("button", { name: /Add column/i });
+    const addColumnButton = page.getByRole('button', { name: /Add column/i });
     await addColumnButton.click();
 
-    await page.getByPlaceholder("Field name").fill("Column New");
+    await page.getByPlaceholder('Field name').fill('Column New');
     await page.getByPlaceholder(/Unique column key/i).fill(columnKey);
-    await page.getByRole("button", { name: "Create field" }).click();
+    await page.getByRole('button', { name: 'Create field' }).click();
 
-    await expect(page.getByText("Column key already exists")).toBeVisible();
+    await expect(page.getByText('Column key already exists')).toBeVisible();
   });
 
-  test("Shows field level validation when submitting empty form", async ({
+  test('Shows field level validation when submitting empty form', async ({
     dealsPage,
     page,
   }) => {
     await dealsPage.goto();
 
-    const addColumnButton = page.getByRole("button", { name: /Add column/i });
+    const addColumnButton = page.getByRole('button', { name: /Add column/i });
     await addColumnButton.click();
 
-    await page.getByRole("button", { name: "Create field" }).click();
+    await page.getByRole('button', { name: 'Create field' }).click();
 
-    await expect(page.getByText("Field name is required")).toBeVisible();
-    await expect(page.getByText("Column key is required")).toBeVisible();
+    await expect(page.getByText('Field name is required')).toBeVisible();
+    await expect(page.getByText('Column key is required')).toBeVisible();
 
-    const invalidKey = "column key";
-    await page.getByPlaceholder("Field name").fill(columnName);
+    const invalidKey = 'column key';
+    await page.getByPlaceholder('Field name').fill(columnName);
     await page.getByPlaceholder(/Unique column key/i).fill(invalidKey);
-    await page.getByRole("button", { name: "Create field" }).click();
-    
-    await expect(page.getByText("Column key must contain only lowercase letters, numbers, and underscores")).toBeVisible();
+    await page.getByRole('button', { name: 'Create field' }).click();
+
+    await expect(
+      page.getByText(
+        'Column key must contain only lowercase letters, numbers, and underscores',
+      ),
+    ).toBeVisible();
   });
 });
 
-test.describe("Row Creation Flow", () => {
-  test("Creates new deal row using add row button", async ({ dealsPage, page }) => {
+test.describe('Row Creation Flow', () => {
+  test('Creates new deal row using add row button', async ({
+    dealsPage,
+    page,
+  }) => {
     await dealsPage.goto();
     await dealsPage.getDealItems();
 
-    const initialRowCount = await page.getByRole("row").count();
+    const initialRowCount = await page.getByRole('row').count();
 
-    const addRowButton = page.getByRole("button", { name: /Add row/i });
+    const addRowButton = page.getByRole('button', { name: /Add row/i });
     await addRowButton.click();
 
     // validate success toast message
     await expect(page.getByText(/New deal added/i)).toBeVisible();
 
     // validate if new row is created
-    await expect(page.getByRole("row")).toHaveCount(initialRowCount + 1);
+    await expect(page.getByRole('row')).toHaveCount(initialRowCount + 1);
     const updatedRowCount = initialRowCount + 1;
 
     // Get the headers to find column indices
-    const headers = page.getByRole("columnheader");
+    const headers = page.getByRole('columnheader');
     const headerTexts = await headers.allInnerTexts();
-    
+
     // Find expected column indices
-    const sNoIndex = headerTexts.findIndex(h => h.toLowerCase().includes("s.no"));
-    const dealTitleIndex = headerTexts.findIndex(h => h.toLowerCase().includes("title"));
-    const ownerIndex = headerTexts.findIndex(h => h.toLowerCase().includes("owner"));
-    const stageIndex = headerTexts.findIndex(h => h.toLowerCase().includes("stage"));
-    const probabilityIndex = headerTexts.findIndex(h => h.toLowerCase().includes("probability"));
+    const sNoIndex = headerTexts.findIndex((h) =>
+      h.toLowerCase().includes('s.no'),
+    );
+    const dealTitleIndex = headerTexts.findIndex((h) =>
+      h.toLowerCase().includes('title'),
+    );
+    const ownerIndex = headerTexts.findIndex((h) =>
+      h.toLowerCase().includes('owner'),
+    );
+    const stageIndex = headerTexts.findIndex((h) =>
+      h.toLowerCase().includes('stage'),
+    );
+    const probabilityIndex = headerTexts.findIndex((h) =>
+      h.toLowerCase().includes('probability'),
+    );
 
     // nth() is 0-indexed, and initialRowCount counts the header + existing data rows.
-    const newDealRow = page.getByRole("row").nth(initialRowCount);
+    const newDealRow = page.getByRole('row').nth(initialRowCount);
 
     // Validate S.No field to be equal to the {updatedRowCount - 1} (row count also includes the header)
-    await expect(newDealRow.locator("td").nth(sNoIndex)).toHaveText((updatedRowCount-1).toString());
+    await expect(newDealRow.locator('td').nth(sNoIndex)).toHaveText(
+      (updatedRowCount - 1).toString(),
+    );
 
     // Validate deal title field
-    await expect(newDealRow.locator("td").nth(dealTitleIndex)).toHaveText("New Deal");
+    await expect(newDealRow.locator('td').nth(dealTitleIndex)).toHaveText(
+      'New Deal',
+    );
 
     // Validate Owner field (current user name)
-    await expect(newDealRow.locator("td").nth(ownerIndex)).toContainText("E2E Test User");
+    await expect(newDealRow.locator('td').nth(ownerIndex)).toContainText(
+      'E2E Test User',
+    );
 
     // Validate probability field to have default value as 50
-    await expect(newDealRow.locator("td").nth(probabilityIndex)).toHaveText("50");
+    await expect(newDealRow.locator('td').nth(probabilityIndex)).toHaveText(
+      '50',
+    );
 
     // Validate stage field to have default value as Prospecting
-    await expect(newDealRow.locator("td").nth(stageIndex)).toHaveText("Prospecting");
+    await expect(newDealRow.locator('td').nth(stageIndex)).toHaveText(
+      'Prospecting',
+    );
   });
 });
 
-test.describe("Cell Editing Flow", () => {
-  test("Edits deal title cell value", async ({ dealsPage, page }) => {
+test.describe('Cell Editing Flow', () => {
+  test('Edits deal title cell value', async ({ dealsPage, page }) => {
     await dealsPage.goto();
     await dealsPage.getDealItems();
 
-    const initialRowCount = await page.getByRole("row").count();
+    const initialRowCount = await page.getByRole('row').count();
     if (initialRowCount === 1) {
       await dealsPage.addRow();
     }
 
     // The first data row is index 1 because index 0 is the header
-    const firstRow = page.getByRole("row").nth(1);
-    
-    // Get headers to find the 'Title' column index
-    const headers = page.getByRole("columnheader");
-    const headerTexts = await headers.allInnerTexts();
-    const titleIndex = headerTexts.findIndex(h => h.toLowerCase().includes("title"));
+    const firstRow = page.getByRole('row').nth(1);
 
-    const titleCell = firstRow.locator("td").nth(titleIndex);
-    const newValue = "Updated Deal Title";
+    // Get headers to find the 'Title' column index
+    const headers = page.getByRole('columnheader');
+    const headerTexts = await headers.allInnerTexts();
+    const titleIndex = headerTexts.findIndex((h) =>
+      h.toLowerCase().includes('title'),
+    );
+
+    const titleCell = firstRow.locator('td').nth(titleIndex);
+    const newValue = 'Updated Deal Title';
 
     // Click to enter edit mode
-    await titleCell.evaluate(node => (node as any).click());
-    
+    await titleCell.evaluate((node) => (node as any).click());
+
     // The Input should be visible
-    const input = titleCell.locator("input");
+    const input = titleCell.locator('input');
     await expect(input).toBeVisible();
     await input.fill(newValue);
-    await input.press("Enter");
+    await input.press('Enter');
 
     // Success toast should appear
-    await expect(page.getByText("Cell updated successfully")).toBeVisible();
+    await expect(page.getByText('Cell updated successfully')).toBeVisible();
 
     // Value should be updated in the cell
     await expect(titleCell).toHaveText(newValue);
@@ -885,30 +906,35 @@ test.describe("Cell Editing Flow", () => {
     await expect(page.getByText(newValue, { exact: true })).toBeVisible();
   });
 
-  test("Edits deal probability cell value (numeric type)", async ({ dealsPage, page }) => {
+  test('Edits deal probability cell value (numeric type)', async ({
+    dealsPage,
+    page,
+  }) => {
     await dealsPage.goto();
     await dealsPage.getDealItems();
 
-    const initialRowCount = await page.getByRole("row").count();
+    const initialRowCount = await page.getByRole('row').count();
     if (initialRowCount === 1) {
       await dealsPage.addRow();
     }
 
-    const firstRow = page.getByRole("row").nth(1);
-    const headers = page.getByRole("columnheader");
+    const firstRow = page.getByRole('row').nth(1);
+    const headers = page.getByRole('columnheader');
     const headerTexts = await headers.allInnerTexts();
-    const probabilityIndex = headerTexts.findIndex(h => h.toLowerCase().includes("probability"));
+    const probabilityIndex = headerTexts.findIndex((h) =>
+      h.toLowerCase().includes('probability'),
+    );
 
-    const probabilityCell = firstRow.locator("td").nth(probabilityIndex);
-    const newValue = "75";
+    const probabilityCell = firstRow.locator('td').nth(probabilityIndex);
+    const newValue = '75';
 
-    await probabilityCell.evaluate(node => (node as any).click());
-    const input = probabilityCell.locator("input");
+    await probabilityCell.evaluate((node) => (node as any).click());
+    const input = probabilityCell.locator('input');
     await expect(input).toBeVisible();
     await input.fill(newValue);
     await input.blur();
 
-    await expect(page.getByText("Cell updated successfully")).toBeVisible();
+    await expect(page.getByText('Cell updated successfully')).toBeVisible();
     await expect(probabilityCell).toHaveText(newValue);
 
     await page.reload();
@@ -916,31 +942,38 @@ test.describe("Cell Editing Flow", () => {
     await expect(page.getByText(newValue, { exact: true })).toBeVisible();
   });
 
-  test("Edits deal expected close date cell value (date type)", async ({ dealsPage, page }) => {
+  test('Edits deal expected close date cell value (date type)', async ({
+    dealsPage,
+    page,
+  }) => {
     await dealsPage.goto();
     await dealsPage.getDealItems();
 
-    const initialRowCount = await page.getByRole("row").count();
+    const initialRowCount = await page.getByRole('row').count();
     if (initialRowCount === 1) {
       await dealsPage.addRow();
     }
 
-    const firstRow = page.getByRole("row").nth(1);
-    const headers = page.getByRole("columnheader");
+    const firstRow = page.getByRole('row').nth(1);
+    const headers = page.getByRole('columnheader');
     const headerTexts = await headers.allInnerTexts();
-    const expectedCloseDateIndex = headerTexts.findIndex(h => h.toLowerCase().includes("expected close"));
+    const expectedCloseDateIndex = headerTexts.findIndex((h) =>
+      h.toLowerCase().includes('expected close'),
+    );
 
-    const expectedCloseDateCell = firstRow.locator("td").nth(expectedCloseDateIndex);
-    const newValue = "2025-12-31";
+    const expectedCloseDateCell = firstRow
+      .locator('td')
+      .nth(expectedCloseDateIndex);
+    const newValue = '2025-12-31';
     const formattedValue = dayjs(newValue).format('DD MMM YYYY');
 
-    await expectedCloseDateCell.evaluate(node => (node as any).click());
-    const input = expectedCloseDateCell.locator("input");
+    await expectedCloseDateCell.evaluate((node) => (node as any).click());
+    const input = expectedCloseDateCell.locator('input');
     await expect(input).toBeVisible();
     await input.fill(newValue);
     await input.blur();
 
-    await expect(page.getByText("Cell updated successfully")).toBeVisible();
+    await expect(page.getByText('Cell updated successfully')).toBeVisible();
     await expect(expectedCloseDateCell).toHaveText(formattedValue);
 
     await page.reload();
@@ -948,52 +981,59 @@ test.describe("Cell Editing Flow", () => {
     await expect(page.getByText(formattedValue, { exact: true })).toBeVisible();
 
     // test clearing date type field
-    await expectedCloseDateCell.evaluate(node => (node as any).click());
-    const input2 = expectedCloseDateCell.locator("input");
+    await expectedCloseDateCell.evaluate((node) => (node as any).click());
+    const input2 = expectedCloseDateCell.locator('input');
     await expect(input2).toBeVisible();
-    await input2.fill("");
+    await input2.fill('');
     await input2.blur();
 
-    await expect(page.getByText("Cell updated successfully")).toBeVisible();
-    await expect(expectedCloseDateCell).toHaveText("");
+    await expect(page.getByText('Cell updated successfully')).toBeVisible();
+    await expect(expectedCloseDateCell).toHaveText('');
 
     await page.reload();
     await dealsPage.getDealItems();
     await expect(page.getByText(formattedValue, { exact: true })).toBeHidden();
   });
 
-  test("Edits deal stage cell value (select type)", async ({ dealsPage, page }) => {
+  test('Edits deal stage cell value (select type)', async ({
+    dealsPage,
+    page,
+  }) => {
     await dealsPage.goto();
     await dealsPage.getDealItems();
 
-    const initialRowCount = await page.getByRole("row").count();
+    const initialRowCount = await page.getByRole('row').count();
     if (initialRowCount === 1) {
       await dealsPage.addRow();
     }
 
-    const firstRow = page.getByRole("row").nth(1);
-    const headers = page.getByRole("columnheader");
+    const firstRow = page.getByRole('row').nth(1);
+    const headers = page.getByRole('columnheader');
     const headerTexts = await headers.allInnerTexts();
-    const stageIndex = headerTexts.findIndex(h => h.toLowerCase().includes("stage"));
+    const stageIndex = headerTexts.findIndex((h) =>
+      h.toLowerCase().includes('stage'),
+    );
 
-    const stageCell = firstRow.locator("td").nth(stageIndex);
+    const stageCell = firstRow.locator('td').nth(stageIndex);
 
     // Click to enter edit mode
-    await stageCell.evaluate(node => (node as any).click());
+    await stageCell.evaluate((node) => (node as any).click());
 
     // The Select should be visible
-    const select = stageCell.locator("select");
+    const select = stageCell.locator('select');
     await expect(select).toBeVisible();
 
     // Read current value and pick a different one so the update always fires
     const currentValue = await select.inputValue();
-    const newValue = currentValue === "qualification" ? "prospecting" : "qualification";
-    const labelValue = newValue === "qualification" ? "Qualification" : "Prospecting";
+    const newValue =
+      currentValue === 'qualification' ? 'prospecting' : 'qualification';
+    const labelValue =
+      newValue === 'qualification' ? 'Qualification' : 'Prospecting';
 
     await select.selectOption({ value: newValue });
 
     // Success toast should appear
-    await expect(page.getByText("Cell updated successfully")).toBeVisible();
+    await expect(page.getByText('Cell updated successfully')).toBeVisible();
 
     // Value should be updated in the cell (showing the label)
     await expect(stageCell).toHaveText(labelValue);
@@ -1002,19 +1042,27 @@ test.describe("Cell Editing Flow", () => {
     // matching the label across multiple deals
     await page.reload();
     await dealsPage.getDealItems();
-    const reloadedHeaders = await page.getByRole("columnheader").allInnerTexts();
-    const reloadedStageIndex = reloadedHeaders.findIndex(h => h.toLowerCase().includes("stage"));
-    const reloadedStageCell = page.getByRole("row").nth(1).locator("td").nth(reloadedStageIndex);
+    const reloadedHeaders = await page
+      .getByRole('columnheader')
+      .allInnerTexts();
+    const reloadedStageIndex = reloadedHeaders.findIndex((h) =>
+      h.toLowerCase().includes('stage'),
+    );
+    const reloadedStageCell = page
+      .getByRole('row')
+      .nth(1)
+      .locator('td')
+      .nth(reloadedStageIndex);
     await expect(reloadedStageCell).toHaveText(labelValue);
   });
 });
 
-test.describe.serial("Custom Column Flow - Select Type", () => {
+test.describe.serial('Custom Column Flow - Select Type', () => {
   const identifier = Date.now();
   const columnName = `Priority Level ${identifier}`;
   const columnKey = `priority_level_${identifier}`;
 
-  test("Creates a column with type select and options", async ({
+  test('Creates a column with type select and options', async ({
     dealsPage,
     page,
   }) => {
@@ -1028,73 +1076,73 @@ test.describe.serial("Custom Column Flow - Select Type", () => {
     }
 
     // Open add column dialog
-    const addColumnButton = page.getByRole("button", { name: /Add column/i });
+    const addColumnButton = page.getByRole('button', { name: /Add column/i });
     await addColumnButton.click();
     await expect(page.getByText(/Add new field/i)).toBeVisible();
 
     // Fill column details
-    await page.getByPlaceholder("Field name").fill(columnName);
+    await page.getByPlaceholder('Field name').fill(columnName);
     await page.getByPlaceholder(/Unique column key/i).fill(columnKey);
-    await page.locator("select").selectOption("select");
+    await page.locator('select').selectOption('select');
 
     // Test option management: add and remove
-    const addOptionButton = page.getByRole("button", { name: /Add option/i });
-    
+    const addOptionButton = page.getByRole('button', { name: /Add option/i });
+
     // Default 1 option exists
-    await expect(page.getByPlaceholder("Option value")).toHaveCount(1);
-    
+    await expect(page.getByPlaceholder('Option value')).toHaveCount(1);
+
     await addOptionButton.click();
-    await expect(page.getByPlaceholder("Option value")).toHaveCount(2);
+    await expect(page.getByPlaceholder('Option value')).toHaveCount(2);
 
     // Remove the newly added option
-    const secondOptionContainer = page.locator("div.group").nth(1);
+    const secondOptionContainer = page.locator('div.group').nth(1);
     await secondOptionContainer.hover();
-    await secondOptionContainer.locator("button").click();
-    await expect(page.getByPlaceholder("Option value")).toHaveCount(1);
+    await secondOptionContainer.locator('button').click();
+    await expect(page.getByPlaceholder('Option value')).toHaveCount(1);
 
     // Add final options
-    await page.getByPlaceholder("Option value").nth(0).fill("High");
+    await page.getByPlaceholder('Option value').nth(0).fill('High');
     await addOptionButton.click();
-    await page.getByPlaceholder("Option value").nth(1).fill("Low");
+    await page.getByPlaceholder('Option value').nth(1).fill('Low');
 
     // Create the field
-    await page.getByRole("button", { name: "Create field" }).click();
+    await page.getByRole('button', { name: 'Create field' }).click();
 
     // Verify creation
-    await expect(page.getByText("Column created successfully")).toBeVisible();
+    await expect(page.getByText('Column created successfully')).toBeVisible();
     await expect(
-      page.getByRole("columnheader", { name: columnName })
+      page.getByRole('columnheader', { name: columnName }),
     ).toBeVisible();
   });
 
-  test("Updates a cell value for the new select type column", async ({
+  test('Updates a cell value for the new select type column', async ({
     dealsPage,
     page,
   }) => {
     await dealsPage.goto();
 
     // Find the dynamic column index
-    const headers = page.getByRole("columnheader");
+    const headers = page.getByRole('columnheader');
     const headerTexts = await headers.allInnerTexts();
     const columnIndex = headerTexts.findIndex((h) => h.includes(columnName));
     expect(columnIndex).toBeGreaterThan(-1);
 
-    const firstRow = page.getByRole("row").nth(1);
-    const cell = firstRow.locator("td").nth(columnIndex);
+    const firstRow = page.getByRole('row').nth(1);
+    const cell = firstRow.locator('td').nth(columnIndex);
 
     // Click to view options
     await cell.click();
 
     // Validate select dropdown and its options
-    const select = cell.locator("select");
+    const select = cell.locator('select');
     await expect(select).toBeVisible();
-    const options = await select.locator("option").allInnerTexts();
-    expect(options).toContain("High");
-    expect(options).toContain("Low");
+    const options = await select.locator('option').allInnerTexts();
+    expect(options).toContain('High');
+    expect(options).toContain('Low');
 
     // Select an option and verify update
-    await select.selectOption("High");
-    await expect(page.getByText("Cell updated successfully")).toBeVisible();
-    await expect(cell).toHaveText("High");
+    await select.selectOption('High');
+    await expect(page.getByText('Cell updated successfully')).toBeVisible();
+    await expect(cell).toHaveText('High');
   });
 });

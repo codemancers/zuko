@@ -7,15 +7,9 @@ import { test, expect } from "./fixtures";
 test.describe("Deal Activity Timeline - Authenticated", () => {
   let dealId!: number;
 
-  test.beforeEach(async ({ dealsPage, page }) => {
-    if (dealId !== undefined) return;
-    await dealsPage.goto();
-
-    const firstDealRow = page.locator('a[href^="/deals/"]').first();
-    await firstDealRow.click();
-
-    await page.waitForURL(/\/deals\/\d+/, { timeout: 10000 });
-    dealId = parseInt(page.url().match(/\/deals\/(\d+)/)?.[1] ?? "1", 10);
+  test.beforeEach(async () => {
+    // Rely on predictable Deal ID instead of brittle DOM navigation
+    dealId = 1;
   });
 
   // ── 1. Empty states (check before any creation) ───────────────────────────
