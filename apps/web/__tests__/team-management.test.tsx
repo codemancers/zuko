@@ -194,7 +194,7 @@ describe('OrgTeams', () => {
   it('shows empty state when no teams found', async () => {
     renderWithTeams([]);
     await waitFor(() => {
-      expect(screen.getByText(/no teams found/i)).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /add row/i })).toBeInTheDocument();
     });
   });
 
