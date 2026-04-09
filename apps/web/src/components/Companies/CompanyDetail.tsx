@@ -14,6 +14,8 @@ import {
   Button,
   Input,
   Subheading,
+  Switch,
+  Text,
 } from '@zuko/ui-kit';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getCompany, getDealsByCompany } from '@/server/query-options';
@@ -309,17 +311,14 @@ export default function CompanyDetail({
                       placeholder="Role"
                       className="h-auto py-1 text-sm"
                     />
-                    <label className="flex items-center gap-1.5">
-                      <input
-                        type="checkbox"
+                    <div className="flex items-center gap-1.5">
+                      <Switch
                         checked={editedIsPrimary}
-                        onChange={(e) => setEditedIsPrimary(e.target.checked)}
-                        className="h-3.5 w-3.5 rounded border-zinc-300 text-blue-600 focus:ring-blue-500 dark:border-zinc-700"
+                        onChange={setEditedIsPrimary}
+                        color="blue"
                       />
-                      <span className="text-xs text-zinc-600 dark:text-zinc-400">
-                        Primary
-                      </span>
-                    </label>
+                      <Text className="text-xs">Primary</Text>
+                    </div>
                     <div className="text-xs text-zinc-600 dark:text-zinc-400">
                       Joined {dayjs(ac.joinedAt).format('MMM D, YYYY')}
                     </div>

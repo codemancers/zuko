@@ -14,22 +14,12 @@ import { getTimeline } from '@/server/query-options';
 import { activitiesApi } from '@/lib/api/activities';
 import dayjs from 'dayjs';
 import { EMPTY_VALUE } from '@/components/Table';
+import { formatStage } from '@/lib/format-utils';
 import relativeTime from 'dayjs/plugin/relativeTime';
 
 dayjs.extend(relativeTime);
 
-const STAGE_LABELS: Record<string, string> = {
-  prospecting: 'Prospecting',
-  qualification: 'Qualification',
-  proposal: 'Proposal',
-  negotiation: 'Negotiation',
-  closed_won: 'Closed Won',
-  closed_lost: 'Closed Lost',
-};
 
-function formatStage(stage: string) {
-  return STAGE_LABELS[stage] ?? stage;
-}
 
 const FIELD_LABELS: Record<string, string> = {
   title: 'title',

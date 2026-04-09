@@ -1,5 +1,5 @@
 'use client';
-import { Button, Divider, Heading, Input, Subheading } from '@zuko/ui-kit';
+import { Button, Divider, ErrorMessage, Field, Heading, Input, Subheading } from '@zuko/ui-kit';
 import React from 'react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
@@ -76,9 +76,7 @@ export const CreateOrg = () => {
     <form onSubmit={form.handleSubmit(onSubmit)} className="">
       <Heading>Create Organization</Heading>
       {form.formState.errors.root && (
-        <p className="mt-4 p-3 bg-red-50 border border-red-200 text-sm text-red-600 rounded-lg">
-          {form.formState.errors.root.message}
-        </p>
+        <ErrorMessage>{form.formState.errors.root.message}</ErrorMessage>
       )}
       <Divider className="my-10 mt-6" />
 
@@ -86,7 +84,7 @@ export const CreateOrg = () => {
         <div className="space-y-1">
           <Subheading>Organization Name</Subheading>
         </div>
-        <div>
+        <Field>
           <Input
             aria-label="Organization Name"
             {...form.register('name', {
@@ -104,11 +102,9 @@ export const CreateOrg = () => {
             })}
           />
           {form.formState.errors.name && (
-            <p className="mt-2 text-sm text-red-500">
-              {form.formState.errors.name.message}
-            </p>
+            <ErrorMessage>{form.formState.errors.name.message}</ErrorMessage>
           )}
-        </div>
+        </Field>
       </section>
 
       <Divider className="my-10" soft />
@@ -117,14 +113,12 @@ export const CreateOrg = () => {
         <div className="space-y-1">
           <Subheading>Organization Slug</Subheading>
         </div>
-        <div>
+        <Field>
           <Input aria-label="Organization Slug" {...form.register('slug')} />
           {form.formState.errors.slug && (
-            <p className="mt-2 text-sm text-red-500">
-              {form.formState.errors.slug.message}
-            </p>
+            <ErrorMessage>{form.formState.errors.slug.message}</ErrorMessage>
           )}
-        </div>
+        </Field>
       </section>
 
       <div className="flex justify-end gap-4 mt-10">
@@ -132,14 +126,12 @@ export const CreateOrg = () => {
           type="button"
           plain
           onClick={() => form.reset()}
-          className="cursor-pointer"
         >
           Reset
         </Button>
         <Button
           type="submit"
           disabled={form.formState.isSubmitting}
-          className="cursor-pointer"
         >
           {form.formState.isSubmitting ? 'Saving...' : 'Save changes'}
         </Button>

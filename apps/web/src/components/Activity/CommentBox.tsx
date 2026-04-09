@@ -15,6 +15,7 @@ import {
   FileCode2,
 } from 'lucide-react';
 import { MarkdownContent } from './MarkdownContent';
+import { editorJsonToMarkdown } from '@/lib/editor-utils';
 
 export interface CommentBoxProps {
   onSubmit: (content: string) => void;
@@ -31,32 +32,7 @@ export interface CommentBoxProps {
 
 function getInitialText(raw: string | undefined): string {
   if (!raw) return '';
-  try {
-    const parsed = JSON.parse(raw);
-    if (Array.isArray(parsed?.blocks)) {
-      return parsed.blocks
-        .map((b: { type: string; data: Record<string, unknown> }) => {
-          if (b.type === 'paragraph' || b.type === 'header')
-            return String(b.data.text ?? '');
-          if (b.type === 'code') return `\`\`\`\n${b.data.code}\n\`\`\``;
-          if (b.type === 'quote') return `> ${b.data.text}`;
-          if (b.type === 'list') {
-            const items = Array.isArray(b.data.items) ? b.data.items : [];
-            return items
-              .map((item: unknown, i: number) =>
-                b.data.style === 'ordered' ? `${i + 1}. ${item}` : `- ${item}`,
-              )
-              .join('\n');
-          }
-          return '';
-        })
-        .filter(Boolean)
-        .join('\n\n');
-    }
-  } catch {
-    /* fall through */
-  }
-  return raw;
+  return editorJsonToMarkdown(raw) ?? raw;
 }
 
 function makeInsertHelpers(

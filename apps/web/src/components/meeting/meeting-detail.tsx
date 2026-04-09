@@ -23,6 +23,9 @@ import {
   Divider,
   Heading,
   Input,
+  Tabs,
+  TabsList,
+  TabsTrigger,
   Text,
   Textarea,
 } from '@zuko/ui-kit';
@@ -62,6 +65,14 @@ const MEETING_STATUS_COLOR_MAP: Record<string, BadgeColor> = {
 };
 
 type Tab = 'recording' | 'transcript' | 'chat' | 'summary' | 'actionItems';
+
+const TABS: { id: Tab; label: string; icon: React.ElementType }[] = [
+  { id: 'recording', label: 'Recording', icon: PlayCircle },
+  { id: 'transcript', label: 'Transcript', icon: FileText },
+  { id: 'chat', label: 'Chat', icon: Lightbulb },
+  { id: 'summary', label: 'Summary', icon: ScrollText },
+  { id: 'actionItems', label: 'Action Items', icon: CheckCircle },
+];
 
 export interface TranscriptData {
   text: string;
@@ -693,36 +704,19 @@ const MeetingDetail = ({ meetingId, meetingOverride }: MeetingDetailProps) => {
             )}
           </div>
 
-          <div className="mt-8 border-b border-zinc-200 dark:border-zinc-800">
-            <nav className="-mb-px flex gap-1">
-              {(
-                [
-                  { id: 'recording', label: 'Recording', icon: PlayCircle },
-                  { id: 'transcript', label: 'Transcript', icon: FileText },
-                  { id: 'chat', label: 'Chat', icon: Lightbulb },
-                  { id: 'summary', label: 'Summary', icon: ScrollText },
-                  {
-                    id: 'actionItems',
-                    label: 'Action Items',
-                    icon: CheckCircle,
-                  },
-                ] as { id: Tab; label: string; icon: React.ElementType }[]
-              ).map(({ id, label, icon: Icon }) => (
-                <button
-                  key={id}
-                  onClick={() => handleTabChange(id)}
-                  className={`flex shrink-0 items-center gap-1.5 border-b-2 px-3 py-3 text-sm font-medium transition-colors ${
-                    activeTab === id
-                      ? 'border-zinc-950 text-zinc-950 dark:border-white dark:text-white'
-                      : 'border-transparent text-zinc-500 hover:border-zinc-300 hover:text-zinc-700 dark:text-zinc-400 dark:hover:border-zinc-700 dark:hover:text-zinc-300'
-                  }`}
-                >
+          <Tabs
+            selectedIndex={TABS.findIndex((t) => t.id === activeTab)}
+            onChange={(index: number) => handleTabChange(TABS[index].id)}
+          >
+            <TabsList variant="line" className="mt-8">
+              {TABS.map(({ id, label, icon: Icon }) => (
+                <TabsTrigger key={id}>
                   <Icon className="h-4 w-4" />
                   {label}
-                </button>
+                </TabsTrigger>
               ))}
-            </nav>
-          </div>
+            </TabsList>
+          </Tabs>
 
           <div className="mt-6">
             {activeTab === 'recording'

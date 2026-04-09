@@ -28,9 +28,21 @@ export function getStageColor(
   return stageColors[stage] || 'zinc';
 }
 
+const STAGE_LABELS: Record<string, string> = {
+  prospecting: 'Prospecting',
+  qualification: 'Qualification',
+  proposal: 'Proposal',
+  negotiation: 'Negotiation',
+  closed_won: 'Closed Won',
+  closed_lost: 'Closed Lost',
+};
+
 export function formatStage(stage: string): string {
-  return stage
-    .split('_')
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(' ');
+  return (
+    STAGE_LABELS[stage] ??
+    stage
+      .split('_')
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ')
+  );
 }

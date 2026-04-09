@@ -14,6 +14,8 @@ import {
   Button,
   Input,
   Subheading,
+  Switch,
+  Text,
 } from '@zuko/ui-kit';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getDeal } from '@/server/query-options';
@@ -426,19 +428,14 @@ export default function DealDetail({ dealId, currentUserId }: DealDetailProps) {
                 {editingCompanyId === da.companyId ? (
                   // Edit mode
                   <>
-                    <label className="flex items-center gap-1.5">
-                      <input
-                        type="checkbox"
+                    <div className="flex items-center gap-1.5">
+                      <Switch
                         checked={editedCompanyIsPrimary}
-                        onChange={(e) =>
-                          setEditedCompanyIsPrimary(e.target.checked)
-                        }
-                        className="h-3.5 w-3.5 rounded border-zinc-300 text-blue-600 focus:ring-blue-500 dark:border-zinc-700"
+                        onChange={setEditedCompanyIsPrimary}
+                        color="blue"
                       />
-                      <span className="text-xs text-zinc-600 dark:text-zinc-400">
-                        Primary
-                      </span>
-                    </label>
+                      <Text className="text-xs">Primary</Text>
+                    </div>
                     <InlineSaveCancel
                       onSave={() => handleSaveCompany(da.companyId)}
                       onCancel={handleCancelEdit}
@@ -513,19 +510,14 @@ export default function DealDetail({ dealId, currentUserId }: DealDetailProps) {
                       placeholder="Role"
                       className="h-auto py-1 text-sm"
                     />
-                    <label className="flex items-center gap-1.5">
-                      <input
-                        type="checkbox"
+                    <div className="flex items-center gap-1.5">
+                      <Switch
                         checked={editedContactIsPrimary}
-                        onChange={(e) =>
-                          setEditedContactIsPrimary(e.target.checked)
-                        }
-                        className="h-3.5 w-3.5 rounded border-zinc-300 text-blue-600 focus:ring-blue-500 dark:border-zinc-700"
+                        onChange={setEditedContactIsPrimary}
+                        color="blue"
                       />
-                      <span className="text-xs text-zinc-600 dark:text-zinc-400">
-                        Primary
-                      </span>
-                    </label>
+                      <Text className="text-xs">Primary</Text>
+                    </div>
                     <InlineSaveCancel
                       onSave={() => handleSaveContact(dc.contactId)}
                       onCancel={handleCancelContactEdit}

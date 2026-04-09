@@ -13,6 +13,7 @@ import {
   Combobox,
   ComboboxOption,
   ComboboxLabel,
+  Description,
   ErrorMessage,
 } from '@zuko/ui-kit';
 import { authClient } from '@/lib/auth-client';
@@ -162,9 +163,9 @@ export const AddMemberToTeamDialog = ({
             </Combobox>
             {error && <ErrorMessage>{error}</ErrorMessage>}
             {teams.length === 0 && (
-              <p className="mt-1 text-sm text-zinc-500">
+              <Description>
                 No teams available. Create a team first.
-              </p>
+              </Description>
             )}
           </Field>
         </DialogBody>
