@@ -11,13 +11,14 @@ import {
   XCircleIcon,
 } from '@heroicons/react/24/outline';
 
+import type { ComponentProps, ReactNode } from 'react';
+import { createContext, isValidElement, useContext, useState } from 'react';
+
 const CircleIcon = (props: React.ComponentProps<'svg'>) => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
     <circle cx="12" cy="12" r="10"/>
   </svg>
 );
-import type { ComponentProps, ReactNode } from 'react';
-import { createContext, isValidElement, useContext, useState } from 'react';
 
 export type ToolPart = ToolUIPart | DynamicToolUIPart;
 

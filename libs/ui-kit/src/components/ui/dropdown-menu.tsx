@@ -3,14 +3,15 @@
 import * as React from 'react';
 import { CheckIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 
+import { DropdownMenu as DropdownMenuPrimitive } from 'radix-ui';
+
+import { cn } from '../../lib/utils';
+
 const CircleIcon = (props: React.ComponentProps<'svg'>) => (
   <svg viewBox="0 0 16 16" {...props}>
     <circle cx="8" cy="8" r="4" />
   </svg>
 );
-import { DropdownMenu as DropdownMenuPrimitive } from 'radix-ui';
-
-import { cn } from '../../lib/utils';
 
 function DropdownMenu({
   ...props
