@@ -40,6 +40,7 @@ import {
   type ChatMention,
 } from '@/components/Chat/ChatInputWithMentions';
 import { useState, useCallback, useRef, useEffect } from 'react';
+import clsx from 'clsx';
 
 // ============================================================================
 // Types
@@ -226,7 +227,7 @@ const ChatInputInner = ({
             variant={isRecording ? 'default' : 'ghost'}
           >
             <MicIcon
-              className={`size-4 ${isRecording ? 'text-red-500' : ''}`}
+              className={clsx('size-4', isRecording && 'text-red-500')}
             />
           </PromptInputButton>
 

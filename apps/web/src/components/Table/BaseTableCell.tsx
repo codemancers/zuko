@@ -1,5 +1,6 @@
 import { Cell, flexRender } from '@tanstack/react-table';
 import { TableCell } from '@zuko/ui-kit';
+import clsx from 'clsx';
 import { useState, useRef } from 'react';
 import type { ColumnMetadata, BaseRow } from './types';
 import { EditorRegistry, type EditorProps } from './CellEditors';
@@ -85,7 +86,7 @@ export function BaseTableCell<TData extends BaseRow>({ cell, onCellUpdate }: Bas
 
   return (
     <TableCell 
-      className={isEditable ? "align-middle cursor-text" : "align-middle"}
+      className={clsx('align-middle', isEditable && 'cursor-text')}
       style={{ 
         width: cell.column.id === 'sno' ? cell.column.getSize() : undefined,
         minWidth: cell.column.id === 'sno' ? cell.column.getSize() : cell.column.columnDef.minSize,

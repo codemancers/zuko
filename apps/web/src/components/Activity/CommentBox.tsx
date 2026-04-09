@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef, useState, type ReactNode } from 'react';
+import clsx from 'clsx';
 import { Avatar, Button } from '@zuko/ui-kit';
 import {
   Heading2,
@@ -202,12 +203,12 @@ export function CommentBox({
                   key={tab}
                   type="button"
                   onClick={() => setActiveTab(tab)}
-                  className={[
+                  className={clsx(
                     'px-3 py-2 text-sm font-medium capitalize transition-colors',
                     activeTab === tab
                       ? 'border-b-2 border-zinc-950 dark:border-white text-zinc-950 dark:text-white -mb-px'
                       : 'text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200',
-                  ].join(' ')}
+                  )}
                 >
                   {tab}
                 </button>

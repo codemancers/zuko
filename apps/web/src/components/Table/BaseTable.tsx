@@ -7,6 +7,7 @@ import { BaseTableProps, BaseRow } from './types';
 import { BaseTableHeader } from './BaseTableHeader';
 import { BaseTableBody } from './BaseTableBody';
 import { Table, Button } from '@zuko/ui-kit';
+import clsx from 'clsx';
 import { PlusIcon } from '@heroicons/react/24/outline';
 import type { PaginationState } from '@tanstack/react-table';
 import { AddColumnDialog } from './AddColumnDialog';
@@ -61,7 +62,7 @@ export function BaseTable<TData extends BaseRow>(props: BaseTableProps<TData>) {
 
   if (loading) {
     return (
-      <div className={`flex flex-col items-center justify-center mt-8 ${className ?? ''}`}>
+      <div className={clsx('flex flex-col items-center justify-center mt-8', className)}>
         <div className="text-sm text-zinc-600 dark:text-zinc-400">
           Loading {props.entityName ?? 'data'}...
         </div>
@@ -70,7 +71,7 @@ export function BaseTable<TData extends BaseRow>(props: BaseTableProps<TData>) {
   }
 
   return (
-    <div className={`mt-8 ${className ?? ''}`}>
+    <div className={clsx('mt-8', className)}>
       <div className="flow-root overflow-hidden border border-zinc-200 dark:border-zinc-800 rounded-lg shadow-sm bg-white dark:bg-zinc-950">
         <Table grid dense className="[--gutter:--spacing(6)] lg:[--gutter:--spacing(10)] text-sm">
           <BaseTableHeader<TData>

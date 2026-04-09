@@ -2,6 +2,7 @@
 
 import type { DynamicToolUIPart, ToolUIPart } from 'ai';
 import { Badge, Button, MessageResponse } from '@zuko/ui-kit';
+import clsx from 'clsx';
 import {
   CheckCircleIcon,
   ChevronDownIcon,
@@ -69,7 +70,7 @@ export const Tool = ({
       <div
         data-slot="tool"
         data-state={open ? 'open' : 'closed'}
-        className={`group mb-4 w-full rounded-md border border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-900 ${className}`}
+        className={clsx('group mb-4 w-full rounded-md border border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-900', className)}
         {...props}
       >
         {children}
@@ -116,7 +117,7 @@ export const ToolHeader = ({
     <Button
       plain
       onClick={() => setOpen(!open)}
-      className={`w-full justify-between gap-4 rounded-none rounded-t-md p-3 font-normal ${className}`}
+      className={clsx('w-full justify-between gap-4 rounded-none rounded-t-md p-3 font-normal', className)}
       {...props}
     >
       <div className="flex items-center gap-2">
@@ -125,7 +126,7 @@ export const ToolHeader = ({
         {getStatusBadge(state)}
       </div>
       <ChevronDownIcon
-        className={`size-4 text-zinc-500 transition-transform dark:text-zinc-400 ${open ? 'rotate-180' : ''}`}
+        className={clsx('size-4 text-zinc-500 transition-transform dark:text-zinc-400', open && 'rotate-180')}
       />
     </Button>
   );
@@ -142,7 +143,7 @@ export const ToolContent = ({
   if (!open) return null;
   return (
     <div
-      className={`space-y-4 border-t border-zinc-200 p-4 text-zinc-700 outline-none dark:border-zinc-700 dark:text-zinc-300 ${className}`}
+      className={clsx('space-y-4 border-t border-zinc-200 p-4 text-zinc-700 outline-none dark:border-zinc-700 dark:text-zinc-300', className)}
       {...props}
     >
       {children}
@@ -236,7 +237,7 @@ function JsonCodeBlock({
 
   return (
     <pre
-      className={`overflow-x-auto rounded-md border border-zinc-200/80 bg-zinc-50/80 p-4 font-mono text-xs leading-relaxed text-zinc-800 dark:border-zinc-700 dark:bg-zinc-800/80 dark:text-zinc-200 ${className}`}
+      className={clsx('overflow-x-auto rounded-md border border-zinc-200/80 bg-zinc-50/80 p-4 font-mono text-xs leading-relaxed text-zinc-800 dark:border-zinc-700 dark:bg-zinc-800/80 dark:text-zinc-200', className)}
     >
       <code className="block min-w-0 whitespace-pre">{segments}</code>
     </pre>
@@ -252,7 +253,7 @@ export const ToolInput = ({
   input,
   ...props
 }: ToolInputProps) => (
-  <div className={`space-y-2 overflow-hidden ${className}`} {...props}>
+  <div className={clsx('space-y-2 overflow-hidden', className)} {...props}>
     <h4 className="text-xs font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
       Parameters
     </h4>
@@ -305,7 +306,7 @@ export const ToolOutput = ({
   }
 
   return (
-    <div className={`space-y-2 ${className}`} {...props}>
+    <div className={clsx('space-y-2', className)} {...props}>
       <h4 className="text-xs font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
         {errorText ? 'Error' : 'Result'}
       </h4>

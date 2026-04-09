@@ -6,6 +6,7 @@ import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
 import Image from 'next/image';
 import { toast } from 'sonner';
+import clsx from 'clsx';
 import {
   Download,
   PlayCircle,
@@ -523,25 +524,25 @@ const MeetingDetail = ({ meetingId, meetingOverride }: MeetingDetailProps) => {
                     return (
                       <div
                         key={it.id}
-                        className={[
+                        className={clsx(
                           'group relative rounded-xl border p-4 transition',
                           isCompleted
                             ? 'border-zinc-100 bg-zinc-50/30 opacity-60 dark:border-zinc-800/50 dark:bg-zinc-900/10'
                             : hasTask
                               ? 'border-zinc-200/50 bg-zinc-50/50 dark:border-zinc-800/50 dark:bg-zinc-900/50'
                               : 'border-zinc-200 bg-white hover:shadow-sm dark:border-zinc-800 dark:bg-zinc-900',
-                        ].join(' ')}
+                        )}
                       >
                         <div className="flex flex-col gap-3">
                           <div className="flex gap-3 min-w-0">
                             <button
                               onClick={() => toggleTaskCompletion(it.id)}
-                              className={[
+                              className={clsx(
                                 'mt-0.5 flex size-5 shrink-0 items-center justify-center rounded border transition-colors',
                                 isCompleted
                                   ? 'border-green-500 bg-green-500 text-white'
                                   : 'border-zinc-300 bg-white hover:border-zinc-400 dark:border-zinc-700 dark:bg-zinc-800',
-                              ].join(' ')}
+                              )}
                             >
                               {isCompleted && (
                                 <Image
@@ -554,28 +555,28 @@ const MeetingDetail = ({ meetingId, meetingOverride }: MeetingDetailProps) => {
                             </button>
                             <div className="min-w-0 flex-1">
                               <Text
-                                className={[
+                                className={clsx(
                                   'text-base md:text-lg font-semibold md:font-bold tracking-tight',
                                   isCompleted
                                     ? 'text-zinc-400 dark:text-zinc-600 line-through'
                                     : hasTask
                                       ? 'text-zinc-600 dark:text-zinc-400'
                                       : 'text-zinc-950 dark:text-zinc-50',
-                                ].join(' ')}
+                                )}
                               >
                                 {it.title}
                               </Text>
 
                               {it.description && (
                                 <div
-                                  className={[
+                                  className={clsx(
                                     'mt-1.5 text-sm leading-relaxed',
                                     isCompleted
                                       ? 'text-zinc-400 dark:text-zinc-600'
                                       : hasTask
                                         ? 'text-zinc-500 dark:text-zinc-500'
                                         : 'text-zinc-700 dark:text-zinc-300',
-                                  ].join(' ')}
+                                  )}
                                 >
                                   {it.description}
                                 </div>
