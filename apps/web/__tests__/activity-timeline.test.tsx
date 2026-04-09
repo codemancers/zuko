@@ -7,6 +7,12 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import ActivityTimeline from '@/components/Activity/ActivityTimeline';
 
+vi.mock('next/image', () => ({
+  default: ({ src, alt }: { src: string; alt: string }) => (
+    <img src={src} alt={alt} />
+  ),
+}));
+
 // ── Mocks ─────────────────────────────────────────────────────────────────
 
 const mockGetTimeline = vi.fn();

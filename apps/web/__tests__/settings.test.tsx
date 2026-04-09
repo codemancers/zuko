@@ -2,6 +2,12 @@
  * @vitest-environment jsdom
  */
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
+
+vi.mock('next/image', () => ({
+  default: ({ src, alt }: { src: string; alt: string }) => (
+    <img src={src} alt={alt} />
+  ),
+}));
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
