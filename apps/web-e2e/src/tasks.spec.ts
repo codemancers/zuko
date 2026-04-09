@@ -108,7 +108,6 @@ test.describe('Task Actions (table dropdown)', () => {
     await tasksPage.goto();
 
     await tasksPage.clickTaskActionEdit('Task for Dropdown Edit');
-    await page.waitForURL('**/tasks/**/edit');
     await expect(page.getByLabel(/title \*/i)).toHaveValue('Task for Dropdown Edit');
   });
 
@@ -180,7 +179,8 @@ test.describe('Hierarchical Tasks', () => {
 
     await tasksPage.createTask({ title: 'Child Subtask', parentId });
 
-    await tasksPage.goto();
+    // Subtasks are not shown in the main list — navigate to parent detail to verify
+    await page.goto(`/tasks/${parentId}`);
     await expect(page.getByText('Child Subtask').first()).toBeVisible();
   });
 
@@ -207,7 +207,8 @@ test.describe('Hierarchical Tasks', () => {
 
     await tasksPage.createTask({ title: 'Subtask to Promote', parentId });
 
-    await tasksPage.goto();
+    // Subtasks are not in the main list — find the subtask via parent detail page
+    await page.goto(`/tasks/${parentId}`);
     const subtaskId = await tasksPage.openTask('Subtask to Promote');
 
     await page.goto(`/tasks/${subtaskId}/edit`);

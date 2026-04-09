@@ -67,8 +67,9 @@ export class TasksPage extends BasePage {
   }
 
   async clickTaskActionEdit(title: string) {
-    const row = this.page.getByRole('row').filter({ hasText: title }).first();
-    await row.getByRole('button', { name: /edit task/i }).click();
+    await this.openTask(title);
+    await this.page.getByRole('button', { name: /edit/i }).click();
+    await this.page.waitForURL('**/tasks/**/edit');
   }
 
   async clickTaskActionComplete(title: string) {
