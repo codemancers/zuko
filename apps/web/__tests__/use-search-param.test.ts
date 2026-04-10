@@ -3,6 +3,8 @@ import { useSearchParam } from '@/hooks/use-search-param';
 import { useState } from 'react';
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 
+vi.unmock('@/hooks/use-search-param');
+
 vi.mock('nuqs', () => {
   return {
     // we mock useQueryState to behave like a standard useState for test isolation
