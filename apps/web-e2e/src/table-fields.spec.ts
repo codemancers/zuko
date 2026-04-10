@@ -25,11 +25,11 @@ test.describe('Table Fields - Add Column Dialog', () => {
     await expect(tablePage.addColumnButton).toBeVisible({ timeout: 10000 });
   });
 
-  test('opens the Add Column dialog', async ({ dealsPage, tablePage }) => {
+  test('opens the Add Column dialog', async ({ dealsPage, tablePage, page }) => {
     await dealsPage.goto();
     await tablePage.openAddColumnDialog();
-    await expect(tablePage.addColumnDialog).toBeVisible();
-    await expect(tablePage.addColumnDialog.getByText('Add new field')).toBeVisible();
+    await expect(page.getByText('Add new field')).toBeVisible();
+    await expect(page.getByText('Choose a field name')).toBeVisible();
   });
 
   test('field type dropdown includes Currency and Multi-select options', async ({
@@ -118,6 +118,7 @@ test.describe('Table Fields - Add Column Dialog', () => {
   test('Cancel button closes the dialog without adding a column', async ({
     dealsPage,
     tablePage,
+    page,
   }) => {
     await dealsPage.goto();
     const headersBefore = await tablePage.getColumnHeaders();
@@ -126,7 +127,7 @@ test.describe('Table Fields - Add Column Dialog', () => {
     await tablePage.fieldNameInput.fill('Should Not Appear');
     await tablePage.cancelButton.click();
 
-    await expect(tablePage.addColumnDialog).toBeHidden();
+    await expect(page.getByText('Add new field')).toBeHidden();
     const headersAfter = await tablePage.getColumnHeaders();
     expect(headersAfter).toEqual(headersBefore);
   });

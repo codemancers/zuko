@@ -7,6 +7,7 @@ import { BasePage } from './BasePage';
  */
 export class TablePage extends BasePage {
   readonly addColumnButton: Locator;
+  /** Scoped to visible dialog content — use this instead of getByRole('dialog') */
   readonly addColumnDialog: Locator;
   readonly fieldNameInput: Locator;
   readonly columnKeyInput: Locator;
@@ -17,7 +18,9 @@ export class TablePage extends BasePage {
   constructor(page: Page) {
     super(page);
     this.addColumnButton = page.getByRole('button', { name: /Add column/i });
-    this.addColumnDialog = page.getByRole('dialog');
+    // Headless UI Dialog is in the DOM but CSS-hidden during transitions;
+    // scope to the visible title text so Playwright can reliably detect open state.
+    this.addColumnDialog = page.locator('[role="dialog"]');
     this.fieldNameInput = page.getByPlaceholder('Field name');
     this.columnKeyInput = page.getByPlaceholder(/Unique column key/i);
     this.fieldTypeSelect = this.addColumnDialog.getByRole('combobox').first();
@@ -27,7 +30,10 @@ export class TablePage extends BasePage {
 
   async openAddColumnDialog() {
     await this.addColumnButton.click();
-    await this.addColumnDialog.waitFor({ state: 'visible' });
+    // Wait for visible content inside the dialog rather than the dialog element
+    // itself — Headless UI keeps the dialog in the DOM during CSS transitions,
+    // which makes Playwright's role-based visibility check unreliable.
+    await this.page.getByText('Add new field').waitFor({ state: 'visible', timeout: 10000 });
   }
 
   async fillColumnDetails(name: string, key: string) {
@@ -49,7 +55,7 @@ export class TablePage extends BasePage {
     await currencyInput.fill(currencyCode);
 
     await this.createFieldButton.click();
-    await this.addColumnDialog.waitFor({ state: 'hidden' });
+    await this.page.getByText('Add new field').waitFor({ state: 'hidden', timeout: 10000 });
   }
 
   async addMultiSelectColumn(name: string, key: string, options: string[]) {
@@ -66,7 +72,7 @@ export class TablePage extends BasePage {
     }
 
     await this.createFieldButton.click();
-    await this.addColumnDialog.waitFor({ state: 'hidden' });
+    await this.page.getByText('Add new field').waitFor({ state: 'hidden', timeout: 10000 });
   }
 
   async getColumnHeaders(): Promise<string[]> {
