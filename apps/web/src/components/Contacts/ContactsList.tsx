@@ -21,14 +21,15 @@ import { useCellUpdate } from '@/hooks/use-cell-update';
 import { ColumnConfig } from '@/types/table-metadata';
 import { contactsApi } from '@/lib/api/contacts';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
+import { useSearchParam } from '@/hooks/use-search-param';
 
 const ContactsList = () => {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const [searchTerm, setSearchTerm] = useState('');
+  const { inputValue: searchTerm, setInputValue: setSearchTerm, debouncedValue } = useSearchParam();
   const [contactToDelete, setContactToDelete] = useState<number | null>(null);
   const { data: contactsData, isLoading } = useQuery(
-    getTableViewContacts({ search: searchTerm || undefined }),
+    getTableViewContacts({ search: debouncedValue || undefined }),
   );
 
   const { mutate: addColumn } = useAddColumn('contacts');

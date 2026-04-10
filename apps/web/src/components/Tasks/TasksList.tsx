@@ -23,6 +23,7 @@ import {
 import type { ColumnDef } from '@tanstack/react-table';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { toast } from 'sonner';
+import { useSearchParam } from '@/hooks/use-search-param';
 
 type TaskRow = BaseRow & { status?: string };
 
@@ -30,10 +31,10 @@ const TasksList = () => {
   const router = useRouter();
   const queryClient = useQueryClient();
   const [taskToDelete, setTaskToDelete] = useState<TaskRow | null>(null);
-  const [searchTerm, setSearchTerm] = useState('');
+  const { inputValue: searchTerm, setInputValue: setSearchTerm, debouncedValue } = useSearchParam();
 
   const { data, isLoading } = useQuery(
-    getTableViewTasks({ search: searchTerm || undefined }),
+    getTableViewTasks({ search: debouncedValue || undefined }),
   );
   const { addRow: addTask } = useAddRow('tasks');
   const { updateCell } = useCellUpdate('tasks');

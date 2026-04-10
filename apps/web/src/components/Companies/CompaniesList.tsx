@@ -21,14 +21,15 @@ import { useCellUpdate } from '@/hooks/use-cell-update';
 import { ColumnConfig } from '@/types/table-metadata';
 import { companiesApi } from '@/lib/api/companies';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
+import { useSearchParam } from '@/hooks/use-search-param';
 
 const CompaniesList = () => {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const [searchTerm, setSearchTerm] = useState('');
+  const { inputValue: searchTerm, setInputValue: setSearchTerm, debouncedValue } = useSearchParam();
   const [companyToDelete, setCompanyToDelete] = useState<number | null>(null);
   const { data: companiesData, isLoading } = useQuery(
-    getTableViewCompanies({ search: searchTerm || undefined }),
+    getTableViewCompanies({ search: debouncedValue || undefined }),
   );
 
   const { mutate: addColumn } = useAddColumn('companies');

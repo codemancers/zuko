@@ -16,16 +16,17 @@ import {
   TableActions,
   DeleteAction,
 } from '@/components/Table';
+import { useSearchParam } from '@/hooks/use-search-param';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 
 export const MeetingList = () => {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const [searchTerm, setSearchTerm] = useState('');
+  const { inputValue: searchTerm, setInputValue: setSearchTerm, debouncedValue } = useSearchParam();
   const [meetingToDelete, setMeetingToDelete] = useState<number | null>(null);
 
   const { data: meetingsData, isLoading } = useQuery(
-    getTableViewMeetings({ search: searchTerm || undefined }),
+    getTableViewMeetings({ search: debouncedValue || undefined }),
   );
 
   const deleteMeetingMutation = useMutation({
