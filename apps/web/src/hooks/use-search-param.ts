@@ -8,14 +8,12 @@ export function useSearchParam(debounceMs = 500) {
   // nuqs limitUrlUpdates only debounces the URL/Server request!
   // The local react state updates immediately for responsive inputs.
   const [queryValue, setQueryValue] = useQueryState(
-    'search',
-    parseAsString
-      .withDefault('')
-      .withOptions({
-        shallow: false,
-        history: 'replace',
-        limitUrlUpdates: debounce(debounceMs)
-      }),
+    'q',
+    parseAsString.withDefault('').withOptions({
+      shallow: false,
+      history: 'replace',
+      limitUrlUpdates: debounce(debounceMs),
+    }),
   );
 
   // So we MUST use a custom useDebounce to debounce the value we give to React-Query (Client-Side).
@@ -35,6 +33,6 @@ export function useSearchParam(debounceMs = 500) {
   return {
     inputValue,
     setInputValue,
-    debouncedValue: debouncedInputValue
+    debouncedValue: debouncedInputValue,
   };
 }
