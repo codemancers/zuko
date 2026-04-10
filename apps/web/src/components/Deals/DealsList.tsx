@@ -21,14 +21,15 @@ import { useCellUpdate } from '@/hooks/use-cell-update';
 import { ColumnConfig } from '@/types/table-metadata';
 import { dealsApi } from '@/lib/api/deals';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
+import { useSearchParam } from '@/hooks/use-search-param';
 
 const DealsList = () => {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const [searchTerm, setSearchTerm] = useState('');
+  const { inputValue: searchTerm, setInputValue: setSearchTerm, debouncedValue } = useSearchParam();
   const [dealToDelete, setDealToDelete] = useState<number | null>(null);
   const { data: dealsData, isLoading } = useQuery(
-    getTableViewDeals({ search: searchTerm || undefined }),
+    getTableViewDeals({ search: debouncedValue || undefined }),
   );
 
   const { mutate: addColumn } = useAddColumn('deals');
