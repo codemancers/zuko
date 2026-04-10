@@ -2,7 +2,7 @@
  * @vitest-environment jsdom
  */
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import {
@@ -12,7 +12,6 @@ import {
 } from '@/components/Table/TableFields';
 import {
   CurrencyEditor,
-  MultiSelectEditor,
   SelectEditor,
 } from '@/components/Table/CellEditors';
 import { AddColumnDialog } from '@/components/Table/AddColumnDialog';
@@ -32,7 +31,9 @@ function makeMetadata(overrides: Partial<ColumnMetadata> = {}): ColumnMetadata {
 
 const baseRow = { id: 1 };
 
+// eslint-disable-next-line @typescript-eslint/no-empty-function
 const noop = () => {};
+// eslint-disable-next-line @typescript-eslint/no-empty-function
 const noopKeyDown = (_e: React.KeyboardEvent) => {};
 
 // ── CurrencyField ──────────────────────────────────────────────────────────────
