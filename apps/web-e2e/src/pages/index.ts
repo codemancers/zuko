@@ -18,4 +18,5 @@ export { MeetingsPage } from './MeetingsPage';
 export { MeetingDetailPage } from './MeetingDetailPage';
 export { TasksPage } from './TasksPage';
 export { TaskDetailPage } from './TaskDetailPage';
+export { TablePage } from './TablePage';
 

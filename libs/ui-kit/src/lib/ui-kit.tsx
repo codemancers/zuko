@@ -19,6 +19,7 @@ export * from './text';
 export * from './textarea';
 export * from './tabs';
 export * from './switch';
+export * from './multi-select';
 
 // Layouts
 export * from '../layouts/auth-layout';

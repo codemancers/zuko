@@ -171,8 +171,21 @@ export function DateField({ value, display }: FieldProps<BaseRow>) {
   );
 };
 
-export function CurrencyField({ value, display }: FieldProps<BaseRow>) {
-  return <span className="text-sm text-zinc-600 dark:text-zinc-400">{(display ?? (value as ReactNode)) ?? ''}</span>;
+export function CurrencyField({ value, display, metadata }: FieldProps<BaseRow>) {
+  if (display) {
+    return <span className="text-sm text-zinc-600 dark:text-zinc-400">{display}</span>;
+  }
+
+  const numValue = typeof value === 'number' ? value : (value !== null && value !== undefined ? Number(value) : null);
+
+  if (numValue === null || Number.isNaN(numValue)) {
+    return <span className="text-sm text-zinc-400">{EMPTY_VALUE}</span>;
+  }
+
+  const currency = metadata.config?.currency ?? 'USD';
+  const formatted = new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(numValue);
+
+  return <span className="text-sm text-zinc-600 dark:text-zinc-400">{formatted}</span>;
 }
 
 export function SelectField({ value, display, metadata }: FieldProps<BaseRow>) {

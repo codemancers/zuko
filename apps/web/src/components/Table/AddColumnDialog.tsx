@@ -31,6 +31,7 @@ export function AddColumnDialog({ isOpen, onClose, onAdd }: AddColumnDialogProps
   const [columnKey, setColumnKey] = useState('');
   const [fieldType, setFieldType] = useState('text');
   const [options, setOptions] = useState<string[]>(['']);
+  const [currencyCode, setCurrencyCode] = useState('USD');
   const [errors, setErrors] = useState<Record<string, string>>({});
   const validKeyRegex = /^[a-z0-9_]+$/;
 
@@ -57,6 +58,7 @@ export function AddColumnDialog({ isOpen, onClose, onAdd }: AddColumnDialogProps
     setColumnKey('');
     setFieldType('text');
     setOptions(['']);
+    setCurrencyCode('USD');
     setErrors({});
     onClose();
   };
@@ -82,15 +84,19 @@ export function AddColumnDialog({ isOpen, onClose, onAdd }: AddColumnDialogProps
   const handleAdd = () => {
     if (validate()) {
       let config: ColumnConfig | undefined = undefined;
-      
-      if (fieldType === 'select') {
+
+      if (fieldType === 'select' || fieldType === 'multiselect') {
         const validOptions = options
           .filter((opt) => opt.trim() !== '')
           .map((opt) => ({ label: opt.trim(), value: opt.trim() }));
-        
+
         if (validOptions.length > 0) {
           config = { options: validOptions };
         }
+      }
+
+      if (fieldType === 'currency') {
+        config = { currency: currencyCode.trim().toUpperCase() || 'USD' };
       }
 
       onAdd(fieldName, columnKey, fieldType, config);
@@ -98,6 +104,7 @@ export function AddColumnDialog({ isOpen, onClose, onAdd }: AddColumnDialogProps
       setColumnKey('');
       setFieldType('text');
       setOptions(['']);
+      setCurrencyCode('USD');
       setErrors({});
       onClose();
     }
@@ -148,12 +155,25 @@ export function AddColumnDialog({ isOpen, onClose, onAdd }: AddColumnDialogProps
             <option value="text">Single line text</option>
             <option value="number">Number</option>
             <option value="date">Date</option>
+            <option value="currency">Currency</option>
             <option value="select">Select</option>
+            <option value="multiselect">Multi-select</option>
           </Select>
           {errors.fieldType && <ErrorMessage>{errors.fieldType}</ErrorMessage>}
         </Field>
 
-        {fieldType === 'select' && (
+        {fieldType === 'currency' && (
+          <Field>
+            <Label>Currency Code</Label>
+            <Input
+              placeholder="e.g. USD, EUR, GBP"
+              value={currencyCode}
+              onChange={(e) => setCurrencyCode(e.target.value)}
+            />
+          </Field>
+        )}
+
+        {(fieldType === 'select' || fieldType === 'multiselect') && (
           <Field>
             <Label>Options</Label>
             <div data-slot="control" className="space-y-2">
