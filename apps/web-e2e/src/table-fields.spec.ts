@@ -39,9 +39,10 @@ test.describe('Table Fields - Add Column Dialog', () => {
     await dealsPage.goto();
     await tablePage.openAddColumnDialog();
 
-    const optionValues = await tablePage.fieldTypeSelect.evaluate((el: HTMLSelectElement) =>
-      Array.from(el.options).map((o) => o.value)
-    );
+    const optionValues = await tablePage.fieldTypeSelect.evaluate((el) => {
+      const select = el as { options: ArrayLike<{ value: string }> };
+      return Array.from(select.options).map((o) => o.value);
+    });
 
     expect(optionValues).toContain('currency');
     expect(optionValues).toContain('multiselect');
