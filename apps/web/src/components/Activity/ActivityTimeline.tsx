@@ -8,28 +8,18 @@ import { MarkdownContent } from './MarkdownContent';
 const ACTIVITY_SOURCES = { AI: 'ai' } as const;
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { PencilIcon } from '@heroicons/react/24/outline';
-import { Divider } from '@zuko/ui-kit';
+import { Button, Divider } from '@zuko/ui-kit';
 import { toast } from 'sonner';
 import { getTimeline } from '@/server/query-options';
 import { activitiesApi } from '@/lib/api/activities';
 import dayjs from 'dayjs';
 import { EMPTY_VALUE } from '@/components/Table';
+import { formatStage } from '@/lib/format-utils';
 import relativeTime from 'dayjs/plugin/relativeTime';
 
 dayjs.extend(relativeTime);
 
-const STAGE_LABELS: Record<string, string> = {
-  prospecting: 'Prospecting',
-  qualification: 'Qualification',
-  proposal: 'Proposal',
-  negotiation: 'Negotiation',
-  closed_won: 'Closed Won',
-  closed_lost: 'Closed Lost',
-};
 
-function formatStage(stage: string) {
-  return STAGE_LABELS[stage] ?? stage;
-}
 
 const FIELD_LABELS: Record<string, string> = {
   title: 'title',
@@ -53,7 +43,10 @@ function formatFieldValue(field: string, val: unknown): string {
   return String(val);
 }
 
-function renderSystemEventText(activity: { activityType: string; metadata?: Record<string, unknown> | null }) {
+function renderSystemEventText(activity: {
+  activityType: string;
+  metadata?: Record<string, unknown> | null;
+}) {
   const m = (activity.metadata ?? {}) as Record<string, unknown>;
   switch (activity.activityType) {
     case 'deal_created':
@@ -83,7 +76,10 @@ function renderSystemEventText(activity: { activityType: string; metadata?: Reco
     case 'field_update': {
       const fieldName = formatFieldName(String(m.field));
       const newVal = formatFieldValue(String(m.field), m.to);
-      const oldVal = m.from === null || m.from === undefined ? null : formatFieldValue(String(m.field), m.from);
+      const oldVal =
+        m.from === null || m.from === undefined
+          ? null
+          : formatFieldValue(String(m.field), m.from);
       return oldVal
         ? `updated ${fieldName} from "${oldVal}" to "${newVal}"`
         : `set ${fieldName} to "${newVal}"`;
@@ -123,7 +119,9 @@ export default function ActivityTimeline({
   limit = 50,
 }: ActivityTimelineProps) {
   const queryClient = useQueryClient();
-  const [editingActivityId, setEditingActivityId] = useState<number | null>(null);
+  const [editingActivityId, setEditingActivityId] = useState<number | null>(
+    null,
+  );
   const clearNewCommentRef = useRef<{ clear: () => void } | null>(null);
 
   const { data: activities, isLoading } = useQuery(
@@ -238,7 +236,10 @@ export default function ActivityTimeline({
                     data-testid="activity-avatar"
                   >
                     <span className="text-xs font-medium text-zinc-600 dark:text-zinc-300">
-                      {activity.actor?.name?.charAt(0).toUpperCase() || (activity.metadata?.source === ACTIVITY_SOURCES.AI ? 'Z' : 'S')}
+                      {activity.actor?.name?.charAt(0).toUpperCase() ||
+                        (activity.metadata?.source === ACTIVITY_SOURCES.AI
+                          ? 'Z'
+                          : 'S')}
                     </span>
                   </div>
                 )}
@@ -250,7 +251,10 @@ export default function ActivityTimeline({
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
                       <span className="text-sm font-medium text-zinc-950 dark:text-white">
-                        {activity.actor?.name || (activity.metadata?.source === ACTIVITY_SOURCES.AI ? 'Zuko AI' : 'System')}
+                        {activity.actor?.name ||
+                          (activity.metadata?.source === ACTIVITY_SOURCES.AI
+                            ? 'Zuko AI'
+                            : 'System')}
                       </span>
                       <span className="text-xs text-zinc-600 dark:text-zinc-400">
                         {dayjs(activity.createdAt).fromNow()}
@@ -266,7 +270,11 @@ export default function ActivityTimeline({
                                 initialContent={activity.content ?? undefined}
                                 onSubmit={handleEditSubmit}
                                 isSubmitting={updateActivityMutation.isPending}
-                                submitLabel={updateActivityMutation.isPending ? 'Saving...' : 'Save'}
+                                submitLabel={
+                                  updateActivityMutation.isPending
+                                    ? 'Saving...'
+                                    : 'Save'
+                                }
                                 onCancel={handleCancel}
                               />
                             </div>
@@ -285,19 +293,19 @@ export default function ActivityTimeline({
                     )}
                   </div>
 
-                  {/* Edit button - only show for own comments when not editing */}
                   {activity.activityType === 'comment' &&
                     currentUserId &&
                     activity.actorId === currentUserId &&
                     editingActivityId !== activity.id && (
-                      <button
+                      <Button
+                        plain
                         onClick={() => handleEdit(activity.id)}
                         disabled={updateActivityMutation.isPending}
                         className="text-zinc-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                         title="Edit comment"
                       >
                         <PencilIcon className="h-4 w-4" />
-                      </button>
+                      </Button>
                     )}
                 </div>
               </div>
@@ -314,8 +322,12 @@ export default function ActivityTimeline({
             title="Add a comment"
             onSubmit={(content) => createCommentMutation.mutate(content)}
             isSubmitting={createCommentMutation.isPending}
-            submitLabel={createCommentMutation.isPending ? 'Posting...' : 'Post Comment'}
-            onReady={(api) => { clearNewCommentRef.current = api; }}
+            submitLabel={
+              createCommentMutation.isPending ? 'Posting...' : 'Post Comment'
+            }
+            onReady={(api) => {
+              clearNewCommentRef.current = api;
+            }}
           />
         </>
       )}

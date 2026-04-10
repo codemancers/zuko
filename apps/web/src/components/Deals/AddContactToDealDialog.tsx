@@ -17,6 +17,8 @@ import {
   ErrorMessage,
   Select,
   Input,
+  Switch,
+  Text,
 } from '@zuko/ui-kit';
 import { PlusIcon } from '@heroicons/react/24/outline';
 
@@ -156,18 +158,15 @@ export default function AddContactToDealDialog({
 
               {/* Primary Flag */}
               <Field>
-                <label className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
+                <div className="flex items-center gap-2">
+                  <Switch
                     checked={isPrimary}
-                    onChange={(e) => setIsPrimary(e.target.checked)}
-                    className="h-4 w-4 rounded border-zinc-300 text-blue-600 focus:ring-blue-500 dark:border-zinc-700"
+                    onChange={setIsPrimary}
+                    color="blue"
                     disabled={addContactMutation.isPending}
                   />
-                  <span className="text-sm text-zinc-950 dark:text-white">
-                    Primary contact for this deal
-                  </span>
-                </label>
+                  <Text>Primary contact for this deal</Text>
+                </div>
                 <Description>
                   Mark as the main contact person for this deal
                 </Description>

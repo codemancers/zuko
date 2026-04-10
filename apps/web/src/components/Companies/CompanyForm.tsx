@@ -9,7 +9,6 @@ import {
   type UpdateCompanyDto,
 } from '@/lib/api/companies';
 import {
-  Button,
   Input,
   Field,
   Label,
@@ -17,6 +16,7 @@ import {
   Description,
   ErrorMessage,
 } from '@zuko/ui-kit';
+import { FormActions } from '@/components/shared';
 import { useRouter } from 'next/navigation';
 
 interface CompanyFormProps {
@@ -216,18 +216,11 @@ export default function CompanyForm({
       {errors.submit && <ErrorMessage>{errors.submit}</ErrorMessage>}
 
       {/* Actions */}
-      <div className="flex gap-3">
-        <Button type="submit" disabled={isLoading}>
-          {isLoading
-            ? 'Saving...'
-            : mode === 'create'
-              ? 'Create Company'
-              : 'Save Changes'}
-        </Button>
-        <Button type="button" plain onClick={handleCancel} disabled={isLoading}>
-          Cancel
-        </Button>
-      </div>
+      <FormActions
+        isLoading={isLoading}
+        submitLabel={mode === 'create' ? 'Create Company' : 'Save Changes'}
+        onCancel={handleCancel}
+      />
     </form>
   );
 }

@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { SearchIcon } from 'lucide-react';
+import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 import {
   Dialog,
   DialogContent,
@@ -108,7 +108,7 @@ export const EntitySelectorDialog = ({
         <div className="space-y-4 py-4">
           {/* Search Input */}
           <div className="relative">
-            <SearchIcon className="absolute top-2.5 left-3 size-4 text-zinc-400" />
+            <MagnifyingGlassIcon className="absolute top-2.5 left-3 size-4 text-zinc-400" />
             <input
               type="text"
               placeholder={searchPlaceholder}

@@ -1,4 +1,5 @@
 import { CheckIcon, PencilIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import { Button } from '@zuko/ui-kit';
 
 interface InlineSaveCancelProps {
   onSave: () => void;
@@ -6,10 +7,15 @@ interface InlineSaveCancelProps {
   disabled?: boolean;
 }
 
-export function InlineSaveCancel({ onSave, onCancel, disabled }: InlineSaveCancelProps) {
+export function InlineSaveCancel({
+  onSave,
+  onCancel,
+  disabled,
+}: InlineSaveCancelProps) {
   return (
     <div className="ml-auto flex gap-2">
-      <button
+      <Button
+        plain
         type="button"
         onClick={onSave}
         disabled={disabled}
@@ -17,8 +23,9 @@ export function InlineSaveCancel({ onSave, onCancel, disabled }: InlineSaveCance
         title="Save changes"
       >
         <CheckIcon className="h-4 w-4" />
-      </button>
-      <button
+      </Button>
+      <Button
+        plain
         type="button"
         onClick={onCancel}
         disabled={disabled}
@@ -26,7 +33,7 @@ export function InlineSaveCancel({ onSave, onCancel, disabled }: InlineSaveCance
         title="Cancel"
       >
         <XMarkIcon className="h-4 w-4" />
-      </button>
+      </Button>
     </div>
   );
 }
@@ -48,7 +55,8 @@ export function InlineEditRemove({
 }: InlineEditRemoveProps) {
   return (
     <div className="ml-auto flex gap-2">
-      <button
+      <Button
+        plain
         type="button"
         onClick={onEdit}
         disabled={disabled}
@@ -56,8 +64,9 @@ export function InlineEditRemove({
         title={editTitle}
       >
         <PencilIcon className="h-4 w-4" />
-      </button>
-      <button
+      </Button>
+      <Button
+        plain
         type="button"
         onClick={onRemove}
         disabled={disabled}
@@ -65,7 +74,7 @@ export function InlineEditRemove({
         title={removeTitle}
       >
         <XMarkIcon className="h-4 w-4" />
-      </button>
+      </Button>
     </div>
   );
 }

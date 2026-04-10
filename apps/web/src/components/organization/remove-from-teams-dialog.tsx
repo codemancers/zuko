@@ -13,6 +13,7 @@ import {
   Combobox,
   ComboboxOption,
   ComboboxLabel,
+  Description,
   ErrorMessage,
 } from '@zuko/ui-kit';
 import { authClient } from '@/lib/auth-client';
@@ -131,9 +132,9 @@ export const RemoveFromTeamsDialog = ({
             </Combobox>
             {error && <ErrorMessage>{error}</ErrorMessage>}
             {memberTeams.length === 0 && (
-              <p className="mt-1 text-sm text-zinc-500">
+              <Description>
                 This member is not in any teams.
-              </p>
+              </Description>
             )}
           </Field>
         </DialogBody>

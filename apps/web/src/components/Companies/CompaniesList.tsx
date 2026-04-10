@@ -1,18 +1,20 @@
 'use client';
 
 import { BuildingOfficeIcon } from '@heroicons/react/24/outline';
-import {
-  Divider,
-  Heading,
-  Input,
-} from '@zuko/ui-kit';
+import { PageHeader, SearchBar } from '@/components/shared';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getTableViewCompanies } from '@/server/query-options';
 import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import type { ColumnDef } from '@tanstack/react-table';
 import { toast } from 'sonner';
-import { BaseTable, createColumnsFromMetadata, type BaseRow, TableActions, DeleteAction } from '../Table';
+import {
+  BaseTable,
+  createColumnsFromMetadata,
+  type BaseRow,
+  TableActions,
+  DeleteAction,
+} from '../Table';
 import { useAddColumn } from '@/hooks/use-add-column';
 import { useAddRow } from '@/hooks/use-add-row';
 import { useCellUpdate } from '@/hooks/use-cell-update';
@@ -64,7 +66,7 @@ const CompaniesList = () => {
 
   const columns = useMemo(
     () => createColumnsFromMetadata<BaseRow>(metadata).concat(actionsColumn),
-    [metadata, actionsColumn]
+    [metadata, actionsColumn],
   );
 
   const handleCompanyClick = (companyId: number) => {
@@ -79,38 +81,36 @@ const CompaniesList = () => {
     router.push('/companies/new');
   };
 
-  const handleNewColumn = (name: string, key: string, type: string, config?: ColumnConfig) => {
+  const handleNewColumn = (
+    name: string,
+    key: string,
+    type: string,
+    config?: ColumnConfig,
+  ) => {
     addColumn({ label: name, columnKey: key, fieldType: type, config });
   };
 
   return (
     <>
-      <div className="flex flex-col">
-        <Heading>Companies</Heading>
-        <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
-          Manage your sales companies and relationships
-        </p>
-      </div>
+      <PageHeader
+        title="Companies"
+        description="Manage your sales companies and relationships"
+      />
 
-      <Divider className="mt-6" />
-
-      {/* Search Bar */}
-      <div className="mt-6">
-        <Input
-          type="search"
-          placeholder="Search companies by name, website, or LinkedIn..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="max-w-md"
-        />
-      </div>
+      <SearchBar
+        value={searchTerm}
+        onChange={setSearchTerm}
+        placeholder="Search companies by name, website, or LinkedIn..."
+      />
 
       <BaseTable<BaseRow>
         columns={columns}
         data={companies}
         loading={isLoading}
         onRowClick={(company) => handleCompanyClick(Number(company.id))}
-        onCellUpdate={(rowId, columnId, value) => updateCell({ rowId, columnId, value })}
+        onCellUpdate={(rowId, columnId, value) =>
+          updateCell({ rowId, columnId, value })
+        }
         totalCount={companiesData?.pagination?.total}
         entityName="companies"
         showAddRow

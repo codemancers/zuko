@@ -1,5 +1,5 @@
-import { Page, Locator } from "@playwright/test";
-import { BasePage } from "./BasePage";
+import { Page, Locator } from '@playwright/test';
+import { BasePage } from './BasePage';
 
 export class MeetingDetailPage extends BasePage {
   readonly backButton: Locator;
@@ -12,28 +12,30 @@ export class MeetingDetailPage extends BasePage {
 
   constructor(page: Page) {
     super(page);
-    this.backButton = page.getByRole("button", { name: /meetings/i });
-    this.meetingHeading = page.getByRole("heading", { level: 1 });
-    this.recordingTab = page.getByRole("button", { name: /recording/i });
-    this.transcriptTab = page.getByRole("button", { name: /transcript/i });
-    this.chatTab = page.getByRole("button", { name: /^chat$/i });
-    this.summaryTab = page.getByRole("button", { name: /summary/i });
-    this.actionItemsTab = page.getByRole("button", { name: /action items/i });
+    this.backButton = page.getByRole('button', { name: /meetings/i });
+    this.meetingHeading = page.getByRole('heading', { level: 1 });
+    this.recordingTab = page.getByRole('tab', { name: /recording/i });
+    this.transcriptTab = page.getByRole('tab', { name: /transcript/i });
+    this.chatTab = page.getByRole('tab', { name: /^chat$/i });
+    this.summaryTab = page.getByRole('tab', { name: /summary/i });
+    this.actionItemsTab = page.getByRole('tab', { name: /action items/i });
   }
 
   override async goto(id: string) {
     await super.goto(`/meeting/${id}`);
   }
 
-  async clickTab(name: "Recording" | "Transcript" | "Chat" | "Summary" | "Action Items") {
+  async clickTab(
+    name: 'Recording' | 'Transcript' | 'Chat' | 'Summary' | 'Action Items',
+  ) {
     const tab =
-      name === "Recording"
+      name === 'Recording'
         ? this.recordingTab
-        : name === "Transcript"
+        : name === 'Transcript'
           ? this.transcriptTab
-          : name === "Chat"
+          : name === 'Chat'
             ? this.chatTab
-            : name === "Summary"
+            : name === 'Summary'
               ? this.summaryTab
               : this.actionItemsTab;
     await tab.click();

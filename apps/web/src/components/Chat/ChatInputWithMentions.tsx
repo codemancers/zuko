@@ -20,7 +20,7 @@ import {
   type MentionTriggerConfig,
 } from '@zuko/ui-kit';
 import { getContacts, getCompanies, getDeals } from '@/server/query-options';
-import { UserIcon, BuildingIcon, Briefcase } from 'lucide-react';
+import { UserIcon, BuildingOfficeIcon, BriefcaseIcon } from '@heroicons/react/24/outline';
 
 // ============================================================================
 // Types
@@ -42,8 +42,8 @@ export interface ChatInputWithMentionsProps extends Omit<
 
 const MENTION_ICON_MAP: Record<ChatEntityType, typeof UserIcon> = {
   contact: UserIcon,
-  company: BuildingIcon,
-  deal: Briefcase,
+  company: BuildingOfficeIcon,
+  deal: BriefcaseIcon,
 };
 
 const HEADER_IDS = {

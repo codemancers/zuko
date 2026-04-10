@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useMemo, type ReactElement } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { UserIcon, BuildingIcon, Briefcase } from 'lucide-react';
+import { UserIcon, BuildingOfficeIcon, BriefcaseIcon } from '@heroicons/react/24/outline';
 import {
   Button,
   ContextChip,
@@ -59,7 +59,7 @@ function companyToEntityItem(company: Company): EntityItem {
     id: `company-${company.id}`,
     label: company.companyName,
     description,
-    icon: <BuildingIcon className="size-4" />,
+    icon: <BuildingOfficeIcon className="size-4" />,
     metadata: {
       type: 'company',
       entityId: company.id,
@@ -81,7 +81,7 @@ function dealToEntityItem(deal: Deal): EntityItem {
     id: `deal-${deal.id}`,
     label: deal.title,
     description,
-    icon: <Briefcase className="size-4" />,
+    icon: <BriefcaseIcon className="size-4" />,
     metadata: {
       type: 'deal',
       entityId: deal.id,
@@ -268,8 +268,8 @@ export const ChatContextManager = ({
 
 const CONTEXT_TYPE_ICON_MAP: Record<ChatEntityType, ReactElement> = {
   contact: <UserIcon className="size-3.5" />,
-  company: <BuildingIcon className="size-3.5" />,
-  deal: <Briefcase className="size-3.5" />,
+  company: <BuildingOfficeIcon className="size-3.5" />,
+  deal: <BriefcaseIcon className="size-3.5" />,
 };
 
 const CONTEXT_TYPE_COLOR_MAP: Record<
@@ -341,7 +341,7 @@ export const EntitySelectorTrigger = ({
         onClick={() => onSelectType('company')}
         className="w-full justify-start gap-2 px-3 py-2 text-sm font-normal"
       >
-        <BuildingIcon className="size-4" />
+        <BuildingOfficeIcon className="size-4" />
         Add company
       </Button>
       <Button
@@ -349,7 +349,7 @@ export const EntitySelectorTrigger = ({
         onClick={() => onSelectType('deal')}
         className="w-full justify-start gap-2 px-3 py-2 text-sm font-normal"
       >
-        <Briefcase className="size-4" />
+        <BriefcaseIcon className="size-4" />
         Add deal
       </Button>
     </>

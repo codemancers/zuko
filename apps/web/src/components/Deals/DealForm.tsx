@@ -9,7 +9,6 @@ import {
   type UpdateDealDto,
 } from '@/lib/api/deals';
 import {
-  Button,
   Input,
   Field,
   Label,
@@ -18,6 +17,7 @@ import {
   ErrorMessage,
   Select,
 } from '@zuko/ui-kit';
+import { FormActions } from '@/components/shared';
 import { useRouter } from 'next/navigation';
 
 interface DealFormProps {
@@ -327,18 +327,11 @@ export default function DealForm({ deal, mode, currentUserId }: DealFormProps) {
       {errors.submit && <ErrorMessage>{errors.submit}</ErrorMessage>}
 
       {/* Actions */}
-      <div className="flex gap-3">
-        <Button type="submit" disabled={isLoading}>
-          {isLoading
-            ? 'Saving...'
-            : mode === 'create'
-              ? 'Create Deal'
-              : 'Save Changes'}
-        </Button>
-        <Button type="button" plain onClick={handleCancel} disabled={isLoading}>
-          Cancel
-        </Button>
-      </div>
+      <FormActions
+        isLoading={isLoading}
+        submitLabel={mode === 'create' ? 'Create Deal' : 'Save Changes'}
+        onCancel={handleCancel}
+      />
     </form>
   );
 }

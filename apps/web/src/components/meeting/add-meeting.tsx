@@ -11,6 +11,7 @@ import {
   Divider,
   Heading,
   Field,
+  Fieldset,
   Label,
   Input,
   Combobox,
@@ -102,109 +103,100 @@ const AddMeeting = () => {
   return (
     <div>
       <main>
-        <div className="m-8 flex flex-col">
+        <div className="space-y-6">
           <Heading>Add Meeting</Heading>
-          <Divider className="my-8" />
+          <Divider />
 
           <form
             className="flex flex-col gap-6 rounded-lg lg:p-0"
             onSubmit={handleSubmit(onMeetingFormSubmit)}
           >
-            <section className="flex w-full flex-col items-start justify-between gap-6 lg:flex-row lg:gap-14">
-              <section className="flex w-full flex-col gap-2">
-                <Field data-error-id="name">
-                  <Label>Meeting Name</Label>
-                  <Input
-                    type="text"
-                    id="name"
-                    placeholder="Enter meeting name"
-                    {...register('name')}
-                    autoComplete="off"
-                  />
-                  {errors.name && <ErrorMessage>{errors.name.message}</ErrorMessage>}
-                </Field>
-              </section>
-
-              <section className="flex w-full flex-col gap-2">
-                <Field data-error-id="url">
-                  <Label>Meeting URL</Label>
-                  <Input
-                    type="text"
-                    id="url"
-                    placeholder="Paste Meeting URL"
-                    {...register('url')}
-                    autoComplete="off"
-                  />
-                  {errors.url && <ErrorMessage>{errors.url.message}</ErrorMessage>}
-                </Field>
-              </section>
-            </section>
-
-            <section className="flex w-full flex-col gap-2">
-              <Field>
-                <Label htmlFor="description">Meeting Description</Label>
-                <Textarea
-                  id="description"
-                  placeholder="Meeting description"
-                  {...register('description')}
+            <Fieldset className="flex w-full flex-col items-start justify-between gap-6 lg:flex-row lg:gap-14">
+              <Field className="w-full" data-error-id="name">
+                <Label>Meeting Name</Label>
+                <Input
+                  type="text"
+                  id="name"
+                  placeholder="Enter meeting name"
+                  {...register('name')}
                   autoComplete="off"
-                  rows={4}
                 />
+                {errors.name && <ErrorMessage>{errors.name.message}</ErrorMessage>}
               </Field>
-            </section>
 
-            <section className="mb-4 flex items-center gap-2">
+              <Field className="w-full" data-error-id="url">
+                <Label>Meeting URL</Label>
+                <Input
+                  type="text"
+                  id="url"
+                  placeholder="Paste Meeting URL"
+                  {...register('url')}
+                  autoComplete="off"
+                />
+                {errors.url && <ErrorMessage>{errors.url.message}</ErrorMessage>}
+              </Field>
+            </Fieldset>
+
+            <Field>
+              <Label htmlFor="description">Meeting Description</Label>
+              <Textarea
+                id="description"
+                placeholder="Meeting description"
+                {...register('description')}
+                autoComplete="off"
+                rows={4}
+              />
+            </Field>
+
+            <div className="flex items-center gap-2">
               <Switch
                 checked={isJoinNow}
                 onChange={setIsJoinNow}
                 color="blue"
               />
               <Text>Join Now</Text>
-            </section>
+            </div>
 
             {!isJoinNow && (
-              <section className="flex w-full flex-col items-start justify-between gap-6 lg:flex-row lg:gap-14">
-                <section className="flex w-full flex-col gap-2">
-                  <Field data-error-id="scheduledAt">
-                    <Label>Schedule Time</Label>
-                    <Input
-                      type="datetime-local"
-                      id="scheduledAt"
-                      {...register('scheduledAt')}
-                    />
-                    {errors.scheduledAt && <ErrorMessage>{errors.scheduledAt.message}</ErrorMessage>}
-                  </Field>
-                </section>
+              <Fieldset className="flex w-full flex-col items-start justify-between gap-6 lg:flex-row lg:gap-14">
+                <Field className="w-full" data-error-id="scheduledAt">
+                  <Label>Schedule Time</Label>
+                  <Input
+                    type="datetime-local"
+                    id="scheduledAt"
+                    {...register('scheduledAt')}
+                  />
+                  {errors.scheduledAt && <ErrorMessage>{errors.scheduledAt.message}</ErrorMessage>}
+                </Field>
 
-                <section
-                  className="flex w-full flex-col gap-2"
+                <Field
+                  className="w-full"
                   data-testid="timezone-field"
+                  data-error-id="timezone"
                 >
-                  <Field data-error-id="timezone">
-                    <Label>Timezone</Label>
-                    <Combobox
-                      name="timezone"
-                      options={timezones}
-                      displayValue={(tz: any) => tz?.tzCode}
-                      defaultValue={timezones.find(
-                        (tz) => tz.tzCode === defaultTimezone,
-                      )}
-                      onChange={(tz: any) => {
-                        setValue('timezone', tz?.tzCode || defaultTimezone);
-                      }}
-                    >
-                      {(tz: any) => (
-                        <ComboboxOption value={tz}>
-                          <ComboboxLabel>{tz.tzCode}</ComboboxLabel>
-                        </ComboboxOption>
-                      )}
-                    </Combobox>
-                  </Field>
-                </section>
-              </section>
+                  <Label>Timezone</Label>
+                  <Combobox
+                    name="timezone"
+                    options={timezones}
+                    displayValue={(tz: any) => tz?.tzCode}
+                    defaultValue={timezones.find(
+                      (tz) => tz.tzCode === defaultTimezone,
+                    )}
+                    onChange={(tz: any) => {
+                      setValue('timezone', tz?.tzCode || defaultTimezone);
+                    }}
+                  >
+                    {(tz: any) => (
+                      <ComboboxOption value={tz}>
+                        <ComboboxLabel>{tz.tzCode}</ComboboxLabel>
+                      </ComboboxOption>
+                    )}
+                  </Combobox>
+                </Field>
+              </Fieldset>
             )}
 
-            <section className="flex items-center justify-end gap-6">
+            <div className="flex items-center justify-end gap-6">
               <Button type="submit" disabled={createMutation.isPending}>
                 {createMutation.isPending ? 'Submitting...' : 'Submit'}
               </Button>
@@ -216,7 +208,7 @@ const AddMeeting = () => {
               >
                 Cancel
               </Button>
-            </section>
+            </div>
           </form>
         </div>
       </main>

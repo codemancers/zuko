@@ -1,20 +1,24 @@
 'use client';
 
 import { useRef, useState, type ReactNode } from 'react';
+import clsx from 'clsx';
 import { Avatar, Button } from '@zuko/ui-kit';
 import {
-  Heading2,
-  Bold,
-  Italic,
-  Quote,
-  Code,
-  Link2,
-  ListOrdered,
-  List,
-  ListChecks,
-  FileCode2,
-} from 'lucide-react';
+  CodeBracketIcon as Code,
+  LinkIcon as Link2,
+  NumberedListIcon as ListOrdered,
+  Bars3BottomLeftIcon as List,
+  ClipboardDocumentCheckIcon as ListChecks,
+  CodeBracketSquareIcon as FileCode2,
+} from '@heroicons/react/24/outline';
+
 import { MarkdownContent } from './MarkdownContent';
+import { editorJsonToMarkdown } from '@/lib/editor-utils';
+
+const Heading2 = (props: React.ComponentProps<'svg'>) => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M4 12h8"/><path d="M4 18V6"/><path d="M12 18V6"/><path d="M21 18h-4c0-4 4-3 4-6 0-1.5-2-2.25-4-1.25"/></svg>;
+const Bold = (props: React.ComponentProps<'svg'>) => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M14 12a4 4 0 0 0 0-8H6v8"/><path d="M15 20a4 4 0 0 0 0-8H6v8Z"/></svg>;
+const Italic = (props: React.ComponentProps<'svg'>) => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><line x1="19" x2="10" y1="4" y2="4"/><line x1="14" x2="5" y1="20" y2="20"/><line x1="15" x2="9" y1="4" y2="20"/></svg>;
+const Quote = (props: React.ComponentProps<'svg'>) => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1z"/><path d="M15 21c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2h.75c0 2.25.25 4-2.75 4v3c0 1 0 1 1 1z"/></svg>;
 
 export interface CommentBoxProps {
   onSubmit: (content: string) => void;
@@ -31,32 +35,7 @@ export interface CommentBoxProps {
 
 function getInitialText(raw: string | undefined): string {
   if (!raw) return '';
-  try {
-    const parsed = JSON.parse(raw);
-    if (Array.isArray(parsed?.blocks)) {
-      return parsed.blocks
-        .map((b: { type: string; data: Record<string, unknown> }) => {
-          if (b.type === 'paragraph' || b.type === 'header')
-            return String(b.data.text ?? '');
-          if (b.type === 'code') return `\`\`\`\n${b.data.code}\n\`\`\``;
-          if (b.type === 'quote') return `> ${b.data.text}`;
-          if (b.type === 'list') {
-            const items = Array.isArray(b.data.items) ? b.data.items : [];
-            return items
-              .map((item: unknown, i: number) =>
-                b.data.style === 'ordered' ? `${i + 1}. ${item}` : `- ${item}`,
-              )
-              .join('\n');
-          }
-          return '';
-        })
-        .filter(Boolean)
-        .join('\n\n');
-    }
-  } catch {
-    /* fall through */
-  }
-  return raw;
+  return editorJsonToMarkdown(raw) ?? raw;
 }
 
 function makeInsertHelpers(
@@ -226,12 +205,12 @@ export function CommentBox({
                   key={tab}
                   type="button"
                   onClick={() => setActiveTab(tab)}
-                  className={[
+                  className={clsx(
                     'px-3 py-2 text-sm font-medium capitalize transition-colors',
                     activeTab === tab
                       ? 'border-b-2 border-zinc-950 dark:border-white text-zinc-950 dark:text-white -mb-px'
                       : 'text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200',
-                  ].join(' ')}
+                  )}
                 >
                   {tab}
                 </button>

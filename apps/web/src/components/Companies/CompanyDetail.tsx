@@ -5,7 +5,6 @@ import {
   BuildingOfficeIcon,
   PencilIcon,
   EyeSlashIcon,
-  ChevronLeftIcon,
 } from '@heroicons/react/24/outline';
 import {
   Badge,
@@ -14,6 +13,8 @@ import {
   Button,
   Input,
   Subheading,
+  Switch,
+  Text,
 } from '@zuko/ui-kit';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getCompany, getDealsByCompany } from '@/server/query-options';
@@ -23,12 +24,15 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import ActivityTimeline from '@/components/Activity/ActivityTimeline';
 import AddContactDialog from './AddContactDialog';
-import { EMPTY_VALUE } from '@/components/Table';
+
 import ConfirmDialog from '@/components/shared/ConfirmDialog';
+import { BackLink, MetadataFooter } from '@/components/shared';
 import {
   InlineSaveCancel,
   InlineEditRemove,
 } from '@/components/shared/InlineEditActions';
+import { LoadingState } from '@/components/shared';
+import { formatCurrency, getStageColor, formatStage } from '@/lib/format-utils';
 
 interface CompanyDetailProps {
   companyId: number;
@@ -95,23 +99,11 @@ export default function CompanyDetail({
   });
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <div className="text-sm text-zinc-600 dark:text-zinc-400">
-          Loading company...
-        </div>
-      </div>
-    );
+    return <LoadingState message="Loading company..." />;
   }
 
   if (!company) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <div className="text-sm text-zinc-600 dark:text-zinc-400">
-          Company not found
-        </div>
-      </div>
-    );
+    return <LoadingState message="Company not found" />;
   }
 
   const handleEdit = () => {
@@ -150,50 +142,9 @@ export default function CompanyDetail({
     setEditedIsPrimary(false);
   };
 
-  const formatCurrency = (value?: number, currency?: string) => {
-    if (value === undefined || value === null) return EMPTY_VALUE;
-    const curr = currency || 'USD';
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: curr,
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(value);
-  };
-
-  const getStageColor = (
-    stage: string,
-  ): 'zinc' | 'blue' | 'yellow' | 'green' | 'red' => {
-    const stageColors: Record<
-      string,
-      'zinc' | 'blue' | 'yellow' | 'green' | 'red'
-    > = {
-      prospecting: 'zinc',
-      qualification: 'blue',
-      proposal: 'yellow',
-      negotiation: 'yellow',
-      closed_won: 'green',
-      closed_lost: 'red',
-    };
-    return stageColors[stage] || 'zinc';
-  };
-
-  const formatStage = (stage: string) => {
-    return stage
-      .split('_')
-      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(' ');
-  };
-
   return (
     <>
-      <Link
-        href="/companies"
-        className="inline-flex items-center gap-2 text-sm/6 text-zinc-500 dark:text-zinc-400"
-      >
-        <ChevronLeftIcon className="size-4" />
-        Companies
-      </Link>
+      <BackLink href="/companies">Companies</BackLink>
 
       <div className="mt-4 flex items-start justify-between">
         <div className="flex items-center gap-4">
@@ -354,17 +305,14 @@ export default function CompanyDetail({
                       placeholder="Role"
                       className="h-auto py-1 text-sm"
                     />
-                    <label className="flex items-center gap-1.5">
-                      <input
-                        type="checkbox"
+                    <div className="flex items-center gap-1.5">
+                      <Switch
                         checked={editedIsPrimary}
-                        onChange={(e) => setEditedIsPrimary(e.target.checked)}
-                        className="h-3.5 w-3.5 rounded border-zinc-300 text-blue-600 focus:ring-blue-500 dark:border-zinc-700"
+                        onChange={setEditedIsPrimary}
+                        color="blue"
                       />
-                      <span className="text-xs text-zinc-600 dark:text-zinc-400">
-                        Primary
-                      </span>
-                    </label>
+                      <Text className="text-xs">Primary</Text>
+                    </div>
                     <div className="text-xs text-zinc-600 dark:text-zinc-400">
                       Joined {dayjs(ac.joinedAt).format('MMM D, YYYY')}
                     </div>
@@ -452,28 +400,10 @@ export default function CompanyDetail({
         </div>
       )}
 
-      {/* Metadata */}
-      <div className="mt-8">
-        <Subheading>Details</Subheading>
-        <dl className="mt-4 space-y-4">
-          <div className="grid grid-cols-3">
-            <dt className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
-              Created
-            </dt>
-            <dd className="col-span-2 text-sm text-zinc-950 dark:text-white">
-              {dayjs(company.createdAt).format('MMMM D, YYYY [at] h:mm A')}
-            </dd>
-          </div>
-          <div className="grid grid-cols-3">
-            <dt className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
-              Last Updated
-            </dt>
-            <dd className="col-span-2 text-sm text-zinc-950 dark:text-white">
-              {dayjs(company.updatedAt).format('MMMM D, YYYY [at] h:mm A')}
-            </dd>
-          </div>
-        </dl>
-      </div>
+      <MetadataFooter
+        createdAt={company.createdAt}
+        updatedAt={company.updatedAt}
+      />
 
       {/* Activity Timeline */}
       <div className="mt-8">

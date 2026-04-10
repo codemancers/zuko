@@ -5,7 +5,6 @@ import {
   UserIcon,
   PencilIcon,
   EyeSlashIcon,
-  ChevronLeftIcon,
 } from '@heroicons/react/24/outline';
 import { Badge, Divider, Heading, Button, Subheading } from '@zuko/ui-kit';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -15,8 +14,11 @@ import dayjs from 'dayjs';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import ActivityTimeline from '@/components/Activity/ActivityTimeline';
-import { EMPTY_VALUE } from '@/components/Table';
+
 import ConfirmDialog from '@/components/shared/ConfirmDialog';
+import { BackLink, MetadataFooter } from '@/components/shared';
+import { LoadingState } from '@/components/shared';
+import { formatCurrency, getStageColor, formatStage } from '@/lib/format-utils';
 
 interface ContactDetailProps {
   contactId: number;
@@ -42,23 +44,11 @@ export default function ContactDetail({
   });
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <div className="text-sm text-zinc-600 dark:text-zinc-400">
-          Loading contact...
-        </div>
-      </div>
-    );
+    return <LoadingState message="Loading contact..." />;
   }
 
   if (!contact) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <div className="text-sm text-zinc-600 dark:text-zinc-400">
-          Contact not found
-        </div>
-      </div>
-    );
+    return <LoadingState message="Contact not found" />;
   }
 
   const handleEdit = () => {
@@ -69,47 +59,9 @@ export default function ContactDetail({
     setShowHideDialog(true);
   };
 
-  const formatCurrency = (value?: number, currency?: string) => {
-    if (value === undefined || value === null) return EMPTY_VALUE;
-    const curr = currency || 'USD';
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: curr,
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(value);
-  };
-
-  const getStageColor = (
-    stage: string,
-  ): 'zinc' | 'blue' | 'yellow' | 'green' | 'red' => {
-    const stageColors: Record<
-      string,
-      'zinc' | 'blue' | 'yellow' | 'green' | 'red'
-    > = {
-      prospecting: 'zinc',
-      qualification: 'blue',
-      proposal: 'yellow',
-      negotiation: 'yellow',
-      closed_won: 'green',
-      closed_lost: 'red',
-    };
-    return stageColors[stage] || 'zinc';
-  };
-
-  const formatStage = (stage: string) => {
-    return stage
-      .split('_')
-      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(' ');
-  };
-
   return (
     <>
-      <Link href="/contacts" className="inline-flex items-center gap-2 text-sm/6 text-zinc-500 dark:text-zinc-400">
-        <ChevronLeftIcon className="size-4" />
-        Contacts
-      </Link>
+      <BackLink href="/contacts">Contacts</BackLink>
 
       <div className="mt-4 flex items-start justify-between">
         <div className="flex items-center gap-4">
@@ -196,9 +148,7 @@ export default function ContactDetail({
 
       {/* Ownership */}
       <div className="mt-8">
-        <Subheading>
-          Owners
-        </Subheading>
+        <Subheading>Owners</Subheading>
         <div className="mt-4 space-y-2">
           {contact.owners.map((owner) => (
             <div key={owner.id} className="flex items-center gap-3">
@@ -221,9 +171,7 @@ export default function ContactDetail({
       {/* Notes */}
       {contact.notes && (
         <div className="mt-8">
-          <Subheading>
-            Notes
-          </Subheading>
+          <Subheading>Notes</Subheading>
           <div className="mt-4 whitespace-pre-wrap rounded-lg bg-zinc-50 p-4 text-sm text-zinc-950 dark:bg-zinc-900 dark:text-white">
             {contact.notes}
           </div>
@@ -233,9 +181,7 @@ export default function ContactDetail({
       {/* Associated Deals */}
       {dealsData && dealsData.deals && dealsData.deals.length > 0 && (
         <div className="mt-8">
-          <Subheading>
-            Associated Deals
-          </Subheading>
+          <Subheading>Associated Deals</Subheading>
           <div className="mt-4 space-y-3">
             {dealsData.deals.map((deal: any) => {
               const dealContact = deal.contacts?.find(
@@ -274,36 +220,14 @@ export default function ContactDetail({
         </div>
       )}
 
-      {/* Metadata */}
-      <div className="mt-8">
-        <Subheading>
-          Details
-        </Subheading>
-        <dl className="mt-4 space-y-4">
-          <div className="grid grid-cols-3">
-            <dt className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
-              Created
-            </dt>
-            <dd className="col-span-2 text-sm text-zinc-950 dark:text-white">
-              {dayjs(contact.createdAt).format('MMMM D, YYYY [at] h:mm A')}
-            </dd>
-          </div>
-          <div className="grid grid-cols-3">
-            <dt className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
-              Last Updated
-            </dt>
-            <dd className="col-span-2 text-sm text-zinc-950 dark:text-white">
-              {dayjs(contact.updatedAt).format('MMMM D, YYYY [at] h:mm A')}
-            </dd>
-          </div>
-        </dl>
-      </div>
+      <MetadataFooter
+        createdAt={contact.createdAt}
+        updatedAt={contact.updatedAt}
+      />
 
       {/* Activity Timeline */}
       <div className="mt-8">
-        <Subheading>
-          Activity
-        </Subheading>
+        <Subheading>Activity</Subheading>
         <div className="mt-4">
           <ActivityTimeline
             entityType="contact"
