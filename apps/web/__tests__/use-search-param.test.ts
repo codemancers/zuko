@@ -27,14 +27,14 @@ describe('useSearchParam hook', () => {
     vi.useRealTimers();
   });
 
-  it('should initialize with empty values', () => {
+  it('initialize with empty values', () => {
     const { result } = renderHook(() => useSearchParam(500));
-    
+
     expect(result.current.inputValue).toBe('');
     expect(result.current.debouncedValue).toBe('');
   });
 
-  it('should instantly update inputValue but wait to update debouncedValue', () => {
+  it('instantly update inputValue but wait to update debouncedValue', () => {
     const { result } = renderHook(() => useSearchParam(500));
 
     act(() => {
@@ -55,19 +55,37 @@ describe('useSearchParam hook', () => {
     expect(result.current.debouncedValue).toBe('hello');
   });
 
-  it('should debounce multiple rapid typed inputs', () => {
+  it('debounce multiple rapid typed inputs', () => {
     const { result } = renderHook(() => useSearchParam(500));
 
     // User types "h", "he", "hel", "hell", "hello" rapidly
-    act(() => { result.current.setInputValue('h'); });
-    act(() => { vi.advanceTimersByTime(100); });
-    act(() => { result.current.setInputValue('he'); });
-    act(() => { vi.advanceTimersByTime(100); });
-    act(() => { result.current.setInputValue('hel'); });
-    act(() => { vi.advanceTimersByTime(100); });
-    act(() => { result.current.setInputValue('hell'); });
-    act(() => { vi.advanceTimersByTime(100); });
-    act(() => { result.current.setInputValue('hello'); });
+    act(() => {
+      result.current.setInputValue('h');
+    });
+    act(() => {
+      vi.advanceTimersByTime(100);
+    });
+    act(() => {
+      result.current.setInputValue('he');
+    });
+    act(() => {
+      vi.advanceTimersByTime(100);
+    });
+    act(() => {
+      result.current.setInputValue('hel');
+    });
+    act(() => {
+      vi.advanceTimersByTime(100);
+    });
+    act(() => {
+      result.current.setInputValue('hell');
+    });
+    act(() => {
+      vi.advanceTimersByTime(100);
+    });
+    act(() => {
+      result.current.setInputValue('hello');
+    });
 
     // The inputValue followed exactly what the user typed
     expect(result.current.inputValue).toBe('hello');
@@ -75,7 +93,9 @@ describe('useSearchParam hook', () => {
     expect(result.current.debouncedValue).toBe('');
 
     // Finally wait 500ms from the last keystroke
-    act(() => { vi.advanceTimersByTime(500); });
+    act(() => {
+      vi.advanceTimersByTime(500);
+    });
 
     expect(result.current.debouncedValue).toBe('hello');
   });
