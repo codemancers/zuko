@@ -13,7 +13,7 @@ import { toast } from 'sonner';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getTableViewMeetings } from '@/server/query-options';
 import { meetingsApi } from '@/lib/api/meetings';
-import { BaseTable, createColumnsFromMetadata, type BaseRow, TableActions, ViewAction, DeleteAction } from '@/components/Table';
+import { BaseTable, createColumnsFromMetadata, type BaseRow, TableActions, DeleteAction } from '@/components/Table';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 
 export const MeetingList = () => {
@@ -44,7 +44,6 @@ export const MeetingList = () => {
       header: 'Actions',
       cell: ({ row }) => (
         <TableActions>
-          <ViewAction href={`/meeting/${row.original.id}`} />
           <DeleteAction
             onClick={() => setMeetingToDelete(Number(row.original.id))}
             disabled={deleteMeetingMutation.isPending}

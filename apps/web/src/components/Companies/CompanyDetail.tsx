@@ -7,7 +7,14 @@ import {
   EyeSlashIcon,
   ChevronLeftIcon,
 } from '@heroicons/react/24/outline';
-import { Badge, Divider, Heading, Button, Input, Subheading } from '@zuko/ui-kit';
+import {
+  Badge,
+  Divider,
+  Heading,
+  Button,
+  Input,
+  Subheading,
+} from '@zuko/ui-kit';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getCompany, getDealsByCompany } from '@/server/query-options';
 import { companiesApi } from '@/lib/api/companies';
@@ -18,7 +25,10 @@ import ActivityTimeline from '@/components/Activity/ActivityTimeline';
 import AddContactDialog from './AddContactDialog';
 import { EMPTY_VALUE } from '@/components/Table';
 import ConfirmDialog from '@/components/shared/ConfirmDialog';
-import { InlineSaveCancel, InlineEditRemove } from '@/components/shared/InlineEditActions';
+import {
+  InlineSaveCancel,
+  InlineEditRemove,
+} from '@/components/shared/InlineEditActions';
 
 interface CompanyDetailProps {
   companyId: number;
@@ -39,7 +49,10 @@ export default function CompanyDetail({
   const [editedRole, setEditedRole] = useState('');
   const [editedIsPrimary, setEditedIsPrimary] = useState(false);
   const [showHideDialog, setShowHideDialog] = useState(false);
-  const [contactToRemove, setContactToRemove] = useState<{ id: number; name: string } | null>(null);
+  const [contactToRemove, setContactToRemove] = useState<{
+    id: number;
+    name: string;
+  } | null>(null);
 
   const hideMutation = useMutation({
     mutationFn: () => companiesApi.hideCompany(companyId),
@@ -55,7 +68,9 @@ export default function CompanyDetail({
     onSuccess: async () => {
       await queryClient.refetchQueries({ queryKey: ['company', companyId] });
       await queryClient.invalidateQueries({ queryKey: ['companies'] });
-      await queryClient.invalidateQueries({ queryKey: ['timeline', 'company', companyId] });
+      await queryClient.invalidateQueries({
+        queryKey: ['timeline', 'company', companyId],
+      });
     },
   });
 
@@ -72,7 +87,9 @@ export default function CompanyDetail({
     onSuccess: async () => {
       await queryClient.refetchQueries({ queryKey: ['company', companyId] });
       await queryClient.invalidateQueries({ queryKey: ['companies'] });
-      await queryClient.invalidateQueries({ queryKey: ['timeline', 'company', companyId] });
+      await queryClient.invalidateQueries({
+        queryKey: ['timeline', 'company', companyId],
+      });
       setEditingContactId(null);
     },
   });
@@ -170,7 +187,10 @@ export default function CompanyDetail({
 
   return (
     <>
-      <Link href="/companies" className="inline-flex items-center gap-2 text-sm/6 text-zinc-500 dark:text-zinc-400">
+      <Link
+        href="/companies"
+        className="inline-flex items-center gap-2 text-sm/6 text-zinc-500 dark:text-zinc-400"
+      >
         <ChevronLeftIcon className="size-4" />
         Companies
       </Link>
@@ -213,9 +233,15 @@ export default function CompanyDetail({
       <ConfirmDialog
         open={!!contactToRemove}
         onClose={() => setContactToRemove(null)}
-        onConfirm={() => contactToRemove && removeContactMutation.mutate(contactToRemove.id)}
+        onConfirm={() =>
+          contactToRemove && removeContactMutation.mutate(contactToRemove.id)
+        }
         title="Remove Contact"
-        description={contactToRemove ? `Are you sure you want to remove ${contactToRemove.name} from this company?` : ''}
+        description={
+          contactToRemove
+            ? `Are you sure you want to remove ${contactToRemove.name} from this company?`
+            : ''
+        }
         confirmText="Remove"
         confirmColor="red"
         isLoading={removeContactMutation.isPending}
@@ -223,9 +249,7 @@ export default function CompanyDetail({
 
       {/* Company Information */}
       <div className="mt-8">
-        <Subheading>
-          Company Information
-        </Subheading>
+        <Subheading>Company Information</Subheading>
         <dl className="mt-4 space-y-4">
           {company.website && (
             <div className="grid grid-cols-3">
@@ -266,9 +290,7 @@ export default function CompanyDetail({
 
       {/* Ownership */}
       <div className="mt-8">
-        <Subheading>
-          Owners
-        </Subheading>
+        <Subheading>Owners</Subheading>
         <div className="mt-4 space-y-2">
           {company.owners.map((owner) => (
             <div key={owner.id} className="flex items-center gap-3">
@@ -291,9 +313,7 @@ export default function CompanyDetail({
       {/* Summary */}
       {company.summary && (
         <div className="mt-8">
-          <Subheading>
-            Summary
-          </Subheading>
+          <Subheading>Summary</Subheading>
           <div className="mt-4 whitespace-pre-wrap rounded-lg bg-zinc-50 p-4 text-sm text-zinc-950 dark:bg-zinc-900 dark:text-white">
             {company.summary}
           </div>
@@ -303,9 +323,7 @@ export default function CompanyDetail({
       {/* Associated Contacts */}
       <div className="mt-8">
         <div className="flex items-center justify-between">
-          <Subheading>
-            Associated Contacts
-          </Subheading>
+          <Subheading>Associated Contacts</Subheading>
           <AddContactDialog
             companyId={companyId}
             existingContactIds={
@@ -373,9 +391,16 @@ export default function CompanyDetail({
                       Joined {dayjs(ac.joinedAt).format('MMM D, YYYY')}
                     </div>
                     <InlineEditRemove
-                      onEdit={() => handleEditContact(ac.contactId, ac.role, ac.isPrimary)}
-                      onRemove={() => handleRemoveContact(ac.contactId, ac.contact.name)}
-                      disabled={updateContactMutation.isPending || removeContactMutation.isPending}
+                      onEdit={() =>
+                        handleEditContact(ac.contactId, ac.role, ac.isPrimary)
+                      }
+                      onRemove={() =>
+                        handleRemoveContact(ac.contactId, ac.contact.name)
+                      }
+                      disabled={
+                        updateContactMutation.isPending ||
+                        removeContactMutation.isPending
+                      }
                       removeTitle="Remove contact"
                     />
                   </>
@@ -393,9 +418,7 @@ export default function CompanyDetail({
       {/* Associated Deals */}
       {dealsData && dealsData.deals && dealsData.deals.length > 0 && (
         <div className="mt-8">
-          <Subheading>
-            Associated Deals
-          </Subheading>
+          <Subheading>Associated Deals</Subheading>
           <div className="mt-4 space-y-3">
             {dealsData.deals.map((deal: any) => {
               const dealCompany = deal.companies?.find(
@@ -431,9 +454,7 @@ export default function CompanyDetail({
 
       {/* Metadata */}
       <div className="mt-8">
-        <Subheading>
-          Details
-        </Subheading>
+        <Subheading>Details</Subheading>
         <dl className="mt-4 space-y-4">
           <div className="grid grid-cols-3">
             <dt className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
@@ -456,9 +477,7 @@ export default function CompanyDetail({
 
       {/* Activity Timeline */}
       <div className="mt-8">
-        <Subheading>
-          Activity
-        </Subheading>
+        <Subheading>Activity</Subheading>
         <div className="mt-4">
           <ActivityTimeline
             entityType="company"

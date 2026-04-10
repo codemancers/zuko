@@ -18,7 +18,7 @@ if (typeof ResizeObserver === 'undefined') {
       observe = vi.fn();
       unobserve = vi.fn();
       disconnect = vi.fn();
-    }
+    },
   );
 }
 
@@ -52,8 +52,10 @@ vi.mock('next/image', () => ({
 vi.mock('@zuko/ui-kit', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@zuko/ui-kit')>();
   const React = await import('react');
-  // eslint-disable-next-line @typescript-eslint/no-empty-function
-  const DropdownCtx = React.createContext<{ open: boolean; toggle: () => void }>({ open: false, toggle: (): void => {} });
+  const DropdownCtx = React.createContext<{ open: boolean; toggle: () => void }>(
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
+    { open: false, toggle: (): void => {} },
+  );
 
   function Dropdown({ children }: { children: React.ReactNode }) {
     const [open, setOpen] = React.useState(false);
@@ -87,7 +89,12 @@ vi.mock('@zuko/ui-kit', async (importOriginal) => {
       );
     }
     return (
-      <button type="button" role="menuitem" onClick={onClick} disabled={disabled}>
+      <button
+        type="button"
+        role="menuitem"
+        onClick={onClick}
+        disabled={disabled}
+      >
         {children}
       </button>
     );
@@ -132,7 +139,8 @@ vi.mock('@/lib/api/meetings', async (importOriginal) => {
     meetingsApi: {
       getMeetings: vi.fn().mockResolvedValue([]),
       getMeeting: vi.fn().mockResolvedValue(null),
-      getTableViewMeetings: (...args: unknown[]) => mockGetTableViewMeetings(...args),
+      getTableViewMeetings: (...args: unknown[]) =>
+        mockGetTableViewMeetings(...args),
       deleteMeeting: (...args: unknown[]) => mockDeleteMeeting(...args),
       endMeeting: (...args: unknown[]) => mockEndMeeting(...args),
       createMeeting: (...args: unknown[]) => mockCreateMeeting(...args),
@@ -202,15 +210,73 @@ const MOCK_MEETINGS: Meeting[] = [
 
 const MOCK_TABLE_MEETINGS = {
   data: [
-    { id: 2, name: 'Q1 Roadmap Planning', platform: { value: 'ZOOM', display: 'Zoom' }, status: { value: 'COMPLETED', display: 'Completed' }, scheduledAt: { value: '2024-01-15T10:00:00Z', display: '15 Jan 2024' } },
-    { id: 1, name: 'Weekly Product Sync', platform: { value: 'ZOOM', display: 'Zoom' }, status: { value: 'COMPLETED', display: 'Completed' }, scheduledAt: { value: '2024-01-14T10:00:00Z', display: '14 Jan 2024' } },
-    { id: 3, name: 'Frontend Performance Review', platform: { value: 'ZOOM', display: 'Zoom' }, status: { value: 'COMPLETED', display: 'Completed' }, scheduledAt: { value: '2024-01-13T10:00:00Z', display: '13 Jan 2024' } },
+    {
+      id: 2,
+      name: 'Q1 Roadmap Planning',
+      platform: { value: 'ZOOM', display: 'Zoom' },
+      status: { value: 'COMPLETED', display: 'Completed' },
+      scheduledAt: { value: '2024-01-15T10:00:00Z', display: '15 Jan 2024' },
+    },
+    {
+      id: 1,
+      name: 'Weekly Product Sync',
+      platform: { value: 'ZOOM', display: 'Zoom' },
+      status: { value: 'COMPLETED', display: 'Completed' },
+      scheduledAt: { value: '2024-01-14T10:00:00Z', display: '14 Jan 2024' },
+    },
+    {
+      id: 3,
+      name: 'Frontend Performance Review',
+      platform: { value: 'ZOOM', display: 'Zoom' },
+      status: { value: 'COMPLETED', display: 'Completed' },
+      scheduledAt: { value: '2024-01-13T10:00:00Z', display: '13 Jan 2024' },
+    },
   ],
   metadata: [
-    { id: 'name', header: 'Name', fieldType: 'entity', dataType: 'text', sortable: true, editable: false, isVisible: true, default: true, config: { hrefTemplate: '/meeting/{id}' } },
-    { id: 'platform', header: 'Platform', fieldType: 'select', dataType: 'text', sortable: false, editable: false, isVisible: true, default: true, config: { format: 'stage' } },
-    { id: 'scheduledAt', header: 'Date', fieldType: 'date', dataType: 'date', sortable: true, editable: false, isVisible: true, default: true, config: { format: 'date' } },
-    { id: 'status', header: 'Status', fieldType: 'select', dataType: 'text', sortable: false, editable: false, isVisible: true, default: true, config: { format: 'stage', render: 'badge' } },
+    {
+      id: 'name',
+      header: 'Name',
+      fieldType: 'entity',
+      dataType: 'text',
+      sortable: true,
+      editable: false,
+      isVisible: true,
+      default: true,
+      config: { hrefTemplate: '/meeting/{id}' },
+    },
+    {
+      id: 'platform',
+      header: 'Platform',
+      fieldType: 'select',
+      dataType: 'text',
+      sortable: false,
+      editable: false,
+      isVisible: true,
+      default: true,
+      config: { format: 'stage' },
+    },
+    {
+      id: 'scheduledAt',
+      header: 'Date',
+      fieldType: 'date',
+      dataType: 'date',
+      sortable: true,
+      editable: false,
+      isVisible: true,
+      default: true,
+      config: { format: 'date' },
+    },
+    {
+      id: 'status',
+      header: 'Status',
+      fieldType: 'select',
+      dataType: 'text',
+      sortable: false,
+      editable: false,
+      isVisible: true,
+      default: true,
+      config: { format: 'stage', render: 'badge' },
+    },
   ],
   pagination: { total: 3, page: 1, limit: 3, totalPages: 1 },
 };
@@ -298,7 +364,10 @@ function createQueryClient() {
     },
   });
   qc.setQueryData(['meetings'], MOCK_MEETINGS);
-  qc.setQueryData(['meetings', 'table', { search: undefined }], MOCK_TABLE_MEETINGS);
+  qc.setQueryData(
+    ['meetings', 'table', { search: undefined }],
+    MOCK_TABLE_MEETINGS,
+  );
   qc.setQueryData(['meeting', 1], MOCK_MEETING_DETAIL);
   qc.setQueryData(['meeting', 99], { ...MOCK_MEETING_DETAIL, id: 99 });
   return qc;
@@ -321,7 +390,9 @@ describe('MeetingList', () => {
   it('renders Meetings heading and search input', () => {
     render(<MeetingList />, { wrapper: Wrapper });
     expect(screen.getByText('Meetings')).toBeInTheDocument();
-    expect(screen.getByPlaceholderText('Search meetings...')).toBeInTheDocument();
+    expect(
+      screen.getByPlaceholderText('Search meetings...'),
+    ).toBeInTheDocument();
   });
 
   it('shows meeting names from table data', () => {
@@ -347,21 +418,21 @@ describe('MeetingList', () => {
     expect(mockPush).toHaveBeenCalledWith('/meeting/add');
   });
 
-  it('View link has correct href', async () => {
-    render(<MeetingList />, { wrapper: Wrapper });
-    const viewLinks = screen.getAllByRole('link', { name: /view/i });
-    expect(viewLinks[1]).toHaveAttribute('href', '/meeting/1');
-  });
-
   it('opens delete dialog when trash button is clicked', async () => {
     const user = userEvent.setup();
     render(<MeetingList />, { wrapper: Wrapper });
     const deleteButtons = screen.getAllByRole('button', { name: /^delete$/i });
     await user.click(deleteButtons[0]);
     const dialog = screen.getByRole('dialog');
-    expect(within(dialog).getByText('Are you sure you want to delete this meeting?')).toBeInTheDocument();
-    expect(within(dialog).getByRole('button', { name: /^cancel$/i })).toBeInTheDocument();
-    expect(within(dialog).getByRole('button', { name: /^delete$/i })).toBeInTheDocument();
+    expect(
+      within(dialog).getByText('Are you sure you want to delete this meeting?'),
+    ).toBeInTheDocument();
+    expect(
+      within(dialog).getByRole('button', { name: /^cancel$/i }),
+    ).toBeInTheDocument();
+    expect(
+      within(dialog).getByRole('button', { name: /^delete$/i }),
+    ).toBeInTheDocument();
   });
 
   it('Cancel in delete dialog closes without calling delete', async () => {
@@ -369,7 +440,11 @@ describe('MeetingList', () => {
     render(<MeetingList />, { wrapper: Wrapper });
     const deleteButtons = screen.getAllByRole('button', { name: /^delete$/i });
     await user.click(deleteButtons[0]);
-    await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: /^cancel$/i }));
+    await user.click(
+      within(screen.getByRole('dialog')).getByRole('button', {
+        name: /^cancel$/i,
+      }),
+    );
     expect(mockToastSuccess).not.toHaveBeenCalled();
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
@@ -379,7 +454,11 @@ describe('MeetingList', () => {
     render(<MeetingList />, { wrapper: Wrapper });
     const deleteButtons = screen.getAllByRole('button', { name: /^delete$/i });
     await user.click(deleteButtons[1]);
-    await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: /^delete$/i }));
+    await user.click(
+      within(screen.getByRole('dialog')).getByRole('button', {
+        name: /^delete$/i,
+      }),
+    );
     expect(mockToastSuccess).toHaveBeenCalledWith('Meeting deleted: 1');
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
@@ -396,7 +475,7 @@ describe('AddMeeting', () => {
     expect(screen.getByLabelText(/meeting name/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/meeting url/i)).toBeInTheDocument();
     expect(
-      screen.getByPlaceholderText(/meeting description/i)
+      screen.getByPlaceholderText(/meeting description/i),
     ).toBeInTheDocument();
     expect(screen.getByText(/join now/i)).toBeInTheDocument();
     expect(screen.getByTestId('timezone-field')).toBeInTheDocument();
@@ -425,7 +504,7 @@ describe('AddMeeting', () => {
     render(<AddMeeting />, { wrapper: Wrapper });
     await user.type(
       screen.getByPlaceholderText(/paste meeting url/i),
-      'https://example.com/meet'
+      'https://example.com/meet',
     );
     await user.click(screen.getByRole('button', { name: /submit/i }));
     expect(screen.getByText(/meeting name is required/i)).toBeInTheDocument();
@@ -437,7 +516,7 @@ describe('AddMeeting', () => {
     render(<AddMeeting />, { wrapper: Wrapper });
     await user.type(
       screen.getByPlaceholderText(/enter meeting name/i),
-      'My Meeting'
+      'My Meeting',
     );
     await user.click(screen.getByRole('button', { name: /submit/i }));
     expect(screen.getByText(/meeting url is required/i)).toBeInTheDocument();
@@ -449,11 +528,11 @@ describe('AddMeeting', () => {
     render(<AddMeeting />, { wrapper: Wrapper });
     await user.type(
       screen.getByPlaceholderText(/enter meeting name/i),
-      'My Meeting'
+      'My Meeting',
     );
     await user.type(
       screen.getByPlaceholderText(/paste meeting url/i),
-      'http://example.com/meet'
+      'http://example.com/meet',
     );
     await user.click(screen.getByRole('button', { name: /submit/i }));
     expect(screen.getByText(/please enter a valid url/i)).toBeInTheDocument();
@@ -472,22 +551,22 @@ describe('AddMeeting', () => {
     render(<AddMeeting />, { wrapper: Wrapper });
     await user.type(
       screen.getByPlaceholderText(/enter meeting name/i),
-      'Test Meeting'
+      'Test Meeting',
     );
     await user.type(
       screen.getByPlaceholderText(/paste meeting url/i),
-      'https://zoom.us/j/123'
+      'https://zoom.us/j/123',
     );
     await user.click(screen.getByRole('button', { name: /submit/i }));
     await vi.waitFor(() => {
       expect(
-        screen.queryByText(/meeting name is required/i)
+        screen.queryByText(/meeting name is required/i),
       ).not.toBeInTheDocument();
       expect(
-        screen.queryByText(/meeting url is required/i)
+        screen.queryByText(/meeting url is required/i),
       ).not.toBeInTheDocument();
       expect(
-        screen.queryByText(/please enter a valid url/i)
+        screen.queryByText(/please enter a valid url/i),
       ).not.toBeInTheDocument();
     });
   });
@@ -501,11 +580,9 @@ describe('MeetingDetail', () => {
 
   it('renders back button, meeting name, platform, status, and metadata', () => {
     render(<MeetingDetail meetingId="1" />, { wrapper: Wrapper });
+    expect(screen.getByRole('link', { name: /meetings/i })).toBeInTheDocument();
     expect(
-      screen.getByRole('link', { name: /meetings/i })
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText('Weekly Sync - Product & Engineering')
+      screen.getByText('Weekly Sync - Product & Engineering'),
     ).toBeInTheDocument();
     expect(screen.getByText('ZOOM')).toBeInTheDocument();
     expect(screen.getByText('COMPLETED')).toBeInTheDocument();
@@ -522,11 +599,14 @@ describe('MeetingDetail', () => {
 
   it('shows End Meeting button when status is IN_PROGRESS', () => {
     render(
-      <MeetingDetail meetingId="1" meetingOverride={{ status: 'IN_PROGRESS' }} />,
-      { wrapper: Wrapper }
+      <MeetingDetail
+        meetingId="1"
+        meetingOverride={{ status: 'IN_PROGRESS' }}
+      />,
+      { wrapper: Wrapper },
     );
     expect(
-      screen.getByRole('button', { name: /end meeting/i })
+      screen.getByRole('button', { name: /end meeting/i }),
     ).toBeInTheDocument();
   });
 
@@ -537,7 +617,7 @@ describe('MeetingDetail', () => {
         meetingId="99"
         meetingOverride={{ status: 'IN_PROGRESS' }}
       />,
-      { wrapper: Wrapper }
+      { wrapper: Wrapper },
     );
     await user.click(screen.getByRole('button', { name: /end meeting/i }));
     expect(mockToastSuccess).toHaveBeenCalledWith('Meeting ended: 99');
@@ -546,10 +626,10 @@ describe('MeetingDetail', () => {
   it('Recording tab shows video and Download link by default', () => {
     render(<MeetingDetail meetingId="1" />, { wrapper: Wrapper });
     expect(
-      screen.getByRole('button', { name: /recording/i })
+      screen.getByRole('button', { name: /recording/i }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole('button', { name: /transcript/i })
+      screen.getByRole('button', { name: /transcript/i }),
     ).toBeInTheDocument();
     const video = document.querySelector('video');
     expect(video).toBeInTheDocument();
@@ -560,10 +640,10 @@ describe('MeetingDetail', () => {
   it('shows No recording available when recordingUrl is null', () => {
     render(
       <MeetingDetail meetingId="1" meetingOverride={{ recordingUrl: null }} />,
-      { wrapper: Wrapper }
+      { wrapper: Wrapper },
     );
     expect(
-      screen.getByText('No recording available for this meeting')
+      screen.getByText('No recording available for this meeting'),
     ).toBeInTheDocument();
   });
 
@@ -572,10 +652,10 @@ describe('MeetingDetail', () => {
     render(<MeetingDetail meetingId="1" />, { wrapper: Wrapper });
     await user.click(screen.getByRole('button', { name: /transcript/i }));
     expect(
-      screen.getByText(/Hello everyone.*start the sync/i)
+      screen.getByText(/Hello everyone.*start the sync/i),
     ).toBeInTheDocument();
     expect(
-      screen.getByText(/I have some updates on the UI refactor/i)
+      screen.getByText(/I have some updates on the UI refactor/i),
     ).toBeInTheDocument();
   });
 
@@ -583,11 +663,11 @@ describe('MeetingDetail', () => {
     const user = userEvent.setup();
     render(
       <MeetingDetail meetingId="1" meetingOverride={{ transcript: [] }} />,
-      { wrapper: Wrapper }
+      { wrapper: Wrapper },
     );
     await user.click(screen.getByRole('button', { name: /transcript/i }));
     expect(
-      screen.getByText('No transcript available for this meeting')
+      screen.getByText('No transcript available for this meeting'),
     ).toBeInTheDocument();
   });
 
@@ -605,11 +685,11 @@ describe('MeetingDetail', () => {
     const user = userEvent.setup();
     render(
       <MeetingDetail meetingId="1" meetingOverride={{ chatMessages: [] }} />,
-      { wrapper: Wrapper }
+      { wrapper: Wrapper },
     );
     await user.click(screen.getByRole('button', { name: /^chat$/i }));
     expect(
-      screen.getByText('No chat messages available for this meeting')
+      screen.getByText('No chat messages available for this meeting'),
     ).toBeInTheDocument();
   });
 
@@ -618,7 +698,7 @@ describe('MeetingDetail', () => {
     render(<MeetingDetail meetingId="1" />, { wrapper: Wrapper });
     await user.click(screen.getByRole('button', { name: /summary/i }));
     expect(
-      screen.getByText(/The team discussed the ongoing UI refactor/i)
+      screen.getByText(/The team discussed the ongoing UI refactor/i),
     ).toBeInTheDocument();
   });
 
@@ -626,11 +706,11 @@ describe('MeetingDetail', () => {
     const user = userEvent.setup();
     render(
       <MeetingDetail meetingId="1" meetingOverride={{ summary: null }} />,
-      { wrapper: Wrapper }
+      { wrapper: Wrapper },
     );
     await user.click(screen.getByRole('button', { name: /summary/i }));
     expect(
-      screen.getByText('No summary available for this meeting')
+      screen.getByText('No summary available for this meeting'),
     ).toBeInTheDocument();
   });
 
@@ -640,7 +720,7 @@ describe('MeetingDetail', () => {
     await user.click(screen.getByRole('button', { name: /action items/i }));
     expect(screen.getByText(/2 of 2 items/)).toBeInTheDocument();
     expect(
-      screen.getByText('Review UI refactor components')
+      screen.getByText('Review UI refactor components'),
     ).toBeInTheDocument();
     expect(screen.getByText('Review API documentation')).toBeInTheDocument();
   });
@@ -649,11 +729,11 @@ describe('MeetingDetail', () => {
     const user = userEvent.setup();
     render(
       <MeetingDetail meetingId="1" meetingOverride={{ actionItems: [] }} />,
-      { wrapper: Wrapper }
+      { wrapper: Wrapper },
     );
     await user.click(screen.getByRole('button', { name: /action items/i }));
     expect(
-      screen.getByText('No action items for this meeting')
+      screen.getByText('No action items for this meeting'),
     ).toBeInTheDocument();
   });
 
