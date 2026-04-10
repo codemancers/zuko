@@ -54,6 +54,7 @@ test.describe("Contact Activity Timeline - Authenticated", () => {
     await page
       .getByRole("heading", { name: "Activity", exact: true })
       .scrollIntoViewIfNeeded();
+    await contactDetailPage.showHistory();
 
     await expect(
       page
@@ -78,6 +79,11 @@ test.describe("Contact Activity Timeline - Authenticated", () => {
   }) => {
     await contactDetailPage.goto(contactId);
 
+    await page
+      .getByRole("heading", { name: "Activity", exact: true })
+      .scrollIntoViewIfNeeded();
+    await contactDetailPage.showHistory();
+
     // Wait for activity section to stabilize before capturing baseline count
     await page
       .locator('[data-testid="activity-item"]')
@@ -99,8 +105,14 @@ test.describe("Contact Activity Timeline - Authenticated", () => {
   // ── 2. Create ─────────────────────────────────────────────────────────────
   test("should create a new comment successfully", async ({
     contactDetailPage,
+    page
   }) => {
     await contactDetailPage.goto(contactId);
+
+    await page
+      .getByRole("heading", { name: "Activity", exact: true })
+      .scrollIntoViewIfNeeded();
+    await contactDetailPage.showHistory();
 
     const commentText = `Test comment created at ${new Date().toISOString()}`;
     await contactDetailPage.createComment(commentText);
@@ -131,6 +143,10 @@ test.describe("Contact Activity Timeline - Authenticated", () => {
     page,
   }) => {
     await contactDetailPage.goto(contactId);
+    await page
+      .getByRole("heading", { name: "Activity", exact: true })
+      .scrollIntoViewIfNeeded();
+    await contactDetailPage.showHistory();
 
     const originalComment = "Original comment " + Date.now();
     const editedComment = "Edited comment " + Date.now();
@@ -163,6 +179,10 @@ test.describe("Contact Activity Timeline - Authenticated", () => {
     page,
   }) => {
     await contactDetailPage.goto(contactId);
+    await page
+      .getByRole("heading", { name: "Activity", exact: true })
+      .scrollIntoViewIfNeeded();
+    await contactDetailPage.showHistory();
 
     const originalComment = "Original comment for cancel test " + Date.now();
 

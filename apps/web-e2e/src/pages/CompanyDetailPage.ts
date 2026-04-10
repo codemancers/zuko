@@ -19,7 +19,12 @@ export class CompanyDetailPage extends BasePage {
     this.associatedContactsSection = page
       .locator("text=Associated Contacts")
       .locator("..");
+    this.companyName = page.locator('h1[contenteditable="true"]');
+    this.summaryField = page.getByPlaceholder(/No summary yet/i);
   }
+
+  readonly companyName: Locator;
+  readonly summaryField: Locator;
 
   /**
    * Navigate to a specific company detail page

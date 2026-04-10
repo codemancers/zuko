@@ -753,16 +753,14 @@ describe('ContactDetail', () => {
 
   it('renders contact name and details when loaded', async () => {
     render(<ContactDetail contactId={7} currentUserId={1} />, { wrapper });
-    await vi.waitFor(() => {
-      expect(screen.getByText('Detail Contact')).toBeInTheDocument();
-    });
+    expect(await screen.findByRole('heading', { level: 1 })).toHaveTextContent('Detail Contact');
     expect(screen.getByText('detail@example.com')).toBeInTheDocument();
     expect(screen.getByText('+14155550000')).toBeInTheDocument();
     expect(screen.getByText('detail-linkedin')).toBeInTheDocument();
     expect(screen.getByText('Contact Information')).toBeInTheDocument();
     expect(screen.getByText('Owners')).toBeInTheDocument();
     expect(screen.getByText('Alice')).toBeInTheDocument();
-    expect(screen.getByText('Some notes here')).toBeInTheDocument();
+    expect(screen.getByDisplayValue('Some notes here')).toBeInTheDocument();
   });
 
   it('navigates to edit page when Edit button is clicked', async () => {

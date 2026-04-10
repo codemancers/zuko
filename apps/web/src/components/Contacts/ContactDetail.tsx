@@ -1,12 +1,20 @@
 'use client';
 
 import { useState } from 'react';
+import { useAutosaveField } from '@/hooks/useAutosaveField';
 import {
   UserIcon,
   PencilIcon,
   EyeSlashIcon,
 } from '@heroicons/react/24/outline';
-import { Badge, Divider, Heading, Button, Subheading } from '@zuko/ui-kit';
+import {
+  Badge,
+  Button,
+  Divider,
+  Heading,
+  Subheading,
+  Textarea,
+} from '@zuko/ui-kit';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getContact, getDealsByContact } from '@/server/query-options';
 import { contactsApi } from '@/lib/api/contacts';
@@ -33,6 +41,25 @@ export default function ContactDetail({
   const queryClient = useQueryClient();
   const { data: contact, isLoading } = useQuery(getContact(contactId));
   const { data: dealsData } = useQuery(getDealsByContact(contactId));
+  const updateMutation = useMutation({
+    mutationFn: (updated: { name?: string; notes?: string }) =>
+      contactsApi.updateContact(contactId, updated),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['contact', contactId] });
+      queryClient.invalidateQueries({ queryKey: ['contacts'] });
+    },
+  });
+
+  const nameField = useAutosaveField(contact?.name, {
+    fieldName: 'contact name',
+    onSave: (val) => updateMutation.mutateAsync({ name: val }),
+  });
+
+  const notesField = useAutosaveField(contact?.notes, {
+    fieldName: 'notes',
+    onSave: (val) => updateMutation.mutateAsync({ notes: val }),
+  });
+
   const [showHideDialog, setShowHideDialog] = useState(false);
 
   const hideMutation = useMutation({
@@ -69,10 +96,25 @@ export default function ContactDetail({
             <UserIcon className="h-8 w-8 text-zinc-600 dark:text-zinc-400" />
           </div>
           <div>
-            <Heading>{contact.name}</Heading>
-            <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
-              Created {dayjs(contact.createdAt).format('MMMM D, YYYY')}
-            </p>
+            <Heading
+              level={1}
+              contentEditable
+              suppressContentEditableWarning
+              onBlur={(e) => nameField.setValue(e.currentTarget.innerText)}
+              className="text-3xl font-bold tracking-tight text-zinc-950 dark:text-white outline-none focus:ring-2 focus:ring-blue-500 rounded px-1 -mx-1 transition-all"
+            >
+              {nameField.value}
+            </Heading>
+            <div className="flex items-center gap-2 mt-1">
+              <p className="text-sm text-zinc-600 dark:text-zinc-400">
+                Created {dayjs(contact.createdAt).format('MMMM D, YYYY')}
+              </p>
+              {nameField.isSaving && (
+                <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 animate-pulse">
+                  Syncing...
+                </span>
+              )}
+            </div>
           </div>
         </div>
         <div className="flex gap-3">
@@ -169,14 +211,22 @@ export default function ContactDetail({
       </div>
 
       {/* Notes */}
-      {contact.notes && (
-        <div className="mt-8">
+      <div className="mt-8">
+        <div className="flex items-center justify-between mb-4">
           <Subheading>Notes</Subheading>
-          <div className="mt-4 whitespace-pre-wrap rounded-lg bg-zinc-50 p-4 text-sm text-zinc-950 dark:bg-zinc-900 dark:text-white">
-            {contact.notes}
-          </div>
+          {notesField.isSaving && (
+            <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 animate-pulse">
+              Syncing...
+            </span>
+          )}
         </div>
-      )}
+        <Textarea
+          value={notesField.value}
+          onChange={(e) => notesField.setValue(e.target.value)}
+          placeholder="No notes yet. Add one..."
+          className="h-32"
+        />
+      </div>
 
       {/* Associated Deals */}
       {dealsData && dealsData.deals && dealsData.deals.length > 0 && (
@@ -226,16 +276,11 @@ export default function ContactDetail({
       />
 
       {/* Activity Timeline */}
-      <div className="mt-8">
-        <Subheading>Activity</Subheading>
-        <div className="mt-4">
-          <ActivityTimeline
-            entityType="contact"
-            entityId={contactId}
-            currentUserId={currentUserId ?? undefined}
-          />
-        </div>
-      </div>
+      <ActivityTimeline
+        entityType="contact"
+        entityId={contactId}
+        currentUserId={currentUserId ?? undefined}
+      />
     </>
   );
 }

@@ -287,3 +287,41 @@ test.describe("Cell Editing Flow", () => {
     await expect(page.getByText(newValue)).toBeVisible();
   });
 });
+
+test.describe("Contact Detail - Inline Editing", () => {
+  test("can edit contact name inline", async ({ contactDetailPage, page }) => {
+    const newName = `Updated Contact Name ${Date.now()}`;
+    await contactDetailPage.goto(1);
+
+    const updatePromise = page.waitForResponse(
+      (resp) => resp.url().includes("/contacts/1") && resp.request().method() === "PATCH"
+    );
+    await contactDetailPage.updateTitle(newName);
+    await updatePromise;
+    
+    // Verify immediate UI update
+    await expect(contactDetailPage.contactName).toHaveText(newName);
+
+    // Refresh and verify persistence
+    await page.reload();
+    await expect(contactDetailPage.contactName).toHaveText(newName);
+  });
+
+  test("can edit contact notes", async ({ contactDetailPage, page }) => {
+    const newNotes = `Updated Contact Notes ${Date.now()}`;
+    await contactDetailPage.goto(1);
+
+    const updatePromise = page.waitForResponse(
+      (resp) => resp.url().includes("/contacts/1") && resp.request().method() === "PATCH"
+    );
+    await contactDetailPage.notesField.fill(newNotes);
+    await contactDetailPage.notesField.blur();
+    
+    // Wait for API save
+    await updatePromise;
+
+    // Refresh and verify persistence
+    await page.reload();
+    await expect(contactDetailPage.notesField).toHaveValue(newNotes);
+  });
+});

@@ -17,20 +17,20 @@ export function MetadataFooter({ createdAt, updatedAt }: MetadataFooterProps) {
   return (
     <div className="mt-8">
       <Subheading>Details</Subheading>
-      <dl className="mt-4 space-y-4">
-        <div className="grid grid-cols-3">
-          <dt className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
+      <dl className="mt-4 flex flex-wrap gap-x-24 gap-y-4">
+        <div className="flex flex-col gap-1">
+          <dt className="text-xs font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-500">
             Created
           </dt>
-          <dd className="col-span-2 text-sm text-zinc-950 dark:text-white">
+          <dd className="text-sm text-zinc-950 dark:text-white">
             {dayjs(createdAt).format('MMMM D, YYYY [at] h:mm A')}
           </dd>
         </div>
-        <div className="grid grid-cols-3">
-          <dt className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
+        <div className="flex flex-col gap-1">
+          <dt className="text-xs font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-500">
             Last Updated
           </dt>
-          <dd className="col-span-2 text-sm text-zinc-950 dark:text-white">
+          <dd className="text-sm text-zinc-950 dark:text-white">
             {dayjs(updatedAt).format('MMMM D, YYYY [at] h:mm A')}
           </dd>
         </div>

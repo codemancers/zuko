@@ -189,7 +189,7 @@ export function CommentBox({
       <div className="flex-1 min-w-0">
         {/* Title */}
         {title && (
-          <p className="mb-2 text-sm font-semibold text-zinc-950 dark:text-white">
+          <p className="mb-6 text-sm font-semibold text-zinc-950 dark:text-white">
             {title}
           </p>
         )}

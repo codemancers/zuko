@@ -13,6 +13,7 @@ test.describe("Deal Activity Timeline - System Events", () => {
   test.describe("deal_created", () => {
     test("shows 'created this deal' after a new deal is created", async ({
       dealsPage,
+      dealDetailPage,
       page,
     }) => {
       await dealsPage.goto();
@@ -37,6 +38,7 @@ test.describe("Deal Activity Timeline - System Events", () => {
       await page
         .getByRole("heading", { name: "Activity", exact: true })
         .scrollIntoViewIfNeeded();
+      await dealDetailPage.showHistory();
 
       await expect(
         page
@@ -84,6 +86,7 @@ test.describe("Deal Activity Timeline - System Events", () => {
       await page
         .getByRole("heading", { name: "Activity", exact: true })
         .scrollIntoViewIfNeeded();
+      await dealDetailPage.showHistory();
 
       await expect(
         page
@@ -141,6 +144,7 @@ test.describe("Deal Activity Timeline - System Events", () => {
       await page
         .getByRole("heading", { name: "Activity", exact: true })
         .scrollIntoViewIfNeeded();
+      await dealDetailPage.showHistory();
 
       await expect(
         page
@@ -175,6 +179,7 @@ test.describe("Deal Activity Timeline - System Events", () => {
       await page
         .getByRole("heading", { name: "Activity", exact: true })
         .scrollIntoViewIfNeeded();
+      await dealDetailPage.showHistory();
 
       await expect(
         page
@@ -231,6 +236,7 @@ test.describe("Deal Activity Timeline - System Events", () => {
       await page
         .getByRole("heading", { name: "Activity", exact: true })
         .scrollIntoViewIfNeeded();
+      await dealDetailPage.showHistory();
 
       await expect(
         page
@@ -265,6 +271,7 @@ test.describe("Deal Activity Timeline - System Events", () => {
       await page
         .getByRole("heading", { name: "Activity", exact: true })
         .scrollIntoViewIfNeeded();
+      await dealDetailPage.showHistory();
 
       await expect(
         page

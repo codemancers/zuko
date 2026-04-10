@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useAutosaveField } from '@/hooks/useAutosaveField';
 import {
   BuildingOfficeIcon,
   PencilIcon,
@@ -15,6 +16,7 @@ import {
   Subheading,
   Switch,
   Text,
+  Textarea,
 } from '@zuko/ui-kit';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getCompany, getDealsByCompany } from '@/server/query-options';
@@ -52,6 +54,25 @@ export default function CompanyDetail({
   const [editingContactId, setEditingContactId] = useState<number | null>(null);
   const [editedRole, setEditedRole] = useState('');
   const [editedIsPrimary, setEditedIsPrimary] = useState(false);
+  const updateMutation = useMutation({
+    mutationFn: (updated: { companyName?: string; summary?: string }) =>
+      companiesApi.updateCompany(companyId, updated),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['company', companyId] });
+      queryClient.invalidateQueries({ queryKey: ['companies'] });
+    },
+  });
+
+  const nameField = useAutosaveField(company?.companyName, {
+    fieldName: 'company name',
+    onSave: (val) => updateMutation.mutateAsync({ companyName: val }),
+  });
+
+  const summaryField = useAutosaveField(company?.summary, {
+    fieldName: 'summary',
+    onSave: (val) => updateMutation.mutateAsync({ summary: val }),
+  });
+
   const [showHideDialog, setShowHideDialog] = useState(false);
   const [contactToRemove, setContactToRemove] = useState<{
     id: number;
@@ -152,10 +173,25 @@ export default function CompanyDetail({
             <BuildingOfficeIcon className="h-8 w-8 text-zinc-600 dark:text-zinc-400" />
           </div>
           <div>
-            <Heading>{company.companyName}</Heading>
-            <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
-              Created {dayjs(company.createdAt).format('MMMM D, YYYY')}
-            </p>
+            <Heading
+              level={1}
+              contentEditable
+              suppressContentEditableWarning
+              onBlur={(e) => nameField.setValue(e.currentTarget.innerText)}
+              className="text-3xl font-bold tracking-tight text-zinc-950 dark:text-white outline-none focus:ring-2 focus:ring-blue-500 rounded px-1 -mx-1 transition-all"
+            >
+              {nameField.value}
+            </Heading>
+            <div className="flex items-center gap-2 mt-1">
+              <p className="text-sm text-zinc-600 dark:text-zinc-400">
+                Created {dayjs(company.createdAt).format('MMMM D, YYYY')}
+              </p>
+              {nameField.isSaving && (
+                <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 animate-pulse">
+                  Syncing...
+                </span>
+              )}
+            </div>
           </div>
         </div>
         <div className="flex gap-3">
@@ -262,14 +298,22 @@ export default function CompanyDetail({
       </div>
 
       {/* Summary */}
-      {company.summary && (
-        <div className="mt-8">
+      <div className="mt-8">
+        <div className="flex items-center justify-between mb-4">
           <Subheading>Summary</Subheading>
-          <div className="mt-4 whitespace-pre-wrap rounded-lg bg-zinc-50 p-4 text-sm text-zinc-950 dark:bg-zinc-900 dark:text-white">
-            {company.summary}
-          </div>
+          {summaryField.isSaving && (
+            <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 animate-pulse">
+              Syncing...
+            </span>
+          )}
         </div>
-      )}
+        <Textarea
+          value={summaryField.value}
+          onChange={(e) => summaryField.setValue(e.target.value)}
+          placeholder="No summary yet. Add one..."
+          className="h-32"
+        />
+      </div>
 
       {/* Associated Contacts */}
       <div className="mt-8">
@@ -406,16 +450,11 @@ export default function CompanyDetail({
       />
 
       {/* Activity Timeline */}
-      <div className="mt-8">
-        <Subheading>Activity</Subheading>
-        <div className="mt-4">
-          <ActivityTimeline
-            entityType="company"
-            entityId={companyId}
-            currentUserId={currentUserId ?? undefined}
-          />
-        </div>
-      </div>
+      <ActivityTimeline
+        entityType="company"
+        entityId={companyId}
+        currentUserId={currentUserId ?? undefined}
+      />
     </>
   );
 }

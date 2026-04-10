@@ -14,6 +14,7 @@ test.describe("Company Activity Timeline - System Events", () => {
   test.describe("company_created", () => {
     test("shows 'created this company' after a new company is created", async ({
       companiesPage,
+      companyDetailPage,
       page,
     }) => {
       await companiesPage.goto();
@@ -34,6 +35,7 @@ test.describe("Company Activity Timeline - System Events", () => {
       await page
         .getByRole("heading", { name: "Activity", exact: true })
         .scrollIntoViewIfNeeded();
+      await companyDetailPage.showHistory();
 
       await expect(
         page
@@ -73,6 +75,7 @@ test.describe("Company Activity Timeline - System Events", () => {
       await page
         .getByRole("heading", { name: "Activity", exact: true })
         .scrollIntoViewIfNeeded();
+      await companyDetailPage.showHistory();
 
       await expect(
         page
@@ -114,6 +117,11 @@ test.describe("Company Activity Timeline - System Events", () => {
         return;
       }
 
+      await page
+        .getByRole("heading", { name: "Activity", exact: true })
+        .scrollIntoViewIfNeeded();
+      await companyDetailPage.showHistory();
+
       // The activity text is "linked contact <name>"
       const baseName = contactName.split('(')[0].trim();
       await expect(
@@ -154,6 +162,7 @@ test.describe("Company Activity Timeline - System Events", () => {
       await page
         .getByRole("heading", { name: "Activity", exact: true })
         .scrollIntoViewIfNeeded();
+      await companyDetailPage.showHistory();
 
       await expect(
         page
@@ -173,6 +182,7 @@ test.describe("Contact Activity Timeline - System Events", () => {
   test.describe("contact_created", () => {
     test("shows 'created this contact' after a new contact is created", async ({
       contactsPage,
+      contactDetailPage,
       page,
     }) => {
       await contactsPage.goto();
@@ -194,6 +204,7 @@ test.describe("Contact Activity Timeline - System Events", () => {
       await page
         .getByRole("heading", { name: "Activity", exact: true })
         .scrollIntoViewIfNeeded();
+      await contactDetailPage.showHistory();
 
       await expect(
         page
@@ -209,6 +220,7 @@ test.describe("Contact Activity Timeline - System Events", () => {
   test.describe("field_update", () => {
     test("shows 'updated' event after a contact field is edited", async ({
       contactsPage,
+      contactDetailPage,
       page,
     }) => {
       await contactsPage.goto();
@@ -230,6 +242,7 @@ test.describe("Contact Activity Timeline - System Events", () => {
       await page
         .getByRole("heading", { name: "Activity", exact: true })
         .scrollIntoViewIfNeeded();
+      await contactDetailPage.showHistory();
 
       await expect(
         page

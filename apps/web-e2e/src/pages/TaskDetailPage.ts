@@ -10,6 +10,8 @@ export class TaskDetailPage extends BasePage {
   readonly activityItems: Locator;
   readonly commentInput: Locator;
   readonly postCommentButton: Locator;
+  readonly taskTitle: Locator;
+  readonly taskDescription: Locator;
 
   constructor(page: Page) {
     super(page);
@@ -19,6 +21,8 @@ export class TaskDetailPage extends BasePage {
     this.postCommentButton = page.getByRole("button", {
       name: /Post Comment/i,
     });
+    this.taskTitle = page.locator('h1[contenteditable="true"]');
+    this.taskDescription = page.getByPlaceholder("Add a detailed description...");
   }
 
   override async goto(taskId: number | string) {
@@ -112,5 +116,12 @@ export class TaskDetailPage extends BasePage {
       .or(this.page.getByText("No activity yet"))
       .first()
       .waitFor({ state: "visible", timeout });
+  }
+
+  async updateDescription(newDescription: string) {
+    await this.taskDescription.fill(newDescription);
+    await this.taskDescription.blur();
+    // Wait for autosave (debounce is 2000ms, so we should wait a bit longer or wait for the 'Syncing' text to disappear)
+    await this.page.waitForTimeout(3000);
   }
 }

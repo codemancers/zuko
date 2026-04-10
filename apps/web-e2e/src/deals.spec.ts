@@ -275,6 +275,26 @@ test.describe('Deal Detail', () => {
   });
 });
 
+test.describe('Deal Detail - Inline Editing', () => {
+  test('can edit deal title inline', async ({ dealDetailPage, page }) => {
+    const newTitle = `Updated Deal Title ${Date.now()}`;
+    await dealDetailPage.goto(1);
+
+    const updatePromise = page.waitForResponse(
+      (resp) => resp.url().includes("/deals/1") && resp.request().method() === "PATCH"
+    );
+    await dealDetailPage.updateTitle(newTitle);
+    await updatePromise;
+
+    // Verify immediate UI update
+    await expect(dealDetailPage.dealTitle).toHaveText(newTitle);
+
+    // Refresh and verify persistence
+    await page.reload();
+    await expect(dealDetailPage.dealTitle).toHaveText(newTitle);
+  });
+});
+
 test.describe('Deal Edit', () => {
   // ── 1. Empty state (edit form) ──────────────────────────────────────────
   test('can navigate to edit page', async ({ dealDetailPage, page }) => {
@@ -690,16 +710,17 @@ test.describe('Deal Activity Timeline - Comments', () => {
   }) => {
     await dealDetailPage.goto(dealId);
 
+    await page
+      .getByRole('heading', { name: /Activity/i })
+      .waitFor({ state: 'visible', timeout: 30000 });
+
     const commentText = `Deal test comment ${Date.now()}`;
 
-    const commentInput = page.getByPlaceholder('Add a comment...');
-    await commentInput.scrollIntoViewIfNeeded();
-    await commentInput.waitFor({ state: 'visible', timeout: 30000 });
-    await commentInput.fill(commentText);
+    // Use robust Page Object methods that handle internal scrolling and waiting
+    await dealDetailPage.showHistory();
+    await dealDetailPage.postComment(commentText);
 
-    await page.getByRole('button', { name: /Post Comment/i }).click();
-
-    await expect(page.getByText(commentText)).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText(commentText)).toBeVisible({ timeout: 15000 });
   });
 });
 

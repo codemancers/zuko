@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useAutosaveField } from '@/hooks/useAutosaveField';
 import {
   BriefcaseIcon,
   PencilIcon,
@@ -53,6 +54,20 @@ export default function DealDetail({ dealId, currentUserId }: DealDetailProps) {
   const [editingContactId, setEditingContactId] = useState<number | null>(null);
   const [editedRole, setEditedRole] = useState('');
   const [editedContactIsPrimary, setEditedContactIsPrimary] = useState(false);
+
+  const updateMutation = useMutation({
+    mutationFn: (updated: { title: string }) =>
+      dealsApi.updateDeal(dealId, updated),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['deal', dealId] });
+      queryClient.invalidateQueries({ queryKey: ['deals'] });
+    },
+  });
+
+  const titleField = useAutosaveField(deal?.title, {
+    fieldName: 'deal title',
+    onSave: (val) => updateMutation.mutateAsync({ title: val }),
+  });
 
   // Confirm dialog state
   const [showHideDialog, setShowHideDialog] = useState(false);
@@ -215,7 +230,15 @@ export default function DealDetail({ dealId, currentUserId }: DealDetailProps) {
             <BriefcaseIcon className="h-8 w-8 text-zinc-600 dark:text-zinc-400" />
           </div>
           <div>
-            <Heading>{deal.title}</Heading>
+            <Heading
+              level={1}
+              contentEditable
+              suppressContentEditableWarning
+              onBlur={(e) => titleField.setValue(e.currentTarget.innerText)}
+              className="text-3xl font-bold tracking-tight text-zinc-950 dark:text-white outline-none focus:ring-2 focus:ring-blue-500 rounded px-1 -mx-1 transition-all"
+            >
+              {titleField.value}
+            </Heading>
             <div className="mt-1 flex items-center gap-2">
               <Badge color={getStageColor(deal.stage)} className="text-xs">
                 {formatStage(deal.stage)}
@@ -223,6 +246,11 @@ export default function DealDetail({ dealId, currentUserId }: DealDetailProps) {
               <span className="text-sm text-zinc-600 dark:text-zinc-400">
                 {formatCurrency(deal.value, deal.currency)}
               </span>
+              {titleField.isSaving && (
+                <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 animate-pulse">
+                  Syncing...
+                </span>
+              )}
             </div>
           </div>
         </div>
@@ -559,16 +587,11 @@ export default function DealDetail({ dealId, currentUserId }: DealDetailProps) {
       <MetadataFooter createdAt={deal.createdAt} updatedAt={deal.updatedAt} />
 
       {/* Activity Timeline */}
-      <div className="mt-8">
-        <Subheading>Activity</Subheading>
-        <div className="mt-4">
-          <ActivityTimeline
-            entityType="deal"
-            entityId={dealId}
-            currentUserId={currentUserId ?? undefined}
-          />
-        </div>
-      </div>
+      <ActivityTimeline
+        entityType="deal"
+        entityId={dealId}
+        currentUserId={currentUserId ?? undefined}
+      />
     </>
   );
 }
