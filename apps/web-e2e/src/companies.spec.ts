@@ -225,6 +225,7 @@ test.describe.serial("Company Detail - Contact Management", () => {
     await page
       .getByRole("heading", { name: "Activity" })
       .scrollIntoViewIfNeeded();
+    await companyDetailPage.showHistory();
     const testComment = `Test comment at ${new Date().toISOString()}`;
     await companyDetailPage.postComment(testComment);
     await expect(page.getByText(testComment)).toBeVisible({ timeout: 10000 });
@@ -234,6 +235,47 @@ test.describe.serial("Company Detail - Contact Management", () => {
     await companyDetailPage.goto(1);
     const activities = await companyDetailPage.getActivityItems();
     expect(activities.length).toBeGreaterThanOrEqual(0);
+  });
+});
+
+test.describe("Company Detail - Inline Editing", () => {
+  test("can edit company name inline", async ({ companyDetailPage, page }) => {
+    const newName = `Updated Company Name ${Date.now()}`;
+    await companyDetailPage.goto(1);
+
+    const updatePromise = page.waitForResponse(
+      (resp) => resp.url().includes("/companies/1") && resp.request().method() === "PATCH"
+    );
+    await companyDetailPage.updateTitle(newName);
+    await updatePromise;
+    
+    // Verify immediate UI update
+    await expect(companyDetailPage.companyName).toHaveText(newName);
+
+    // Refresh and verify persistence
+    await page.reload();
+    await expect(companyDetailPage.companyName).toHaveText(newName);
+  });
+
+  test("can edit company summary", async ({ companyDetailPage, page }) => {
+    const newSummary = `Updated Company Summary ${Date.now()}`;
+    await companyDetailPage.goto(1);
+
+    const updatePromise = page.waitForResponse(
+      (resp) => resp.url().includes("/companies/1") && resp.request().method() === "PATCH"
+    );
+    await companyDetailPage.summaryField.fill(newSummary);
+    await companyDetailPage.summaryField.blur();
+    
+    // Wait for API save
+    await updatePromise;
+
+    // Verify immediate UI update
+    await expect(companyDetailPage.summaryField).toHaveValue(newSummary);
+
+    // Refresh and verify persistence
+    await page.reload();
+    await expect(companyDetailPage.summaryField).toHaveValue(newSummary);
   });
 });
 

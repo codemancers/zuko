@@ -649,11 +649,9 @@ describe('CompanyDetail', () => {
 
   it('renders company name and details when loaded', async () => {
     render(<CompanyDetail companyId={7} currentUserId={1} />, { wrapper });
-    await waitFor(() => {
-      expect(screen.getByText('Detail Company')).toBeInTheDocument();
-    });
+    expect(await screen.findByRole('heading', { level: 1 })).toHaveTextContent('Detail Company');
     expect(screen.getByText('https://detail.com')).toBeInTheDocument();
-    expect(screen.getByText('Company summary')).toBeInTheDocument();
+    expect(screen.getByDisplayValue('Company summary')).toBeInTheDocument();
     expect(screen.getByText('Alice')).toBeInTheDocument();
   });
 

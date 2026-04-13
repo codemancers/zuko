@@ -12,6 +12,8 @@ export class ContactDetailPage extends BasePage {
   readonly postCommentButton: Locator;
   readonly activityAvatars: Locator;
   readonly connectingLines: Locator;
+  readonly contactName: Locator;
+  readonly notesField: Locator;
 
   constructor(page: Page) {
     super(page);
@@ -26,6 +28,8 @@ export class ContactDetailPage extends BasePage {
     this.connectingLines = page.locator(
       '[data-testid="activity-connecting-line"]',
     );
+    this.contactName = page.locator('h1[contenteditable="true"]');
+    this.notesField = page.getByPlaceholder(/No notes yet/i);
   }
 
   /**

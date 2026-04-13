@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useAutosaveField } from '@/hooks/useAutosaveField';
 import {
   BuildingOfficeIcon,
   PencilIcon,
@@ -9,12 +10,12 @@ import {
 import {
   Badge,
   Divider,
-  Heading,
   Button,
   Input,
   Subheading,
   Switch,
   Text,
+  Textarea,
 } from '@zuko/ui-kit';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getCompany, getDealsByCompany } from '@/server/query-options';
@@ -26,7 +27,7 @@ import ActivityTimeline from '@/components/Activity/ActivityTimeline';
 import AddContactDialog from './AddContactDialog';
 
 import ConfirmDialog from '@/components/shared/ConfirmDialog';
-import { BackLink, MetadataFooter } from '@/components/shared';
+import { BackLink, MetadataFooter, DetailHeader } from '@/components/shared';
 import {
   InlineSaveCancel,
   InlineEditRemove,
@@ -52,6 +53,25 @@ export default function CompanyDetail({
   const [editingContactId, setEditingContactId] = useState<number | null>(null);
   const [editedRole, setEditedRole] = useState('');
   const [editedIsPrimary, setEditedIsPrimary] = useState(false);
+  const updateMutation = useMutation({
+    mutationFn: (updated: { companyName?: string; summary?: string }) =>
+      companiesApi.updateCompany(companyId, updated),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['company', companyId] });
+      queryClient.invalidateQueries({ queryKey: ['companies'] });
+    },
+  });
+
+  const nameField = useAutosaveField(company?.companyName, {
+    fieldName: 'company name',
+    onSave: (val) => updateMutation.mutateAsync({ companyName: val }),
+  });
+
+  const summaryField = useAutosaveField(company?.summary, {
+    fieldName: 'summary',
+    onSave: (val) => updateMutation.mutateAsync({ summary: val }),
+  });
+
   const [showHideDialog, setShowHideDialog] = useState(false);
   const [contactToRemove, setContactToRemove] = useState<{
     id: number;
@@ -147,17 +167,13 @@ export default function CompanyDetail({
       <BackLink href="/companies">Companies</BackLink>
 
       <div className="mt-4 flex items-start justify-between">
-        <div className="flex items-center gap-4">
-          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-zinc-100 dark:bg-zinc-800">
-            <BuildingOfficeIcon className="h-8 w-8 text-zinc-600 dark:text-zinc-400" />
-          </div>
-          <div>
-            <Heading>{company.companyName}</Heading>
-            <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
-              Created {dayjs(company.createdAt).format('MMMM D, YYYY')}
-            </p>
-          </div>
-        </div>
+        <DetailHeader
+          icon={BuildingOfficeIcon}
+          title={nameField.value}
+          onTitleBlur={(val) => nameField.setValue(val)}
+          isSaving={nameField.isSaving}
+          createdAt={company.createdAt}
+        />
         <div className="flex gap-3">
           <Button onClick={handleEdit}>
             <PencilIcon className="h-4 w-4" />
@@ -262,14 +278,22 @@ export default function CompanyDetail({
       </div>
 
       {/* Summary */}
-      {company.summary && (
-        <div className="mt-8">
+      <div className="mt-8">
+        <div className="flex items-center justify-between mb-4">
           <Subheading>Summary</Subheading>
-          <div className="mt-4 whitespace-pre-wrap rounded-lg bg-zinc-50 p-4 text-sm text-zinc-950 dark:bg-zinc-900 dark:text-white">
-            {company.summary}
-          </div>
+          {summaryField.isSaving && (
+            <span className="text-xs font-bold uppercase tracking-widest text-zinc-400 animate-pulse">
+              Syncing...
+            </span>
+          )}
         </div>
-      )}
+        <Textarea
+          value={summaryField.value}
+          onChange={(e) => summaryField.setValue(e.target.value)}
+          placeholder="No summary yet. Add one..."
+          className="h-32"
+        />
+      </div>
 
       {/* Associated Contacts */}
       <div className="mt-8">
@@ -406,16 +430,11 @@ export default function CompanyDetail({
       />
 
       {/* Activity Timeline */}
-      <div className="mt-8">
-        <Subheading>Activity</Subheading>
-        <div className="mt-4">
-          <ActivityTimeline
-            entityType="company"
-            entityId={companyId}
-            currentUserId={currentUserId ?? undefined}
-          />
-        </div>
-      </div>
+      <ActivityTimeline
+        entityType="company"
+        entityId={companyId}
+        currentUserId={currentUserId ?? undefined}
+      />
     </>
   );
 }

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useAutosaveField } from '@/hooks/useAutosaveField';
 import {
   BriefcaseIcon,
   PencilIcon,
@@ -9,7 +10,6 @@ import {
 import {
   Badge,
   Divider,
-  Heading,
   Button,
   Input,
   Subheading,
@@ -27,7 +27,7 @@ import AddCompanyToDealDialog from './AddCompanyToDealDialog';
 import AddContactToDealDialog from './AddContactToDealDialog';
 
 import ConfirmDialog from '@/components/shared/ConfirmDialog';
-import { BackLink, MetadataFooter } from '@/components/shared';
+import { BackLink, MetadataFooter, DetailHeader } from '@/components/shared';
 import {
   InlineSaveCancel,
   InlineEditRemove,
@@ -53,6 +53,20 @@ export default function DealDetail({ dealId, currentUserId }: DealDetailProps) {
   const [editingContactId, setEditingContactId] = useState<number | null>(null);
   const [editedRole, setEditedRole] = useState('');
   const [editedContactIsPrimary, setEditedContactIsPrimary] = useState(false);
+
+  const updateMutation = useMutation({
+    mutationFn: (updated: { title: string }) =>
+      dealsApi.updateDeal(dealId, updated),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['deal', dealId] });
+      queryClient.invalidateQueries({ queryKey: ['deals'] });
+    },
+  });
+
+  const titleField = useAutosaveField(deal?.title, {
+    fieldName: 'deal title',
+    onSave: (val) => updateMutation.mutateAsync({ title: val }),
+  });
 
   // Confirm dialog state
   const [showHideDialog, setShowHideDialog] = useState(false);
@@ -210,22 +224,22 @@ export default function DealDetail({ dealId, currentUserId }: DealDetailProps) {
       <BackLink href="/deals">Deals</BackLink>
 
       <div className="mt-4 flex items-start justify-between">
-        <div className="flex items-center gap-4">
-          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-zinc-100 dark:bg-zinc-800">
-            <BriefcaseIcon className="h-8 w-8 text-zinc-600 dark:text-zinc-400" />
-          </div>
-          <div>
-            <Heading>{deal.title}</Heading>
-            <div className="mt-1 flex items-center gap-2">
+        <DetailHeader
+          icon={BriefcaseIcon}
+          title={titleField.value}
+          onTitleBlur={(val) => titleField.setValue(val)}
+          isSaving={titleField.isSaving}
+          subtitle={
+            <>
               <Badge color={getStageColor(deal.stage)} className="text-xs">
                 {formatStage(deal.stage)}
               </Badge>
               <span className="text-sm text-zinc-600 dark:text-zinc-400">
                 {formatCurrency(deal.value, deal.currency)}
               </span>
-            </div>
-          </div>
-        </div>
+            </>
+          }
+        />
         <div className="flex gap-3">
           <Button onClick={handleEdit}>
             <PencilIcon className="h-4 w-4" />
@@ -559,16 +573,11 @@ export default function DealDetail({ dealId, currentUserId }: DealDetailProps) {
       <MetadataFooter createdAt={deal.createdAt} updatedAt={deal.updatedAt} />
 
       {/* Activity Timeline */}
-      <div className="mt-8">
-        <Subheading>Activity</Subheading>
-        <div className="mt-4">
-          <ActivityTimeline
-            entityType="deal"
-            entityId={dealId}
-            currentUserId={currentUserId ?? undefined}
-          />
-        </div>
-      </div>
+      <ActivityTimeline
+        entityType="deal"
+        entityId={dealId}
+        currentUserId={currentUserId ?? undefined}
+      />
     </>
   );
 }

@@ -41,6 +41,7 @@ test.describe("Deal Activity Timeline - Authenticated", () => {
     await page
       .getByRole("heading", { name: /Activity/i })
       .scrollIntoViewIfNeeded();
+    await dealDetailPage.showHistory();
     await page
       .locator('[data-testid="activity-item"]')
       .or(page.getByText("No activity yet"))
@@ -66,6 +67,11 @@ test.describe("Deal Activity Timeline - Authenticated", () => {
   }) => {
     await dealDetailPage.goto(dealId);
 
+    await page
+      .getByRole("heading", { name: "Activity", exact: true })
+      .scrollIntoViewIfNeeded();
+    await dealDetailPage.showHistory();
+
     // Wait for activity section to stabilize before capturing baseline count
     await page
       .locator('[data-testid="activity-item"]')
@@ -87,8 +93,14 @@ test.describe("Deal Activity Timeline - Authenticated", () => {
   // ── 2. Create ─────────────────────────────────────────────────────────────
   test("should create a new comment successfully", async ({
     dealDetailPage,
+    page
   }) => {
     await dealDetailPage.goto(dealId);
+
+    await page
+      .getByRole("heading", { name: "Activity", exact: true })
+      .scrollIntoViewIfNeeded();
+    await dealDetailPage.showHistory();
 
     const commentText = `Test comment created at ${new Date().toISOString()}`;
     await dealDetailPage.createComment(commentText);
@@ -118,6 +130,10 @@ test.describe("Deal Activity Timeline - Authenticated", () => {
     page,
   }) => {
     await dealDetailPage.goto(dealId);
+    await page
+      .getByRole("heading", { name: "Activity", exact: true })
+      .scrollIntoViewIfNeeded();
+    await dealDetailPage.showHistory();
 
     const originalComment = "Original comment " + Date.now();
     const editedComment = "Edited comment " + Date.now();
@@ -147,6 +163,10 @@ test.describe("Deal Activity Timeline - Authenticated", () => {
     page,
   }) => {
     await dealDetailPage.goto(dealId);
+    await page
+      .getByRole("heading", { name: "Activity", exact: true })
+      .scrollIntoViewIfNeeded();
+    await dealDetailPage.showHistory();
 
     const originalComment = "Original comment for cancel test " + Date.now();
 

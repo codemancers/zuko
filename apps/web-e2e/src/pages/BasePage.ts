@@ -39,6 +39,28 @@ export class BasePage {
   }
 
   /**
+   * Show history in the activity timeline if it exists and is hidden
+   */
+  async showHistory() {
+    const showBtn = this.page.getByRole("button", { name: /SHOW HISTORY/i });
+    if (await showBtn.isVisible()) {
+      await showBtn.click();
+      // Wait for history to animate in
+      await this.page.waitForTimeout(500);
+    }
+  }
+
+  /**
+   * Update the page title (h1) via inline editing
+   */
+  async updateTitle(newTitle: string) {
+    const heading = this.page.locator('h1[contenteditable="true"]');
+    await heading.fill(newTitle);
+    await heading.blur();
+    await this.page.waitForTimeout(500);
+  }
+
+  /**
    * Take a screenshot
    */
   async screenshot(options?: { path?: string; fullPage?: boolean }) {

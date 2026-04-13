@@ -395,7 +395,8 @@ describe('TaskDetail', () => {
 
     await waitFor(() => {
       expect(screen.getByText('Test Task')).toBeInTheDocument();
-      expect(screen.getByText('Test description')).toBeInTheDocument();
+      expect(screen.getByText(/Created March 12, 2026/i)).toBeInTheDocument();
+      expect(screen.getByDisplayValue('Test description')).toBeInTheDocument();
       expect(screen.getByText(/john@example\.com/i)).toBeInTheDocument();
     });
   });

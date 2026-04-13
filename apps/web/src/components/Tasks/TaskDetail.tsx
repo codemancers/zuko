@@ -4,19 +4,22 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getTask } from '@/server/query-options';
 import { tasksApi } from '@/lib/api/tasks';
 import { useRouter } from 'next/navigation';
-import { Badge, Button, Divider, Heading, Subheading } from '@zuko/ui-kit';
+import { Badge, Button, Divider, Subheading, Textarea } from '@zuko/ui-kit';
 import dayjs from 'dayjs';
 import {
   PencilIcon,
   TrashIcon,
+  ClipboardDocumentCheckIcon,
 } from '@heroicons/react/24/outline';
 import type { TaskStatus } from '@/lib/api/tasks';
 import { useState } from 'react';
+import { useAutosaveField } from '@/hooks/useAutosaveField';
 import ConfirmDialog from '@/components/shared/ConfirmDialog';
-import { BackLink } from '@/components/shared';
+import { BackLink, DetailHeader } from '@/components/shared';
 import { LoadingState } from '@/components/shared';
 import ActivityTimeline from '@/components/Activity/ActivityTimeline';
 import { toast } from 'sonner';
+import { MetadataFooter } from '@/components/shared/MetadataFooter';
 
 const statusConfig: Record<
   TaskStatus,
@@ -38,6 +41,25 @@ const TaskDetail = ({ taskId, currentUserId }: TaskDetailProps) => {
   const queryClient = useQueryClient();
   const { data: task, isLoading } = useQuery(getTask(taskId));
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+
+  const updateMutation = useMutation({
+    mutationFn: (updated: { title?: string; description?: string }) =>
+      tasksApi.updateTask(taskId, updated),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['task', taskId] });
+      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+    },
+  });
+
+  const titleField = useAutosaveField(task?.title, {
+    fieldName: 'task title',
+    onSave: (val) => updateMutation.mutateAsync({ title: val }),
+  });
+
+  const descriptionField = useAutosaveField(task?.description, {
+    fieldName: 'description',
+    onSave: (val) => updateMutation.mutateAsync({ description: val }),
+  });
 
   const deleteMutation = useMutation({
     mutationFn: () => tasksApi.deleteTask(taskId),
@@ -74,14 +96,13 @@ const TaskDetail = ({ taskId, currentUserId }: TaskDetailProps) => {
       <BackLink href="/tasks">Tasks</BackLink>
 
       <div className="mt-4 flex items-start justify-between">
-        <div>
-          <Heading>{task.title}</Heading>
-          {task.description && (
-            <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
-              {task.description}
-            </p>
-          )}
-        </div>
+        <DetailHeader
+          icon={ClipboardDocumentCheckIcon}
+          title={titleField.value}
+          onTitleBlur={(val) => titleField.setValue(val)}
+          isSaving={titleField.isSaving || descriptionField.isSaving}
+          createdAt={task.createdAt}
+        />
         <div className="flex gap-2">
           <Button onClick={() => router.push(`/tasks/${taskId}/edit`)}>
             <PencilIcon className="h-4 w-4" />
@@ -111,7 +132,7 @@ const TaskDetail = ({ taskId, currentUserId }: TaskDetailProps) => {
         isLoading={deleteMutation.isPending}
       />
 
-      <dl className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
+      <dl className="mt-6 grid grid-cols-1 gap-6 sm:grid-cols-3">
         {[
           {
             label: 'Status',
@@ -131,25 +152,34 @@ const TaskDetail = ({ taskId, currentUserId }: TaskDetailProps) => {
               <span className="text-zinc-400">—</span>
             ),
           },
-          {
-            label: 'Created',
-            value: dayjs(task.createdAt).format('MMM D, YYYY'),
-          },
-          {
-            label: 'Updated',
-            value: dayjs(task.updatedAt).format('MMM D, YYYY'),
-          },
         ].map(({ label, value }) => (
-          <div key={label}>
-            <dt className="text-sm font-medium text-zinc-500 dark:text-zinc-400">
+          <div key={label} className="flex flex-col gap-1">
+            <dt className="text-xs font-bold uppercase tracking-wider text-zinc-500">
               {label}
             </dt>
-            <dd className="mt-1 text-sm text-zinc-900 dark:text-white">
+            <dd className="text-sm text-zinc-950 dark:text-white">
               {value}
             </dd>
           </div>
         ))}
       </dl>
+
+      <div className="mt-8">
+        <div className="flex items-center justify-between mb-2">
+          <Subheading>Description</Subheading>
+          {descriptionField.isSaving && (
+            <span className="text-xs font-bold uppercase tracking-widest text-zinc-400 animate-pulse">
+              Syncing...
+            </span>
+          )}
+        </div>
+        <Textarea
+          value={descriptionField.value}
+          onChange={(e) => descriptionField.setValue(e.target.value)}
+          placeholder="Add a detailed description..."
+          className="h-32"
+        />
+      </div>
 
       {task.subtasks.length > 0 && (
         <>
@@ -201,17 +231,17 @@ const TaskDetail = ({ taskId, currentUserId }: TaskDetailProps) => {
         </div>
       )}
 
+      <MetadataFooter
+        createdAt={task.createdAt}
+        updatedAt={task.updatedAt}
+      />
+
       {/* Activity Timeline */}
-      <div className="mt-8">
-        <Subheading>Activity</Subheading>
-        <div className="mt-4">
-          <ActivityTimeline
-            entityType="task"
-            entityId={taskId}
-            currentUserId={currentUserId ?? undefined}
-          />
-        </div>
-      </div>
+      <ActivityTimeline
+        entityType="task"
+        entityId={taskId}
+        currentUserId={currentUserId ?? undefined}
+      />
     </>
   );
 };

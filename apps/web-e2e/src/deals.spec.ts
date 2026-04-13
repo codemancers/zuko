@@ -275,6 +275,26 @@ test.describe('Deal Detail', () => {
   });
 });
 
+test.describe('Deal Detail - Inline Editing', () => {
+  test('can edit deal title inline', async ({ dealDetailPage, page }) => {
+    const newTitle = `Updated Deal Title ${Date.now()}`;
+    await dealDetailPage.goto(1);
+
+    const updatePromise = page.waitForResponse(
+      (resp) => resp.url().includes("/deals/1") && resp.request().method() === "PATCH"
+    );
+    await dealDetailPage.updateTitle(newTitle);
+    await updatePromise;
+
+    // Verify immediate UI update
+    await expect(dealDetailPage.dealTitle).toHaveText(newTitle);
+
+    // Refresh and verify persistence
+    await page.reload();
+    await expect(dealDetailPage.dealTitle).toHaveText(newTitle);
+  });
+});
+
 test.describe('Deal Edit', () => {
   // ── 1. Empty state (edit form) ──────────────────────────────────────────
   test('can navigate to edit page', async ({ dealDetailPage, page }) => {
@@ -643,63 +663,6 @@ test.describe('Deal Associations - Contacts', () => {
     } else {
       expect(isEmptyStateVisible).toBe(false);
     }
-  });
-});
-
-test.describe('Deal Activity Timeline - Comments', () => {
-  let dealId: number;
-
-  test.beforeEach(async () => {
-    // Rely on predictable Deal ID instead of brittle DOM navigation
-    dealId = 1;
-  });
-
-  // ── 1. Empty state ─────────────────────────────────────────────────────
-  test('should display comment input form in activity timeline', async ({
-    dealDetailPage,
-    page,
-  }) => {
-    await dealDetailPage.goto(dealId);
-
-    const commentInput = page.getByPlaceholder('Add a comment...');
-    await expect(commentInput).toBeVisible({ timeout: 30000 });
-    await commentInput.scrollIntoViewIfNeeded();
-
-    const postButton = page.getByRole('button', { name: /Post Comment/i });
-    await expect(postButton).toBeVisible();
-  });
-
-  test('should disable post button when comment is empty', async ({
-    dealDetailPage,
-    page,
-  }) => {
-    await dealDetailPage.goto(dealId);
-
-    const commentInput = page.getByPlaceholder('Add a comment...');
-    await commentInput.scrollIntoViewIfNeeded();
-    await expect(commentInput).toBeVisible({ timeout: 30000 });
-
-    const postButton = page.getByRole('button', { name: /Post Comment/i });
-    await expect(postButton).toBeDisabled();
-  });
-
-  // ── 2. Create ───────────────────────────────────────────────────────────
-  test('should create a new comment successfully on a deal', async ({
-    dealDetailPage,
-    page,
-  }) => {
-    await dealDetailPage.goto(dealId);
-
-    const commentText = `Deal test comment ${Date.now()}`;
-
-    const commentInput = page.getByPlaceholder('Add a comment...');
-    await commentInput.scrollIntoViewIfNeeded();
-    await commentInput.waitFor({ state: 'visible', timeout: 30000 });
-    await commentInput.fill(commentText);
-
-    await page.getByRole('button', { name: /Post Comment/i }).click();
-
-    await expect(page.getByText(commentText)).toBeVisible({ timeout: 10000 });
   });
 });
 

@@ -41,6 +41,7 @@ test.describe("Task Activity Timeline - System Events", () => {
         title: `Activity Event Task ${Date.now()}`,
       });
       await taskDetailPage.goto(taskId);
+      await taskDetailPage.showHistory();
 
       await expect(
         page
@@ -72,6 +73,7 @@ test.describe("Task Activity Timeline - System Events", () => {
       await page.getByLabel(/status/i).selectOption("IN_PROGRESS");
       await page.getByRole("button", { name: /save changes/i }).click();
       await page.waitForURL(/\/tasks\/\d+$/, { timeout: 10000 });
+      await taskDetailPage.showHistory();
 
       await expect(
         page
@@ -103,6 +105,7 @@ test.describe("Task Activity Timeline - System Events", () => {
       await titleInput.fill(updatedTitle);
       await page.getByRole("button", { name: /save changes/i }).click();
       await page.waitForURL(/\/tasks\/\d+$/, { timeout: 10000 });
+      await taskDetailPage.showHistory();
 
       await expect(
         page

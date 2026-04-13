@@ -16,7 +16,7 @@ export class DealDetailPage extends BasePage {
     super(page);
     this.editButton = page.getByRole("button", { name: /^Edit$/i });
     this.hideButton = page.getByRole("button", { name: /Hide/i });
-    this.dealTitle = page.locator("h1");
+    this.dealTitle = page.locator('h1[contenteditable="true"]');
     this.dealStage = page
       .locator("span")
       .filter({

@@ -75,6 +75,45 @@ test.describe('Tasks - CRUD', () => {
   });
 });
 
+test.describe("Task Detail - Inline Editing", () => { 
+  test('can edit task title inline', async ({ taskDetailPage, page }) => {
+    const newTitle = `Updated Task Title ${Date.now()}`;
+    await taskDetailPage.goto(1);
+
+    const updatePromise = page.waitForResponse(
+      (resp) => resp.url().includes("/tasks/1") && resp.request().method() === "PATCH"
+    );
+    await taskDetailPage.updateTitle(newTitle);
+    await updatePromise;
+
+    // Verify immediate UI update
+    await expect(taskDetailPage.taskTitle).toHaveText(newTitle);
+
+    // Refresh and verify persistence
+    await page.reload();
+    await expect(taskDetailPage.taskTitle).toHaveText(newTitle);
+  });
+
+  test('can edit task description inline', async ({ taskDetailPage, page }) => {
+    const newDescription = `Updated Task Description ${Date.now()}`;
+    await taskDetailPage.goto(1);
+
+    const updatePromise = page.waitForResponse(
+      (resp) => resp.url().includes("/tasks/1") && resp.request().method() === "PATCH"
+    );
+    // updateDescription has a hardcoded sleep but we rely on the API wait for safety
+    await taskDetailPage.updateDescription(newDescription);
+    await updatePromise;
+
+    // Verify immediate UI update (checking the value of the textarea)
+    await expect(taskDetailPage.taskDescription).toHaveValue(newDescription);
+
+    // Refresh and verify persistence
+    await page.reload();
+    await expect(taskDetailPage.taskDescription).toHaveValue(newDescription);
+  });
+});
+
 test.describe('Task Form Validation', () => {
   test('shows validation error when title is empty', async ({ page }) => {
     await page.goto('/tasks/new');
