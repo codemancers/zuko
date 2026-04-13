@@ -88,3 +88,4 @@ vitest.config.*.timestamp*
 AGENTS.md
 CLAUDE.md
 GEMINI.md
+.antigravity/

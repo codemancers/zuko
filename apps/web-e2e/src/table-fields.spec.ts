@@ -56,7 +56,7 @@ test.describe('Table Fields - Add Column Dialog', () => {
     await tablePage.openAddColumnDialog();
     await tablePage.selectFieldType('currency');
 
-    const currencyInput = tablePage.addColumnDialog.getByPlaceholder('e.g. USD, EUR, GBP');
+    const currencyInput = tablePage.addColumnDialog.getByPlaceholder('Search currency...');
     await expect(currencyInput).toBeVisible();
     await expect(currencyInput).toHaveValue('USD');
   });

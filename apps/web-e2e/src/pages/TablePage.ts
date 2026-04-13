@@ -14,6 +14,7 @@ export class TablePage extends BasePage {
   readonly fieldTypeSelect: Locator;
   readonly createFieldButton: Locator;
   readonly cancelButton: Locator;
+  readonly currencyComboboxInput: Locator;
 
   constructor(page: Page) {
     super(page);
@@ -26,6 +27,7 @@ export class TablePage extends BasePage {
     this.fieldTypeSelect = this.addColumnDialog.getByRole('combobox').first();
     this.createFieldButton = page.getByRole('button', { name: /Create field/i });
     this.cancelButton = page.getByRole('button', { name: /Cancel/i });
+    this.currencyComboboxInput = this.addColumnDialog.getByPlaceholder('Search currency...');
   }
 
   async openAddColumnDialog() {
@@ -50,9 +52,16 @@ export class TablePage extends BasePage {
     await this.fillColumnDetails(name, key);
     await this.selectFieldType('currency');
 
-    const currencyInput = this.addColumnDialog.getByPlaceholder('e.g. USD, EUR, GBP');
-    await currencyInput.clear();
-    await currencyInput.fill(currencyCode);
+    await this.currencyComboboxInput.waitFor({ state: 'visible', timeout: 10000 });
+
+    // The currency picker is a combobox. Keep the default USD untouched unless
+    // the caller explicitly asks for a different code, in which case select the
+    // matching option from the list so component state updates correctly.
+    if (currencyCode !== 'USD') {
+      await this.currencyComboboxInput.clear();
+      await this.currencyComboboxInput.fill(currencyCode);
+      await this.page.getByRole('option', { name: new RegExp(`^${currencyCode}\\b`, 'i') }).click();
+    }
 
     await this.createFieldButton.click();
     await this.page.getByText('Add new field').waitFor({ state: 'hidden', timeout: 10000 });
