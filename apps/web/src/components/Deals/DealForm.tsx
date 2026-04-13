@@ -52,7 +52,7 @@ export default function DealForm({ deal, mode, currentUserId }: DealFormProps) {
   const router = useRouter();
   const queryClient = useQueryClient();
 
-  const { data: currencies = [], isLoading: isLoadingCurrencies } = useQuery({
+  const { data: currencies = [] } = useQuery({
     queryKey: ['currencies'],
     queryFn: metadataApi.getCurrencies,
   });
