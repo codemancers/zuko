@@ -100,7 +100,7 @@ jobs:
         run: bunx nx affected -t test --parallel=1 --nxBail
 
       - name: E2E tests
-        run: bunx nx affected -t e2e --exclude=backend-e2e --exclude=ai-agents-e2e --nxBail
+        run: bunx nx affected -t e2e --exclude=backend-e2e --exclude=ai-agents-e2e --nxBail --verbose
 
       # Nx Cloud recommends fixes for failures to help you get CI green faster. Learn more: https://nx.dev/ci/features/self-healing-ci
       - run: bunx nx fix-ci
