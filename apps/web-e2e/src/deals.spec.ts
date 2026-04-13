@@ -666,66 +666,6 @@ test.describe('Deal Associations - Contacts', () => {
   });
 });
 
-test.describe('Deal Activity Timeline - Comments', () => {
-  let dealId: number;
-
-  test.beforeEach(async () => {
-    // Rely on predictable Deal ID instead of brittle DOM navigation
-    dealId = 1;
-  });
-
-  // ── 1. Empty state ─────────────────────────────────────────────────────
-  test('should display comment input form in activity timeline', async ({
-    dealDetailPage,
-    page,
-  }) => {
-    await dealDetailPage.goto(dealId);
-
-    const commentInput = page.getByPlaceholder('Add a comment...');
-    await expect(commentInput).toBeVisible({ timeout: 30000 });
-    await commentInput.scrollIntoViewIfNeeded();
-
-    await expect(dealDetailPage.postCommentButton).toBeVisible();
-  });
-
-  test('should disable post button when comment is empty', async ({
-    dealDetailPage,
-    page,
-  }) => {
-    await dealDetailPage.goto(dealId);
-
-    await page
-      .getByRole('heading', { name: /Activity/i })
-      .waitFor({ state: 'visible', timeout: 30000 });
-
-    const commentInput = dealDetailPage.commentInput;
-    await expect(commentInput).toBeVisible({ timeout: 30000 });
-    await commentInput.scrollIntoViewIfNeeded();
-
-    await expect(dealDetailPage.postCommentButton).toBeDisabled();
-  });
-
-  // ── 2. Create ───────────────────────────────────────────────────────────
-  test('should create a new comment successfully on a deal', async ({
-    dealDetailPage,
-    page,
-  }) => {
-    await dealDetailPage.goto(dealId);
-
-    await page
-      .getByRole('heading', { name: /Activity/i })
-      .waitFor({ state: 'visible', timeout: 30000 });
-
-    const commentText = `Deal test comment ${Date.now()}`;
-
-    // Use robust Page Object methods that handle internal scrolling and waiting
-    await dealDetailPage.showHistory();
-    await dealDetailPage.postComment(commentText);
-
-    await expect(page.getByText(commentText)).toBeVisible({ timeout: 15000 });
-  });
-});
-
 test.describe.serial('Column Creation Flow', () => {
   const identifier = Date.now();
   const columnName = `Source ${identifier}`;

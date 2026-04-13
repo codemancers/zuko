@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getTask } from '@/server/query-options';
 import { tasksApi } from '@/lib/api/tasks';
 import { useRouter } from 'next/navigation';
-import { Badge, Button, Divider, Heading, Subheading, Text, Textarea } from '@zuko/ui-kit';
+import { Badge, Button, Divider, Subheading, Textarea } from '@zuko/ui-kit';
 import dayjs from 'dayjs';
 import {
   PencilIcon,
@@ -15,7 +15,7 @@ import type { TaskStatus } from '@/lib/api/tasks';
 import { useState } from 'react';
 import { useAutosaveField } from '@/hooks/useAutosaveField';
 import ConfirmDialog from '@/components/shared/ConfirmDialog';
-import { BackLink } from '@/components/shared';
+import { BackLink, DetailHeader } from '@/components/shared';
 import { LoadingState } from '@/components/shared';
 import ActivityTimeline from '@/components/Activity/ActivityTimeline';
 import { toast } from 'sonner';
@@ -96,32 +96,13 @@ const TaskDetail = ({ taskId, currentUserId }: TaskDetailProps) => {
       <BackLink href="/tasks">Tasks</BackLink>
 
       <div className="mt-4 flex items-start justify-between">
-        <div className="flex items-center gap-4">
-          <div className="flex h-16 w-16 flex-shrink-0 items-center justify-center rounded-full bg-zinc-100 dark:bg-zinc-800">
-            <ClipboardDocumentCheckIcon className="h-8 w-8 text-zinc-600 dark:text-zinc-400" />
-          </div>
-          <div>
-            <Heading
-              level={1}
-              contentEditable
-              suppressContentEditableWarning
-              onBlur={(e) => titleField.setValue(e.currentTarget.innerText)}
-              className="text-3xl font-bold tracking-tight text-zinc-950 dark:text-white outline-none focus:ring-2 focus:ring-blue-500 rounded px-1 -mx-1 transition-all"
-            >
-              {titleField.value}
-            </Heading>
-            <div className="flex items-center gap-2 mt-1">
-              <Text>
-                Created {dayjs(task.createdAt).format('MMMM D, YYYY')}
-              </Text>
-              {(titleField.isSaving || descriptionField.isSaving) && (
-                <span className="text-xs font-bold uppercase tracking-widest text-zinc-400 animate-pulse">
-                  Syncing...
-                </span>
-              )}
-            </div>
-          </div>
-        </div>
+        <DetailHeader
+          icon={ClipboardDocumentCheckIcon}
+          title={titleField.value}
+          onTitleBlur={(val) => titleField.setValue(val)}
+          isSaving={titleField.isSaving || descriptionField.isSaving}
+          createdAt={task.createdAt}
+        />
         <div className="flex gap-2">
           <Button onClick={() => router.push(`/tasks/${taskId}/edit`)}>
             <PencilIcon className="h-4 w-4" />
@@ -187,7 +168,7 @@ const TaskDetail = ({ taskId, currentUserId }: TaskDetailProps) => {
         <div className="flex items-center justify-between mb-2">
           <Subheading>Description</Subheading>
           {descriptionField.isSaving && (
-            <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 animate-pulse">
+            <span className="text-xs font-bold uppercase tracking-widest text-zinc-400 animate-pulse">
               Syncing...
             </span>
           )}

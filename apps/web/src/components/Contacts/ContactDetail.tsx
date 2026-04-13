@@ -11,21 +11,18 @@ import {
   Badge,
   Button,
   Divider,
-  Heading,
   Subheading,
-  Text,
   Textarea,
 } from '@zuko/ui-kit';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getContact, getDealsByContact } from '@/server/query-options';
 import { contactsApi } from '@/lib/api/contacts';
-import dayjs from 'dayjs';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import ActivityTimeline from '@/components/Activity/ActivityTimeline';
 
 import ConfirmDialog from '@/components/shared/ConfirmDialog';
-import { BackLink, MetadataFooter } from '@/components/shared';
+import { BackLink, MetadataFooter, DetailHeader } from '@/components/shared';
 import { LoadingState } from '@/components/shared';
 import { formatCurrency, getStageColor, formatStage } from '@/lib/format-utils';
 
@@ -92,32 +89,13 @@ export default function ContactDetail({
       <BackLink href="/contacts">Contacts</BackLink>
 
       <div className="mt-4 flex items-start justify-between">
-        <div className="flex items-center gap-4">
-          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-zinc-100 dark:bg-zinc-800">
-            <UserIcon className="h-8 w-8 text-zinc-600 dark:text-zinc-400" />
-          </div>
-          <div>
-            <Heading
-              level={1}
-              contentEditable
-              suppressContentEditableWarning
-              onBlur={(e) => nameField.setValue(e.currentTarget.innerText)}
-              className="text-3xl font-bold tracking-tight text-zinc-950 dark:text-white outline-none focus:ring-2 focus:ring-blue-500 rounded px-1 -mx-1 transition-all"
-            >
-              {nameField.value}
-            </Heading>
-            <div className="flex items-center gap-2 mt-1">
-              <Text>
-                Created {dayjs(contact.createdAt).format('MMMM D, YYYY')}
-              </Text>
-              {nameField.isSaving && (
-                <span className="text-xs font-bold uppercase tracking-widest text-zinc-400 animate-pulse">
-                  Syncing...
-                </span>
-              )}
-            </div>
-          </div>
-        </div>
+        <DetailHeader
+          icon={UserIcon}
+          title={nameField.value}
+          onTitleBlur={(val) => nameField.setValue(val)}
+          isSaving={nameField.isSaving}
+          createdAt={contact.createdAt}
+        />
         <div className="flex gap-3">
           <Button onClick={handleEdit}>
             <PencilIcon className="h-4 w-4" />
