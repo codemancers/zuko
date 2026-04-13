@@ -4,8 +4,19 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { BaseTable } from '@/components/Table';
 import { ColumnDef } from '@tanstack/react-table';
+
+function createQueryClient() {
+  return new QueryClient({ defaultOptions: { queries: { retry: false } } });
+}
+
+function renderWithQuery(ui: React.ReactElement) {
+  return render(
+    <QueryClientProvider client={createQueryClient()}>{ui}</QueryClientProvider>
+  );
+}
 
 interface MockData {
   id: number;
@@ -41,7 +52,7 @@ const mockEmptyStateConfig = {
 
 describe('BaseTable', () => {
   it('renders loading state', () => {
-    render(
+    renderWithQuery(
       <BaseTable
         columns={mockColumns}
         data={[]}
@@ -55,7 +66,7 @@ describe('BaseTable', () => {
   });
 
   it('renders table structure even when data is empty', () => {
-    render(
+    renderWithQuery(
       <BaseTable
         columns={mockColumns}
         data={[]}
@@ -72,7 +83,7 @@ describe('BaseTable', () => {
   });
 
   it('renders data table correctly', () => {
-    render(
+    renderWithQuery(
       <BaseTable
         columns={mockColumns}
         data={mockData}
@@ -93,7 +104,7 @@ describe('BaseTable', () => {
 
   it('calls onRowClick when a row is clicked', () => {
     const onRowClick = vi.fn();
-    render(
+    renderWithQuery(
       <BaseTable
         columns={mockColumns}
         data={mockData}
@@ -108,7 +119,7 @@ describe('BaseTable', () => {
   });
 
   it('renders pagination info when totalCount is provided', () => {
-    render(
+    renderWithQuery(
       <BaseTable
         columns={mockColumns}
         data={mockData}
@@ -125,7 +136,7 @@ describe('BaseTable', () => {
   describe('Add Row Feature', () => {
     it('renders the add row button when showAddRow is true', () => {
       const onAddRow = vi.fn();
-      render(
+      renderWithQuery(
         <BaseTable
           columns={mockColumns}
           data={mockData}
@@ -146,7 +157,7 @@ describe('BaseTable', () => {
 
   describe('Add Column Feature', () => {
     it('renders the add column trigger in the header when showAddColumn is true', () => {
-      render(
+      renderWithQuery(
         <BaseTable
           columns={mockColumns}
           data={mockData}
@@ -162,7 +173,7 @@ describe('BaseTable', () => {
 
     it('opens the Add Column dialog when the header trigger is clicked', () => {
       const onAddColumn = vi.fn();
-      render(
+      renderWithQuery(
         <BaseTable
           columns={mockColumns}
           data={mockData}

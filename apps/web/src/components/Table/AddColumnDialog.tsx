@@ -13,26 +13,45 @@ import {
   Field,
   Label,
   ErrorMessage,
+  Combobox,
+  ComboboxOption,
+  ComboboxLabel,
+  ComboboxDescription,
+  Text,
 } from '@zuko/ui-kit';
-import {
-  PlusIcon,
-  XMarkIcon,
-} from '@heroicons/react/20/solid';
+import { useQuery } from '@tanstack/react-query';
+import { metadataApi } from '@/lib/api';
+import { PlusIcon, XMarkIcon } from '@heroicons/react/20/solid';
 import { ColumnConfig } from '@/types/table-metadata';
 
 interface AddColumnDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  onAdd: (name: string, key: string, type: string, config?: ColumnConfig) => void;
+  onAdd: (
+    name: string,
+    key: string,
+    type: string,
+    config?: ColumnConfig,
+  ) => void;
 }
 
-export function AddColumnDialog({ isOpen, onClose, onAdd }: AddColumnDialogProps) {
+export function AddColumnDialog({
+  isOpen,
+  onClose,
+  onAdd,
+}: AddColumnDialogProps) {
   const [fieldName, setFieldName] = useState('');
   const [columnKey, setColumnKey] = useState('');
   const [fieldType, setFieldType] = useState('text');
   const [options, setOptions] = useState<string[]>(['']);
+  const [currencyCode, setCurrencyCode] = useState('USD');
   const [errors, setErrors] = useState<Record<string, string>>({});
   const validKeyRegex = /^[a-z0-9_]+$/;
+
+  const { data: currencies = [] } = useQuery({
+    queryKey: ['currencies'],
+    queryFn: metadataApi.getCurrencies,
+  });
 
   const validate = () => {
     const newErrors: Record<string, string> = {};
@@ -46,7 +65,8 @@ export function AddColumnDialog({ isOpen, onClose, onAdd }: AddColumnDialogProps
       newErrors.fieldType = 'Field type is required';
     }
     if (columnKey && !validKeyRegex.test(columnKey)) {
-      newErrors.columnKey = 'Column key must contain only lowercase letters, numbers, and underscores';
+      newErrors.columnKey =
+        'Column key must contain only lowercase letters, numbers, and underscores';
     }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -57,6 +77,7 @@ export function AddColumnDialog({ isOpen, onClose, onAdd }: AddColumnDialogProps
     setColumnKey('');
     setFieldType('text');
     setOptions(['']);
+    setCurrencyCode('USD');
     setErrors({});
     onClose();
   };
@@ -82,15 +103,19 @@ export function AddColumnDialog({ isOpen, onClose, onAdd }: AddColumnDialogProps
   const handleAdd = () => {
     if (validate()) {
       let config: ColumnConfig | undefined = undefined;
-      
-      if (fieldType === 'select') {
+
+      if (fieldType === 'select' || fieldType === 'multiselect') {
         const validOptions = options
           .filter((opt) => opt.trim() !== '')
           .map((opt) => ({ label: opt.trim(), value: opt.trim() }));
-        
+
         if (validOptions.length > 0) {
           config = { options: validOptions };
         }
+      }
+
+      if (fieldType === 'currency') {
+        config = { currency: currencyCode.trim().toUpperCase() || 'USD' };
       }
 
       onAdd(fieldName, columnKey, fieldType, config);
@@ -98,6 +123,7 @@ export function AddColumnDialog({ isOpen, onClose, onAdd }: AddColumnDialogProps
       setColumnKey('');
       setFieldType('text');
       setOptions(['']);
+      setCurrencyCode('USD');
       setErrors({});
       onClose();
     }
@@ -112,26 +138,26 @@ export function AddColumnDialog({ isOpen, onClose, onAdd }: AddColumnDialogProps
       <DialogBody className="space-y-4">
         <Field>
           <Label>Field Name</Label>
-          <Input 
-            placeholder="Field name" 
-            value={fieldName} 
+          <Input
+            placeholder="Field name"
+            value={fieldName}
             onChange={(e) => {
               setFieldName(e.target.value);
               if (errors.fieldName) setErrors({ ...errors, fieldName: '' });
-            }} 
+            }}
             invalid={!!errors.fieldName}
           />
           {errors.fieldName && <ErrorMessage>{errors.fieldName}</ErrorMessage>}
         </Field>
         <Field>
           <Label>Column Key</Label>
-          <Input 
-            placeholder="Unique column key (e.g. favorite_color)" 
-            value={columnKey} 
+          <Input
+            placeholder="Unique column key (e.g. favorite_color)"
+            value={columnKey}
             onChange={(e) => {
               setColumnKey(e.target.value);
               if (errors.columnKey) setErrors({ ...errors, columnKey: '' });
-            }} 
+            }}
             invalid={!!errors.columnKey}
           />
           {errors.columnKey && <ErrorMessage>{errors.columnKey}</ErrorMessage>}
@@ -148,12 +174,37 @@ export function AddColumnDialog({ isOpen, onClose, onAdd }: AddColumnDialogProps
             <option value="text">Single line text</option>
             <option value="number">Number</option>
             <option value="date">Date</option>
+            <option value="currency">Currency</option>
             <option value="select">Select</option>
+            <option value="multiselect">Multi-select</option>
           </Select>
           {errors.fieldType && <ErrorMessage>{errors.fieldType}</ErrorMessage>}
         </Field>
 
-        {fieldType === 'select' && (
+        {fieldType === 'currency' && (
+          <Field>
+            <Label>Currency Code</Label>
+            <Combobox
+              options={currencies}
+              value={currencies.find((c) => c.code === currencyCode) || null}
+              onChange={(value) => {
+                if (value) setCurrencyCode(value.code);
+              }}
+              displayValue={(value) => value?.code}
+              placeholder="Search currency..."
+            >
+              {(currency) => (
+                <ComboboxOption key={currency.code} value={currency}>
+                  <ComboboxLabel>{currency.code}</ComboboxLabel>
+                  <ComboboxDescription>{currency.name}</ComboboxDescription>
+                  <Text className="ml-2">({currency.symbol})</Text>
+                </ComboboxOption>
+              )}
+            </Combobox>
+          </Field>
+        )}
+
+        {(fieldType === 'select' || fieldType === 'multiselect') && (
           <Field>
             <Label>Options</Label>
             <div data-slot="control" className="space-y-2">
@@ -174,7 +225,11 @@ export function AddColumnDialog({ isOpen, onClose, onAdd }: AddColumnDialogProps
                   </Button>
                 </div>
               ))}
-              <Button plain onClick={handleAddOption} className="mt-1 !h-8 text-xs !flex !items-center">
+              <Button
+                plain
+                onClick={handleAddOption}
+                className="mt-1 !h-8 text-xs !flex !items-center"
+              >
                 <PlusIcon className="h-4 w-4 mr-1" />
                 <span>Add option</span>
               </Button>
@@ -183,7 +238,9 @@ export function AddColumnDialog({ isOpen, onClose, onAdd }: AddColumnDialogProps
         )}
       </DialogBody>
       <DialogActions>
-        <Button plain onClick={onCloseDialog}>Cancel</Button>
+        <Button plain onClick={onCloseDialog}>
+          Cancel
+        </Button>
         <Button onClick={handleAdd}>Create field</Button>
       </DialogActions>
     </Dialog>

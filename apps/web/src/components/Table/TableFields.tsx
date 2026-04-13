@@ -5,7 +5,14 @@ export const EMPTY_VALUE = '—';
 import type { ReactNode } from 'react';
 import Image from 'next/image';
 import { ArrowTopRightOnSquareIcon } from '@heroicons/react/24/outline';
-import { Badge, Link, Avatar } from '@zuko/ui-kit';
+import {
+  Badge,
+  Link,
+  Avatar,
+  Tooltip,
+  TooltipTrigger,
+  TooltipContent,
+} from '@zuko/ui-kit';
 import { type ColumnMetadata, type BaseRow } from './types';
 
 type RowWithEntityFields = BaseRow & {
@@ -15,13 +22,18 @@ type RowWithEntityFields = BaseRow & {
 };
 
 export interface FieldProps<T extends BaseRow = BaseRow> {
-  value: unknown; 
+  value: unknown;
   display?: string | null;
   metadata: ColumnMetadata;
   row: T;
 }
 
-export function TextField({ value, display, metadata, row }: FieldProps<BaseRow>) {
+export function TextField({
+  value,
+  display,
+  metadata,
+  row,
+}: FieldProps<BaseRow>) {
   const content = display ?? (value as ReactNode) ?? '';
   const renderConfig = metadata.config?.render;
 
@@ -64,7 +76,13 @@ export function TextField({ value, display, metadata, row }: FieldProps<BaseRow>
     return (
       <div className="flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-400">
         {iconSrc && (
-          <Image src={iconSrc} alt={String(content)} width={16} height={16} className="shrink-0 grayscale" />
+          <Image
+            src={iconSrc}
+            alt={String(content)}
+            width={16}
+            height={16}
+            className="shrink-0 grayscale"
+          />
         )}
         <span>{content}</span>
       </div>
@@ -80,7 +98,10 @@ export function TextField({ value, display, metadata, row }: FieldProps<BaseRow>
         rel="noopener noreferrer"
         onClick={(e) => e.stopPropagation()}
       >
-        <Badge color="blue" className="inline-flex items-center gap-1 cursor-pointer">
+        <Badge
+          color="blue"
+          className="inline-flex items-center gap-1 cursor-pointer"
+        >
           <ArrowTopRightOnSquareIcon className="h-3 w-3" />
           Join
         </Badge>
@@ -89,20 +110,23 @@ export function TextField({ value, display, metadata, row }: FieldProps<BaseRow>
   }
 
   return (
-    <span className="text-sm text-zinc-600 dark:text-zinc-400">
-      {content}
-    </span>
+    <span className="text-sm text-zinc-600 dark:text-zinc-400">{content}</span>
   );
 }
 
-export function EntityField<T extends BaseRow>({ value, display, metadata, row }: FieldProps<T>) {
+export function EntityField<T extends BaseRow>({
+  value,
+  display,
+  metadata,
+  row,
+}: FieldProps<T>) {
   const rowWithEntityField = row as T & RowWithEntityFields;
   const entityType = metadata.config?.entityType;
 
   let linkTarget: string | undefined = '#';
   let displayText = display ?? value ?? rowWithEntityField.name;
 
-  if(entityType === 'company') {
+  if (entityType === 'company') {
     linkTarget = `/companies/${row.id}`;
     displayText = display ?? value ?? rowWithEntityField.companyName;
   } else if (entityType === 'contact') {
@@ -150,29 +174,68 @@ export function EntityField<T extends BaseRow>({ value, display, metadata, row }
             {displayText as ReactNode}
           </Link>
         ) : (
-          displayText as ReactNode
+          (displayText as ReactNode)
         )}
       </div>
     </div>
   );
-};
+}
 
 export function DateField({ value, display }: FieldProps<BaseRow>) {
   let content: ReactNode = '';
   if (display) {
     content = display;
   } else if (value instanceof Date) {
-    content = value.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' });
+    content = value.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+    });
   } else if (value !== null && value !== undefined) {
     content = value as ReactNode;
   }
   return (
     <span className="text-sm text-zinc-600 dark:text-zinc-400">{content}</span>
   );
-};
+}
 
-export function CurrencyField({ value, display }: FieldProps<BaseRow>) {
-  return <span className="text-sm text-zinc-600 dark:text-zinc-400">{(display ?? (value as ReactNode)) ?? ''}</span>;
+export function CurrencyField({
+  value,
+  display,
+  metadata,
+}: FieldProps<BaseRow>) {
+  if (display) {
+    return (
+      <span className="text-sm text-zinc-600 dark:text-zinc-400">
+        {display}
+      </span>
+    );
+  }
+
+  const numValue =
+    typeof value === 'number'
+      ? value
+      : value !== null && value !== undefined
+        ? Number(value)
+        : null;
+
+  if (numValue === null || Number.isNaN(numValue)) {
+    return <span className="text-sm text-zinc-400">{EMPTY_VALUE}</span>;
+  }
+
+  const currency = metadata.config?.currency ?? 'USD';
+  const formatted = new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency,
+  }).format(numValue);
+
+  return (
+    <span className="text-sm text-zinc-600 dark:text-zinc-400">
+      {formatted}
+    </span>
+  );
 }
 
 export function SelectField({ value, display, metadata }: FieldProps<BaseRow>) {
@@ -190,33 +253,71 @@ export function SelectField({ value, display, metadata }: FieldProps<BaseRow>) {
     );
   }
 
-  return <span className="text-sm text-zinc-600 dark:text-zinc-400">{content}</span>;
+  return (
+    <span className="text-sm text-zinc-600 dark:text-zinc-400">{content}</span>
+  );
 }
 
 export function MultiSelectField({ value, metadata }: FieldProps<BaseRow>) {
-  const values = Array.isArray(value) ? (value as string[]) : value ? [String(value)] : [];
+  const values = Array.isArray(value)
+    ? (value as string[])
+    : value
+      ? [String(value)]
+      : [];
   const options = metadata.config?.options ?? [];
 
-  const getLabel = (val: string) => options.find((o) => o.value === val)?.label ?? val;
-  const getColor = (val: string): string => metadata.config?.colorMap?.[val] ?? 'zinc';
+  const getLabel = (val: string) =>
+    options.find((o) => o.value === val)?.label ?? val;
+  const getColor = (val: string): string =>
+    metadata.config?.colorMap?.[val] ?? 'zinc';
 
   if (values.length === 0) {
     return <span className="text-sm text-zinc-400">{EMPTY_VALUE}</span>;
   }
 
+  const MAX_VISIBLE = 2;
+  const visibleValues = values.slice(0, MAX_VISIBLE);
+  const remainingCount = values.length - MAX_VISIBLE;
+
   return (
-    <div className="flex flex-wrap gap-1">
-      {values.map((val) => (
-        <Badge key={val} color={getColor(val) as any} className="text-xs">
+    <div className="flex items-center gap-1 whitespace-nowrap overflow-hidden">
+      {visibleValues.map((val) => (
+        <Badge
+          key={val}
+          color={getColor(val) as any}
+          className="text-[10px] py-0.5 px-1.5 truncate max-w-[100px]"
+        >
           {getLabel(val)}
         </Badge>
       ))}
+      {remainingCount > 0 && (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Badge
+              color="zinc"
+              className="text-[10px] py-0.5 px-1.5 shrink-0 cursor-default"
+            >
+              +{remainingCount}
+            </Badge>
+          </TooltipTrigger>
+          <TooltipContent side="top">
+            <div className="flex flex-col gap-1">
+              {values.slice(MAX_VISIBLE).map((val) => (
+                <div key={val}>{getLabel(val)}</div>
+              ))}
+            </div>
+          </TooltipContent>
+        </Tooltip>
+      )}
     </div>
   );
 }
 
 // Registry of field components
-export const FieldRegistry: Record<string, (props: FieldProps<BaseRow>) => ReactNode> = {
+export const FieldRegistry: Record<
+  string,
+  (props: FieldProps<BaseRow>) => ReactNode
+> = {
   text: TextField,
   date: DateField,
   currency: CurrencyField,
@@ -229,4 +330,4 @@ export function DataField(props: FieldProps) {
   // fallback to default as TextField
   const Component = FieldRegistry[props.metadata.fieldType] || TextField;
   return <Component {...props} />;
-};
+}

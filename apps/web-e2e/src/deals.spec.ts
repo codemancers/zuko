@@ -53,7 +53,7 @@ test.describe('Deals - Authenticated', () => {
     await page.getByLabel(/Deal Title/i).fill('TEST E2E DEAL');
     await page.getByLabel(/Deal Value/i).fill('100000');
     await page.getByLabel(/Stage/i).selectOption('Prospecting');
-    await page.getByLabel(/Currency/i).selectOption('USD');
+    // Currency defaults to USD — no interaction needed
     await page.getByLabel(/Priority/i).selectOption('2'); // value in form; label is "P2 - Medium"
     await page.getByLabel(/Expected Close Date/i).fill('2026-01-01');
     await page.getByLabel(/Source/i).fill('Website');
@@ -193,12 +193,10 @@ test.describe('Deal Creation', () => {
   test('displays currency options', async ({ page }) => {
     await page.goto('/deals/new');
 
-    const currencySelect = page.getByLabel(/Currency/i);
-    await expect(currencySelect).toBeVisible();
-
-    const options = await currencySelect.locator('option').allTextContents();
-    expect(options.length).toBeGreaterThan(0);
-    expect(options.some((opt) => opt.includes('USD'))).toBe(true);
+    // Currency is a Combobox pre-filled with USD by default
+    const currencyInput = page.getByPlaceholder('Search currency...');
+    await expect(currencyInput).toBeVisible();
+    await expect(currencyInput).toHaveValue('USD');
   });
 
   test('displays priority options', async ({ page }) => {
@@ -547,6 +545,7 @@ test.describe('Deal Associations - Contacts', () => {
 
   test('can close Add Contact dialog', async ({ dealDetailPage, page }) => {
     await dealDetailPage.goto(1);
+    await expect(dealDetailPage.dealTitle).toBeVisible({ timeout: 15000 });
 
     await page.getByRole('button', { name: /Add Contact/i }).click();
 
@@ -663,8 +662,8 @@ test.describe('Deal Activity Timeline - Comments', () => {
     await dealDetailPage.goto(dealId);
 
     const commentInput = page.getByPlaceholder('Add a comment...');
-    await commentInput.scrollIntoViewIfNeeded();
     await expect(commentInput).toBeVisible({ timeout: 30000 });
+    await commentInput.scrollIntoViewIfNeeded();
 
     const postButton = page.getByRole('button', { name: /Post Comment/i });
     await expect(postButton).toBeVisible();

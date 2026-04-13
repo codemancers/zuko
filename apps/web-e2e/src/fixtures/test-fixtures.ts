@@ -15,12 +15,14 @@ import {
   MeetingDetailPage,
   TasksPage,
   TaskDetailPage,
+  TablePage,
 } from '../pages';
 import { createUserWithSession, AuthUser } from '../lib/auth';
 
 type TestFixtures = {
   tasksPage: TasksPage;
   taskDetailPage: TaskDetailPage;
+  tablePage: TablePage;
   signInPage: SignInPage;
   contactsPage: ContactsPage;
   contactDetailPage: ContactDetailPage;
@@ -96,6 +98,10 @@ export const test = base.extend<TestFixtures>({
   },
   meetingDetailPage: async ({ page }, use) => {
     await use(new MeetingDetailPage(page));
+  },
+
+  tablePage: async ({ page }, use) => {
+    await use(new TablePage(page));
   },
 
   // ── Auth fixture ──────────────────────────────────────────────────────────

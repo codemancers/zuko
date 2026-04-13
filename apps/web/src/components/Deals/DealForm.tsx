@@ -1,13 +1,14 @@
 'use client';
 
 import { useState } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import {
   dealsApi,
   type Deal,
   type CreateDealDto,
   type UpdateDealDto,
 } from '@/lib/api/deals';
+import { metadataApi } from '@/lib/api/metadata';
 import {
   Input,
   Field,
@@ -16,6 +17,10 @@ import {
   Description,
   ErrorMessage,
   Select,
+  Combobox,
+  ComboboxOption,
+  ComboboxLabel,
+  ComboboxDescription,
 } from '@zuko/ui-kit';
 import { FormActions } from '@/components/shared';
 import { useRouter } from 'next/navigation';
@@ -35,14 +40,6 @@ const DEAL_STAGES = [
   { value: 'closed_lost', label: 'Closed Lost' },
 ];
 
-const CURRENCIES = [
-  { value: 'USD', label: 'USD ($)' },
-  { value: 'EUR', label: 'EUR (€)' },
-  { value: 'GBP', label: 'GBP (£)' },
-  { value: 'JPY', label: 'JPY (¥)' },
-  { value: 'INR', label: 'INR (₹)' },
-];
-
 const PRIORITIES = [
   { value: 0, label: 'P0 - Critical' },
   { value: 1, label: 'P1 - High' },
@@ -54,6 +51,11 @@ const PRIORITIES = [
 export default function DealForm({ deal, mode, currentUserId }: DealFormProps) {
   const router = useRouter();
   const queryClient = useQueryClient();
+
+  const { data: currencies = [] } = useQuery({
+    queryKey: ['currencies'],
+    queryFn: metadataApi.getCurrencies,
+  });
 
   const [formData, setFormData] = useState({
     title: deal?.title || '',
@@ -87,7 +89,9 @@ export default function DealForm({ deal, mode, currentUserId }: DealFormProps) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['deals'] });
       queryClient.invalidateQueries({ queryKey: ['deal', deal!.id] });
-      queryClient.invalidateQueries({ queryKey: ['timeline', 'deal', deal!.id] });
+      queryClient.invalidateQueries({
+        queryKey: ['timeline', 'deal', deal!.id],
+      });
       router.push(`/deals/${deal!.id}`);
     },
     onError: (error: any) => {
@@ -206,19 +210,26 @@ export default function DealForm({ deal, mode, currentUserId }: DealFormProps) {
 
         <Field>
           <Label>Currency</Label>
-          <Select
-            value={formData.currency}
-            onChange={(e) =>
-              setFormData({ ...formData, currency: e.target.value })
-            }
+          <Combobox
+            options={currencies}
+            value={currencies.find((c) => c.code === formData.currency) || null}
+            onChange={(value) => {
+              if (value) setFormData({ ...formData, currency: value.code });
+            }}
+            displayValue={(value) => value?.code}
             disabled={isLoading}
+            placeholder="Search currency..."
           >
-            {CURRENCIES.map((currency) => (
-              <option key={currency.value} value={currency.value}>
-                {currency.label}
-              </option>
-            ))}
-          </Select>
+            {(currency) => (
+              <ComboboxOption key={currency.code} value={currency}>
+                <ComboboxLabel>{currency.code}</ComboboxLabel>
+                <ComboboxDescription>{currency.name}</ComboboxDescription>
+                <span className="text-zinc-500 text-xs ml-2">
+                  ({currency.symbol})
+                </span>
+              </ComboboxOption>
+            )}
+          </Combobox>
         </Field>
       </div>
 

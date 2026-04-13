@@ -1,7 +1,7 @@
 'use client';
 
 import { ReactNode } from 'react';
-import { Input, Select } from '@zuko/ui-kit';
+import { Input, InputGroup, Select, MultiSelect } from '@zuko/ui-kit';
 import type { ColumnMetadata } from './types';
 
 export interface EditorProps {
@@ -40,6 +40,32 @@ export function NumberEditor({ value, onChange, onBlur, onKeyDown, autoFocus }: 
   );
 }
 
+export function CurrencyEditor({ value, onChange, onBlur, onKeyDown, autoFocus, metadata }: EditorProps) {
+  const currency = metadata.config?.currency ?? 'USD';
+  const symbol = new Intl.NumberFormat('en-US', { style: 'currency', currency })
+    .formatToParts(0)
+    .find((p) => p.type === 'currency')?.value ?? '$';
+
+  return (
+    <InputGroup className="w-full !min-w-0">
+      <span
+        data-slot="icon"
+        className="pointer-events-none text-zinc-500 dark:text-zinc-400 text-sm font-medium select-none"
+      >
+        {symbol}
+      </span>
+      <Input
+        autoFocus={autoFocus}
+        type="number"
+        value={value as number ?? ''}
+        onChange={(e) => onChange(e.target.value === '' ? null : Number(e.target.value))}
+        onBlur={onBlur}
+        onKeyDown={onKeyDown}
+      />
+    </InputGroup>
+  );
+}
+
 export function DateEditor({ value, onChange, onBlur, onKeyDown, autoFocus }: EditorProps) {
   // Format the date value to YYYY-MM-DD for the native browser date picker
   const formattedValue = (value && !isNaN(new Date(value as string).getTime()))
@@ -61,7 +87,7 @@ export function DateEditor({ value, onChange, onBlur, onKeyDown, autoFocus }: Ed
 
 export function SelectEditor({ value, onChange, onBlur, onKeyDown, autoFocus, metadata }: EditorProps) {
   const options = metadata.config?.options ?? [];
-  
+
   return (
     <Select
       autoFocus={autoFocus}
@@ -84,29 +110,20 @@ export function SelectEditor({ value, onChange, onBlur, onKeyDown, autoFocus, me
   );
 }
 
-export function MultiSelectEditor({ value, onChange, onBlur, onKeyDown, autoFocus, metadata }: EditorProps) {
+export function MultiSelectEditor({ value, onChange, onBlur, metadata }: EditorProps) {
   const options = metadata.config?.options ?? [];
   const current = Array.isArray(value) ? (value as string[]) : [];
 
   return (
-    <select
-      multiple
-      autoFocus={autoFocus}
+    <MultiSelect
       value={current}
-      onChange={(e) => {
-        const selected = Array.from(e.target.selectedOptions).map((o) => o.value);
-        onChange(selected);
-      }}
-      onBlur={onBlur}
-      onKeyDown={onKeyDown}
-      className="w-full !min-w-0 rounded border border-zinc-300 bg-white text-sm dark:border-zinc-600 dark:bg-zinc-800"
-    >
-      {options.map((option) => (
-        <option key={option.value} value={option.value}>
-          {option.label}
-        </option>
-      ))}
-    </select>
+      options={options}
+      onChange={onChange as (value: string[]) => void}
+      onClose={onBlur}
+      colorMap={metadata.config?.colorMap}
+      placeholder="Select..."
+      className="w-full !min-w-0"
+    />
   );
 }
 
@@ -142,7 +159,7 @@ export const EditorRegistry: Record<string, (props: EditorProps) => ReactNode> =
   multiselect: MultiSelectEditor,
   relation: RelationEditor,
   date: DateEditor,
-  currency: NumberEditor,
+  currency: CurrencyEditor,
   entity: TextEditor,
 };
 
