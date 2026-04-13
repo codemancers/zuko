@@ -247,7 +247,7 @@ export default function DealDetail({ dealId, currentUserId }: DealDetailProps) {
                 {formatCurrency(deal.value, deal.currency)}
               </span>
               {titleField.isSaving && (
-                <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 animate-pulse">
+                <span className="text-xs font-bold uppercase tracking-widest text-zinc-400 animate-pulse">
                   Syncing...
                 </span>
               )}

@@ -2,7 +2,7 @@
 
 import { useRef, useState, type ReactNode } from 'react';
 import clsx from 'clsx';
-import { Avatar, Button } from '@zuko/ui-kit';
+import { Avatar, Button, Subheading } from '@zuko/ui-kit';
 import {
   CodeBracketIcon as Code,
   LinkIcon as Link2,
@@ -189,9 +189,9 @@ export function CommentBox({
       <div className="flex-1 min-w-0">
         {/* Title */}
         {title && (
-          <p className="mb-6 text-sm font-semibold text-zinc-950 dark:text-white">
+          <Subheading className='mb-6'>
             {title}
-          </p>
+          </Subheading>
         )}
 
         {/* Editor box */}

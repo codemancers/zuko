@@ -13,6 +13,7 @@ import {
   Divider,
   Heading,
   Subheading,
+  Text,
   Textarea,
 } from '@zuko/ui-kit';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -106,11 +107,11 @@ export default function ContactDetail({
               {nameField.value}
             </Heading>
             <div className="flex items-center gap-2 mt-1">
-              <p className="text-sm text-zinc-600 dark:text-zinc-400">
+              <Text>
                 Created {dayjs(contact.createdAt).format('MMMM D, YYYY')}
-              </p>
+              </Text>
               {nameField.isSaving && (
-                <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 animate-pulse">
+                <span className="text-xs font-bold uppercase tracking-widest text-zinc-400 animate-pulse">
                   Syncing...
                 </span>
               )}
@@ -215,7 +216,7 @@ export default function ContactDetail({
         <div className="flex items-center justify-between mb-4">
           <Subheading>Notes</Subheading>
           {notesField.isSaving && (
-            <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 animate-pulse">
+            <span className="text-xs font-bold uppercase tracking-widest text-zinc-400 animate-pulse">
               Syncing...
             </span>
           )}

@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getTask } from '@/server/query-options';
 import { tasksApi } from '@/lib/api/tasks';
 import { useRouter } from 'next/navigation';
-import { Badge, Button, Divider, Heading, Subheading, Textarea } from '@zuko/ui-kit';
+import { Badge, Button, Divider, Heading, Subheading, Text, Textarea } from '@zuko/ui-kit';
 import dayjs from 'dayjs';
 import {
   PencilIcon,
@@ -111,11 +111,11 @@ const TaskDetail = ({ taskId, currentUserId }: TaskDetailProps) => {
               {titleField.value}
             </Heading>
             <div className="flex items-center gap-2 mt-1">
-              <p className="text-sm text-zinc-600 dark:text-zinc-400">
+              <Text>
                 Created {dayjs(task.createdAt).format('MMMM D, YYYY')}
-              </p>
+              </Text>
               {(titleField.isSaving || descriptionField.isSaving) && (
-                <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 animate-pulse">
+                <span className="text-xs font-bold uppercase tracking-widest text-zinc-400 animate-pulse">
                   Syncing...
                 </span>
               )}

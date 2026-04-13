@@ -685,8 +685,7 @@ test.describe('Deal Activity Timeline - Comments', () => {
     await expect(commentInput).toBeVisible({ timeout: 30000 });
     await commentInput.scrollIntoViewIfNeeded();
 
-    const postButton = page.getByRole('button', { name: /Post Comment/i });
-    await expect(postButton).toBeVisible();
+    await expect(dealDetailPage.postCommentButton).toBeVisible();
   });
 
   test('should disable post button when comment is empty', async ({
@@ -695,12 +694,15 @@ test.describe('Deal Activity Timeline - Comments', () => {
   }) => {
     await dealDetailPage.goto(dealId);
 
-    const commentInput = page.getByPlaceholder('Add a comment...');
-    await commentInput.scrollIntoViewIfNeeded();
-    await expect(commentInput).toBeVisible({ timeout: 30000 });
+    await page
+      .getByRole('heading', { name: /Activity/i })
+      .waitFor({ state: 'visible', timeout: 30000 });
 
-    const postButton = page.getByRole('button', { name: /Post Comment/i });
-    await expect(postButton).toBeDisabled();
+    const commentInput = dealDetailPage.commentInput;
+    await expect(commentInput).toBeVisible({ timeout: 30000 });
+    await commentInput.scrollIntoViewIfNeeded();
+
+    await expect(dealDetailPage.postCommentButton).toBeDisabled();
   });
 
   // ── 2. Create ───────────────────────────────────────────────────────────

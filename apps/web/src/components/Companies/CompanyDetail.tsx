@@ -183,11 +183,11 @@ export default function CompanyDetail({
               {nameField.value}
             </Heading>
             <div className="flex items-center gap-2 mt-1">
-              <p className="text-sm text-zinc-600 dark:text-zinc-400">
+              <Text>
                 Created {dayjs(company.createdAt).format('MMMM D, YYYY')}
-              </p>
+              </Text>
               {nameField.isSaving && (
-                <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 animate-pulse">
+                <span className="text-xs font-bold uppercase tracking-widest text-zinc-400 animate-pulse">
                   Syncing...
                 </span>
               )}
@@ -302,7 +302,7 @@ export default function CompanyDetail({
         <div className="flex items-center justify-between mb-4">
           <Subheading>Summary</Subheading>
           {summaryField.isSaving && (
-            <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 animate-pulse">
+            <span className="text-xs font-bold uppercase tracking-widest text-zinc-400 animate-pulse">
               Syncing...
             </span>
           )}
