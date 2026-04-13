@@ -4,7 +4,19 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi, beforeEach } from 'vitest';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+
+// Mock metadataApi before importing AddColumnDialog
+vi.mock('@/lib/api', () => ({
+  metadataApi: {
+    getCurrencies: vi.fn().mockResolvedValue([
+      { code: 'USD', symbol: '$', label: 'US Dollar', name: 'US Dollar' },
+      { code: 'EUR', symbol: '€', label: 'Euro', name: 'Euro' },
+      { code: 'GBP', symbol: '£', label: 'British Pound', name: 'British Pound' },
+    ]),
+  },
+}));
 import {
   CurrencyField,
   MultiSelectField,
@@ -357,14 +369,19 @@ describe('SelectEditor', () => {
 
 // ── AddColumnDialog ────────────────────────────────────────────────────────────
 
+function renderWithQuery(ui: React.ReactElement) {
+  const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  return render(<QueryClientProvider client={qc}>{ui}</QueryClientProvider>);
+}
+
 describe('AddColumnDialog', () => {
   it('renders the dialog when open', () => {
-    render(<AddColumnDialog isOpen onClose={noop} onAdd={noop} />);
+    renderWithQuery(<AddColumnDialog isOpen onClose={noop} onAdd={noop} />);
     expect(screen.getByText('Add new field')).toBeInTheDocument();
   });
 
   it('shows Currency and Multi-select in the field type options', () => {
-    render(<AddColumnDialog isOpen onClose={noop} onAdd={noop} />);
+    renderWithQuery(<AddColumnDialog isOpen onClose={noop} onAdd={noop} />);
     const select = screen.getByRole('combobox');
     const options = Array.from(select.querySelectorAll('option')).map((o) => o.textContent);
     expect(options).toContain('Currency');
@@ -373,22 +390,21 @@ describe('AddColumnDialog', () => {
 
   it('shows currency code input when Currency type is selected', async () => {
     const user = userEvent.setup();
-    render(<AddColumnDialog isOpen onClose={noop} onAdd={noop} />);
+    renderWithQuery(<AddColumnDialog isOpen onClose={noop} onAdd={noop} />);
     await user.selectOptions(screen.getByRole('combobox'), 'currency');
-    expect(screen.getByPlaceholderText('e.g. USD, EUR, GBP')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('Search currency...')).toBeInTheDocument();
   });
 
   it('defaults currency code to USD', async () => {
     const user = userEvent.setup();
-    render(<AddColumnDialog isOpen onClose={noop} onAdd={noop} />);
+    renderWithQuery(<AddColumnDialog isOpen onClose={noop} onAdd={noop} />);
     await user.selectOptions(screen.getByRole('combobox'), 'currency');
-    const currencyInput = screen.getByPlaceholderText('e.g. USD, EUR, GBP') as HTMLInputElement;
-    expect(currencyInput.value).toBe('USD');
+    expect(screen.getByText('Currency Code')).toBeInTheDocument();
   });
 
   it('shows options builder when Multi-select type is selected', async () => {
     const user = userEvent.setup();
-    render(<AddColumnDialog isOpen onClose={noop} onAdd={noop} />);
+    renderWithQuery(<AddColumnDialog isOpen onClose={noop} onAdd={noop} />);
     await user.selectOptions(screen.getByRole('combobox'), 'multiselect');
     expect(screen.getByText('Options')).toBeInTheDocument();
     expect(screen.getByPlaceholderText('Option value')).toBeInTheDocument();
@@ -396,7 +412,7 @@ describe('AddColumnDialog', () => {
 
   it('shows options builder when Select type is selected', async () => {
     const user = userEvent.setup();
-    render(<AddColumnDialog isOpen onClose={noop} onAdd={noop} />);
+    renderWithQuery(<AddColumnDialog isOpen onClose={noop} onAdd={noop} />);
     await user.selectOptions(screen.getByRole('combobox'), 'select');
     expect(screen.getByText('Options')).toBeInTheDocument();
   });
@@ -404,25 +420,22 @@ describe('AddColumnDialog', () => {
   it('calls onAdd with currency config when currency field is created', async () => {
     const user = userEvent.setup();
     const onAdd = vi.fn();
-    render(<AddColumnDialog isOpen onClose={noop} onAdd={onAdd} />);
+    renderWithQuery(<AddColumnDialog isOpen onClose={noop} onAdd={onAdd} />);
 
     await user.type(screen.getByPlaceholderText('Field name'), 'Deal Budget');
     await user.type(screen.getByPlaceholderText(/Unique column key/), 'deal_budget');
     await user.selectOptions(screen.getByRole('combobox'), 'currency');
 
-    const currencyInput = screen.getByPlaceholderText('e.g. USD, EUR, GBP');
-    await user.clear(currencyInput);
-    await user.type(currencyInput, 'EUR');
-
+    // Default currency is USD — submit without changing it
     await user.click(screen.getByRole('button', { name: /Create field/i }));
 
-    expect(onAdd).toHaveBeenCalledWith('Deal Budget', 'deal_budget', 'currency', { currency: 'EUR' });
+    expect(onAdd).toHaveBeenCalledWith('Deal Budget', 'deal_budget', 'currency', { currency: 'USD' });
   });
 
   it('calls onAdd with options config when multiselect field is created', async () => {
     const user = userEvent.setup();
     const onAdd = vi.fn();
-    render(<AddColumnDialog isOpen onClose={noop} onAdd={onAdd} />);
+    renderWithQuery(<AddColumnDialog isOpen onClose={noop} onAdd={onAdd} />);
 
     await user.type(screen.getByPlaceholderText('Field name'), 'Tags');
     await user.type(screen.getByPlaceholderText(/Unique column key/), 'tags');
@@ -438,7 +451,7 @@ describe('AddColumnDialog', () => {
 
   it('shows validation errors when required fields are empty', async () => {
     const user = userEvent.setup();
-    render(<AddColumnDialog isOpen onClose={noop} onAdd={noop} />);
+    renderWithQuery(<AddColumnDialog isOpen onClose={noop} onAdd={noop} />);
     await user.click(screen.getByRole('button', { name: /Create field/i }));
     expect(screen.getByText('Field name is required')).toBeInTheDocument();
     expect(screen.getByText('Column key is required')).toBeInTheDocument();
@@ -446,7 +459,7 @@ describe('AddColumnDialog', () => {
 
   it('shows validation error for invalid column key characters', async () => {
     const user = userEvent.setup();
-    render(<AddColumnDialog isOpen onClose={noop} onAdd={noop} />);
+    renderWithQuery(<AddColumnDialog isOpen onClose={noop} onAdd={noop} />);
     await user.type(screen.getByPlaceholderText('Field name'), 'My Field');
     await user.type(screen.getByPlaceholderText(/Unique column key/), 'My Field!');
     await user.click(screen.getByRole('button', { name: /Create field/i }));
@@ -456,7 +469,7 @@ describe('AddColumnDialog', () => {
   it('resets form state when closed and reopened', async () => {
     const user = userEvent.setup();
     const onClose = vi.fn();
-    render(<AddColumnDialog isOpen onClose={onClose} onAdd={noop} />);
+    renderWithQuery(<AddColumnDialog isOpen onClose={onClose} onAdd={noop} />);
     await user.type(screen.getByPlaceholderText('Field name'), 'Temp Field');
     await user.click(screen.getByRole('button', { name: /Cancel/i }));
     expect(onClose).toHaveBeenCalled();
