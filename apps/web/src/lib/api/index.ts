@@ -12,3 +12,4 @@ export * from './tasks';
 export * from './activities';
 export * from './tables';
 export * from './meetings';
+export * from './metadata';

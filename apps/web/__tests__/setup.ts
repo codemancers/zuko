@@ -31,3 +31,13 @@ vi.mock('@/hooks/use-search-param', () => ({
     return { inputValue: val, setInputValue: setVal, debouncedValue: val };
   }
 }));
+
+vi.mock('@/lib/api/metadata', () => ({
+  metadataApi: {
+    getCurrencies: vi.fn().mockResolvedValue([
+      { code: 'USD', symbol: '$', label: 'USD ($)' },
+      { code: 'EUR', symbol: '€', label: 'EUR (€)' },
+      { code: 'GBP', symbol: '£', label: 'GBP (£)' },
+    ]),
+  },
+}));

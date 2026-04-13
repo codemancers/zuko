@@ -3,6 +3,11 @@
 import * as Headless from '@headlessui/react';
 import clsx from 'clsx';
 import { useEffect, useRef } from 'react';
+import {
+  Tooltip,
+  TooltipTrigger,
+  TooltipContent,
+} from '../components/ui/tooltip';
 import { Badge } from './badge';
 
 export interface MultiSelectOption {
@@ -11,7 +16,13 @@ export interface MultiSelectOption {
 }
 
 /** Calls onClose once when the Listbox transitions from open → closed */
-function CloseTracker({ open, onClose }: { open: boolean; onClose?: () => void }) {
+function CloseTracker({
+  open,
+  onClose,
+}: {
+  open: boolean;
+  onClose?: () => void;
+}) {
   const wasOpen = useRef(false);
 
   useEffect(() => {
@@ -44,7 +55,10 @@ export function MultiSelect({
   const getColor = (val: string) => colorMap?.[val] ?? 'zinc';
 
   const selectedLabels = value
-    .map((v) => ({ label: options.find((o) => o.value === v)?.label ?? v, value: v }))
+    .map((v) => ({
+      label: options.find((o) => o.value === v)?.label ?? v,
+      value: v,
+    }))
     .filter(Boolean);
 
   return (
@@ -65,7 +79,7 @@ export function MultiSelect({
           >
             <Headless.ListboxButton
               className={clsx([
-                'relative flex min-h-[calc(--spacing(9)+2px)] w-full cursor-default flex-wrap items-center gap-1 rounded-lg py-1 pl-[calc(--spacing(3.5)-1px)] pr-[calc(--spacing(10)-1px)] sm:min-h-[calc(--spacing(7)+2px)] sm:pl-[calc(--spacing(3)-1px)] sm:pr-[calc(--spacing(9)-1px)]',
+                'relative flex min-h-[calc(--spacing(9)+2px)] w-full cursor-default flex-nowrap items-center gap-1 overflow-hidden rounded-lg py-1 pl-[calc(--spacing(3.5)-1px)] pr-[calc(--spacing(10)-1px)] sm:min-h-[calc(--spacing(7)+2px)] sm:pl-[calc(--spacing(3)-1px)] sm:pr-[calc(--spacing(9)-1px)]',
                 'text-base/6 sm:text-sm/6',
                 'border border-zinc-950/10 data-hover:border-zinc-950/20 dark:border-white/10 dark:data-hover:border-white/20',
                 'bg-transparent dark:bg-white/5',
@@ -75,11 +89,33 @@ export function MultiSelect({
               {selectedLabels.length === 0 ? (
                 <span className="text-zinc-500">{placeholder}</span>
               ) : (
-                selectedLabels.map((item) => (
-                  <Badge key={item.value} color={getColor(item.value) as any} className="text-xs">
-                    {item.label}
-                  </Badge>
-                ))
+                <>
+                  {selectedLabels.slice(0, 2).map((item) => (
+                    <Badge
+                      key={item.value}
+                      color={getColor(item.value) as any}
+                      className="max-w-[100px] truncate text-xs"
+                    >
+                      {item.label}
+                    </Badge>
+                  ))}
+                  {selectedLabels.length > 2 && (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Badge color="zinc" className="shrink-0 text-xs cursor-default">
+                          +{selectedLabels.length - 2}
+                        </Badge>
+                      </TooltipTrigger>
+                      <TooltipContent side="top">
+                        <div className="flex flex-col gap-1">
+                          {selectedLabels.slice(2).map((item) => (
+                            <div key={item.value}>{item.label}</div>
+                          ))}
+                        </div>
+                      </TooltipContent>
+                    </Tooltip>
+                  )}
+                </>
               )}
               <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
                 <svg
@@ -130,7 +166,9 @@ export function MultiSelect({
                   'forced-color-adjust-none forced-colors:data-focus:bg-[Highlight] forced-colors:data-focus:text-[HighlightText]',
                 )}
               >
-                <span className="flex min-w-0 items-center truncate">{option.label}</span>
+                <span className="flex min-w-0 items-center truncate">
+                  {option.label}
+                </span>
                 <svg
                   className="relative col-start-2 hidden size-5 self-center stroke-current group-data-selected/option:inline sm:size-4"
                   viewBox="0 0 16 16"
