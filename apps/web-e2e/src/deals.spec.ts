@@ -53,11 +53,7 @@ test.describe('Deals - Authenticated', () => {
     await page.getByLabel(/Deal Title/i).fill('TEST E2E DEAL');
     await page.getByLabel(/Deal Value/i).fill('100000');
     await page.getByLabel(/Stage/i).selectOption('Prospecting');
-    // Currency is a Combobox — click the toggle button to open, type to filter, then select USD
-    const currencyInput = page.getByPlaceholder('Search currency...');
-    await page.getByTestId('combobox-button').click();
-    await currencyInput.pressSequentially('USD');
-    await page.getByRole('option', { name: /USD/i }).first().click();
+    // Currency defaults to USD — no interaction needed
     await page.getByLabel(/Priority/i).selectOption('2'); // value in form; label is "P2 - Medium"
     await page.getByLabel(/Expected Close Date/i).fill('2026-01-01');
     await page.getByLabel(/Source/i).fill('Website');
@@ -197,12 +193,10 @@ test.describe('Deal Creation', () => {
   test('displays currency options', async ({ page }) => {
     await page.goto('/deals/new');
 
-    // Currency is a Combobox (not a <select>), click the toggle button to open it
+    // Currency is a Combobox pre-filled with USD by default
     const currencyInput = page.getByPlaceholder('Search currency...');
     await expect(currencyInput).toBeVisible();
-    await page.getByTestId('combobox-button').click();
-    await currencyInput.pressSequentially('USD');
-    await expect(page.getByRole('option', { name: /USD/i }).first()).toBeVisible();
+    await expect(currencyInput).toHaveValue('USD');
   });
 
   test('displays priority options', async ({ page }) => {
