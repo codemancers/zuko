@@ -370,6 +370,8 @@ export default function DealDetail({ dealId, currentUserId }: DealDetailProps) {
         </dl>
       </div>
 
+      <Divider className="mt-8" />
+
       {/* Ownership */}
       <div className="mt-8">
         <Subheading>Owners</Subheading>

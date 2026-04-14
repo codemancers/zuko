@@ -158,6 +158,8 @@ const TaskDetail = ({ taskId, currentUserId }: TaskDetailProps) => {
         ))}
       </dl>
 
+      <Divider className="mt-8" />
+
       <div className="mt-8">
         <div className="flex items-center justify-between mb-2">
           <Subheading>Description</Subheading>

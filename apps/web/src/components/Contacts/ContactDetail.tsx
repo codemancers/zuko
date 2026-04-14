@@ -160,6 +160,8 @@ export default function ContactDetail({
         </dl>
       </div>
 
+      <Divider className="mt-8" />
+
       {/* Ownership */}
       <div className="mt-8">
         <Subheading>Owners</Subheading>
