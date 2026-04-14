@@ -4,7 +4,6 @@ import { useState } from 'react';
 import { useAutosaveField } from '@/hooks/useAutosaveField';
 import {
   BuildingOfficeIcon,
-  PencilIcon,
   EyeSlashIcon,
 } from '@heroicons/react/24/outline';
 import {
@@ -126,9 +125,6 @@ export default function CompanyDetail({
     return <LoadingState message="Company not found" />;
   }
 
-  const handleEdit = () => {
-    router.push(`/companies/${companyId}/edit`);
-  };
 
   const handleHide = () => {
     setShowHideDialog(true);
@@ -175,10 +171,6 @@ export default function CompanyDetail({
           createdAt={company.createdAt}
         />
         <div className="flex gap-3">
-          <Button onClick={handleEdit}>
-            <PencilIcon className="h-4 w-4" />
-            Edit
-          </Button>
           <Button plain onClick={handleHide} disabled={hideMutation.isPending}>
             <EyeSlashIcon className="h-4 w-4" />
             {hideMutation.isPending ? 'Hiding...' : 'Hide'}

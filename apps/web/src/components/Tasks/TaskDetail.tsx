@@ -7,7 +7,6 @@ import { useRouter } from 'next/navigation';
 import { Badge, Button, Divider, Subheading, Textarea } from '@zuko/ui-kit';
 import dayjs from 'dayjs';
 import {
-  PencilIcon,
   TrashIcon,
   ClipboardDocumentCheckIcon,
 } from '@heroicons/react/24/outline';
@@ -102,11 +101,7 @@ const TaskDetail = ({ taskId, currentUserId }: TaskDetailProps) => {
           isSaving={titleField.isSaving || descriptionField.isSaving}
           createdAt={task.createdAt}
         />
-        <div className="flex gap-2">
-          <Button onClick={() => router.push(`/tasks/${taskId}/edit`)}>
-            <PencilIcon className="h-4 w-4" />
-            Edit
-          </Button>
+  <div className="flex gap-2">
           <Button
             plain
             onClick={() => setShowDeleteDialog(true)}

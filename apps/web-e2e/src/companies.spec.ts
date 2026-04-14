@@ -280,12 +280,6 @@ test.describe("Company Detail - Inline Editing", () => {
 });
 
 test.describe("Company Edit", () => {
-  test("can navigate to edit page", async ({ companyDetailPage, page }) => {
-    await companyDetailPage.goto(1);
-    await companyDetailPage.clickEdit();
-    await page.waitForURL("**/companies/**/edit", { timeout: 10000 });
-    expect(page.url()).toContain("/edit");
-  });
 
   test("edit page displays company form", async ({ page }) => {
     await page.goto("/companies/1/edit");

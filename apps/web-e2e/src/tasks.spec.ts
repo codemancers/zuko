@@ -42,21 +42,6 @@ test.describe('Tasks - CRUD', () => {
     await expect(page.getByRole('heading', { name: 'Detail View Task' })).toBeVisible();
   });
 
-  test('can edit a task', async ({ tasksPage, page }) => {
-    await tasksPage.createTask({ title: 'Task to Edit' });
-
-    await tasksPage.goto();
-    await tasksPage.openTask('Task to Edit');
-
-    await page.getByRole('button', { name: /edit/i }).click();
-    await page.waitForURL('**/tasks/**/edit');
-
-    await page.getByLabel(/title \*/i).fill('Edited Task Title');
-    await page.getByRole('button', { name: /save changes/i }).click();
-    await page.waitForURL('**/tasks/**', { timeout: 10000 });
-
-    await expect(page.getByRole('heading', { name: 'Edited Task Title' })).toBeVisible();
-  });
 
   test('can delete a task via confirmation dialog', async ({ tasksPage, page }) => {
     await tasksPage.createTask({ title: 'Task to Delete' });
@@ -138,16 +123,6 @@ test.describe('Task Form Validation', () => {
 });
 
 test.describe('Task Actions (table dropdown)', () => {
-  test('Edit from action dropdown navigates to edit page', async ({
-    tasksPage,
-    page,
-  }) => {
-    await tasksPage.createTask({ title: 'Task for Dropdown Edit' });
-    await tasksPage.goto();
-
-    await tasksPage.clickTaskActionEdit('Task for Dropdown Edit');
-    await expect(page.getByLabel(/title \*/i)).toHaveValue('Task for Dropdown Edit');
-  });
 
   test('Complete from action dropdown marks task as done', async ({
     tasksPage,

@@ -289,14 +289,6 @@ test.describe('Deal Detail - Inline Editing', () => {
 
 test.describe('Deal Edit', () => {
   // ── 1. Empty state (edit form) ──────────────────────────────────────────
-  test('can navigate to edit page', async ({ dealDetailPage, page }) => {
-    await dealDetailPage.goto(1);
-
-    await dealDetailPage.clickEdit();
-
-    await page.waitForURL('**/deals/**/edit');
-    expect(page.url()).toContain('/edit');
-  });
 
   test('edit page displays deal form with existing values', async ({
     page,
