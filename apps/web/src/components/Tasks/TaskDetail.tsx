@@ -19,7 +19,6 @@ import { BackLink, DetailHeader } from '@/components/shared';
 import { LoadingState } from '@/components/shared';
 import ActivityTimeline from '@/components/Activity/ActivityTimeline';
 import { toast } from 'sonner';
-import { MetadataFooter } from '@/components/shared/MetadataFooter';
 
 const statusConfig: Record<
   TaskStatus,
@@ -231,10 +230,6 @@ const TaskDetail = ({ taskId, currentUserId }: TaskDetailProps) => {
         </div>
       )}
 
-      <MetadataFooter
-        createdAt={task.createdAt}
-        updatedAt={task.updatedAt}
-      />
 
       {/* Activity Timeline */}
       <ActivityTimeline

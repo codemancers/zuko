@@ -22,7 +22,7 @@ import Link from 'next/link';
 import ActivityTimeline from '@/components/Activity/ActivityTimeline';
 
 import ConfirmDialog from '@/components/shared/ConfirmDialog';
-import { BackLink, MetadataFooter, DetailHeader } from '@/components/shared';
+import { BackLink, DetailHeader } from '@/components/shared';
 import { LoadingState } from '@/components/shared';
 import { formatCurrency, getStageColor, formatStage } from '@/lib/format-utils';
 
@@ -248,11 +248,6 @@ export default function ContactDetail({
           </div>
         </div>
       )}
-
-      <MetadataFooter
-        createdAt={contact.createdAt}
-        updatedAt={contact.updatedAt}
-      />
 
       {/* Activity Timeline */}
       <ActivityTimeline

@@ -40,7 +40,6 @@ test.describe('Tasks - CRUD', () => {
     await tasksPage.openTask('Detail View Task');
 
     await expect(page.getByRole('heading', { name: 'Detail View Task' })).toBeVisible();
-    await expect(page.getByText('Created', { exact: true })).toBeVisible();
   });
 
   test('can edit a task', async ({ tasksPage, page }) => {
