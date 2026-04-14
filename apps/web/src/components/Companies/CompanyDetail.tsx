@@ -208,7 +208,6 @@ export default function CompanyDetail({
 
       {/* Company Information */}
       <div className="mt-8">
-        <Subheading>Company Information</Subheading>
         <dl className="mt-4 space-y-4">
           {company.website && (
             <div className="grid grid-cols-3">

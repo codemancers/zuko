@@ -290,7 +290,6 @@ export default function DealDetail({ dealId, currentUserId }: DealDetailProps) {
 
       {/* Deal Information */}
       <div className="mt-8">
-        <Subheading>Deal Information</Subheading>
         <dl className="mt-4 space-y-4">
           <div className="grid grid-cols-3">
             <dt className="text-sm font-medium text-zinc-600 dark:text-zinc-400">

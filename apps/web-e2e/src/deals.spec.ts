@@ -220,9 +220,6 @@ test.describe('Deal Detail', () => {
     await dealDetailPage.goto(1);
 
     await expect(dealDetailPage.dealTitle).toBeVisible();
-    await expect(
-      page.getByRole('heading', { name: /Deal Information/i }),
-    ).toBeVisible();
   });
 
   // ── 2. Check after (detail content) ─────────────────────────────────────

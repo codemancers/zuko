@@ -114,7 +114,6 @@ export default function ContactDetail({
 
       {/* Contact Information */}
       <div className="mt-8">
-        <Subheading>Contact Information</Subheading>
         <dl className="mt-4 space-y-4">
           {contact.email && (
             <div className="grid grid-cols-3">
