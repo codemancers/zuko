@@ -18,7 +18,7 @@ import {
 } from '@zuko/ui-kit';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getCompany, getDealsByCompany } from '@/server/query-options';
-import { companiesApi } from '@/lib/api/companies';
+import { companiesApi, UpdateCompanyDto } from '@/lib/api/companies';
 import dayjs from 'dayjs';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -26,7 +26,7 @@ import ActivityTimeline from '@/components/Activity/ActivityTimeline';
 import AddContactDialog from './AddContactDialog';
 
 import ConfirmDialog from '@/components/shared/ConfirmDialog';
-import { BackLink, DetailHeader } from '@/components/shared';
+import { BackLink, DetailHeader, EntityProperties } from '@/components/shared';
 import {
   InlineSaveCancel,
   InlineEditRemove,
@@ -53,11 +53,12 @@ export default function CompanyDetail({
   const [editedRole, setEditedRole] = useState('');
   const [editedIsPrimary, setEditedIsPrimary] = useState(false);
   const updateMutation = useMutation({
-    mutationFn: (updated: { companyName?: string; summary?: string }) =>
+    mutationFn: (updated: UpdateCompanyDto) =>
       companiesApi.updateCompany(companyId, updated),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['company', companyId] });
       queryClient.invalidateQueries({ queryKey: ['companies'] });
+      queryClient.invalidateQueries({ queryKey: ['timeline', 'company', companyId] });
     },
   });
 
@@ -122,8 +123,11 @@ export default function CompanyDetail({
   }
 
   if (!company) {
-    return <LoadingState message="Company not found" />;
+    return <LoadingState message="Company not found." />;
   }
+
+  const primaryOwner = company.owners.find((o) => o.isPrimary);
+  const primaryOwnerName = primaryOwner?.user.name || 'Unassigned';
 
 
   const handleHide = () => {
@@ -206,73 +210,34 @@ export default function CompanyDetail({
         isLoading={removeContactMutation.isPending}
       />
 
-      {/* Company Information */}
-      <div className="mt-8">
-        <dl className="mt-4 space-y-4">
-          <div className="grid grid-cols-3">
-            <dt className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
-              Website
-            </dt>
-            <dd className="col-span-2 text-sm text-zinc-950 dark:text-white">
-              {company.website ? (
-                <a
-                  href={company.website}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-blue-600 hover:underline dark:text-blue-400"
-                >
-                  {company.website}
-                </a>
-              ) : (
-                <span className="text-zinc-400">—</span>
-              )}
-            </dd>
-          </div>
-          <div className="grid grid-cols-3">
-            <dt className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
-              LinkedIn
-            </dt>
-            <dd className="col-span-2 text-sm text-zinc-950 dark:text-white">
-              {company.linkedinUrl ? (
-                <a
-                  href={company.linkedinUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-blue-600 hover:underline dark:text-blue-400"
-                >
-                  {company.linkedinUrl}
-                </a>
-              ) : (
-                <span className="text-zinc-400">—</span>
-              )}
-            </dd>
-          </div>
-        </dl>
-      </div>
+      <EntityProperties
+        properties={[
+          {
+            label: 'Owners',
+            value: primaryOwnerName,
+            renderType: 'user',
+          },
+          {
+            label: 'Website',
+            value: company.website,
+            renderType: 'link',
+            fieldType: 'text',
+            placeholder: 'eg: https://example.com',
+            onSave: (val) =>
+              updateMutation.mutateAsync({ website: val }),
+          },
+          {
+            label: 'LinkedIn',
+            value: company.linkedinUrl,
+            renderType: 'link',
+            fieldType: 'text',
+            placeholder: 'https://www.linkedin.com/company/example',
+            onSave: (val) =>
+              updateMutation.mutateAsync({ linkedinUrl: val }),
+          },
+        ]}
+      />
 
-      <Divider className="mt-8" />
-
-      {/* Ownership */}
-      <div className="mt-8">
-        <Subheading>Owners</Subheading>
-        <div className="mt-4 space-y-2">
-          {company.owners.map((owner) => (
-            <div key={owner.id} className="flex items-center gap-3">
-              <div className="text-sm text-zinc-950 dark:text-white">
-                {owner.user.name}
-              </div>
-              <div className="text-sm text-zinc-600 dark:text-zinc-400">
-                {owner.user.email}
-              </div>
-              {owner.isPrimary && (
-                <Badge color="lime" className="text-xs">
-                  Primary
-                </Badge>
-              )}
-            </div>
-          ))}
-        </div>
-      </div>
 
       {/* Summary */}
       <div className="mt-8">

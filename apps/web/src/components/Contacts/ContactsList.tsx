@@ -74,9 +74,6 @@ const ContactsList = () => {
     router.push(`/contacts/${contactId}`);
   };
 
-  const handleNewContact = () => {
-    router.push('/contacts/new');
-  };
 
   const handleNewContactRow = () => {
     addRow();
@@ -119,15 +116,6 @@ const ContactsList = () => {
         showAddColumn
         onAddColumn={handleNewColumn}
         disableRowClick={true}
-        emptyStateConfig={{
-          icon: UserIcon,
-          title: 'No Contacts',
-          description: 'Get started by creating a new contact.',
-          action: {
-            label: 'New Contact',
-            onClick: handleNewContact,
-          },
-        }}
       />
 
       <ConfirmDialog

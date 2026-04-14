@@ -15,13 +15,13 @@ import {
 } from '@zuko/ui-kit';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getContact, getDealsByContact } from '@/server/query-options';
-import { contactsApi } from '@/lib/api/contacts';
+import { contactsApi, UpdateContactDto } from '@/lib/api/contacts';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import ActivityTimeline from '@/components/Activity/ActivityTimeline';
 
 import ConfirmDialog from '@/components/shared/ConfirmDialog';
-import { BackLink, DetailHeader } from '@/components/shared';
+import { BackLink, DetailHeader, EntityProperties } from '@/components/shared';
 import { LoadingState } from '@/components/shared';
 import { formatCurrency, getStageColor, formatStage } from '@/lib/format-utils';
 
@@ -39,11 +39,12 @@ export default function ContactDetail({
   const { data: contact, isLoading } = useQuery(getContact(contactId));
   const { data: dealsData } = useQuery(getDealsByContact(contactId));
   const updateMutation = useMutation({
-    mutationFn: (updated: { name?: string; notes?: string }) =>
+    mutationFn: (updated: UpdateContactDto) =>
       contactsApi.updateContact(contactId, updated),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['contact', contactId] });
       queryClient.invalidateQueries({ queryKey: ['contacts'] });
+      queryClient.invalidateQueries({ queryKey: ['timeline', 'contact', contactId] });
     },
   });
 
@@ -72,8 +73,11 @@ export default function ContactDetail({
   }
 
   if (!contact) {
-    return <LoadingState message="Contact not found" />;
+    return <LoadingState message="Contact not found." />;
   }
+
+  const primaryOwner = contact.owners.find((o) => o.isPrimary);
+  const primaryOwnerName = primaryOwner?.user.name || 'Unassigned';
 
 
   const handleHide = () => {
@@ -112,77 +116,42 @@ export default function ContactDetail({
         isLoading={hideMutation.isPending}
       />
 
-      {/* Contact Information */}
-      <div className="mt-8">
-        <dl className="mt-4 space-y-4">
-          <div className="grid grid-cols-3">
-            <dt className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
-              Email
-            </dt>
-            <dd className="col-span-2 text-sm text-zinc-950 dark:text-white">
-              {contact.email ? (
-                <a
-                  href={`mailto:${contact.email}`}
-                  className="text-blue-600 hover:underline dark:text-blue-400"
-                >
-                  {contact.email}
-                </a>
-              ) : (
-                <span className="text-zinc-400">—</span>
-              )}
-            </dd>
-          </div>
-          <div className="grid grid-cols-3">
-            <dt className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
-              Phone
-            </dt>
-            <dd className="col-span-2 text-sm text-zinc-950 dark:text-white">
-              {contact.phone ? (
-                <a
-                  href={`tel:${contact.phone}`}
-                  className="text-blue-600 hover:underline dark:text-blue-400"
-                >
-                  {contact.phone}
-                </a>
-              ) : (
-                <span className="text-zinc-400">—</span>
-              )}
-            </dd>
-          </div>
-          <div className="grid grid-cols-3">
-            <dt className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
-              LinkedIn
-            </dt>
-            <dd className="col-span-2 text-sm text-zinc-950 dark:text-white">
-              {contact.linkedinId || <span className="text-zinc-400">—</span>}
-            </dd>
-          </div>
-        </dl>
-      </div>
+      <EntityProperties
+        properties={[
+          {
+            label: 'Owners',
+            value: primaryOwnerName,
+            renderType: 'user',
+          },
+          {
+            label: 'Email',
+            value: contact.email,
+            renderType: 'email',
+            fieldType: 'text',
+            placeholder: 'john@example.com',
+            onSave: (val) =>
+              updateMutation.mutateAsync({ email: val }),
+          },
+          {
+            label: 'Phone',
+            value: contact.phone,
+            renderType: 'phone',
+            fieldType: 'text',
+            placeholder: '+14155552671',
+            onSave: (val) =>
+              updateMutation.mutateAsync({ phone: val }),
+          },
+          {
+            label: 'LinkedIn',
+            value: contact.linkedinId,
+            fieldType: 'text',
+            placeholder: 'eg: john-doe-123456',
+            onSave: (val) =>
+              updateMutation.mutateAsync({ linkedinId: val }),
+          },
+        ]}
+      />
 
-      <Divider className="mt-8" />
-
-      {/* Ownership */}
-      <div className="mt-8">
-        <Subheading>Owners</Subheading>
-        <div className="mt-4 space-y-2">
-          {contact.owners.map((owner) => (
-            <div key={owner.id} className="flex items-center gap-3">
-              <div className="text-sm text-zinc-950 dark:text-white">
-                {owner.user.name}
-              </div>
-              <div className="text-sm text-zinc-600 dark:text-zinc-400">
-                {owner.user.email}
-              </div>
-              {owner.isPrimary && (
-                <Badge color="lime" className="text-xs">
-                  Primary
-                </Badge>
-              )}
-            </div>
-          ))}
-        </div>
-      </div>
 
       {/* Notes */}
       <div className="mt-8">

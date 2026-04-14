@@ -6,3 +6,4 @@ export { InlineSaveCancel, InlineEditRemove } from './InlineEditActions';
 export { BackLink } from './BackLink';
 export { DetailHeader } from './DetailHeader';
 export { FormActions } from './FormActions';
+export { EntityProperties } from './EntityProperties';

@@ -2,7 +2,7 @@
  * @vitest-environment jsdom
  */
 import React from 'react';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -47,7 +47,21 @@ vi.mock('@/lib/api/tables', () => ({
   },
 }));
 
+vi.mock('@/lib/api/metadata', () => ({
+  metadataApi: {
+    getTaskStatuses: vi.fn(() =>
+      Promise.resolve([
+        { value: 'TODO', label: 'To Do' },
+        { value: 'IN_PROGRESS', label: 'In Progress' },
+        { value: 'DONE', label: 'Done' },
+        { value: 'CANCELLED', label: 'Cancelled' },
+      ])
+    ),
+  },
+}));
+
 // Mock ErrorMessage to avoid HeadlessUI context issues
+// Mock Combobox to avoid HeadlessUI portal/virtual rendering issues in jsdom
 vi.mock('@zuko/ui-kit', async () => {
   const actual = await vi.importActual('@zuko/ui-kit');
   return {
@@ -55,6 +69,29 @@ vi.mock('@zuko/ui-kit', async () => {
     ErrorMessage: ({ children }: { children: React.ReactNode }) => (
       <div role="alert">{children}</div>
     ),
+    Combobox: ({ options, onChange, placeholder, children: _children, value, displayValue }: any) => (
+      <select
+        data-testid="mock-combobox"
+        value={value ? (typeof value === 'object' ? value.value ?? value.code ?? '' : value) : ''}
+        onChange={(e) => {
+          const selected = options.find(
+            (o: any) => String(o.value ?? o.code ?? o) === e.target.value
+          );
+          if (selected) onChange(selected);
+        }}
+        aria-label={placeholder}
+      >
+        <option value="">{placeholder}</option>
+        {options.map((o: any) => (
+          <option key={o.value ?? o.code ?? o} value={o.value ?? o.code ?? o}>
+            {o.label ?? o.code ?? String(o)}
+          </option>
+        ))}
+      </select>
+    ),
+    ComboboxOption: ({ children }: any) => <>{children}</>,
+    ComboboxLabel: ({ children }: any) => <>{children}</>,
+    ComboboxDescription: ({ children }: any) => <>{children}</>,
   };
 });
 
@@ -67,9 +104,11 @@ function createQueryClient() {
   });
 }
 
+let queryClient: QueryClient;
+
 function wrapper({ children }: { children: React.ReactNode }) {
   return (
-    <QueryClientProvider client={createQueryClient()}>
+    <QueryClientProvider client={queryClient}>
       {children}
     </QueryClientProvider>
   );
@@ -92,6 +131,7 @@ const mockTask: Task = {
 
 describe('TaskForm', () => {
   beforeEach(() => {
+    queryClient = createQueryClient();
     vi.clearAllMocks();
     mockGetTasks.mockResolvedValue({
       tasks: [],
@@ -150,23 +190,6 @@ describe('TaskForm', () => {
     });
   });
 
-  it('updates a task in edit mode', async () => {
-    const user = userEvent.setup();
-    mockUpdateTask.mockResolvedValue({ ...mockTask, title: 'Updated' });
-
-    render(<TaskForm mode="edit" task={mockTask} />, { wrapper });
-
-    const titleInput = screen.getByLabelText(/title \*/i);
-    await user.clear(titleInput);
-    await user.type(titleInput, 'Updated');
-    await user.click(screen.getByRole('button', { name: /save changes/i }));
-
-    await waitFor(() => {
-      expect(mockUpdateTask).toHaveBeenCalledWith(1, expect.objectContaining({ title: 'Updated' }));
-      expect(mockPush).toHaveBeenCalledWith('/tasks/1');
-    });
-  });
-
   it('displays error message on submission failure', async () => {
     const user = userEvent.setup();
     mockCreateTask.mockRejectedValue(new Error('Network error'));
@@ -196,6 +219,7 @@ const mockTableViewResponse = {
 
 describe('TasksList', () => {
   beforeEach(() => {
+    queryClient = createQueryClient();
     vi.clearAllMocks();
   });
 
@@ -385,12 +409,13 @@ describe('TasksList', () => {
 
 describe('TaskDetail', () => {
   beforeEach(() => {
+    queryClient = createQueryClient();
     vi.clearAllMocks();
+    mockGetTask.mockResolvedValue(mockTask);
+    mockGetTasks.mockResolvedValue({ tasks: [] });
   });
 
   it('renders task detail with all information', async () => {
-    mockGetTask.mockResolvedValue(mockTask);
-
     render(<TaskDetail taskId={1} />, { wrapper });
 
     await waitFor(() => {
@@ -398,6 +423,7 @@ describe('TaskDetail', () => {
       expect(screen.getByText(/Created March 12, 2026/i)).toBeInTheDocument();
       expect(screen.getByDisplayValue('Test description')).toBeInTheDocument();
       expect(screen.getByText(/john@example\.com/i)).toBeInTheDocument();
+      expect(screen.getByText(/To Do/)).toBeInTheDocument();
     });
   });
 
@@ -429,23 +455,8 @@ describe('TaskDetail', () => {
     });
   });
 
-  it('navigates to edit page when edit is clicked', async () => {
-    const user = userEvent.setup();
-    mockGetTask.mockResolvedValue(mockTask);
-
-    render(<TaskDetail taskId={1} />, { wrapper });
-
-    await waitFor(() => {
-      expect(screen.getByRole('button', { name: /edit/i })).toBeInTheDocument();
-    });
-
-    await user.click(screen.getByRole('button', { name: /edit/i }));
-    expect(mockPush).toHaveBeenCalledWith('/tasks/1/edit');
-  });
-
   it('shows delete confirmation dialog and deletes task', async () => {
     const user = userEvent.setup();
-    mockGetTask.mockResolvedValue(mockTask);
     mockDeleteTask.mockResolvedValue(undefined);
 
     render(<TaskDetail taskId={1} />, { wrapper });
@@ -461,12 +472,121 @@ describe('TaskDetail', () => {
       expect(screen.getByText(/this action cannot be undone/i)).toBeInTheDocument();
     });
 
-    const confirmButton = screen.getByRole('button', { name: /^delete$/i });
-    await user.click(confirmButton);
+    await user.click(screen.getByRole('button', { name: /^delete$/i }));
 
     await waitFor(() => {
       expect(mockDeleteTask).toHaveBeenCalledWith(1);
       expect(mockPush).toHaveBeenCalledWith('/tasks');
+    });
+  });
+
+  describe('Edit Task', () => {
+    it('edits title via contentEditable heading', async () => {
+      const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
+      mockUpdateTask.mockResolvedValue({ ...mockTask, title: 'Updated Title' });
+
+      render(<TaskDetail taskId={1} />, { wrapper });
+
+      await waitFor(() => {
+        expect(screen.getByText('Test Task')).toBeInTheDocument();
+      });
+
+      fireEvent.blur(screen.getByRole('heading', { level: 1 }), {
+        target: { innerText: 'Updated Title' },
+      });
+
+      await new Promise((r) => setTimeout(r, 2100)); // past 2000ms debounce
+
+      await waitFor(() => {
+        expect(mockUpdateTask).toHaveBeenCalledWith(1, expect.objectContaining({ title: 'Updated Title' }));
+        expect(invalidateSpy).toHaveBeenCalledWith(
+          expect.objectContaining({ queryKey: ['timeline', 'task', 1] }),
+        );
+      });
+    });
+
+    it('edits assignee via inline text field', async () => {
+      const user = userEvent.setup();
+      const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
+      mockUpdateTask.mockResolvedValue({ ...mockTask, assignee: 'jane@example.com' });
+
+      render(<TaskDetail taskId={1} />, { wrapper });
+
+      await waitFor(() => {
+        expect(screen.getByText(/john@example\.com/i)).toBeInTheDocument();
+      });
+
+      await user.click(screen.getAllByTitle('Edit')[0]);
+
+      const input = screen.getByDisplayValue('john@example.com');
+      await user.clear(input);
+      await user.type(input, 'jane@example.com');
+      await user.tab();
+
+      await waitFor(() => {
+        expect(mockUpdateTask).toHaveBeenCalledWith(1, expect.objectContaining({ assignee: 'jane@example.com' }));
+        expect(invalidateSpy).toHaveBeenCalledWith(
+          expect.objectContaining({ queryKey: ['timeline', 'task', 1] }),
+        );
+      });
+    });
+
+    it('edits status via combobox', async () => {
+      const user = userEvent.setup();
+      const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
+      mockUpdateTask.mockResolvedValue({ ...mockTask, status: 'IN_PROGRESS' });
+
+      render(<TaskDetail taskId={1} />, { wrapper });
+
+      await waitFor(() => {
+        expect(screen.getByText('To Do')).toBeInTheDocument();
+      });
+
+      // Status is the 2nd editable property — click its pencil icon
+      await user.click(screen.getAllByTitle('Edit')[1]);
+
+      // Mocked combobox renders as a <select>
+      const select = await screen.findByRole('combobox');
+      await user.selectOptions(select, 'IN_PROGRESS');
+
+      await waitFor(() => {
+        expect(mockUpdateTask).toHaveBeenCalledWith(1, expect.objectContaining({ status: 'IN_PROGRESS' }));
+        expect(invalidateSpy).toHaveBeenCalledWith(
+          expect.objectContaining({ queryKey: ['timeline', 'task', 1] }),
+        );
+      });
+    });
+
+    it('edits completedAt via date picker', async () => {
+      const user = userEvent.setup();
+      const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
+      mockUpdateTask.mockResolvedValue({ ...mockTask, completedAt: '2026-04-15T00:00:00.000Z' });
+
+      render(<TaskDetail taskId={1} />, { wrapper });
+
+      await waitFor(() => {
+        expect(screen.getByText('Test Task')).toBeInTheDocument();
+      });
+
+      // completedAt is null — renders a clickable "—" dash to enter edit mode
+      const completedLabel = screen.getByText('Completed', { selector: 'dt' });
+      const completedCell = completedLabel.closest('div')!;
+      await user.click(completedCell.querySelector('span')!);
+
+      const dateInput = document.querySelector('input[type="date"]') as HTMLInputElement;
+      expect(dateInput).toBeInTheDocument();
+      fireEvent.change(dateInput, { target: { value: '2026-04-15' } });
+      fireEvent.blur(dateInput);
+
+      await waitFor(() => {
+        expect(mockUpdateTask).toHaveBeenCalledWith(
+          1,
+          expect.objectContaining({ completedAt: expect.stringContaining('2026-04-15') }),
+        );
+        expect(invalidateSpy).toHaveBeenCalledWith(
+          expect.objectContaining({ queryKey: ['timeline', 'task', 1] }),
+        );
+      });
     });
   });
 });

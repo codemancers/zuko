@@ -78,10 +78,6 @@ const DealsList = () => {
     addRow();
   };
 
-  const handleNewDeal = () => {
-    router.push('/deals/new');
-  };
-
   const handleNewColumn = (
     name: string,
     key: string,
@@ -119,15 +115,6 @@ const DealsList = () => {
         showAddColumn
         onAddColumn={handleNewColumn}
         disableRowClick={true}
-        emptyStateConfig={{
-          icon: BriefcaseIcon,
-          title: 'No Deals',
-          description: 'Get started by creating a new deal.',
-          action: {
-            label: 'New Deal',
-            onClick: handleNewDeal,
-          },
-        }}
       />
 
       <ConfirmDialog

@@ -2,11 +2,10 @@
  * @vitest-environment jsdom
  */
 import React from 'react';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import CompanyForm from '@/components/Companies/CompanyForm';
 import CompaniesList from '@/components/Companies/CompaniesList';
 import CompanyDetail from '@/components/Companies/CompanyDetail';
 import type { Company } from '@/lib/api/companies';
@@ -58,6 +57,12 @@ vi.mock('@/lib/api/deals', () => ({
   },
 }));
 
+vi.mock('@/lib/auth-client', () => ({
+  authClient: {
+    useSession: vi.fn(() => ({ data: { user: { id: '1' } } })),
+  },
+}));
+
 vi.mock('@/components/Activity/ActivityTimeline', () => ({
   default: () => <div data-testid="activity-timeline">Activity</div>,
 }));
@@ -89,271 +94,15 @@ function createQueryClient() {
   });
 }
 
+let queryClient: QueryClient;
+
 function wrapper({ children }: { children: React.ReactNode }) {
   return (
-    <QueryClientProvider client={createQueryClient()}>
+    <QueryClientProvider client={queryClient}>
       {children}
     </QueryClientProvider>
   );
 }
-
-describe('CompanyForm', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
-  it('renders form with all fields', () => {
-    render(
-      <CompanyForm mode="create" currentUserId={CURRENT_USER_ID} />,
-      { wrapper }
-    );
-    expect(
-      screen.getByLabelText(/company name \*/i)
-    ).toBeInTheDocument();
-    expect(screen.getByLabelText(/website/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/linkedin url/i)).toBeInTheDocument();
-    expect(
-      screen.getByPlaceholderText(/add a summary about this company/i)
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole('button', { name: /create company/i })
-    ).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /cancel/i })).toBeInTheDocument();
-  });
-
-  it('shows Create Company in create mode and Save Changes in edit mode', () => {
-    render(
-      <CompanyForm mode="create" currentUserId={CURRENT_USER_ID} />,
-      { wrapper }
-    );
-    expect(
-      screen.getByRole('button', { name: /create company/i })
-    ).toBeInTheDocument();
-
-    render(
-      <CompanyForm
-        mode="edit"
-        currentUserId={CURRENT_USER_ID}
-        company={{
-          id: 1,
-          companyName: 'Acme',
-          isHidden: false,
-          createdAt: '',
-          updatedAt: '',
-          owners: [],
-        }}
-      />,
-      { wrapper }
-    );
-    expect(
-      screen.getByRole('button', { name: /save changes/i })
-    ).toBeInTheDocument();
-  });
-
-  it('prefills fields when editing', () => {
-    render(
-      <CompanyForm
-        mode="edit"
-        currentUserId={CURRENT_USER_ID}
-        company={{
-          id: 1,
-          companyName: 'Acme Inc',
-          website: 'https://acme.com',
-          linkedinUrl: 'https://www.linkedin.com/company/acme',
-          summary: 'Notes',
-          isHidden: false,
-          createdAt: '',
-          updatedAt: '',
-          owners: [],
-        }}
-      />,
-      { wrapper }
-    );
-    expect(screen.getByDisplayValue('Acme Inc')).toBeInTheDocument();
-    expect(screen.getByDisplayValue('https://acme.com')).toBeInTheDocument();
-    expect(
-      screen.getByDisplayValue('https://www.linkedin.com/company/acme')
-    ).toBeInTheDocument();
-    expect(screen.getByDisplayValue('Notes')).toBeInTheDocument();
-  });
-
-  it('shows company name required and does not submit', async () => {
-    const user = userEvent.setup();
-    render(
-      <CompanyForm mode="create" currentUserId={CURRENT_USER_ID} />,
-      { wrapper }
-    );
-    await user.click(screen.getByRole('button', { name: /create company/i }));
-    expect(
-      screen.getByText(/company name is required/i)
-    ).toBeInTheDocument();
-    expect(mockCreateCompany).not.toHaveBeenCalled();
-  });
-
-  it('shows website URL validation error for invalid protocol', async () => {
-    const user = userEvent.setup();
-    render(
-      <CompanyForm mode="create" currentUserId={CURRENT_USER_ID} />,
-      { wrapper }
-    );
-    await user.type(
-      screen.getByPlaceholderText(/acme inc\.?/i),
-      'Test Co'
-    );
-    await user.type(
-      screen.getByPlaceholderText(/https:\/\/example\.com/i),
-      'ftp://example.com'
-    );
-    await user.click(screen.getByRole('button', { name: /create company/i }));
-    expect(
-      screen.getByText(/Website must be a valid URL/i)
-    ).toBeInTheDocument();
-    expect(mockCreateCompany).not.toHaveBeenCalled();
-  });
-
-  it('calls createCompany and redirects on valid submit', async () => {
-    mockCreateCompany.mockResolvedValue({ id: 1 });
-    const user = userEvent.setup();
-    render(
-      <CompanyForm mode="create" currentUserId={CURRENT_USER_ID} />,
-      { wrapper }
-    );
-    await user.type(
-      screen.getByPlaceholderText(/acme inc\.?/i),
-      'New Company'
-    );
-    await user.click(screen.getByRole('button', { name: /create company/i }));
-
-    await waitFor(() => {
-      expect(mockCreateCompany).toHaveBeenCalledWith(
-        expect.objectContaining({
-          companyName: 'New Company',
-          ownerIds: [CURRENT_USER_ID],
-          primaryOwnerId: CURRENT_USER_ID,
-        })
-      );
-    });
-    await waitFor(() => {
-      expect(mockPush).toHaveBeenCalledWith('/companies');
-    });
-  });
-
-  it('calls updateCompany and redirects on valid submit in edit mode', async () => {
-    mockUpdateCompany.mockResolvedValue({});
-    const user = userEvent.setup();
-    render(
-      <CompanyForm
-        mode="edit"
-        currentUserId={CURRENT_USER_ID}
-        company={{
-          id: 42,
-          companyName: 'Old Name',
-          isHidden: false,
-          createdAt: '',
-          updatedAt: '',
-          owners: [],
-        }}
-      />,
-      { wrapper }
-    );
-    await user.clear(screen.getByDisplayValue('Old Name'));
-    await user.type(
-      screen.getByPlaceholderText(/acme inc/i),
-      'Updated Name'
-    );
-    await user.click(screen.getByRole('button', { name: /save changes/i }));
-
-    await waitFor(() => {
-      expect(mockUpdateCompany).toHaveBeenCalledWith(
-        42,
-        expect.objectContaining({ companyName: 'Updated Name' })
-      );
-    });
-    await waitFor(() => {
-      expect(mockPush).toHaveBeenCalledWith('/companies/42');
-    });
-  });
-
-  it('navigates to companies list on Cancel in create mode', async () => {
-    const user = userEvent.setup();
-    render(
-      <CompanyForm mode="create" currentUserId={CURRENT_USER_ID} />,
-      { wrapper }
-    );
-    await user.click(screen.getByRole('button', { name: /cancel/i }));
-    expect(mockPush).toHaveBeenCalledWith('/companies');
-  });
-
-  it('navigates to company detail on Cancel in edit mode', async () => {
-    const user = userEvent.setup();
-    render(
-      <CompanyForm
-        mode="edit"
-        currentUserId={CURRENT_USER_ID}
-        company={{
-          id: 10,
-          companyName: 'X',
-          isHidden: false,
-          createdAt: '',
-          updatedAt: '',
-          owners: [],
-        }}
-      />,
-      { wrapper }
-    );
-    await user.click(screen.getByRole('button', { name: /cancel/i }));
-    expect(mockPush).toHaveBeenCalledWith('/companies/10');
-  });
-
-  it('shows submit error when create fails', async () => {
-    mockCreateCompany.mockRejectedValue(new Error('Server error'));
-    const user = userEvent.setup();
-    render(
-      <CompanyForm mode="create" currentUserId={CURRENT_USER_ID} />,
-      { wrapper }
-    );
-    await user.type(
-      screen.getByPlaceholderText(/acme inc\.?/i),
-      'Fail Co'
-    );
-    await user.click(screen.getByRole('button', { name: /create company/i }));
-    await waitFor(() => {
-      expect(
-        screen.getByText(/server error|failed to create company/i)
-      ).toBeInTheDocument();
-    });
-  });
-
-  it('shows Saving... and disables buttons while submitting', async () => {
-    let resolveCreate: (value: { id: number }) => void = () => {
-      /* noop until Promise constructor runs */
-    };
-    mockCreateCompany.mockImplementation(
-      () =>
-        new Promise((resolve) => {
-          resolveCreate = resolve;
-        })
-    );
-    const user = userEvent.setup();
-    render(
-      <CompanyForm mode="create" currentUserId={CURRENT_USER_ID} />,
-      { wrapper }
-    );
-    await user.type(
-      screen.getByPlaceholderText(/acme inc\.?/i),
-      'Slow Co'
-    );
-    await user.click(screen.getByRole('button', { name: /create company/i }));
-
-    await waitFor(() => {
-      expect(screen.getByRole('button', { name: /saving/i })).toBeInTheDocument();
-    });
-    if (resolveCreate) resolveCreate({ id: 1 });
-    await waitFor(() => {
-      expect(mockPush).toHaveBeenCalledWith('/companies');
-    });
-  });
-});
 
 const mockMetadata = [
   {
@@ -473,6 +222,7 @@ const mockCompany = {
 
 describe('CompaniesList', () => {
   beforeEach(() => {
+    queryClient = createQueryClient();
     vi.clearAllMocks();
     mockGetTableViewCompanies.mockResolvedValue(emptyCompaniesResponse);
   });
@@ -600,6 +350,26 @@ describe('CompaniesList', () => {
     expect(screen.getByText('Field Type')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /create field/i })).toBeInTheDocument();
   });
+
+  // creates new company when click on add row
+  it('creates new company when add row is clicked', async () => {
+    const user = userEvent.setup();
+    mockCreateCompany.mockResolvedValue({ id: 99 });
+
+    render(<CompaniesList />, { wrapper });
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /add row/i })).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByRole('button', { name: /add row/i }));
+
+    await waitFor(() => {
+      expect(mockCreateCompany).toHaveBeenCalledWith(
+        expect.objectContaining({ companyName: 'New Company' }),
+      );
+    });
+  });
 });
 
 describe('CompanyDetail', () => {
@@ -626,6 +396,7 @@ describe('CompanyDetail', () => {
   };
 
   beforeEach(() => {
+    queryClient = createQueryClient();
     vi.clearAllMocks();
     mockGetCompany.mockResolvedValue(detailCompany);
     vi.spyOn(window, 'confirm').mockReturnValue(true);
@@ -652,17 +423,8 @@ describe('CompanyDetail', () => {
     expect(await screen.findByRole('heading', { level: 1 })).toHaveTextContent('Detail Company');
     expect(screen.getByText('https://detail.com')).toBeInTheDocument();
     expect(screen.getByDisplayValue('Company summary')).toBeInTheDocument();
+    expect(screen.getByText('https://www.linkedin.com/company/detail')).toBeInTheDocument();
     expect(screen.getByText('Alice')).toBeInTheDocument();
-  });
-
-  it('navigates to edit when Edit button is clicked', async () => {
-    const user = userEvent.setup();
-    render(<CompanyDetail companyId={7} currentUserId={1} />, { wrapper });
-    await waitFor(() => {
-      expect(screen.getByText('Detail Company')).toBeInTheDocument();
-    });
-    await user.click(screen.getByRole('button', { name: /edit/i }));
-    expect(mockPush).toHaveBeenCalledWith('/companies/7/edit');
   });
 
   it('calls hideCompany and redirects when Hide is confirmed', async () => {
@@ -695,6 +457,129 @@ describe('CompanyDetail', () => {
     await user.click(screen.getByRole('button', { name: /^hide$/i }));
     expect(mockHideCompany).not.toHaveBeenCalled();
   });
-});
 
+  // add specs for editing the companies fields and validation errors
+
+  describe('Edit Company', () => {
+    it('edits company title via contentEditable heading', async () => {
+      const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
+      mockUpdateCompany.mockResolvedValue({});
+
+      render(<CompanyDetail companyId={7} currentUserId={1} />, { wrapper });
+
+      await waitFor(() => {
+        expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Detail Company');
+      });
+
+      fireEvent.blur(screen.getByRole('heading', { level: 1 }), {
+        target: { innerText: 'Updated Company' },
+      });
+
+      await new Promise((r) => setTimeout(r, 2100)); // past 2000ms debounce
+
+      await waitFor(() => {
+        expect(mockUpdateCompany).toHaveBeenCalledWith(7, expect.objectContaining({ companyName: 'Updated Company' }));
+        expect(invalidateSpy).toHaveBeenCalledWith(
+          expect.objectContaining({ queryKey: ['timeline', 'company', 7] }),
+        );
+      });
+    });
+
+    it('edits website via inline text field', async () => {
+      const user = userEvent.setup();
+      const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
+      mockUpdateCompany.mockResolvedValue({});
+
+      render(<CompanyDetail companyId={7} currentUserId={1} />, { wrapper });
+
+      await waitFor(() => {
+        expect(screen.getByText('https://detail.com')).toBeInTheDocument();
+      });
+
+      await user.click(screen.getAllByTitle('Edit')[0]);
+
+      const input = screen.getByDisplayValue('https://detail.com');
+      await user.clear(input);
+      await user.type(input, 'https://updated.com');
+      await user.tab();
+
+      await waitFor(() => {
+        expect(mockUpdateCompany).toHaveBeenCalledWith(7, expect.objectContaining({ website: 'https://updated.com' }));
+        expect(invalidateSpy).toHaveBeenCalledWith(
+          expect.objectContaining({ queryKey: ['timeline', 'company', 7] }),
+        );
+      });
+    });
+
+    it('edits linkedin via inline text field', async () => {
+      const user = userEvent.setup();
+      const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
+      mockUpdateCompany.mockResolvedValue({});
+
+      render(<CompanyDetail companyId={7} currentUserId={1} />, { wrapper });
+
+      await waitFor(() => {
+        expect(screen.getByText('https://www.linkedin.com/company/detail')).toBeInTheDocument();
+      });
+
+      await user.click(screen.getAllByTitle('Edit')[1]);
+
+      const input = screen.getByDisplayValue('https://www.linkedin.com/company/detail');
+      await user.clear(input);
+      await user.type(input, 'https://www.linkedin.com/company/updated');
+      await user.tab();
+
+      await waitFor(() => {
+        expect(mockUpdateCompany).toHaveBeenCalledWith(7, expect.objectContaining({ linkedinUrl: 'https://www.linkedin.com/company/updated' }));
+        expect(invalidateSpy).toHaveBeenCalledWith(
+          expect.objectContaining({ queryKey: ['timeline', 'company', 7] }),
+        );
+      });
+    });
+
+    it('shows validation error for invalid website URL', async () => {
+      const user = userEvent.setup();
+
+      render(<CompanyDetail companyId={7} currentUserId={1} />, { wrapper });
+
+      await waitFor(() => {
+        expect(screen.getByText('https://detail.com')).toBeInTheDocument();
+      });
+
+      await user.click(screen.getAllByTitle('Edit')[0]);
+
+      const input = screen.getByDisplayValue('https://detail.com');
+      await user.clear(input);
+      await user.type(input, 'not-a-url');
+      await user.tab();
+
+      await waitFor(() => {
+        expect(screen.getByText(/must be a valid url/i)).toBeInTheDocument();
+      });
+      expect(mockUpdateCompany).not.toHaveBeenCalled();
+    });
+
+    it('shows validation error for invalid linkedin URL', async () => {
+      const user = userEvent.setup();
+
+      render(<CompanyDetail companyId={7} currentUserId={1} />, { wrapper });
+
+      await waitFor(() => {
+        expect(screen.getByText('https://www.linkedin.com/company/detail')).toBeInTheDocument();
+      });
+
+      await user.click(screen.getAllByTitle('Edit')[1]);
+
+      const input = screen.getByDisplayValue('https://www.linkedin.com/company/detail');
+      await user.clear(input);
+      await user.type(input, 'not-a-url');
+      await user.tab();
+
+      await waitFor(() => {
+        expect(screen.getByText(/must be a valid url/i)).toBeInTheDocument();
+      });
+      expect(mockUpdateCompany).not.toHaveBeenCalled();
+    });
+  });
+});
 

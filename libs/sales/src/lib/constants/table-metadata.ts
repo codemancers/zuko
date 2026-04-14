@@ -1,5 +1,6 @@
 import { ColumnMetadata } from '../types/table-metadata';
 import { DEAL_STAGES } from './deals';
+import { TASK_STATUSES } from './tasks';
 
 export const COMPANY_TABLE_METADATA: ColumnMetadata[] = [
   {
@@ -299,12 +300,7 @@ export const TASK_TABLE_METADATA: ColumnMetadata[] = [
     config: {
       render: 'badge',
       format: 'stage',
-      options: [
-        { label: 'To Do', value: 'TODO' },
-        { label: 'In Progress', value: 'IN_PROGRESS' },
-        { label: 'Done', value: 'DONE' },
-        { label: 'Cancelled', value: 'CANCELLED' },
-      ],
+      options: [...TASK_STATUSES],
       colorMap: {
         TODO: 'zinc',
         IN_PROGRESS: 'blue',

@@ -17,8 +17,8 @@ import {
 } from '@zuko/ui-kit';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getDeal } from '@/server/query-options';
-import { dealsApi } from '@/lib/api/deals';
-import dayjs from 'dayjs';
+import { dealsApi, UpdateDealDto } from '@/lib/api/deals';
+import { metadataApi } from '@/lib/api/metadata';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import ActivityTimeline from '@/components/Activity/ActivityTimeline';
@@ -26,7 +26,7 @@ import AddCompanyToDealDialog from './AddCompanyToDealDialog';
 import AddContactToDealDialog from './AddContactToDealDialog';
 
 import ConfirmDialog from '@/components/shared/ConfirmDialog';
-import { BackLink, DetailHeader } from '@/components/shared';
+import { BackLink, DetailHeader, EntityProperties } from '@/components/shared';
 import {
   InlineSaveCancel,
   InlineEditRemove,
@@ -43,6 +43,18 @@ export default function DealDetail({ dealId, currentUserId }: DealDetailProps) {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { data: deal, isLoading } = useQuery(getDeal(dealId));
+  const { data: currencies = [] } = useQuery({
+    queryKey: ['currencies'],
+    queryFn: metadataApi.getCurrencies,
+  });
+  const { data: priorities = [] } = useQuery({
+    queryKey: ['priorities'],
+    queryFn: metadataApi.getDealPriorities,
+  });
+  const { data: stages = [] } = useQuery({
+    queryKey: ['stages'],
+    queryFn: metadataApi.getDealStages,
+  });
 
   // State for inline editing company associations
   const [editingCompanyId, setEditingCompanyId] = useState<number | null>(null);
@@ -54,11 +66,12 @@ export default function DealDetail({ dealId, currentUserId }: DealDetailProps) {
   const [editedContactIsPrimary, setEditedContactIsPrimary] = useState(false);
 
   const updateMutation = useMutation({
-    mutationFn: (updated: { title: string }) =>
+    mutationFn: (updated: UpdateDealDto) =>
       dealsApi.updateDeal(dealId, updated),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['deal', dealId] });
       queryClient.invalidateQueries({ queryKey: ['deals'] });
+      queryClient.invalidateQueries({ queryKey: ['timeline', 'deal', dealId] });
     },
   });
 
@@ -150,6 +163,9 @@ export default function DealDetail({ dealId, currentUserId }: DealDetailProps) {
     return <LoadingState message="Deal not found" />;
   }
 
+  const primaryOwner = deal.owners.find((o) => o.isPrimary);
+  const primaryOwnerName = primaryOwner?.user.name || 'Unassigned';
+
 
   const handleHide = () => {
     setShowHideDialog(true);
@@ -205,14 +221,8 @@ export default function DealDetail({ dealId, currentUserId }: DealDetailProps) {
   };
 
   const getPriorityLabel = (priority?: number) => {
-    const labels: Record<number, string> = {
-      0: 'P0 - Critical',
-      1: 'P1 - High',
-      2: 'P2 - Medium',
-      3: 'P3 - Low',
-      4: 'P4 - Backlog',
-    };
-    return labels[priority ?? 2] || 'P2 - Medium';
+    const match = priorities.find((p) => p.value === priority);
+    return match?.label ?? priorities.find((p) => p.value === 2)?.label ?? '—';
   };
 
   return (
@@ -288,111 +298,88 @@ export default function DealDetail({ dealId, currentUserId }: DealDetailProps) {
         isLoading={removeContactMutation.isPending}
       />
 
-      {/* Deal Information */}
-      <div className="mt-8">
-        <dl className="mt-4 space-y-4">
-          <div className="grid grid-cols-3">
-            <dt className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
-              Value
-            </dt>
-            <dd className="col-span-2 text-sm text-zinc-950 dark:text-white">
-              {formatCurrency(deal.value, deal.currency)}
-            </dd>
-          </div>
-          <div className="grid grid-cols-3">
-            <dt className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
-              Stage
-            </dt>
-            <dd className="col-span-2 text-sm">
-              <Badge color={getStageColor(deal.stage)} className="text-xs">
-                {formatStage(deal.stage)}
-              </Badge>
-            </dd>
-          </div>
-          {deal.probability !== undefined && (
-            <div className="grid grid-cols-3">
-              <dt className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
-                Win Probability
-              </dt>
-              <dd className="col-span-2 text-sm text-zinc-950 dark:text-white">
-                {deal.probability}%
-              </dd>
-            </div>
-          )}
-          {deal.expectedCloseDate && (
-            <div className="grid grid-cols-3">
-              <dt className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
-                Expected Close Date
-              </dt>
-              <dd className="col-span-2 text-sm text-zinc-950 dark:text-white">
-                {dayjs(deal.expectedCloseDate).format('MMMM D, YYYY')}
-              </dd>
-            </div>
-          )}
-          {deal.actualCloseDate && (
-            <div className="grid grid-cols-3">
-              <dt className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
-                Actual Close Date
-              </dt>
-              <dd className="col-span-2 text-sm text-zinc-950 dark:text-white">
-                {dayjs(deal.actualCloseDate).format('MMMM D, YYYY')}
-              </dd>
-            </div>
-          )}
-          {deal.source && (
-            <div className="grid grid-cols-3">
-              <dt className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
-                Source
-              </dt>
-              <dd className="col-span-2 text-sm text-zinc-950 dark:text-white">
-                {deal.source}
-              </dd>
-            </div>
-          )}
-          <div className="grid grid-cols-3">
-            <dt className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
-              Priority
-            </dt>
-            <dd className="col-span-2 text-sm text-zinc-950 dark:text-white">
-              {getPriorityLabel(deal.priority)}
-            </dd>
-          </div>
-          {deal.lostReason && (
-            <div className="grid grid-cols-3">
-              <dt className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
-                Lost Reason
-              </dt>
-              <dd className="col-span-2 text-sm text-zinc-950 dark:text-white">
-                {deal.lostReason}
-              </dd>
-            </div>
-          )}
-        </dl>
-      </div>
+      <EntityProperties
+        properties={[
+          {
+            label: 'Owners',
+            value: primaryOwnerName,
+            renderType: 'user',
+            isPrimary: true,
+          },
+          {
+            label: 'Stage',
+            value: formatStage(deal.stage),
+            renderType: 'badge',
+            fieldType: 'combobox',
+            options: {
+              badgeColor: getStageColor(deal.stage),
+              comboboxOptions: stages.map((s) => ({ value: s.value, label: s.label })),
+            },
+            isPrimary: true,
+            onSave: (val: string) =>
+              updateMutation.mutateAsync({ stage: val }),
+          },
+          {
+            label: 'Value',
+            value: deal.value,
+            renderType: 'currency',
+            fieldType: 'currency',
+            options: {
+              currency: deal.currency,
+              currencyOptions: currencies.map((c) => ({ code: c.code, symbol: c.symbol, name: c.name })),
+            },
+            isPrimary: true,
+            onSave: (val: { value: number; currency: string }) =>
+              updateMutation.mutateAsync({ value: val.value, currency: val.currency }),
+          },
+          {
+            label: 'Priority',
+            value: getPriorityLabel(deal.priority),
+            fieldType: 'combobox',
+            options: {
+              comboboxOptions: priorities.map((p) => ({ value: p.value, label: p.label })),
+            },
+            isPrimary: true,
+            onSave: (val: number) =>
+              updateMutation.mutateAsync({ priority: val }),
+          },
+          {
+            label: 'Win Probability',
+            value: deal.probability != null ? `${deal.probability}%` : null,
+            fieldType: 'number',
+            placeholder: '0-100',
+            options: { min: 0, max: 100 },
+            onSave: (val) =>
+              updateMutation.mutateAsync({ probability: val }),
+          },
+          {
+            label: 'Expected Close',
+            value: deal.expectedCloseDate,
+            renderType: 'date',
+            fieldType: 'date',
+            isPrimary: true,
+            onSave: (val) =>
+              updateMutation.mutateAsync({ expectedCloseDate: val }),
+          },
+          {
+            label: 'Actual Close',
+            value: deal.actualCloseDate,
+            renderType: 'date',
+            fieldType: 'date',
+            onSave: (val) =>
+              updateMutation.mutateAsync({ actualCloseDate: val }),
+          },
+          {
+            label: 'Source',
+            value: deal.source,
+            fieldType: 'text',
+            placeholder: 'e.g., Referral, Inbound, Outbound',
+            onSave: (val) =>
+              updateMutation.mutateAsync({ source: val }),
+          },
+        ]}
+      />
 
-      <Divider className="mt-8" />
-
-      {/* Ownership */}
-      <div className="mt-8">
-        <Subheading>Owners</Subheading>
-        <div className="mt-4 space-y-2">
-          {deal.owners.map((owner) => (
-            <div key={owner.id} className="flex items-center gap-3">
-              <div className="text-sm text-zinc-950 dark:text-white">
-                {owner.user.name}
-              </div>
-              <div className="text-sm text-zinc-600 dark:text-zinc-400">
-                {owner.user.email}
-              </div>
-              {owner.isPrimary && (
-                <Badge color="lime" className="text-xs">
-                  Primary
-                </Badge>
-              )}
-            </div>
-          ))}
-        </div>
-      </div>
 
       {/* Summary */}
       {deal.summary && (

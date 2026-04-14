@@ -9,4 +9,19 @@ export class MetadataController {
   getCurrencies() {
     return this.metadataService.getCurrencies();
   }
+
+  @Get('deal/priorities')
+  getPriorities() {
+    return this.metadataService.getDealPriorities();
+  }
+
+  @Get('deal/stages')
+  getStages() {
+    return this.metadataService.getDealStages();
+  }
+
+  @Get('task/status')
+  getTaskStatuses() {
+    return this.metadataService.getTaskStatuses();
+  }
 }

@@ -1,20 +1,20 @@
 'use client';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getTask } from '@/server/query-options';
+import { getTask, getTasks } from '@/server/query-options';
 import { tasksApi } from '@/lib/api/tasks';
+import { metadataApi } from '@/lib/api/metadata';
 import { useRouter } from 'next/navigation';
 import { Badge, Button, Divider, Subheading, Textarea } from '@zuko/ui-kit';
-import dayjs from 'dayjs';
 import {
   TrashIcon,
   ClipboardDocumentCheckIcon,
 } from '@heroicons/react/24/outline';
-import type { TaskStatus } from '@/lib/api/tasks';
+import type { TaskStatus, UpdateTaskDto } from '@/lib/api/tasks';
 import { useState } from 'react';
 import { useAutosaveField } from '@/hooks/useAutosaveField';
 import ConfirmDialog from '@/components/shared/ConfirmDialog';
-import { BackLink, DetailHeader } from '@/components/shared';
+import { BackLink, DetailHeader, EntityProperties } from '@/components/shared';
 import { LoadingState } from '@/components/shared';
 import ActivityTimeline from '@/components/Activity/ActivityTimeline';
 import { toast } from 'sonner';
@@ -38,14 +38,24 @@ const TaskDetail = ({ taskId, currentUserId }: TaskDetailProps) => {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { data: task, isLoading } = useQuery(getTask(taskId));
+  const { data: taskStatuses = [] } = useQuery({
+    queryKey: ['taskStatuses'],
+    queryFn: metadataApi.getTaskStatuses,
+  });
+  const { data: tasksData } = useQuery(getTasks());
+  const allTasks = tasksData?.tasks ?? [];
+  const parentTaskOptions = allTasks
+    .filter((t) => t.id !== taskId)
+    .map((t) => ({ value: String(t.id), label: t.title }));
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   const updateMutation = useMutation({
-    mutationFn: (updated: { title?: string; description?: string }) =>
+    mutationFn: (updated: UpdateTaskDto) =>
       tasksApi.updateTask(taskId, updated),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['task', taskId] });
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      queryClient.invalidateQueries({ queryKey: ['timeline', 'task', taskId] });
     },
   });
 
@@ -126,37 +136,57 @@ const TaskDetail = ({ taskId, currentUserId }: TaskDetailProps) => {
         isLoading={deleteMutation.isPending}
       />
 
-      <dl className="mt-6 grid grid-cols-1 gap-6 sm:grid-cols-3">
-        {[
-          {
-            label: 'Status',
-            value: <Badge color={statusCfg.color}>{statusCfg.label}</Badge>,
-          },
+      <EntityProperties
+        properties={[
           {
             label: 'Assignee',
-            value: task.assignee || (
-              <span className="text-zinc-400">Unassigned</span>
-            ),
+            value: task.assignee,
+            renderType: 'user',
+            fieldType: 'text',
+            placeholder: 'Person responsible',
+            onSave: (val: string) =>
+              updateMutation.mutateAsync({ assignee: val || null }),
+          },
+          {
+            label: 'Status',
+            value: statusCfg.label,
+            renderType: 'badge',
+            fieldType: 'combobox',
+            options: {
+              badgeColor: statusCfg.color,
+              comboboxOptions: taskStatuses.map((s) => ({ value: s.value, label: s.label })),
+            },
+            onSave: (val: string) =>
+              updateMutation.mutateAsync({ status: val as any }),
           },
           {
             label: 'Completed',
-            value: task.completedAt ? (
-              dayjs(task.completedAt).format('MMM D, YYYY')
-            ) : (
-              <span className="text-zinc-400">—</span>
-            ),
+            value: task.completedAt,
+            renderType: 'date',
+            fieldType: 'date',
+            onSave: (val) => updateMutation.mutateAsync({ completedAt: val }),
           },
-        ].map(({ label, value }) => (
-          <div key={label} className="flex flex-col gap-1">
-            <dt className="text-xs font-bold uppercase tracking-wider text-zinc-500">
-              {label}
-            </dt>
-            <dd className="text-sm text-zinc-950 dark:text-white">
-              {value}
-            </dd>
-          </div>
-        ))}
-      </dl>
+          {
+            label: 'Parent Task',
+            value: task.parentId
+              ? (allTasks.find((t) => t.id === task.parentId)?.title ?? String(task.parentId))
+              : null,
+            renderType: 'text',
+            fieldType: 'combobox',
+            placeholder: 'Select parent task...',
+            options: {
+              comboboxOptions: [
+                { value: '', label: 'No parent (top-level)' },
+                ...parentTaskOptions,
+              ],
+            },
+            onSave: async (val: string) => {
+              const parentId = val ? parseInt(val, 10) : null;
+              await updateMutation.mutateAsync({ parentId });
+            },
+          },
+        ]}
+      />
 
       <Divider className="mt-8" />
 

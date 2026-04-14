@@ -126,15 +126,6 @@ const TasksList = () => {
         onCellUpdate={(rowId, columnId, value) =>
           updateCell({ rowId, columnId, value })
         }
-        emptyStateConfig={{
-          icon: ClipboardDocumentListIcon,
-          title: 'No Tasks',
-          description: 'Get started by creating a new task.',
-          action: {
-            label: 'New Task',
-            onClick: () => addTask(),
-          },
-        }}
         showAddRow
         onAddRow={() => addTask()}
       />
