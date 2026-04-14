@@ -5,7 +5,6 @@ import { BasePage } from "./BasePage";
  * Page Object Model for Company Detail page
  */
 export class CompanyDetailPage extends BasePage {
-  readonly editButton: Locator;
   readonly hideButton: Locator;
   readonly addContactButton: Locator;
   readonly associatedContactsSection: Locator;
@@ -13,7 +12,6 @@ export class CompanyDetailPage extends BasePage {
   constructor(page: Page) {
     super(page);
     // Use exact match to avoid matching "Edit association" button
-    this.editButton = page.getByRole("button", { name: "Edit", exact: true });
     this.hideButton = page.getByRole("button", { name: /Hide/i });
     this.addContactButton = page.getByRole("button", { name: "Add Contact" });
     this.associatedContactsSection = page
@@ -21,10 +19,14 @@ export class CompanyDetailPage extends BasePage {
       .locator("..");
     this.companyName = page.locator('h1[contenteditable="true"]');
     this.summaryField = page.getByPlaceholder(/No summary yet/i);
+    this.websiteField = page.getByPlaceholder(/https:\/\/example.com/i);
+    this.linkedinUrlField = page.getByPlaceholder(/https:\/\/linkedin.com\/company\/example/i);
   }
 
   readonly companyName: Locator;
   readonly summaryField: Locator;
+  readonly websiteField: Locator;
+  readonly linkedinUrlField: Locator;
 
   /**
    * Navigate to a specific company detail page
@@ -33,15 +35,8 @@ export class CompanyDetailPage extends BasePage {
   async goto(companyId: number) {
     await super.goto(`/companies/${companyId}`);
     await this.page.waitForLoadState('domcontentloaded');
-    await this.editButton.waitFor({ state: 'visible' });
   }
 
-  /**
-   * Click edit button
-   */
-  async clickEdit() {
-    await this.editButton.click();
-  }
 
   /**
    * Add a contact to the company.

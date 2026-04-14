@@ -209,12 +209,12 @@ export default function CompanyDetail({
       {/* Company Information */}
       <div className="mt-8">
         <dl className="mt-4 space-y-4">
-          {company.website && (
-            <div className="grid grid-cols-3">
-              <dt className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
-                Website
-              </dt>
-              <dd className="col-span-2 text-sm text-zinc-950 dark:text-white">
+          <div className="grid grid-cols-3">
+            <dt className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
+              Website
+            </dt>
+            <dd className="col-span-2 text-sm text-zinc-950 dark:text-white">
+              {company.website ? (
                 <a
                   href={company.website}
                   target="_blank"
@@ -223,15 +223,17 @@ export default function CompanyDetail({
                 >
                   {company.website}
                 </a>
-              </dd>
-            </div>
-          )}
-          {company.linkedinUrl && (
-            <div className="grid grid-cols-3">
-              <dt className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
-                LinkedIn
-              </dt>
-              <dd className="col-span-2 text-sm text-zinc-950 dark:text-white">
+              ) : (
+                <span className="text-zinc-400">—</span>
+              )}
+            </dd>
+          </div>
+          <div className="grid grid-cols-3">
+            <dt className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
+              LinkedIn
+            </dt>
+            <dd className="col-span-2 text-sm text-zinc-950 dark:text-white">
+              {company.linkedinUrl ? (
                 <a
                   href={company.linkedinUrl}
                   target="_blank"
@@ -240,9 +242,11 @@ export default function CompanyDetail({
                 >
                   {company.linkedinUrl}
                 </a>
-              </dd>
-            </div>
-          )}
+              ) : (
+                <span className="text-zinc-400">—</span>
+              )}
+            </dd>
+          </div>
         </dl>
       </div>
 

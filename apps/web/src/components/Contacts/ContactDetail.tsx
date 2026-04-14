@@ -115,46 +115,48 @@ export default function ContactDetail({
       {/* Contact Information */}
       <div className="mt-8">
         <dl className="mt-4 space-y-4">
-          {contact.email && (
-            <div className="grid grid-cols-3">
-              <dt className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
-                Email
-              </dt>
-              <dd className="col-span-2 text-sm text-zinc-950 dark:text-white">
+          <div className="grid grid-cols-3">
+            <dt className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
+              Email
+            </dt>
+            <dd className="col-span-2 text-sm text-zinc-950 dark:text-white">
+              {contact.email ? (
                 <a
                   href={`mailto:${contact.email}`}
                   className="text-blue-600 hover:underline dark:text-blue-400"
                 >
                   {contact.email}
                 </a>
-              </dd>
-            </div>
-          )}
-          {contact.phone && (
-            <div className="grid grid-cols-3">
-              <dt className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
-                Phone
-              </dt>
-              <dd className="col-span-2 text-sm text-zinc-950 dark:text-white">
+              ) : (
+                <span className="text-zinc-400">—</span>
+              )}
+            </dd>
+          </div>
+          <div className="grid grid-cols-3">
+            <dt className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
+              Phone
+            </dt>
+            <dd className="col-span-2 text-sm text-zinc-950 dark:text-white">
+              {contact.phone ? (
                 <a
                   href={`tel:${contact.phone}`}
                   className="text-blue-600 hover:underline dark:text-blue-400"
                 >
                   {contact.phone}
                 </a>
-              </dd>
-            </div>
-          )}
-          {contact.linkedinId && (
-            <div className="grid grid-cols-3">
-              <dt className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
-                LinkedIn
-              </dt>
-              <dd className="col-span-2 text-sm text-zinc-950 dark:text-white">
-                {contact.linkedinId}
-              </dd>
-            </div>
-          )}
+              ) : (
+                <span className="text-zinc-400">—</span>
+              )}
+            </dd>
+          </div>
+          <div className="grid grid-cols-3">
+            <dt className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
+              LinkedIn
+            </dt>
+            <dd className="col-span-2 text-sm text-zinc-950 dark:text-white">
+              {contact.linkedinId || <span className="text-zinc-400">—</span>}
+            </dd>
+          </div>
         </dl>
       </div>
 
