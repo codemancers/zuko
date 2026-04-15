@@ -19,6 +19,7 @@ import {
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getCompany, getDealsByCompany } from '@/server/query-options';
 import { companiesApi, UpdateCompanyDto } from '@/lib/api/companies';
+import { toast } from 'sonner';
 import dayjs from 'dayjs';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -59,6 +60,10 @@ export default function CompanyDetail({
       queryClient.invalidateQueries({ queryKey: ['company', companyId] });
       queryClient.invalidateQueries({ queryKey: ['companies'] });
       queryClient.invalidateQueries({ queryKey: ['timeline', 'company', companyId] });
+    },
+    onError: (error) => {
+      toast.error('Failed to save changes');
+      queryClient.invalidateQueries({ queryKey: ['company', companyId] });
     },
   });
 
@@ -171,7 +176,7 @@ export default function CompanyDetail({
           icon={BuildingOfficeIcon}
           title={nameField.value}
           onTitleBlur={(val) => nameField.setValue(val)}
-          isSaving={nameField.isSaving}
+          isSaving={nameField.isSaving || updateMutation.isPending}
           createdAt={company.createdAt}
         />
         <div className="flex gap-3">
@@ -232,6 +237,9 @@ export default function CompanyDetail({
             renderType: 'link',
             fieldType: 'text',
             placeholder: 'https://www.linkedin.com/company/example',
+            options: {
+              validation: 'linkedin',
+            },
             onSave: (val) =>
               updateMutation.mutateAsync({ linkedinUrl: val }),
           },
@@ -243,11 +251,6 @@ export default function CompanyDetail({
       <div className="mt-8">
         <div className="flex items-center justify-between mb-4">
           <Subheading>Summary</Subheading>
-          {summaryField.isSaving && (
-            <span className="text-xs font-bold uppercase tracking-widest text-zinc-400 animate-pulse">
-              Syncing...
-            </span>
-          )}
         </div>
         <Textarea
           value={summaryField.value}

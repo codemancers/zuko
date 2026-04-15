@@ -14,10 +14,12 @@ import {
   Subheading,
   Switch,
   Text,
+  Textarea,
 } from '@zuko/ui-kit';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getDeal } from '@/server/query-options';
 import { dealsApi, UpdateDealDto } from '@/lib/api/deals';
+import { toast } from 'sonner';
 import { metadataApi } from '@/lib/api/metadata';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -73,11 +75,20 @@ export default function DealDetail({ dealId, currentUserId }: DealDetailProps) {
       queryClient.invalidateQueries({ queryKey: ['deals'] });
       queryClient.invalidateQueries({ queryKey: ['timeline', 'deal', dealId] });
     },
+    onError: (error) => {
+      toast.error('Failed to save changes');
+      queryClient.invalidateQueries({ queryKey: ['deal', dealId] });
+    },
   });
 
   const titleField = useAutosaveField(deal?.title, {
     fieldName: 'deal title',
     onSave: (val) => updateMutation.mutateAsync({ title: val }),
+  });
+
+  const summaryField = useAutosaveField(deal?.summary, {
+    fieldName: 'summary',
+    onSave: (val) => updateMutation.mutateAsync({ summary: val }),
   });
 
   // Confirm dialog state
@@ -234,7 +245,7 @@ export default function DealDetail({ dealId, currentUserId }: DealDetailProps) {
           icon={BriefcaseIcon}
           title={titleField.value}
           onTitleBlur={(val) => titleField.setValue(val)}
-          isSaving={titleField.isSaving}
+          isSaving={titleField.isSaving || updateMutation.isPending}
           subtitle={
             <>
               <Badge color={getStageColor(deal.stage)} className="text-xs">
@@ -382,14 +393,17 @@ export default function DealDetail({ dealId, currentUserId }: DealDetailProps) {
 
 
       {/* Summary */}
-      {deal.summary && (
-        <div className="mt-8">
+      <div className="mt-8">
+        <div className="flex items-center justify-between mb-4">
           <Subheading>Summary</Subheading>
-          <div className="mt-4 whitespace-pre-wrap rounded-lg bg-zinc-50 p-4 text-sm text-zinc-950 dark:bg-zinc-900 dark:text-white">
-            {deal.summary}
-          </div>
         </div>
-      )}
+        <Textarea
+          value={summaryField.value}
+          onChange={(e) => summaryField.setValue(e.target.value)}
+          placeholder="No summary yet. Add one..."
+          className="h-32"
+        />
+      </div>
 
       {/* Associated Companies */}
       <div className="mt-8">

@@ -25,6 +25,7 @@ export interface Property {
   placeholder?: string;
   isPrimary?: boolean; // New: explicitly mark as primary
   options?: {
+    validation?: 'linkedin'; //special validations
     href?: string;
     currency?: string;
     badgeColor?: 'zinc' | 'blue' | 'green' | 'red' | 'yellow';
@@ -56,6 +57,11 @@ function validateProperty(value: string, property: Property): string | null {
         const url = new URL(value);
         if (url.protocol !== 'http:' && url.protocol !== 'https:') {
           return 'Must be a valid URL (e.g., https://example.com)';
+        }
+        else if (property.options?.validation === 'linkedin') {
+          if (!url.hostname.includes('linkedin.com')) {
+            return 'Must be a valid LinkedIn URL';
+          }
         }
         return null;
       } catch {
@@ -211,6 +217,7 @@ export function EntityProperties({
       setValidationError(null);
     } catch (error) {
       console.error('Failed to save property:', error);
+      handleCancel();
     } finally {
       setIsSaving(false);
     }

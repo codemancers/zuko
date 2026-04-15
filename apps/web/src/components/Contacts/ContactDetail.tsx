@@ -16,6 +16,7 @@ import {
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getContact, getDealsByContact } from '@/server/query-options';
 import { contactsApi, UpdateContactDto } from '@/lib/api/contacts';
+import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import ActivityTimeline from '@/components/Activity/ActivityTimeline';
@@ -45,6 +46,10 @@ export default function ContactDetail({
       queryClient.invalidateQueries({ queryKey: ['contact', contactId] });
       queryClient.invalidateQueries({ queryKey: ['contacts'] });
       queryClient.invalidateQueries({ queryKey: ['timeline', 'contact', contactId] });
+    },
+    onError: () => {
+      toast.error('Failed to save changes');
+      queryClient.invalidateQueries({ queryKey: ['contact', contactId] });
     },
   });
 
@@ -93,7 +98,7 @@ export default function ContactDetail({
           icon={UserIcon}
           title={nameField.value}
           onTitleBlur={(val) => nameField.setValue(val)}
-          isSaving={nameField.isSaving}
+          isSaving={nameField.isSaving || updateMutation.isPending}
           createdAt={contact.createdAt}
         />
         <div className="flex gap-3">
@@ -128,7 +133,7 @@ export default function ContactDetail({
             value: contact.email,
             renderType: 'email',
             fieldType: 'text',
-            placeholder: 'john@example.com',
+            placeholder: 'eg: john@example.com',
             onSave: (val) =>
               updateMutation.mutateAsync({ email: val }),
           },
@@ -137,7 +142,7 @@ export default function ContactDetail({
             value: contact.phone,
             renderType: 'phone',
             fieldType: 'text',
-            placeholder: '+14155552671',
+            placeholder: 'eg: +14155552671',
             onSave: (val) =>
               updateMutation.mutateAsync({ phone: val }),
           },
@@ -157,11 +162,6 @@ export default function ContactDetail({
       <div className="mt-8">
         <div className="flex items-center justify-between mb-4">
           <Subheading>Notes</Subheading>
-          {notesField.isSaving && (
-            <span className="text-xs font-bold uppercase tracking-widest text-zinc-400 animate-pulse">
-              Syncing...
-            </span>
-          )}
         </div>
         <Textarea
           value={notesField.value}

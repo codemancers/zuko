@@ -57,6 +57,10 @@ const TaskDetail = ({ taskId, currentUserId }: TaskDetailProps) => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
       queryClient.invalidateQueries({ queryKey: ['timeline', 'task', taskId] });
     },
+    onError: () => {
+      toast.error('Failed to save changes');
+      queryClient.invalidateQueries({ queryKey: ['task', taskId] });
+    },
   });
 
   const titleField = useAutosaveField(task?.title, {
@@ -108,7 +112,7 @@ const TaskDetail = ({ taskId, currentUserId }: TaskDetailProps) => {
           icon={ClipboardDocumentCheckIcon}
           title={titleField.value}
           onTitleBlur={(val) => titleField.setValue(val)}
-          isSaving={titleField.isSaving || descriptionField.isSaving}
+          isSaving={titleField.isSaving || descriptionField.isSaving || updateMutation.isPending}
           createdAt={task.createdAt}
         />
   <div className="flex gap-2">
@@ -193,11 +197,6 @@ const TaskDetail = ({ taskId, currentUserId }: TaskDetailProps) => {
       <div className="mt-8">
         <div className="flex items-center justify-between mb-2">
           <Subheading>Description</Subheading>
-          {descriptionField.isSaving && (
-            <span className="text-xs font-bold uppercase tracking-widest text-zinc-400 animate-pulse">
-              Syncing...
-            </span>
-          )}
         </div>
         <Textarea
           value={descriptionField.value}
