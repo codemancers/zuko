@@ -27,7 +27,7 @@ import AddCompanyToDealDialog from './AddCompanyToDealDialog';
 import AddContactToDealDialog from './AddContactToDealDialog';
 
 import ConfirmDialog from '@/components/shared/ConfirmDialog';
-import { BackLink, MetadataFooter, DetailHeader } from '@/components/shared';
+import { BackLink, DetailHeader } from '@/components/shared';
 import {
   InlineSaveCancel,
   InlineEditRemove,
@@ -570,7 +570,6 @@ export default function DealDetail({ dealId, currentUserId }: DealDetailProps) {
         )}
       </div>
 
-      <MetadataFooter createdAt={deal.createdAt} updatedAt={deal.updatedAt} />
 
       {/* Activity Timeline */}
       <ActivityTimeline

@@ -27,7 +27,7 @@ import ActivityTimeline from '@/components/Activity/ActivityTimeline';
 import AddContactDialog from './AddContactDialog';
 
 import ConfirmDialog from '@/components/shared/ConfirmDialog';
-import { BackLink, MetadataFooter, DetailHeader } from '@/components/shared';
+import { BackLink, DetailHeader } from '@/components/shared';
 import {
   InlineSaveCancel,
   InlineEditRemove,
@@ -424,10 +424,6 @@ export default function CompanyDetail({
         </div>
       )}
 
-      <MetadataFooter
-        createdAt={company.createdAt}
-        updatedAt={company.updatedAt}
-      />
 
       {/* Activity Timeline */}
       <ActivityTimeline

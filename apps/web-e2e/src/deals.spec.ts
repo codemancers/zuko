@@ -265,14 +265,6 @@ test.describe('Deal Detail', () => {
     await commentInput.scrollIntoViewIfNeeded();
     await expect(commentInput).toBeVisible({ timeout: 30000 });
   });
-
-  test('displays metadata section', async ({ dealDetailPage, page }) => {
-    await dealDetailPage.goto(1);
-
-    await expect(page.getByRole('heading', { name: /Details/i })).toBeVisible();
-    await expect(page.getByText('Created', { exact: true })).toBeVisible();
-    await expect(page.getByText(/Last Updated/i)).toBeVisible();
-  });
 });
 
 test.describe('Deal Detail - Inline Editing', () => {
