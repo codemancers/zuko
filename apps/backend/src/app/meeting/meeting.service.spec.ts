@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, jest } from "@jest/globals";
+import { describe, it, expect, beforeEach } from "vitest";
 import { Test, TestingModule } from "@nestjs/testing";
 import { MeetingService } from "./meeting.service";
 import { PrismaService } from "../../prisma/prisma.service";
@@ -12,24 +12,24 @@ describe("MeetingService", () => {
   beforeEach(async () => {
     const mockPrisma = {
       meeting: {
-        create: jest.fn(),
-        findMany: jest.fn(),
-        findUnique: jest.fn(),
-        update: jest.fn(),
-        delete: jest.fn(),
+        create: vi.fn(),
+        findMany: vi.fn(),
+        findUnique: vi.fn(),
+        update: vi.fn(),
+        delete: vi.fn(),
       },
-      meetingSummary: { findFirst: jest.fn(), create: jest.fn() },
+      meetingSummary: { findFirst: vi.fn(), create: vi.fn() },
       meetingActionItem: {
-        findMany: jest.fn(),
-        findUnique: jest.fn(),
-        update: jest.fn(),
-        create: jest.fn(),
+        findMany: vi.fn(),
+        findUnique: vi.fn(),
+        update: vi.fn(),
+        create: vi.fn(),
       },
     };
 
-    const mockGateway = { sendEnd: jest.fn() };
-    const mockIngest = { ingestChunk: jest.fn() };
-    const mockNotify = { notifyMeetingEnd: jest.fn() };
+    const mockGateway = { sendEnd: vi.fn() };
+    const mockIngest = { ingestChunk: vi.fn() };
+    const mockNotify = { notifyMeetingEnd: vi.fn() };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [

@@ -103,8 +103,12 @@
         }
       },
       "test": {
+        "executor": "@nx/vitest:test",
+        "outputs": [
+          "{projectRoot}/test-output/vitest/coverage"
+        ],
         "options": {
-          "passWithNoTests": true
+          "configFile": "apps/ai-agents/vitest.config.ts"
         }
       }
     }

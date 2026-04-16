@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, jest } from '@jest/globals';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { Test, TestingModule } from '@nestjs/testing';
 import { DealsController, CreateDealDto } from './deals.controller';
 import { DealsService } from '@zuko/sales';
@@ -12,26 +12,26 @@ describe('DealsController', () => {
   let controller: DealsController;
 
   const mockDealsService = {
-    create: jest.fn(),
-    update: jest.fn(),
-    findById: jest.fn(),
-    findAll: jest.fn(),
-    hide: jest.fn(),
-    unhide: jest.fn(),
-    addOwner: jest.fn(),
-    removeOwner: jest.fn(),
-    setPrimaryOwner: jest.fn(),
-    getDealsByOwner: jest.fn(),
-    addCompany: jest.fn(),
-    removeCompany: jest.fn(),
-    updateCompany: jest.fn(),
-    getCompanies: jest.fn(),
-    addContact: jest.fn(),
-    removeContact: jest.fn(),
-    updateContact: jest.fn(),
-    getContacts: jest.fn(),
-    getDealsByCompany: jest.fn(),
-    getDealsByContact: jest.fn(),
+    create: vi.fn(),
+    update: vi.fn(),
+    findById: vi.fn(),
+    findAll: vi.fn(),
+    hide: vi.fn(),
+    unhide: vi.fn(),
+    addOwner: vi.fn(),
+    removeOwner: vi.fn(),
+    setPrimaryOwner: vi.fn(),
+    getDealsByOwner: vi.fn(),
+    addCompany: vi.fn(),
+    removeCompany: vi.fn(),
+    updateCompany: vi.fn(),
+    getCompanies: vi.fn(),
+    addContact: vi.fn(),
+    removeContact: vi.fn(),
+    updateContact: vi.fn(),
+    getContacts: vi.fn(),
+    getDealsByCompany: vi.fn(),
+    getDealsByContact: vi.fn(),
   };
 
   beforeEach(async () => {
@@ -53,7 +53,7 @@ describe('DealsController', () => {
     controller = module.get<DealsController>(DealsController);
 
     // Reset all mocks before each test
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('should be defined', () => {
@@ -84,7 +84,7 @@ describe('DealsController', () => {
         contacts: [],
       };
 
-      (mockDealsService.create as jest.Mock).mockResolvedValue(
+      (mockDealsService.create as vi.Mock).mockResolvedValue(
         mockCreatedDeal as never,
       );
 
@@ -124,7 +124,7 @@ describe('DealsController', () => {
         contacts: [],
       };
 
-      (mockDealsService.create as jest.Mock).mockResolvedValue(
+      (mockDealsService.create as vi.Mock).mockResolvedValue(
         mockCreatedDeal as never,
       );
 
@@ -156,7 +156,7 @@ describe('DealsController', () => {
         owners: [],
       };
 
-      (mockDealsService.update as jest.Mock).mockResolvedValue(
+      (mockDealsService.update as vi.Mock).mockResolvedValue(
         mockUpdatedDeal as never,
       );
 
@@ -194,7 +194,7 @@ describe('DealsController', () => {
         owners: [],
       };
 
-      (mockDealsService.update as jest.Mock).mockResolvedValue(
+      (mockDealsService.update as vi.Mock).mockResolvedValue(
         mockUpdatedDeal as never,
       );
 

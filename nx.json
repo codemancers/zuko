@@ -58,17 +58,6 @@
       }
     },
     {
-      "plugin": "@nx/jest/plugin",
-      "options": {
-        "targetName": "test"
-      },
-      "exclude": [
-        "apps/backend-e2e/**/*",
-        "apps/web/**/*",
-        "apps/ai-agents-e2e/**/*"
-      ]
-    },
-    {
       "plugin": "@nx/vitest",
       "options": {
         "testTargetName": "test"
@@ -107,12 +96,7 @@
     "test": {
       "dependsOn": [
         "^build"
-      ],
-      "options": {
-        "env": {
-          "NODE_OPTIONS": "--experimental-vm-modules"
-        }
-      }
+      ]
     },
     "@nx/js:tsc": {
       "cache": true,

@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, jest } from "@jest/globals";
+import { describe, it, expect, beforeEach } from "vitest";
 import { Test, TestingModule } from "@nestjs/testing";
 import { MeetingController } from "./meeting.controller";
 import { MeetingService } from "./meeting.service";
@@ -10,16 +10,16 @@ describe("MeetingController", () => {
 
   beforeEach(async () => {
     const mockMeetingService = {
-      create: jest.fn(),
-      findAll: jest.fn(),
-      findOne: jest.fn(),
-      update: jest.fn(),
-      remove: jest.fn(),
-      webhook: jest.fn(),
-      addTranscriptChunk: jest.fn(),
-      getTranscript: jest.fn(),
-      updateActionItem: jest.fn(),
-      endMeeting: jest.fn(),
+      create: vi.fn(),
+      findAll: vi.fn(),
+      findOne: vi.fn(),
+      update: vi.fn(),
+      remove: vi.fn(),
+      webhook: vi.fn(),
+      addTranscriptChunk: vi.fn(),
+      getTranscript: vi.fn(),
+      updateActionItem: vi.fn(),
+      endMeeting: vi.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({

@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from "@jest/globals";
+import { describe, it, expect, beforeEach } from "vitest";
 import { Test, TestingModule } from "@nestjs/testing";
 import { AdminController } from "./admin.controller";
 import { AuthGuard } from "@thallesp/nestjs-better-auth";

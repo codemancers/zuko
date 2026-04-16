@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, jest } from '@jest/globals';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { TaskActivityListener } from './task-activity.listener';
 import { ActivityService } from '../services/activity.service';
 
@@ -7,14 +7,14 @@ const ACTOR_ID = 42;
 
 describe('TaskActivityListener', () => {
   let listener: TaskActivityListener;
-  const mockActivityService = { create: jest.fn() };
+  const mockActivityService = { create: vi.fn() };
 
   beforeEach(() => {
     listener = new TaskActivityListener(
       mockActivityService as unknown as ActivityService,
     );
-    jest.clearAllMocks();
-    (mockActivityService.create as jest.Mock).mockResolvedValue(undefined as never);
+    vi.clearAllMocks();
+    (mockActivityService.create as vi.Mock).mockResolvedValue(undefined as never);
   });
 
   describe('handleTaskCreated', () => {

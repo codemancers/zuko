@@ -119,8 +119,12 @@
         }
       },
       "test": {
+        "executor": "@nx/vitest:test",
+        "outputs": [
+          "{projectRoot}/test-output/vitest/coverage"
+        ],
         "options": {
-          "passWithNoTests": true
+          "configFile": "apps/backend/vitest.config.ts"
         }
       },
       "docker:build": {
