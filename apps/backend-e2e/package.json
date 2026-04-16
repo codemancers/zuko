@@ -8,12 +8,12 @@
     ],
     "targets": {
       "e2e": {
-        "executor": "@nx/jest:jest",
+        "executor": "@nx/vitest:test",
         "outputs": [
-          "{projectRoot}/test-output/jest/coverage"
+          "{projectRoot}/test-output/vitest/coverage"
         ],
         "options": {
-          "jestConfig": "apps/backend-e2e/jest.config.js",
+          "configFile": "apps/backend-e2e/vitest.config.ts",
           "passWithNoTests": true
         },
         "dependsOn": [

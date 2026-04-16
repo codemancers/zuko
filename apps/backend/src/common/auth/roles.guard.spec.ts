@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, jest } from "@jest/globals";
+import { describe, it, expect, beforeEach } from "vitest";
 import { ExecutionContext } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
 import { RolesGuard } from "./roles.guard";
@@ -24,14 +24,14 @@ describe("RolesGuard", () => {
     requiredRoles?: UserRole[],
   ): ExecutionContext => {
     const mockContext = {
-      switchToHttp: jest.fn().mockReturnValue({
-        getRequest: jest.fn().mockReturnValue({ user }),
+      switchToHttp: vi.fn().mockReturnValue({
+        getRequest: vi.fn().mockReturnValue({ user }),
       }),
-      getHandler: jest.fn(),
-      getClass: jest.fn(),
+      getHandler: vi.fn(),
+      getClass: vi.fn(),
     } as unknown as ExecutionContext;
 
-    jest.spyOn(reflector, "getAllAndOverride").mockReturnValue(requiredRoles);
+    vi.spyOn(reflector, "getAllAndOverride").mockReturnValue(requiredRoles);
 
     return mockContext;
   };

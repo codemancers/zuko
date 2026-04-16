@@ -4,8 +4,9 @@
     "outDir": "out-tsc/@zuko/backend-e2e",
     "esModuleInterop": true,
     "noUnusedLocals": false,
-    "noImplicitAny": false
+    "noImplicitAny": false,
+    "types": ["vitest/globals", "node"]
   },
-  "include": ["src/**/*.ts"],
+  "include": ["vitest.config.ts", "src/**/*.ts"],
   "references": []
 }

@@ -5,12 +5,13 @@
   "projectType": "application",
   "targets": {
     "e2e": {
-      "executor": "@nx/jest:jest",
-      "outputs": ["{workspaceRoot}/test-output/jest/coverage"],
+      "executor": "@nx/vitest:test",
+      "outputs": ["{projectRoot}/test-output/vitest/coverage"],
       "options": {
-        "jestConfig": "apps/backend-e2e/jest.config.js",
+        "configFile": "apps/backend-e2e/vitest.config.ts",
         "passWithNoTests": true
-      }
+      },
+      "dependsOn": ["@zuko/backend:build"]
     }
   },
   "implicitDependencies": ["@zuko/backend"]

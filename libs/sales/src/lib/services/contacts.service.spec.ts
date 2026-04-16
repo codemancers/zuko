@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, afterAll } from '@jest/globals';
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { Test } from '@nestjs/testing';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { Contact, PrismaClient, TableColumn, User } from '@prisma/client';

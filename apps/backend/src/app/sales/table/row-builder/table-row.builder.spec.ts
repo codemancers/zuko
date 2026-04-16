@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { describe, it, expect, beforeEach } from '@jest/globals';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { TableRowBuilder } from './table-row.builder';
 import { ColumnMetadata } from '@zuko/sales';
 

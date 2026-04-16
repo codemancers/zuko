@@ -8,17 +8,16 @@
     ],
     "targets": {
       "e2e": {
-        "executor": "@nx/jest:jest",
+        "executor": "@nx/vitest:test",
         "outputs": [
-          "{projectRoot}/test-output/jest/coverage"
+          "{projectRoot}/test-output/vitest/coverage"
         ],
         "options": {
-          "jestConfig": "apps/ai-agents-e2e/jest.config.cts",
+          "configFile": "apps/ai-agents-e2e/vitest.config.ts",
           "passWithNoTests": true
         },
         "dependsOn": [
-          "@zuko/ai-agents:build",
-          "@zuko/ai-agents:serve"
+          "@zuko/ai-agents:build"
         ]
       }
     }

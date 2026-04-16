@@ -63,8 +63,12 @@
         }
       },
       "test": {
+        "executor": "@nx/vitest:test",
+        "outputs": [
+          "{projectRoot}/test-output/vitest/coverage"
+        ],
         "options": {
-          "passWithNoTests": true
+          "configFile": "apps/meeting-bot/vitest.config.ts"
         }
       },
       "copy-workspace-modules": {

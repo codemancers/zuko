@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, jest } from '@jest/globals';
+import { describe, it, expect, beforeEach, type Mock } from 'vitest';
 import { ContactActivityListener } from './contact-activity.listener';
 import { ActivityService } from '../services/activity.service';
 
@@ -7,14 +7,14 @@ const ACTOR_ID = 5;
 
 describe('ContactActivityListener', () => {
   let listener: ContactActivityListener;
-  const mockActivityService = { create: jest.fn() };
+  const mockActivityService = { create: vi.fn() };
 
   beforeEach(() => {
     listener = new ContactActivityListener(
       mockActivityService as unknown as ActivityService,
     );
-    jest.clearAllMocks();
-    (mockActivityService.create as jest.Mock).mockResolvedValue(undefined as never);
+    vi.clearAllMocks();
+    (mockActivityService.create as Mock).mockResolvedValue(undefined as never);
   });
 
   describe('handleContactCreated', () => {

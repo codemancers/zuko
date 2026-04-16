@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, jest } from '@jest/globals';
+import { describe, it, expect, beforeEach, type Mock } from 'vitest';
 import { DealActivityListener } from './deal-activity.listener';
 import { ActivityService } from '../services/activity.service';
 
@@ -7,14 +7,14 @@ const ACTOR_ID = 42;
 
 describe('DealActivityListener', () => {
   let listener: DealActivityListener;
-  const mockActivityService = { create: jest.fn() };
+  const mockActivityService = { create: vi.fn() };
 
   beforeEach(() => {
     listener = new DealActivityListener(
       mockActivityService as unknown as ActivityService,
     );
-    jest.clearAllMocks();
-    (mockActivityService.create as jest.Mock).mockResolvedValue(undefined as never);
+    vi.clearAllMocks();
+    (mockActivityService.create as Mock).mockResolvedValue(undefined as never);
   });
 
   describe('handleDealCreated', () => {
@@ -208,7 +208,7 @@ describe('DealActivityListener', () => {
         contactName: 'Jane Smith',
       });
 
-      const call = (mockActivityService.create as jest.Mock).mock.calls[0] as [{ metadata: Record<string, unknown> }];
+      const call = (mockActivityService.create as Mock).mock.calls[0] as [{ metadata: Record<string, unknown> }];
       expect(call[0].metadata).not.toHaveProperty('role');
     });
   });

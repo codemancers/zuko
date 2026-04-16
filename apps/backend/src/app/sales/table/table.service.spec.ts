@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, beforeAll, afterAll, jest } from '@jest/globals';
+import { describe, it, expect, beforeEach, beforeAll, afterAll } from 'vitest';
 import { Test, TestingModule } from '@nestjs/testing';
 import { TableService } from './table.service';
 import {
@@ -29,7 +29,7 @@ describe('TableService', () => {
   let testUser: User;
 
   beforeAll(async () => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     const module: TestingModule = await Test.createTestingModule({
       providers: [PrismaService],
     }).compile();
@@ -59,7 +59,7 @@ describe('TableService', () => {
     if (prisma) {
       await prisma.$disconnect();
     }
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   beforeEach(async () => {

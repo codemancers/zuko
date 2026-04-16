@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, jest } from '@jest/globals';
+import { describe, it, expect, beforeEach, type Mock } from 'vitest';
 import { NotFoundException } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { TaskService } from './task.service';
@@ -24,28 +24,28 @@ describe('TaskService', () => {
   let service: TaskService;
 
   const mockRepo = {
-    create: jest.fn(),
-    findById: jest.fn(),
-    findAll: jest.fn(),
-    update: jest.fn(),
-    delete: jest.fn(),
-    updateSubtasksCompletedAt: jest.fn(),
+    create: vi.fn(),
+    findById: vi.fn(),
+    findAll: vi.fn(),
+    update: vi.fn(),
+    delete: vi.fn(),
+    updateSubtasksCompletedAt: vi.fn(),
   };
 
-  const mockEventEmitter = { emitAsync: jest.fn() };
+  const mockEventEmitter = { emitAsync: vi.fn() };
 
   beforeEach(() => {
     service = new TaskService(
       mockRepo as unknown as TaskRepository,
       mockEventEmitter as unknown as EventEmitter2,
     );
-    jest.clearAllMocks();
-    (mockEventEmitter.emitAsync as jest.Mock).mockResolvedValue(undefined as never);
+    vi.clearAllMocks();
+    (mockEventEmitter.emitAsync as Mock).mockResolvedValue(undefined as never);
   });
 
   describe('createTask', () => {
     it('should create a task with orgId', async () => {
-      (mockRepo.create as jest.Mock).mockResolvedValue(mockTask as never);
+      (mockRepo.create as Mock).mockResolvedValue(mockTask as never);
 
       const result = await service.createTask(ORG_ID, { title: 'Test task' });
 
@@ -63,7 +63,7 @@ describe('TaskService', () => {
         assignee: 'Bob',
         status: TaskStatus.IN_PROGRESS,
       };
-      (mockRepo.create as jest.Mock).mockResolvedValue({
+      (mockRepo.create as Mock).mockResolvedValue({
         ...mockTask,
         ...input,
       } as never);
@@ -83,7 +83,7 @@ describe('TaskService', () => {
         tasks: [mockTask],
         pagination: { page: 1, limit: 50, total: 1, totalPages: 1 },
       };
-      (mockRepo.findAll as jest.Mock).mockResolvedValue(
+      (mockRepo.findAll as Mock).mockResolvedValue(
         paginatedResult as never,
       );
 
@@ -97,7 +97,7 @@ describe('TaskService', () => {
     });
 
     it('should forward parentId filter', async () => {
-      (mockRepo.findAll as jest.Mock).mockResolvedValue({
+      (mockRepo.findAll as Mock).mockResolvedValue({
         tasks: [],
         pagination: { page: 1, limit: 50, total: 0, totalPages: 0 },
       } as never);
@@ -110,7 +110,7 @@ describe('TaskService', () => {
 
   describe('getTaskById', () => {
     it('should return task when found', async () => {
-      (mockRepo.findById as jest.Mock).mockResolvedValue(mockTask as never);
+      (mockRepo.findById as Mock).mockResolvedValue(mockTask as never);
 
       const result = await service.getTaskById(ORG_ID, 1);
 
@@ -119,7 +119,7 @@ describe('TaskService', () => {
     });
 
     it('should throw NotFoundException when task not found', async () => {
-      (mockRepo.findById as jest.Mock).mockResolvedValue(null as never);
+      (mockRepo.findById as Mock).mockResolvedValue(null as never);
 
       await expect(service.getTaskById(ORG_ID, 99)).rejects.toThrow(
         NotFoundException,
@@ -130,8 +130,8 @@ describe('TaskService', () => {
   describe('updateTask', () => {
     it('should update a task', async () => {
       const updated = { ...mockTask, title: 'Updated' };
-      (mockRepo.findById as jest.Mock).mockResolvedValue(mockTask as never);
-      (mockRepo.update as jest.Mock).mockResolvedValue(updated as never);
+      (mockRepo.findById as Mock).mockResolvedValue(mockTask as never);
+      (mockRepo.update as Mock).mockResolvedValue(updated as never);
 
       const result = await service.updateTask(ORG_ID, 1, { title: 'Updated' });
 
@@ -142,7 +142,7 @@ describe('TaskService', () => {
     });
 
     it('should throw NotFoundException when task does not exist', async () => {
-      (mockRepo.findById as jest.Mock).mockResolvedValue(null as never);
+      (mockRepo.findById as Mock).mockResolvedValue(null as never);
 
       await expect(
         service.updateTask(ORG_ID, 99, { title: 'x' }),
@@ -156,11 +156,11 @@ describe('TaskService', () => {
         ...mockTask,
         subtasks: [{ id: 2 }, { id: 3 }],
       };
-      (mockRepo.findById as jest.Mock).mockResolvedValue(mockTask as never);
-      (mockRepo.update as jest.Mock).mockResolvedValue(
+      (mockRepo.findById as Mock).mockResolvedValue(mockTask as never);
+      (mockRepo.update as Mock).mockResolvedValue(
         taskWithSubtasks as never,
       );
-      (mockRepo.updateSubtasksCompletedAt as jest.Mock).mockResolvedValue(
+      (mockRepo.updateSubtasksCompletedAt as Mock).mockResolvedValue(
         undefined as never,
       );
 
@@ -176,8 +176,8 @@ describe('TaskService', () => {
     });
 
     it('should not cascade when status is DONE but completedAt is missing', async () => {
-      (mockRepo.findById as jest.Mock).mockResolvedValue(mockTask as never);
-      (mockRepo.update as jest.Mock).mockResolvedValue({
+      (mockRepo.findById as Mock).mockResolvedValue(mockTask as never);
+      (mockRepo.update as Mock).mockResolvedValue({
         ...mockTask,
         subtasks: [{ id: 2 }],
       } as never);
@@ -189,8 +189,8 @@ describe('TaskService', () => {
 
     it('should not cascade when task has no subtasks', async () => {
       const completedAt = new Date('2026-03-12');
-      (mockRepo.findById as jest.Mock).mockResolvedValue(mockTask as never);
-      (mockRepo.update as jest.Mock).mockResolvedValue(mockTask as never); // subtasks: []
+      (mockRepo.findById as Mock).mockResolvedValue(mockTask as never);
+      (mockRepo.update as Mock).mockResolvedValue(mockTask as never); // subtasks: []
 
       await service.updateTask(ORG_ID, 1, {
         status: TaskStatus.DONE,
@@ -203,8 +203,8 @@ describe('TaskService', () => {
 
   describe('deleteTask', () => {
     it('should delete a task', async () => {
-      (mockRepo.findById as jest.Mock).mockResolvedValue(mockTask as never);
-      (mockRepo.delete as jest.Mock).mockResolvedValue(mockTask as never);
+      (mockRepo.findById as Mock).mockResolvedValue(mockTask as never);
+      (mockRepo.delete as Mock).mockResolvedValue(mockTask as never);
 
       await service.deleteTask(ORG_ID, 1);
 
@@ -212,7 +212,7 @@ describe('TaskService', () => {
     });
 
     it('should throw NotFoundException when task does not exist', async () => {
-      (mockRepo.findById as jest.Mock).mockResolvedValue(null as never);
+      (mockRepo.findById as Mock).mockResolvedValue(null as never);
 
       await expect(service.deleteTask(ORG_ID, 99)).rejects.toThrow(
         NotFoundException,

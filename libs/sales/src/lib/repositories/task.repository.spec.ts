@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, jest } from '@jest/globals';
+import { describe, it, expect, beforeEach, type Mock } from 'vitest';
 import { TaskRepository, TaskStatus } from './task.repository';
 import type { PrismaService } from '../modules/prisma.types';
 
@@ -23,19 +23,19 @@ describe('TaskRepository', () => {
 
   const mockPrisma = {
     task: {
-      create: jest.fn(),
-      findFirst: jest.fn(),
-      findMany: jest.fn(),
-      count: jest.fn(),
-      update: jest.fn(),
-      updateMany: jest.fn(),
-      delete: jest.fn(),
-      findUniqueOrThrow: jest.fn(),
+      create: vi.fn(),
+      findFirst: vi.fn(),
+      findMany: vi.fn(),
+      count: vi.fn(),
+      update: vi.fn(),
+      updateMany: vi.fn(),
+      delete: vi.fn(),
+      findUniqueOrThrow: vi.fn(),
     },
     taskOwner: {
-      create: jest.fn(),
+      create: vi.fn(),
     },
-    $transaction: jest.fn(async (fn: (tx: typeof mockPrisma) => Promise<unknown>) =>
+    $transaction: vi.fn(async (fn: (tx: typeof mockPrisma) => Promise<unknown>) =>
       fn({
         task: mockPrisma.task,
         taskOwner: mockPrisma.taskOwner,
@@ -45,12 +45,12 @@ describe('TaskRepository', () => {
 
   beforeEach(() => {
     repo = new TaskRepository(mockPrisma as unknown as PrismaService);
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   describe('create', () => {
     it('should create a task and include subtasks', async () => {
-      (mockPrisma.task.create as jest.Mock).mockResolvedValue(
+      (mockPrisma.task.create as Mock).mockResolvedValue(
         mockTask as never,
       );
 
@@ -71,7 +71,7 @@ describe('TaskRepository', () => {
 
   describe('findById', () => {
     it('should find a task by id scoped to org', async () => {
-      (mockPrisma.task.findFirst as jest.Mock).mockResolvedValue(
+      (mockPrisma.task.findFirst as Mock).mockResolvedValue(
         mockTask as never,
       );
 
@@ -87,7 +87,7 @@ describe('TaskRepository', () => {
     });
 
     it('should return null when not found', async () => {
-      (mockPrisma.task.findFirst as jest.Mock).mockResolvedValue(null as never);
+      (mockPrisma.task.findFirst as Mock).mockResolvedValue(null as never);
 
       const result = await repo.findById(99, ORG_ID);
 
@@ -97,14 +97,14 @@ describe('TaskRepository', () => {
 
   describe('findAll', () => {
     it('should default to top-level tasks (parentId: null)', async () => {
-      (mockPrisma.task.findMany as jest.Mock).mockResolvedValue(
+      (mockPrisma.task.findMany as Mock).mockResolvedValue(
         [mockTask] as never,
       );
-      (mockPrisma.task.count as jest.Mock).mockResolvedValue(1 as never);
+      (mockPrisma.task.count as Mock).mockResolvedValue(1 as never);
 
       const result = await repo.findAll(ORG_ID);
 
-      const findManyCall = (mockPrisma.task.findMany as jest.Mock).mock
+      const findManyCall = (mockPrisma.task.findMany as Mock).mock
         .calls[0][0] as { where: object };
       expect(findManyCall.where).toEqual({
         organizationId: ORG_ID,
@@ -115,12 +115,12 @@ describe('TaskRepository', () => {
     });
 
     it('should filter by parentId when provided', async () => {
-      (mockPrisma.task.findMany as jest.Mock).mockResolvedValue([] as never);
-      (mockPrisma.task.count as jest.Mock).mockResolvedValue(0 as never);
+      (mockPrisma.task.findMany as Mock).mockResolvedValue([] as never);
+      (mockPrisma.task.count as Mock).mockResolvedValue(0 as never);
 
       await repo.findAll(ORG_ID, { parentId: 5 });
 
-      const findManyCall = (mockPrisma.task.findMany as jest.Mock).mock
+      const findManyCall = (mockPrisma.task.findMany as Mock).mock
         .calls[0][0] as { where: object };
       expect(findManyCall.where).toEqual({
         organizationId: ORG_ID,
@@ -129,12 +129,12 @@ describe('TaskRepository', () => {
     });
 
     it('should apply pagination correctly', async () => {
-      (mockPrisma.task.findMany as jest.Mock).mockResolvedValue([] as never);
-      (mockPrisma.task.count as jest.Mock).mockResolvedValue(25 as never);
+      (mockPrisma.task.findMany as Mock).mockResolvedValue([] as never);
+      (mockPrisma.task.count as Mock).mockResolvedValue(25 as never);
 
       const result = await repo.findAll(ORG_ID, { page: 3, limit: 10 });
 
-      const findManyCall = (mockPrisma.task.findMany as jest.Mock).mock
+      const findManyCall = (mockPrisma.task.findMany as Mock).mock
         .calls[0][0] as { skip: number; take: number };
       expect(findManyCall.skip).toBe(20);
       expect(findManyCall.take).toBe(10);
@@ -150,7 +150,7 @@ describe('TaskRepository', () => {
   describe('update', () => {
     it('should update a task by id', async () => {
       const updated = { ...mockTask, title: 'Updated' };
-      (mockPrisma.task.update as jest.Mock).mockResolvedValue(
+      (mockPrisma.task.update as Mock).mockResolvedValue(
         updated as never,
       );
 
@@ -169,7 +169,7 @@ describe('TaskRepository', () => {
 
   describe('delete', () => {
     it('should delete a task by id', async () => {
-      (mockPrisma.task.delete as jest.Mock).mockResolvedValue(
+      (mockPrisma.task.delete as Mock).mockResolvedValue(
         mockTask as never,
       );
 
@@ -183,7 +183,7 @@ describe('TaskRepository', () => {
 
   describe('updateSubtasksCompletedAt', () => {
     it('should bulk-update all subtasks of a parent', async () => {
-      (mockPrisma.task.updateMany as jest.Mock).mockResolvedValue({
+      (mockPrisma.task.updateMany as Mock).mockResolvedValue({
         count: 2,
       } as never);
 

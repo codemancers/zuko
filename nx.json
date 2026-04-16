@@ -11,7 +11,6 @@
       "!{projectRoot}/eslint.config.mjs",
       "!{projectRoot}/**/?(*.)+(spec|test).[jt]s?(x)?(.snap)",
       "!{projectRoot}/tsconfig.spec.json",
-      "!{projectRoot}/jest.config.[jt]s",
       "!{projectRoot}/src/test-setup.[jt]s",
       "!{projectRoot}/test-setup.[jt]s"
     ],
@@ -58,21 +57,11 @@
       }
     },
     {
-      "plugin": "@nx/jest/plugin",
-      "options": {
-        "targetName": "test"
-      },
-      "exclude": [
-        "apps/backend-e2e/**/*",
-        "apps/web/**/*",
-        "apps/ai-agents-e2e/**/*"
-      ]
-    },
-    {
       "plugin": "@nx/vitest",
       "options": {
         "testTargetName": "test"
-      }
+      },
+      "exclude": ["apps/backend-e2e/**", "apps/ai-agents-e2e/**"]
     },
     {
       "plugin": "@nx/docker",
@@ -107,12 +96,7 @@
     "test": {
       "dependsOn": [
         "^build"
-      ],
-      "options": {
-        "env": {
-          "NODE_OPTIONS": "--experimental-vm-modules"
-        }
-      }
+      ]
     },
     "@nx/js:tsc": {
       "cache": true,
