@@ -7,7 +7,7 @@ import {
 } from "../support/auth-helper";
 
 describe("Role-Based Access Control", () => {
-  const prisma = new PrismaClient({ datasourceUrl: process.env.DATABASE_URL });
+  const prisma = new PrismaClient();
   const baseUrl = process.env.API_URL || "http://localhost:3001";
 
   let adminUser: TestUser;
