@@ -1,28 +1,46 @@
 {
   "$schema": "https://unpkg.com/knip@latest/schema.json",
   "ignoreExportsUsedInFile": true,
-  "ignoreBinaries": ["flyctl", "fly"],
+  "ignoreBinaries": ["flyctl", "fly", "oxlint"],
   "workspaces": {
     ".": {
       "entry": ["scripts/**/*.{ts,js}"],
       "project": ["scripts/**/*.{ts,js}"],
       "ignoreDependencies": [
-        "patch-package",
         "tslib",
-        "autoprefixer",
-        "jiti"
+        "@swc/jest",
+        "jest-environment-node",
+        "jest-util",
+        "@nx/nest",
+        "@nx/node",
+        "@nx/vite",
+        "@nx/web",
+        "@nx/workspace",
+        "@nestjs/schematics",
+        "reflect-metadata",
+        "rxjs",
+        "socket.io-client",
+        "ws",
+        "@aws-sdk/client-s3",
+        "@deepgram/sdk",
+        "@heroicons/react",
+        "@nestjs/config",
+        "@thallesp/nestjs-better-auth",
+        "@types/jsonwebtoken",
+        "joi",
+        "jsonwebtoken",
+        "puppeteer-core",
+        "puppeteer-extra",
+        "puppeteer-extra-plugin-stealth",
+        "puppeteer-stream",
+        "simple-git"
       ]
     },
     "apps/web": {
       "entry": [
         "src/app/**/page.{ts,tsx}",
         "src/app/**/layout.{ts,tsx}",
-        "src/app/**/loading.{ts,tsx}",
-        "src/app/**/error.{ts,tsx}",
-        "src/app/**/not-found.{ts,tsx}",
-        "src/app/**/route.{ts,tsx}",
-        "src/proxy.ts",
-        "next.config.ts"
+        "src/app/**/route.{ts,tsx}"
       ],
       "project": ["src/**/*.{ts,tsx}"]
     },
@@ -36,28 +54,17 @@
       "project": ["src/**/*.ts"]
     },
     "libs/core": {
-      "entry": ["src/index.ts"],
       "project": ["src/**/*.ts"]
     },
     "libs/models": {
-      "entry": ["src/index.ts"],
       "project": ["src/**/*.ts"]
     },
     "libs/sales": {
-      "entry": ["src/index.ts"],
       "project": ["src/**/*.ts"]
     }
   },
   "ignore": [
-    "**/*.spec.ts",
-    "**/*.test.ts",
-    "**/*.test.tsx",
-    "**/*.d.ts",
     "apps/**-e2e/**",
-    "**/dist/**",
-    "**/.next/**",
-    "**/out-tsc/**",
-    "apps/meeting-bot/**",
     "libs/ui-kit/**"
   ]
 }
