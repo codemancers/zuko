@@ -6,6 +6,8 @@ export default defineConfig({
     globals: true,
     environment: 'node',
     include: ['src/**/*.spec.ts'],
+    globalSetup: ['src/support/global-setup.ts'],
+    setupFiles: ['src/support/test-setup.ts'],
     passWithNoTests: true,
     reporters: ['default'],
     coverage: {
