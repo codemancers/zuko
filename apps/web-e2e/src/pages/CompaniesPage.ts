@@ -28,13 +28,6 @@ export class CompaniesPage extends BasePage {
   }
 
   /**
-   * Click the new company button
-   */
-  async clickNewCompany() {
-    await this.page.goto('/companies/new');
-  }
-
-  /**
    * Search for a company by name
    */
   async searchCompany(name: string) {
@@ -49,10 +42,10 @@ export class CompaniesPage extends BasePage {
   }
 
   /**
-   * Click on a company by name
+   * Click on a company name
    */
-  async clickCompany(companyName: string) {
-    await this.page.getByText(companyName, { exact: false }).click();
+  async clickCompany(row: Locator) {
+    await row.locator('a[href^="/companies/"]').click();
   }
 
   /**
@@ -62,5 +55,29 @@ export class CompaniesPage extends BasePage {
     await this.page
       .waitForSelector("table", { timeout: 5000 })
       .catch(() => null);
+  }
+
+  /**
+   * Create a new company and return the table row index
+   */
+  async createNewCompany() {
+    const initialRowCount = await this.getRowCount();
+    await this.createNewRecord();
+    return initialRowCount;  // 0-indexed, new row index will be equal to initial row count
+  }
+
+  /**
+   * Wait for details page to load and return the company ID from url
+   */
+  async waitForDetailsPageToLoad() {
+    await this.page.waitForURL(/\/companies\/\d+$/, { timeout: 10000 });
+    await this.page.waitForLoadState('domcontentloaded');
+    const match = this.page.url().match(/\/companies\/(\d+)/);
+    if (!match?.[1]) {
+      throw new Error(
+        `Failed to extract company ID from URL: ${this.page.url()}`
+      );
+    }
+    return Number(match[1]);
   }
 }

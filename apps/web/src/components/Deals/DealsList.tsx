@@ -1,6 +1,5 @@
 'use client';
 
-import { BriefcaseIcon } from '@heroicons/react/24/outline';
 import { PageHeader, SearchBar } from '@/components/shared';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getTableViewDeals } from '@/server/query-options';
@@ -78,10 +77,6 @@ const DealsList = () => {
     addRow();
   };
 
-  const handleNewDeal = () => {
-    router.push('/deals/new');
-  };
-
   const handleNewColumn = (
     name: string,
     key: string,
@@ -119,15 +114,6 @@ const DealsList = () => {
         showAddColumn
         onAddColumn={handleNewColumn}
         disableRowClick={true}
-        emptyStateConfig={{
-          icon: BriefcaseIcon,
-          title: 'No Deals',
-          description: 'Get started by creating a new deal.',
-          action: {
-            label: 'New Deal',
-            onClick: handleNewDeal,
-          },
-        }}
       />
 
       <ConfirmDialog

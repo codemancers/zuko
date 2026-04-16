@@ -1,4 +1,4 @@
-import { Page } from '@playwright/test';
+import { Page, Locator, expect } from '@playwright/test';
 
 /**
  * Base Page Object Model
@@ -65,5 +65,167 @@ export class BasePage {
    */
   async screenshot(options?: { path?: string; fullPage?: boolean }) {
     return this.page.screenshot(options);
+  }
+
+  /**
+   create new record by clicking add row button
+   */
+  async createNewRecord() {
+    await this.page.getByRole("button", { name: /Add row/i }).click();
+  }
+
+  async getRowCount() {
+    return this.page.getByRole("row").count();
+  }
+
+  async getColumnIndex(columnName: string) {
+    const headers = this.page.getByRole("columnheader");
+    const headerTexts = await headers.allInnerTexts();
+    const columnIndex = headerTexts.findIndex(h => h.toLowerCase().includes(columnName.toLowerCase()));
+    return columnIndex;
+  }
+
+  /**
+   * Update a cell in the table by column name.
+   * Handles both text inputs and comboboxes.
+   */
+  async updateTableCell(row: Locator, columnHeader: string, value: string) {
+    const colIndex = await this.getColumnIndex(columnHeader);
+    if (colIndex === -1) throw new Error(`Column "${columnHeader}" not found`);
+
+    const cell = row.locator("td").nth(colIndex);
+    // Use evaluate click to avoid issues with elements being "obscured" by the cell itself
+    await cell.evaluate((node) => (node as any).click());
+
+    // Check if it's a combobox or a simple input
+    const combobox = cell.getByRole("combobox");
+    const input = cell.locator("input");
+
+    if (await combobox.isVisible({ timeout: 2000 }).catch(() => false)) {
+      await combobox.click();
+      await this.page.getByRole("option", { name: new RegExp(value, "i") }).click();
+    } else {
+      await input.waitFor({ state: "visible" });
+      await input.fill(value);
+      await input.press("Enter");
+    }
+  }
+
+  // ── Inline editing helpers (EntityProperties) ──────────────────────────────
+
+  /**
+   * Get the EntityProperties container (the <dl> that holds all properties).
+   */
+  get propertiesSection() {
+    return this.page.locator("dl");
+  }
+
+  /**
+   * Locate a property row (dt/dd pair) by its label text.
+   */
+  propertyRow(label: string) {
+    return this.propertiesSection
+      .locator("div")
+      .filter({ has: this.page.locator("dt", { hasText: new RegExp(`^${label}$`, "i") }) });
+  }
+
+  /**
+   * Hover the property value to reveal the pencil icon, click it to enter
+   * edit mode, and return the input that appears.
+   */
+  async openPropertyEditor(label: string): Promise<Locator> {
+    const row = this.propertyRow(label);
+    const dd = row.locator("dd");
+
+    // if dd has '-' as value then click it instead of hover
+    if ((await dd.textContent())?.trim() === "—") {
+      // find the text inside dd and click it
+      const text = dd.locator("text=—");
+      await text.click();
+    } else {
+      // Hover to reveal the pencil icon
+      await dd.hover();
+      const pencilButton = dd.locator('button[title="Edit"]');
+      await expect(pencilButton).toBeVisible({ timeout: 3000 });
+      await pencilButton.click();
+    }
+
+    const input = dd.locator("input");
+    await expect(input).toBeVisible({ timeout: 3000 });
+    return input;
+  }
+
+  /**
+   * Update an EntityProperties text field inline and wait for the PATCH response.
+   * @param entityPath  The API path fragment to match (e.g. "/companies/123")
+   */
+  async updateEntityProperty(
+    label: string,
+    value: string,
+    entityPath: string,
+  ) {
+    const input = await this.openPropertyEditor(label);
+
+    const patchPromise = this.page.waitForResponse(
+      (resp) =>
+        resp.url().includes(entityPath) &&
+        resp.request().method() === "PATCH",
+      { timeout: 10000 },
+    );
+
+    await input.fill(value);
+    await input.press("Enter");
+
+    await patchPromise;
+  }
+
+  /**
+   * Read the currently displayed value of an EntityProperties field.
+   */
+  async getPropertyValue(label: string): Promise<string> {
+    const row = this.propertyRow(label);
+    const dd = row.locator("dd");
+    return ((await dd.textContent()) ?? "").trim();
+  }
+
+  /**
+   * Get the anchor element (<a>) inside a property's value cell.
+   */
+  getPropertyLink(label: string): Locator {
+    const row = this.propertyRow(label);
+    return row.locator("dd a");
+  }
+
+  // ── Activity Timeline Helpers ─────────────────────────────────────────────
+
+  /**
+   * Scroll to the Activity section & open the history accordion.
+   */
+  async openActivityHistory() {
+    await this.page
+      .getByRole("heading", { name: "Activity", exact: true })
+      .scrollIntoViewIfNeeded();
+    await this.showHistory();
+  }
+
+  /**
+   * Assert that a specific activity text is visible in the timeline.
+   */
+  async expectActivityEntry(textPattern: RegExp | string) {
+    let pattern: RegExp;
+    if (typeof textPattern === "string") {
+      // Escape special characters so that strings like "+123" match
+      const escaped = textPattern.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      pattern = new RegExp(escaped, "i");
+    } else {
+      pattern = textPattern;
+    }
+
+    await expect(
+      this.page
+        .locator('[data-testid="activity-item"]')
+        .filter({ hasText: pattern })
+        .first(),
+    ).toBeVisible({ timeout: 10000 });
   }
 }

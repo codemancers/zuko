@@ -67,7 +67,7 @@ export class TableRowBuilder {
       display: new Intl.NumberFormat('en-US', {
         style: 'currency',
         currency:
-          column.config?.currency || (entity.currency as string) || 'USD',
+          (entity.currency as string) || column.config?.currency || 'USD',
         minimumFractionDigits: 0,
         maximumFractionDigits: 0,
       }).format(value as number),

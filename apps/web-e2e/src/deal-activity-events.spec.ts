@@ -1,4 +1,5 @@
 import { test, expect } from "./fixtures";
+import { createFreshDeal } from "./fixtures/helpers";
 
 /**
  * Deal Activity Timeline - System Events
@@ -8,111 +9,64 @@ import { test, expect } from "./fixtures";
  * company_unlinked, contact_linked, contact_unlinked.
  */
 test.describe("Deal Activity Timeline - System Events", () => {
+  let dealId: number;
+
+  test.beforeAll(async ({ browser }) => {
+    dealId = await createFreshDeal(browser);
+  });
+
   // ── deal_created ────────────────────────────────────────────────────────
 
-  test.describe("deal_created", () => {
-    test("shows 'created this deal' after a new deal is created", async ({
-      dealsPage,
-      dealDetailPage,
-      page,
-    }) => {
-      await dealsPage.goto();
-      await dealsPage.clickNewDeal();
-      await page.waitForURL("**/deals/new", { timeout: 10000 });
+  test("shows 'created this deal' after a new deal is created", async ({
+    dealsPage,
+    dealDetailPage,
+    page,
+  }) => {
+    const dealTitle = `Activity Event Test ${Date.now()}`;
+    await dealsPage.goto();
+    
+    // Create deal via add row
+    await dealsPage.createDealRow(dealTitle);
+    
+    // Get the ID of the newly created deal
+    const freshDealRow = page.getByRole("row").filter({ hasText: dealTitle }).first();
+    const freshDealLink = freshDealRow.locator('a[href^="/deals/"]');
+    await freshDealLink.click();
+    
+    await dealsPage.waitForDetailsPageToLoad();
 
-      const dealTitle = `Activity Event Test ${Date.now()}`;
-      await page.getByLabel(/Deal Title/i).fill(dealTitle);
-      await page.getByLabel(/Stage/i).selectOption("prospecting");
-      await page.getByRole("button", { name: /Create Deal/i }).click();
-
-      await page.waitForURL("**/deals", { timeout: 10000 });
-      await expect(page.getByText(dealTitle)).toBeVisible({ timeout: 10000 });
-
-      // Navigate to the newly created deal
-      await page
-        .locator('a[href^="/deals/"]')
-        .filter({ hasText: dealTitle })
-        .click();
-      await page.waitForURL(/\/deals\/\d+/, { timeout: 10000 });
-
-      await page
-        .getByRole("heading", { name: "Activity", exact: true })
-        .scrollIntoViewIfNeeded();
-      await dealDetailPage.showHistory();
-
-      await expect(
-        page
-          .locator('[data-testid="activity-item"]')
-          .filter({ hasText: /created this deal/i })
-          .first(),
-      ).toBeVisible({ timeout: 10000 });
-    });
+    // Verify activity event on details page
+    await dealDetailPage.openActivityHistory();
+    await expect(dealDetailPage.hideHistoryButton).toBeVisible();
+    await dealDetailPage.expectActivityEntry(/created this deal/i);
   });
 
   // ── stage_change ─────────────────────────────────────────────────────────
 
-  test.describe("stage_change", () => {
-    test("shows 'moved deal from X to Y' after stage is edited", async ({
-      dealsPage,
-      dealDetailPage,
-      page,
-    }) => {
-      await dealsPage.goto();
-      const firstLink = page.locator('a[href^="/deals/"]').first();
-      await firstLink.click();
-      await page.waitForURL(/\/deals\/\d+/, { timeout: 10000 });
+  test("shows 'moved deal from X to Y' after stage is edited", async ({
+    dealDetailPage,
+    page,
+  }) => {
+    await dealDetailPage.goto(dealId);
+    const defaultNewStage = "Prospecting";
+    const targetStage = "Qualification";
 
-      // Read current stage so we can switch to something different
-      const currentStageText = await page
-        .locator("span")
-        .filter({
-          hasText: /Prospecting|Qualification|Proposal|Negotiation|Closed/i,
-        })
-        .first()
-        .textContent();
+    await dealDetailPage.openActivityHistory();
+    await dealDetailPage.updateProperty("Stage", targetStage, dealId);
+    await expect(dealDetailPage.propertyRow("Stage").locator("dd")).toHaveText(targetStage);
 
-      const targetStage = /qualification/i.test(currentStageText ?? "")
-        ? "proposal"
-        : "qualification";
-
-      await dealDetailPage.clickEdit();
-      await page.waitForURL(/\/deals\/\d+\/edit/, { timeout: 10000 });
-
-      await page.getByLabel(/Stage/i).selectOption(targetStage);
-      await page.getByRole("button", { name: /Save Changes/i }).click();
-
-      await page.waitForURL(/\/deals\/\d+$/, { timeout: 10000 });
-
-      await page
-        .getByRole("heading", { name: "Activity", exact: true })
-        .scrollIntoViewIfNeeded();
-      await dealDetailPage.showHistory();
-
-      await expect(
-        page
-          .locator('[data-testid="activity-item"]')
-          .filter({ hasText: /moved deal from/i })
-          .first(),
-      ).toBeVisible({ timeout: 10000 });
-    });
+    // Verify activity entry
+    await dealDetailPage.expectActivityEntry(`moved deal from ${defaultNewStage} to ${targetStage}`);
+    
+    // Verify persistence
+    await page.reload();
+    const persistedStage = await dealDetailPage.getDealStage();
+    expect(persistedStage.toLowerCase()).toBe(targetStage.toLowerCase());
   });
 
   // ── company_linked / company_unlinked ────────────────────────────────────
 
   test.describe("company events", () => {
-    let dealId: number;
-
-    test.beforeEach(async ({ dealsPage, page }) => {
-      await dealsPage.goto();
-      const firstLink = page.locator('a[href^="/deals/"]').first();
-      await firstLink.click();
-      await page.waitForURL(/\/deals\/\d+/, { timeout: 10000 });
-      dealId = parseInt(
-        page.url().match(/\/deals\/(\d+)/)?.[1] ?? "0",
-        10,
-      );
-    });
-
     test("shows 'linked company X' after a company is added", async ({
       dealDetailPage,
       page,
@@ -193,19 +147,6 @@ test.describe("Deal Activity Timeline - System Events", () => {
   // ── contact_linked / contact_unlinked ────────────────────────────────────
 
   test.describe("contact events", () => {
-    let dealId: number;
-
-    test.beforeEach(async ({ dealsPage, page }) => {
-      await dealsPage.goto();
-      const firstLink = page.locator('a[href^="/deals/"]').first();
-      await firstLink.click();
-      await page.waitForURL(/\/deals\/\d+/, { timeout: 10000 });
-      dealId = parseInt(
-        page.url().match(/\/deals\/(\d+)/)?.[1] ?? "0",
-        10,
-      );
-    });
-
     test("shows 'linked contact X' after a contact is added", async ({
       dealDetailPage,
       page,

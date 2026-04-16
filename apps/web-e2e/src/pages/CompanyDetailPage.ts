@@ -5,15 +5,14 @@ import { BasePage } from "./BasePage";
  * Page Object Model for Company Detail page
  */
 export class CompanyDetailPage extends BasePage {
-  readonly editButton: Locator;
   readonly hideButton: Locator;
   readonly addContactButton: Locator;
   readonly associatedContactsSection: Locator;
+  readonly hideHistoryButton: Locator;
 
   constructor(page: Page) {
     super(page);
     // Use exact match to avoid matching "Edit association" button
-    this.editButton = page.getByRole("button", { name: "Edit", exact: true });
     this.hideButton = page.getByRole("button", { name: /Hide/i });
     this.addContactButton = page.getByRole("button", { name: "Add Contact" });
     this.associatedContactsSection = page
@@ -21,10 +20,15 @@ export class CompanyDetailPage extends BasePage {
       .locator("..");
     this.companyName = page.locator('h1[contenteditable="true"]');
     this.summaryField = page.getByPlaceholder(/No summary yet/i);
+    this.websiteField = page.getByPlaceholder(/https:\/\/example.com/i);
+    this.linkedinUrlField = page.getByPlaceholder(/https:\/\/linkedin.com\/company\/example/i);
+    this.hideHistoryButton = page.getByRole("button", { name: /Hide history/i });
   }
 
   readonly companyName: Locator;
   readonly summaryField: Locator;
+  readonly websiteField: Locator;
+  readonly linkedinUrlField: Locator;
 
   /**
    * Navigate to a specific company detail page
@@ -33,14 +37,42 @@ export class CompanyDetailPage extends BasePage {
   async goto(companyId: number) {
     await super.goto(`/companies/${companyId}`);
     await this.page.waitForLoadState('domcontentloaded');
-    await this.editButton.waitFor({ state: 'visible' });
   }
 
   /**
-   * Click edit button
+   * Update a company property inline and wait for the PATCH response.
    */
-  async clickEdit() {
-    await this.editButton.click();
+  async updateProperty(label: string, value: string, companyId: number) {
+    await this.updateEntityProperty(label, value, `/companies/${companyId}`);
+  }
+
+  /**
+   * Update the company name (h1 contenteditable) inline and wait for save.
+   */
+  async updateCompanyName(name: string, companyId: number) {
+    const patchPromise = this.page.waitForResponse(
+      (resp) =>
+        resp.url().includes(`/companies/${companyId}`) &&
+        resp.request().method() === "PATCH",
+      { timeout: 10000 },
+    );
+    await this.updateTitle(name);
+    await patchPromise;
+  }
+
+  /**
+   * Update the summary textarea and wait for save.
+   */
+  async updateSummary(summary: string, companyId: number) {
+    const patchPromise = this.page.waitForResponse(
+      (resp) =>
+        resp.url().includes(`/companies/${companyId}`) &&
+        resp.request().method() === "PATCH",
+      { timeout: 10000 },
+    );
+    await this.summaryField.fill(summary);
+    await this.summaryField.blur();
+    await patchPromise;
   }
 
   /**

@@ -1,5 +1,6 @@
 import dayjs from 'dayjs';
 import { test, expect } from './fixtures';
+import { createFreshDeal } from './fixtures/helpers';
 
 /**
  * Deals Feature E2E Tests
@@ -36,35 +37,32 @@ test.describe('Deals - Authenticated', () => {
     expect(Array.isArray(deals)).toBe(true);
   });
 
-  // ── 2. Create ─────────────────────────────────────────────────────────
-  test('can navigate to create new deal', async ({ dealsPage, page }) => {
+  test('can create a new deal', async ({
+    dealsPage,
+    dealDetailPage,
+    page,
+  }) => {
+    const dealName = `TEST E2E DEAL ${Date.now()}`;
     await dealsPage.goto();
 
-    await dealsPage.clickNewDeal();
+    // 1. Create new deal via table "Add row"
+    await dealsPage.createDealRow(dealName);
+    const newRow = page.getByRole('row').filter({ hasText: dealName }).first();
 
-    await page.waitForURL('**/deals/new');
-    expect(page.url()).toContain('/deals/new');
-  });
+    // 2. Update other fields inline in the table
+    await dealsPage.updateTableCell(newRow, 'Value', '100000');
+    // 'Close Date' column might be named 'Expected Close Date' or just 'Close Date'
+    await dealsPage.updateTableCell(newRow, 'Expected Close', '2026-01-01');
 
-  test('can create a new deal', async ({ dealsPage, page }) => {
-    await dealsPage.goto();
-    await dealsPage.clickNewDeal();
-    await page.waitForURL('**/deals/new', { timeout: 10000 });
-    await page.getByLabel(/Deal Title/i).fill('TEST E2E DEAL');
-    await page.getByLabel(/Deal Value/i).fill('100000');
-    await page.getByLabel(/Stage/i).selectOption('Prospecting');
-    // Currency defaults to USD — no interaction needed
-    await page.getByLabel(/Priority/i).selectOption('2'); // value in form; label is "P2 - Medium"
-    await page.getByLabel(/Expected Close Date/i).fill('2026-01-01');
-    await page.getByLabel(/Source/i).fill('Website');
-    await page
-      .getByPlaceholder(/Add notes about this deal/i)
-      .fill('TEST E2E DEAL SUMMARY');
-    await page.getByRole('button', { name: /Create Deal/i }).click();
-    await page.waitForURL('**/deals', { timeout: 10000 });
-    await expect(page.getByText('TEST E2E DEAL')).toBeVisible({
-      timeout: 10000,
-    });
+    // 3. Navigate to details page by clicking the deal name
+    await dealsPage.clickDeal(newRow);
+    await dealsPage.waitForDetailsPageToLoad();
+
+    // 4. Verify properties on the details page
+    await expect(dealDetailPage.dealTitle).toHaveText(dealName);
+    await expect(dealDetailPage.propertyRow('Stage').locator('dd')).toHaveText(
+      'Prospecting'
+    );
   });
 
   // ── 3. Check after (list with data) ─────────────────────────────────────
@@ -146,88 +144,24 @@ test.describe('Deals - Authenticated', () => {
   });
 });
 
-test.describe('Deal Creation', () => {
-  test('validates required fields', async ({ page }) => {
-    await page.goto('/deals/new');
-
-    await page.getByRole('button', { name: /Create Deal/i }).click();
-
-    await expect(page.getByText(/Deal title is required/i)).toBeVisible();
-  });
-
-  test('validates value is a positive number', async ({ page }) => {
-    await page.goto('/deals/new');
-
-    await page.getByLabel(/Deal Title/i).fill('Test Deal');
-    await page.getByLabel(/Deal Value/i).fill('-100');
-    await page.getByRole('button', { name: /Create Deal/i }).click();
-
-    await expect(
-      page.getByText(/Value must be a positive number/i),
-    ).toBeVisible();
-  });
-
-  // Skipped: Chrome's native HTML5 form validation (max="100") intercepts submission
-  // before React's onSubmit fires, so the custom error message never renders.
-  test.skip('validates probability is between 0 and 100', async ({ page }) => {
-    await page.goto('/deals/new');
-    await page.getByLabel(/Deal Title/i).fill('Test Deal');
-    await page.getByLabel(/Win Probability/i).fill('150');
-    await page.getByRole('button', { name: /Create Deal/i }).click();
-    await expect(
-      page.getByText(/Probability must be between 0 and 100/i),
-    ).toBeVisible();
-  });
-
-  test('displays stage options', async ({ page }) => {
-    await page.goto('/deals/new');
-
-    const stageSelect = page.getByLabel(/Stage/i);
-    await expect(stageSelect).toBeVisible();
-
-    const options = await stageSelect.locator('option').allTextContents();
-    expect(options.length).toBeGreaterThan(0);
-    expect(options.some((opt) => opt.includes('Prospecting'))).toBe(true);
-  });
-
-  test('displays currency options', async ({ page }) => {
-    await page.goto('/deals/new');
-
-    // Currency is a Combobox pre-filled with USD by default
-    const currencyInput = page.getByPlaceholder('Search currency...');
-    await expect(currencyInput).toBeVisible();
-    await expect(currencyInput).toHaveValue('USD');
-  });
-
-  test('displays priority options', async ({ page }) => {
-    await page.goto('/deals/new');
-
-    const prioritySelect = page.getByLabel(/Priority/i);
-    await expect(prioritySelect).toBeVisible();
-
-    const options = await prioritySelect.locator('option').allTextContents();
-    expect(options.length).toBeGreaterThan(0);
-    expect(options.some((opt) => opt.includes('P2'))).toBe(true);
-  });
-});
-
 test.describe('Deal Detail', () => {
+  let dealId: number;
+  test.beforeAll(async ({ browser }) => {
+    dealId = await createFreshDeal(browser);
+  });
+    
   // ── 1. Empty state (detail sections visible) ────────────────────────────
   test('displays deal detail page with information', async ({
-    page,
     dealDetailPage,
   }) => {
-    await dealDetailPage.goto(1);
+    await dealDetailPage.goto(dealId);
 
     await expect(dealDetailPage.dealTitle).toBeVisible();
-    await expect(
-      page.getByRole('heading', { name: /Deal Information/i }),
-    ).toBeVisible();
   });
 
   // ── 2. Check after (detail content) ─────────────────────────────────────
   test('displays deal value and stage', async ({ dealDetailPage }) => {
-    await dealDetailPage.goto(1);
+    await dealDetailPage.goto(dealId);
 
     const stage = await dealDetailPage.getDealStage();
     expect(stage.length).toBeGreaterThan(0);
@@ -236,28 +170,19 @@ test.describe('Deal Detail', () => {
     expect(typeof value).toBe('string');
   });
 
-  test('displays owners section', async ({ dealDetailPage, page }) => {
-    await dealDetailPage.goto(1);
 
-    await expect(page.getByRole('heading', { name: /Owners/i })).toBeVisible();
-  });
-
-  test('displays summary if present', async ({ dealDetailPage, page }) => {
-    await dealDetailPage.goto(1);
+  test('displays summary', async ({ dealDetailPage, page }) => {
+    await dealDetailPage.goto(dealId);
 
     const summaryHeading = page.getByRole('heading', { name: /Summary/i });
-    const isVisible = await summaryHeading.isVisible().catch(() => false);
-
-    if (isVisible) {
-      await expect(summaryHeading).toBeVisible();
-    }
+    await expect(summaryHeading).toBeVisible();
   });
 
   test('displays activity timeline section', async ({
     dealDetailPage,
     page,
   }) => {
-    await dealDetailPage.goto(1);
+    await dealDetailPage.goto(dealId);
 
     // CI can be slower to render this section; the comment input is a more
     // stable signal than the heading text/role.
@@ -268,12 +193,17 @@ test.describe('Deal Detail', () => {
 });
 
 test.describe('Deal Detail - Inline Editing', () => {
+  let dealId: number;
+  test.beforeAll(async ({ browser }) => {
+    dealId = await createFreshDeal(browser);
+  });
+  
   test('can edit deal title inline', async ({ dealDetailPage, page }) => {
     const newTitle = `Updated Deal Title ${Date.now()}`;
-    await dealDetailPage.goto(1);
+    await dealDetailPage.goto(dealId);
 
     const updatePromise = page.waitForResponse(
-      (resp) => resp.url().includes("/deals/1") && resp.request().method() === "PATCH"
+      (resp) => resp.url().includes(`/deals/${dealId}`) && resp.request().method() === "PATCH"
     );
     await dealDetailPage.updateTitle(newTitle);
     await updatePromise;
@@ -285,42 +215,24 @@ test.describe('Deal Detail - Inline Editing', () => {
     await page.reload();
     await expect(dealDetailPage.dealTitle).toHaveText(newTitle);
   });
-});
 
-test.describe('Deal Edit', () => {
-  // ── 1. Empty state (edit form) ──────────────────────────────────────────
-  test('can navigate to edit page', async ({ dealDetailPage, page }) => {
-    await dealDetailPage.goto(1);
+  // edit deal stage
+  test('can edit deal stage', async ({ dealDetailPage, page }) => {
+    const newStage = 'Closed Won';
+    const defaultNewStage = 'Prospecting';
+    await dealDetailPage.goto(dealId);
 
-    await dealDetailPage.clickEdit();
+    const updatePromise = page.waitForResponse(
+      (resp) => resp.url().includes(`/deals/${dealId}`) && resp.request().method() === "PATCH"
+    );
 
-    await page.waitForURL('**/deals/**/edit');
-    expect(page.url()).toContain('/edit');
-  });
+    await dealDetailPage.openActivityHistory();
+    await dealDetailPage.updateProperty("Stage", newStage, dealId);
+    await expect(dealDetailPage.propertyRow("Stage").locator("dd")).toHaveText(newStage);
 
-  test('edit page displays deal form with existing values', async ({
-    page,
-  }) => {
-    await page.goto('/deals/1/edit');
-
-    await expect(page.getByLabel(/Deal Title/i)).toBeVisible();
-    await expect(page.getByLabel(/Stage/i)).toBeVisible();
-    await expect(
-      page.getByRole('button', { name: /Save Changes/i }),
-    ).toBeVisible();
-
-    const titleInput = page.getByLabel(/Deal Title/i);
-    const titleValue = await titleInput.inputValue();
-    expect(titleValue.length).toBeGreaterThan(0);
-  });
-
-  test('edit form includes save and cancel buttons', async ({ page }) => {
-    await page.goto('/deals/1/edit');
-
-    await expect(
-      page.getByRole('button', { name: /Save Changes/i }),
-    ).toBeVisible();
-    await expect(page.getByRole('button', { name: /Cancel/i })).toBeVisible();
+    // Verify activity entry
+    await dealDetailPage.expectActivityEntry(`moved deal from ${defaultNewStage} to ${newStage}`);
+    await updatePromise;
   });
 });
 
@@ -500,12 +412,16 @@ test.describe('Deal Associations - Companies', () => {
 });
 
 test.describe('Deal Associations - Contacts', () => {
+  let dealId: number;
+  test.beforeAll(async ({ browser }) => {
+    dealId = await createFreshDeal(browser);
+  });
   // ── 1. Empty state ─────────────────────────────────────────────────────
   test('displays Associated Contacts section', async ({
     dealDetailPage,
     page,
   }) => {
-    await dealDetailPage.goto(1);
+    await dealDetailPage.goto(dealId);
 
     await expect(
       page.getByRole('heading', { name: /Associated Contacts/i }),
@@ -513,7 +429,7 @@ test.describe('Deal Associations - Contacts', () => {
   });
 
   test('shows Add Contact button', async ({ dealDetailPage, page }) => {
-    await dealDetailPage.goto(1);
+    await dealDetailPage.goto(dealId);
 
     await expect(
       page.getByRole('button', { name: /Add Contact/i }),
@@ -521,7 +437,7 @@ test.describe('Deal Associations - Contacts', () => {
   });
 
   test('can open Add Contact dialog', async ({ dealDetailPage, page }) => {
-    await dealDetailPage.goto(1);
+    await dealDetailPage.goto(dealId);
 
     await page.getByRole('button', { name: /Add Contact/i }).click();
 
@@ -537,7 +453,7 @@ test.describe('Deal Associations - Contacts', () => {
     dealDetailPage,
     page,
   }) => {
-    await dealDetailPage.goto(1);
+    await dealDetailPage.goto(dealId);
 
     await page.getByRole('button', { name: /Add Contact/i }).click();
 
@@ -556,7 +472,7 @@ test.describe('Deal Associations - Contacts', () => {
   });
 
   test('can close Add Contact dialog', async ({ dealDetailPage, page }) => {
-    await dealDetailPage.goto(1);
+    await dealDetailPage.goto(dealId);
     await expect(dealDetailPage.dealTitle).toBeVisible({ timeout: 15000 });
 
     await page.getByRole('button', { name: /Add Contact/i }).click();
@@ -573,7 +489,7 @@ test.describe('Deal Associations - Contacts', () => {
     dealDetailPage,
     page,
   }) => {
-    await dealDetailPage.goto(1);
+    await dealDetailPage.goto(dealId);
 
     // Find first contact link (if any exist)
     const contactLinks = page.locator('a[href^="/contacts/"]');
@@ -593,7 +509,7 @@ test.describe('Deal Associations - Contacts', () => {
     dealDetailPage,
     page,
   }) => {
-    await dealDetailPage.goto(1);
+    await dealDetailPage.goto(dealId);
 
     const contactSection = page
       .locator('text=Associated Contacts')
@@ -623,7 +539,7 @@ test.describe('Deal Associations - Contacts', () => {
     dealDetailPage,
     page,
   }) => {
-    await dealDetailPage.goto(1);
+    await dealDetailPage.goto(dealId);
 
     const contactLinks = page.locator('a[href^="/contacts/"]');
     const count = await contactLinks.count();
@@ -643,7 +559,7 @@ test.describe('Deal Associations - Contacts', () => {
     dealDetailPage,
     page,
   }) => {
-    await dealDetailPage.goto(1);
+    await dealDetailPage.goto(dealId);
     const contactLinks = page.locator('a[href^="/contacts/"]');
     const count = await contactLinks.count();
     const emptyStateText = page.getByText(/No contacts associated yet/i);
@@ -823,7 +739,7 @@ test.describe('Cell Editing Flow', () => {
 
     const initialRowCount = await page.getByRole('row').count();
     if (initialRowCount === 1) {
-      await dealsPage.addRow();
+      await dealsPage.createNewRecord();
     }
 
     // The first data row is index 1 because index 0 is the header
@@ -869,7 +785,7 @@ test.describe('Cell Editing Flow', () => {
 
     const initialRowCount = await page.getByRole('row').count();
     if (initialRowCount === 1) {
-      await dealsPage.addRow();
+      await dealsPage.createNewRecord();
     }
 
     const firstRow = page.getByRole('row').nth(1);
@@ -905,7 +821,7 @@ test.describe('Cell Editing Flow', () => {
 
     const initialRowCount = await page.getByRole('row').count();
     if (initialRowCount === 1) {
-      await dealsPage.addRow();
+      await dealsPage.createNewRecord();
     }
 
     const firstRow = page.getByRole('row').nth(1);
@@ -958,7 +874,7 @@ test.describe('Cell Editing Flow', () => {
 
     const initialRowCount = await page.getByRole('row').count();
     if (initialRowCount === 1) {
-      await dealsPage.addRow();
+      await dealsPage.createNewRecord();
     }
 
     const firstRow = page.getByRole('row').nth(1);
@@ -1025,7 +941,7 @@ test.describe.serial('Custom Column Flow - Select Type', () => {
     // Ensure at least one row exists
     const deals = await dealsPage.getDealItems();
     if (deals.length === 0) {
-      await dealsPage.addRow();
+      await dealsPage.createNewRecord();
       await expect(page.getByText(/New deal added/i)).toBeVisible();
     }
 

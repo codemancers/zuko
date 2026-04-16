@@ -4,7 +4,6 @@ import { useState } from 'react';
 import { useAutosaveField } from '@/hooks/useAutosaveField';
 import {
   BuildingOfficeIcon,
-  PencilIcon,
   EyeSlashIcon,
 } from '@heroicons/react/24/outline';
 import {
@@ -19,7 +18,8 @@ import {
 } from '@zuko/ui-kit';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getCompany, getDealsByCompany } from '@/server/query-options';
-import { companiesApi } from '@/lib/api/companies';
+import { companiesApi, UpdateCompanyDto } from '@/lib/api/companies';
+import { toast } from 'sonner';
 import dayjs from 'dayjs';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -27,7 +27,7 @@ import ActivityTimeline from '@/components/Activity/ActivityTimeline';
 import AddContactDialog from './AddContactDialog';
 
 import ConfirmDialog from '@/components/shared/ConfirmDialog';
-import { BackLink, DetailHeader } from '@/components/shared';
+import { BackLink, DetailHeader, EntityProperties } from '@/components/shared';
 import {
   InlineSaveCancel,
   InlineEditRemove,
@@ -54,11 +54,16 @@ export default function CompanyDetail({
   const [editedRole, setEditedRole] = useState('');
   const [editedIsPrimary, setEditedIsPrimary] = useState(false);
   const updateMutation = useMutation({
-    mutationFn: (updated: { companyName?: string; summary?: string }) =>
+    mutationFn: (updated: UpdateCompanyDto) =>
       companiesApi.updateCompany(companyId, updated),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['company', companyId] });
       queryClient.invalidateQueries({ queryKey: ['companies'] });
+      queryClient.invalidateQueries({ queryKey: ['timeline', 'company', companyId] });
+    },
+    onError: (error) => {
+      toast.error('Failed to save changes');
+      queryClient.invalidateQueries({ queryKey: ['company', companyId] });
     },
   });
 
@@ -123,12 +128,12 @@ export default function CompanyDetail({
   }
 
   if (!company) {
-    return <LoadingState message="Company not found" />;
+    return <LoadingState message="Company not found." />;
   }
 
-  const handleEdit = () => {
-    router.push(`/companies/${companyId}/edit`);
-  };
+  const primaryOwner = company.owners.find((o) => o.isPrimary);
+  const primaryOwnerName = primaryOwner?.user.name || 'Unassigned';
+
 
   const handleHide = () => {
     setShowHideDialog(true);
@@ -171,14 +176,10 @@ export default function CompanyDetail({
           icon={BuildingOfficeIcon}
           title={nameField.value}
           onTitleBlur={(val) => nameField.setValue(val)}
-          isSaving={nameField.isSaving}
+          isSaving={nameField.isSaving || updateMutation.isPending}
           createdAt={company.createdAt}
         />
         <div className="flex gap-3">
-          <Button onClick={handleEdit}>
-            <PencilIcon className="h-4 w-4" />
-            Edit
-          </Button>
           <Button plain onClick={handleHide} disabled={hideMutation.isPending}>
             <EyeSlashIcon className="h-4 w-4" />
             {hideMutation.isPending ? 'Hiding...' : 'Hide'}
@@ -214,78 +215,42 @@ export default function CompanyDetail({
         isLoading={removeContactMutation.isPending}
       />
 
-      {/* Company Information */}
-      <div className="mt-8">
-        <Subheading>Company Information</Subheading>
-        <dl className="mt-4 space-y-4">
-          {company.website && (
-            <div className="grid grid-cols-3">
-              <dt className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
-                Website
-              </dt>
-              <dd className="col-span-2 text-sm text-zinc-950 dark:text-white">
-                <a
-                  href={company.website}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-blue-600 hover:underline dark:text-blue-400"
-                >
-                  {company.website}
-                </a>
-              </dd>
-            </div>
-          )}
-          {company.linkedinUrl && (
-            <div className="grid grid-cols-3">
-              <dt className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
-                LinkedIn
-              </dt>
-              <dd className="col-span-2 text-sm text-zinc-950 dark:text-white">
-                <a
-                  href={company.linkedinUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-blue-600 hover:underline dark:text-blue-400"
-                >
-                  {company.linkedinUrl}
-                </a>
-              </dd>
-            </div>
-          )}
-        </dl>
-      </div>
+      <EntityProperties
+        properties={[
+          {
+            label: 'Owners',
+            value: primaryOwnerName,
+            renderType: 'user',
+          },
+          {
+            label: 'Website',
+            value: company.website,
+            renderType: 'link',
+            fieldType: 'text',
+            placeholder: 'eg: https://example.com',
+            onSave: (val) =>
+              updateMutation.mutateAsync({ website: val }),
+          },
+          {
+            label: 'LinkedIn',
+            value: company.linkedinUrl,
+            renderType: 'link',
+            fieldType: 'text',
+            placeholder: 'https://www.linkedin.com/company/example',
+            options: {
+              validation: 'linkedin',
+            },
+            onSave: (val) =>
+              updateMutation.mutateAsync({ linkedinUrl: val }),
+          },
+        ]}
+      />
 
-      {/* Ownership */}
-      <div className="mt-8">
-        <Subheading>Owners</Subheading>
-        <div className="mt-4 space-y-2">
-          {company.owners.map((owner) => (
-            <div key={owner.id} className="flex items-center gap-3">
-              <div className="text-sm text-zinc-950 dark:text-white">
-                {owner.user.name}
-              </div>
-              <div className="text-sm text-zinc-600 dark:text-zinc-400">
-                {owner.user.email}
-              </div>
-              {owner.isPrimary && (
-                <Badge color="lime" className="text-xs">
-                  Primary
-                </Badge>
-              )}
-            </div>
-          ))}
-        </div>
-      </div>
 
       {/* Summary */}
       <div className="mt-8">
         <div className="flex items-center justify-between mb-4">
           <Subheading>Summary</Subheading>
-          {summaryField.isSaving && (
-            <span className="text-xs font-bold uppercase tracking-widest text-zinc-400 animate-pulse">
-              Syncing...
-            </span>
-          )}
         </div>
         <Textarea
           value={summaryField.value}

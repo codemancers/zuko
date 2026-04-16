@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { UserIcon } from '@heroicons/react/24/outline';
 import { PageHeader, SearchBar } from '@/components/shared';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getTableViewContacts } from '@/server/query-options';
@@ -74,9 +73,6 @@ const ContactsList = () => {
     router.push(`/contacts/${contactId}`);
   };
 
-  const handleNewContact = () => {
-    router.push('/contacts/new');
-  };
 
   const handleNewContactRow = () => {
     addRow();
@@ -119,15 +115,6 @@ const ContactsList = () => {
         showAddColumn
         onAddColumn={handleNewColumn}
         disableRowClick={true}
-        emptyStateConfig={{
-          icon: UserIcon,
-          title: 'No Contacts',
-          description: 'Get started by creating a new contact.',
-          action: {
-            label: 'New Contact',
-            onClick: handleNewContact,
-          },
-        }}
       />
 
       <ConfirmDialog

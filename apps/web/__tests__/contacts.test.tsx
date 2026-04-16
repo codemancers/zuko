@@ -2,11 +2,10 @@
  * @vitest-environment jsdom
  */
 import React from 'react';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import ContactForm from '@/components/Contacts/ContactForm';
 import ContactsList from '@/components/Contacts/ContactsList';
 import ContactDetail from '@/components/Contacts/ContactDetail';
 import type { Contact } from '@/lib/api/contacts';
@@ -56,6 +55,12 @@ vi.mock('@/lib/api/deals', () => ({
   },
 }));
 
+vi.mock('@/lib/auth-client', () => ({
+  authClient: {
+    useSession: vi.fn(() => ({ data: { user: { id: '1' } } })),
+  },
+}));
+
 vi.mock('@/components/Activity/ActivityTimeline', () => ({
   default: () => <div data-testid="activity-timeline">Activity</div>,
 }));
@@ -83,369 +88,16 @@ function createQueryClient() {
   });
 }
 
+let queryClient: QueryClient;
+
 function wrapper({ children }: { children: React.ReactNode }) {
   return (
-    <QueryClientProvider client={createQueryClient()}>
+    <QueryClientProvider client={queryClient}>
       {children}
     </QueryClientProvider>
   );
 }
 
-describe('ContactForm', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
-  it('renders form with all fields', () => {
-    render(
-      <ContactForm mode="create" currentUserId={CURRENT_USER_ID} />,
-      { wrapper }
-    );
-
-    expect(screen.getByLabelText(/name \*/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/phone/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/linkedin id/i)).toBeInTheDocument();
-    expect(
-      screen.getByPlaceholderText(/add notes about this contact/i)
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole('button', { name: /create contact/i })
-    ).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /cancel/i })).toBeInTheDocument();
-  });
-
-  it('shows Create Contact submit button in create mode', () => {
-    render(
-      <ContactForm mode="create" currentUserId={CURRENT_USER_ID} />,
-      { wrapper }
-    );
-    expect(
-      screen.getByRole('button', { name: /create contact/i })
-    ).toBeInTheDocument();
-  });
-
-  it('shows Save Changes submit button in edit mode', () => {
-    render(
-      <ContactForm
-        mode="edit"
-        currentUserId={CURRENT_USER_ID}
-        contact={{
-          id: 1,
-          name: 'Jane Doe',
-          email: 'jane@example.com',
-          isHidden: false,
-          createdAt: '',
-          updatedAt: '',
-          owners: [],
-        }}
-      />,
-      { wrapper }
-    );
-    expect(
-      screen.getByRole('button', { name: /save changes/i })
-    ).toBeInTheDocument();
-  });
-
-  it('prefills fields when editing a contact', () => {
-    render(
-      <ContactForm
-        mode="edit"
-        currentUserId={CURRENT_USER_ID}
-        contact={{
-          id: 1,
-          name: 'Jane Doe',
-          email: 'jane@example.com',
-          phone: '+14155552671',
-          linkedinId: 'jane-doe',
-          notes: 'Some notes',
-          isHidden: false,
-          createdAt: '',
-          updatedAt: '',
-          owners: [],
-        }}
-      />,
-      { wrapper }
-    );
-
-    expect(screen.getByDisplayValue('Jane Doe')).toBeInTheDocument();
-    expect(screen.getByDisplayValue('jane@example.com')).toBeInTheDocument();
-    expect(screen.getByDisplayValue('+14155552671')).toBeInTheDocument();
-    expect(screen.getByDisplayValue('jane-doe')).toBeInTheDocument();
-    expect(screen.getByDisplayValue('Some notes')).toBeInTheDocument();
-  });
-
-  it('does not submit when name is empty (validation blocks submit)', async () => {
-    const user = userEvent.setup();
-    render(
-      <ContactForm mode="create" currentUserId={CURRENT_USER_ID} />,
-      { wrapper }
-    );
-
-    await user.type(screen.getByPlaceholderText(/john@example\.com/i), 'a');
-    await user.click(screen.getByRole('button', { name: /create contact/i }));
-
-    expect(mockCreateContact).not.toHaveBeenCalled();
-  });
-
-  it('shows validation error when no contact method provided', async () => {
-    const user = userEvent.setup();
-    render(
-      <ContactForm mode="create" currentUserId={CURRENT_USER_ID} />,
-      { wrapper }
-    );
-
-    await user.type(screen.getByPlaceholderText(/john doe/i), 'John Doe');
-    await user.click(screen.getByRole('button', { name: /create contact/i }));
-
-    expect(
-      screen.getByText(/at least one contact method/i)
-    ).toBeInTheDocument();
-    expect(mockCreateContact).not.toHaveBeenCalled();
-  });
-
-  it('shows validation error for invalid phone format', async () => {
-    const user = userEvent.setup();
-    render(
-      <ContactForm mode="create" currentUserId={CURRENT_USER_ID} />,
-      { wrapper }
-    );
-
-    await user.type(screen.getByPlaceholderText(/john doe/i), 'John Doe');
-    await user.type(screen.getByPlaceholderText(/\+14155552671/i), '123');
-    await user.click(screen.getByRole('button', { name: /create contact/i }));
-
-    expect(
-      screen.getByText(/phone must be in E\.164 format/i)
-    ).toBeInTheDocument();
-    expect(mockCreateContact).not.toHaveBeenCalled();
-  });
-
-  it('calls createContact and redirects on valid submit in create mode', async () => {
-    mockCreateContact.mockResolvedValue({ id: 1 });
-    const user = userEvent.setup();
-    render(
-      <ContactForm mode="create" currentUserId={CURRENT_USER_ID} />,
-      { wrapper }
-    );
-
-    await user.type(screen.getByPlaceholderText(/john doe/i), 'John Doe');
-    await user.type(screen.getByPlaceholderText(/john@example\.com/i), 'john@example.com');
-    await user.click(screen.getByRole('button', { name: /create contact/i }));
-
-    await vi.waitFor(() => {
-      expect(mockCreateContact).toHaveBeenCalledWith(
-        expect.objectContaining({
-          name: 'John Doe',
-          email: 'john@example.com',
-          ownerIds: [CURRENT_USER_ID],
-          primaryOwnerId: CURRENT_USER_ID,
-        })
-      );
-    });
-    await vi.waitFor(() => {
-      expect(mockPush).toHaveBeenCalledWith('/contacts');
-    });
-  });
-
-  it('calls updateContact and redirects on valid submit in edit mode', async () => {
-    mockUpdateContact.mockResolvedValue({});
-    const user = userEvent.setup();
-    const contact = {
-      id: 42,
-      name: 'Jane',
-      email: 'jane@example.com',
-      isHidden: false,
-      createdAt: '',
-      updatedAt: '',
-      owners: [],
-    };
-    render(
-      <ContactForm mode="edit" currentUserId={CURRENT_USER_ID} contact={contact} />,
-      { wrapper }
-    );
-
-    await user.clear(screen.getByDisplayValue('Jane'));
-    await user.type(screen.getByPlaceholderText(/john doe/i), 'Jane Updated');
-    await user.click(screen.getByRole('button', { name: /save changes/i }));
-
-    await vi.waitFor(() => {
-      expect(mockUpdateContact).toHaveBeenCalledWith(
-        42,
-        expect.objectContaining({
-          name: 'Jane Updated',
-          email: 'jane@example.com',
-        })
-      );
-    });
-    await vi.waitFor(() => {
-      expect(mockPush).toHaveBeenCalledWith('/contacts/42');
-    });
-  });
-
-  it('navigates to contacts on Cancel in create mode', async () => {
-    const user = userEvent.setup();
-    render(
-      <ContactForm mode="create" currentUserId={CURRENT_USER_ID} />,
-      { wrapper }
-    );
-    await user.click(screen.getByRole('button', { name: /cancel/i }));
-    expect(mockPush).toHaveBeenCalledWith('/contacts');
-  });
-
-  it('navigates to contact detail on Cancel in edit mode', async () => {
-    const user = userEvent.setup();
-    render(
-      <ContactForm
-        mode="edit"
-        currentUserId={CURRENT_USER_ID}
-        contact={{
-          id: 10,
-          name: 'Jane',
-          isHidden: false,
-          createdAt: '',
-          updatedAt: '',
-          owners: [],
-        }}
-      />,
-      { wrapper }
-    );
-    await user.click(screen.getByRole('button', { name: /cancel/i }));
-    expect(mockPush).toHaveBeenCalledWith('/contacts/10');
-  });
-
-  it('shows name required validation when name is empty', async () => {
-    const user = userEvent.setup();
-    render(
-      <ContactForm mode="create" currentUserId={CURRENT_USER_ID} />,
-      { wrapper }
-    );
-    await user.click(screen.getByRole('button', { name: /create contact/i }));
-    expect(screen.getByText(/name is required/i)).toBeInTheDocument();
-    expect(mockCreateContact).not.toHaveBeenCalled();
-  });
-
-  it('calls createContact with phone only (no email) on valid submit', async () => {
-    mockCreateContact.mockResolvedValue({ id: 2 });
-    const user = userEvent.setup();
-    render(
-      <ContactForm mode="create" currentUserId={CURRENT_USER_ID} />,
-      { wrapper }
-    );
-    await user.type(screen.getByPlaceholderText(/john doe/i), 'Phone User');
-    await user.type(screen.getByPlaceholderText(/\+14155552671/i), '+14155551234');
-    await user.click(screen.getByRole('button', { name: /create contact/i }));
-
-    await vi.waitFor(() => {
-      expect(mockCreateContact).toHaveBeenCalledWith(
-        expect.objectContaining({
-          name: 'Phone User',
-          phone: '+14155551234',
-          ownerIds: [CURRENT_USER_ID],
-        })
-      );
-    });
-    await vi.waitFor(() => {
-      expect(mockPush).toHaveBeenCalledWith('/contacts');
-    });
-  });
-
-  it('calls createContact with linkedinId only on valid submit', async () => {
-    mockCreateContact.mockResolvedValue({ id: 3 });
-    const user = userEvent.setup();
-    render(
-      <ContactForm mode="create" currentUserId={CURRENT_USER_ID} />,
-      { wrapper }
-    );
-    await user.type(screen.getByPlaceholderText(/john doe/i), 'LinkedIn User');
-    await user.type(screen.getByPlaceholderText(/john-doe-123456/i), 'linkedin-id');
-    await user.click(screen.getByRole('button', { name: /create contact/i }));
-
-    await vi.waitFor(() => {
-      expect(mockCreateContact).toHaveBeenCalledWith(
-        expect.objectContaining({
-          name: 'LinkedIn User',
-          linkedinId: 'linkedin-id',
-          ownerIds: [CURRENT_USER_ID],
-        })
-      );
-    });
-  });
-
-  it('shows submit error when create fails', async () => {
-    mockCreateContact.mockRejectedValue(new Error('Server error'));
-    const user = userEvent.setup();
-    render(
-      <ContactForm mode="create" currentUserId={CURRENT_USER_ID} />,
-      { wrapper }
-    );
-    await user.type(screen.getByPlaceholderText(/john doe/i), 'John');
-    await user.type(screen.getByPlaceholderText(/john@example\.com/i), 'john@example.com');
-    await user.click(screen.getByRole('button', { name: /create contact/i }));
-
-    await vi.waitFor(() => {
-      expect(screen.getByText(/server error|failed to create/i)).toBeInTheDocument();
-    });
-  });
-
-  it('shows submit error when update fails', async () => {
-    mockUpdateContact.mockRejectedValue(new Error('Update failed'));
-    const user = userEvent.setup();
-    render(
-      <ContactForm
-        mode="edit"
-        currentUserId={CURRENT_USER_ID}
-        contact={{
-          id: 5,
-          name: 'Jane',
-          email: 'jane@example.com',
-          isHidden: false,
-          createdAt: '',
-          updatedAt: '',
-          owners: [],
-        }}
-      />,
-      { wrapper }
-    );
-    await user.click(screen.getByRole('button', { name: /save changes/i }));
-
-    await vi.waitFor(() => {
-      expect(screen.getByText(/update failed|failed to update/i)).toBeInTheDocument();
-    });
-  });
-
-  it('shows Saving... and disables buttons while submitting in create mode', async () => {
-    let resolveCreate: (value: { id: number }) => void = () => {
-      /* noop until Promise constructor runs */
-    };
-    mockCreateContact.mockImplementation(
-      () =>
-        new Promise<{ id: number }>((resolve) => {
-          resolveCreate = resolve;
-        })
-    );
-    const user = userEvent.setup();
-    render(
-      <ContactForm mode="create" currentUserId={CURRENT_USER_ID} />,
-      { wrapper }
-    );
-    await user.type(screen.getByPlaceholderText(/john doe/i), 'John');
-    await user.type(screen.getByPlaceholderText(/john@example\.com/i), 'john@example.com');
-    await user.click(screen.getByRole('button', { name: /create contact/i }));
-
-    await vi.waitFor(() => {
-      expect(screen.getByRole('button', { name: /saving/i })).toBeInTheDocument();
-    });
-    const submitBtn = screen.getByRole('button', { name: /saving/i });
-    expect(submitBtn).toBeDisabled();
-    expect(screen.getByRole('button', { name: /cancel/i })).toBeDisabled();
-
-    if (resolveCreate) resolveCreate({ id: 1 });
-    await vi.waitFor(() => {
-      expect(mockPush).toHaveBeenCalledWith('/contacts');
-    });
-  });
-});
 
 const mockMetadata = [
   {
@@ -567,6 +219,7 @@ const mockContact = {
 
 describe('ContactsList', () => {
   beforeEach(() => {
+    queryClient = createQueryClient();
     vi.clearAllMocks();
     mockGetTableViewContacts.mockResolvedValue(emptyContactsResponse);
   });
@@ -704,6 +357,26 @@ describe('ContactsList', () => {
     expect(screen.getByText('Field Type')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /create field/i })).toBeInTheDocument();
   });
+
+  // creates new contact when click on add row
+  it('creates new company when add row is clicked', async () => {
+    const user = userEvent.setup();
+    mockCreateContact.mockResolvedValue({ id: 99 });
+
+    render(<ContactsList />, { wrapper });
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /add row/i })).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByRole('button', { name: /add row/i }));
+
+    await waitFor(() => {
+      expect(mockCreateContact).toHaveBeenCalledWith(
+        expect.objectContaining({ name: 'New Contact' }),
+      );
+    });
+  });
 });
 
 describe('ContactDetail', () => {
@@ -730,6 +403,7 @@ describe('ContactDetail', () => {
   };
 
   beforeEach(() => {
+    queryClient = createQueryClient();
     vi.clearAllMocks();
     mockGetContact.mockResolvedValue(detailContact);
     vi.spyOn(window, 'confirm').mockReturnValue(true);
@@ -757,20 +431,8 @@ describe('ContactDetail', () => {
     expect(screen.getByText('detail@example.com')).toBeInTheDocument();
     expect(screen.getByText('+14155550000')).toBeInTheDocument();
     expect(screen.getByText('detail-linkedin')).toBeInTheDocument();
-    expect(screen.getByText('Contact Information')).toBeInTheDocument();
-    expect(screen.getByText('Owners')).toBeInTheDocument();
     expect(screen.getByText('Alice')).toBeInTheDocument();
     expect(screen.getByDisplayValue('Some notes here')).toBeInTheDocument();
-  });
-
-  it('navigates to edit page when Edit button is clicked', async () => {
-    const user = userEvent.setup();
-    render(<ContactDetail contactId={7} currentUserId={1} />, { wrapper });
-    await vi.waitFor(() => {
-      expect(screen.getByText('Detail Contact')).toBeInTheDocument();
-    });
-    await user.click(screen.getByRole('button', { name: /edit/i }));
-    expect(mockPush).toHaveBeenCalledWith('/contacts/7/edit');
   });
 
   it('calls hideContact and redirects when Hide is confirmed', async () => {
@@ -802,6 +464,154 @@ describe('ContactDetail', () => {
     });
     await user.click(screen.getByRole('button', { name: /^hide$/i }));
     expect(mockHideContact).not.toHaveBeenCalled();
+  });
+
+  describe('Edit Contact', () => {
+    it('edits contact title via contentEditable heading', async () => {
+      const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
+      mockUpdateContact.mockResolvedValue({});
+
+      render(<ContactDetail contactId={7} currentUserId={1} />, { wrapper });
+
+      await waitFor(() => {
+        expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Detail Contact');
+      });
+
+      fireEvent.blur(screen.getByRole('heading', { level: 1 }), {
+        target: { innerText: 'Updated Contact' },
+      });
+
+      await new Promise((r) => setTimeout(r, 2100)); // past 2000ms debounce
+
+      await waitFor(() => {
+        expect(mockUpdateContact).toHaveBeenCalledWith(7, expect.objectContaining({ name: 'Updated Contact' }));
+        expect(invalidateSpy).toHaveBeenCalledWith(
+          expect.objectContaining({ queryKey: ['timeline', 'contact', 7] }),
+        );
+      });
+    });
+
+    it('edits email via inline text field', async () => {
+      const user = userEvent.setup();
+      const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
+      mockUpdateContact.mockResolvedValue({});
+
+      render(<ContactDetail contactId={7} currentUserId={1} />, { wrapper });
+
+      await waitFor(() => {
+        expect(screen.getByText('detail@example.com')).toBeInTheDocument();
+      });
+
+      await user.click(screen.getAllByTitle('Edit')[0]);
+
+      const input = screen.getByDisplayValue('detail@example.com');
+      await user.clear(input);
+      await user.type(input, 'updated@example.com');
+      await user.tab();
+
+      await waitFor(() => {
+        expect(mockUpdateContact).toHaveBeenCalledWith(7, expect.objectContaining({ email: 'updated@example.com' }));
+        expect(invalidateSpy).toHaveBeenCalledWith(
+          expect.objectContaining({ queryKey: ['timeline', 'contact', 7] }),
+        );
+      });
+    });
+
+    it('edits phone via inline text field', async () => {
+      const user = userEvent.setup();
+      const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
+      mockUpdateContact.mockResolvedValue({});
+
+      render(<ContactDetail contactId={7} currentUserId={1} />, { wrapper });
+
+      await waitFor(() => {
+        expect(screen.getByText('+14155550000')).toBeInTheDocument();
+      });
+
+      await user.click(screen.getAllByTitle('Edit')[1]);
+
+      const input = screen.getByDisplayValue('+14155550000');
+      await user.clear(input);
+      await user.type(input, '+14155559999');
+      await user.tab();
+
+      await waitFor(() => {
+        expect(mockUpdateContact).toHaveBeenCalledWith(7, expect.objectContaining({ phone: '+14155559999' }));
+        expect(invalidateSpy).toHaveBeenCalledWith(
+          expect.objectContaining({ queryKey: ['timeline', 'contact', 7] }),
+        );
+      });
+    });
+
+    it('edits linkedinId via inline text field', async () => {
+      const user = userEvent.setup();
+      const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
+      mockUpdateContact.mockResolvedValue({});
+
+      render(<ContactDetail contactId={7} currentUserId={1} />, { wrapper });
+
+      await waitFor(() => {
+        expect(screen.getByText('detail-linkedin')).toBeInTheDocument();
+      });
+
+      await user.click(screen.getAllByTitle('Edit')[2]);
+
+      const input = screen.getByDisplayValue('detail-linkedin');
+      await user.clear(input);
+      await user.type(input, 'updated-linkedin');
+      await user.tab();
+
+      await waitFor(() => {
+        expect(mockUpdateContact).toHaveBeenCalledWith(7, expect.objectContaining({ linkedinId: 'updated-linkedin' }));
+        expect(invalidateSpy).toHaveBeenCalledWith(
+          expect.objectContaining({ queryKey: ['timeline', 'contact', 7] }),
+        );
+      });
+    });
+
+    it('shows validation error for invalid email', async () => {
+      const user = userEvent.setup();
+
+      render(<ContactDetail contactId={7} currentUserId={1} />, { wrapper });
+
+      await waitFor(() => {
+        expect(screen.getByText('detail@example.com')).toBeInTheDocument();
+      });
+
+      await user.click(screen.getAllByTitle('Edit')[0]);
+
+      const input = screen.getByDisplayValue('detail@example.com');
+      await user.clear(input);
+      await user.type(input, 'not-an-email');
+      await user.tab();
+
+      await waitFor(() => {
+        expect(screen.getByText(/must be a valid email/i)).toBeInTheDocument();
+      });
+      expect(mockUpdateContact).not.toHaveBeenCalled();
+    });
+
+    it('shows validation error for invalid phone format', async () => {
+      const user = userEvent.setup();
+
+      render(<ContactDetail contactId={7} currentUserId={1} />, { wrapper });
+
+      await waitFor(() => {
+        expect(screen.getByText('+14155550000')).toBeInTheDocument();
+      });
+
+      await user.click(screen.getAllByTitle('Edit')[1]);
+
+      const input = screen.getByDisplayValue('+14155550000');
+      await user.clear(input);
+      await user.type(input, '12345');
+      await user.tab();
+
+      await waitFor(() => {
+        expect(screen.getByText(/E\.164 format/i)).toBeInTheDocument();
+      });
+      expect(mockUpdateContact).not.toHaveBeenCalled();
+    });
   });
 });
 

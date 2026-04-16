@@ -1,4 +1,4 @@
-import { Page, Locator } from "@playwright/test";
+import { Page, Locator, expect } from "@playwright/test";
 import { BasePage } from "./BasePage";
 
 export class DealsPage extends BasePage {
@@ -14,10 +14,6 @@ export class DealsPage extends BasePage {
   override async goto() {
     await super.goto("/deals");
     await this.waitForDealsToLoad();
-  }
-
-  async clickNewDeal() {
-    await this.page.goto('/deals/new');
   }
 
   async searchDeal(query: string) {
@@ -37,8 +33,56 @@ export class DealsPage extends BasePage {
       .catch(() => null);
   }
 
-  async addRow() {
-    const addRowButton = this.page.getByRole("button", { name: /Add row/i });
-    await addRowButton.click();
+  /**
+   * Create a new deal and return the table row index
+   */
+  async createNewDeal() {
+    const initialRowCount = await this.getRowCount();
+    await this.createNewRecord();
+    return initialRowCount; // 0-indexed, new row index will be equal to initial row count
+  }
+
+  /**
+   * Create a new deal row with given name
+   */
+  async createDealRow(dealName: string) {
+    await this.page.goto("/deals");
+    const initialRowCount = await this.page.locator("tbody tr").count();
+
+    await this.page.getByRole("button", { name: "Add row" }).click();
+    await expect(this.page.locator("tbody tr")).toHaveCount(initialRowCount + 1);
+
+    // Find the 'title' column index
+    const titleIndex = await this.getColumnIndex("title");
+
+    const lastRow = this.page.locator("tbody tr").last();
+    const titleCell = lastRow.locator("td").nth(titleIndex);
+    await titleCell.evaluate((node) => (node as any).click());
+
+    const input = titleCell.locator("input");
+    await input.waitFor({ state: "visible" });
+    await input.fill(dealName);
+    await input.press("Enter");
+    await expect(this.page.getByText(dealName)).toBeVisible();
+  }
+
+  /**
+   * Wait for details page to load and return the deal ID from url
+   */
+  async waitForDetailsPageToLoad() {
+    await this.page.waitForURL(/\/deals\/\d+$/, { timeout: 10000 });
+    await this.page.waitForLoadState("domcontentloaded");
+    const match = this.page.url().match(/\/deals\/(\d+)/);
+    if (!match?.[1]) {
+      throw new Error(`Failed to extract deal ID from URL: ${this.page.url()}`);
+    }
+    return Number(match[1]);
+  }
+
+  /**
+   * Click on a deal's link to view details
+   */
+  async clickDeal(row: Locator) {
+    await row.locator('a[href^="/deals/"]').click();
   }
 }

@@ -1,6 +1,5 @@
 'use client';
 
-import { BuildingOfficeIcon } from '@heroicons/react/24/outline';
 import { PageHeader, SearchBar } from '@/components/shared';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getTableViewCompanies } from '@/server/query-options';
@@ -78,10 +77,6 @@ const CompaniesList = () => {
     addRow();
   };
 
-  const handleNewCompany = () => {
-    router.push('/companies/new');
-  };
-
   const handleNewColumn = (
     name: string,
     key: string,
@@ -119,15 +114,6 @@ const CompaniesList = () => {
         showAddColumn
         onAddColumn={handleNewColumn}
         disableRowClick={true}
-        emptyStateConfig={{
-          icon: BuildingOfficeIcon,
-          title: 'No Companies',
-          description: 'Get started by creating a new company.',
-          action: {
-            label: 'New Company',
-            onClick: handleNewCompany,
-          },
-        }}
       />
 
       <ConfirmDialog

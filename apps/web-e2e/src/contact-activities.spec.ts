@@ -1,4 +1,5 @@
 import { test, expect } from "./fixtures";
+import { createFreshContact } from "./fixtures/helpers";
 
 /**
  * Contact Activity Timeline Tests.
@@ -7,20 +8,8 @@ import { test, expect } from "./fixtures";
 test.describe("Contact Activity Timeline - Authenticated", () => {
   let contactId!: number;
 
-  test.beforeEach(async ({ contactsPage, page }) => {
-    if (contactId !== undefined) return;
-
-    const contactName = `E2E Comment Test Contact ${Date.now()}`;
-    await contactsPage.createContact({
-      name: contactName,
-      email: `activity-test-${Date.now()}@example.com`,
-    });
-
-    await contactsPage.goto();
-    const contactLink = page.getByText(contactName).first();
-    await contactLink.click();
-    await page.waitForURL(/\/contacts\/\d+/, { timeout: 10000 });
-    contactId = parseInt(page.url().match(/\/contacts\/(\d+)/)?.[1] ?? "0", 10);
+  test.beforeAll(async ({ browser }) => {
+    contactId = await createFreshContact(browser);
   });
 
   // ── 1. Empty states (check before any creation) ───────────────────────────
@@ -51,11 +40,7 @@ test.describe("Contact Activity Timeline - Authenticated", () => {
     page,
   }) => {
     await contactDetailPage.goto(contactId);
-    await page
-      .getByRole("heading", { name: "Activity", exact: true })
-      .scrollIntoViewIfNeeded();
-    await contactDetailPage.showHistory();
-
+    await contactDetailPage.openActivityHistory();
     await expect(
       page
         .locator('[data-testid="activity-item"]')
@@ -78,11 +63,7 @@ test.describe("Contact Activity Timeline - Authenticated", () => {
     page,
   }) => {
     await contactDetailPage.goto(contactId);
-
-    await page
-      .getByRole("heading", { name: "Activity", exact: true })
-      .scrollIntoViewIfNeeded();
-    await contactDetailPage.showHistory();
+    await contactDetailPage.openActivityHistory();
 
     // Wait for activity section to stabilize before capturing baseline count
     await page
@@ -105,14 +86,9 @@ test.describe("Contact Activity Timeline - Authenticated", () => {
   // ── 2. Create ─────────────────────────────────────────────────────────────
   test("should create a new comment successfully", async ({
     contactDetailPage,
-    page
   }) => {
     await contactDetailPage.goto(contactId);
-
-    await page
-      .getByRole("heading", { name: "Activity", exact: true })
-      .scrollIntoViewIfNeeded();
-    await contactDetailPage.showHistory();
+    await contactDetailPage.openActivityHistory();
 
     const commentText = `Test comment created at ${new Date().toISOString()}`;
     await contactDetailPage.createComment(commentText);
@@ -179,10 +155,7 @@ test.describe("Contact Activity Timeline - Authenticated", () => {
     page,
   }) => {
     await contactDetailPage.goto(contactId);
-    await page
-      .getByRole("heading", { name: "Activity", exact: true })
-      .scrollIntoViewIfNeeded();
-    await contactDetailPage.showHistory();
+    await contactDetailPage.openActivityHistory();
 
     const originalComment = "Original comment for cancel test " + Date.now();
 

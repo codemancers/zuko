@@ -9,9 +9,8 @@ import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import CompanyForm from '@/components/Companies/CompanyForm';
 import CompanyDetail from '@/components/Companies/CompanyDetail';
-import ContactForm from '@/components/Contacts/ContactForm';
+import ContactDetail from '@/components/Contacts/ContactDetail';
 import AddContactDialog from '@/components/Companies/AddContactDialog';
 import TaskForm from '@/components/Tasks/TaskForm';
 
@@ -40,15 +39,21 @@ vi.mock('@/lib/api/companies', () => ({
 
 const mockUpdateContact2 = vi.fn();
 const mockGetContacts = vi.fn();
+const mockGetContact = vi.fn();
 vi.mock('@/lib/api/contacts', () => ({
   contactsApi: {
     updateContact: (...args: unknown[]) => mockUpdateContact2(...args),
     getContacts: (...args: unknown[]) => mockGetContacts(...args),
+    getContact: (...args: unknown[]) => mockGetContact(...args),
+    hideContact: vi.fn(),
   },
 }));
 
 vi.mock('@/lib/api/deals', () => ({
-  dealsApi: { getDealsByCompany: vi.fn(() => Promise.resolve({ deals: [] })) },
+  dealsApi: {
+    getDealsByCompany: vi.fn(() => Promise.resolve({ deals: [] })),
+    getDealsByContact: vi.fn(() => Promise.resolve({ deals: [] })),
+  },
 }));
 
 const mockUpdateTask = vi.fn();
@@ -102,27 +107,32 @@ beforeEach(() => {
   });
   vi.clearAllMocks();
   mockGetCompany.mockResolvedValue(mockCompany);
+  mockGetContact.mockResolvedValue(mockContact);
   mockGetContacts.mockResolvedValue({ contacts: [{ id: 10, name: 'Free Contact', email: 'free@test.com' }] });
   mockGetTasks.mockResolvedValue({ tasks: [] });
 });
 
-// ── CompanyForm ───────────────────────────────────────────────────────────────
+// ── CompanyDetail – updateMutation ────────────────────────────────────────────
 
-describe('CompanyForm – timeline invalidation', () => {
-  it('invalidates timeline query after a successful update', async () => {
+describe('CompanyDetail – timeline invalidation on property update', () => {
+  it('invalidates timeline query after updating a company property inline', async () => {
     mockUpdateCompany.mockResolvedValue({});
     const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
     const user = userEvent.setup();
 
-    render(
-      <CompanyForm mode="edit" currentUserId={1} company={mockCompany} />,
-      { wrapper: createWrapper() },
-    );
+    render(<CompanyDetail companyId={42} currentUserId={1} />, { wrapper: createWrapper() });
 
-    const nameInput = screen.getByPlaceholderText(/acme inc/i);
-    await user.clear(nameInput);
-    await user.type(nameInput, 'Acme Updated');
-    await user.click(screen.getByRole('button', { name: /save changes/i }));
+    await waitFor(() => {
+      expect(screen.getByText('https://acme.com')).toBeInTheDocument();
+    });
+
+    // Click the pencil icon to enter edit mode for Website
+    await user.click(screen.getByTitle('Edit'));
+
+    const input = screen.getByDisplayValue('https://acme.com');
+    await user.clear(input);
+    await user.type(input, 'https://acme-updated.com');
+    await user.tab(); // blur triggers save
 
     await waitFor(() => {
       expect(invalidateSpy).toHaveBeenCalledWith(
@@ -132,23 +142,27 @@ describe('CompanyForm – timeline invalidation', () => {
   });
 });
 
-// ── ContactForm ───────────────────────────────────────────────────────────────
+// ── ContactDetail – updateMutation ───────────────────────────────────────────
 
-describe('ContactForm – timeline invalidation', () => {
-  it('invalidates timeline query after a successful update', async () => {
+describe('ContactDetail – timeline invalidation on property update', () => {
+  it('invalidates timeline query after updating a contact property inline', async () => {
     mockUpdateContact2.mockResolvedValue({});
     const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
     const user = userEvent.setup();
 
-    render(
-      <ContactForm mode="edit" currentUserId={1} contact={mockContact} />,
-      { wrapper: createWrapper() },
-    );
+    render(<ContactDetail contactId={99} currentUserId={1} />, { wrapper: createWrapper() });
 
-    const nameInput = screen.getByPlaceholderText(/john doe/i);
-    await user.clear(nameInput);
-    await user.type(nameInput, 'Bob Updated');
-    await user.click(screen.getByRole('button', { name: /save changes/i }));
+    await waitFor(() => {
+      expect(screen.getByText('bob@example.com')).toBeInTheDocument();
+    });
+
+    // Click the pencil icon to enter edit mode for Email
+    await user.click(screen.getByTitle('Edit'));
+
+    const input = screen.getByDisplayValue('bob@example.com');
+    await user.clear(input);
+    await user.type(input, 'bob-updated@example.com');
+    await user.tab(); // blur triggers save
 
     await waitFor(() => {
       expect(invalidateSpy).toHaveBeenCalledWith(
