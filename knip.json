@@ -39,10 +39,6 @@
       "entry": ["src/index.ts"],
       "project": ["src/**/*.ts"]
     },
-    "libs/ui-kit": {
-      "entry": ["src/index.ts"],
-      "project": ["src/**/*.{ts,tsx}"]
-    },
     "libs/models": {
       "entry": ["src/index.ts"],
       "project": ["src/**/*.ts"]
@@ -61,6 +57,7 @@
     "**/dist/**",
     "**/.next/**",
     "**/out-tsc/**",
-    "apps/meeting-bot/**"
+    "apps/meeting-bot/**",
+    "libs/ui-kit/**"
   ]
 }
