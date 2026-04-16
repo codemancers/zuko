@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, type Mock } from 'vitest';
 import { ContactActivityListener } from './contact-activity.listener';
 import { ActivityService } from '../services/activity.service';
 
@@ -14,7 +14,7 @@ describe('ContactActivityListener', () => {
       mockActivityService as unknown as ActivityService,
     );
     vi.clearAllMocks();
-    (mockActivityService.create as vi.Mock).mockResolvedValue(undefined as never);
+    (mockActivityService.create as Mock).mockResolvedValue(undefined as never);
   });
 
   describe('handleContactCreated', () => {

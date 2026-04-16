@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, type Mock } from 'vitest';
 import { DealActivityListener } from './deal-activity.listener';
 import { ActivityService } from '../services/activity.service';
 
@@ -14,7 +14,7 @@ describe('DealActivityListener', () => {
       mockActivityService as unknown as ActivityService,
     );
     vi.clearAllMocks();
-    (mockActivityService.create as vi.Mock).mockResolvedValue(undefined as never);
+    (mockActivityService.create as Mock).mockResolvedValue(undefined as never);
   });
 
   describe('handleDealCreated', () => {
@@ -208,7 +208,7 @@ describe('DealActivityListener', () => {
         contactName: 'Jane Smith',
       });
 
-      const call = (mockActivityService.create as vi.Mock).mock.calls[0] as [{ metadata: Record<string, unknown> }];
+      const call = (mockActivityService.create as Mock).mock.calls[0] as [{ metadata: Record<string, unknown> }];
       expect(call[0].metadata).not.toHaveProperty('role');
     });
   });
