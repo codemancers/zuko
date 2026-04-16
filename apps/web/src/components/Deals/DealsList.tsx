@@ -1,6 +1,5 @@
 'use client';
 
-import { BriefcaseIcon } from '@heroicons/react/24/outline';
 import { PageHeader, SearchBar } from '@/components/shared';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getTableViewDeals } from '@/server/query-options';

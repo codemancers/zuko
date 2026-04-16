@@ -1,10 +1,6 @@
 import dayjs from "dayjs";
 import { test, expect } from "./fixtures";
-
-/**
- * Companies tests run in the chromium project with storageState (logged-in user).
- * The unauthenticated describe overrides with empty storage state.
- */
+import { createFreshCompany } from "./fixtures/helpers";
 
 test.describe("Companies Page - Unauthenticated", () => {
   test.use({ storageState: { cookies: [], origins: [] } });
@@ -26,33 +22,18 @@ test.describe("Companies - Authenticated", () => {
     await companiesPage.waitForCompaniesToLoad();
   });
 
-  test("can navigate to create new company", async ({
-    companiesPage,
-    page,
-  }) => {
+  test("creates a new company record in table", async ({ companiesPage, page }) => {
     await companiesPage.goto();
-    await companiesPage.clickNewCompany();
-    await page.waitForURL("**/companies/new", { timeout: 10000 });
-    expect(page.url()).toContain("/companies/new");
-  });
 
-  test("can create a new company", async ({ companiesPage, page }) => {
-    await companiesPage.goto();
-    await companiesPage.clickNewCompany();
-    await page.waitForURL("**/companies/new", { timeout: 10000 });
-    await page.getByLabel(/Company Name/i).fill("TEST E2E COMPANY");
-    await page.getByLabel(/Website/i).fill("https://example.com");
-    await page
-      .getByLabel(/LinkedIn URL/i)
-      .fill("https://linkedin.com/company/test-e2e-company");
-    await page
-      .getByPlaceholder(/Add a summary about this company/i)
-      .fill("TEST E2E COMPANY SUMMARY");
-    await page.getByRole("button", { name: /Create Company/i }).click();
-    await page.waitForURL("**/companies", { timeout: 10000 });
-    await expect(page.getByText("TEST E2E COMPANY")).toBeVisible({
-      timeout: 10000,
-    });
+    const initialRowCount = await companiesPage.getRowCount();
+    const newRowIndex = await companiesPage.createNewCompany();
+    await expect(page.getByText("New company added")).toBeVisible();
+    const newRowCount = await companiesPage.getRowCount();
+    expect(newRowCount).toBe(initialRowCount + 1);
+
+    const companyNameIndex = await companiesPage.getColumnIndex("Company");
+    const newRow = page.getByRole("row").nth(newRowIndex);
+    await expect(newRow.locator("td").nth(companyNameIndex)).toHaveText("New Company");
   });
 
   test("can view company list", async ({ companiesPage }) => {
@@ -117,11 +98,16 @@ test.describe("Companies - Authenticated", () => {
 });
 
 test.describe.serial("Company Detail - Contact Management", () => {
+  let companyId: number;
+
+  test.beforeAll(async ({ browser }) => {
+    companyId = await createFreshCompany(browser);
+  });
+
   test("displays company detail page with associated contacts section", async ({
-    page,
     companyDetailPage,
   }) => {
-    await companyDetailPage.goto(1);
+    await companyDetailPage.goto(companyId);
     await expect(companyDetailPage.associatedContactsSection).toBeVisible({
       timeout: 10000,
     });
@@ -132,7 +118,7 @@ test.describe.serial("Company Detail - Contact Management", () => {
     companyDetailPage,
     page,
   }) => {
-    await companyDetailPage.goto(1);
+    await companyDetailPage.goto(companyId);
     const selectedName = await companyDetailPage.addContact(
       undefined,
       "Employee",
@@ -148,7 +134,7 @@ test.describe.serial("Company Detail - Contact Management", () => {
     companyDetailPage,
     page,
   }) => {
-    await companyDetailPage.goto(1);
+    await companyDetailPage.goto(companyId);
     const associatedContacts = await companyDetailPage.getAssociatedContacts();
     if (associatedContacts.length === 0) {
       test.skip();
@@ -186,9 +172,8 @@ test.describe.serial("Company Detail - Contact Management", () => {
 
   test("can remove a contact from a company", async ({
     companyDetailPage,
-    page,
   }) => {
-    await companyDetailPage.goto(1);
+    await companyDetailPage.goto(companyId);
     const contacts = await companyDetailPage.getAssociatedContacts();
     if (contacts.length === 0) {
       const addedName = await companyDetailPage.addContact(
@@ -218,39 +203,36 @@ test.describe.serial("Company Detail - Contact Management", () => {
     companyDetailPage,
     page,
   }) => {
-    await companyDetailPage.goto(1);
-    await page
-      .getByRole("heading", { name: "Activity" })
-      .scrollIntoViewIfNeeded();
-    await page
-      .getByRole("heading", { name: "Activity" })
-      .scrollIntoViewIfNeeded();
-    await companyDetailPage.showHistory();
+    await companyDetailPage.goto(companyId);
+    await companyDetailPage.openActivityHistory();
     const testComment = `Test comment at ${new Date().toISOString()}`;
     await companyDetailPage.postComment(testComment);
     await expect(page.getByText(testComment)).toBeVisible({ timeout: 10000 });
   });
 
   test("displays activity timeline section", async ({ companyDetailPage }) => {
-    await companyDetailPage.goto(1);
+    await companyDetailPage.goto(companyId);
     const activities = await companyDetailPage.getActivityItems();
     expect(activities.length).toBeGreaterThanOrEqual(0);
   });
 });
 
-test.describe("Company Detail - Inline Editing", () => {
-  test("can edit company name inline", async ({ companyDetailPage, page }) => {
-    const newName = `Updated Company Name ${Date.now()}`;
-    await companyDetailPage.goto(1);
+test.describe("Company Detail - Inline Editing with Activity Verification", () => {
+  let companyId: number;
 
-    const updatePromise = page.waitForResponse(
-      (resp) => resp.url().includes("/companies/1") && resp.request().method() === "PATCH"
-    );
-    await companyDetailPage.updateTitle(newName);
-    await updatePromise;
-    
+  test.beforeAll(async ({ browser }) => {
+    companyId = await createFreshCompany(browser);
+  });
+
+  test("can edit company name inline", async ({ companyDetailPage, page }) => {
+    const newName = `Acme Corp ${Date.now()}`;
+    await companyDetailPage.goto(companyId);
+    await companyDetailPage.openActivityHistory();
+    await companyDetailPage.updateCompanyName(newName, companyId);
+
     // Verify immediate UI update
     await expect(companyDetailPage.companyName).toHaveText(newName);
+    await companyDetailPage.expectActivityEntry(/updated companyName from/i);
 
     // Refresh and verify persistence
     await page.reload();
@@ -258,79 +240,159 @@ test.describe("Company Detail - Inline Editing", () => {
   });
 
   test("can edit company summary", async ({ companyDetailPage, page }) => {
-    const newSummary = `Updated Company Summary ${Date.now()}`;
-    await companyDetailPage.goto(1);
-
-    const updatePromise = page.waitForResponse(
-      (resp) => resp.url().includes("/companies/1") && resp.request().method() === "PATCH"
-    );
-    await companyDetailPage.summaryField.fill(newSummary);
-    await companyDetailPage.summaryField.blur();
-    
-    // Wait for API save
-    await updatePromise;
+    const newSummary = `Enterprise solutions provider — updated at ${Date.now()}`;
+    await companyDetailPage.goto(companyId);
+    await companyDetailPage.openActivityHistory();
+    await companyDetailPage.updateSummary(newSummary, companyId);
 
     // Verify immediate UI update
     await expect(companyDetailPage.summaryField).toHaveValue(newSummary);
+    await companyDetailPage.expectActivityEntry(`set summary to "${newSummary}"`);
 
     // Refresh and verify persistence
     await page.reload();
     await expect(companyDetailPage.summaryField).toHaveValue(newSummary);
   });
-});
 
-test.describe("Company Edit", () => {
-
-  test("edit page displays company form", async ({ page }) => {
-    await page.goto("/companies/1/edit");
-    await expect(page.getByLabel(/Company Name/i)).toBeVisible({
-      timeout: 10000,
-    });
-    await expect(page.getByLabel(/Website/i)).toBeVisible();
-    await expect(page.getByLabel(/LinkedIn URL/i)).toBeVisible();
-    await expect(
-      page.getByPlaceholder(/Add a summary about this company/i)
-    ).toBeVisible();
-  });
-});
-
-test.describe("Company Creation", () => {
-  test("new company form displays all required fields", async ({ page }) => {
-    await page.goto("/companies/new");
-    await expect(page.getByLabel(/Company Name/i)).toBeVisible({
-      timeout: 10000,
-    });
-    await expect(page.getByLabel(/Website/i)).toBeVisible();
-    await expect(page.getByLabel(/LinkedIn URL/i)).toBeVisible();
-    await expect(
-      page.getByPlaceholder(/Add a summary about this company/i)
-    ).toBeVisible();
-  });
-
-  test("validates required fields", async ({ page }) => {
-    await page.goto("/companies/new");
-    await page.getByRole("button", { name: /Create Company/i }).click();
-    await expect(page.getByText(/Company name is required/i)).toBeVisible({
-      timeout: 5000,
-    });
-  });
-});
-
-test.describe("Contact Association Constraints", () => {
-  test("shows warning about one-company-per-contact constraint", async ({
+  test("can set/edit company website", async ({
     companyDetailPage,
     page,
   }) => {
-    await companyDetailPage.goto(1);
-    await companyDetailPage.addContactButton.click();
-    await expect(page.getByText("Add Contact to Company")).toBeVisible({
-      timeout: 5000,
-    });
+    const newWebsite = `https://acme-${Date.now()}.com`;
+    await companyDetailPage.goto(companyId);
+    await companyDetailPage.openActivityHistory();
+
+    // Test setting value initially
+    await companyDetailPage.updateProperty("Website", newWebsite, companyId);
+    await expect(companyDetailPage.propertyRow("Website").locator("dd")).toHaveText(newWebsite);
+    
+    // Verify it renders as a clickable <a> tag with correct href
+    const link = companyDetailPage.getPropertyLink("Website");
+    await expect(link).toBeVisible();
+    await expect(link).toHaveAttribute("href", newWebsite);
+    await expect(link).toHaveAttribute("target", "_blank");
+    await companyDetailPage.expectActivityEntry(`set website to "${newWebsite}"`);
+
+    // Test updating the value
+    const updatedWebsite = `https://acme-${Date.now()}-updated.com`;
+    await companyDetailPage.updateProperty("Website", updatedWebsite, companyId);
+    await expect(companyDetailPage.propertyRow("Website").locator("dd")).toHaveText(updatedWebsite);
+    await companyDetailPage.expectActivityEntry(`updated website from "${newWebsite}" to "${updatedWebsite}"`);
+
+    // Refresh and verify persistence + link rendering
+    await page.reload();
+    const persisted = await companyDetailPage.getPropertyValue("Website");
+    expect(persisted).toBe(updatedWebsite);
+    await expect(companyDetailPage.getPropertyLink("Website")).toHaveAttribute("href", updatedWebsite);
+  });
+
+  test("can set/edit company linkedin", async ({
+    companyDetailPage,
+    page,
+  }) => {
+    const newLinkedin = `https://linkedin.com/company/acme-${Date.now()}`;
+    await companyDetailPage.goto(companyId);
+    await companyDetailPage.openActivityHistory();
+
+     // Test setting value initially
+    await companyDetailPage.updateProperty("LinkedIn", newLinkedin, companyId);
+    await expect(companyDetailPage.propertyRow("LinkedIn").locator("dd")).toHaveText(newLinkedin);
+
+    // Verify it renders as a clickable <a> tag with correct href
+    const link = companyDetailPage.getPropertyLink("LinkedIn");
+    await expect(link).toBeVisible();
+    await expect(link).toHaveAttribute("href", newLinkedin);
+    await expect(link).toHaveAttribute("target", "_blank");
+    await companyDetailPage.expectActivityEntry(`set linkedinUrl to "${newLinkedin}"`);
+
+    // Test updating the value
+    const updatedLinkedin = `https://linkedin.com/company/acme-${Date.now()}-updated`;
+    await companyDetailPage.updateProperty("LinkedIn", updatedLinkedin, companyId);
+    await expect(companyDetailPage.propertyRow("LinkedIn").locator("dd")).toHaveText(updatedLinkedin);
+    await companyDetailPage.expectActivityEntry(`updated linkedinUrl from "${newLinkedin}" to "${updatedLinkedin}"`);
+
+    // Refresh and verify persistence + link rendering
+    await page.reload();
+    const persisted = await companyDetailPage.getPropertyValue("LinkedIn");
+    expect(persisted).toBe(updatedLinkedin);
+    await expect(companyDetailPage.getPropertyLink("LinkedIn")).toHaveAttribute("href", updatedLinkedin);
+  });
+
+  test("shows validation error for invalid website URL", async ({
+    companyDetailPage,
+    page,
+  }) => {
+    await companyDetailPage.goto(companyId);
+    const input = await companyDetailPage.openPropertyEditor("Website");
+    await input.fill("not-a-url");
+    await input.press("Enter");
+
     await expect(
-      page.getByText(
-        /A contact can only be associated with one company at a time/i
-      )
-    ).toBeVisible();
+      page.getByText(/Must be a valid URL/i)
+    ).toBeVisible({ timeout: 3000 });
+  });
+
+  test("shows validation error for invalid linkedin URL", async ({
+    companyDetailPage,
+    page,
+  }) => {
+    await companyDetailPage.goto(companyId);
+    const input = await companyDetailPage.openPropertyEditor("LinkedIn");
+    await input.fill("not-a-url");
+    await input.press("Enter");
+
+    await expect(
+      page.getByText(/Must be a valid URL/i)
+    ).toBeVisible({ timeout: 3000 });
+
+    await input.fill("https://acme.com");
+    await input.press("Enter");
+
+    await expect(
+      page.getByText(/Must be a valid LinkedIn URL/i)
+    ).toBeVisible({ timeout: 3000 });
+  });
+
+  test("pressing Escape cancels EntityProperties editing without saving", async ({
+    companyDetailPage,
+  }) => {
+    await companyDetailPage.goto(companyId);
+
+    const originalValue = await companyDetailPage.getPropertyValue("Website");
+
+    const input = await companyDetailPage.openPropertyEditor("Website");
+    await input.fill("https://should-be-reverted.com");
+    await input.press("Escape");
+
+    // Input should disappear
+    await expect(input).toBeHidden({ timeout: 3000 });
+
+    // Value should be unchanged
+    const currentValue = await companyDetailPage.getPropertyValue("Website");
+    expect(currentValue).toBe(originalValue);
+  });
+
+  test("clearing an EntityProperties field saves null", async ({
+    companyDetailPage,
+    page,
+  }) => {
+    const tempValue = `https://linkedin.com/company/acme-${Date.now()}`;
+    await companyDetailPage.goto(companyId);
+    
+    // 1. Ensure the field has a value first so we have something to clear
+    await companyDetailPage.updateProperty("LinkedIn", tempValue, companyId);
+    await expect(companyDetailPage.propertyRow("LinkedIn").locator("dd")).toHaveText(tempValue);
+
+    // 2. Now clear the field
+    await companyDetailPage.updateProperty("LinkedIn", "", companyId);
+    
+    // 3. Verify it shows the empty placeholder "—"
+    await expect(companyDetailPage.propertyRow("LinkedIn").locator("dd")).toHaveText("—");
+
+    // 4. Reload and verify persistence
+    await page.reload();
+    const persisted = await companyDetailPage.getPropertyValue("LinkedIn");
+    expect(persisted).toBe("—");
   });
 });
 

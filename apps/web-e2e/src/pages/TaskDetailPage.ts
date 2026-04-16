@@ -124,4 +124,25 @@ export class TaskDetailPage extends BasePage {
     // Wait for autosave (debounce is 2000ms, so we should wait a bit longer or wait for the 'Syncing' text to disappear)
     await this.page.waitForTimeout(3000);
   }
+
+  /**
+   * Update a task property inline and wait for the PATCH response.
+   */
+  async updateProperty(label: string, value: string, taskId: number) {
+    await this.updateEntityProperty(label, value, `/tasks/${taskId}`);
+  }
+
+  /**
+   * Update the task title (h1 contenteditable) inline and wait for save.
+   */
+  async updateTaskTitle(title: string, taskId: number) {
+    const patchPromise = this.page.waitForResponse(
+      (resp) =>
+        resp.url().includes(`/tasks/${taskId}`) &&
+        resp.request().method() === "PATCH",
+      { timeout: 10000 },
+    );
+    await this.updateTitle(title);
+    await patchPromise;
+  }
 }

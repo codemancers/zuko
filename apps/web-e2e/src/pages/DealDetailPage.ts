@@ -11,8 +11,10 @@ export class DealDetailPage extends BasePage {
   readonly activityItems: Locator;
   readonly commentInput: Locator;
   readonly postCommentButton: Locator;
+  readonly summaryField: Locator;
+  readonly hideHistoryButton: Locator;
 
-  constructor(page: Page, dealId?: number) {
+  constructor(page: Page) {
     super(page);
     this.editButton = page.getByRole("button", { name: /^Edit$/i });
     this.hideButton = page.getByRole("button", { name: /Hide/i });
@@ -30,15 +32,58 @@ export class DealDetailPage extends BasePage {
     this.postCommentButton = page.getByRole("button", {
       name: /Post Comment/i,
     });
+    this.summaryField = page.locator('textarea[name="summary"]');
+    this.hideHistoryButton = page.getByRole("button", { name: /Hide History/i });
   }
 
-  override async goto(dealIdOrPath: number | string) {
-    if (typeof dealIdOrPath === "number") {
-      await this.page.goto(`/deals/${dealIdOrPath}`);
-    } else {
-      await this.page.goto(dealIdOrPath);
+  override async goto(dealId: number | string) {
+    const path = `/deals/${dealId}`;
+    if (this.page.url().includes(path)) {
+      await this.page.waitForLoadState("domcontentloaded");
+      await this.activitySection.waitFor({ state: "visible" });
+      return;
     }
+    await this.page.goto(path);
+    await this.page.waitForLoadState("domcontentloaded");
+    await this.activitySection.waitFor({ state: "visible" });
   }
+
+  /**
+   * Update a deal property inline and wait for the PATCH response.
+   */
+  async updateProperty(label: string, value: string, dealId: number) {
+    await this.updateEntityProperty(label, value, `/deals/${dealId}`);
+  }
+
+  /**
+   * Update the deal name (h1 contenteditable) inline and wait for save.
+   */
+  async updateDealName(name: string, dealId: number) {
+    const patchPromise = this.page.waitForResponse(
+      (resp) =>
+        resp.url().includes(`/deals/${dealId}`) &&
+        resp.request().method() === "PATCH",
+      { timeout: 10000 }
+    );
+    await this.updateTitle(name);
+    await patchPromise;
+  }
+
+  /**
+   * Update the summary textarea and wait for save.
+   */
+  async updateSummary(summary: string, dealId: number) {
+    const patchPromise = this.page.waitForResponse(
+      (resp) =>
+        resp.url().includes(`/deals/${dealId}`) &&
+        resp.request().method() === "PATCH",
+      { timeout: 10000 },
+    );
+    await this.summaryField.fill(summary);
+    await this.summaryField.blur();
+    await patchPromise;
+  }
+
 
   async clickEdit() {
     await this.editButton.click();
@@ -56,9 +101,19 @@ export class DealDetailPage extends BasePage {
     return (await this.dealStage.textContent()) || "";
   }
 
+  /**
+   * Scroll to the Activity section & open the history accordion.
+   */
+  override async openActivityHistory() {
+    await this.page
+      .getByRole("heading", { name: "Activity", exact: true })
+      .scrollIntoViewIfNeeded();
+    await this.showHistory();
+  }
+
   async isActivitySectionVisible(): Promise<boolean> {
     try {
-      await this.activitySection.waitFor({ state: 'visible', timeout: 10000 });
+      await this.activitySection.waitFor({ state: "visible", timeout: 10000 });
       return true;
     } catch {
       return false;

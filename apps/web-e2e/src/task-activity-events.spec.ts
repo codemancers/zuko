@@ -65,22 +65,12 @@ test.describe("Task Activity Timeline - System Events", () => {
         status: "TODO",
       });
       await taskDetailPage.goto(taskId);
-
-      // Edit task to change status
-      await page.getByRole("button", { name: /edit/i }).click();
-      await page.waitForURL(/\/tasks\/\d+\/edit/, { timeout: 10000 });
-
-      await page.getByLabel(/status/i).selectOption("IN_PROGRESS");
-      await page.getByRole("button", { name: /save changes/i }).click();
-      await page.waitForURL(/\/tasks\/\d+$/, { timeout: 10000 });
+      await taskDetailPage.updateProperty("Status", "In Progress", taskId);
       await taskDetailPage.showHistory();
 
-      await expect(
-        page
-          .locator('[data-testid="activity-item"]')
-          .filter({ hasText: /moved task from To Do to In Progress/i })
-          .first(),
-      ).toBeVisible({ timeout: 10000 });
+      await taskDetailPage.expectActivityEntry(
+        /moved task from To Do to In Progress/i,
+      );
     });
   });
 
@@ -98,21 +88,10 @@ test.describe("Task Activity Timeline - System Events", () => {
       });
       await taskDetailPage.goto(taskId);
 
-      await page.getByRole("button", { name: /edit/i }).click();
-      await page.waitForURL(/\/tasks\/\d+\/edit/, { timeout: 10000 });
-
-      const titleInput = page.getByLabel(/title \*/i);
-      await titleInput.fill(updatedTitle);
-      await page.getByRole("button", { name: /save changes/i }).click();
-      await page.waitForURL(/\/tasks\/\d+$/, { timeout: 10000 });
+      await taskDetailPage.updateTaskTitle(updatedTitle, taskId);
       await taskDetailPage.showHistory();
 
-      await expect(
-        page
-          .locator('[data-testid="activity-item"]')
-          .filter({ hasText: /updated title from/i })
-          .first(),
-      ).toBeVisible({ timeout: 10000 });
+      await taskDetailPage.expectActivityEntry(/updated title from/i);
     });
   });
 });

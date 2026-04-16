@@ -1,4 +1,5 @@
 import { test, expect } from "./fixtures";
+import { createFreshDeal } from "./fixtures/helpers";
 
 /**
  * Deal Activity Timeline Tests.
@@ -7,9 +8,8 @@ import { test, expect } from "./fixtures";
 test.describe("Deal Activity Timeline - Authenticated", () => {
   let dealId!: number;
 
-  test.beforeEach(async () => {
-    // Rely on predictable Deal ID instead of brittle DOM navigation
-    dealId = 1;
+  test.beforeAll(async ({ browser }) => {
+    dealId = await createFreshDeal(browser);
   });
 
   // ── 1. Empty states (check before any creation) ───────────────────────────
@@ -31,25 +31,6 @@ test.describe("Deal Activity Timeline - Authenticated", () => {
       .getByRole("heading", { name: /Activity/i })
       .scrollIntoViewIfNeeded();
     await expect(dealDetailPage.commentInput).toBeVisible({ timeout: 10000 });
-  });
-
-  test('should show "No activity yet" when there are no activities', async ({
-    dealDetailPage,
-    page,
-  }) => {
-    await dealDetailPage.goto(dealId);
-    await page
-      .getByRole("heading", { name: /Activity/i })
-      .scrollIntoViewIfNeeded();
-    await dealDetailPage.showHistory();
-    await page
-      .locator('[data-testid="activity-item"]')
-      .or(page.getByText("No activity yet"))
-      .first()
-      .waitFor({ state: "visible", timeout: 10000 });
-
-    const hasNoActivity = await dealDetailPage.hasNoActivityMessage();
-    expect(hasNoActivity).toBeTruthy();
   });
 
   test("should disable post button when comment is empty", async ({

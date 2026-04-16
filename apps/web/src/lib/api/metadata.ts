@@ -17,7 +17,7 @@ export interface DealStage {
   label: string;
 }
 
-export interface TaskStatus {
+export interface TaskStatusList {
   value: string;
   label: string;
 }
@@ -32,7 +32,7 @@ export const metadataApi = {
   getDealStages: async (): Promise<DealStage[]> => {
     return await apiClient.get<DealStage[]>('/metadata/deal/stages');
   },
-  getTaskStatuses: async (): Promise<TaskStatus[]> => {
-    return await apiClient.get<TaskStatus[]>('/metadata/task/status');
+  getTaskStatuses: async (): Promise<TaskStatusList[]> => {
+    return await apiClient.get<TaskStatusList[]>('/metadata/task/status');
   },
 };

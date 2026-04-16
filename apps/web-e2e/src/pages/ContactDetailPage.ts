@@ -14,6 +14,7 @@ export class ContactDetailPage extends BasePage {
   readonly connectingLines: Locator;
   readonly contactName: Locator;
   readonly notesField: Locator;
+  readonly hideHistoryButton: Locator;
 
   constructor(page: Page) {
     super(page);
@@ -30,6 +31,7 @@ export class ContactDetailPage extends BasePage {
     );
     this.contactName = page.locator('h1[contenteditable="true"]');
     this.notesField = page.getByPlaceholder(/No notes yet/i);
+    this.hideHistoryButton = page.getByRole("button", { name: /Hide history/i }); 
   }
 
   /**
@@ -47,6 +49,42 @@ export class ContactDetailPage extends BasePage {
     await this.page.goto(path);
     await this.page.waitForLoadState('domcontentloaded');
     await this.activitySection.waitFor({ state: 'visible' });
+  }
+
+    /**
+   * Update a contact property inline and wait for the PATCH response.
+   */
+  async updateProperty(label: string, value: string, contactId: number) {
+    await this.updateEntityProperty(label, value, `/contacts/${contactId}`);
+  }
+
+  /**
+   * Update the contact name (h1 contenteditable) inline and wait for save.
+   */
+  async updateContactName(name: string, contactId: number) {
+    const patchPromise = this.page.waitForResponse(
+      (resp) =>
+        resp.url().includes(`/contacts/${contactId}`) &&
+        resp.request().method() === "PATCH",
+      { timeout: 10000 },
+    );
+    await this.updateTitle(name);
+    await patchPromise;
+  }
+
+  /**
+   * Update the notes textarea and wait for save.
+   */
+  async updateNotes(notes: string, contactId: number) {
+    const patchPromise = this.page.waitForResponse(
+      (resp) =>
+        resp.url().includes(`/contacts/${contactId}`) &&
+        resp.request().method() === "PATCH",
+      { timeout: 10000 },
+    );
+    await this.notesField.fill(notes);
+    await this.notesField.blur();
+    await patchPromise;
   }
 
   /**

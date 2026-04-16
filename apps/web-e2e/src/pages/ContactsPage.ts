@@ -28,13 +28,6 @@ export class ContactsPage extends BasePage {
   }
 
   /**
-   * Click the new contact button
-   */
-  async clickNewContact() {
-    await this.page.goto('/contacts/new');
-  }
-
-  /**
    * Search for a contact by name
    */
   async searchContact(name: string) {
@@ -52,21 +45,28 @@ export class ContactsPage extends BasePage {
   }
 
   /**
-   * Click on a contact by name
+   * Click on a contact name
    */
-  async clickContact(name: string) {
-    await this.page.getByText(name, { exact: false }).click();
+  async clickContact(row: Locator) {
+    await row.locator('a[href^="/contacts/"]').click();
   }
 
   /**
-   * Create a new contact by navigating to the creation form
+   * Wait for contacts to load
    */
-  async createContact({ name, email }: { name: string; email: string }) {
-    await this.page.goto('/contacts/new');
-    await this.page.getByLabel(/Name/i).fill(name);
-    await this.page.getByLabel(/Email/i).fill(email);
-    await this.page.getByRole('button', { name: /Create Contact/i }).click();
-    await this.page.waitForURL('**/contacts', { timeout: 10000 });
+  async waitForContactsToLoad() {
+    await this.page
+      .waitForSelector("table", { timeout: 5000 })
+      .catch(() => null);
+  }
+
+  /**
+   * Create a new contact and return the table row index
+   */
+  async createNewContact() {
+    const initialRowCount = await this.getRowCount();
+    await this.createNewRecord();
+    return initialRowCount;  // 0-indexed, new row index will be equal to initial row count
   }
 
   /**
@@ -79,10 +79,8 @@ export class ContactsPage extends BasePage {
     await this.page.getByRole('button', { name: 'Add row' }).click();
     await expect(this.page.locator('tbody tr')).toHaveCount(initialRowCount + 1);
     
-    // Get headers to find the 'name' column index
-    const headers = this.page.getByRole("columnheader");
-    const headerTexts = await headers.allInnerTexts();
-    const nameIndex = headerTexts.findIndex(h => h.toLowerCase().includes("name"));
+    // Find the 'name' column index
+    const nameIndex = await this.getColumnIndex("name");
 
     const lastRow = this.page.locator('tbody tr').last();
     const nameCell = lastRow.locator("td").nth(nameIndex);
@@ -106,5 +104,20 @@ export class ContactsPage extends BasePage {
     await this.page.getByLabel('Field Type').selectOption(columnType);
     await this.page.getByRole('button', { name: 'Create field' }).click();
     await expect(this.page.getByRole('columnheader', { name: columnName })).toBeVisible();
+  }
+
+  /**
+   * Wait for details page to load and return the contact ID from url
+   */
+  async waitForDetailsPageToLoad() {
+    await this.page.waitForURL(/\/contacts\/\d+$/, { timeout: 10000 });
+    await this.page.waitForLoadState('domcontentloaded');
+    const match = this.page.url().match(/\/contacts\/(\d+)/);
+    if (!match?.[1]) {
+      throw new Error(
+        `Failed to extract contact ID from URL: ${this.page.url()}`
+      );
+    }
+    return Number(match[1]);
   }
 }

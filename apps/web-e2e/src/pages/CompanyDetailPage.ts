@@ -8,6 +8,7 @@ export class CompanyDetailPage extends BasePage {
   readonly hideButton: Locator;
   readonly addContactButton: Locator;
   readonly associatedContactsSection: Locator;
+  readonly hideHistoryButton: Locator;
 
   constructor(page: Page) {
     super(page);
@@ -21,6 +22,7 @@ export class CompanyDetailPage extends BasePage {
     this.summaryField = page.getByPlaceholder(/No summary yet/i);
     this.websiteField = page.getByPlaceholder(/https:\/\/example.com/i);
     this.linkedinUrlField = page.getByPlaceholder(/https:\/\/linkedin.com\/company\/example/i);
+    this.hideHistoryButton = page.getByRole("button", { name: /Hide history/i });
   }
 
   readonly companyName: Locator;
@@ -37,6 +39,41 @@ export class CompanyDetailPage extends BasePage {
     await this.page.waitForLoadState('domcontentloaded');
   }
 
+  /**
+   * Update a company property inline and wait for the PATCH response.
+   */
+  async updateProperty(label: string, value: string, companyId: number) {
+    await this.updateEntityProperty(label, value, `/companies/${companyId}`);
+  }
+
+  /**
+   * Update the company name (h1 contenteditable) inline and wait for save.
+   */
+  async updateCompanyName(name: string, companyId: number) {
+    const patchPromise = this.page.waitForResponse(
+      (resp) =>
+        resp.url().includes(`/companies/${companyId}`) &&
+        resp.request().method() === "PATCH",
+      { timeout: 10000 },
+    );
+    await this.updateTitle(name);
+    await patchPromise;
+  }
+
+  /**
+   * Update the summary textarea and wait for save.
+   */
+  async updateSummary(summary: string, companyId: number) {
+    const patchPromise = this.page.waitForResponse(
+      (resp) =>
+        resp.url().includes(`/companies/${companyId}`) &&
+        resp.request().method() === "PATCH",
+      { timeout: 10000 },
+    );
+    await this.summaryField.fill(summary);
+    await this.summaryField.blur();
+    await patchPromise;
+  }
 
   /**
    * Add a contact to the company.

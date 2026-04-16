@@ -1,7 +1,6 @@
 'use client';
 
 import {
-  ClipboardDocumentListIcon,
   CheckCircleIcon,
 } from '@heroicons/react/24/outline';
 import { PageHeader, SearchBar } from '@/components/shared';
