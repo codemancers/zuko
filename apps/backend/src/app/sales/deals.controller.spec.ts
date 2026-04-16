@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, type Mock } from 'vitest';
 import { Test, TestingModule } from '@nestjs/testing';
 import { DealsController, CreateDealDto } from './deals.controller';
 import { DealsService } from '@zuko/sales';
@@ -84,7 +84,7 @@ describe('DealsController', () => {
         contacts: [],
       };
 
-      (mockDealsService.create as vi.Mock).mockResolvedValue(
+      (mockDealsService.create as Mock).mockResolvedValue(
         mockCreatedDeal as never,
       );
 
@@ -124,7 +124,7 @@ describe('DealsController', () => {
         contacts: [],
       };
 
-      (mockDealsService.create as vi.Mock).mockResolvedValue(
+      (mockDealsService.create as Mock).mockResolvedValue(
         mockCreatedDeal as never,
       );
 
@@ -156,7 +156,7 @@ describe('DealsController', () => {
         owners: [],
       };
 
-      (mockDealsService.update as vi.Mock).mockResolvedValue(
+      (mockDealsService.update as Mock).mockResolvedValue(
         mockUpdatedDeal as never,
       );
 
@@ -194,7 +194,7 @@ describe('DealsController', () => {
         owners: [],
       };
 
-      (mockDealsService.update as vi.Mock).mockResolvedValue(
+      (mockDealsService.update as Mock).mockResolvedValue(
         mockUpdatedDeal as never,
       );
 
