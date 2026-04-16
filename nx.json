@@ -61,7 +61,8 @@
       "plugin": "@nx/vitest",
       "options": {
         "testTargetName": "test"
-      }
+      },
+      "exclude": ["apps/backend-e2e/**", "apps/ai-agents-e2e/**"]
     },
     {
       "plugin": "@nx/docker",
