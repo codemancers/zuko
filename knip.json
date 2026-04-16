@@ -1,0 +1,64 @@
+{
+  "$schema": "https://unpkg.com/knip@latest/schema.json",
+  "workspaces": {
+    ".": {
+      "entry": ["scripts/**/*.{ts,js}"],
+      "project": ["scripts/**/*.{ts,js}"],
+      "ignoreDependencies": [
+        "patch-package",
+        "tslib",
+        "autoprefixer",
+        "jiti"
+      ]
+    },
+    "apps/web": {
+      "entry": [
+        "src/app/**/page.{ts,tsx}",
+        "src/app/**/layout.{ts,tsx}",
+        "src/app/**/loading.{ts,tsx}",
+        "src/app/**/error.{ts,tsx}",
+        "src/app/**/not-found.{ts,tsx}",
+        "src/app/**/route.{ts,tsx}",
+        "src/proxy.ts",
+        "next.config.ts"
+      ],
+      "project": ["src/**/*.{ts,tsx}"]
+    },
+    "apps/backend": {
+      "entry": ["src/main.ts"],
+      "project": ["src/**/*.ts"],
+      "webpack": false
+    },
+    "apps/ai-agents": {
+      "entry": ["src/main.ts"],
+      "project": ["src/**/*.ts"]
+    },
+    "libs/core": {
+      "entry": ["src/index.ts"],
+      "project": ["src/**/*.ts"]
+    },
+    "libs/ui-kit": {
+      "entry": ["src/index.ts"],
+      "project": ["src/**/*.{ts,tsx}"]
+    },
+    "libs/models": {
+      "entry": ["src/index.ts"],
+      "project": ["src/**/*.ts"]
+    },
+    "libs/sales": {
+      "entry": ["src/index.ts"],
+      "project": ["src/**/*.ts"]
+    }
+  },
+  "ignore": [
+    "**/*.spec.ts",
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "**/*.d.ts",
+    "apps/**-e2e/**",
+    "**/dist/**",
+    "**/.next/**",
+    "**/out-tsc/**",
+    "apps/meeting-bot/**"
+  ]
+}
