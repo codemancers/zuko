@@ -1,5 +1,6 @@
 {
   "$schema": "https://mintlify.com/schema.json",
+  "theme": "mint",
   "name": "Zuko Docs",
   "favicon": "favicon.svg",
   "colors": {
