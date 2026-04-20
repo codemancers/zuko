@@ -2,13 +2,15 @@ import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import type { PrismaService } from '../modules/prisma.types';
 import type { PaginationOptions } from './types';
+import { EditorData } from '../types/sales-api';
+
 
 export interface CreateCompanyInput {
   organizationId: number;
   companyName: string;
   website?: string;
   linkedinUrl?: string;
-  summary?: string;
+  summary?: EditorData;
   ownerIds?: number[];
   primaryOwnerId?: number;
   fields?: Record<string, unknown>;
@@ -18,7 +20,7 @@ export interface UpdateCompanyInput {
   companyName?: string;
   website?: string;
   linkedinUrl?: string;
-  summary?: string;
+  summary?: EditorData;
   isHidden?: boolean;
   fields?: Record<string, unknown>;
 }

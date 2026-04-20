@@ -1,5 +1,6 @@
 import { apiClient } from '../api-client';
 import type { TableViewResponse } from '@/types/table-metadata';
+import type { OutputData } from '@editorjs/editorjs';
 
 export type TaskStatus = 'TODO' | 'IN_PROGRESS' | 'DONE' | 'CANCELLED';
 
@@ -20,7 +21,7 @@ export interface Task {
   id: number;
   organizationId: number;
   title: string;
-  description?: string | null;
+  description?: OutputData | null;
   status: TaskStatus;
   completedAt?: string | null;
   parentId?: number | null;
@@ -43,7 +44,7 @@ export interface TasksListResponse {
 
 export interface CreateTaskDto {
   title: string;
-  description?: string;
+  description?: OutputData;
   status?: TaskStatus;
   completedAt?: string;
   parentId?: number;
@@ -52,7 +53,7 @@ export interface CreateTaskDto {
 
 export interface UpdateTaskDto {
   title?: string;
-  description?: string | null;
+  description?: OutputData | null;
   status?: TaskStatus;
   completedAt?: string | null;
   parentId?: number | null;

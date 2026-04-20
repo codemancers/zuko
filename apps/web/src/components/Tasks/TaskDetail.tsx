@@ -5,7 +5,7 @@ import { getTask, getTasks } from '@/server/query-options';
 import { tasksApi } from '@/lib/api/tasks';
 import { metadataApi } from '@/lib/api/metadata';
 import { useRouter } from 'next/navigation';
-import { Badge, Button, Divider, Subheading, Textarea } from '@zuko/ui-kit';
+import { Badge, Button, Divider, Subheading } from '@zuko/ui-kit';
 import {
   TrashIcon,
   ClipboardDocumentCheckIcon,
@@ -18,6 +18,8 @@ import { BackLink, DetailHeader, EntityProperties } from '@/components/shared';
 import { LoadingState } from '@/components/shared';
 import ActivityTimeline from '@/components/Activity/ActivityTimeline';
 import { toast } from 'sonner';
+import Editor, { ensureOutputData } from '@/components/Common/Editor/Editor';
+import { OutputData } from '@editorjs/editorjs';
 
 const statusConfig: Record<
   TaskStatus,
@@ -68,7 +70,7 @@ const TaskDetail = ({ taskId, currentUserId }: TaskDetailProps) => {
     onSave: (val) => updateMutation.mutateAsync({ title: val }),
   });
 
-  const descriptionField = useAutosaveField(task?.description, {
+  const descriptionField = useAutosaveField<OutputData>(ensureOutputData(task?.description), {
     fieldName: 'description',
     onSave: (val) => updateMutation.mutateAsync({ description: val }),
   });
@@ -198,12 +200,14 @@ const TaskDetail = ({ taskId, currentUserId }: TaskDetailProps) => {
         <div className="flex items-center justify-between mb-2">
           <Subheading>Description</Subheading>
         </div>
-        <Textarea
-          value={descriptionField.value}
-          onChange={(e) => descriptionField.setValue(e.target.value)}
-          placeholder="Add a detailed description..."
-          className="h-32"
-        />
+        <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 p-4 min-h-32 bg-white dark:bg-zinc-900 shadow-sm transition-all focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-500">
+          <Editor
+            holder="task-description-editor"
+            data={descriptionField.value}
+            onChange={(val) => descriptionField.setValue(val)}
+            placeholder="Add a detailed description..."
+          />
+        </div>
       </div>
 
       {task.subtasks.length > 0 && (

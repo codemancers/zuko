@@ -2,6 +2,8 @@ import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import type { PrismaService } from '../modules/prisma.types';
 import type { PaginationOptions } from './types';
+import { EditorData } from '../types/sales-api';
+
 
 export interface CreateContactInput {
   organizationId: number;
@@ -9,7 +11,7 @@ export interface CreateContactInput {
   email?: string;
   phone?: string;
   linkedinId?: string;
-  notes?: string;
+  notes?: EditorData;
   ownerIds?: number[];
   primaryOwnerId?: number;
   fields?: Record<string, unknown>;
@@ -20,7 +22,7 @@ export interface UpdateContactInput {
   email?: string;
   phone?: string;
   linkedinId?: string;
-  notes?: string;
+  notes?: EditorData;
   isHidden?: boolean;
   fields?: Record<string, unknown>;
 }

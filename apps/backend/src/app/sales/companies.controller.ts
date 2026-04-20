@@ -22,6 +22,7 @@ import {
   UpdateCompanyInput,
   AddContactToCompanyInput,
   UpdateContactCompanyInput,
+  EditorData,
 } from '@zuko/sales';
 import { OrganizationGuard } from '../../common/auth/organization.guard';
 import { OrgId } from '../../common/auth/org-id.decorator';
@@ -33,7 +34,7 @@ export class CreateCompanyDto
   companyName!: string;
   website?: string;
   linkedinUrl?: string;
-  summary?: string;
+  summary?: EditorData;
   ownerIds?: number[];
   primaryOwnerId?: number;
   fields?: Record<string, unknown>;
@@ -43,7 +44,7 @@ export class UpdateCompanyDto implements Partial<UpdateCompanyInput> {
   companyName?: string;
   website?: string;
   linkedinUrl?: string;
-  summary?: string;
+  summary?: EditorData;
   isHidden?: boolean;
   fields?: Record<string, unknown>;
 }

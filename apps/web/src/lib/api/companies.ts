@@ -7,13 +7,14 @@ import { apiClient } from '../api-client';
 import type { Contact } from './contacts';
 import type { TableViewResponse, PaginationInfo } from '@/types/table-metadata';
 import type { BaseRow } from '@/components/Table';
+import type { OutputData } from '@editorjs/editorjs';
 
 export interface Company {
   id: number;
   companyName: string;
   website?: string;
   linkedinUrl?: string;
-  summary?: string;
+  summary?: OutputData;
   isHidden: boolean;
   createdAt: string;
   updatedAt: string;
@@ -62,7 +63,7 @@ export interface CreateCompanyDto {
   companyName: string;
   website?: string;
   linkedinUrl?: string;
-  summary?: string;
+  summary?: OutputData;
   ownerIds?: number[];
   primaryOwnerId?: number;
 }
@@ -71,7 +72,7 @@ export interface UpdateCompanyDto {
   companyName?: string;
   website?: string;
   linkedinUrl?: string;
-  summary?: string;
+  summary?: OutputData;
 }
 
 export interface CompanyFilters {

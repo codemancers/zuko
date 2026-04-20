@@ -6,6 +6,7 @@
 import { apiClient } from '../api-client';
 import type { TableViewResponse, PaginationInfo } from '@/types/table-metadata';
 import type { BaseRow } from '@/components/Table';
+import type { OutputData } from '@editorjs/editorjs';
 
 export interface Contact {
   id: number;
@@ -13,7 +14,7 @@ export interface Contact {
   email?: string;
   phone?: string;
   linkedinId?: string;
-  notes?: string;
+  notes?: OutputData;
   isHidden: boolean;
   createdAt: string;
   updatedAt: string;
@@ -46,7 +47,7 @@ export interface CreateContactDto {
   email?: string;
   phone?: string;
   linkedinId?: string;
-  notes?: string;
+  notes?: OutputData;
   ownerIds?: number[];
   primaryOwnerId?: number;
 }
@@ -56,7 +57,7 @@ export interface UpdateContactDto {
   email?: string;
   phone?: string;
   linkedinId?: string;
-  notes?: string;
+  notes?: OutputData;
 }
 
 export interface ContactFilters {

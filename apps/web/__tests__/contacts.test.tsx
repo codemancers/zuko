@@ -77,7 +77,7 @@ vi.mock('@zuko/ui-kit', async (importOriginal) => {
   };
 });
 
-const CURRENT_USER_ID = 1;
+
 
 function createQueryClient() {
   return new QueryClient({

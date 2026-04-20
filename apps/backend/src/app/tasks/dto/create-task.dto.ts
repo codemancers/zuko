@@ -1,8 +1,8 @@
-import { TaskStatus } from '@zuko/sales';
+import { TaskStatus, EditorData } from '@zuko/sales';
 
 export class CreateTaskDto {
   title!: string;
-  description?: string;
+  description?: EditorData;
   status?: TaskStatus;
   completedAt?: Date;
   parentId?: number;

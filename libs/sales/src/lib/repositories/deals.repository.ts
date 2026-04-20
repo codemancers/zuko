@@ -2,6 +2,8 @@ import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import type { PrismaService } from '../modules/prisma.types';
 import type { PaginationOptions } from './types';
+import { EditorData } from '../types/sales-api';
+
 
 export interface CreateDealInput {
   organizationId: number;
@@ -10,7 +12,7 @@ export interface CreateDealInput {
   currency?: string;
   probability?: number;
   stage?: string;
-  summary?: string;
+  summary?: EditorData;
   expectedCloseDate?: Date;
   source?: string;
   priority?: number;
@@ -25,7 +27,7 @@ export interface UpdateDealInput {
   currency?: string;
   probability?: number;
   stage?: string;
-  summary?: string;
+  summary?: EditorData;
   expectedCloseDate?: Date;
   actualCloseDate?: Date;
   lostReason?: string;
@@ -320,7 +322,6 @@ export class DealsRepository {
 
       where.OR = [
         { title: { contains: search, mode: 'insensitive' } },
-        { summary: { contains: search, mode: 'insensitive' } },
         { source: { contains: search, mode: 'insensitive' } },
         ...customColumns.map((col) => ({
           fields: {

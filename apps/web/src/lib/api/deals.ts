@@ -8,6 +8,7 @@ import type { Contact } from './contacts';
 import type { Company } from './companies';
 import type { TableViewResponse, PaginationInfo } from '@/types/table-metadata';
 import type { BaseRow } from '@/components/Table';
+import type { OutputData } from '@editorjs/editorjs';
 
 export interface Deal {
   id: number;
@@ -16,7 +17,7 @@ export interface Deal {
   currency?: string;
   probability?: number;
   stage: string;
-  summary?: string;
+  summary?: OutputData;
   expectedCloseDate?: string;
   actualCloseDate?: string;
   lostReason?: string;
@@ -82,7 +83,7 @@ export interface CreateDealDto {
   currency?: string;
   probability?: number;
   stage?: string;
-  summary?: string;
+  summary?: OutputData;
   expectedCloseDate?: string;
   source?: string;
   priority?: number;
@@ -96,7 +97,7 @@ export interface UpdateDealDto {
   currency?: string;
   probability?: number;
   stage?: string;
-  summary?: string;
+  summary?: OutputData;
   expectedCloseDate?: string;
   actualCloseDate?: string;
   lostReason?: string;
