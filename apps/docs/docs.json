@@ -6,51 +6,42 @@
   "colors": {
     "primary": "#2563eb"
   },
-  "navigation": [
-    {
-      "group": "Overview",
-      "pages": [
-        "index"
-      ]
-    },
-    {
-      "group": "Getting Started",
-      "pages": [
-        "getting-started/overview",
-        "getting-started/quickstart"
-      ]
-    },
-    {
-      "group": "Concepts",
-      "pages": [
-        "concepts/architecture"
-      ]
-    },
-    {
-      "group": "Guides",
-      "pages": [
-        "guides/agentic-crm-chat",
-        "guides/ai-agents",
-        "guides/meeting-bot"
-      ]
-    }
-  ],
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Docs",
+        "groups": [
+          {
+            "group": "Overview",
+            "pages": ["index"]
+          },
+          {
+            "group": "Getting Started",
+            "pages": [
+              "getting-started/overview",
+              "getting-started/quickstart"
+            ]
+          },
+          {
+            "group": "Concepts",
+            "pages": ["concepts/architecture"]
+          },
+          {
+            "group": "Guides",
+            "pages": [
+              "guides/agentic-crm-chat",
+              "guides/ai-agents",
+              "guides/meeting-bot"
+            ]
+          }
+        ]
+      }
+    ]
+  },
   "topbarLinks": [
     {
       "name": "GitHub",
       "url": "https://github.com/zuko-dev/zuko"
     }
-  ],
-  "footerLinks": [
-    {
-      "group": "Project",
-      "links": [
-        {
-          "name": "GitHub",
-          "url": "https://github.com/zuko-dev/zuko"
-        }
-      ]
-    }
   ]
 }
-
