@@ -1,8 +1,11 @@
 /** @type {import('knip').KnipConfig} */
 const config = {
   ignoreExportsUsedInFile: true,
-  ignoreBinaries: ["flyctl", "fly", "oxlint", "knip"],
-  ignore: ["apps/**-e2e/**", "libs/ui-kit/**"],
+  ignoreBinaries: ["flyctl", "fly", "oxlint"],
+
+  // Exclude entire workspaces from analysis (ignoreWorkspaces, not ignore)
+  ignoreWorkspaces: ["apps/*-e2e", "libs/ui-kit"],
+
   ignoreDependencies: [
     // Nx executor names — referenced by string in project configs, not imported
     "@nx/nest",
@@ -11,6 +14,10 @@ const config = {
     "@nx/web",
     "@nx/workspace",
     "@nestjs/schematics",
+    // Nx tooling — consumed by Nx CLI/plugins, not imported directly in source
+    "@nx/devkit",
+    "@nx/react",
+    "jiti",
     // Peer deps of @nx/react/babel — used via ui-kit/.babelrc (ui-kit is ignored)
     "@babel/core",
     "@babel/preset-react",
@@ -21,6 +28,7 @@ const config = {
     "eslint-plugin-jsx-a11y",
     "eslint-plugin-react",
     "eslint-plugin-react-hooks",
+    "eslint-plugin-playwright",
     "typescript-eslint",
     // Runtime deps used via NestJS DI / decorator reflection, not direct imports
     "reflect-metadata",
@@ -53,12 +61,24 @@ const config = {
     "tslib",
     // JSON schema validator — peer dep of vitest/webpack tooling
     "ajv",
+    // Root package.json shared deps — declared at root for hoisting but each
+    // workspace also declares them; removing from root is a separate cleanup task
+    "@prisma/client",
+    "@tailwindcss/typography",
+    "axios",
+    "rxjs",
+    "prisma",
+    "tailwindcss",
+    "vite-plugin-dts",
   ],
+
   workspaces: {
+    // Root workspace: only scripts/ — all apps/libs are their own workspaces
     ".": {
       entry: ["scripts/**/*.{ts,js}"],
       project: ["scripts/**/*.{ts,js}"],
     },
+    // Override entry points per app (Knip's defaults don't know these conventions)
     "apps/web": {
       entry: [
         "src/app/**/page.{ts,tsx}",
@@ -82,15 +102,7 @@ const config = {
       ],
       project: ["src/**/*.ts"],
     },
-    "libs/core": {
-      project: ["src/**/*.ts"],
-    },
-    "libs/models": {
-      project: ["src/**/*.ts"],
-    },
-    "libs/sales": {
-      project: ["src/**/*.ts"],
-    },
+    // libs/core, libs/models, libs/sales — auto-discovered, default patterns work
   },
 };
 

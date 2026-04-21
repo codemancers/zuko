@@ -90,6 +90,13 @@
       "options": {
         "targetName": "e2e"
       }
+    },
+    {
+      "plugin": "@berenddeboer/nx-knip",
+      "options": {
+        "targetName": "knip"
+      },
+      "exclude": ["apps/*-e2e/**", "libs/ui-kit/**", "apps/meeting-bot/**"]
     }
   ],
   "targetDefaults": {
