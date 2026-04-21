@@ -4,6 +4,7 @@ export default defineConfig({
   test: {
     name: '@zuko/core',
     globals: true,
+    watch: false,
     environment: 'node',
     include: ['src/**/*.spec.ts'],
     reporters: ['default'],

@@ -14,6 +14,7 @@ export default defineConfig({
     name: '@zuko/backend',
     globals: true,
     environment: 'node',
+    watch: false,
     include: ['src/**/*.spec.ts'],
     setupFiles: ['src/test-setup.ts'],
     reporters: ['default'],

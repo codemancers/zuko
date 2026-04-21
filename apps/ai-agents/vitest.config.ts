@@ -5,6 +5,7 @@ export default defineConfig({
     name: '@zuko/ai-agents',
     globals: true,
     environment: 'node',
+    watch: false,
     include: ['src/**/*.spec.ts'],
     passWithNoTests: true,
     reporters: ['default'],

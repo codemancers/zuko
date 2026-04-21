@@ -23,8 +23,11 @@ export function useAutosaveField<T>(
   }, [onSave]);
 
   // Sync with initialValue if it changes externally (e.g. after a re-fetch)
+  const prevInitialRef = useRef<string>(JSON.stringify(initialValue));
   useEffect(() => {
-    if (initialValue !== value && !isSaving) {
+    const newJSON = JSON.stringify(initialValue);
+    if (prevInitialRef.current !== newJSON && !isSaving) {
+      prevInitialRef.current = newJSON;
       setValue(initialValue as T);
       lastSavedValue.current = initialValue as T;
     }

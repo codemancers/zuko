@@ -118,7 +118,7 @@ const mockTask: Task = {
   id: 1,
   organizationId: 1,
   title: 'Test Task',
-  description: { blocks: [], version: '2.30.0', time: 123 },
+  description: { blocks: [{ type: 'paragraph', data: { text: 'Test description' } }], version: '2.30.0', time: 123 },
   status: 'TODO',
   completedAt: null,
   parentId: null,
