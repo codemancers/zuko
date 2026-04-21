@@ -1,0 +1,55 @@
+{
+  "$schema": "https://mintlify.com/schema.json",
+  "theme": "mint",
+  "name": "Zuko Docs",
+  "favicon": "favicon.svg",
+  "colors": {
+    "primary": "#2563eb"
+  },
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Docs",
+        "groups": [
+          {
+            "group": "Overview",
+            "pages": ["index"]
+          },
+          {
+            "group": "Getting Started",
+            "pages": [
+              "getting-started/overview",
+              "getting-started/quickstart"
+            ]
+          },
+          {
+            "group": "Concepts",
+            "pages": ["concepts/architecture"]
+          },
+          {
+            "group": "Guides",
+            "pages": [
+              "guides/agentic-crm-chat",
+              "guides/ai-agents",
+              "guides/meeting-bot"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "topbarLinks": [
+    {
+      "name": "GitHub",
+      "url": "https://github.com/zuko-dev/zuko"
+    }
+  ],
+  "contextual": {
+    "options": [
+      "copy",
+      "chatgpt",
+      "claude",
+      "cursor"
+    ]
+  }
+}

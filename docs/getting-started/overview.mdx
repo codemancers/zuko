@@ -2,26 +2,116 @@
 title: What is Zuko?
 ---
 
-Zuko is an **agentic CRM** that combines a modern CRM data model (contacts, companies, deals) with an **AI chat** experience. You can keep conversations in the context of specific CRM entities so that every interaction is grounded in the right customer, deal, or company.
+Zuko is an **open-source agentic CRM** that combines a modern CRM data model (contacts, companies, deals) with an **AI chat** experience. Every conversation can be grounded in a specific CRM entity so the AI always has the right customer, deal, or company in context.
 
-Zuko is built as an Nx monorepo with:
+---
 
-- A **Next.js web app** (`apps/web`)
-- A **NestJS backend** (`apps/backend`)
-- A separate **ai-agents** service (`apps/ai-agents`) for the agent runtime
-- Shared libraries for core utilities, Prisma models, sales domain, and UI components
+## Tech stack
+
+| Layer | Technology |
+|---|---|
+| Frontend | Next.js 16 + React 19 (App Router) |
+| Backend | NestJS 11 |
+| Database | PostgreSQL via Prisma ORM |
+| Auth | Better Auth (GitHub OAuth + optional email/password) |
+| AI agents | LangGraph (graph agents in TypeScript) |
+| Meeting bot | Puppeteer + Deepgram (Google Meet recording) |
+| Monorepo | Nx + Bun 1.3.10 workspaces |
+
+---
+
+## Repository structure
+
+```
+zuko/
+├── apps/
+│   ├── backend/          # NestJS API (port 3001)
+│   ├── web/              # Next.js frontend (port 3000)
+│   ├── ai-agents/        # LangGraph agents service (port 8080)
+│   ├── meeting-bot/      # Google Meet recording bot (port 8000)
+│   ├── web-e2e/          # Playwright E2E tests for web
+│   ├── backend-e2e/      # Backend E2E tests
+│   └── ai-agents-e2e/    # AI agents E2E tests
+├── libs/
+│   ├── models/           # Prisma schema, DB client, seeds
+│   ├── core/             # Shared utilities
+│   ├── ui-kit/           # Shared React components
+│   ├── sales/            # CRM domain: contacts, deals, companies
+│   └── agents/           # AI agents library
+└── docs/                 # This documentation
+```
+
+---
+
+## Prerequisites
+
+Before setting up Zuko, make sure you have the following installed:
+
+<AccordionGroup>
+  <Accordion title="Node.js 22">
+    Zuko requires **Node.js 22** (matches the CI environment). Earlier versions will not work.
+
+    Check your version:
+    ```bash
+    node --version
+    # Should output v22.x.x
+    ```
+
+    Install via [nvm](https://github.com/nvm-sh/nvm):
+    ```bash
+    nvm install 22
+    nvm use 22
+    ```
+  </Accordion>
+
+  <Accordion title="Bun 1.3.10+">
+    Bun is used as the package manager and runtime across the monorepo.
+
+    Check your version:
+    ```bash
+    bun --version
+    # Should output 1.3.10 or higher
+    ```
+
+    Install Bun:
+    ```bash
+    curl -fsSL https://bun.sh/install | bash
+    ```
+  </Accordion>
+
+  <Accordion title="PostgreSQL">
+    Zuko uses PostgreSQL for all data storage. Any recent version works.
+
+    macOS (Homebrew):
+    ```bash
+    brew install postgresql@16
+    brew services start postgresql@16
+    ```
+
+    Check it's running:
+    ```bash
+    psql --version
+    pg_isready
+    ```
+  </Accordion>
+
+  <Accordion title="API Keys">
+    You will need:
+    - **OpenAI API key** — for AI chat. Get one at [platform.openai.com](https://platform.openai.com)
+    - **GitHub OAuth credentials** — for authentication. Create an OAuth App at [github.com/settings/developers](https://github.com/settings/developers)
+
+    Optional:
+    - **LangSmith API key** — for agent tracing at [smith.langchain.com](https://smith.langchain.com)
+    - **Deepgram API key** — only needed for the meeting bot
+  </Accordion>
+</AccordionGroup>
+
+---
 
 ## Core concepts
 
-- **Contacts, companies, deals**: Core CRM entities modeled in the backend and exposed to the web app.
-- **Agentic chat**: An AI chat interface that can be given context from contacts, companies, and deals so responses stay grounded.
-- **Beads issue tracking**: Issues live in `.beads/issues.jsonl` and are managed with the `bd` CLI, close to the code.
-
-## When to use Zuko
-
-Use Zuko when you want:
-
-- A CRM that is tightly integrated with AI assistants and workflows.
-- A codebase that is friendly to AI coding agents (issues and docs live with the code).
-- A starting point for experimenting with agentic CRM use cases.
-
+- **Contacts, companies, deals** — the three core CRM entities, modeled in the database and exposed via the backend API.
+- **Agentic chat** — an AI chat interface where conversations can be attached to any CRM entity, keeping AI responses grounded in real customer data.
+- **AI agents service** — a separate LangGraph service (`apps/ai-agents`) that runs the agent logic and calls the backend via authenticated `/api/agents/*` endpoints.
+- **Meeting bot** — joins Google Meet calls, records audio, transcribes via Deepgram, and stores recordings in S3.
+- **Beads issue tracking** — issues live in `.beads/issues.jsonl` and are managed with the `bd` CLI directly in the repo.
