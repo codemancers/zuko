@@ -5,10 +5,6 @@ description: Set up Zuko locally from scratch — clone, configure, migrate, and
 
 This guide walks you through running the full Zuko stack locally. Follow each step in order.
 
-<Info>
-  **AI-assisted setup**: If you paste this page into an AI assistant (Claude, ChatGPT, etc.), it has everything it needs to guide you through setup step by step.
-</Info>
-
 ---
 
 ## Step 1 — Clone the repository
@@ -313,7 +309,6 @@ bun nx affected -t lint                    # Lint affected projects
   <Accordion title="Port already in use">
     Find and kill the process on the conflicting port:
     ```bash
-    # Find process on port 3001
     lsof -ti:3001 | xargs kill -9
     ```
   </Accordion>
