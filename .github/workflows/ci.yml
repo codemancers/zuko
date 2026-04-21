@@ -13,7 +13,7 @@ permissions:
 env:
   CI: true
   NX_NO_CLOUD: true
-  DATABASE_URL: postgres://postgres:postgres@localhost:5432/zuko_test
+  DATABASE_URL: postgres://zuko_ci:zuko_ci_password@localhost:5432/zuko_ci
   OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY || 'abc123' }}
   AGENTS_LLM_MODEL: ${{ vars.AGENTS_LLM_MODEL || 'gpt-4o' }}
   GITHUB_CLIENT_ID: ${{ secrets.GITHUB_CLIENT_ID || 'github-client-id' }}
@@ -36,12 +36,11 @@ jobs:
       postgres:
         image: postgres:latest
         env:
-          POSTGRES_DB: zuko_test
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_USER: postgres
-          POSTGRES_HOST_AUTH_METHOD: trust
+          POSTGRES_DB: zuko_ci
+          POSTGRES_PASSWORD: zuko_ci_password
+          POSTGRES_USER: zuko_ci
         ports:
-          - 5432:5432
+          - 127.0.0.1:5432:5432
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
