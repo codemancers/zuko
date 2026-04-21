@@ -26,25 +26,6 @@ env:
   NEXT_PUBLIC_USE_AUTH_PROXY: ${{ vars.NEXT_PUBLIC_USE_AUTH_PROXY || 'true' }}
 
 jobs:
-  knip:
-    name: Dead code check (Knip)
-    runs-on: ubuntu-latest
-    permissions:
-      actions: read
-      contents: read
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: oven-sh/setup-bun@v2
-
-      - name: Install dependencies
-        run: bun install --frozen-lockfile
-
-      - name: Run Knip
-        # TODO: set continue-on-error to false once existing issues are resolved
-        continue-on-error: true
-        run: bunx nx knip
-
   ci:
     runs-on: ubuntu-latest
     permissions:
@@ -105,6 +86,12 @@ jobs:
       # Lint & Format (parallel)
       - name: Lint
         run: bunx nx affected -t lint --parallel=3 --nxBail
+
+      # Dead code check (per-project, cached via @berenddeboer/nx-knip plugin)
+      # TODO: remove continue-on-error once existing dead code is resolved
+      - name: Knip
+        continue-on-error: true
+        run: bunx nx affected -t knip --parallel=3
 
       # typecheck & Build (parallel)
       - name: Typecheck

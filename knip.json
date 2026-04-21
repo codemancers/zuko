@@ -1,24 +1,19 @@
 {
   "$schema": "https://unpkg.com/knip@latest/schema.json",
   "ignoreExportsUsedInFile": true,
-  "ignoreBinaries": ["flyctl", "fly", "oxlint"],
+  "ignoreBinaries": ["flyctl", "fly", "oxlint", "knip"],
   "workspaces": {
     ".": {
       "entry": ["scripts/**/*.{ts,js}"],
       "project": ["scripts/**/*.{ts,js}"],
       "ignoreDependencies": [
         "tslib",
-        "@swc/jest",
-        "jest-environment-node",
-        "jest-util",
         "@nx/nest",
         "@nx/node",
         "@nx/vite",
         "@nx/web",
         "@nx/workspace",
         "@nestjs/schematics",
-        "reflect-metadata",
-        "rxjs",
         "socket.io-client",
         "ws",
         "@aws-sdk/client-s3",
@@ -33,7 +28,20 @@
         "puppeteer-extra",
         "puppeteer-extra-plugin-stealth",
         "puppeteer-stream",
-        "simple-git"
+        "simple-git",
+        "@babel/core",
+        "@babel/preset-react",
+        "@eslint/js",
+        "eslint-config-next",
+        "eslint-plugin-import",
+        "eslint-plugin-jsx-a11y",
+        "eslint-plugin-react",
+        "eslint-plugin-react-hooks",
+        "typescript-eslint",
+        "@types/bcrypt",
+        "@types/ws",
+        "ajv",
+        "bcrypt"
       ]
     },
     "apps/web": {
@@ -42,7 +50,10 @@
         "src/app/**/layout.{ts,tsx}",
         "src/app/**/route.{ts,tsx}"
       ],
-      "project": ["src/**/*.{ts,tsx}"]
+      "project": ["src/**/*.{ts,tsx}"],
+      "ignoreDependencies": [
+        "shiki"
+      ]
     },
     "apps/backend": {
       "entry": ["src/main.ts"],
@@ -50,7 +61,10 @@
       "webpack": false
     },
     "apps/ai-agents": {
-      "entry": ["src/main.ts"],
+      "entry": [
+        "src/agents/index.ts",
+        "src/main.ts"
+      ],
       "project": ["src/**/*.ts"]
     },
     "libs/core": {
