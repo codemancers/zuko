@@ -1,84 +1,334 @@
 ---
 title: Quickstart
+description: Set up Zuko locally from scratch — clone, configure, migrate, and run.
 ---
 
-This guide walks you through running Zuko locally.
+This guide walks you through running the full Zuko stack locally. Follow each step in order.
 
-## Prerequisites
+<Info>
+  **AI-assisted setup**: If you paste this page into an AI assistant (Claude, ChatGPT, etc.), it has everything it needs to guide you through setup step by step.
+</Info>
 
-- **Node.js** 22 (matches CI)
-- **Bun** (recommended package manager)
-- **PostgreSQL** for the backend database
+---
 
-## 1. Clone the repository
+## Step 1 — Clone the repository
 
 ```bash
-git clone <repository-url> zuko
+git clone https://github.com/codemancers/zuko.git zuko
 cd zuko
 ```
 
-## 2. Install dependencies
+---
 
-From the repo root:
+## Step 2 — Install dependencies
+
+From the repo root, install all workspace dependencies:
 
 ```bash
 bun install
 ```
 
-## 3. Configure environment variables
+---
 
-Copy the example env files and adjust as needed:
+## Step 3 — Configure environment variables
 
-- Backend: `apps/backend/.env.example` → `apps/backend/.env`
-- Web: `apps/web/.env.example` → `apps/web/.env`
-- AI agents: `apps/ai-agents/.env.example` → `apps/ai-agents/.env`
+Copy the example env files for each service:
 
-Make sure to set at least:
+```bash
+cp apps/backend/.env.example apps/backend/.env
+cp apps/web/.env.example apps/web/.env
+cp apps/ai-agents/.env.example apps/ai-agents/.env
+```
 
-- `DATABASE_URL` – PostgreSQL connection string for the backend
-- `OPENAI_API_KEY` – API key for AI chat
-- `NEXT_PUBLIC_APP_URL` and `NEXT_PUBLIC_BACKEND_URL` – app and API URLs for the web app
-- `AGENT_TOKEN` – shared token used by `apps/ai-agents` to call the backend `/api/agents/*` endpoints
-- `BACKEND_URL` – backend base URL for `apps/ai-agents` (example: `http://localhost:3001`)
+Then edit each file with your actual values. The required variables for each service are listed below.
 
-## 4. Set up the database
+### Backend — `apps/backend/.env`
 
-Generate the Prisma client and run migrations:
+```env
+# ── Database ──────────────────────────────────────────────────
+# PostgreSQL connection string
+DATABASE_URL=postgres://postgres:password@localhost:5432/zuko_dev
+
+# ── Auth ──────────────────────────────────────────────────────
+# Random secret for Better Auth session signing (min 32 chars)
+BETTER_AUTH_SECRET=your-secret-here
+
+# GitHub OAuth — create app at https://github.com/settings/developers
+# Homepage URL: http://localhost:3000
+# Authorization callback URL: http://localhost:3001/auth/callback/github
+GITHUB_CLIENT_ID=your-github-client-id
+GITHUB_CLIENT_SECRET=your-github-client-secret
+
+# ── URLs ──────────────────────────────────────────────────────
+BACKEND_URL=http://localhost:3001
+FRONTEND_URL=http://localhost:3000
+
+# List of allowed CORS origins (comma-separated)
+TRUSTED_ORIGINS=http://localhost:3000,http://localhost:3001
+
+# ── AI ────────────────────────────────────────────────────────
+OPENAI_API_KEY=sk-...
+
+# ── Agents ────────────────────────────────────────────────────
+# Shared secret token used by the ai-agents service to call /api/agents/*
+AGENT_TOKEN=your-agent-token
+
+# ── Optional ──────────────────────────────────────────────────
+# Enable email/password login (GitHub OAuth only by default)
+BETTER_AUTH_INCLUDE_EMAILS_AUTH=false
+
+# LangSmith tracing (optional but useful for debugging agents)
+LANGSMITH_TRACING=false
+LANGSMITH_API_KEY=
+LANGSMITH_PROJECT=zuko
+```
+
+### Web — `apps/web/.env`
+
+```env
+# Frontend URL
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+
+# Backend API URL
+NEXT_PUBLIC_BACKEND_URL=http://localhost:3001
+
+# Optional: enable email/password login (must match backend setting)
+NEXT_PUBLIC_BETTER_AUTH_INCLUDE_EMAILS_AUTH=false
+
+# Auth proxy: frontend proxies /api/auth/* to backend
+NEXT_PUBLIC_USE_AUTH_PROXY=true
+```
+
+### AI Agents — `apps/ai-agents/.env`
+
+```env
+# PostgreSQL (used for LangGraph checkpoint storage)
+DATABASE_URL=postgres://postgres:password@localhost:5432/zuko_dev
+
+# OpenAI
+OPENAI_API_KEY=sk-...
+OPENAI_MODEL=gpt-4.1
+
+# Backend connection — must match AGENT_TOKEN in backend .env
+BACKEND_URL=http://localhost:3001
+AGENT_TOKEN=your-agent-token
+
+# Optional tracing
+LANGSMITH_TRACING=false
+LANGSMITH_API_KEY=
+```
+
+<Tip>
+  `AGENT_TOKEN` must be the same value in both `apps/backend/.env` and `apps/ai-agents/.env`. It authenticates the agents service when calling backend endpoints.
+</Tip>
+
+---
+
+## Step 4 — Set up the database
+
+**Create the database:**
+
+```bash
+createdb zuko_dev
+```
+
+**Generate the Prisma client:**
 
 ```bash
 bun nx run @zuko/models:prisma:generate
+```
+
+**Run database migrations:**
+
+```bash
 bun nx run @zuko/models:prisma:migrate -- --name init
 ```
 
-Optionally seed test data:
+**Seed test data (optional):**
+
+Creates a test user (`e2e@example.com` / `TestPassword123!`) and sample CRM data:
 
 ```bash
 bun nx run @zuko/models:seed
 ```
 
-## 5. Run the app
+**Browse the database (optional):**
 
-Recommended: run the entire stack (backend, web, and agents):
+```bash
+bun nx run @zuko/models:prisma:studio
+# Opens Prisma Studio at http://localhost:5555
+```
+
+---
+
+## Step 5 — Set up GitHub OAuth
+
+1. Go to [github.com/settings/developers](https://github.com/settings/developers)
+2. Click **New OAuth App**
+3. Fill in:
+   - **Application name**: `Zuko (local)`
+   - **Homepage URL**: `http://localhost:3000`
+   - **Authorization callback URL**: `http://localhost:3001/auth/callback/github`
+4. Copy the **Client ID** and generate a **Client Secret**
+5. Paste them into `apps/backend/.env` as `GITHUB_CLIENT_ID` and `GITHUB_CLIENT_SECRET`
+
+---
+
+## Step 6 — Start the app
+
+**Recommended — start backend + frontend together:**
 
 ```bash
 bun nx run @zuko/web:dev
 ```
 
-This starts the NestJS backend (for example on port 3001) and the Next.js app (for example on port 3000).
+This starts both the NestJS backend and the Next.js frontend with hot reload.
 
-## 6. Run the AI agents service (optional)
+| Service | URL |
+|---|---|
+| Frontend | http://localhost:3000 |
+| Backend API | http://localhost:3001 |
+| Auth | http://localhost:3001/auth |
 
-Zuko includes a separate **ai-agents** service (`apps/ai-agents`) that hosts the LLM agent and calls the backend via `/api/agents/*`.
+---
+
+## Step 7 — Start the AI agents service (optional)
 
 In a separate terminal:
 
 ```bash
-npx nx run @zuko/ai-agents:dev
+bun nx run @zuko/ai-agents:dev
 ```
 
-## 6. Next steps
+This starts the LangGraph agent runtime at **http://localhost:8080** with LangGraph Studio for debugging.
 
-- Explore the web app to create and manage contacts, companies, and deals.
-- Try the chat experience and attach CRM entities as context.
-- Check out the **Concepts** and **Guides** sections for deeper dives.
+<Note>
+  The AI agents service is only needed if you want to use the agentic chat features. The core CRM (contacts, companies, deals) works without it.
+</Note>
 
+---
+
+## Verify your setup
+
+Open [http://localhost:3000](http://localhost:3000) — you should see the Zuko login page.
+
+Click **Sign in with GitHub** and authorize the OAuth app. You'll land on the CRM dashboard.
+
+To test without GitHub OAuth, enable email/password auth:
+1. Set `BETTER_AUTH_INCLUDE_EMAILS_AUTH=true` in both `apps/backend/.env` and `apps/web/.env`
+2. Restart the services
+3. Log in with `e2e@example.com` / `TestPassword123!` (after seeding)
+
+---
+
+## All commands reference
+
+```bash
+# Install dependencies
+bun install
+
+# Database
+bun nx run @zuko/models:prisma:generate    # Generate Prisma client
+bun nx run @zuko/models:prisma:migrate -- --name init  # Run migrations
+bun nx run @zuko/models:seed               # Seed test data
+bun nx run @zuko/models:prisma:studio      # Open DB browser (port 5555)
+bun nx run @zuko/models:prisma:reset       # Reset DB (destructive!)
+
+# Development
+bun nx run @zuko/web:dev                   # Start frontend + backend
+bun nx run @zuko/backend:serve             # Start backend only
+bun nx run @zuko/ai-agents:dev             # Start AI agents (port 8080)
+bun nx run @zuko/meeting-bot:dev           # Start meeting bot (port 8000)
+
+# Tests
+bun nx run @zuko/backend:test              # Backend unit tests
+bun nx run @zuko/web:test                  # Web unit tests
+bun nx affected -t test                    # Test only affected projects
+
+# E2E tests
+NODE_ENV=test bunx nx run web-e2e:e2e      # Run E2E tests
+NODE_ENV=test bunx nx run web-e2e:e2e --ui # E2E with UI mode
+
+# Build
+bun nx run @zuko/backend:build
+bun nx run @zuko/web:build
+bun nx run @zuko/ai-agents:build
+
+# Utilities
+bun nx graph                               # Visualize project dependency graph
+bun nx show project @zuko/backend          # Show available targets
+bun nx affected -t lint                    # Lint affected projects
+```
+
+---
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="PostgreSQL connection error">
+    Ensure PostgreSQL is running:
+    ```bash
+    # macOS
+    brew services start postgresql@16
+
+    # Linux
+    sudo systemctl start postgresql
+    ```
+
+    Test the connection:
+    ```bash
+    psql -U postgres -d zuko_dev
+    ```
+
+    Check `DATABASE_URL` format: `postgres://user:password@host:port/dbname`
+  </Accordion>
+
+  <Accordion title="Prisma client errors">
+    Clear the cached client and regenerate:
+    ```bash
+    rm -rf node_modules/.prisma/
+    bun nx run @zuko/models:prisma:generate
+    ```
+  </Accordion>
+
+  <Accordion title="Auth / CORS errors">
+    - Ensure `TRUSTED_ORIGINS` in `apps/backend/.env` includes both `http://localhost:3000` and `http://localhost:3001`
+    - Clear browser cookies and retry
+    - Confirm the GitHub OAuth callback URL is exactly `http://localhost:3001/auth/callback/github`
+  </Accordion>
+
+  <Accordion title="Frontend can't connect to backend">
+    - Confirm `NEXT_PUBLIC_BACKEND_URL=http://localhost:3001` in `apps/web/.env`
+    - Make sure the backend started without errors before opening the frontend
+    - Check the backend terminal for startup errors
+  </Accordion>
+
+  <Accordion title="Bun install fails or lock file issues">
+    ```bash
+    rm bun.lockb
+    bun install --force
+    ```
+  </Accordion>
+
+  <Accordion title="Port already in use">
+    Find and kill the process on the conflicting port:
+    ```bash
+    # Find process on port 3001
+    lsof -ti:3001 | xargs kill -9
+    ```
+  </Accordion>
+
+  <Accordion title="AI agents service won't start">
+    - Ensure `OPENAI_API_KEY` is set in `apps/ai-agents/.env`
+    - Ensure `AGENT_TOKEN` matches the value in `apps/backend/.env`
+    - The first start may be slow (downloading LangGraph CLI dependencies)
+    - If port 8080 is in use, kill it: `lsof -ti:8080 | xargs kill -9`
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Next steps
+
+- Explore the **[Concepts](/concepts/architecture)** section to understand the architecture
+- Read the **[Guides](/guides/agentic-crm-chat)** to learn how to use agentic chat with CRM data

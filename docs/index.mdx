@@ -2,13 +2,27 @@
 title: Welcome to Zuko Docs
 ---
 
-Welcome to **Zuko Docs**.
+import { Card, CardGroup } from '@mintlify/components'
+
+Welcome to **Zuko** — an open-source agentic CRM that combines contacts, companies, and deals with an AI chat experience grounded in your customer data.
 
 Use the sidebar to explore:
 
-- **Getting Started** – overview and quickstart to run Zuko locally.
-- **Concepts** – architecture and key ideas behind the agentic CRM.
-- **Guides** – workflows for using chat together with contacts, companies, and deals.
+- **Getting Started** — prerequisites, environment setup, and running Zuko locally end-to-end.
+- **Concepts** — architecture and key ideas behind the agentic CRM.
+- **Guides** — workflows for using AI chat with contacts, companies, and deals.
 
-If you're not sure where to begin, start with **Getting Started → Quickstart**.
+If you're not sure where to begin, start with **[Getting Started → Quickstart](/getting-started/quickstart)**.
 
+---
+
+## Services at a glance
+
+| Service | Port | Description |
+|---|---|---|
+| Next.js web app | 3000 | Frontend CRM UI |
+| NestJS backend | 3001 | REST API + WebSocket |
+| AI agents | 8080 | LangGraph agent runtime + Studio |
+| Meeting bot | 8000 | Google Meet recording bot |
+| Prisma Studio | 5555 | Database browser |
+| PostgreSQL | 5432 | Database |
