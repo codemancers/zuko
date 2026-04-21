@@ -38,11 +38,31 @@ cp apps/ai-agents/.env.example apps/ai-agents/.env
 
 Then edit each file with your actual values. The required variables for each service are listed below.
 
+### Root — `.env`
+
+Create a `.env` file at the repo root for shared variables that apply across all services:
+
+```env
+# ── Database ──────────────────────────────────────────────────
+DATABASE_URL=postgres://postgres:password@localhost:5432/zuko_dev
+
+# ── AI ────────────────────────────────────────────────────────
+OPENAI_API_KEY=sk-...
+
+# ── Agents ────────────────────────────────────────────────────
+# Shared secret token — must match AGENT_TOKEN in each service .env
+AGENT_TOKEN=your-agent-token
+```
+
+<Tip>
+  NX automatically loads the root `.env` for all workspace commands. Set shared variables here once instead of repeating them in each service's `.env`.
+</Tip>
+
 ### Backend — `apps/backend/.env`
 
 ```env
 # ── Database ──────────────────────────────────────────────────
-# PostgreSQL connection string
+# PostgreSQL connection string (can be omitted if set in root .env)
 DATABASE_URL=postgres://postgres:password@localhost:5432/zuko_dev
 
 # ── Auth ──────────────────────────────────────────────────────
@@ -69,9 +89,9 @@ OPENAI_API_KEY=sk-...
 # Shared secret token used by the ai-agents service to call /api/agents/*
 AGENT_TOKEN=your-agent-token
 
-# ── Optional ──────────────────────────────────────────────────
-# Enable email/password login (GitHub OAuth only by default)
-BETTER_AUTH_INCLUDE_EMAILS_AUTH=false
+# ── Auth options ──────────────────────────────────────────────
+# Enable email/password login in addition to GitHub OAuth
+BETTER_AUTH_INCLUDE_EMAILS_AUTH=true
 
 # LangSmith tracing (optional but useful for debugging agents)
 LANGSMITH_TRACING=false
@@ -88,8 +108,8 @@ NEXT_PUBLIC_APP_URL=http://localhost:3000
 # Backend API URL
 NEXT_PUBLIC_BACKEND_URL=http://localhost:3001
 
-# Optional: enable email/password login (must match backend setting)
-NEXT_PUBLIC_BETTER_AUTH_INCLUDE_EMAILS_AUTH=false
+# Enable email/password login (must match backend setting)
+NEXT_PUBLIC_BETTER_AUTH_INCLUDE_EMAILS_AUTH=true
 
 # Auth proxy: frontend proxies /api/auth/* to backend
 NEXT_PUBLIC_USE_AUTH_PROXY=true
@@ -99,9 +119,10 @@ NEXT_PUBLIC_USE_AUTH_PROXY=true
 
 ```env
 # PostgreSQL (used for LangGraph checkpoint storage)
+# Can be omitted if set in root .env
 DATABASE_URL=postgres://postgres:password@localhost:5432/zuko_dev
 
-# OpenAI
+# OpenAI (can be omitted if set in root .env)
 OPENAI_API_KEY=sk-...
 OPENAI_MODEL=gpt-4.1
 
@@ -210,10 +231,7 @@ Open [http://localhost:3000](http://localhost:3000) — you should see the Zuko 
 
 Click **Sign in with GitHub** and authorize the OAuth app. You'll land on the CRM dashboard.
 
-To test without GitHub OAuth, enable email/password auth:
-1. Set `BETTER_AUTH_INCLUDE_EMAILS_AUTH=true` in both `apps/backend/.env` and `apps/web/.env`
-2. Restart the services
-3. Log in with `e2e@example.com` / `TestPassword123!` (after seeding)
+Email/password auth is enabled by default in the config above. Log in with `e2e@example.com` / `TestPassword123!` after seeding, or use **Sign in with GitHub**.
 
 ---
 
