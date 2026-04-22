@@ -2,19 +2,19 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useDebounce } from '@uidotdev/usehooks';
 import { toast } from 'sonner';
 
-interface UseAutosaveFieldOptions {
+interface UseAutosaveFieldOptions<T> {
   debounceMs?: number;
-  onSave: (value: string) => Promise<any>;
+  onSave: (value: T) => Promise<unknown>;
   fieldName?: string;
 }
 
-export function useAutosaveField(
-  initialValue: string | null | undefined,
-  { debounceMs = 2000, onSave, fieldName = 'field' }: UseAutosaveFieldOptions
+export function useAutosaveField<T>(
+  initialValue: T | null | undefined,
+  { debounceMs = 2000, onSave, fieldName = 'field' }: UseAutosaveFieldOptions<T>
 ) {
-  const [value, setValue] = useState(initialValue || '');
+  const [value, setValue] = useState<T>(initialValue as T);
   const [isSaving, setIsSaving] = useState(false);
-  const lastSavedValue = useRef(initialValue || '');
+  const lastSavedValue = useRef<T>(initialValue as T);
   const debouncedValue = useDebounce(value, debounceMs);
 
   const onSaveRef = useRef(onSave);
@@ -23,15 +23,17 @@ export function useAutosaveField(
   }, [onSave]);
 
   // Sync with initialValue if it changes externally (e.g. after a re-fetch)
+  const prevInitialRef = useRef<string>(JSON.stringify(initialValue));
   useEffect(() => {
-    const normalizedInitial = initialValue || '';
-    if (normalizedInitial !== value && !isSaving) {
-      setValue(normalizedInitial);
-      lastSavedValue.current = normalizedInitial;
+    const newJSON = JSON.stringify(initialValue);
+    if (prevInitialRef.current !== newJSON && !isSaving) {
+      prevInitialRef.current = newJSON;
+      setValue(initialValue as T);
+      lastSavedValue.current = initialValue as T;
     }
   }, [initialValue]);
 
-  const save = useCallback(async (val: string) => {
+  const save = useCallback(async (val: T) => {
     if (val === lastSavedValue.current) return;
     
     setIsSaving(true);
@@ -45,7 +47,7 @@ export function useAutosaveField(
     } finally {
       setIsSaving(false);
     }
-  }, []);
+  }, [fieldName]);
 
   useEffect(() => {
     if (debouncedValue !== lastSavedValue.current) {

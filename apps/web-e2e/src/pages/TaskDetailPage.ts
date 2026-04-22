@@ -22,7 +22,7 @@ export class TaskDetailPage extends BasePage {
       name: /Post Comment/i,
     });
     this.taskTitle = page.locator('h1[contenteditable="true"]');
-    this.taskDescription = page.getByPlaceholder("Add a detailed description...");
+    this.taskDescription = page.locator('[id^="task-description-editor-"] .ce-paragraph[contenteditable="true"]').first();
   }
 
   override async goto(taskId: number | string) {
@@ -119,9 +119,12 @@ export class TaskDetailPage extends BasePage {
   }
 
   async updateDescription(newDescription: string) {
-    await this.taskDescription.fill(newDescription);
+    await this.taskDescription.waitFor({ state: 'visible' });
+    await this.taskDescription.click();
+    await this.page.keyboard.press('Control+a');
+    await this.page.keyboard.type(newDescription);
     await this.taskDescription.blur();
-    // Wait for autosave (debounce is 2000ms, so we should wait a bit longer or wait for the 'Syncing' text to disappear)
+    // Wait for autosave debounce (2000ms) to fire
     await this.page.waitForTimeout(3000);
   }
 

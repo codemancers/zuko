@@ -1,6 +1,17 @@
 import { Contact, Company, User, ContactOwner, CompanyOwner, Deal } from '@prisma/client';
 
 /**
+ * Interface representing Editor.js output data structure.
+ */
+export interface EditorData {
+  time?: number;
+  blocks: any[];
+  version?: string;
+  [key: string]: any;
+}
+
+
+/**
  * Shared interface for dynamic JSON fields in CRM entities.
  */
 export interface CustomFields {

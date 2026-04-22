@@ -246,12 +246,12 @@ test.describe("Company Detail - Inline Editing with Activity Verification", () =
     await companyDetailPage.updateSummary(newSummary, companyId);
 
     // Verify immediate UI update
-    await expect(companyDetailPage.summaryField).toHaveValue(newSummary);
-    await companyDetailPage.expectActivityEntry(`set summary to "${newSummary}"`);
+    await expect(companyDetailPage.summaryField).toHaveText(newSummary);
+    await companyDetailPage.expectActivityEntry(/set summary/i);
 
     // Refresh and verify persistence
     await page.reload();
-    await expect(companyDetailPage.summaryField).toHaveValue(newSummary);
+    await expect(companyDetailPage.summaryField).toHaveText(newSummary);
   });
 
   test("can set/edit company website", async ({

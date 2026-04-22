@@ -14,8 +14,9 @@ import {
   Subheading,
   Switch,
   Text,
-  Textarea,
 } from '@zuko/ui-kit';
+import Editor, { ensureOutputData } from '@/components/Common/Editor/Editor';
+import { OutputData } from '@editorjs/editorjs';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getCompany, getDealsByCompany } from '@/server/query-options';
 import { companiesApi, UpdateCompanyDto } from '@/lib/api/companies';
@@ -72,7 +73,7 @@ export default function CompanyDetail({
     onSave: (val) => updateMutation.mutateAsync({ companyName: val }),
   });
 
-  const summaryField = useAutosaveField(company?.summary, {
+  const summaryField = useAutosaveField<OutputData>(ensureOutputData(company?.summary), {
     fieldName: 'summary',
     onSave: (val) => updateMutation.mutateAsync({ summary: val }),
   });
@@ -252,12 +253,15 @@ export default function CompanyDetail({
         <div className="flex items-center justify-between mb-4">
           <Subheading>Summary</Subheading>
         </div>
-        <Textarea
-          value={summaryField.value}
-          onChange={(e) => summaryField.setValue(e.target.value)}
-          placeholder="No summary yet. Add one..."
-          className="h-32"
-        />
+        <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 p-4 min-h-32 bg-white dark:bg-zinc-900 shadow-sm transition-all focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-500">
+          <Editor
+            key={`company-summary-${companyId}`}
+            holder="company-summary-editor"
+            data={summaryField.value}
+            onChange={(val) => summaryField.setValue(val)}
+            placeholder="No summary yet. Add one..."
+          />
+        </div>
       </div>
 
       {/* Associated Contacts */}

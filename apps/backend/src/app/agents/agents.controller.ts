@@ -17,6 +17,7 @@ import {
   ContactsService,
   DealsService,
   ACTIVITY_SOURCES,
+  EditorData,
 } from "@zuko/sales";
 
 // DTOs for agent API (organizationId from AgentGuard via @OrgId())
@@ -39,7 +40,7 @@ class CompanyCreateDto {
   companyName!: string;
   website!: string;
   linkedinUrl?: string;
-  summary?: string;
+  summary?: EditorData;
   ownerIds!: number[];
   primaryOwnerId?: number;
 }
@@ -48,7 +49,7 @@ class CompanyUpdateDto {
   companyName?: string;
   website?: string;
   linkedinUrl?: string;
-  summary?: string;
+  summary?: EditorData;
   isHidden?: boolean;
   fields?: Record<string, unknown>;
 }
@@ -72,7 +73,7 @@ class ContactCreateDto {
   email!: string;
   phone?: string;
   linkedinId?: string;
-  notes?: string;
+  notes?: EditorData;
   ownerIds!: number[];
   primaryOwnerId?: number;
 }
@@ -82,7 +83,7 @@ class ContactUpdateDto {
   email?: string;
   phone?: string;
   linkedinId?: string;
-  notes?: string;
+  notes?: EditorData;
 }
 
 class DealQueryDto {
@@ -111,7 +112,7 @@ class DealCreateDto {
   currency?: string;
   probability?: number;
   stage?: string;
-  summary?: string;
+  summary?: EditorData;
   expectedCloseDate?: string;
   source?: string;
   priority?: number;
@@ -125,7 +126,7 @@ class DealUpdateDto {
   currency?: string;
   probability?: number;
   stage?: string;
-  summary?: string;
+  summary?: EditorData;
   expectedCloseDate?: string;
   actualCloseDate?: string;
   lostReason?: string;

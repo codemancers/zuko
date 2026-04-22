@@ -238,7 +238,7 @@ const mockTask = {
   id: 7,
   organizationId: 1,
   title: 'Fix bug',
-  description: 'A bug to fix',
+  description: { blocks: [], version: '2.30.0', time: 123 },
   status: 'TODO' as const,
   assignee: null,
   parentId: null,

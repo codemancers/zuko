@@ -5,6 +5,7 @@ export default defineConfig({
     name: '@zuko/models',
     globals: true,
     environment: 'node',
+    watch: false,
     include: ['src/**/*.spec.ts'],
     reporters: ['default'],
     coverage: {

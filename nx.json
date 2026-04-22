@@ -96,7 +96,10 @@
     "test": {
       "dependsOn": [
         "^build"
-      ]
+      ],
+      "options": {
+        "watch": false
+      }
     },
     "@nx/js:tsc": {
       "cache": true,

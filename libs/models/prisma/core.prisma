@@ -239,7 +239,7 @@ model Task {
   id             Int        @id @default(autoincrement())
   organizationId Int        @map("organization_id")
   title          String
-  description    String?    @db.Text
+  description    Json?      @map("description")
   status         TaskStatus @default(TODO)
   completedAt    DateTime?  @map("completed_at")
   parentId       Int?       @map("parent_id")

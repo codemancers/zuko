@@ -11,7 +11,6 @@ import {
   Button,
   Divider,
   Subheading,
-  Textarea,
 } from '@zuko/ui-kit';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getContact, getDealsByContact } from '@/server/query-options';
@@ -20,6 +19,8 @@ import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import ActivityTimeline from '@/components/Activity/ActivityTimeline';
+import Editor, { ensureOutputData } from '@/components/Common/Editor/Editor';
+import { OutputData } from '@editorjs/editorjs';
 
 import ConfirmDialog from '@/components/shared/ConfirmDialog';
 import { BackLink, DetailHeader, EntityProperties } from '@/components/shared';
@@ -58,7 +59,7 @@ export default function ContactDetail({
     onSave: (val) => updateMutation.mutateAsync({ name: val }),
   });
 
-  const notesField = useAutosaveField(contact?.notes, {
+  const notesField = useAutosaveField<OutputData>(ensureOutputData(contact?.notes), {
     fieldName: 'notes',
     onSave: (val) => updateMutation.mutateAsync({ notes: val }),
   });
@@ -163,12 +164,15 @@ export default function ContactDetail({
         <div className="flex items-center justify-between mb-4">
           <Subheading>Notes</Subheading>
         </div>
-        <Textarea
-          value={notesField.value}
-          onChange={(e) => notesField.setValue(e.target.value)}
-          placeholder="No notes yet. Add one..."
-          className="h-32"
-        />
+        <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 p-4 min-h-32 bg-white dark:bg-zinc-900 shadow-sm transition-all focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-500">
+          <Editor
+            key={`contact-notes-${contactId}`}
+            holder="contact-notes-editor"
+            data={notesField.value}
+            onChange={(val) => notesField.setValue(val)}
+            placeholder="No notes yet. Add one..."
+          />
+        </div>
       </div>
 
       {/* Associated Deals */}

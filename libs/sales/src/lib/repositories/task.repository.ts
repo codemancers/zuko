@@ -2,13 +2,15 @@ import { Injectable } from '@nestjs/common';
 import { TaskStatus } from '@prisma/client';
 import type { PrismaService } from '../modules/prisma.types';
 import type { PaginationOptions } from './types';
+import { EditorData } from '../types/sales-api';
+
 
 export { TaskStatus };
 
 export interface CreateTaskInput {
   organizationId: number;
   title: string;
-  description?: string;
+  description?: EditorData;
   status?: TaskStatus;
   completedAt?: Date;
   parentId?: number;
@@ -18,7 +20,7 @@ export interface CreateTaskInput {
 
 export interface UpdateTaskInput {
   title?: string;
-  description?: string;
+  description?: EditorData;
   status?: TaskStatus;
   completedAt?: Date | null;
   parentId?: number | null;
@@ -83,7 +85,6 @@ export class TaskRepository {
       ? {
           OR: [
             { title: { contains: search, mode: 'insensitive' as const } },
-            { description: { contains: search, mode: 'insensitive' as const } },
             { assignee: { contains: search, mode: 'insensitive' as const } },
           ],
         }

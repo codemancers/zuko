@@ -76,6 +76,11 @@ function renderSystemEventText(activity: {
       return `moved deal from ${formatStage(String(m.from))} to ${formatStage(String(m.to))}`;
     case 'field_update': {
       const fieldName = formatFieldName(String(m.field));
+      const isRichTextField = ['summary', 'notes', 'description'].includes(String(m.field));
+      if (isRichTextField) {
+        const hasOldValue = m.from !== null && m.from !== undefined;
+        return hasOldValue ? `updated ${fieldName}` : `set ${fieldName}`;
+      }
       const newVal = formatFieldValue(String(m.field), m.to);
       const oldVal =
         m.from === null || m.from === undefined

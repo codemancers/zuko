@@ -45,7 +45,10 @@ export class TasksPage extends BasePage {
     await this.page.goto('/tasks/new');
     await this.page.getByLabel(/title \*/i).fill(title);
     if (description) {
-      await this.page.getByPlaceholder(/optional description/i).fill(description);
+      await this.page
+        .locator('#task-description-editor .ce-paragraph')
+        .first()
+        .fill(description);
     }
     if (status) {
       await this.page.getByLabel(/status/i).selectOption(status);
@@ -58,6 +61,32 @@ export class TasksPage extends BasePage {
     }
     await this.page.getByRole('button', { name: /create task/i }).click();
     await this.page.waitForURL('**/tasks', { timeout: 10000 });
+  }
+
+  /**
+   * Create a new task and return the table row index
+   */
+  async createNewTask() {
+    const initialRowCount = await this.getRowCount();
+    await this.createNewRecord();
+    return initialRowCount; // 0-indexed
+  }
+
+  async clickTask(row: Locator) {
+    await row.locator('a[href^="/tasks/"]').first().click();
+  }
+
+  /**
+   * Wait for details page to load and return the task ID from url
+   */
+  async waitForDetailsPageToLoad() {
+    await this.page.waitForURL(/\/tasks\/\d+$/, { timeout: 10000 });
+    await this.page.waitForLoadState('domcontentloaded');
+    const match = this.page.url().match(/\/tasks\/(\d+)/);
+    if (!match?.[1]) {
+      throw new Error(`Failed to extract task ID from URL: ${this.page.url()}`);
+    }
+    return Number(match[1]);
   }
 
   async openTask(title: string) {

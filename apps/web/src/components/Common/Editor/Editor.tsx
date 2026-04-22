@@ -10,6 +10,7 @@ import Quote from '@editorjs/quote';
 import Marker from '@editorjs/marker';
 import Warning from '@editorjs/warning';
 import Delimiter from '@editorjs/delimiter';
+import './Editor.css';
 
 interface EditorProps {
   data?: OutputData;
@@ -29,89 +30,105 @@ const Editor = ({
   readOnly = false,
 }: EditorProps) => {
   const ejInstance = useRef<EditorJS | null>(null);
+  const isMounted = useRef(true);
 
   useEffect(() => {
-    // Basic instantiation since tools are now imported at top-level
-    const editor = new EditorJS({
-      holder: holder,
-      data: data,
-      readOnly: readOnly,
-      placeholder: placeholder,
-      tools: {
-        header: {
-          class: Header as unknown as EditorJS.ToolConstructable,
-          inlineToolbar: ['link'],
+    isMounted.current = true;
+
+    if (!ejInstance.current) {
+      const editor = new EditorJS({
+        holder: holder,
+        data: data,
+        readOnly: readOnly,
+        placeholder: placeholder,
+        tools: {
+          header: {
+            class: Header as unknown as EditorJS.ToolConstructable,
+            inlineToolbar: ['link'],
+          },
+          list: {
+            class: List as unknown as EditorJS.ToolConstructable,
+            inlineToolbar: true,
+          },
+          table: {
+            class: Table as unknown as EditorJS.ToolConstructable,
+            inlineToolbar: true,
+          },
+          checklist: {
+            class: Checklist as unknown as EditorJS.ToolConstructable,
+            inlineToolbar: true,
+          },
+          inlineCode: InlineCode as unknown as EditorJS.ToolConstructable,
+          code: Code as unknown as EditorJS.ToolConstructable,
+          quote: {
+            class: Quote as unknown as EditorJS.ToolConstructable,
+            inlineToolbar: true,
+          },
+          marker: Marker,
+          warning: Warning,
+          delimiter: Delimiter,
         },
-        list: {
-          class: List as unknown as EditorJS.ToolConstructable,
-          inlineToolbar: true,
+        onReady: () => {
+          onReady?.(editor);
         },
-        table: {
-          class: Table as unknown as EditorJS.ToolConstructable,
-          inlineToolbar: true,
+        onChange: async () => {
+          if (onChange) {
+            const content = await editor.save();
+            onChange(content);
+          }
         },
-        checklist: {
-          class: Checklist as unknown as EditorJS.ToolConstructable,
-          inlineToolbar: true,
-        },
-        inlineCode: InlineCode as unknown as EditorJS.ToolConstructable,
-        code: Code as unknown as EditorJS.ToolConstructable,
-        quote: {
-          class: Quote as unknown as EditorJS.ToolConstructable,
-          inlineToolbar: true,
-        },
-        marker: Marker,
-        warning: Warning,
-        delimiter: Delimiter,
-      },
-      onReady: () => {
-        ejInstance.current = editor;
-        onReady?.(editor);
-      },
-      onChange: async () => {
-        if (onChange) {
-          const content = await editor.save();
-          onChange(content);
-        }
-      },
-      autofocus: false,
-    });
+        autofocus: false,
+      });
+
+      ejInstance.current = editor;
+    }
 
     return () => {
-      if (ejInstance.current && ejInstance.current.destroy) {
-        try {
-          ejInstance.current.destroy();
-        } catch (e) {
-          console.error('Error destroying EditorJS:', e);
+      isMounted.current = false;
+      setTimeout(() => {
+        if (!isMounted.current && ejInstance.current && ejInstance.current.destroy) {
+          ejInstance.current.isReady
+            .then(() => {
+              try {
+                ejInstance.current?.destroy();
+              } catch (e) {
+                console.warn('EditorJS destroy failed:', e);
+              }
+              ejInstance.current = null;
+            })
+            .catch((e) => console.error('Error destroying EditorJS:', e));
         }
-        ejInstance.current = null;
-      }
+      }, 0);
     };
-  }, []);
+  }, [holder, readOnly]);
 
   return (
     <div className="w-full">
       <div 
         id={holder} 
-        className="prose prose-zinc dark:prose-invert max-w-none min-h-[100px] editor-js-container" 
+        className="max-w-none min-h-24 editor-js-container" 
       />
-      <style jsx global>{`
-        .editor-js-container .ce-block__content {
-          max-width: 100% !important;
-        }
-        .editor-js-container .ce-toolbar__content {
-          max-width: 100% !important;
-        }
-        .editor-js-container .ce-paragraph {
-          font-size: 1rem;
-          line-height: 1.6;
-        }
-        .ce-popover {
-          z-index: 50;
-        }
-      `}</style>
     </div>
   );
+};
+
+export const ensureOutputData = (val: any): OutputData => {
+  if (typeof val === 'string' && val.trim() !== '') {
+    return {
+      blocks: [
+        {
+          type: 'paragraph',
+          data: {
+            text: val,
+          },
+        },
+      ],
+    };
+  }
+  if (val && typeof val === 'object' && Array.isArray(val.blocks)) {
+    return val as OutputData;
+  }
+  return { blocks: [] };
 };
 
 export default memo(Editor);

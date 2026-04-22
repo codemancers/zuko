@@ -14,6 +14,7 @@ export default defineConfig({
     name: '@zuko/sales',
     globals: true,
     environment: 'node',
+    watch: false,
     include: ['src/**/*.spec.ts'],
     passWithNoTests: true,
     reporters: ['default'],

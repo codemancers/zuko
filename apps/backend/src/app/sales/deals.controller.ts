@@ -22,6 +22,7 @@ import {
   AddCompanyToDealInput,
   AddContactToDealInput,
   UpdateContactDealInput,
+  EditorData,
 } from '@zuko/sales';
 import type { RequestWithUser } from '@zuko/core';
 import { OrganizationGuard } from '../../common/auth/organization.guard';
@@ -34,7 +35,7 @@ export class CreateDealDto implements Omit<CreateDealInput, 'organizationId'> {
   currency?: string;
   probability?: number;
   stage?: string;
-  summary?: string;
+  summary?: EditorData;
   expectedCloseDate?: Date;
   source?: string;
   priority?: number;
@@ -49,7 +50,7 @@ export class UpdateDealDto implements Partial<UpdateDealInput> {
   currency?: string;
   probability?: number;
   stage?: string;
-  summary?: string;
+  summary?: EditorData;
   expectedCloseDate?: Date;
   actualCloseDate?: Date;
   lostReason?: string;

@@ -20,6 +20,7 @@ import {
   ContactsService,
   CreateContactInput,
   UpdateContactInput,
+  EditorData,
 } from '@zuko/sales';
 import { OrganizationGuard } from '../../common/auth/organization.guard';
 import { OrgId } from '../../common/auth/org-id.decorator';
@@ -32,7 +33,7 @@ export class CreateContactDto
   email?: string;
   phone?: string;
   linkedinId?: string;
-  notes?: string;
+  notes?: EditorData;
   ownerIds?: number[];
   primaryOwnerId?: number;
   fields?: Record<string, unknown>; // for custom fields
@@ -43,7 +44,7 @@ export class UpdateContactDto implements Partial<UpdateContactInput> {
   email?: string;
   phone?: string;
   linkedinId?: string;
-  notes?: string;
+  notes?: EditorData;
   fields?: Record<string, unknown>; // for custom fields
 }
 
