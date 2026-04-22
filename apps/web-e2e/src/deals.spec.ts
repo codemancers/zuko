@@ -268,12 +268,16 @@ test.describe('Deal Search and Filters', () => {
 });
 
 test.describe('Deal Associations - Companies', () => {
+  let dealId: number;
+  test.beforeAll(async ({ browser }) => {
+    dealId = await createFreshDeal(browser);
+  });
   // ── 1. Empty state ─────────────────────────────────────────────────────
   test('displays Associated Companies section', async ({
     dealDetailPage,
     page,
   }) => {
-    await dealDetailPage.goto(1);
+    await dealDetailPage.goto(dealId);
 
     await expect(
       page.getByRole('heading', { name: /Associated Companies/i }),
@@ -281,7 +285,7 @@ test.describe('Deal Associations - Companies', () => {
   });
 
   test('shows Add Company button', async ({ dealDetailPage, page }) => {
-    await dealDetailPage.goto(1);
+    await dealDetailPage.goto(dealId);
 
     await expect(
       page.getByRole('button', { name: /Add Company/i }),
@@ -289,7 +293,7 @@ test.describe('Deal Associations - Companies', () => {
   });
 
   test('can open Add Company dialog', async ({ dealDetailPage, page }) => {
-    await dealDetailPage.goto(1);
+    await dealDetailPage.goto(dealId);
 
     await page.getByRole('button', { name: /Add Company/i }).click();
 
@@ -305,7 +309,7 @@ test.describe('Deal Associations - Companies', () => {
     dealDetailPage,
     page,
   }) => {
-    await dealDetailPage.goto(1);
+    await dealDetailPage.goto(dealId);
 
     await page.getByRole('button', { name: /Add Company/i }).click();
 
@@ -320,7 +324,7 @@ test.describe('Deal Associations - Companies', () => {
   });
 
   test('can close Add Company dialog', async ({ dealDetailPage, page }) => {
-    await dealDetailPage.goto(1);
+    await dealDetailPage.goto(dealId);
 
     await page.getByRole('button', { name: /Add Company/i }).click();
 
@@ -336,7 +340,7 @@ test.describe('Deal Associations - Companies', () => {
     dealDetailPage,
     page,
   }) => {
-    await dealDetailPage.goto(1);
+    await dealDetailPage.goto(dealId);
 
     // Find first company link (if any exist)
     const companyLinks = page.locator('a[href^="/companies/"]');
@@ -356,7 +360,7 @@ test.describe('Deal Associations - Companies', () => {
     dealDetailPage,
     page,
   }) => {
-    await dealDetailPage.goto(1);
+    await dealDetailPage.goto(dealId);
 
     // Check if any companies are marked as primary
     const companySection = page
@@ -375,7 +379,7 @@ test.describe('Deal Associations - Companies', () => {
     dealDetailPage,
     page,
   }) => {
-    await dealDetailPage.goto(1);
+    await dealDetailPage.goto(dealId);
 
     const companyLinks = page.locator('a[href^="/companies/"]');
     const count = await companyLinks.count();
@@ -396,7 +400,7 @@ test.describe('Deal Associations - Companies', () => {
     dealDetailPage,
     page,
   }) => {
-    await dealDetailPage.goto(1);
+    await dealDetailPage.goto(dealId);
     const companyLinks = page.locator('a[href^="/companies/"]');
     const count = await companyLinks.count();
     const emptyStateText = page.getByText(/No companies associated yet/i);

@@ -90,11 +90,11 @@ test.describe("Task Detail - Inline Editing", () => {
     await updatePromise;
 
     // Verify immediate UI update (checking the value of the textarea)
-    await expect(taskDetailPage.taskDescription).toHaveValue(newDescription);
+    await expect(taskDetailPage.taskDescription).toHaveText(newDescription);
 
     // Refresh and verify persistence
     await page.reload();
-    await expect(taskDetailPage.taskDescription).toHaveValue(newDescription);
+    await expect(taskDetailPage.taskDescription).toHaveText(newDescription);
   });
 });
 

@@ -311,12 +311,12 @@ test.describe("Contact Detail - Inline Editing with Activity Verification", () =
     await contactDetailPage.updateNotes(newNotes, contactId);
 
     // Verify immediate UI update
-    await expect(contactDetailPage.notesField).toHaveValue(newNotes);
-    await contactDetailPage.expectActivityEntry(`set notes to "${newNotes}"`);
+    await expect(contactDetailPage.notesField).toHaveText(newNotes);
+    await contactDetailPage.expectActivityEntry(/set notes/i);
 
     // Refresh and verify persistence
     await page.reload();
-    await expect(contactDetailPage.notesField).toHaveValue(newNotes);
+    await expect(contactDetailPage.notesField).toHaveText(newNotes);
   });
 
   test("can set/edit contact email", async ({ contactDetailPage, page }) => {

@@ -19,7 +19,7 @@ export class CompanyDetailPage extends BasePage {
       .locator("text=Associated Contacts")
       .locator("..");
     this.companyName = page.locator('h1[contenteditable="true"]');
-    this.summaryField = page.getByPlaceholder(/No summary yet/i);
+    this.summaryField = page.locator('#company-summary-editor .ce-paragraph[contenteditable="true"]').first();
     this.websiteField = page.getByPlaceholder(/https:\/\/example.com/i);
     this.linkedinUrlField = page.getByPlaceholder(/https:\/\/linkedin.com\/company\/example/i);
     this.hideHistoryButton = page.getByRole("button", { name: /Hide history/i });
@@ -70,7 +70,10 @@ export class CompanyDetailPage extends BasePage {
         resp.request().method() === "PATCH",
       { timeout: 10000 },
     );
-    await this.summaryField.fill(summary);
+    await this.summaryField.waitFor({ state: 'visible' });
+    await this.summaryField.click();
+    await this.page.keyboard.press('Control+a');
+    await this.page.keyboard.type(summary);
     await this.summaryField.blur();
     await patchPromise;
   }

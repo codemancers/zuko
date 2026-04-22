@@ -30,7 +30,7 @@ export class ContactDetailPage extends BasePage {
       '[data-testid="activity-connecting-line"]',
     );
     this.contactName = page.locator('h1[contenteditable="true"]');
-    this.notesField = page.getByPlaceholder(/No notes yet/i);
+    this.notesField = page.locator('#contact-notes-editor .ce-paragraph[contenteditable="true"]').first();
     this.hideHistoryButton = page.getByRole("button", { name: /Hide history/i }); 
   }
 
@@ -82,7 +82,10 @@ export class ContactDetailPage extends BasePage {
         resp.request().method() === "PATCH",
       { timeout: 10000 },
     );
-    await this.notesField.fill(notes);
+    await this.notesField.waitFor({ state: 'visible' });
+    await this.notesField.click();
+    await this.page.keyboard.press('Control+a');
+    await this.page.keyboard.type(notes);
     await this.notesField.blur();
     await patchPromise;
   }

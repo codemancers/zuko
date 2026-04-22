@@ -45,7 +45,10 @@ export class TasksPage extends BasePage {
     await this.page.goto('/tasks/new');
     await this.page.getByLabel(/title \*/i).fill(title);
     if (description) {
-      await this.page.getByPlaceholder(/optional description/i).fill(description);
+      await this.page
+        .locator('#task-description-editor .ce-paragraph')
+        .first()
+        .fill(description);
     }
     if (status) {
       await this.page.getByLabel(/status/i).selectOption(status);

@@ -32,7 +32,7 @@ export class DealDetailPage extends BasePage {
     this.postCommentButton = page.getByRole("button", {
       name: /Post Comment/i,
     });
-    this.summaryField = page.locator('textarea[name="summary"]');
+    this.summaryField = page.locator('#deal-summary-editor .ce-paragraph[contenteditable="true"]').first();
     this.hideHistoryButton = page.getByRole("button", { name: /Hide History/i });
   }
 
@@ -79,7 +79,10 @@ export class DealDetailPage extends BasePage {
         resp.request().method() === "PATCH",
       { timeout: 10000 },
     );
-    await this.summaryField.fill(summary);
+    await this.summaryField.waitFor({ state: 'visible' });
+    await this.summaryField.click();
+    await this.page.keyboard.press('Control+a');
+    await this.page.keyboard.type(summary);
     await this.summaryField.blur();
     await patchPromise;
   }
