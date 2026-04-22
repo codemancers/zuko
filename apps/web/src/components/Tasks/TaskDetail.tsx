@@ -202,7 +202,8 @@ const TaskDetail = ({ taskId, currentUserId }: TaskDetailProps) => {
         </div>
         <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 p-4 min-h-32 bg-white dark:bg-zinc-900 shadow-sm transition-all focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-500">
           <Editor
-            holder="task-description-editor"
+            key={taskId}
+            holder={`task-description-editor-${taskId}`}
             data={descriptionField.value}
             onChange={(val) => descriptionField.setValue(val)}
             placeholder="Add a detailed description..."
