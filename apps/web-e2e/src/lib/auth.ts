@@ -1,18 +1,18 @@
-import * as dotenv from "dotenv";
-import * as path from "path";
+import * as dotenv from 'dotenv';
+import * as path from 'path';
 
 // Load env vars before importing anything that reads them
-dotenv.config({ path: path.join(__dirname, "../../../../.env.test.local") });
-dotenv.config({ path: path.join(__dirname, "../../../../.env.test") });
-dotenv.config({ path: path.join(__dirname, "../../../../.env.local") });
-dotenv.config({ path: path.join(__dirname, "../../../../.env") });
+dotenv.config({ path: path.join(__dirname, '../../../../.env.test.local') });
+dotenv.config({ path: path.join(__dirname, '../../../../.env.test') });
+dotenv.config({ path: path.join(__dirname, '../../../../.env.local') });
+dotenv.config({ path: path.join(__dirname, '../../../../.env') });
 
-import { betterAuth } from "better-auth";
-import { prismaAdapter } from "better-auth/adapters/prisma";
-import { testUtils } from "better-auth/plugins";
-import { PrismaClient } from "@prisma/client";
-import { PrismaPg } from "@prisma/adapter-pg";
-import { Pool } from "pg";
+import { betterAuth } from 'better-auth';
+import { prismaAdapter } from 'better-auth/adapters/prisma';
+import { testUtils } from 'better-auth/plugins';
+import { PrismaClient } from '@prisma/client';
+import { PrismaPg } from '@prisma/adapter-pg';
+import { Pool } from 'pg';
 
 export type AuthUser = { id: number; email: string; name: string };
 
@@ -20,27 +20,27 @@ let _ctx: Awaited<ReturnType<typeof createContext>> | null = null;
 
 async function createContext() {
   const connectionString = process.env.DATABASE_URL;
-  if (!connectionString) throw new Error("DATABASE_URL is not set");
+  if (!connectionString) throw new Error('DATABASE_URL is not set');
 
   const secret = process.env.BETTER_AUTH_SECRET || process.env.AUTH_SECRET;
-  if (!secret) throw new Error("BETTER_AUTH_SECRET is not set");
+  if (!secret) throw new Error('BETTER_AUTH_SECRET is not set');
 
   const pool = new Pool({ connectionString });
 
   const prisma = new PrismaClient({
-    adapter: new PrismaPg(pool as any),
+    adapter: new PrismaPg(pool),
   });
 
   // Create a minimal auth instance that shares the same secret and generateId
   // config as the running backend, so session cookies are accepted by it.
   const auth = betterAuth({
-    baseURL: process.env.BACKEND_URL || "http://localhost:3001",
+    baseURL: process.env.BACKEND_URL || 'http://localhost:3001',
     secret,
-    database: prismaAdapter(prisma, { provider: "postgresql" }),
+    database: prismaAdapter(prisma, { provider: 'postgresql' }),
     advanced: {
-      database: { generateId: "serial" },
+      database: { generateId: 'serial' },
       useSecureCookies: false,
-      defaultCookieAttributes: { sameSite: "lax", secure: false },
+      defaultCookieAttributes: { sameSite: 'lax', secure: false },
     },
     plugins: [testUtils()],
   });
@@ -74,7 +74,7 @@ export async function createUserWithSession(
     path: string;
     httpOnly: boolean;
     secure: boolean;
-    sameSite: "Strict" | "Lax" | "None";
+    sameSite: 'Strict' | 'Lax' | 'None';
     expires?: number;
   }>;
   cleanup: () => Promise<void>;
@@ -82,7 +82,7 @@ export async function createUserWithSession(
   const ctx = await getAuthContext();
 
   const email = overrides.email ?? `e2e-${Date.now()}@example.com`;
-  const name = overrides.name ?? "E2E Test User";
+  const name = overrides.name ?? 'E2E Test User';
 
   const userObj = ctx.test.createUser({ email, name });
   const savedUser = await ctx.test.saveUser(userObj);
@@ -93,7 +93,7 @@ export async function createUserWithSession(
 
   const cookies = rawCookies.map((c: any) => ({
     ...c,
-    domain: "localhost",
+    domain: 'localhost',
     expires: c.expires ?? -1,
   }));
 
