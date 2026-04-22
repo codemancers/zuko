@@ -87,6 +87,12 @@ jobs:
       - name: Lint
         run: bunx nx affected -t lint --parallel=3 --nxBail
 
+      # Dead code check (per-project, cached — @berenddeboer/nx-knip plugin)
+      # TODO: remove continue-on-error once existing dead code is resolved
+      - name: Knip
+        continue-on-error: true
+        run: bunx nx affected -t knip --parallel=3
+
       # typecheck & Build (parallel)
       - name: Typecheck
         run: bunx nx affected -t typecheck --parallel=50% --nxBail
