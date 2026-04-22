@@ -1,0 +1,79 @@
+{
+  "$schema": "https://unpkg.com/knip@latest/schema.json",
+  "ignoreExportsUsedInFile": true,
+  "ignoreBinaries": ["flyctl", "fly", "oxlint"],
+  "ignoreWorkspaces": ["apps/*-e2e", "libs/ui-kit"],
+  "ignoreDependencies": [
+    "@nx/nest",
+    "@nx/node",
+    "@nx/vite",
+    "@nx/web",
+    "@nx/workspace",
+    "@nestjs/schematics",
+    "@nx/devkit",
+    "@nx/react",
+    "jiti",
+    "@babel/core",
+    "@babel/preset-react",
+    "@eslint/js",
+    "eslint-config-next",
+    "eslint-plugin-import",
+    "eslint-plugin-jsx-a11y",
+    "eslint-plugin-react",
+    "eslint-plugin-react-hooks",
+    "eslint-plugin-playwright",
+    "typescript-eslint",
+    "reflect-metadata",
+    "@nestjs/config",
+    "@thallesp/nestjs-better-auth",
+    "bcrypt",
+    "@types/bcrypt",
+    "@types/jsonwebtoken",
+    "@types/ws",
+    "joi",
+    "jsonwebtoken",
+    "socket.io-client",
+    "ws",
+    "@aws-sdk/client-s3",
+    "@deepgram/sdk",
+    "@heroicons/react",
+    "puppeteer-core",
+    "puppeteer-extra",
+    "puppeteer-extra-plugin-stealth",
+    "puppeteer-stream",
+    "simple-git",
+    "tslib",
+    "ajv",
+    "@prisma/client",
+    "@tailwindcss/typography",
+    "axios",
+    "rxjs",
+    "prisma",
+    "tailwindcss",
+    "vite-plugin-dts"
+  ],
+  "workspaces": {
+    ".": {
+      "entry": ["scripts/**/*.{ts,js}"],
+      "project": ["scripts/**/*.{ts,js}"]
+    },
+    "apps/web": {
+      "entry": [
+        "src/app/**/page.{ts,tsx}",
+        "src/app/**/layout.{ts,tsx}",
+        "src/app/**/route.{ts,tsx}"
+      ],
+      "project": ["src/**/*.{ts,tsx}"],
+      "ignoreDependencies": ["shiki"]
+    },
+    "apps/backend": {
+      "entry": ["src/main.ts"],
+      "project": ["src/**/*.ts"],
+      "webpack": false
+    },
+    "apps/ai-agents": {
+      "entry": ["src/agents/index.ts", "src/main.ts"],
+      "project": ["src/**/*.ts"]
+    }
+  }
+}
