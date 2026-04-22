@@ -22,7 +22,7 @@ export class TaskDetailPage extends BasePage {
       name: /Post Comment/i,
     });
     this.taskTitle = page.locator('h1[contenteditable="true"]');
-    this.taskDescription = page.locator('#task-description-editor .ce-paragraph[contenteditable="true"]').first();
+    this.taskDescription = page.locator('[id^="task-description-editor-"] .ce-paragraph[contenteditable="true"]').first();
   }
 
   override async goto(taskId: number | string) {

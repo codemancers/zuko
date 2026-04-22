@@ -1,4 +1,5 @@
 import { test, expect } from './fixtures';
+import { createFreshTask } from './fixtures/helpers';
 
 /**
  * Tasks Feature E2E Tests
@@ -59,13 +60,19 @@ test.describe('Tasks - CRUD', () => {
   });
 });
 
-test.describe("Task Detail - Inline Editing", () => { 
+test.describe("Task Detail - Inline Editing", () => {
+  let taskId: number;
+
+  test.beforeAll(async ({ browser }) => {
+    taskId = await createFreshTask(browser);
+  });
+
   test('can edit task title inline', async ({ taskDetailPage, page }) => {
     const newTitle = `Updated Task Title ${Date.now()}`;
-    await taskDetailPage.goto(1);
+    await taskDetailPage.goto(taskId);
 
     const updatePromise = page.waitForResponse(
-      (resp) => resp.url().includes("/tasks/1") && resp.request().method() === "PATCH"
+      (resp) => resp.url().includes(`/tasks/${taskId}`) && resp.request().method() === "PATCH"
     );
     await taskDetailPage.updateTitle(newTitle);
     await updatePromise;
@@ -80,10 +87,10 @@ test.describe("Task Detail - Inline Editing", () => {
 
   test('can edit task description inline', async ({ taskDetailPage, page }) => {
     const newDescription = `Updated Task Description ${Date.now()}`;
-    await taskDetailPage.goto(1);
+    await taskDetailPage.goto(taskId);
 
     const updatePromise = page.waitForResponse(
-      (resp) => resp.url().includes("/tasks/1") && resp.request().method() === "PATCH"
+      (resp) => resp.url().includes(`/tasks/${taskId}`) && resp.request().method() === "PATCH"
     );
     // updateDescription has a hardcoded sleep but we rely on the API wait for safety
     await taskDetailPage.updateDescription(newDescription);

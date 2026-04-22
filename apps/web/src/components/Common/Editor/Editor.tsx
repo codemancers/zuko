@@ -10,6 +10,7 @@ import Quote from '@editorjs/quote';
 import Marker from '@editorjs/marker';
 import Warning from '@editorjs/warning';
 import Delimiter from '@editorjs/delimiter';
+import './Editor.css';
 
 interface EditorProps {
   data?: OutputData;
@@ -107,50 +108,6 @@ const Editor = ({
         id={holder} 
         className="max-w-none min-h-24 editor-js-container" 
       />
-      <style jsx global>{`
-        .editor-js-container {
-          font-family: inherit;
-        }
-        .editor-js-container .ce-block__content {
-          max-width: 100% !important;
-        }
-        .editor-js-container .ce-toolbar__content {
-          max-width: 100% !important;
-        }
-        .editor-js-container .ce-paragraph {
-          font-size: 1rem;
-          line-height: 1.6;
-          color: inherit;
-        }
-        /* Only show placeholder on the very first block, and only if it's empty */
-        .editor-js-container .ce-block:first-child .ce-paragraph[data-placeholder]:empty::before {
-          content: attr(data-placeholder);
-          color: #707684;
-          opacity: 0.5;
-          font-weight: normal;
-          display: inline-block;
-          vertical-align: top;
-          pointer-events: none;
-        }
-        /* Hide placeholder for any subsequent blocks */
-        .editor-js-container .ce-block:not(:first-child) .ce-paragraph[data-placeholder]::before {
-          content: none !important;
-        }
-        /* Ensure placeholder disappears when focused */
-        .editor-js-container .ce-paragraph[data-placeholder]:empty:focus::before {
-          opacity: 0.3;
-        }
-        /* Style headers and other blocks to look consistent without 'prose' */
-        .editor-js-container h1 { font-size: 2em; font-weight: bold; margin: 0.67em 0; }
-        .editor-js-container h2 { font-size: 1.5em; font-weight: bold; margin: 0.75em 0; }
-        .editor-js-container h3 { font-size: 1.17em; font-weight: bold; margin: 0.83em 0; }
-        .editor-js-container ul { list-style-type: disc; padding-left: 40px; }
-        .editor-js-container ol { list-style-type: decimal; padding-left: 40px; }
-        
-        .ce-popover {
-          z-index: 50;
-        }
-      `}</style>
     </div>
   );
 };
