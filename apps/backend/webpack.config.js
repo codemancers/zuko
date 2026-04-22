@@ -2,9 +2,6 @@ const { NxAppWebpackPlugin } = require('@nx/webpack/app-plugin');
 const { join } = require('path');
 
 module.exports = {
-  resolve: {
-    conditionNames: ['@zuko/source', 'node', 'require', 'import', 'default'],
-  },
   output: {
     path: join(__dirname, 'dist'),
     clean: true,
