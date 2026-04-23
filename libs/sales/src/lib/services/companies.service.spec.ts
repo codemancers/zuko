@@ -3,7 +3,6 @@ import { Test } from '@nestjs/testing';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { Company, PrismaClient, TableColumn, User } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
-import { Pool } from 'pg';
 import { CompaniesService } from './companies.service';
 import { CompaniesRepository } from '../repositories/companies.repository';
 import { TableColumnRepository } from '../repositories/table-column.repository';
@@ -11,8 +10,6 @@ import { TableColumnRepository } from '../repositories/table-column.repository';
 describe('CompaniesService', () => {
   let service: CompaniesService;
   let prisma: PrismaClient;
-  let pool: Pool;
-
   const ORG_ID = 999_001;
   const TEST_USER_EMAIL = `test-actor-1-${ORG_ID}@example.com`;
   let company1: Company;
@@ -21,9 +18,8 @@ describe('CompaniesService', () => {
 
   beforeAll(async () => {
     const connectionString = process.env.DATABASE_URL;
-    pool = new Pool({ connectionString });
     prisma = new PrismaClient({
-      adapter: new PrismaPg(pool),
+      adapter: new PrismaPg({ connectionString }),
     });
     await prisma.$connect();
 
@@ -117,7 +113,6 @@ describe('CompaniesService', () => {
     }
 
     await prisma.$disconnect();
-    await pool.end();
   });
 
   describe('update custom fields', () => {

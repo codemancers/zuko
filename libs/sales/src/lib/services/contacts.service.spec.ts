@@ -3,7 +3,6 @@ import { Test } from '@nestjs/testing';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { Contact, PrismaClient, TableColumn, User } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
-import { Pool } from 'pg';
 import { ContactsService } from './contacts.service';
 import { ContactsRepository } from '../repositories/contacts.repository';
 import { TableColumnRepository } from '../repositories/table-column.repository';
@@ -11,8 +10,6 @@ import { TableColumnRepository } from '../repositories/table-column.repository';
 describe('ContactsService', () => {
   let service: ContactsService;
   let prisma: PrismaClient;
-  let pool: Pool;
-
   const ORG_ID = 999_002;
   const TEST_USER_EMAIL = `test-actor-1-${ORG_ID}@example.com`;
   let column1: TableColumn;
@@ -23,9 +20,8 @@ describe('ContactsService', () => {
     const connectionString = process.env.DATABASE_URL;
     if (!connectionString) throw new Error('DATABASE_URL is not set');
 
-    pool = new Pool({ connectionString });
     prisma = new PrismaClient({
-      adapter: new PrismaPg(pool),
+      adapter: new PrismaPg({ connectionString }),
     });
     await prisma.$connect();
 
@@ -122,7 +118,6 @@ describe('ContactsService', () => {
     }
 
     await prisma.$disconnect();
-    await pool.end();
   });
 
   describe('create and update', () => {

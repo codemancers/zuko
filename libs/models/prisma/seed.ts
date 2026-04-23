@@ -11,7 +11,6 @@
  */
 
 import * as path from 'node:path';
-import { Pool } from 'pg';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '@prisma/client';
 import { betterAuth } from 'better-auth';
@@ -29,8 +28,7 @@ if (!connectionString) throw new Error('DATABASE_URL is not set');
 const secret = process.env.BETTER_AUTH_SECRET || process.env.AUTH_SECRET;
 if (!secret) throw new Error('BETTER_AUTH_SECRET or AUTH_SECRET is not set');
 
-const pool = new Pool({ connectionString });
-const adapter = new PrismaPg(pool);
+const adapter = new PrismaPg({ connectionString });
 const prisma = new PrismaClient({ adapter });
 
 const auth = betterAuth({

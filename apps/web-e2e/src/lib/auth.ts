@@ -12,7 +12,6 @@ import { prismaAdapter } from 'better-auth/adapters/prisma';
 import { testUtils } from 'better-auth/plugins';
 import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
-import { Pool } from 'pg';
 
 export type AuthUser = { id: number; email: string; name: string };
 
@@ -25,10 +24,8 @@ async function createContext() {
   const secret = process.env.BETTER_AUTH_SECRET || process.env.AUTH_SECRET;
   if (!secret) throw new Error('BETTER_AUTH_SECRET is not set');
 
-  const pool = new Pool({ connectionString });
-
   const prisma = new PrismaClient({
-    adapter: new PrismaPg(pool),
+    adapter: new PrismaPg({ connectionString }),
   });
 
   // Create a minimal auth instance that shares the same secret and generateId
