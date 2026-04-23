@@ -3,7 +3,6 @@ import { Test } from '@nestjs/testing';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { Contact, PrismaClient, TableColumn, User } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
-import { Pool } from 'pg';
 import { ContactsService } from './contacts.service';
 import { ContactsRepository } from '../repositories/contacts.repository';
 import { TableColumnRepository } from '../repositories/table-column.repository';
@@ -11,8 +10,6 @@ import { TableColumnRepository } from '../repositories/table-column.repository';
 describe('ContactsService', () => {
   let service: ContactsService;
   let prisma: PrismaClient;
-  let pool: Pool;
-
   const ORG_ID = 999_002;
   const TEST_USER_EMAIL = `test-actor-1-${ORG_ID}@example.com`;
   let column1: TableColumn;
@@ -22,10 +19,9 @@ describe('ContactsService', () => {
   beforeAll(async () => {
     const connectionString = process.env.DATABASE_URL;
     if (!connectionString) throw new Error('DATABASE_URL is not set');
-    
-    pool = new Pool({ connectionString });
+
     prisma = new PrismaClient({
-      adapter: new PrismaPg(pool as any),
+      adapter: new PrismaPg({ connectionString }),
     });
     await prisma.$connect();
 
@@ -90,20 +86,31 @@ describe('ContactsService', () => {
       },
     });
 
-    contact = await service.create({
-      organizationId: ORG_ID,
-      name: 'Jane Doe',
-      email: `jane-${ORG_ID}@example.com`,
-    }, user.id);
+    contact = await service.create(
+      {
+        organizationId: ORG_ID,
+        name: 'Jane Doe',
+        email: `jane-${ORG_ID}@example.com`,
+      },
+      user.id,
+    );
   });
 
   afterAll(async () => {
     try {
-      await prisma.dealContact.deleteMany({ where: { contact: { organizationId: ORG_ID } } });
-      await prisma.companyContact.deleteMany({ where: { contact: { organizationId: ORG_ID } } });
-      await prisma.contactOwner.deleteMany({ where: { contact: { organizationId: ORG_ID } } });
+      await prisma.dealContact.deleteMany({
+        where: { contact: { organizationId: ORG_ID } },
+      });
+      await prisma.companyContact.deleteMany({
+        where: { contact: { organizationId: ORG_ID } },
+      });
+      await prisma.contactOwner.deleteMany({
+        where: { contact: { organizationId: ORG_ID } },
+      });
       await prisma.contact.deleteMany({ where: { organizationId: ORG_ID } });
-      await prisma.tableColumn.deleteMany({ where: { organizationId: ORG_ID, tableName: 'contacts' } });
+      await prisma.tableColumn.deleteMany({
+        where: { organizationId: ORG_ID, tableName: 'contacts' },
+      });
       await prisma.organization.deleteMany({ where: { id: ORG_ID } });
       await prisma.user.deleteMany({ where: { email: TEST_USER_EMAIL } });
     } catch (e) {
@@ -111,12 +118,13 @@ describe('ContactsService', () => {
     }
 
     await prisma.$disconnect();
-    await pool.end();
   });
 
   describe('create and update', () => {
     it('creates a contact and updates its custom select field', async () => {
-      const user = await prisma.user.findUniqueOrThrow({ where: { email: TEST_USER_EMAIL } });
+      const user = await prisma.user.findUniqueOrThrow({
+        where: { email: TEST_USER_EMAIL },
+      });
 
       expect(contact.id).toBeDefined();
       expect(contact.name).toBe('Jane Doe');
@@ -129,8 +137,12 @@ describe('ContactsService', () => {
         user.id,
       );
 
-      const updated = await prisma.contact.findUnique({ where: { id: contact.id } });
-      expect((updated?.fields as Record<string, unknown>)[column1.columnKey]).toBe('web');
+      const updated = await prisma.contact.findUnique({
+        where: { id: contact.id },
+      });
+      expect(
+        (updated?.fields as Record<string, unknown>)[column1.columnKey],
+      ).toBe('web');
 
       // 3. Update with invalid option should fail
       await expect(

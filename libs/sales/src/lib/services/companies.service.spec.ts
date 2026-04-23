@@ -3,7 +3,6 @@ import { Test } from '@nestjs/testing';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { Company, PrismaClient, TableColumn, User } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
-import { Pool } from 'pg';
 import { CompaniesService } from './companies.service';
 import { CompaniesRepository } from '../repositories/companies.repository';
 import { TableColumnRepository } from '../repositories/table-column.repository';
@@ -11,8 +10,6 @@ import { TableColumnRepository } from '../repositories/table-column.repository';
 describe('CompaniesService', () => {
   let service: CompaniesService;
   let prisma: PrismaClient;
-  let pool: Pool;
-
   const ORG_ID = 999_001;
   const TEST_USER_EMAIL = `test-actor-1-${ORG_ID}@example.com`;
   let company1: Company;
@@ -21,9 +18,8 @@ describe('CompaniesService', () => {
 
   beforeAll(async () => {
     const connectionString = process.env.DATABASE_URL;
-    pool = new Pool({ connectionString });
     prisma = new PrismaClient({
-      adapter: new PrismaPg(pool as any),
+      adapter: new PrismaPg({ connectionString }),
     });
     await prisma.$connect();
 
@@ -100,10 +96,16 @@ describe('CompaniesService', () => {
 
   afterAll(async () => {
     try {
-      await prisma.companyContact.deleteMany({ where: { company: { organizationId: ORG_ID } } });
-      await prisma.companyOwner.deleteMany({ where: { company: { organizationId: ORG_ID } } });
+      await prisma.companyContact.deleteMany({
+        where: { company: { organizationId: ORG_ID } },
+      });
+      await prisma.companyOwner.deleteMany({
+        where: { company: { organizationId: ORG_ID } },
+      });
       await prisma.company.deleteMany({ where: { organizationId: ORG_ID } });
-      await prisma.tableColumn.deleteMany({ where: { organizationId: ORG_ID } });
+      await prisma.tableColumn.deleteMany({
+        where: { organizationId: ORG_ID },
+      });
       await prisma.organization.deleteMany({ where: { id: ORG_ID } });
       await prisma.user.deleteMany({ where: { email: TEST_USER_EMAIL } });
     } catch (e) {
@@ -111,7 +113,6 @@ describe('CompaniesService', () => {
     }
 
     await prisma.$disconnect();
-    await pool.end();
   });
 
   describe('update custom fields', () => {
@@ -125,14 +126,18 @@ describe('CompaniesService', () => {
       );
 
       // 2. Verify
-      const updated = await prisma.company.findUnique({ where: { id: company1.id } });
+      const updated = await prisma.company.findUnique({
+        where: { id: company1.id },
+      });
       const fields = updated?.fields as Record<string, unknown>;
       expect(fields[column1.columnKey]).toBe('growth');
     });
 
     it('rejects an invalid select option', async () => {
-      const user = await prisma.user.findUniqueOrThrow({ where: { email: TEST_USER_EMAIL } });
-      
+      const user = await prisma.user.findUniqueOrThrow({
+        where: { email: TEST_USER_EMAIL },
+      });
+
       await expect(
         service.update(
           company1.id,
