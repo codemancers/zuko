@@ -463,6 +463,13 @@ describe('DealsList', () => {
       );
     });
   });
+
+  it('navigates to new deal page when "New Deal" button is clicked', async () => {
+    const user = userEvent.setup();
+    render(<DealsList />, { wrapper });
+    await user.click(screen.getByRole('button', { name: /new deal/i }));
+    expect(mockPush).toHaveBeenCalledWith('/deals/new');
+  });
 });
 
 describe('DealDetail', () => {
@@ -554,6 +561,17 @@ describe('DealDetail', () => {
     });
     await user.click(screen.getByRole('button', { name: /^hide$/i }));
     expect(mockHideDeal).not.toHaveBeenCalled();
+  });
+
+  it('navigates to edit page when "Edit" button is clicked', async () => {
+    const user = userEvent.setup();
+    render(<DealDetail dealId={7} currentUserId={1} />, { wrapper });
+    await waitFor(() => {
+      expect(screen.getByText('Detail Deal')).toBeInTheDocument();
+    });
+    const editButtons = screen.getAllByRole('button', { name: /^edit$/i });
+    await user.click(editButtons[0]);
+    expect(mockPush).toHaveBeenCalledWith('/deals/7/edit');
   });
 
   describe('Edit Deal', () => {

@@ -2,7 +2,9 @@
 
 import {
   CheckCircleIcon,
+  PlusIcon,
 } from '@heroicons/react/24/outline';
+import { Button } from '@zuko/ui-kit';
 import { PageHeader, SearchBar } from '@/components/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { getTableViewTasks } from '@/server/query-options';
@@ -107,6 +109,12 @@ const TasksList = () => {
       <PageHeader
         title="Tasks"
         description="Manage and track your team's work"
+        action={
+          <Button onClick={() => router.push('/tasks/new')}>
+            <PlusIcon className="h-4 w-4" />
+            New Task
+          </Button>
+        }
       />
 
       <SearchBar

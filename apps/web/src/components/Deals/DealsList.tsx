@@ -1,5 +1,7 @@
 'use client';
 
+import { PlusIcon } from '@heroicons/react/24/outline';
+import { Button } from '@zuko/ui-kit';
 import { PageHeader, SearchBar } from '@/components/shared';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getTableViewDeals } from '@/server/query-options';
@@ -77,6 +79,10 @@ const DealsList = () => {
     addRow();
   };
 
+  const handleNewDeal = () => {
+    router.push('/deals/new');
+  };
+
   const handleNewColumn = (
     name: string,
     key: string,
@@ -91,6 +97,12 @@ const DealsList = () => {
       <PageHeader
         title="Deals"
         description="Manage your sales pipeline and track deal progress"
+        action={
+          <Button onClick={handleNewDeal}>
+            <PlusIcon className="h-4 w-4" />
+            New Deal
+          </Button>
+        }
       />
 
       <SearchBar

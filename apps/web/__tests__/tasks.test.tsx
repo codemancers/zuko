@@ -405,6 +405,14 @@ describe('TasksList', () => {
     });
     expect(mockUpdateCell).not.toHaveBeenCalled();
   });
+
+  it('navigates to new task page when "New Task" button is clicked', async () => {
+    const user = userEvent.setup();
+    mockGetTasks.mockResolvedValue(mockTableViewResponse);
+    render(<TasksList />, { wrapper });
+    await user.click(screen.getByRole('button', { name: /new task/i }));
+    expect(mockPush).toHaveBeenCalledWith('/tasks/new');
+  });
 });
 
 describe('TaskDetail', () => {
@@ -478,6 +486,17 @@ describe('TaskDetail', () => {
       expect(mockDeleteTask).toHaveBeenCalledWith(1);
       expect(mockPush).toHaveBeenCalledWith('/tasks');
     });
+  });
+
+  it('navigates to edit page when "Edit" button is clicked', async () => {
+    const user = userEvent.setup();
+    render(<TaskDetail taskId={1} />, { wrapper });
+    await waitFor(() => {
+      expect(screen.getByText('Test Task')).toBeInTheDocument();
+    });
+    const editButtons = screen.getAllByRole('button', { name: /^edit$/i });
+    await user.click(editButtons[0]);
+    expect(mockPush).toHaveBeenCalledWith('/tasks/1/edit');
   });
 
   describe('Edit Task', () => {

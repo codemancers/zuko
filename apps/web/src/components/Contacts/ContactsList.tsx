@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useMemo } from 'react';
+import { PlusIcon } from '@heroicons/react/24/outline';
+import { Button } from '@zuko/ui-kit';
 import { PageHeader, SearchBar } from '@/components/shared';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getTableViewContacts } from '@/server/query-options';
@@ -73,6 +75,9 @@ const ContactsList = () => {
     router.push(`/contacts/${contactId}`);
   };
 
+  const handleNewContact = () => {
+    router.push('/contacts/new');
+  };
 
   const handleNewContactRow = () => {
     addRow();
@@ -92,6 +97,12 @@ const ContactsList = () => {
       <PageHeader
         title="Contacts"
         description="Manage your sales contacts and relationships"
+        action={
+          <Button onClick={handleNewContact}>
+            <PlusIcon className="h-4 w-4" />
+            New Contact
+          </Button>
+        }
       />
 
       <SearchBar

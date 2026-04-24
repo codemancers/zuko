@@ -8,6 +8,7 @@ import { useRouter } from 'next/navigation';
 import { Badge, Button, Divider, Subheading } from '@zuko/ui-kit';
 import {
   TrashIcon,
+  PencilIcon,
   ClipboardDocumentCheckIcon,
 } from '@heroicons/react/24/outline';
 import type { TaskStatus, UpdateTaskDto } from '@/lib/api/tasks';
@@ -117,7 +118,11 @@ const TaskDetail = ({ taskId, currentUserId }: TaskDetailProps) => {
           isSaving={titleField.isSaving || descriptionField.isSaving || updateMutation.isPending}
           createdAt={task.createdAt}
         />
-  <div className="flex gap-2">
+        <div className="flex gap-2">
+          <Button onClick={() => router.push(`/tasks/${taskId}/edit`)}>
+            <PencilIcon className="h-4 w-4" />
+            Edit
+          </Button>
           <Button
             plain
             onClick={() => setShowDeleteDialog(true)}
