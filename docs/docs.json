@@ -24,6 +24,15 @@
             ]
           },
           {
+            "group": "Setup",
+            "pages": [
+              "setup/frontend",
+              "setup/backend",
+              "setup/meeting-bot",
+              "setup/ai-agents"
+            ]
+          },
+          {
             "group": "Concepts",
             "pages": ["concepts/architecture"]
           },

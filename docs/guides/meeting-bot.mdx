@@ -13,6 +13,8 @@ Zuko includes a standalone **meeting-bot** service (`apps/meeting-bot`) that aut
 - Emits status webhooks throughout the meeting lifecycle
 - Auto-leaves when it's the only participant remaining
 
+---
+
 ## How it works
 
 When the backend calls `POST /api/google-meet/join`, the meeting-bot:
@@ -25,26 +27,32 @@ When the backend calls `POST /api/google-meet/join`, the meeting-bot:
 6. On meeting end, uploads the recording and full transcript JSON to S3
 7. Emits a `completed` webhook with the S3 artifact keys
 
+---
+
 ## Environment variables
 
 `apps/meeting-bot` reads:
 
-- `BACKEND_URL`: Backend base URL (example: `http://localhost:3001`)
-- `AGENT_TOKEN`: Shared token for authenticating requests to the backend
-- `DEEPGRAM_API_KEY`: Deepgram API key for live transcription
-- `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_REGION`, `AWS_BUCKET_NAME`: S3 credentials for uploading recordings and transcripts
-- `FLY_API_TOKEN`, `FLY_APP_NAME`: Fly.io credentials for launching worker machines (production only)
-- `PUPPETEER_EXECUTABLE_PATH`: Path to the Chrome binary
-- `BOT_NAME`: Display name shown in the meeting (default: `Zuko AI`)
-- `PORT`: HTTP server port (default: `8000`)
+- `BACKEND_URL` — backend base URL (e.g. `http://localhost:3001`)
+- `AGENT_TOKEN` — shared token for authenticating requests to the backend
+- `DEEPGRAM_API_KEY` — Deepgram API key for live transcription
+- `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_REGION`, `AWS_BUCKET_NAME` — S3 credentials for uploading recordings and transcripts
+- `FLY_API_TOKEN`, `FLY_APP_NAME` — Fly.io credentials for launching worker machines (production only)
+- `PUPPETEER_EXECUTABLE_PATH` — path to the Chrome binary
+- `BOT_NAME` — display name shown in the meeting (default: `Zuko AI`)
+- `PORT` — HTTP server port (default: `8080`)
 
 The backend must have the same `AGENT_TOKEN` configured to validate incoming transcript and callback requests.
+
+---
 
 ## Run locally
 
 ```bash
 npx nx run @zuko/meeting-bot:dev
 ```
+
+---
 
 ## API
 
@@ -74,6 +82,8 @@ Triggers the bot to join a Google Meet.
 { "message": "Meeting scheduled" }
 ```
 
+---
+
 ## Status webhooks
 
 The bot sends `POST` requests to `callbackUrl` (or `BACKEND_URL/api/meetings/webhook`) at each lifecycle stage.
@@ -98,15 +108,20 @@ The bot sends `POST` requests to `callbackUrl` (or `BACKEND_URL/api/meetings/web
 | `failed` | An error occurred |
 | `rejected` | Host denied the bot entry |
 
+---
+
 ## Transcript streaming
 
 During the meeting, the bot streams transcript chunks to the backend in real-time.
 
 **POST** `/api/meetings/:meetingId/transcript-chunks`
 
-Headers:
-- `x-agent-token`: must match `AGENT_TOKEN`
-- `x-user-provider`: `google-meet`
+### Headers
+
+- `x-agent-token` — must match `AGENT_TOKEN`
+- `x-user-provider` — `google-meet`
+
+### Payload
 
 ```json
 {
@@ -118,6 +133,8 @@ Headers:
 
 Chunks are buffered at ~600 characters with 100-character overlap to preserve context across boundaries. On meeting end, any remaining buffered text is flushed.
 
+---
+
 ## S3 artifacts
 
 After a meeting, two files are written to S3:
@@ -127,9 +144,13 @@ After a meeting, two files are written to S3:
 | Recording | `meetings/{meetingId}/recording.webm` | Raw WebM video; the backend transcodes this to MP4 asynchronously |
 | Transcript | `meetings/{meetingId}/transcript.json` | Full speaker-diarized transcript with timestamps and chat messages |
 
+---
+
 ## Chat and AI responses
 
 The bot captures all chat messages from the meeting. When a participant sends a message containing `@zuko`, the bot queries the backend AI agent and posts the response back to the meeting chat.
+
+---
 
 ## Deployment
 

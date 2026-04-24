@@ -6,18 +6,49 @@ Zuko is organized as an Nx monorepo. This page gives a high-level view of the ma
 
 ## Apps
 
-- `apps/backend`: NestJS API for auth, chat, and the sales domain (contacts, companies, deals).
-- `apps/ai-agents`: Agent runtime service. Hosts the LLM agent and exposes tools that call the backend `/api/agents/*` endpoints (machine-to-machine via `AGENT_TOKEN`).
-- `apps/web`: Next.js frontend that provides the web UI and chat experience.
-- `apps/backend-e2e`: Backend end-to-end tests.
-- `apps/web-e2e`: Playwright-based E2E tests for the web app.
+### Backend
+
+`apps/backend` — NestJS API that handles auth, chat, and the sales domain (contacts, companies, deals).
+
+### AI Agents
+
+`apps/ai-agents` — Agent runtime service. Hosts the LLM agent and exposes tools that call the backend `/api/agents/*` endpoints (machine-to-machine via `AGENT_TOKEN`).
+
+### Web
+
+`apps/web` — Next.js frontend that provides the web UI and chat experience.
+
+### Meeting Bot
+
+`apps/meeting-bot` — Puppeteer-based bot that joins Google Meet calls, transcribes audio via Deepgram, and stores recordings in S3.
+
+### Tests
+
+- `apps/web-e2e` — Playwright-based E2E tests for the web app
+- `apps/backend-e2e` — Backend end-to-end tests
+- `apps/ai-agents-e2e` — AI agents end-to-end tests
+
+---
 
 ## Libraries
 
-- `libs/core`: Shared core utilities.
-- `libs/models`: Prisma schema and client, including migrations and seed logic.
-- `libs/sales`: CRM domain logic for contacts, companies, and deals.
-- `libs/ui-kit`: Shared UI components used by the web app.
+### models
+
+`libs/models` — Prisma schema, database client, migrations, and seed logic. Shared across backend and agents.
+
+### sales
+
+`libs/sales` — CRM domain logic for contacts, companies, and deals.
+
+### ui-kit
+
+`libs/ui-kit` — Shared React components used by the web app.
+
+### core
+
+`libs/core` — Shared utilities and helpers used across the monorepo.
+
+---
 
 ## Data flow
 
@@ -26,9 +57,18 @@ Zuko is organized as an Nx monorepo. This page gives a high-level view of the ma
 3. AI chat endpoints can incorporate CRM context from `libs/sales`. The backend can also delegate tool execution to the **ai-agents** service via `/api/agents/*`.
 4. UI components from `libs/ui-kit` render CRM entities and chat interfaces in the web app.
 
+---
+
 ## Testing and tooling
 
-- E2E tests live in `apps/web-e2e` and use Playwright with Nx.
-- Beads (`.beads/`) is used for issue tracking, so issues stay in the repo.
-- Nx provides task orchestration (`nx run`, `nx affected`) for builds, tests, and linting.
+### E2E tests
 
+E2E tests live in `apps/web-e2e` and use Playwright with Nx.
+
+### Task orchestration
+
+Nx provides task orchestration (`nx run`, `nx affected`) for builds, tests, and linting across the monorepo.
+
+### Issue tracking
+
+Beads (`.beads/`) is used for issue tracking so issues stay version-controlled inside the repo.

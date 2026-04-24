@@ -1,0 +1,203 @@
+---
+title: Backend Setup
+description: Configure and run the NestJS API server locally.
+---
+
+The backend is a **NestJS** server that lives in `apps/backend`. It handles the REST API, authentication (Better Auth + GitHub OAuth), database access via Prisma, and agent routing.
+
+---
+
+## Prerequisites
+
+- Repo cloned and dependencies installed (`bun install`)
+- PostgreSQL running locally
+
+---
+
+## Environment variables
+
+Copy the example file:
+
+```bash
+cp apps/backend/.env.example apps/backend/.env
+```
+
+### Database
+
+```env
+# PostgreSQL connection string (can be omitted if set in root .env)
+DATABASE_URL=postgres://postgres:password@localhost:5432/zuko_dev
+```
+
+### Authentication
+
+```env
+# Random secret for Better Auth session signing (min 32 chars)
+BETTER_AUTH_SECRET=your-secret-here
+
+# GitHub OAuth — create app at https://github.com/settings/developers
+# Homepage URL: http://localhost:3000
+# Authorization callback URL: http://localhost:3001/auth/callback/github
+GITHUB_CLIENT_ID=your-github-client-id
+GITHUB_CLIENT_SECRET=your-github-client-secret
+
+# Enable email/password login in addition to GitHub OAuth
+BETTER_AUTH_INCLUDE_EMAILS_AUTH=true
+```
+
+### URLs & CORS
+
+```env
+BACKEND_URL=http://localhost:3001
+FRONTEND_URL=http://localhost:3000
+
+# List of allowed CORS origins (comma-separated)
+TRUSTED_ORIGINS=http://localhost:3000,http://localhost:3001
+```
+
+### AI & agents
+
+```env
+OPENAI_API_KEY=sk-...
+
+# Shared secret token used by the ai-agents service to call /api/agents/*
+AGENT_TOKEN=your-agent-token
+```
+
+### Tracing (optional)
+
+```env
+LANGSMITH_TRACING=false
+LANGSMITH_API_KEY=
+LANGSMITH_PROJECT=zuko
+```
+
+---
+
+## Database setup
+
+### Create the database
+
+```bash
+createdb zuko_dev
+```
+
+### Generate the Prisma client
+
+```bash
+bun nx run @zuko/models:prisma:generate
+```
+
+### Run migrations
+
+```bash
+bun nx run @zuko/models:prisma:migrate -- --name init
+```
+
+### Seed test data
+
+Creates a test user (`e2e@example.com` / `TestPassword123!`) and sample CRM data:
+
+```bash
+bun nx run @zuko/models:seed
+```
+
+### Browse the database
+
+```bash
+bun nx run @zuko/models:prisma:studio
+# Opens Prisma Studio at http://localhost:5555
+```
+
+---
+
+## GitHub OAuth
+
+1. Go to [github.com/settings/developers](https://github.com/settings/developers)
+2. Click **New OAuth App**
+3. Fill in:
+   - **Application name**: `Zuko (local)`
+   - **Homepage URL**: `http://localhost:3000`
+   - **Authorization callback URL**: `http://localhost:3001/auth/callback/github`
+4. Copy the **Client ID** and generate a **Client Secret**
+5. Paste them into `apps/backend/.env` as `GITHUB_CLIENT_ID` and `GITHUB_CLIENT_SECRET`
+
+---
+
+## Start the development server
+
+```bash
+bun nx run @zuko/backend:serve
+```
+
+The API is available at **http://localhost:3001**.
+
+| Endpoint | Description |
+|---|---|
+| `http://localhost:3001` | REST API |
+| `http://localhost:3001/auth` | Better Auth routes |
+
+---
+
+## Useful commands
+
+```bash
+bun nx run @zuko/backend:serve         # Start backend only
+bun nx run @zuko/backend:build         # Production build
+bun nx run @zuko/backend:test          # Unit tests
+bun nx run @zuko/backend:lint          # Lint
+
+# Database
+bun nx run @zuko/models:prisma:generate                   # Regenerate Prisma client
+bun nx run @zuko/models:prisma:migrate -- --name <name>   # New migration
+bun nx run @zuko/models:prisma:studio                     # DB browser (port 5555)
+bun nx run @zuko/models:prisma:reset                      # Reset DB (destructive!)
+bun nx run @zuko/models:seed                              # Seed test data
+```
+
+---
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="PostgreSQL connection error">
+    Ensure PostgreSQL is running:
+
+    ```bash
+    # macOS
+    brew services start postgresql@16
+
+    # Linux
+    sudo systemctl start postgresql
+    ```
+
+    Test the connection:
+
+    ```bash
+    psql -U postgres -d zuko_dev
+    ```
+
+    Check `DATABASE_URL` format: `postgres://user:password@host:port/dbname`
+  </Accordion>
+
+  <Accordion title="Prisma client errors">
+    Clear the cached client and regenerate:
+
+    ```bash
+    rm -rf node_modules/.prisma/
+    bun nx run @zuko/models:prisma:generate
+    ```
+  </Accordion>
+
+  <Accordion title="Auth / CORS errors">
+    - Ensure `TRUSTED_ORIGINS` includes both `http://localhost:3000` and `http://localhost:3001`
+    - Clear browser cookies and retry
+    - Confirm the GitHub OAuth callback URL is exactly `http://localhost:3001/auth/callback/github`
+  </Accordion>
+
+  <Accordion title="Port already in use">
+    ```bash
+    lsof -ti:3001 | xargs kill -9
+    ```
+  </Accordion>
+</AccordionGroup>

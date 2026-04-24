@@ -1,0 +1,104 @@
+---
+title: Frontend Setup
+description: Configure and run the Next.js web application locally.
+---
+
+The frontend is a **Next.js** app that lives in `apps/web`. It communicates with the NestJS backend over HTTP and proxies auth requests.
+
+---
+
+## Prerequisites
+
+- Repo cloned and dependencies installed (`bun install`)
+- Backend running at `http://localhost:3001`
+
+---
+
+## Environment variables
+
+Copy the example file:
+
+```bash
+cp apps/web/.env.example apps/web/.env
+```
+
+### App URLs
+
+```env
+# Public app URL (used for OAuth callbacks and public-facing URLs)
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+
+# Backend API URL
+NEXT_PUBLIC_BACKEND_URL=http://localhost:3001
+```
+
+### Authentication
+
+```env
+# Enable email/password login (must match BETTER_AUTH_INCLUDE_EMAILS_AUTH in backend .env)
+NEXT_PUBLIC_BETTER_AUTH_INCLUDE_EMAILS_AUTH=true
+
+# Auth proxy: frontend proxies /api/auth/* to backend
+NEXT_PUBLIC_USE_AUTH_PROXY=true
+```
+
+---
+
+## Start the development server
+
+```bash
+bun nx run @zuko/web:dev
+```
+
+The app is available at **http://localhost:3000**.
+
+<Note>
+  Running `@zuko/web:dev` also starts the backend automatically. To start only the Next.js process, use `bun nx run @zuko/web:next:dev`.
+</Note>
+
+---
+
+## Verify your setup
+
+Open [http://localhost:3000](http://localhost:3000) — you should see the Zuko login page.
+
+### Sign in with GitHub
+
+Requires GitHub OAuth configured in the backend. Click **Sign in with GitHub** and authorize the app.
+
+### Sign in with email
+
+After seeding the database, log in with `e2e@example.com` / `TestPassword123!`.
+
+---
+
+## Useful commands
+
+```bash
+bun nx run @zuko/web:dev        # Start frontend (+ backend)
+bun nx run @zuko/web:build      # Production build
+bun nx run @zuko/web:test       # Unit tests
+bun nx run @zuko/web:lint       # Lint
+
+# E2E tests
+NODE_ENV=test bunx nx run web-e2e:e2e       # Headless
+NODE_ENV=test bunx nx run web-e2e:e2e --ui  # With UI
+```
+
+---
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Frontend can't connect to backend">
+    - Confirm `NEXT_PUBLIC_BACKEND_URL=http://localhost:3001` in `apps/web/.env`
+    - Make sure the backend started without errors before opening the frontend
+    - Check the backend terminal for startup errors
+  </Accordion>
+
+  <Accordion title="Auth / login issues">
+    - Ensure `NEXT_PUBLIC_BETTER_AUTH_INCLUDE_EMAILS_AUTH` matches `BETTER_AUTH_INCLUDE_EMAILS_AUTH` in `apps/backend/.env`
+    - Clear browser cookies and retry
+    - Confirm `NEXT_PUBLIC_USE_AUTH_PROXY=true` is set so auth requests route through the Next.js proxy
+  </Accordion>
+</AccordionGroup>

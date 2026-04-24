@@ -22,96 +22,107 @@ Zuko is an **open-source agentic CRM** that combines a modern CRM data model (co
 
 ## Repository structure
 
+### Apps
+
 ```
-zuko/
-├── apps/
-│   ├── backend/          # NestJS API (port 3001)
-│   ├── web/              # Next.js frontend (port 3000)
-│   ├── ai-agents/        # LangGraph agents service (port 8080)
-│   ├── meeting-bot/      # Google Meet recording bot (port 8000)
-│   ├── web-e2e/          # Playwright E2E tests for web
-│   ├── backend-e2e/      # Backend E2E tests
-│   └── ai-agents-e2e/    # AI agents E2E tests
-├── libs/
-│   ├── models/           # Prisma schema, DB client, seeds
-│   ├── core/             # Shared utilities
-│   ├── ui-kit/           # Shared React components
-│   ├── sales/            # CRM domain: contacts, deals, companies
-│   └── agents/           # AI agents library
-└── docs/                 # This documentation
+apps/
+├── backend/          # NestJS API (port 3001)
+├── web/              # Next.js frontend (port 3000)
+├── ai-agents/        # LangGraph agents service (port 8080)
+├── meeting-bot/      # Google Meet recording bot (port 8080)
+├── web-e2e/          # Playwright E2E tests for web
+├── backend-e2e/      # Backend E2E tests
+└── ai-agents-e2e/    # AI agents E2E tests
+```
+
+### Libraries
+
+```
+libs/
+├── models/           # Prisma schema, DB client, seeds
+├── core/             # Shared utilities
+├── ui-kit/           # Shared React components
+├── sales/            # CRM domain: contacts, deals, companies
+└── agents/           # AI agents library
 ```
 
 ---
 
 ## Prerequisites
 
-Before setting up Zuko, make sure you have the following installed:
+Before setting up Zuko, make sure you have the following installed.
 
-<AccordionGroup>
-  <Accordion title="Node.js 22">
-    Zuko requires **Node.js 22** (matches the CI environment). Earlier versions will not work.
+### Node.js 22
 
-    Check your version:
-    ```bash
-    node --version
-    # Should output v22.x.x
-    ```
+Zuko requires **Node.js 22** (matches the CI environment). Earlier versions will not work.
 
-    Install via [nvm](https://github.com/nvm-sh/nvm):
-    ```bash
-    nvm install 22
-    nvm use 22
-    ```
-  </Accordion>
+```bash
+node --version
+# Should output v22.x.x
+```
 
-  <Accordion title="Bun 1.3.10+">
-    Bun is used as the package manager and runtime across the monorepo.
+Install via [nvm](https://github.com/nvm-sh/nvm):
 
-    Check your version:
-    ```bash
-    bun --version
-    # Should output 1.3.10 or higher
-    ```
+```bash
+nvm install 22
+nvm use 22
+```
 
-    Install Bun:
-    ```bash
-    curl -fsSL https://bun.sh/install | bash
-    ```
-  </Accordion>
+### Bun 1.3.10+
 
-  <Accordion title="PostgreSQL">
-    Zuko uses PostgreSQL for all data storage. Any recent version works.
+Bun is used as the package manager and runtime across the monorepo.
 
-    macOS (Homebrew):
-    ```bash
-    brew install postgresql@16
-    brew services start postgresql@16
-    ```
+```bash
+bun --version
+# Should output 1.3.10 or higher
+```
 
-    Check it's running:
-    ```bash
-    psql --version
-    pg_isready
-    ```
-  </Accordion>
+Install Bun:
 
-  <Accordion title="API Keys">
-    You will need:
-    - **OpenAI API key** — for AI chat. Get one at [platform.openai.com](https://platform.openai.com)
-    - **GitHub OAuth credentials** — for authentication. Create an OAuth App at [github.com/settings/developers](https://github.com/settings/developers)
+```bash
+curl -fsSL https://bun.sh/install | bash
+```
 
-    Optional:
-    - **LangSmith API key** — for agent tracing at [smith.langchain.com](https://smith.langchain.com)
-    - **Deepgram API key** — only needed for the meeting bot
-  </Accordion>
-</AccordionGroup>
+### PostgreSQL
+
+Zuko uses PostgreSQL for all data storage. Any recent version works.
+
+```bash
+# macOS
+brew install postgresql@16
+brew services start postgresql@16
+
+# Verify
+psql --version
+pg_isready
+```
+
+### API keys
+
+**Required:**
+- **OpenAI API key** — for AI chat. Get one at [platform.openai.com](https://platform.openai.com)
+- **GitHub OAuth credentials** — for authentication. Create an OAuth App at [github.com/settings/developers](https://github.com/settings/developers)
+
+**Optional:**
+- **LangSmith API key** — for agent tracing at [smith.langchain.com](https://smith.langchain.com)
+- **Deepgram API key** — only needed for the meeting bot
 
 ---
 
 ## Core concepts
 
-- **Contacts, companies, deals** — the three core CRM entities, modeled in the database and exposed via the backend API.
-- **Agentic chat** — an AI chat interface where conversations can be attached to any CRM entity, keeping AI responses grounded in real customer data.
-- **AI agents service** — a separate LangGraph service (`apps/ai-agents`) that runs the agent logic and calls the backend via authenticated `/api/agents/*` endpoints.
-- **Meeting bot** — joins Google Meet calls, records audio, transcribes via Deepgram, and stores recordings in S3.
-- **Beads issue tracking** — issues live in `.beads/issues.jsonl` and are managed with the `bd` CLI directly in the repo.
+### CRM entities
+
+**Contacts, companies, and deals** are the three core CRM entities, modeled in the database and exposed via the backend API.
+
+### Agentic chat
+
+An AI chat interface where conversations can be attached to any CRM entity, keeping AI responses grounded in real customer data.
+
+### AI agents service
+
+A separate LangGraph service (`apps/ai-agents`) that runs the agent logic and calls the backend via authenticated `/api/agents/*` endpoints.
+
+### Meeting bot
+
+Joins Google Meet calls, records audio, transcribes via Deepgram, and stores recordings in S3.

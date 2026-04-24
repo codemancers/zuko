@@ -1,0 +1,182 @@
+---
+title: Meeting Bot Setup
+description: Configure and run the Zuko meeting bot service locally.
+---
+
+The meeting bot is a standalone service in `apps/meeting-bot` that joins video calls, transcribes audio via Deepgram, and streams results to the AI agents service.
+
+---
+
+## Prerequisites
+
+- Repo cloned and dependencies installed (`bun install`)
+- Backend running at `http://localhost:3001`
+- AI agents service running at `http://localhost:8080` (optional, for agent routing)
+
+---
+
+## Install Chrome for Puppeteer
+
+The meeting bot uses Puppeteer to control a real Chrome browser to join meetings. Install the required Chrome version:
+
+```bash
+npx @puppeteer/browsers install chrome@139.0.7258.68
+```
+
+### Get the executable path
+
+After the install completes, the CLI prints the binary path:
+
+```
+chrome@139.0.7258.68 /Users/you/chrome/mac_arm-139.0.7258.68/chrome-mac-arm64/Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing
+```
+
+Copy everything after the version tag — that full path is your `PUPPETEER_EXECUTABLE_PATH`.
+
+<Tip>
+  On Apple Silicon the path contains `mac_arm-...`. On Intel Mac it will be `mac-...`. On Linux it will end in a plain `chrome` binary.
+</Tip>
+
+---
+
+## Environment variables
+
+Copy the example file:
+
+```bash
+cp apps/meeting-bot/.env.example apps/meeting-bot/.env
+```
+
+### Bot & platform
+
+```env
+PORT=8080
+BOT_NAME="Zuko Development"
+NODE_ENV=development
+
+# Platform to join: mac | google_meet | zoom | teams
+PLATFORM=mac
+```
+
+### Transcription
+
+```env
+# Deepgram API key for audio transcription
+DEEPGRAM_API_KEY=your-deepgram-api-key
+```
+
+### Storage (AWS S3)
+
+```env
+AWS_ACCESS_KEY_ID=your-access-key-id
+AWS_SECRET_ACCESS_KEY=your-secret-access-key
+AWS_REGION=us-east-2
+AWS_BUCKET_NAME=your-bucket-name
+```
+
+### Backend connection
+
+```env
+BACKEND_URL=http://localhost:3001
+AGENT_TOKEN=your-agent-token
+```
+
+### Zoom OAuth
+
+```env
+ZOOM_CLIENT_ID=your-zoom-client-id
+ZOOM_CLIENT_SECRET=your-zoom-client-secret
+```
+
+### Browser
+
+```env
+# Paste the path printed by the install command above
+PUPPETEER_EXECUTABLE_PATH="/Users/you/chrome/mac_arm-139.0.7258.68/chrome-mac-arm64/Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing"
+```
+
+### Analytics & tracing (optional)
+
+```env
+NEXT_PUBLIC_POSTHOG_KEY=your-posthog-key
+NEXT_PUBLIC_POSTHOG_HOST=https://us.i.posthog.com
+
+LANGSMITH_API_KEY=
+```
+
+### Fly.io (production deploy only)
+
+```env
+FLY_API_TOKEN=your-fly-api-token
+FLY_APP_NAME=meeting-bot
+FLY_REGION=sin
+```
+
+<Tip>
+  `AGENT_TOKEN` must match the value set in `apps/backend/.env`. It authenticates the meeting bot when calling backend endpoints.
+</Tip>
+
+---
+
+## Deepgram API key
+
+1. Sign up at [deepgram.com](https://deepgram.com)
+2. Create a new project and generate an API key
+3. Paste it into `DEEPGRAM_API_KEY`
+
+---
+
+## Zoom OAuth credentials
+
+1. Go to [marketplace.zoom.us](https://marketplace.zoom.us) and create an OAuth app
+2. Copy the **Client ID** and **Client Secret**
+3. Set `ZOOM_CLIENT_ID` and `ZOOM_CLIENT_SECRET` in `.env`
+
+---
+
+## Start the development server
+
+```bash
+bun nx run @zuko/meeting-bot:dev
+```
+
+The service starts at **http://localhost:8080**.
+
+---
+
+## Useful commands
+
+```bash
+bun nx run @zuko/meeting-bot:dev      # Start with hot reload
+bun nx run @zuko/meeting-bot:build    # Production build
+bun nx run @zuko/meeting-bot:lint     # Lint
+```
+
+---
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Bot can't join meeting">
+    - Ensure `PLATFORM` is set correctly (`mac`, `google_meet`, `zoom`, `teams`)
+    - Verify `PUPPETEER_EXECUTABLE_PATH` points to the Chrome binary installed above
+    - Re-run `npx @puppeteer/browsers install chrome@139.0.7258.68` if the binary is missing
+    - On Linux, you may need additional system dependencies for headless Chrome
+  </Accordion>
+
+  <Accordion title="Transcription not working">
+    - Verify `DEEPGRAM_API_KEY` is valid and has transcription permissions
+    - Check the meeting bot logs for Deepgram connection errors
+  </Accordion>
+
+  <Accordion title="Can't connect to backend">
+    - Confirm `BACKEND_URL=http://localhost:3001` and that the backend is running
+    - Verify `AGENT_TOKEN` matches the value in `apps/backend/.env`
+  </Accordion>
+
+  <Accordion title="Port already in use">
+    ```bash
+    lsof -ti:8080 | xargs kill -9
+    ```
+  </Accordion>
+</AccordionGroup>
