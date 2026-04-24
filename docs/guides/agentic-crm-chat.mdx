@@ -6,29 +6,44 @@ This guide explains how to use Zuko as an **agentic CRM**, combining CRM data wi
 
 ## Working with CRM entities
 
-Zuko models three core CRM entities:
+### Contacts
 
-- **Contacts** – people you interact with.
-- **Companies** – organizations associated with contacts and deals.
-- **Deals** – sales opportunities tied to contacts and companies.
+People you interact with. Create and manage contacts through the web app — names, emails, associated companies, and deal history are all available as agent context.
 
-You can create and manage these entities through the web app. The backend stores them in PostgreSQL via Prisma.
+### Companies
+
+Organizations associated with contacts and deals. Attach a company to a conversation to let the agent reason about the account as a whole.
+
+### Deals
+
+Sales opportunities tied to contacts and companies. The agent can discuss deal details, stage, and next steps when a deal is attached to the chat.
+
+---
 
 ## Chat with context
 
-The chat experience in Zuko becomes much more powerful when you attach CRM context:
+The chat experience becomes much more powerful when you attach CRM context before sending a message.
 
-- Attach a **contact** so the agent can answer questions about that person.
-- Attach a **deal** so the agent can discuss deal details and next steps.
-- Attach a **company** so the agent can reason about the account as a whole.
+### Attaching context
 
-When you send messages with context attached, the backend includes that context in the prompt or retrieval pipeline so responses stay grounded.
+- Attach a **contact** so the agent can answer questions about that person
+- Attach a **deal** so the agent can discuss deal details and next steps
+- Attach a **company** so the agent can reason about the account as a whole
+
+When context is attached, the backend includes it in the prompt so responses stay grounded in real customer data.
+
+---
 
 ## Example workflows
 
-- **Prepare for a call**: Attach a contact and company, then ask the agent for a summary of recent interactions and open deals.
-- **Update follow-ups**: After a conversation, ask the agent to summarize next steps and reflect them into deals or notes.
-- **Pipeline review**: Use chat to ask questions like “Which deals are closest to closing this month?” while viewing the deals UI.
+### Prepare for a call
 
-As Zuko evolves, additional guides can expand on specific flows for contacts, companies, and deals, as well as deeper agent behavior and customization.
+Attach a contact and company, then ask the agent for a summary of recent interactions and open deals.
 
+### Update follow-ups
+
+After a conversation, ask the agent to summarize next steps and reflect them into deals or notes.
+
+### Pipeline review
+
+Use chat to ask questions like "Which deals are closest to closing this month?" while viewing the deals UI.

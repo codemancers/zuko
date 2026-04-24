@@ -14,11 +14,15 @@ Zuko publishes an MCP (Model Context Protocol) server at `https://docs.tryzuko.c
 
 ## Add to Claude Code
 
+### CLI
+
 ```bash
 claude mcp add --transport http ZukoDocs https://docs.tryzuko.com/mcp
 ```
 
-Or add it to your project's `.mcp.json`:
+### Project config
+
+Add to your project's `.mcp.json`:
 
 ```json
 {
@@ -33,7 +37,11 @@ Or add it to your project's `.mcp.json`:
 
 ## Add to Cursor
 
-Open **Cursor Settings → MCP** and add a new server:
+### Settings UI
+
+Open **Cursor Settings → MCP** and add a new server.
+
+### Config file
 
 ```json
 {
