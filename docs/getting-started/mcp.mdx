@@ -1,0 +1,66 @@
+---
+title: Use with AI (MCP)
+description: Add the Zuko docs MCP server to your AI coding agent for context-aware setup help.
+---
+
+Zuko publishes an MCP (Model Context Protocol) server at `https://docs.tryzuko.com/mcp`. Once added, your AI coding agent can search and read the Zuko docs directly — useful when setting up the project locally, configuring services, or navigating the codebase.
+
+## What the MCP server provides
+
+| Tool | Description |
+|---|---|
+| `search_zuko_docs` | Searches the Zuko knowledge base for guides, API references, and code examples |
+| `query_docs_filesystem_zuko_docs` | Reads and navigates raw `.mdx` documentation files |
+
+## Add to Claude Code
+
+```bash
+claude mcp add --transport http ZukoDocs https://docs.tryzuko.com/mcp
+```
+
+Or add it to your project's `.mcp.json`:
+
+```json
+{
+  "mcpServers": {
+    "ZukoDocs": {
+      "type": "http",
+      "url": "https://docs.tryzuko.com/mcp"
+    }
+  }
+}
+```
+
+## Add to Cursor
+
+Open **Cursor Settings → MCP** and add a new server:
+
+```json
+{
+  "ZukoDocs": {
+    "type": "http",
+    "url": "https://docs.tryzuko.com/mcp"
+  }
+}
+```
+
+## Add to other MCP-compatible clients
+
+Use the HTTP transport with this URL:
+
+```
+https://docs.tryzuko.com/mcp
+```
+
+Most MCP-compatible clients (Windsurf, Goose, Continue, etc.) support HTTP transport. Refer to your client's docs for the exact config format.
+
+## Example prompts
+
+Once connected, you can ask your agent things like:
+
+- _"How do I set up Zuko locally?"_
+- _"What environment variables does the backend need?"_
+- _"How does the AI agents service connect to the backend?"_
+- _"Walk me through the database migration steps."_
+
+The agent will pull answers directly from the Zuko docs rather than guessing.
