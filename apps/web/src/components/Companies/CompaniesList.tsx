@@ -1,5 +1,7 @@
 'use client';
 
+import { PlusIcon } from '@heroicons/react/24/outline';
+import { Button } from '@zuko/ui-kit';
 import { PageHeader, SearchBar } from '@/components/shared';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getTableViewCompanies } from '@/server/query-options';
@@ -77,6 +79,10 @@ const CompaniesList = () => {
     addRow();
   };
 
+  const handleNewCompany = () => {
+    router.push('/companies/new');
+  };
+
   const handleNewColumn = (
     name: string,
     key: string,
@@ -91,6 +97,12 @@ const CompaniesList = () => {
       <PageHeader
         title="Companies"
         description="Manage your sales companies and relationships"
+        action={
+          <Button onClick={handleNewCompany}>
+            <PlusIcon className="h-4 w-4" />
+            New Company
+          </Button>
+        }
       />
 
       <SearchBar

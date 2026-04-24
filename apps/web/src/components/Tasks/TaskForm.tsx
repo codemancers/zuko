@@ -144,7 +144,7 @@ const TaskForm = ({ mode, task, defaultParentId }: TaskFormProps) => {
               control={form.control}
               name="description"
               render={({ field }) => (
-                <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 p-4 min-h-32 bg-white dark:bg-zinc-900 shadow-sm transition-all focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-500">
+                <div data-slot="control" className="rounded-lg border border-zinc-200 dark:border-zinc-800 p-4 min-h-32 bg-white dark:bg-zinc-900 shadow-sm transition-all focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-500">
                   <Editor
                     holder="task-description-editor"
                     data={ensureOutputData(field.value)}

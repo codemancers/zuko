@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useAutosaveField } from '@/hooks/useAutosaveField';
 import {
   UserIcon,
+  PencilIcon,
   EyeSlashIcon,
 } from '@heroicons/react/24/outline';
 import {
@@ -86,6 +87,10 @@ export default function ContactDetail({
   const primaryOwnerName = primaryOwner?.user.name || 'Unassigned';
 
 
+  const handleEdit = () => {
+    router.push(`/contacts/${contactId}/edit`);
+  };
+
   const handleHide = () => {
     setShowHideDialog(true);
   };
@@ -103,6 +108,10 @@ export default function ContactDetail({
           createdAt={contact.createdAt}
         />
         <div className="flex gap-3">
+          <Button onClick={handleEdit}>
+            <PencilIcon className="h-4 w-4" />
+            Edit
+          </Button>
           <Button plain onClick={handleHide} disabled={hideMutation.isPending}>
             <EyeSlashIcon className="h-4 w-4" />
             {hideMutation.isPending ? 'Hiding...' : 'Hide'}

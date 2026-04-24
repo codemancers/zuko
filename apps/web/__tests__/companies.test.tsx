@@ -370,6 +370,13 @@ describe('CompaniesList', () => {
       );
     });
   });
+
+  it('navigates to new company page when "New Company" button is clicked', async () => {
+    const user = userEvent.setup();
+    render(<CompaniesList />, { wrapper });
+    await user.click(screen.getByRole('button', { name: /new company/i }));
+    expect(mockPush).toHaveBeenCalledWith('/companies/new');
+  });
 });
 
 describe('CompanyDetail', () => {
@@ -425,6 +432,17 @@ describe('CompanyDetail', () => {
     expect(screen.getByDisplayValue('Company summary')).toBeInTheDocument();
     expect(screen.getByText('https://www.linkedin.com/company/detail')).toBeInTheDocument();
     expect(screen.getByText('Alice')).toBeInTheDocument();
+  });
+
+  it('navigates to edit page when "Edit" button is clicked', async () => {
+    const user = userEvent.setup();
+    render(<CompanyDetail companyId={7} currentUserId={1} />, { wrapper });
+    await waitFor(() => {
+      expect(screen.getByText('Detail Company')).toBeInTheDocument();
+    });
+    const editButtons = screen.getAllByRole('button', { name: /^edit$/i });
+    await user.click(editButtons[0]);
+    expect(mockPush).toHaveBeenCalledWith('/companies/7/edit');
   });
 
   it('calls hideCompany and redirects when Hide is confirmed', async () => {
