@@ -50,7 +50,7 @@ cp apps/meeting-bot/.env.example apps/meeting-bot/.env
 ### Bot & platform
 
 ```env
-PORT=8080
+PORT=8000
 BOT_NAME="Zuko Development"
 NODE_ENV=development
 
@@ -140,7 +140,7 @@ FLY_REGION=sin
 bun nx run @zuko/meeting-bot:dev
 ```
 
-The service starts at **http://localhost:8080**.
+The service starts at **http://localhost:8000**.
 
 ---
 
@@ -176,7 +176,7 @@ bun nx run @zuko/meeting-bot:lint     # Lint
 
   <Accordion title="Port already in use">
     ```bash
-    lsof -ti:8080 | xargs kill -9
+    lsof -ti:8000 | xargs kill -9
     ```
   </Accordion>
 </AccordionGroup>
