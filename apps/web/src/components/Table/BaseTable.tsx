@@ -48,8 +48,13 @@ export function BaseTable<TData extends BaseRow>(props: BaseTableProps<TData>) {
     onAddColumn,
     onCellUpdate,
     showEmptyState,
-    emptyStateConfig
+    emptyStateConfig,
+    openAddColumnRef,
   } = props;
+
+  if (openAddColumnRef) {
+    openAddColumnRef.current = openAddColumnDialog;
+  }
   const [hasMounted, setHasMounted] = useState(false);
 
   useEffect(() => {
