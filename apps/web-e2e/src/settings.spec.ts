@@ -144,6 +144,34 @@ test.describe("Settings", () => {
   });
 });
 
+test.describe("Settings - Teams tab", () => {
+  test("clicking Create Team button opens the Create Team dialog", async ({
+    settingsPage,
+    page,
+  }) => {
+    await settingsPage.goto();
+    await settingsPage.switchTab("teams");
+
+    await settingsPage.createTeamButton.click();
+
+    await expect(page.getByText("Create Team").first()).toBeVisible();
+  });
+});
+
+test.describe("Settings - Members tab", () => {
+  test("clicking Invite to Org button opens the Add Member dialog", async ({
+    settingsPage,
+    page,
+  }) => {
+    await settingsPage.goto();
+    await settingsPage.switchTab("members");
+
+    await settingsPage.inviteToOrgButton.click();
+
+    await expect(page.getByText("Add Member").first()).toBeVisible();
+  });
+});
+
 test.describe("Settings - Navigation", () => {
   test("can navigate back from settings", async ({ page }) => {
     await page.goto("/settings");

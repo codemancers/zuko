@@ -10,6 +10,7 @@ export class SettingsPage extends BasePage {
   readonly membersTab: Locator;
   readonly teamsTab: Locator;
   readonly invitationsTab: Locator;
+  readonly createTeamButton: Locator;
   readonly inviteToOrgButton: Locator;
   readonly addMemberEmailInput: Locator;
   readonly addMemberRoleCombobox: Locator;
@@ -28,6 +29,7 @@ export class SettingsPage extends BasePage {
     this.membersTab = page.getByRole('tab', { name: /members/i });
     this.teamsTab = page.getByRole('tab', { name: /teams/i });
     this.invitationsTab = page.getByRole('tab', { name: /invitations/i });
+    this.createTeamButton = page.getByRole('button', { name: /create team/i });
     this.inviteToOrgButton = page.getByRole('button', {
       name: /invite to org/i,
     });

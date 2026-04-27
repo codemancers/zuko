@@ -1,16 +1,19 @@
 'use client';
 
 import {
-  Heading,
   Tabs,
   TabsList,
   TabsTrigger,
   TabsPanels,
   TabsContent,
   Badge,
-  Divider,
+  Button,
 } from '@zuko/ui-kit';
-import { useEffect, Suspense } from 'react';
+import { useEffect, Suspense, useState } from 'react';
+import { AddMemberDialog } from '@/components/organization/add-member-dialog';
+import { CreateTeamDialog } from '@/components/organization/create-team-dialog';
+import { PageHeader } from '@/components/shared';
+import { useQueryClient } from '@tanstack/react-query';
 import { authClient } from '@/lib/auth-client';
 import { OrgTeams } from '@/components/organization/org-teams';
 import { OrgMembers } from '@/components/organization/org-members';
@@ -74,6 +77,9 @@ function SettingsPageContent() {
 
   const { data: invitations = [] } = useQuery(getUserInvitations());
   const activeOrg = authClient.useActiveOrganization();
+  const queryClient = useQueryClient();
+  const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
+  const [isCreateTeamDialogOpen, setIsCreateTeamDialogOpen] = useState(false);
 
   // Redirect to invitations tab if there are pending invitations
   useEffect(() => {
@@ -90,12 +96,21 @@ function SettingsPageContent() {
 
   return (
     <>
-      <Heading>{currentTabSpec.heading}</Heading>
-      <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
-        {currentTabSpec.description}
-      </p>
-
-      <Divider className="mt-6" />
+      <PageHeader
+        title={currentTabSpec.heading}
+        description={currentTabSpec.description}
+        action={
+          currentTab === 'members' ? (
+            <Button onClick={() => setIsInviteDialogOpen(true)}>
+              Invite to Org
+            </Button>
+          ) : currentTab === 'teams' ? (
+            <Button onClick={() => setIsCreateTeamDialogOpen(true)}>
+              Create Team
+            </Button>
+          ) : undefined
+        }
+      />
 
       <Tabs
         className="mt-8"
@@ -125,8 +140,6 @@ function SettingsPageContent() {
               );
             })}
           </TabsList>
-
-          <div />
         </div>
 
         <TabsPanels>
@@ -161,6 +174,28 @@ function SettingsPageContent() {
           })}
         </TabsPanels>
       </Tabs>
+
+      <AddMemberDialog
+        organizationId={activeOrg.data?.id ?? ''}
+        isOpen={isInviteDialogOpen}
+        onClose={() => setIsInviteDialogOpen(false)}
+        onSuccess={() => {
+          queryClient.invalidateQueries({
+            queryKey: ['organization', activeOrg.data?.id, 'invitations'],
+          });
+        }}
+      />
+
+      <CreateTeamDialog
+        organizationId={activeOrg.data?.id ?? ''}
+        isOpen={isCreateTeamDialogOpen}
+        onClose={() => setIsCreateTeamDialogOpen(false)}
+        onSuccess={() => {
+          queryClient.invalidateQueries({
+            queryKey: ['organization', activeOrg.data?.id, 'teams'],
+          });
+        }}
+      />
     </>
   );
 }
