@@ -98,6 +98,7 @@ export function AddToTeamDropdown({
       if (error) { toast.error(error.message || 'Failed to add to team'); return; }
       toast.success(`${row.name} added to ${teamName}`);
       queryClient.invalidateQueries({ queryKey: ['organization', organizationId, 'teams'] });
+      queryClient.invalidateQueries({ queryKey: ['team', teamId, 'members'] });
     } catch {
       toast.error('An error occurred');
     }
