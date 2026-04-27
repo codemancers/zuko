@@ -18,6 +18,8 @@ export class TablePage extends BasePage {
 
   constructor(page: Page) {
     super(page);
+    // Button now lives in the SearchBar row (hamburger icon), not the table header.
+    // Pass showAddColumn={true} to BaseTable to restore the in-header + button instead.
     this.addColumnButton = page.getByRole('button', { name: /Add column/i });
     // Headless UI Dialog is in the DOM but CSS-hidden during transitions;
     // scope to the visible title text so Playwright can reliably detect open state.

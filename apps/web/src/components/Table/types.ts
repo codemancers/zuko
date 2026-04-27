@@ -1,3 +1,4 @@
+import React from 'react';
 import { ColumnConfig } from '@/types/table-metadata';
 import {
   ColumnDef,
@@ -60,6 +61,7 @@ export interface BaseTableProps<TData extends BaseRow> {
   addRowContent?: React.ReactNode;
   showAddColumn?: boolean;
   onAddColumn?: (name: string, key: string, type: string, config?: ColumnConfig) => void;
+  openAddColumnRef?: React.MutableRefObject<(() => void) | undefined>;
   onCellUpdate?: (rowId: string | number, columnId: string, value: any) => void;
   showEmptyState?: boolean;
   emptyStateConfig?: {

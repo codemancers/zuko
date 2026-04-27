@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import { PlusIcon } from '@heroicons/react/24/outline';
 import { Button } from '@zuko/ui-kit';
 import { PageHeader, SearchBar } from '@/components/shared';
@@ -27,6 +27,7 @@ import { useSearchParam } from '@/hooks/use-search-param';
 const ContactsList = () => {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const openAddColumnRef = useRef<(() => void) | undefined>(undefined);
   const { inputValue: searchTerm, setInputValue: setSearchTerm, debouncedValue } = useSearchParam();
   const [contactToDelete, setContactToDelete] = useState<number | null>(null);
   const { data: contactsData, isLoading } = useQuery(
@@ -109,6 +110,7 @@ const ContactsList = () => {
         value={searchTerm}
         onChange={setSearchTerm}
         placeholder="Search contacts by name, email, phone, or LinkedIn..."
+        onAddColumn={() => openAddColumnRef.current?.()}
       />
 
       <BaseTable<BaseRow>
@@ -123,8 +125,9 @@ const ContactsList = () => {
         entityName="contacts"
         showAddRow
         onAddRow={handleNewContactRow}
-        showAddColumn
+        showAddColumn={false}
         onAddColumn={handleNewColumn}
+        openAddColumnRef={openAddColumnRef}
         disableRowClick={true}
       />
 

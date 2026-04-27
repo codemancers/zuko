@@ -433,8 +433,7 @@ describe('DealsList', () => {
       expect(screen.getByText('Enterprise Deal')).toBeInTheDocument();
     });
     
-    // Click the "Add column" button in the table header
-    await user.click(screen.getByLabelText('Add column'));
+    await user.click(screen.getByRole('button', { name: /add column/i }));
     
     // Verify the dialog title and input fields
     expect(screen.getByText('Add new field')).toBeInTheDocument();

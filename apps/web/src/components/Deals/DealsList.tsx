@@ -5,7 +5,7 @@ import { Button } from '@zuko/ui-kit';
 import { PageHeader, SearchBar } from '@/components/shared';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getTableViewDeals } from '@/server/query-options';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import type { ColumnDef } from '@tanstack/react-table';
 import { toast } from 'sonner';
@@ -27,6 +27,7 @@ import { useSearchParam } from '@/hooks/use-search-param';
 const DealsList = () => {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const openAddColumnRef = useRef<(() => void) | undefined>(undefined);
   const { inputValue: searchTerm, setInputValue: setSearchTerm, debouncedValue } = useSearchParam();
   const [dealToDelete, setDealToDelete] = useState<number | null>(null);
   const { data: dealsData, isLoading } = useQuery(
@@ -109,6 +110,7 @@ const DealsList = () => {
         value={searchTerm}
         onChange={setSearchTerm}
         placeholder="Search deals by title, summary, or source..."
+        onAddColumn={() => openAddColumnRef.current?.()}
       />
 
       <BaseTable<BaseRow>
@@ -123,8 +125,9 @@ const DealsList = () => {
         entityName="deals"
         showAddRow
         onAddRow={handleNewDealRow}
-        showAddColumn
+        showAddColumn={false}
         onAddColumn={handleNewColumn}
+        openAddColumnRef={openAddColumnRef}
         disableRowClick={true}
       />
 
