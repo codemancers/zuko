@@ -1,6 +1,6 @@
 import type { Request } from 'express';
 import { ForbiddenException, Logger } from '@nestjs/common';
-import type { PrismaService } from '../../prisma/prisma.service';
+import { PrismaService } from '../../prisma/prisma.service';
 
 const log = new Logger('GetOrganizationId');
 

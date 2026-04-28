@@ -1,14 +1,17 @@
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
-import type {
+import {
   CompaniesService,
   ContactsService,
   DealsService,
-  ColumnMetadata,
   TableColumnRepository,
+} from '@zuko/sales';
+import type {
+  ColumnMetadata,
   FlattenedContact,
   FlattenedCompany,
   FlattenedDeal,
-  ColumnType} from '@zuko/sales';
+  ColumnType,
+} from '@zuko/sales';
 import {
   COMPANY_TABLE_METADATA,
   CONTACT_TABLE_METADATA,
@@ -20,13 +23,13 @@ import {
   mergeCustomFieldValue,
   castFieldValue,
 } from '@zuko/sales';
-import type { TableRowBuilder } from './row-builder/table-row.builder';
+import { TableRowBuilder } from './row-builder/table-row.builder';
 import type { CompanyListQueryDto } from '../companies.controller';
 import type { ContactListQueryDto } from '../contacts.controller';
 import type { DealListQueryDto } from '../deals.controller';
 import type { CreateColumnDto, UpdateCellDto } from './table.controller';
 import type { TableColumn } from '@prisma/client';
-import type { PrismaService } from '../../../prisma/prisma.service';
+import { PrismaService } from '../../../prisma/prisma.service';
 
 @Injectable()
 export class TableService {
@@ -191,9 +194,7 @@ export class TableService {
       where: {
         organizationId,
         deletedAt: null,
-        ...(search
-          ? { name: { contains: search, mode: 'insensitive' } }
-          : {}),
+        ...(search ? { name: { contains: search, mode: 'insensitive' } } : {}),
       },
       orderBy: { createdAt: 'desc' },
     });
@@ -227,7 +228,7 @@ export class TableService {
     userId: number,
     dto: CreateColumnDto,
   ) {
-    if(!dto || !dto.label || !dto.columnKey || !dto.fieldType) {
+    if (!dto || !dto.label || !dto.columnKey || !dto.fieldType) {
       throw new BadRequestException('Invalid request body');
     }
 
@@ -253,7 +254,9 @@ export class TableService {
 
     const validKeyRegex = /^[a-z0-9_]+$/;
     if (!validKeyRegex.test(dto.columnKey)) {
-      throw new BadRequestException('Column key must contain only lowercase letters, numbers, and underscores');
+      throw new BadRequestException(
+        'Column key must contain only lowercase letters, numbers, and underscores',
+      );
     }
 
     const columnKey = dto.columnKey;
@@ -288,7 +291,7 @@ export class TableService {
       if (error instanceof BadRequestException) {
         throw error;
       }
-      
+
       throw new BadRequestException('Failed to create column');
     }
   }
@@ -304,23 +307,33 @@ export class TableService {
 
     try {
       let result: unknown;
-      
+
       switch (entity) {
         case 'contacts': {
-          const isDefaultColumn = CONTACT_TABLE_METADATA.find((m) => m.id === columnId);
+          const isDefaultColumn = CONTACT_TABLE_METADATA.find(
+            (m) => m.id === columnId,
+          );
           if (isDefaultColumn) {
             result = await this.contactsService.update(
               rowId,
               organizationId,
-              { [columnId]: castFieldValue(value, isDefaultColumn.fieldType as ColumnType) },
+              {
+                [columnId]: castFieldValue(
+                  value,
+                  isDefaultColumn.fieldType as ColumnType,
+                ),
+              },
               actorId,
             );
           } else {
-            const contact = await this.contactsService.findById(rowId, organizationId);
+            const contact = await this.contactsService.findById(
+              rowId,
+              organizationId,
+            );
             const columnMetadata = await this.tableColumnRepository.findByKey(
               organizationId,
               'contacts',
-              columnId
+              columnId,
             );
             if (!columnMetadata) {
               throw new BadRequestException('Column not found');
@@ -344,20 +357,30 @@ export class TableService {
         }
 
         case 'companies': {
-          const isDefaultColumn = COMPANY_TABLE_METADATA.find((m) => m.id === columnId);
+          const isDefaultColumn = COMPANY_TABLE_METADATA.find(
+            (m) => m.id === columnId,
+          );
           if (isDefaultColumn) {
             result = await this.companiesService.update(
               rowId,
               organizationId,
-              { [columnId]: castFieldValue(value, isDefaultColumn.fieldType as ColumnType) },
+              {
+                [columnId]: castFieldValue(
+                  value,
+                  isDefaultColumn.fieldType as ColumnType,
+                ),
+              },
               actorId,
             );
           } else {
-            const company = await this.companiesService.findById(rowId, organizationId);
+            const company = await this.companiesService.findById(
+              rowId,
+              organizationId,
+            );
             const columnMetadata = await this.tableColumnRepository.findByKey(
               organizationId,
               'companies',
-              columnId
+              columnId,
             );
             if (!columnMetadata) {
               throw new BadRequestException('Column not found');
@@ -381,20 +404,30 @@ export class TableService {
         }
 
         case 'deals': {
-          const isDefaultColumn = DEAL_TABLE_METADATA.find((m) => m.id === columnId);
+          const isDefaultColumn = DEAL_TABLE_METADATA.find(
+            (m) => m.id === columnId,
+          );
           if (isDefaultColumn) {
             result = await this.dealsService.update(
               rowId,
               organizationId,
-              { [columnId]: castFieldValue(value, isDefaultColumn.fieldType as ColumnType) },
+              {
+                [columnId]: castFieldValue(
+                  value,
+                  isDefaultColumn.fieldType as ColumnType,
+                ),
+              },
               actorId,
             );
           } else {
-            const deal = await this.dealsService.findById(rowId, organizationId);
+            const deal = await this.dealsService.findById(
+              rowId,
+              organizationId,
+            );
             const columnMetadata = await this.tableColumnRepository.findByKey(
               organizationId,
               'deals',
-              columnId
+              columnId,
             );
             if (!columnMetadata) {
               throw new BadRequestException('Column not found');
@@ -422,21 +455,31 @@ export class TableService {
           if (!col) throw new BadRequestException('Column not found');
           result = await this.prisma.task.update({
             where: { id: rowId, organizationId },
-            data: { [columnId]: castFieldValue(value, col.fieldType as ColumnType) },
+            data: {
+              [columnId]: castFieldValue(value, col.fieldType as ColumnType),
+            },
           });
           break;
         }
 
         default:
-          throw new BadRequestException(`Entity ${entity} not supported for cell update`);
+          throw new BadRequestException(
+            `Entity ${entity} not supported for cell update`,
+          );
       }
 
-      this.logger.log(`[TableService] Update successful for ${entity} ID: ${rowId}`);
+      this.logger.log(
+        `[TableService] Update successful for ${entity} ID: ${rowId}`,
+      );
       return result;
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       const errorStack = error instanceof Error ? error.stack : undefined;
-      this.logger.error(`[TableService] Failed to update cell: ${errorMessage}`, errorStack);
+      this.logger.error(
+        `[TableService] Failed to update cell: ${errorMessage}`,
+        errorStack,
+      );
       throw error;
     }
   }
@@ -451,7 +494,7 @@ export class TableService {
   ): { metadata: ColumnMetadata[]; data: T[] } {
     const customMetadata = mapTableColumnsToMetadata(customColumns);
     const mergedMetadata = [...defaultMetadata, ...customMetadata];
-    
+
     // flatten data
     const flattenedData = data.map((item) => {
       const { fields, ...rest } = item;
@@ -466,5 +509,4 @@ export class TableService {
       data: this.rowBuilder.buildRows<T>(flattenedData, mergedMetadata),
     };
   }
-
 }

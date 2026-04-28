@@ -1,5 +1,5 @@
 import { Controller, Get } from '@nestjs/common';
-import type { MetadataService } from './metadata.service';
+import { MetadataService } from './metadata.service';
 
 @Controller('metadata')
 export class MetadataController {

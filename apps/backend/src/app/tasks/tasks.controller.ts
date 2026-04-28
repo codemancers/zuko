@@ -14,7 +14,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { AuthGuard } from '@thallesp/nestjs-better-auth';
-import type { TaskService } from '@zuko/sales';
+import { TaskService } from '@zuko/sales';
 import type { RequestWithUser } from '@zuko/core';
 import { OrganizationGuard } from '../../common/auth/organization.guard';
 import { OrgId } from '../../common/auth/org-id.decorator';

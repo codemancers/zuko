@@ -10,9 +10,9 @@ import {
   getPlatformFromUrl,
   generateUtcCronExpression,
 } from "../../utils/meeting";
-import type { PrismaService } from "../../prisma/prisma.service";
-import type { MeetingNotifyService } from "./meeting-notify.service";
-import type { MeetingTranscriptIngestService } from "./meeting-transcript-ingest.service";
+import { PrismaService } from "../../prisma/prisma.service";
+import { MeetingNotifyService } from "./meeting-notify.service";
+import { MeetingTranscriptIngestService } from "./meeting-transcript-ingest.service";
 import { MeetingStatus, MeetingPlatform } from "@prisma/client";
 
 export interface TranscriptData {

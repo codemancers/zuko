@@ -11,7 +11,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { AuthGuard } from '@thallesp/nestjs-better-auth';
-import type { TableService } from './table.service';
+import { TableService } from './table.service';
 import { OrgId } from '../../../common/auth/org-id.decorator';
 import { OrganizationGuard } from '../../../common/auth/organization.guard';
 import type { CompanyListQueryDto } from '../companies.controller';

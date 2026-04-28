@@ -5,7 +5,7 @@ import {
   Injectable,
   Logger
 } from "@nestjs/common";
-import type { ConfigService } from "@nestjs/config";
+import { ConfigService } from "@nestjs/config";
 import pg from "pg";
 import type { MeetingGateway } from "./meeting.gateway";
 

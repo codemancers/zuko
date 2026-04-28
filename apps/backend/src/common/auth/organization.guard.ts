@@ -5,7 +5,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { getActiveOrganizationId } from './get-organization-id';
-import type { PrismaService } from '../../prisma/prisma.service';
+import { PrismaService } from '../../prisma/prisma.service';
 import type { RequestWithOrganization } from '@zuko/core';
 
 /**

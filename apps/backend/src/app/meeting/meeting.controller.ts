@@ -13,7 +13,7 @@ import {
 } from "@nestjs/common";
 import { AuthGuard } from "@thallesp/nestjs-better-auth";
 import type { RequestWithUser } from "@zuko/core";
-import type { MeetingService } from "./meeting.service";
+import { MeetingService } from "./meeting.service";
 import { CallbackSchema, MeetingSchema, TranscriptChunkSchema } from "./dto/meeting.dto";
 import type { CallbackDto, MeetingDto, TranscriptChunkDto } from "./dto/meeting.dto";
 import { OrganizationGuard } from "../../common/auth/organization.guard";

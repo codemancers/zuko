@@ -13,8 +13,8 @@ import type { ContextEntityReference } from "../types/chat";
 import { toUIMessageStream } from "@ai-sdk/langchain";
 import type { UIMessage } from "ai";
 import type { RequestWithUser } from "@zuko/core";
-import type { ChatsService } from "../chats/chats.service";
-import type { LangsmithService } from "../langsmith/langsmith.service";
+import { ChatsService } from "../chats/chats.service";
+import { LangsmithService } from "../langsmith/langsmith.service";
 import { transformSSEToLangChainStreamFromNode } from "../langsmith/langsmith-stream.util";
 
 
