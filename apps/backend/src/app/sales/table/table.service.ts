@@ -4,15 +4,6 @@ import {
   ContactsService,
   DealsService,
   TableColumnRepository,
-} from '@zuko/sales';
-import type {
-  ColumnMetadata,
-  FlattenedContact,
-  FlattenedCompany,
-  FlattenedDeal,
-  ColumnType,
-} from '@zuko/sales';
-import {
   COMPANY_TABLE_METADATA,
   CONTACT_TABLE_METADATA,
   DEAL_TABLE_METADATA,
@@ -22,6 +13,11 @@ import {
   COLUMN_TYPES,
   mergeCustomFieldValue,
   castFieldValue,
+  type ColumnMetadata,
+  type FlattenedContact,
+  type FlattenedCompany,
+  type FlattenedDeal,
+  type ColumnType,
 } from '@zuko/sales';
 import { TableRowBuilder } from './row-builder/table-row.builder';
 import type { CompanyListQueryDto } from '../companies.controller';
