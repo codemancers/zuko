@@ -17,7 +17,6 @@
   "dependencies": {
     "@prisma/client": "^7.7.0",
     "express": "^5.1.0",
-    "tslib": "^2.3.0",
-    "vitest": "^4.0.0"
+    "tslib": "^2.3.0"
   }
 }
