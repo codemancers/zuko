@@ -4,9 +4,9 @@ import {
   NotFoundException,
   Logger,
 } from '@nestjs/common';
-import { EventEmitter2 } from '@nestjs/event-emitter';
+import type { EventEmitter2 } from '@nestjs/event-emitter';
 import type { PaginationOptions } from '../repositories/types';
-import {
+import type {
   CompaniesRepository,
   CreateCompanyInput,
   UpdateCompanyInput,
@@ -14,10 +14,11 @@ import {
   AddContactToCompanyInput,
   UpdateContactCompanyInput,
 } from '../repositories/companies.repository';
-import { TableColumnRepository } from '../repositories/table-column.repository';
-import { COMPANY_EVENTS, CompanyFieldUpdatedEvent } from '../events/company-events';
+import type { TableColumnRepository } from '../repositories/table-column.repository';
+import type { CompanyFieldUpdatedEvent } from '../events/company-events';
+import { COMPANY_EVENTS } from '../events/company-events';
 import type { ActivitySource } from '../events/deal-events';
-import { ColumnConfig, ColumnType } from '../types/table-metadata';
+import type { ColumnConfig, ColumnType } from '../types/table-metadata';
 import { validateCellValue, castFieldValue } from '../utils/custom-fields';
 
 /**

@@ -1,7 +1,8 @@
-import { HeaderGroup, flexRender } from '@tanstack/react-table';
+import type { HeaderGroup} from '@tanstack/react-table';
+import { flexRender } from '@tanstack/react-table';
 import { TableHead, TableHeader, TableRow, Button } from '@zuko/ui-kit';
 import { PlusIcon } from '@heroicons/react/24/outline';
-import { BaseRow } from './types';
+import type { BaseRow } from './types';
 
 interface BaseTableHeaderProps<TData extends BaseRow> {
   headerGroups: HeaderGroup<TData>[];

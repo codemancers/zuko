@@ -15,7 +15,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { AuthGuard } from '@thallesp/nestjs-better-auth';
-import { ActivityService } from '@zuko/sales';
+import type { ActivityService } from '@zuko/sales';
 import type { RequestWithUser } from '@zuko/core';
 
 

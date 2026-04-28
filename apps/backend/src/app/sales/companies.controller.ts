@@ -16,7 +16,7 @@ import {
 } from '@nestjs/common';
 import { AuthGuard } from '@thallesp/nestjs-better-auth';
 import type { RequestWithUser } from '@zuko/core';
-import {
+import type {
   CompaniesService,
   CreateCompanyInput,
   UpdateCompanyInput,

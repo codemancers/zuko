@@ -1,6 +1,7 @@
 'use client';
 
-import { createContext, useContext, ReactNode, useEffect, useRef } from 'react';
+import type { ReactNode} from 'react';
+import { createContext, useContext, useEffect, useRef } from 'react';
 import { usePromptInputReferencedSources } from '@zuko/ui-kit';
 import { CHAT_ENTITY_TYPE_LABEL } from '@/lib/constants';
 import { ChatContextManager, type ChatEntity } from './ChatContextManager';

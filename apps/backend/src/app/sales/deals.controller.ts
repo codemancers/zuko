@@ -15,7 +15,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { AuthGuard } from '@thallesp/nestjs-better-auth';
-import {
+import type {
   DealsService,
   CreateDealInput,
   UpdateDealInput,

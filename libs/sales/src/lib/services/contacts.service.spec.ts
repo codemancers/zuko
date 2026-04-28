@@ -1,7 +1,8 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { Test } from '@nestjs/testing';
 import { EventEmitterModule } from '@nestjs/event-emitter';
-import { Contact, PrismaClient, TableColumn, User } from '@prisma/client';
+import type { Contact, TableColumn, User } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { ContactsService } from './contacts.service';
 import { ContactsRepository } from '../repositories/contacts.repository';
@@ -141,7 +142,7 @@ describe('ContactsService', () => {
         where: { id: contact.id },
       });
       expect(
-        (updated?.fields as Record<string, unknown>)[column1.columnKey],
+        (updated!.fields as Record<string, unknown>)[column1.columnKey],
       ).toBe('web');
 
       // 3. Update with invalid option should fail

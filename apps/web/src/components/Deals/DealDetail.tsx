@@ -17,10 +17,11 @@ import {
   Text,
 } from '@zuko/ui-kit';
 import Editor, { ensureOutputData } from '@/components/Common/Editor/Editor';
-import { OutputData } from '@editorjs/editorjs';
+import type { OutputData } from '@editorjs/editorjs';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getDeal } from '@/server/query-options';
-import { dealsApi, UpdateDealDto } from '@/lib/api/deals';
+import type { UpdateDealDto } from '@/lib/api/deals';
+import { dealsApi } from '@/lib/api/deals';
 import { toast } from 'sonner';
 import { metadataApi } from '@/lib/api/metadata';
 import { useRouter } from 'next/navigation';
@@ -30,12 +31,11 @@ import AddCompanyToDealDialog from './AddCompanyToDealDialog';
 import AddContactToDealDialog from './AddContactToDealDialog';
 
 import ConfirmDialog from '@/components/shared/ConfirmDialog';
-import { BackLink, DetailHeader, EntityProperties } from '@/components/shared';
+import { BackLink, DetailHeader, EntityProperties, LoadingState } from '@/components/shared';
 import {
   InlineSaveCancel,
   InlineEditRemove,
 } from '@/components/shared/InlineEditActions';
-import { LoadingState } from '@/components/shared';
 import { formatCurrency, getStageColor, formatStage } from '@/lib/format-utils';
 
 interface DealDetailProps {

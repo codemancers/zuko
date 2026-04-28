@@ -1,4 +1,5 @@
-import { Cell, flexRender } from '@tanstack/react-table';
+import type { Cell} from '@tanstack/react-table';
+import { flexRender } from '@tanstack/react-table';
 import { TableCell } from '@zuko/ui-kit';
 import clsx from 'clsx';
 import { useState, useRef } from 'react';

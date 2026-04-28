@@ -4,9 +4,9 @@ import {
   NotFoundException,
   Logger,
 } from '@nestjs/common';
-import { EventEmitter2 } from '@nestjs/event-emitter';
+import type { EventEmitter2 } from '@nestjs/event-emitter';
 import type { PaginationOptions } from '../repositories/types';
-import {
+import type {
   DealsRepository,
   CreateDealInput,
   UpdateDealInput,
@@ -15,14 +15,15 @@ import {
   UpdateContactDealInput,
   AddContactToDealInput,
 } from '../repositories/deals.repository';
-import { TableColumnRepository } from '../repositories/table-column.repository';
-import {
-  DEAL_EVENTS,
+import type { TableColumnRepository } from '../repositories/table-column.repository';
+import type {
   DealFieldUpdatedEvent,
-  ActivitySource,
+  ActivitySource} from '../events/deal-events';
+import {
+  DEAL_EVENTS
 } from '../events/deal-events';
 import { DEAL_STAGE_VALUES } from '../constants/deals';
-import { ColumnConfig, ColumnType } from '../types/table-metadata';
+import type { ColumnConfig, ColumnType } from '../types/table-metadata';
 import { validateCellValue, castFieldValue } from '../utils/custom-fields';
 
 // Fields handled by dedicated events or not user-visible — excluded from generic field_update

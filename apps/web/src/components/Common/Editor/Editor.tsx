@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, memo } from 'react';
-import EditorJS, { OutputData } from '@editorjs/editorjs';
+import type { OutputData } from '@editorjs/editorjs';
+import EditorJS from '@editorjs/editorjs';
 import Header from '@editorjs/header';
 import List from '@editorjs/list';
 import Table from '@editorjs/table';

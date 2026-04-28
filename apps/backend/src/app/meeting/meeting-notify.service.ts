@@ -1,12 +1,13 @@
+import type {
+  OnModuleDestroy,
+  OnModuleInit} from "@nestjs/common";
 import {
   Injectable,
-  Logger,
-  OnModuleDestroy,
-  OnModuleInit,
+  Logger
 } from "@nestjs/common";
-import { ConfigService } from "@nestjs/config";
+import type { ConfigService } from "@nestjs/config";
 import pg from "pg";
-import { MeetingGateway } from "./meeting.gateway";
+import type { MeetingGateway } from "./meeting.gateway";
 
 const CHANNEL = "meeting_end";
 

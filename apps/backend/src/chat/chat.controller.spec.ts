@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { MessageMetadata } from "../types/chat";
+import type { MessageMetadata } from "../types/chat";
 
 /**
  * Tests for contextEntities extraction from AI SDK message metadata

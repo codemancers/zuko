@@ -6,7 +6,7 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { BaseTable } from '@/components/Table';
-import { ColumnDef } from '@tanstack/react-table';
+import type { ColumnDef } from '@tanstack/react-table';
 
 function createQueryClient() {
   return new QueryClient({ defaultOptions: { queries: { retry: false } } });

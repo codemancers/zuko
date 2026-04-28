@@ -1,31 +1,32 @@
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
-import {
+import type {
   CompaniesService,
   ContactsService,
   DealsService,
+  ColumnMetadata,
+  TableColumnRepository,
+  FlattenedContact,
+  FlattenedCompany,
+  FlattenedDeal,
+  ColumnType} from '@zuko/sales';
+import {
   COMPANY_TABLE_METADATA,
   CONTACT_TABLE_METADATA,
   DEAL_TABLE_METADATA,
   MEETING_TABLE_METADATA,
   TASK_TABLE_METADATA,
-  ColumnMetadata,
-  TableColumnRepository,
   mapTableColumnsToMetadata,
-  FlattenedContact,
-  FlattenedCompany,
-  FlattenedDeal,
   COLUMN_TYPES,
-  ColumnType,
   mergeCustomFieldValue,
   castFieldValue,
 } from '@zuko/sales';
-import { TableRowBuilder } from './row-builder/table-row.builder';
-import { CompanyListQueryDto } from '../companies.controller';
-import { ContactListQueryDto } from '../contacts.controller';
-import { DealListQueryDto } from '../deals.controller';
-import { CreateColumnDto, UpdateCellDto } from './table.controller';
-import { TableColumn } from '@prisma/client';
-import { PrismaService } from '../../../prisma/prisma.service';
+import type { TableRowBuilder } from './row-builder/table-row.builder';
+import type { CompanyListQueryDto } from '../companies.controller';
+import type { ContactListQueryDto } from '../contacts.controller';
+import type { DealListQueryDto } from '../deals.controller';
+import type { CreateColumnDto, UpdateCellDto } from './table.controller';
+import type { TableColumn } from '@prisma/client';
+import type { PrismaService } from '../../../prisma/prisma.service';
 
 @Injectable()
 export class TableService {

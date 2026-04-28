@@ -1,5 +1,5 @@
-import { JsonValue } from '@prisma/client/runtime/client';
-import {
+import type { JsonValue } from '@prisma/client/runtime/client';
+import type {
   ColumnMetadata,
   ColumnType,
   DataType,

@@ -4,6 +4,9 @@ import { AgentGuard } from '../../common/auth/agent.guard';
 import { PrismaModule } from '../../prisma/prisma.module';
 import { PrismaService } from '../../prisma/prisma.service';
 import { AgentsController } from './agents.controller';
+import type {
+  TableColumnRepository
+} from '@zuko/sales';
 import {
   ContactsService,
   CompaniesService,
@@ -12,8 +15,7 @@ import {
   ContactsRepository,
   CompaniesRepository,
   DealsRepository,
-  ActivityRepository,
-  TableColumnRepository
+  ActivityRepository
 } from '@zuko/sales';
 
 @Module({

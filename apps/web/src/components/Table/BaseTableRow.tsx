@@ -1,8 +1,8 @@
-import { Row } from '@tanstack/react-table';
+import type { Row } from '@tanstack/react-table';
 import { BaseTableCell } from './BaseTableCell';
 import { TableRow, TableCell } from '@zuko/ui-kit';
 import clsx from 'clsx';
-import { BaseRow } from './types';
+import type { BaseRow } from './types';
 
 interface BaseTableRowProps<TData extends BaseRow> {
   row: Row<TData>;

@@ -1,4 +1,4 @@
-import { ColumnDef } from '@tanstack/react-table';
+import type { ColumnDef } from '@tanstack/react-table';
 import type { ColumnMetadata, CellValue, BaseRow } from './types';
 import { DataField } from './TableFields';
 

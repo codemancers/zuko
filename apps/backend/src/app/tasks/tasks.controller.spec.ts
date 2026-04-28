@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, type Mock } from 'vitest';
-import { Test, TestingModule } from '@nestjs/testing';
+import type { TestingModule } from '@nestjs/testing';
+import { Test } from '@nestjs/testing';
 import { NotFoundException } from '@nestjs/common';
 import { TasksController } from './tasks.controller';
 import { TaskService, TaskStatus } from '@zuko/sales';

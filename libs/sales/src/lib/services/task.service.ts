@@ -1,18 +1,20 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { EventEmitter2 } from '@nestjs/event-emitter';
+import type { EventEmitter2 } from '@nestjs/event-emitter';
 import type { PaginationOptions } from '../repositories/types';
-import {
+import type {
   TaskRepository,
   CreateTaskInput,
-  UpdateTaskInput,
+  UpdateTaskInput} from '../repositories/task.repository';
+import {
   TaskStatus,
 } from '../repositories/task.repository';
-import {
-  TASK_EVENTS,
+import type {
   TaskCreatedEvent,
   TaskStatusChangedEvent,
   TaskFieldUpdatedEvent,
-  TaskSubtaskAddedEvent,
+  TaskSubtaskAddedEvent} from '../events/task-events';
+import {
+  TASK_EVENTS
 } from '../events/task-events';
 
 @Injectable()

@@ -4,15 +4,15 @@ import {
   Injectable,
   Logger,
 } from "@nestjs/common";
-import { MeetingDto, CallbackDto } from "./dto/meeting.dto";
+import type { MeetingDto, CallbackDto } from "./dto/meeting.dto";
 import axios from "axios";
 import {
   getPlatformFromUrl,
   generateUtcCronExpression,
 } from "../../utils/meeting";
-import { PrismaService } from "../../prisma/prisma.service";
-import { MeetingNotifyService } from "./meeting-notify.service";
-import { MeetingTranscriptIngestService } from "./meeting-transcript-ingest.service";
+import type { PrismaService } from "../../prisma/prisma.service";
+import type { MeetingNotifyService } from "./meeting-notify.service";
+import type { MeetingTranscriptIngestService } from "./meeting-transcript-ingest.service";
 import { MeetingStatus, MeetingPlatform } from "@prisma/client";
 
 export interface TranscriptData {

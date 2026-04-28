@@ -1,9 +1,9 @@
 'use client';
 
 import Image from 'next/image';
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useBaseTable } from '@/hooks/use-base-table';
-import { BaseTableProps, BaseRow } from './types';
+import type { BaseTableProps, BaseRow } from './types';
 import { BaseTableHeader } from './BaseTableHeader';
 import { BaseTableBody } from './BaseTableBody';
 import { Table, Button } from '@zuko/ui-kit';
@@ -11,8 +11,7 @@ import clsx from 'clsx';
 import { PlusIcon } from '@heroicons/react/24/outline';
 import type { PaginationState } from '@tanstack/react-table';
 import { AddColumnDialog } from './AddColumnDialog';
-import React from 'react';
-import { ColumnConfig } from '@/types/table-metadata';
+import type { ColumnConfig } from '@/types/table-metadata';
 
 const CHEVRON_LEFT = '/icons/chevron-left.svg';
 const CHEVRON_RIGHT = '/icons/chevron-right.svg';

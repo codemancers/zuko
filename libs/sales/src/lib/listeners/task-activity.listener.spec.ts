@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, type Mock } from 'vitest';
 import { TaskActivityListener } from './task-activity.listener';
-import { ActivityService } from '../services/activity.service';
+import type { ActivityService } from '../services/activity.service';
 
 const TASK_ID = 20;
 const ACTOR_ID = 42;

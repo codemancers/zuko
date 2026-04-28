@@ -19,7 +19,7 @@ import {
 import { useAddColumn } from '@/hooks/use-add-column';
 import { useAddRow } from '@/hooks/use-add-row';
 import { useCellUpdate } from '@/hooks/use-cell-update';
-import { ColumnConfig } from '@/types/table-metadata';
+import type { ColumnConfig } from '@/types/table-metadata';
 import { companiesApi } from '@/lib/api/companies';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { useSearchParam } from '@/hooks/use-search-param';

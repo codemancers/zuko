@@ -7,12 +7,12 @@ import { randomUUID } from "crypto";
 import type { RequestWithUser } from "@zuko/core";
 import type { UIMessage } from "ai";
 import { toBaseMessages } from "@ai-sdk/langchain";
-import { ContextEntityReference, MessageMetadata } from "../types/chat";
+import type { ContextEntityReference, MessageMetadata } from "../types/chat";
 import { getActiveOrganizationId } from "../common/auth/get-organization-id";
-import { PrismaService } from "../prisma/prisma.service";
-import { LangsmithService } from "../langsmith/langsmith.service";
-import { SpritesService } from "../sprites/sprites.service";
-import { ChatsRepository } from "./chats.repository";
+import type { PrismaService } from "../prisma/prisma.service";
+import type { LangsmithService } from "../langsmith/langsmith.service";
+import type { SpritesService } from "../sprites/sprites.service";
+import type { ChatsRepository } from "./chats.repository";
 
 @Injectable()
 export class ChatsService {

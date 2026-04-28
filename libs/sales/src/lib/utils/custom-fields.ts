@@ -1,6 +1,6 @@
 import { BadRequestException } from '@nestjs/common';
 import dayjs from 'dayjs';
-import { ColumnConfig, ColumnType } from '../types/table-metadata';
+import type { ColumnConfig, ColumnType } from '../types/table-metadata';
 
 /**
  * Normalizes a raw value based on its ColumnType (e.g., handles date/number casting)

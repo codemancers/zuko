@@ -1,10 +1,10 @@
 import { describe, it, expect, beforeEach, type Mock } from 'vitest';
 import { DealsService } from './deals.service';
-import { DealsRepository } from '../repositories/deals.repository';
-import { EventEmitter2 } from '@nestjs/event-emitter';
+import type { DealsRepository } from '../repositories/deals.repository';
+import type { EventEmitter2 } from '@nestjs/event-emitter';
 import { DEAL_EVENTS } from '../events/deal-events';
 import { BadRequestException } from '@nestjs/common';
-import { TableColumnRepository } from '../repositories/table-column.repository';
+import type { TableColumnRepository } from '../repositories/table-column.repository';
 
 const ORG_ID = 1;
 const ACTOR_ID = 42;

@@ -4,7 +4,7 @@ import {
   ForbiddenException,
   BadRequestException,
 } from '@nestjs/common';
-import {
+import type {
   ActivityRepository,
   CreateActivityInput,
   ActivityFilters,

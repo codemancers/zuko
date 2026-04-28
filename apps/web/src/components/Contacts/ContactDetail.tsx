@@ -15,17 +15,17 @@ import {
 } from '@zuko/ui-kit';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getContact, getDealsByContact } from '@/server/query-options';
-import { contactsApi, UpdateContactDto } from '@/lib/api/contacts';
+import type { UpdateContactDto } from '@/lib/api/contacts';
+import { contactsApi } from '@/lib/api/contacts';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import ActivityTimeline from '@/components/Activity/ActivityTimeline';
 import Editor, { ensureOutputData } from '@/components/Common/Editor/Editor';
-import { OutputData } from '@editorjs/editorjs';
+import type { OutputData } from '@editorjs/editorjs';
 
 import ConfirmDialog from '@/components/shared/ConfirmDialog';
-import { BackLink, DetailHeader, EntityProperties } from '@/components/shared';
-import { LoadingState } from '@/components/shared';
+import { BackLink, DetailHeader, EntityProperties, LoadingState } from '@/components/shared';
 import { formatCurrency, getStageColor, formatStage } from '@/lib/format-utils';
 
 interface ContactDetailProps {

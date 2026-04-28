@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
+import type { Prisma } from '@prisma/client';
 import type { PrismaService } from '../modules/prisma.types';
 import type { PaginationOptions } from './types';
-import { EditorData } from '../types/sales-api';
+import type { EditorData } from '../types/sales-api';
 
 
 export interface CreateContactInput {

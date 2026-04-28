@@ -1,6 +1,6 @@
 'use client';
 
-import { ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { Input, InputGroup, Select, MultiSelect } from '@zuko/ui-kit';
 import type { ColumnMetadata } from './types';
 

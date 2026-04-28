@@ -1,7 +1,8 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { Test } from '@nestjs/testing';
 import { EventEmitterModule } from '@nestjs/event-emitter';
-import { Company, PrismaClient, TableColumn, User } from '@prisma/client';
+import type { Company, TableColumn, User } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { CompaniesService } from './companies.service';
 import { CompaniesRepository } from '../repositories/companies.repository';

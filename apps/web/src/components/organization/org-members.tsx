@@ -33,8 +33,7 @@ import {
   AddToTeamDropdown,
   type MemberTableRow,
 } from './member-columns';
-import { ConfirmDialog } from '@/components/shared';
-import { BackLink } from '@/components/shared';
+import { ConfirmDialog, BackLink } from '@/components/shared';
 
 const ROLES = ['owner', 'admin', 'member'] as const;
 

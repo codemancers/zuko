@@ -15,7 +15,7 @@ import {
   ErrorMessage,
 } from '@zuko/ui-kit';
 import { FormActions } from '@/components/shared';
-import { tasksApi, TaskStatus, type Task } from '@/lib/api/tasks';
+import { tasksApi, type Task, type TaskStatus } from '@/lib/api/tasks';
 import { toast } from 'sonner';
 import { getTasks } from '@/server/query-options';
 import Editor, { ensureOutputData } from '@/components/Common/Editor/Editor';

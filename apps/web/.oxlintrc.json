@@ -1,0 +1,45 @@
+{
+  "$schema": "https://raw.githubusercontent.com/oxc-project/oxc/main/npm/oxlint/configuration_schema.json",
+  "plugins": [
+    "react",
+    "react-hooks",
+    "jsx-a11y",
+    "typescript",
+    "import",
+    "nextjs"
+  ],
+  "env": {
+    "browser": true,
+    "es2021": true
+  },
+  "categories": {
+    "correctness": "error",
+    "suspicious": "warn",
+    "perf": "warn"
+  },
+  "rules": {
+    "no-console": "warn",
+    "no-unused-vars": "warn",
+    "eqeqeq": [
+      "error",
+      "smart"
+    ],
+    "prefer-const": "error",
+    "no-var": "error",
+    "typescript/no-explicit-any": "warn",
+    "typescript/consistent-type-imports": "warn",
+    "import/no-duplicates": "error",
+    "react/jsx-key": "error",
+    "react/no-array-index-key": "warn",
+    "react/jsx-no-target-blank": "error",
+    "react/no-unknown-property": "error",
+    "react/rules-of-hooks": "error",
+    "react/exhaustive-deps": "warn",
+    "react/react-in-jsx-scope": "off",
+    "jsx-a11y/no-autofocus": "warn",
+    "jsx-a11y/click-events-have-key-events": "warn",
+    "jsx-a11y/no-static-element-interactions": "warn",
+    "jsx-a11y/media-has-caption": "warn",
+    "nextjs/no-img-element": "warn"
+  }
+}

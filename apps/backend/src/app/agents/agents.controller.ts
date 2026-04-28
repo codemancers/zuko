@@ -12,12 +12,13 @@ import {
 } from "@nestjs/common";
 import { OrgId } from "../../common/auth/org-id.decorator";
 import { AgentGuard } from "../../common/auth/agent.guard";
-import {
+import type {
   CompaniesService,
   ContactsService,
   DealsService,
-  ACTIVITY_SOURCES,
-  EditorData,
+  EditorData} from "@zuko/sales";
+import {
+  ACTIVITY_SOURCES
 } from "@zuko/sales";
 
 // DTOs for agent API (organizationId from AgentGuard via @OrgId())

@@ -10,7 +10,7 @@ import {
   UseGuards,
 } from "@nestjs/common";
 import { AuthGuard } from "@thallesp/nestjs-better-auth";
-import { ChatsService } from "./chats.service";
+import type { ChatsService } from "./chats.service";
 import type { RequestWithUser } from "@zuko/core";
 
 @Controller("chats")
