@@ -4,15 +4,15 @@ import {
   NotFoundException,
   Logger,
 } from '@nestjs/common';
-import type { EventEmitter2 } from '@nestjs/event-emitter';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import type { PaginationOptions } from '../repositories/types';
+import { ContactsRepository } from '../repositories/contacts.repository';
 import type {
-  ContactsRepository,
   CreateContactInput,
   UpdateContactInput,
   ContactFilters,
 } from '../repositories/contacts.repository';
-import type { TableColumnRepository } from '../repositories/table-column.repository';
+import { TableColumnRepository } from '../repositories/table-column.repository';
 import type { ContactFieldUpdatedEvent } from '../events/contact-events';
 import { CONTACT_EVENTS } from '../events/contact-events';
 import type { ActivitySource } from '../events/deal-events';

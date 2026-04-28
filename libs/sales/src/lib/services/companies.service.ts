@@ -4,17 +4,17 @@ import {
   NotFoundException,
   Logger,
 } from '@nestjs/common';
-import type { EventEmitter2 } from '@nestjs/event-emitter';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import type { PaginationOptions } from '../repositories/types';
+import { CompaniesRepository } from '../repositories/companies.repository';
 import type {
-  CompaniesRepository,
   CreateCompanyInput,
   UpdateCompanyInput,
   CompanyFilters,
   AddContactToCompanyInput,
   UpdateContactCompanyInput,
 } from '../repositories/companies.repository';
-import type { TableColumnRepository } from '../repositories/table-column.repository';
+import { TableColumnRepository } from '../repositories/table-column.repository';
 import type { CompanyFieldUpdatedEvent } from '../events/company-events';
 import { COMPANY_EVENTS } from '../events/company-events';
 import type { ActivitySource } from '../events/deal-events';
@@ -63,7 +63,11 @@ export class CompaniesService {
     private readonly tableColumnRepository: TableColumnRepository,
   ) {}
 
-  async create(input: CreateCompanyInput, actorId?: number, source?: ActivitySource) {
+  async create(
+    input: CreateCompanyInput,
+    actorId?: number,
+    source?: ActivitySource,
+  ) {
     this.logger.log('[SERVICE] Starting company creation');
 
     // Default Name Support: If no name provided, use "New Company"
@@ -150,7 +154,13 @@ export class CompaniesService {
     return company;
   }
 
-  async update(id: number, organizationId: number, input: UpdateCompanyInput, actorId?: number, source?: ActivitySource) {
+  async update(
+    id: number,
+    organizationId: number,
+    input: UpdateCompanyInput,
+    actorId?: number,
+    source?: ActivitySource,
+  ) {
     const existingCompany = await this.findById(id, organizationId);
 
     // Validate company name if being updated
@@ -193,7 +203,10 @@ export class CompaniesService {
             column.fieldType as ColumnType,
             column.config as ColumnConfig,
           );
-          input.fields[key] = castFieldValue(value, column.fieldType as ColumnType);
+          input.fields[key] = castFieldValue(
+            value,
+            column.fieldType as ColumnType,
+          );
         }
       }
     }
@@ -251,7 +264,11 @@ export class CompaniesService {
     actorId?: number,
   ) {
     await this.findById(companyId, organizationId);
-    const result = await this.companiesRepository.addOwner(companyId, userId, isPrimary);
+    const result = await this.companiesRepository.addOwner(
+      companyId,
+      userId,
+      isPrimary,
+    );
     await this.eventEmitter.emitAsync(COMPANY_EVENTS.OWNER_ASSIGNED, {
       companyId,
       actorId,
@@ -268,7 +285,10 @@ export class CompaniesService {
     actorId?: number,
   ) {
     await this.findById(companyId, organizationId);
-    const result = await this.companiesRepository.removeOwner(companyId, userId);
+    const result = await this.companiesRepository.removeOwner(
+      companyId,
+      userId,
+    );
     await this.eventEmitter.emitAsync(COMPANY_EVENTS.OWNER_REMOVED, {
       companyId,
       actorId,
@@ -364,8 +384,11 @@ export class CompaniesService {
 
     await this.findById(companyId, organizationId);
 
-    const activeContacts = await this.companiesRepository.getActiveContacts(companyId);
-    const contactToRemove = activeContacts.find((c) => c.contactId === contactId);
+    const activeContacts =
+      await this.companiesRepository.getActiveContacts(companyId);
+    const contactToRemove = activeContacts.find(
+      (c) => c.contactId === contactId,
+    );
     const contactName = contactToRemove?.contact?.name ?? 'Unknown';
 
     try {
