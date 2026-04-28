@@ -73,9 +73,10 @@ export class TaskRepository {
     options: PaginationOptions & {
       parentId?: number | null;
       search?: string;
+      status?: TaskStatus;
     } = {},
   ) {
-    const { page = 1, limit = 50, parentId, search } = options;
+    const { page = 1, limit = 50, parentId, search, status } = options;
     const skip = (page - 1) * limit;
 
     const parentFilter =
@@ -90,7 +91,14 @@ export class TaskRepository {
         }
       : {};
 
-    const where = { organizationId, ...parentFilter, ...searchFilter };
+    const statusFilter = status ? { status } : {};
+
+    const where = {
+      organizationId,
+      ...parentFilter,
+      ...searchFilter,
+      ...statusFilter,
+    };
 
     const [tasks, total] = await Promise.all([
       this.prisma.task.findMany({
@@ -116,7 +124,7 @@ export class TaskRepository {
 
   async update(id: number, organizationId: number, input: UpdateTaskInput) {
     return this.prisma.task.update({
-      where: { id },
+      where: { id, organizationId },
       data: input,
       include: taskInclude,
     });
@@ -124,7 +132,7 @@ export class TaskRepository {
 
   async delete(id: number, organizationId: number) {
     return this.prisma.task.delete({
-      where: { id },
+      where: { id, organizationId },
     });
   }
 

@@ -1,23 +1,15 @@
-/**
- * This is not a production server yet!
- * This is only a minimal backend to get started.
- */
-
 import { Logger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app/app.module';
+import { registerMcpRoutes } from './app/mcp/mcp.bootstrap';
 
 async function bootstrap() {
-  // Disable body parser for better-auth to handle raw request bodies
   const app = await NestFactory.create(AppModule, { bodyParser: false });
 
-  // Enable CORS for frontend requests
-  // origin must be explicit (not true) when credentials: true
   const allowedOrigins = [
     'http://localhost:3000',
     'http://localhost:4200',
-    'https://zuko-webv-5725.fly.dev',
     process.env.FRONTEND_URL,
   ].filter(Boolean);
 
@@ -52,12 +44,15 @@ async function bootstrap() {
     swaggerOptions: { persistAuthorization: true },
   });
 
+  registerMcpRoutes(app, port);
+
+
   await app.listen(port);
-  Logger.log(
-    `🚀 Application is running on: http://localhost:${port}/${globalPrefix}`,
-  );
+
+  Logger.log(`🚀 Application is running on: http://localhost:${port}/api`);
   Logger.log(`🔐 Auth endpoints available at: http://localhost:${port}/auth`);
   Logger.log(`📖 Swagger UI available at: http://localhost:${port}/api/docs`);
+  Logger.log(`🤖 MCP endpoint available at: http://localhost:${port}/api/mcp`);
 }
 
 bootstrap();

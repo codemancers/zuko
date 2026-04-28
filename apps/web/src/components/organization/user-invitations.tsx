@@ -160,7 +160,7 @@ export const UserInvitations = () => {
         );
       },
     }),
-    // eslint-disable-next-line
+     
     [isProcessing],
   );
 

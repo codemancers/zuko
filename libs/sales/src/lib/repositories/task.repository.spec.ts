@@ -151,7 +151,7 @@ describe('TaskRepository', () => {
 
       expect(mockPrisma.task.update).toHaveBeenCalledWith(
         expect.objectContaining({
-          where: { id: 1 },
+          where: { id: 1, organizationId: ORG_ID },
           data: { title: 'Updated' },
           include: expect.objectContaining({ subtasks: true }),
         }),
@@ -167,7 +167,7 @@ describe('TaskRepository', () => {
       await repo.delete(1, ORG_ID);
 
       expect(mockPrisma.task.delete).toHaveBeenCalledWith({
-        where: { id: 1 },
+        where: { id: 1, organizationId: ORG_ID },
       });
     });
   });

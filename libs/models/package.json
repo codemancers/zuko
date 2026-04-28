@@ -17,7 +17,8 @@
   "dependencies": {
     "@prisma/client": "^7.7.0",
     "better-auth": "^1.5.4",
-    "tslib": "^2.3.0"
+    "tslib": "^2.3.0",
+    "vitest": "^4.0.0"
   },
   "devDependencies": {
     "@prisma/adapter-pg": "^7.7.0",

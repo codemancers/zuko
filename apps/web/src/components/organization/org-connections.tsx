@@ -9,21 +9,33 @@ import {
 } from '@/components/Table';
 import type { ColumnDef } from '@tanstack/react-table';
 import type { ColumnMetadata } from '@/types/table-metadata';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Suspense, useMemo } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useState } from 'react';
+import { McpSetupModal } from './mcp-setup-modal';
+import {
+  githubStatusQueryOptions,
+  linkedAccountsQueryOptions,
+} from './server/query-options';
+import {
+  useConnectAccount,
+  useDisconnectAccount,
+  useInstallGitHubApp,
+} from './hooks/mutations';
+import {
+  useMcpOAuth,
+  McpOAuthHandler,
+  getMcpEndpoint,
+} from './hooks/use-mcp-oauth';
 import { authClient } from '@/lib/auth-client';
 import {
-  getGitHubInstallationStatus,
-  getGitHubInstallationUrl,
-} from '@/server/actions/github';
-import type { GitHubInstallationStatus } from '@/lib/api/github';
-import {
-  getApolloConnectionStatus,
   getApolloAuthorizationUrl,
   disconnectApollo,
 } from '@/server/actions/apollo';
-import type { ApolloConnectionStatus } from '@/lib/api/apollo';
-import { useQuery } from '@tanstack/react-query';
-import { getApolloUsageStats } from '@/server/query-options';
+import {
+  getApolloConnectionStatus,
+  getApolloUsageStats,
+} from '@/server/query-options';
 import { toast } from 'sonner';
 
 // ---------------------------------------------------------------------------
@@ -39,15 +51,13 @@ type ConnectionRow = {
   connectedAt?: Date;
 };
 
-type AccountData = {
-  providerId: string;
-  createdAt?: string | Date;
-};
-
 // ---------------------------------------------------------------------------
 // Icons
 // ---------------------------------------------------------------------------
 
+const GitHubIcon = () => (
+  <Image src="/icons/github.svg" alt="GitHub" width={20} height={20} />
+);
 const GoogleCalendarIcon = () => (
   <Image
     src="/icons/google-calendar.svg"
@@ -56,13 +66,16 @@ const GoogleCalendarIcon = () => (
     height={20}
   />
 );
+const McpIcon = () => (
+  <Image src="/icons/mcp.svg" alt="MCP" width={20} height={20} />
+);
 
 const ApolloIcon = () => (
   <Image src="/icons/apollo.svg" alt="Apollo.io" width={20} height={20} />
 );
 
 // ---------------------------------------------------------------------------
-// Metadata
+// Table metadata
 // ---------------------------------------------------------------------------
 
 const CONNECTION_TABLE_METADATA: ColumnMetadata[] = [
@@ -107,149 +120,70 @@ const CONNECTION_TABLE_METADATA: ColumnMetadata[] = [
 
 export const OrgConnections = () => {
   const session = authClient.useSession();
-  const userEmail = (session?.data?.user as any)?.email as string | undefined;
+  const userEmail = session?.data?.user?.email ?? undefined;
+  const queryClient = useQueryClient();
 
-  const [ghAppStatus, setGhAppStatus] =
-    useState<GitHubInstallationStatus | null>(null);
-  const [loadingApp, setLoadingApp] = useState(true);
-  const [accounts, setAccounts] = useState<AccountData[]>([]);
-  const [loadingAccounts, setLoadingAccounts] = useState(true);
-  const [apolloStatus, setApolloStatus] =
-    useState<ApolloConnectionStatus | null>(null);
-  const [loadingApollo, setLoadingApollo] = useState(true);
-  const [pendingAction, setPendingAction] = useState<string | null>(null);
+  // MCP state (extracted hook)
+  const {
+    mcpToken,
+    mcpPending,
+    mcpConnected,
+    handleMcpSuccess,
+    handleMcpPending,
+    handleMcpConnect,
+    handleMcpDisconnect,
+  } = useMcpOAuth();
 
-  // -------------------------------------------------------------------------
-  // Data fetching
-  // -------------------------------------------------------------------------
-
-  const fetchAccounts = useCallback(async () => {
-    try {
-      const result = await authClient.listAccounts();
-      const data = (result?.data ?? []) as AccountData[];
-      setAccounts(data);
-    } catch (e) {
-      console.error('Failed to load accounts:', e);
-    } finally {
-      setLoadingAccounts(false);
-    }
-  }, []);
-
-  const fetchApolloStatus = useCallback(async () => {
-    try {
-      const status = await getApolloConnectionStatus();
-      setApolloStatus(status);
-    } catch {
-      setApolloStatus({ connected: false });
-    } finally {
-      setLoadingApollo(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    getGitHubInstallationStatus()
-      .then((data) => {
-        if (data) setGhAppStatus(data);
-      })
-      .catch(() => setGhAppStatus({ installed: false }))
-      .finally(() => setLoadingApp(false));
-
-    fetchAccounts();
-    fetchApolloStatus();
-  }, [fetchAccounts, fetchApolloStatus]);
+  const [mcpSetupOpen, setMcpSetupOpen] = useState(false);
 
   // -------------------------------------------------------------------------
-  // Action handlers
+  // Queries
   // -------------------------------------------------------------------------
 
-  const handleConnect = useCallback(async (provider: 'google') => {
-    setPendingAction(provider);
-    try {
-      const result = await authClient.linkSocial({
-        provider,
-        callbackURL: `${window.location.origin}/settings`,
-      });
-      if (result?.error) {
-        toast.error(result.error.message || `Failed to connect ${provider}`);
-      }
-    } catch (e) {
-      console.error('Connection error:', e);
-      toast.error(`Failed to connect ${provider}`);
-    } finally {
-      setPendingAction(null);
-    }
-  }, []);
-
-  const handleDisconnect = useCallback(
-    async (providerId: string) => {
-      setPendingAction(`disconnect-${providerId}`);
-      try {
-        const result = await (authClient as any).unlinkAccount?.({
-          providerId,
-        });
-        if (result?.error) {
-          toast.error(
-            result.error.message || `Failed to disconnect ${providerId}`,
-          );
-          return;
-        }
-        toast.success(`Disconnected ${providerId}`);
-        setLoadingAccounts(true);
-        await fetchAccounts();
-      } catch (e) {
-        console.error('Disconnect error:', e);
-        toast.error(`Failed to disconnect ${providerId}`);
-      } finally {
-        setPendingAction(null);
-      }
-    },
-    [fetchAccounts],
+  const { data: ghAppStatus, isLoading: loadingApp } = useQuery(
+    githubStatusQueryOptions(),
   );
+  const { data: accounts = [], isLoading: loadingAccounts } = useQuery(
+    linkedAccountsQueryOptions(),
+  );
+  const { data: apolloStatus, isLoading: loadingApollo } = useQuery({
+    ...getApolloConnectionStatus(),
+    retry: false,
+  });
+  const apolloConnected = apolloStatus?.connected ?? false;
 
-  const handleConnectApollo = useCallback(async () => {
-    setPendingAction('apollo');
-    try {
-      const { url } = await getApolloAuthorizationUrl();
-      window.location.href = url;
-    } catch (e) {
-      toast.error('Failed to initiate Apollo connection');
-      setPendingAction(null);
-    }
-  }, []);
-
-  const handleDisconnectApollo = useCallback(async () => {
-    setPendingAction('disconnect-apollo');
-    try {
-      await disconnectApollo();
-      toast.success('Apollo disconnected');
-      setLoadingApollo(true);
-      await fetchApolloStatus();
-    } catch (e) {
-      toast.error('Failed to disconnect Apollo');
-    } finally {
-      setPendingAction(null);
-    }
-  }, [fetchApolloStatus]);
-
-  const handleInstallApp = useCallback(async () => {
-    setPendingAction('github-app');
-    try {
-      const data = await getGitHubInstallationUrl();
-      if (data.url) {
-        window.location.href = data.url;
-      } else {
-        toast.error('Could not get GitHub App installation URL');
-      }
-    } catch (e) {
-      console.error('Install error:', e);
-      toast.error('Failed to get GitHub App installation URL');
-    } finally {
-      setPendingAction(null);
-    }
-  }, []);
+  const { data: usageStats } = useQuery({
+    ...getApolloUsageStats(),
+    enabled: apolloConnected,
+  });
 
   // -------------------------------------------------------------------------
-  // Column definitions (inside component so handlers are in scope)
+  // Mutations
+  // -------------------------------------------------------------------------
+
+  const connectAccount = useConnectAccount();
+  const disconnectAccount = useDisconnectAccount();
+  const installGitHubApp = useInstallGitHubApp();
+
+  const connectApollo = useMutation({
+    mutationFn: getApolloAuthorizationUrl,
+    onSuccess: ({ url }) => {
+      window.location.href = url;
+    },
+    onError: () => toast.error('Failed to initiate Apollo connection'),
+  });
+
+  const disconnectApolloMutation = useMutation({
+    mutationFn: disconnectApollo,
+    onSuccess: () => {
+      toast.success('Apollo disconnected');
+      queryClient.invalidateQueries({ queryKey: ['apollo', 'connection-status'] });
+    },
+    onError: () => toast.error('Failed to disconnect Apollo'),
+  });
+
+  // -------------------------------------------------------------------------
+  // Column definitions
   // -------------------------------------------------------------------------
 
   const nameColumn: ColumnDef<BaseRow> = useMemo(
@@ -274,30 +208,24 @@ export const OrgConnections = () => {
     [],
   );
 
-  const actionsColumn: ColumnDef<BaseRow> = useMemo(
+  const integrationActionsColumn: ColumnDef<BaseRow> = useMemo(
     () => ({
       id: 'actions',
       header: 'Actions',
       cell: ({ row }) => {
         const { id, status } = row.original as ConnectionRow;
         const connected = status === 'connected';
-        const isIntegration = id === 'github-app';
-        const provider = id as 'google';
-        const isPending =
-          pendingAction === id || pendingAction === `disconnect-${id}`;
 
-        if (isIntegration) {
+        if (id === 'github-app') {
           return (
-            <div className="flex items-center gap-1">
-              <Button
-                plain
-                disabled={isPending}
-                onClick={handleInstallApp}
-                className="!text-blue-500 dark:!text-blue-400"
-              >
-                {connected ? 'Re-install' : 'Install'}
-              </Button>
-            </div>
+            <Button
+              plain
+              disabled={installGitHubApp.isPending}
+              onClick={() => installGitHubApp.mutate()}
+              className="!text-blue-500 dark:!text-blue-400"
+            >
+              {connected ? 'Re-install' : 'Install'}
+            </Button>
           );
         }
 
@@ -308,16 +236,16 @@ export const OrgConnections = () => {
                 <>
                   <Button
                     plain
-                    disabled={pendingAction === 'disconnect-apollo'}
-                    onClick={handleDisconnectApollo}
+                    disabled={disconnectApolloMutation.isPending}
+                    onClick={() => disconnectApolloMutation.mutate()}
                     className="!text-red-500 dark:!text-red-400"
                   >
                     Disconnect
                   </Button>
                   <Button
                     plain
-                    disabled={pendingAction === 'apollo'}
-                    onClick={handleConnectApollo}
+                    disabled={connectApollo.isPending}
+                    onClick={() => connectApollo.mutate()}
                     className="!text-blue-500 dark:!text-blue-400"
                   >
                     Reconnect
@@ -326,16 +254,77 @@ export const OrgConnections = () => {
               ) : (
                 <Button
                   plain
-                  disabled={pendingAction === 'apollo'}
-                  onClick={handleConnectApollo}
+                  disabled={connectApollo.isPending}
+                  onClick={() => connectApollo.mutate()}
                   className="!text-blue-500 dark:!text-blue-400"
                 >
-                  {pendingAction === 'apollo' ? 'Connecting...' : 'Connect'}
+                  {connectApollo.isPending ? 'Connecting...' : 'Connect'}
                 </Button>
               )}
             </div>
           );
         }
+
+        if (id === 'zuko-mcp') {
+          if (mcpPending)
+            return <span className="text-sm text-zinc-400">Connecting...</span>;
+          if (connected) {
+            return (
+              <div className="flex items-center gap-1">
+                <Button
+                  plain
+                  onClick={handleMcpDisconnect}
+                  className="!text-red-500 dark:!text-red-400"
+                >
+                  Disconnect
+                </Button>
+                <Button
+                  plain
+                  onClick={() => setMcpSetupOpen(true)}
+                  className="!text-blue-500 dark:!text-blue-400"
+                >
+                  Setup guide
+                </Button>
+              </div>
+            );
+          }
+          return (
+            <Button
+              plain
+              onClick={handleMcpConnect}
+              className="!text-blue-500 dark:!text-blue-400"
+            >
+              Connect
+            </Button>
+          );
+        }
+
+        return null;
+      },
+    }),
+    [
+      installGitHubApp,
+      connectApollo,
+      disconnectApolloMutation,
+      mcpPending,
+      handleMcpConnect,
+      handleMcpDisconnect,
+    ],
+  );
+
+  const connectionActionsColumn: ColumnDef<BaseRow> = useMemo(
+    () => ({
+      id: 'actions',
+      header: 'Actions',
+      cell: ({ row }) => {
+        const { id, status } = row.original as ConnectionRow;
+        const connected = status === 'connected';
+        const provider = id as 'github' | 'google';
+        const isConnecting =
+          connectAccount.isPending && connectAccount.variables === provider;
+        const isDisconnecting =
+          disconnectAccount.isPending && disconnectAccount.variables === id;
+        const isPending = isConnecting || isDisconnecting;
 
         return (
           <div className="flex items-center gap-1">
@@ -343,16 +332,16 @@ export const OrgConnections = () => {
               <>
                 <Button
                   plain
-                  disabled={pendingAction === `disconnect-${id}`}
-                  onClick={() => handleDisconnect(id)}
+                  disabled={isPending}
+                  onClick={() => disconnectAccount.mutate(id)}
                   className="!text-red-500 dark:!text-red-400"
                 >
                   Disconnect
                 </Button>
                 <Button
                   plain
-                  disabled={pendingAction === provider}
-                  onClick={() => handleConnect(provider)}
+                  disabled={isPending}
+                  onClick={() => connectAccount.mutate(provider)}
                   className="!text-blue-500 dark:!text-blue-400"
                 >
                   Reconnect
@@ -361,27 +350,36 @@ export const OrgConnections = () => {
             ) : (
               <Button
                 plain
-                disabled={pendingAction === provider}
-                onClick={() => handleConnect(provider)}
+                disabled={isPending}
+                onClick={() => connectAccount.mutate(provider)}
                 className="!text-blue-500 dark:!text-blue-400"
               >
-                {pendingAction === provider ? 'Connecting...' : 'Connect'}
+                {isPending ? 'Connecting...' : 'Connect'}
               </Button>
             )}
           </div>
         );
       },
     }),
-    [pendingAction, handleConnect, handleDisconnect, handleInstallApp],
+    [connectAccount, disconnectAccount],
   );
 
-  const columns = useMemo(
+  const integrationColumns = useMemo(
     () => [
       nameColumn,
       ...createColumnsFromMetadata<BaseRow>(CONNECTION_TABLE_METADATA),
-      actionsColumn,
+      integrationActionsColumn,
     ],
-    [nameColumn, actionsColumn],
+    [nameColumn, integrationActionsColumn],
+  );
+
+  const connectionColumns = useMemo(
+    () => [
+      nameColumn,
+      ...createColumnsFromMetadata<BaseRow>(CONNECTION_TABLE_METADATA),
+      connectionActionsColumn,
+    ],
+    [nameColumn, connectionActionsColumn],
   );
 
   // -------------------------------------------------------------------------
@@ -390,15 +388,12 @@ export const OrgConnections = () => {
 
   const googleAccount = accounts.find((a) => a.providerId === 'google');
   const ghAppInstalled = ghAppStatus?.installed ?? false;
-  const apolloConnected = apolloStatus?.connected ?? false;
 
   const integrationRows: ConnectionRow[] = [
     {
       id: 'github-app',
       name: 'GitHub App',
-      icon: (
-        <Image src="/icons/github.svg" alt="GitHub" width={20} height={20} />
-      ),
+      icon: <GitHubIcon />,
       status: ghAppInstalled ? 'connected' : 'not-connected',
       connectedBy: ghAppInstalled
         ? ghAppStatus?.installation?.accountLogin
@@ -419,6 +414,15 @@ export const OrgConnections = () => {
           ? new Date(apolloStatus.connectedAt)
           : undefined,
     },
+    {
+      id: 'zuko-mcp',
+      name: 'Zuko MCP',
+      icon: <McpIcon />,
+      status: mcpConnected ? 'connected' : 'not-connected',
+      connectedBy: mcpConnected ? userEmail : undefined,
+      connectedAt:
+        mcpConnected && mcpToken ? new Date(mcpToken.connectedAt) : undefined,
+    },
   ];
 
   const connectionRows: ConnectionRow[] = [
@@ -437,19 +441,30 @@ export const OrgConnections = () => {
   const integrationActiveCount = integrationRows.filter(
     (r) => r.status === 'connected',
   ).length;
-
   const connectionActiveCount = connectionRows.filter(
     (r) => r.status === 'connected',
   ).length;
 
-  const { data: usageStats } = useQuery({
-    ...getApolloUsageStats(),
-    enabled: apolloConnected,
-  });
+  // -------------------------------------------------------------------------
+  // Render
+  // -------------------------------------------------------------------------
 
   return (
     <>
-      {/* Integrations Section */}
+      <Suspense fallback={null}>
+        <McpOAuthHandler
+          onSuccess={handleMcpSuccess}
+          onPending={handleMcpPending}
+        />
+      </Suspense>
+
+      <McpSetupModal
+        open={mcpSetupOpen}
+        onClose={() => setMcpSetupOpen(false)}
+        endpoint={getMcpEndpoint()}
+        token={mcpToken?.accessToken ?? ''}
+      />
+
       <section>
         <div className="mb-2">
           <Subheading>Integrations</Subheading>
@@ -457,15 +472,13 @@ export const OrgConnections = () => {
             Install apps to extend functionality.
           </Text>
         </div>
-
         <BaseTable<BaseRow>
-          columns={columns}
+          columns={integrationColumns}
           data={integrationRows}
           loading={loadingApp || loadingApollo}
           entityName="integrations"
           disableRowClick
         />
-
         <Text className="mt-3 text-xs text-zinc-500 dark:text-zinc-400">
           {integrationActiveCount} of {integrationRows.length} integration
           {integrationRows.length !== 1 ? 's' : ''} active
@@ -513,7 +526,6 @@ export const OrgConnections = () => {
 
       <Divider className="my-10" soft />
 
-      {/* Connections Section */}
       <section>
         <div className="mb-2">
           <Subheading>Connections</Subheading>
@@ -521,15 +533,13 @@ export const OrgConnections = () => {
             Connect your accounts for authentication and data access.
           </Text>
         </div>
-
         <BaseTable<BaseRow>
-          columns={columns}
+          columns={connectionColumns}
           data={connectionRows}
           loading={loadingAccounts}
           entityName="connections"
           disableRowClick
         />
-
         <Text className="mt-3 text-xs text-zinc-500 dark:text-zinc-400">
           {connectionActiveCount} of {connectionRows.length} connection
           {connectionRows.length !== 1 ? 's' : ''} active
