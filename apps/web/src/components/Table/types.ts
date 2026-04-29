@@ -11,7 +11,12 @@ import type {
   Row,
 } from '@tanstack/react-table';
 
-export type { ColumnType, ColumnMetadata, TableViewResponse, CellValue } from '@/types/table-metadata';
+export type {
+  ColumnType,
+  ColumnMetadata,
+  TableViewResponse,
+  CellValue,
+} from '@/types/table-metadata';
 
 export interface BaseRow {
   id: string | number;
@@ -60,7 +65,12 @@ export interface BaseTableProps<TData extends BaseRow> {
   onAddRow?: () => void;
   addRowContent?: React.ReactNode;
   showAddColumn?: boolean;
-  onAddColumn?: (name: string, key: string, type: string, config?: ColumnConfig) => void;
+  onAddColumn?: (
+    name: string,
+    key: string,
+    type: string,
+    config?: ColumnConfig,
+  ) => void;
   openAddColumnRef?: React.MutableRefObject<(() => void) | undefined>;
   onCellUpdate?: (rowId: string | number, columnId: string, value: any) => void;
   showEmptyState?: boolean;

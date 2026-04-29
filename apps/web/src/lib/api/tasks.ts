@@ -71,10 +71,15 @@ export const tasksApi = {
   async getTasks(filters?: TaskFilters): Promise<TasksListResponse> {
     const params = new URLSearchParams();
     if (filters) {
-      if (filters.page !== undefined) params.append('page', String(filters.page));
-      if (filters.limit !== undefined) params.append('limit', String(filters.limit));
+      if (filters.page !== undefined)
+        params.append('page', String(filters.page));
+      if (filters.limit !== undefined)
+        params.append('limit', String(filters.limit));
       if (filters.parentId !== undefined) {
-        params.append('parentId', filters.parentId === null ? 'null' : String(filters.parentId));
+        params.append(
+          'parentId',
+          filters.parentId === null ? 'null' : String(filters.parentId),
+        );
       }
       if (filters.search) params.append('search', filters.search);
     }
@@ -98,7 +103,11 @@ export const tasksApi = {
     return apiClient.delete(`/tasks/${id}`);
   },
 
-  async getTableViewTasks(filters?: { search?: string }): Promise<TableViewResponse<Record<string, unknown> & { id: string | number }>> {
+  async getTableViewTasks(filters?: {
+    search?: string;
+  }): Promise<
+    TableViewResponse<Record<string, unknown> & { id: string | number }>
+  > {
     const params = new URLSearchParams();
     if (filters?.search) params.append('search', filters.search);
     const qs = params.toString();

@@ -73,7 +73,8 @@
   cursor: default;
   pointer-events: none;
 }
-.mentions-input__suggestions__item:has([data-section-header]) [data-section-header] {
+.mentions-input__suggestions__item:has([data-section-header])
+  [data-section-header] {
   pointer-events: auto;
 }
 

@@ -1,5 +1,8 @@
-import type { TableColumnRecord} from './column-metadata.mapper';
-import { mapTableColumnToMetadata, mapTableColumnsToMetadata } from './column-metadata.mapper';
+import type { TableColumnRecord } from './column-metadata.mapper';
+import {
+  mapTableColumnToMetadata,
+  mapTableColumnsToMetadata,
+} from './column-metadata.mapper';
 
 describe('column-metadata.mapper', () => {
   const mockBaseRecord: TableColumnRecord = {
@@ -51,7 +54,10 @@ describe('column-metadata.mapper', () => {
       ];
 
       cases.forEach(({ field, expected }) => {
-        const result = mapTableColumnToMetadata({ ...mockBaseRecord, fieldType: field });
+        const result = mapTableColumnToMetadata({
+          ...mockBaseRecord,
+          fieldType: field,
+        });
         expect(result.dataType).toBe(expected);
       });
     });
@@ -70,17 +76,20 @@ describe('column-metadata.mapper', () => {
       });
 
       it('should NOT overwrite existing currency config', () => {
-        const record = { 
-          ...mockBaseRecord, 
-          fieldType: 'currency', 
-          config: { format: 'custom', currency: 'EUR' } 
+        const record = {
+          ...mockBaseRecord,
+          fieldType: 'currency',
+          config: { format: 'custom', currency: 'EUR' },
         };
         const result = mapTableColumnToMetadata(record);
         expect(result.config).toEqual({ format: 'custom', currency: 'EUR' });
       });
 
       it('should handle null/undefined config gracefully', () => {
-        const record = { ...mockBaseRecord, config: null as unknown as TableColumnRecord['config'] };
+        const record = {
+          ...mockBaseRecord,
+          config: null as unknown as TableColumnRecord['config'],
+        };
         const result = mapTableColumnToMetadata(record);
         expect(result.config).toEqual({});
       });

@@ -18,20 +18,19 @@ import type {
 import type { TableColumnRepository } from '../repositories/table-column.repository';
 import type {
   DealFieldUpdatedEvent,
-  ActivitySource} from '../events/deal-events';
-import {
-  DEAL_EVENTS
+  ActivitySource,
 } from '../events/deal-events';
+import { DEAL_EVENTS } from '../events/deal-events';
 import { DEAL_STAGE_VALUES } from '../constants/deals';
 import type { ColumnConfig, ColumnType } from '../types/table-metadata';
 import { validateCellValue, castFieldValue } from '../utils/custom-fields';
 
 // Fields handled by dedicated events or not user-visible — excluded from generic field_update
 const FIELD_UPDATE_EXCLUDED = new Set<keyof UpdateDealInput>([
-  'stage',           // handled by STAGE_CHANGED event
+  'stage', // handled by STAGE_CHANGED event
   'actualCloseDate', // handled by CLOSED event
-  'lostReason',      // part of CLOSED event metadata
-  'isHidden',        // handled by hide/unhide methods
+  'lostReason', // part of CLOSED event metadata
+  'isHidden', // handled by hide/unhide methods
 ]);
 
 @Injectable()
@@ -44,7 +43,11 @@ export class DealsService {
     private readonly tableColumnRepository: TableColumnRepository,
   ) {}
 
-  async create(input: CreateDealInput, actorId?: number, source?: ActivitySource) {
+  async create(
+    input: CreateDealInput,
+    actorId?: number,
+    source?: ActivitySource,
+  ) {
     this.logger.log('[SERVICE] Starting deal creation');
 
     // Default Title Support: If no title provided, use "New Deal"
@@ -117,7 +120,13 @@ export class DealsService {
     return deal;
   }
 
-  async update(id: number, organizationId: number, input: UpdateDealInput, actorId?: number, source?: ActivitySource) {
+  async update(
+    id: number,
+    organizationId: number,
+    input: UpdateDealInput,
+    actorId?: number,
+    source?: ActivitySource,
+  ) {
     // Check deal exists and belongs to org
     const existingDeal = await this.findById(id, organizationId);
 
@@ -151,7 +160,9 @@ export class DealsService {
 
     // Validate stage if provided
     if (input.stage !== undefined && !DEAL_STAGE_VALUES.includes(input.stage)) {
-      throw new BadRequestException(`Invalid deal stage: ${input.stage}. Must be one of: ${DEAL_STAGE_VALUES.join(', ')}`);
+      throw new BadRequestException(
+        `Invalid deal stage: ${input.stage}. Must be one of: ${DEAL_STAGE_VALUES.join(', ')}`,
+      );
     }
 
     // Validate actualCloseDate is after expectedCloseDate if both are present
@@ -181,7 +192,10 @@ export class DealsService {
 
           // We should also ensure the value is casted correctly if it's not already
           // although typically the caller should handle this, doing it here ensures consistency.
-          input.fields[key] = castFieldValue(value, column.fieldType as ColumnType);
+          input.fields[key] = castFieldValue(
+            value,
+            column.fieldType as ColumnType,
+          );
         }
       }
     }
@@ -247,7 +261,11 @@ export class DealsService {
     actorId?: number,
   ) {
     await this.findById(dealId, organizationId);
-    const result = await this.dealsRepository.addOwner(dealId, userId, isPrimary);
+    const result = await this.dealsRepository.addOwner(
+      dealId,
+      userId,
+      isPrimary,
+    );
     await this.eventEmitter.emitAsync(DEAL_EVENTS.OWNER_ASSIGNED, {
       dealId,
       actorId,
@@ -257,7 +275,12 @@ export class DealsService {
     return result;
   }
 
-  async removeOwner(dealId: number, organizationId: number, userId: number, actorId?: number) {
+  async removeOwner(
+    dealId: number,
+    organizationId: number,
+    userId: number,
+    actorId?: number,
+  ) {
     await this.findById(dealId, organizationId);
     const result = await this.dealsRepository.removeOwner(dealId, userId);
     await this.eventEmitter.emitAsync(DEAL_EVENTS.OWNER_REMOVED, {

@@ -34,7 +34,17 @@ export class MetadataService {
 
     // Modern Intl API to get all supported ISO 4217 currency codes
     const currencyCodes = (Intl as any).supportedValuesOf?.('currency') || [
-      'USD', 'EUR', 'GBP', 'JPY', 'INR', 'CAD', 'AUD', 'CHF', 'CNY', 'ZAR', 'BRL'
+      'USD',
+      'EUR',
+      'GBP',
+      'JPY',
+      'INR',
+      'CAD',
+      'AUD',
+      'CHF',
+      'CNY',
+      'ZAR',
+      'BRL',
     ];
 
     const displayNames = new Intl.DisplayNames(['en-US'], { type: 'currency' });

@@ -5,8 +5,18 @@ import { getUserInvitations } from '@/server/query-options';
 import { authClient } from '@/lib/auth-client';
 import { toast } from 'sonner';
 import { useMemo, useState } from 'react';
-import { EnvelopeOpenIcon, CheckIcon, XMarkIcon } from '@heroicons/react/24/outline';
-import { BaseTable, TableActions, TableActionButton, createColumnsFromMetadata, type BaseRow } from '@/components/Table';
+import {
+  EnvelopeOpenIcon,
+  CheckIcon,
+  XMarkIcon,
+} from '@heroicons/react/24/outline';
+import {
+  BaseTable,
+  TableActions,
+  TableActionButton,
+  createColumnsFromMetadata,
+  type BaseRow,
+} from '@/components/Table';
 import type { ColumnDef } from '@tanstack/react-table';
 import type { ColumnMetadata } from '@/types/table-metadata';
 
@@ -71,8 +81,13 @@ export const UserInvitations = () => {
   const handleAccept = async (invitationId: string, organizationId: string) => {
     setIsProcessing(invitationId);
     try {
-      const { error } = await authClient.organization.acceptInvitation({ invitationId });
-      if (error) { toast.error(error.message || 'Failed to accept invitation'); return; }
+      const { error } = await authClient.organization.acceptInvitation({
+        invitationId,
+      });
+      if (error) {
+        toast.error(error.message || 'Failed to accept invitation');
+        return;
+      }
       toast.success('Invitation accepted');
       await authClient.organization.setActive({ organizationId });
       queryClient.invalidateQueries({ queryKey: ['organizations'] });
@@ -88,8 +103,13 @@ export const UserInvitations = () => {
   const handleReject = async (invitationId: string) => {
     setIsProcessing(invitationId);
     try {
-      const { error } = await authClient.organization.rejectInvitation({ invitationId });
-      if (error) { toast.error(error.message || 'Failed to reject invitation'); return; }
+      const { error } = await authClient.organization.rejectInvitation({
+        invitationId,
+      });
+      if (error) {
+        toast.error(error.message || 'Failed to reject invitation');
+        return;
+      }
       toast.success('Invitation declined');
       queryClient.invalidateQueries({ queryKey: ['user', 'invitations'] });
     } catch {
@@ -145,7 +165,10 @@ export const UserInvitations = () => {
   );
 
   const columns = useMemo(
-    () => createColumnsFromMetadata<BaseRow>(INVITATION_TABLE_METADATA).concat(actionsColumn),
+    () =>
+      createColumnsFromMetadata<BaseRow>(INVITATION_TABLE_METADATA).concat(
+        actionsColumn,
+      ),
     [actionsColumn],
   );
 

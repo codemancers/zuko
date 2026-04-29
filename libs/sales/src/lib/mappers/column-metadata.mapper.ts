@@ -37,11 +37,10 @@ const FIELD_TYPE_TO_DATA_TYPE: Record<string, DataType> = {
  * Injects sensible default config values based on fieldType
  * so custom columns get proper formatting out of the box.
  */
-function buildConfig(
-  fieldType: string,
-  userConfig: JsonValue,
-): ColumnConfig {
-  const config = { ...((userConfig as Record<string, unknown>) ?? {}) } as ColumnConfig;
+function buildConfig(fieldType: string, userConfig: JsonValue): ColumnConfig {
+  const config = {
+    ...((userConfig as Record<string, unknown>) ?? {}),
+  } as ColumnConfig;
 
   switch (fieldType) {
     case 'date':

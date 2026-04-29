@@ -27,8 +27,9 @@ test.describe('Auth setup', () => {
     // Wait for app (chat, contacts, or org create if first time)
     await page.waitForURL(
       (url) =>
-        !url.pathname.startsWith('/sign-in') && !url.pathname.startsWith('/sign-up'),
-      { timeout: 60000 }
+        !url.pathname.startsWith('/sign-in') &&
+        !url.pathname.startsWith('/sign-up'),
+      { timeout: 60000 },
     );
 
     const authDir = path.join(__dirname, '..', '.auth');

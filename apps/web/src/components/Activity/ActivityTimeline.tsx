@@ -8,7 +8,11 @@ import clsx from 'clsx';
 
 const ACTIVITY_SOURCES = { AI: 'ai' } as const;
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { PencilIcon, ChevronDownIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
+import {
+  PencilIcon,
+  ChevronDownIcon,
+  ChevronRightIcon,
+} from '@heroicons/react/24/outline';
 import { Button, Divider, Subheading } from '@zuko/ui-kit';
 import { toast } from 'sonner';
 import { getTimeline } from '@/server/query-options';
@@ -19,8 +23,6 @@ import { formatStage } from '@/lib/format-utils';
 import relativeTime from 'dayjs/plugin/relativeTime';
 
 dayjs.extend(relativeTime);
-
-
 
 const FIELD_LABELS: Record<string, string> = {
   title: 'title',
@@ -76,7 +78,9 @@ function renderSystemEventText(activity: {
       return `moved deal from ${formatStage(String(m.from))} to ${formatStage(String(m.to))}`;
     case 'field_update': {
       const fieldName = formatFieldName(String(m.field));
-      const isRichTextField = ['summary', 'notes', 'description'].includes(String(m.field));
+      const isRichTextField = ['summary', 'notes', 'description'].includes(
+        String(m.field),
+      );
       if (isRichTextField) {
         const hasOldValue = m.from !== null && m.from !== undefined;
         return hasOldValue ? `updated ${fieldName}` : `set ${fieldName}`;
@@ -239,7 +243,10 @@ export default function ActivityTimeline({
               activities.map((activity, index) => (
                 <div
                   key={activity.id}
-                  className={clsx("flex gap-3", index < activities.length - 1 && "pb-6")}
+                  className={clsx(
+                    'flex gap-3',
+                    index < activities.length - 1 && 'pb-6',
+                  )}
                   data-testid="activity-item"
                 >
                   {/* Avatar with connecting line */}
@@ -298,9 +305,13 @@ export default function ActivityTimeline({
                               {editingActivityId === activity.id ? (
                                 <div className="mt-2">
                                   <CommentBox
-                                    initialContent={activity.content ?? undefined}
+                                    initialContent={
+                                      activity.content ?? undefined
+                                    }
                                     onSubmit={handleEditSubmit}
-                                    isSubmitting={updateActivityMutation.isPending}
+                                    isSubmitting={
+                                      updateActivityMutation.isPending
+                                    }
                                     submitLabel={
                                       updateActivityMutation.isPending
                                         ? 'Saving...'

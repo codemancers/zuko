@@ -2,7 +2,8 @@ export const ACTIVITY_SOURCES = {
   AI: 'ai',
 } as const;
 
-export type ActivitySource = typeof ACTIVITY_SOURCES[keyof typeof ACTIVITY_SOURCES];
+export type ActivitySource =
+  (typeof ACTIVITY_SOURCES)[keyof typeof ACTIVITY_SOURCES];
 
 export const DEAL_EVENTS = {
   CREATED: 'deal.created',

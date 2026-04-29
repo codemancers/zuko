@@ -25,7 +25,11 @@ test.describe('Table Fields - Add Column Dialog', () => {
     await expect(tablePage.addColumnButton).toBeVisible({ timeout: 10000 });
   });
 
-  test('opens the Add Column dialog', async ({ dealsPage, tablePage, page }) => {
+  test('opens the Add Column dialog', async ({
+    dealsPage,
+    tablePage,
+    page,
+  }) => {
     await dealsPage.goto();
     await tablePage.openAddColumnDialog();
     await expect(page.getByText('Add new field')).toBeVisible();
@@ -56,7 +60,8 @@ test.describe('Table Fields - Add Column Dialog', () => {
     await tablePage.openAddColumnDialog();
     await tablePage.selectFieldType('currency');
 
-    const currencyInput = tablePage.addColumnDialog.getByPlaceholder('Search currency...');
+    const currencyInput =
+      tablePage.addColumnDialog.getByPlaceholder('Search currency...');
     await expect(currencyInput).toBeVisible();
     await expect(currencyInput).toHaveValue('USD');
   });
@@ -70,7 +75,9 @@ test.describe('Table Fields - Add Column Dialog', () => {
     await tablePage.selectFieldType('multiselect');
 
     await expect(tablePage.addColumnDialog.getByText('Options')).toBeVisible();
-    await expect(tablePage.addColumnDialog.getByPlaceholder('Option value')).toBeVisible();
+    await expect(
+      tablePage.addColumnDialog.getByPlaceholder('Option value'),
+    ).toBeVisible();
   });
 
   test('can add multiple options for multiselect via Add option button', async ({
@@ -81,7 +88,9 @@ test.describe('Table Fields - Add Column Dialog', () => {
     await tablePage.openAddColumnDialog();
     await tablePage.selectFieldType('multiselect');
 
-    const addOptionButton = tablePage.addColumnDialog.getByRole('button', { name: /Add option/i });
+    const addOptionButton = tablePage.addColumnDialog.getByRole('button', {
+      name: /Add option/i,
+    });
     await addOptionButton.click();
 
     const inputs = tablePage.addColumnDialog.getByPlaceholder('Option value');
@@ -96,8 +105,12 @@ test.describe('Table Fields - Add Column Dialog', () => {
     await tablePage.openAddColumnDialog();
     await tablePage.createFieldButton.click();
 
-    await expect(tablePage.addColumnDialog.getByText('Field name is required')).toBeVisible();
-    await expect(tablePage.addColumnDialog.getByText('Column key is required')).toBeVisible();
+    await expect(
+      tablePage.addColumnDialog.getByText('Field name is required'),
+    ).toBeVisible();
+    await expect(
+      tablePage.addColumnDialog.getByText('Column key is required'),
+    ).toBeVisible();
   });
 
   test('shows validation error for invalid column key', async ({
@@ -111,7 +124,9 @@ test.describe('Table Fields - Add Column Dialog', () => {
     await tablePage.createFieldButton.click();
 
     await expect(
-      tablePage.addColumnDialog.getByText(/lowercase letters, numbers, and underscores/i)
+      tablePage.addColumnDialog.getByText(
+        /lowercase letters, numbers, and underscores/i,
+      ),
     ).toBeVisible();
   });
 
@@ -132,12 +147,18 @@ test.describe('Table Fields - Add Column Dialog', () => {
     expect(headersAfter).toEqual(headersBefore);
   });
 
-  test('can create a currency column', async ({ dealsPage, tablePage, page }) => {
+  test('can create a currency column', async ({
+    dealsPage,
+    tablePage,
+    page,
+  }) => {
     await dealsPage.goto();
     await tablePage.addCurrencyColumn('Budget', 'budget', 'USD');
 
     // Verify the new column header appears
-    await expect(page.getByRole('columnheader', { name: /Budget/i })).toBeVisible({
+    await expect(
+      page.getByRole('columnheader', { name: /Budget/i }),
+    ).toBeVisible({
       timeout: 10000,
     });
   });
@@ -148,11 +169,17 @@ test.describe('Table Fields - Add Column Dialog', () => {
     page,
   }) => {
     await dealsPage.goto();
-    await tablePage.addMultiSelectColumn('Tags', 'tags', ['Hot', 'Cold', 'Warm']);
+    await tablePage.addMultiSelectColumn('Tags', 'tags', [
+      'Hot',
+      'Cold',
+      'Warm',
+    ]);
 
-    await expect(page.getByRole('columnheader', { name: /Tags/i })).toBeVisible({
-      timeout: 10000,
-    });
+    await expect(page.getByRole('columnheader', { name: /Tags/i })).toBeVisible(
+      {
+        timeout: 10000,
+      },
+    );
   });
 });
 

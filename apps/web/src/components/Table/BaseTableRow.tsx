@@ -12,18 +12,18 @@ interface BaseTableRowProps<TData extends BaseRow> {
   onRowClick?: (row: TData) => void;
 }
 
-export function BaseTableRow<TData extends BaseRow>({ 
-  row, 
-  showAddColumn, 
+export function BaseTableRow<TData extends BaseRow>({
+  row,
+  showAddColumn,
   onCellUpdate,
   disableRowClick = false,
-  onRowClick
+  onRowClick,
 }: BaseTableRowProps<TData>) {
   return (
     <TableRow
       className={clsx(
         'transition-all duration-200 ease-in hover:bg-zinc-50 dark:hover:bg-zinc-800/50',
-        !disableRowClick && onRowClick && 'hover:cursor-pointer'
+        !disableRowClick && onRowClick && 'hover:cursor-pointer',
       )}
       onClick={() => !disableRowClick && onRowClick?.(row.original)}
     >

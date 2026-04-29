@@ -1,8 +1,8 @@
-import { Browser } from "@playwright/test";
-import { CompaniesPage } from "../pages/CompaniesPage";
-import { ContactsPage } from "../pages/ContactsPage";
-import { DealsPage } from "../pages/DealsPage";
-import { TasksPage } from "../pages/TasksPage";
+import { Browser } from '@playwright/test';
+import { CompaniesPage } from '../pages/CompaniesPage';
+import { ContactsPage } from '../pages/ContactsPage';
+import { DealsPage } from '../pages/DealsPage';
+import { TasksPage } from '../pages/TasksPage';
 
 export async function createFreshCompany(browser: Browser): Promise<number> {
   const context = await browser.newContext();
@@ -10,7 +10,7 @@ export async function createFreshCompany(browser: Browser): Promise<number> {
   const companiesPage = new CompaniesPage(page);
   await companiesPage.goto();
   const newCompanyIndex = await companiesPage.createNewCompany();
-  const newRow = page.getByRole("row").nth(newCompanyIndex);
+  const newRow = page.getByRole('row').nth(newCompanyIndex);
   await companiesPage.clickCompany(newRow);
   const companyId = await companiesPage.waitForDetailsPageToLoad();
   await page.close();
@@ -24,7 +24,7 @@ export async function createFreshContact(browser: Browser): Promise<number> {
   const contactsPage = new ContactsPage(page);
   await contactsPage.goto();
   const newContactIndex = await contactsPage.createNewContact();
-  const newRow = page.getByRole("row").nth(newContactIndex);
+  const newRow = page.getByRole('row').nth(newContactIndex);
   await contactsPage.clickContact(newRow);
   const contactId = await contactsPage.waitForDetailsPageToLoad();
   await page.close();
@@ -38,7 +38,7 @@ export async function createFreshDeal(browser: Browser): Promise<number> {
   const dealsPage = new DealsPage(page);
   await dealsPage.goto();
   const newDealIndex = await dealsPage.createNewDeal();
-  const newRow = page.getByRole("row").nth(newDealIndex);
+  const newRow = page.getByRole('row').nth(newDealIndex);
   await dealsPage.clickDeal(newRow);
   const dealId = await dealsPage.waitForDetailsPageToLoad();
   await page.close();
@@ -52,7 +52,7 @@ export async function createFreshTask(browser: Browser): Promise<number> {
   const tasksPage = new TasksPage(page);
   await tasksPage.goto();
   const newTaskIndex = await tasksPage.createNewTask();
-  const newRow = page.getByRole("row").nth(newTaskIndex);
+  const newRow = page.getByRole('row').nth(newTaskIndex);
   await tasksPage.clickTask(newRow);
   const taskId = await tasksPage.waitForDetailsPageToLoad();
   await page.close();

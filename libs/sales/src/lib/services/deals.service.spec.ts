@@ -56,10 +56,10 @@ describe('DealsService - activity events', () => {
   const mockEventEmitter = {
     emitAsync: vi.fn().mockImplementation(() => Promise.resolve([])),
   };
-  
+
   const mockTableColumnRepository = {
     findByTable: vi.fn(),
-  }
+  };
 
   beforeEach(() => {
     service = new DealsService(
@@ -90,10 +90,16 @@ describe('DealsService - activity events', () => {
     });
 
     it('does not emit event when repo.create throws', async () => {
-      (mockRepo.create as Mock).mockRejectedValue(new Error('DB error') as never);
+      (mockRepo.create as Mock).mockRejectedValue(
+        new Error('DB error') as never,
+      );
 
       await expect(
-        service.create({ title: 'Test Deal', ownerIds: [1], organizationId: ORG_ID }),
+        service.create({
+          title: 'Test Deal',
+          ownerIds: [1],
+          organizationId: ORG_ID,
+        }),
       ).rejects.toThrow('DB error');
 
       expect(mockEventEmitter.emitAsync).not.toHaveBeenCalled();
@@ -101,10 +107,10 @@ describe('DealsService - activity events', () => {
 
     it('throws BadRequestException when stage is invalid', async () => {
       await expect(
-        service.create({ 
-          title: 'Test Deal', 
-          stage: 'invalid_stage', 
-          organizationId: ORG_ID 
+        service.create({
+          title: 'Test Deal',
+          stage: 'invalid_stage',
+          organizationId: ORG_ID,
         }),
       ).rejects.toThrow(BadRequestException);
 
@@ -122,7 +128,12 @@ describe('DealsService - activity events', () => {
         stage: 'qualification',
       } as never);
 
-      await service.update(mockDeal.id, ORG_ID, { stage: 'qualification' }, ACTOR_ID);
+      await service.update(
+        mockDeal.id,
+        ORG_ID,
+        { stage: 'qualification' },
+        ACTOR_ID,
+      );
 
       expect(mockEventEmitter.emitAsync).toHaveBeenCalledWith(
         DEAL_EVENTS.STAGE_CHANGED,
@@ -138,15 +149,29 @@ describe('DealsService - activity events', () => {
     it('does not emit stage_changed when stage is unchanged', async () => {
       (mockRepo.update as Mock).mockResolvedValue(mockDeal as never);
 
-      await service.update(mockDeal.id, ORG_ID, { stage: 'prospecting' }, ACTOR_ID);
+      await service.update(
+        mockDeal.id,
+        ORG_ID,
+        { stage: 'prospecting' },
+        ACTOR_ID,
+      );
 
-      const calls = (mockEventEmitter.emitAsync as Mock).mock.calls as Array<[string, unknown]>;
-      expect(calls.some(([event]) => event === DEAL_EVENTS.STAGE_CHANGED)).toBe(false);
+      const calls = (mockEventEmitter.emitAsync as Mock).mock.calls as Array<
+        [string, unknown]
+      >;
+      expect(calls.some(([event]) => event === DEAL_EVENTS.STAGE_CHANGED)).toBe(
+        false,
+      );
     });
 
     it('throws BadRequestException when updating to an invalid stage', async () => {
       await expect(
-        service.update(mockDeal.id, ORG_ID, { stage: 'invalid_stage' }, ACTOR_ID),
+        service.update(
+          mockDeal.id,
+          ORG_ID,
+          { stage: 'invalid_stage' },
+          ACTOR_ID,
+        ),
       ).rejects.toThrow(BadRequestException);
 
       expect(mockRepo.update).not.toHaveBeenCalled();
@@ -187,7 +212,11 @@ describe('DealsService - activity events', () => {
       await service.update(
         mockDeal.id,
         ORG_ID,
-        { stage: 'closed_lost', actualCloseDate: new Date(), lostReason: 'Price' },
+        {
+          stage: 'closed_lost',
+          actualCloseDate: new Date(),
+          lostReason: 'Price',
+        },
         ACTOR_ID,
       );
 
@@ -202,9 +231,16 @@ describe('DealsService - activity events', () => {
       (mockRepo.findById as Mock).mockResolvedValue(dealAlreadyClosed as never);
       (mockRepo.update as Mock).mockResolvedValue(dealAlreadyClosed as never);
 
-      await service.update(mockDeal.id, ORG_ID, { actualCloseDate: new Date() }, ACTOR_ID);
+      await service.update(
+        mockDeal.id,
+        ORG_ID,
+        { actualCloseDate: new Date() },
+        ACTOR_ID,
+      );
 
-      const calls = (mockEventEmitter.emitAsync as Mock).mock.calls as Array<[string, unknown]>;
+      const calls = (mockEventEmitter.emitAsync as Mock).mock.calls as Array<
+        [string, unknown]
+      >;
       expect(calls.some(([event]) => event === DEAL_EVENTS.CLOSED)).toBe(false);
     });
   });
@@ -219,9 +255,16 @@ describe('DealsService - activity events', () => {
         probability: 80,
       } as never);
 
-      await service.update(mockDeal.id, ORG_ID, { value: 9999, probability: 80 }, ACTOR_ID);
+      await service.update(
+        mockDeal.id,
+        ORG_ID,
+        { value: 9999, probability: 80 },
+        ACTOR_ID,
+      );
 
-      const calls = (mockEventEmitter.emitAsync as Mock).mock.calls as Array<[string, { field: string }]>;
+      const calls = (mockEventEmitter.emitAsync as Mock).mock.calls as Array<
+        [string, { field: string }]
+      >;
       const fieldUpdates = calls
         .filter(([event]) => event === DEAL_EVENTS.FIELD_UPDATED)
         .map(([, payload]) => payload.field);
@@ -235,16 +278,25 @@ describe('DealsService - activity events', () => {
 
       await service.update(mockDeal.id, ORG_ID, { value: 5000 }, ACTOR_ID);
 
-      const calls = (mockEventEmitter.emitAsync as Mock).mock.calls as Array<[string, unknown]>;
-      expect(calls.some(([event]) => event === DEAL_EVENTS.FIELD_UPDATED)).toBe(false);
+      const calls = (mockEventEmitter.emitAsync as Mock).mock.calls as Array<
+        [string, unknown]
+      >;
+      expect(calls.some(([event]) => event === DEAL_EVENTS.FIELD_UPDATED)).toBe(
+        false,
+      );
     });
 
     it('emits field_updated for fields not previously in the hardcoded list (e.g. currency)', async () => {
-      (mockRepo.update as Mock).mockResolvedValue({ ...mockDeal, currency: 'EUR' } as never);
+      (mockRepo.update as Mock).mockResolvedValue({
+        ...mockDeal,
+        currency: 'EUR',
+      } as never);
 
       await service.update(mockDeal.id, ORG_ID, { currency: 'EUR' }, ACTOR_ID);
 
-      const calls = (mockEventEmitter.emitAsync as Mock).mock.calls as Array<[string, { field: string }]>;
+      const calls = (mockEventEmitter.emitAsync as Mock).mock.calls as Array<
+        [string, { field: string }]
+      >;
       const fields = calls
         .filter(([event]) => event === DEAL_EVENTS.FIELD_UPDATED)
         .map(([, payload]) => payload.field);
@@ -252,16 +304,26 @@ describe('DealsService - activity events', () => {
     });
 
     it('does not emit field_updated for excluded fields (stage, actualCloseDate, lostReason, isHidden)', async () => {
-      (mockRepo.update as Mock).mockResolvedValue({ ...mockDeal, stage: 'qualification' } as never);
+      (mockRepo.update as Mock).mockResolvedValue({
+        ...mockDeal,
+        stage: 'qualification',
+      } as never);
 
       await service.update(
         mockDeal.id,
         ORG_ID,
-        { stage: 'qualification', actualCloseDate: new Date(), lostReason: 'Price', isHidden: true },
+        {
+          stage: 'qualification',
+          actualCloseDate: new Date(),
+          lostReason: 'Price',
+          isHidden: true,
+        },
         ACTOR_ID,
       );
 
-      const calls = (mockEventEmitter.emitAsync as Mock).mock.calls as Array<[string, { field: string }]>;
+      const calls = (mockEventEmitter.emitAsync as Mock).mock.calls as Array<
+        [string, { field: string }]
+      >;
       const fieldUpdateFields = calls
         .filter(([event]) => event === DEAL_EVENTS.FIELD_UPDATED)
         .map(([, payload]) => payload.field);
@@ -286,7 +348,12 @@ describe('DealsService - activity events', () => {
 
       expect(mockEventEmitter.emitAsync).toHaveBeenCalledWith(
         DEAL_EVENTS.COMPANY_LINKED,
-        { dealId: mockDeal.id, actorId: ACTOR_ID, companyId: 5, companyName: 'Acme Corp' },
+        {
+          dealId: mockDeal.id,
+          actorId: ACTOR_ID,
+          companyId: 5,
+          companyName: 'Acme Corp',
+        },
       );
     });
   });
@@ -304,7 +371,12 @@ describe('DealsService - activity events', () => {
 
       expect(mockEventEmitter.emitAsync).toHaveBeenCalledWith(
         DEAL_EVENTS.COMPANY_UNLINKED,
-        { dealId: mockDeal.id, actorId: ACTOR_ID, companyId: 5, companyName: 'Acme Corp' },
+        {
+          dealId: mockDeal.id,
+          actorId: ACTOR_ID,
+          companyId: 5,
+          companyName: 'Acme Corp',
+        },
       );
     });
 
@@ -339,7 +411,13 @@ describe('DealsService - activity events', () => {
 
       expect(mockEventEmitter.emitAsync).toHaveBeenCalledWith(
         DEAL_EVENTS.CONTACT_LINKED,
-        { dealId: mockDeal.id, actorId: ACTOR_ID, contactId: 7, contactName: 'Jane Smith', role: 'Decision Maker' },
+        {
+          dealId: mockDeal.id,
+          actorId: ACTOR_ID,
+          contactId: 7,
+          contactName: 'Jane Smith',
+          role: 'Decision Maker',
+        },
       );
     });
 
@@ -351,8 +429,12 @@ describe('DealsService - activity events', () => {
 
       await service.addContact(mockDeal.id, ORG_ID, { contactId: 7 }, ACTOR_ID);
 
-      const calls = (mockEventEmitter.emitAsync as Mock).mock.calls as Array<[string, Record<string, unknown>]>;
-      const payload = calls.find(([event]) => event === DEAL_EVENTS.CONTACT_LINKED)?.[1];
+      const calls = (mockEventEmitter.emitAsync as Mock).mock.calls as Array<
+        [string, Record<string, unknown>]
+      >;
+      const payload = calls.find(
+        ([event]) => event === DEAL_EVENTS.CONTACT_LINKED,
+      )?.[1];
       expect(payload).not.toHaveProperty('role');
     });
   });
@@ -370,7 +452,12 @@ describe('DealsService - activity events', () => {
 
       expect(mockEventEmitter.emitAsync).toHaveBeenCalledWith(
         DEAL_EVENTS.CONTACT_UNLINKED,
-        { dealId: mockDeal.id, actorId: ACTOR_ID, contactId: 7, contactName: 'Jane Smith' },
+        {
+          dealId: mockDeal.id,
+          actorId: ACTOR_ID,
+          contactId: 7,
+          contactName: 'Jane Smith',
+        },
       );
     });
 

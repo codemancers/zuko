@@ -13,7 +13,8 @@ export function useAddColumn(entity: string) {
       queryClient.invalidateQueries({ queryKey: [entity, 'table'] });
     },
     onError: (error: any) => {
-      const message = error.details?.message || error.message || 'Failed to create column';
+      const message =
+        error.details?.message || error.message || 'Failed to create column';
       toast.error(message);
     },
   });

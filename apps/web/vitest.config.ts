@@ -14,7 +14,7 @@ export default defineConfig({
       '@': path.resolve(import.meta.dirname, './src'),
       '@zuko/ui-kit': path.resolve(
         import.meta.dirname,
-        '../../libs/ui-kit/src/index.ts'
+        '../../libs/ui-kit/src/index.ts',
       ),
     },
     dedupe: ['react', 'react-dom'],
@@ -33,11 +33,7 @@ export default defineConfig({
       },
     },
     coverage: {
-      exclude: [
-        'node_modules/',
-        '**/*.config.{ts,js,mts}',
-        '__tests__/**',
-      ],
+      exclude: ['node_modules/', '**/*.config.{ts,js,mts}', '__tests__/**'],
       reportsDirectory: './test-output/vitest/coverage',
       provider: 'v8',
       reporter: ['text', 'json', 'html'],

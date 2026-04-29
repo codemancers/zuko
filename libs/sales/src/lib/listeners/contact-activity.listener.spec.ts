@@ -19,7 +19,10 @@ describe('ContactActivityListener', () => {
 
   describe('handleContactCreated', () => {
     it('calls activityService.create with contact_created', async () => {
-      await listener.handleContactCreated({ contactId: CONTACT_ID, actorId: ACTOR_ID });
+      await listener.handleContactCreated({
+        contactId: CONTACT_ID,
+        actorId: ACTOR_ID,
+      });
 
       expect(mockActivityService.create).toHaveBeenCalledWith({
         activityType: 'contact_created',
@@ -31,7 +34,11 @@ describe('ContactActivityListener', () => {
     });
 
     it('includes source in metadata when source is provided', async () => {
-      await listener.handleContactCreated({ contactId: CONTACT_ID, actorId: ACTOR_ID, source: 'ai' });
+      await listener.handleContactCreated({
+        contactId: CONTACT_ID,
+        actorId: ACTOR_ID,
+        source: 'ai',
+      });
 
       expect(mockActivityService.create).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -56,7 +63,11 @@ describe('ContactActivityListener', () => {
         entityType: 'contact',
         entityId: CONTACT_ID,
         actorId: ACTOR_ID,
-        metadata: { field: 'email', from: 'old@example.com', to: 'new@example.com' },
+        metadata: {
+          field: 'email',
+          from: 'old@example.com',
+          to: 'new@example.com',
+        },
       });
     });
   });

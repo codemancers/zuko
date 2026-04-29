@@ -6,10 +6,9 @@ import type {
   TaskCreatedEvent,
   TaskStatusChangedEvent,
   TaskFieldUpdatedEvent,
-  TaskSubtaskAddedEvent} from '../events/task-events';
-import {
-  TASK_EVENTS
+  TaskSubtaskAddedEvent,
 } from '../events/task-events';
+import { TASK_EVENTS } from '../events/task-events';
 
 @Injectable()
 export class TaskActivityListener {
@@ -59,7 +58,10 @@ export class TaskActivityListener {
       entityType: 'task',
       entityId: event.taskId,
       actorId: event.actorId,
-      metadata: { subtaskId: event.subtaskId, subtaskTitle: event.subtaskTitle },
+      metadata: {
+        subtaskId: event.subtaskId,
+        subtaskTitle: event.subtaskTitle,
+      },
     });
   }
 }

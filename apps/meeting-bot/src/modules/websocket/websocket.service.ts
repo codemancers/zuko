@@ -1,7 +1,7 @@
-import { Injectable } from "@nestjs/common";
-import { BaseService } from "../../common/base/base.service";
-import * as WebSocket from "ws";
-import { EventEmitter } from "events";
+import { Injectable } from '@nestjs/common';
+import { BaseService } from '../../common/base/base.service';
+import * as WebSocket from 'ws';
+import { EventEmitter } from 'events';
 
 @Injectable()
 export class WebSocketService extends BaseService {
@@ -10,7 +10,7 @@ export class WebSocketService extends BaseService {
   private messageEmitter = new EventEmitter();
 
   constructor() {
-    super("WebSocketService");
+    super('WebSocketService');
   }
 
   async startServer(port: number): Promise<EventEmitter> {
@@ -21,13 +21,13 @@ export class WebSocketService extends BaseService {
           resolve(this.messageEmitter);
         });
 
-        this.wss.on("connection", (ws: WebSocket) => {
-          this.logger.log("WebSocket client connected");
+        this.wss.on('connection', (ws: WebSocket) => {
+          this.logger.log('WebSocket client connected');
           this.handleConnection(ws);
         });
 
-        this.wss.on("error", (error) => {
-          this.logger.error("WebSocket server error:", error);
+        this.wss.on('error', (error) => {
+          this.logger.error('WebSocket server error:', error);
           reject(error);
         });
       } catch (error) {
@@ -44,22 +44,22 @@ export class WebSocketService extends BaseService {
   }
 
   private handleConnection(ws: WebSocket) {
-    ws.on("message", (data: Buffer) => {
+    ws.on('message', (data: Buffer) => {
       this.handleMessage(data);
     });
 
-    ws.on("close", () => {
-      this.logger.log("WebSocket client disconnected");
+    ws.on('close', () => {
+      this.logger.log('WebSocket client disconnected');
     });
 
-    ws.on("error", (error) => {
-      this.logger.error("WebSocket connection error:", error);
+    ws.on('error', (error) => {
+      this.logger.error('WebSocket connection error:', error);
     });
   }
 
   private handleMessage(data: Buffer) {
     if (data.length < 4) {
-      this.logger.warn("Received message too short to contain type");
+      this.logger.warn('Received message too short to contain type');
       return;
     }
 
@@ -87,29 +87,29 @@ export class WebSocketService extends BaseService {
 
   private handleJsonMessage(data: Buffer) {
     try {
-      const jsonData = JSON.parse(data.subarray(4).toString("utf-8"));
+      const jsonData = JSON.parse(data.subarray(4).toString('utf-8'));
       switch (jsonData.type) {
-        case "UsersUpdate":
+        case 'UsersUpdate':
           this.handleUsersUpdate(jsonData);
           break;
-        case "ChatMessage":
-          this.messageEmitter.emit("chatMessage", jsonData);
+        case 'ChatMessage':
+          this.messageEmitter.emit('chatMessage', jsonData);
           break;
-        case "MeetingStatusChange":
-          if (jsonData.change === "removed_from_meeting")
-            this.messageEmitter.emit("meetingEnded");
-          if (jsonData.change === "meeting_ended")
-            this.messageEmitter.emit("meetingEnded");
+        case 'MeetingStatusChange':
+          if (jsonData.change === 'removed_from_meeting')
+            this.messageEmitter.emit('meetingEnded');
+          if (jsonData.change === 'meeting_ended')
+            this.messageEmitter.emit('meetingEnded');
           break;
       }
     } catch (error) {
-      this.logger.error("Error parsing JSON message:", error);
+      this.logger.error('Error parsing JSON message:', error);
     }
   }
 
   private handleUsersUpdate(jsonData: any) {
     for (const user of jsonData.newUsers || []) {
-      user.active = user.humanized_status === "in_meeting";
+      user.active = user.humanized_status === 'in_meeting';
       this.participantsInfo.set(user.deviceId, user);
     }
 
@@ -119,7 +119,7 @@ export class WebSocketService extends BaseService {
     }
 
     for (const user of jsonData.updatedUsers || []) {
-      user.active = user.humanized_status === "in_meeting";
+      user.active = user.humanized_status === 'in_meeting';
       this.participantsInfo.set(user.deviceId, user);
     }
   }
@@ -132,7 +132,7 @@ export class WebSocketService extends BaseService {
         // Extract participant ID (UTF-8)
         const participantId = message
           .subarray(5, 5 + participantIdLength)
-          .toString("utf-8");
+          .toString('utf-8');
 
         const audioStart = 5 + participantIdLength;
         const audioLength = message.length - audioStart;
@@ -145,7 +145,7 @@ export class WebSocketService extends BaseService {
         const float32Buffer = new Float32Array(
           audioCopy.buffer,
           audioCopy.byteOffset,
-          audioCopy.length / 4
+          audioCopy.length / 4,
         );
 
         // Convert Float32 to Int16 PCM
@@ -158,13 +158,13 @@ export class WebSocketService extends BaseService {
 
         const audioBytes = Buffer.from(int16Array.buffer);
 
-        this.messageEmitter.emit("participantAudio", {
+        this.messageEmitter.emit('participantAudio', {
           participantId,
           audioData: audioBytes,
         });
       }
     } catch (error) {
-      this.logger.error("Error while sending per person audio", error);
+      this.logger.error('Error while sending per person audio', error);
     }
   }
 

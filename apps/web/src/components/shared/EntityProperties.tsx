@@ -1,6 +1,14 @@
-import type { ReactNode} from 'react';
+import type { ReactNode } from 'react';
 import { useState } from 'react';
-import { Badge, Input, Combobox, ComboboxOption, ComboboxLabel, ComboboxDescription, Text } from '@zuko/ui-kit';
+import {
+  Badge,
+  Input,
+  Combobox,
+  ComboboxOption,
+  ComboboxLabel,
+  ComboboxDescription,
+  Text,
+} from '@zuko/ui-kit';
 import { formatCurrency } from '@/lib/format-utils';
 import dayjs from 'dayjs';
 import { PlusIcon, ChevronUpIcon, PencilIcon } from '@heroicons/react/20/solid';
@@ -15,7 +23,14 @@ export type RenderType =
   | 'date'
   | 'user';
 
-export type EditType = 'text' | 'number' | 'select' | 'date' | 'textarea' | 'currency' | 'combobox';
+export type EditType =
+  | 'text'
+  | 'number'
+  | 'select'
+  | 'date'
+  | 'textarea'
+  | 'currency'
+  | 'combobox';
 
 export interface Property {
   label: string;
@@ -58,8 +73,7 @@ function validateProperty(value: string, property: Property): string | null {
         const url = new URL(value);
         if (url.protocol !== 'http:' && url.protocol !== 'https:') {
           return 'Must be a valid URL (e.g., https://example.com)';
-        }
-        else if (property.options?.validation === 'linkedin') {
+        } else if (property.options?.validation === 'linkedin') {
           if (!url.hostname.includes('linkedin.com')) {
             return 'Must be a valid LinkedIn URL';
           }
@@ -123,15 +137,21 @@ export function EntityProperties({
     // For number fields, extract numeric value from display string (e.g. "50%" → "50")
     const rawValue = property.value ?? '';
     if (property.fieldType === 'currency') {
-      setEditValue({ amount: rawValue, currency: property.options?.currency ?? 'USD' });
+      setEditValue({
+        amount: rawValue,
+        currency: property.options?.currency ?? 'USD',
+      });
     } else if (property.fieldType === 'combobox') {
       // Reverse-map the display label back to the option value
-      const match = property.options?.comboboxOptions?.find((o) => o.label === rawValue);
+      const match = property.options?.comboboxOptions?.find(
+        (o) => o.label === rawValue,
+      );
       setEditValue(match?.value ?? rawValue);
     } else {
-      const editVal = property.fieldType === 'number' && typeof rawValue === 'string'
-        ? rawValue.replace(/[^0-9.-]/g, '')
-        : rawValue;
+      const editVal =
+        property.fieldType === 'number' && typeof rawValue === 'string'
+          ? rawValue.replace(/[^0-9.-]/g, '')
+          : rawValue;
       setEditValue(editVal);
     }
     setValidationError(null);
@@ -149,7 +169,10 @@ export function EntityProperties({
     // Currency has its own save flow
     if (property.fieldType === 'currency') {
       const cv = editValue as { amount: any; currency: string };
-      const amountStr = typeof cv?.amount === 'string' ? cv.amount.trim() : String(cv?.amount ?? '');
+      const amountStr =
+        typeof cv?.amount === 'string'
+          ? cv.amount.trim()
+          : String(cv?.amount ?? '');
 
       if (amountStr && (isNaN(Number(amountStr)) || Number(amountStr) < 0)) {
         setValidationError('Must be a positive number');
@@ -158,7 +181,10 @@ export function EntityProperties({
 
       const newAmount = amountStr ? Number(amountStr) : 0;
       const newCurrency = cv?.currency ?? 'USD';
-      if (newAmount === (property.value ?? 0) && newCurrency === (property.options?.currency ?? 'USD')) {
+      if (
+        newAmount === (property.value ?? 0) &&
+        newCurrency === (property.options?.currency ?? 'USD')
+      ) {
         handleCancel();
         return;
       }
@@ -177,7 +203,8 @@ export function EntityProperties({
       return;
     }
 
-    const trimmedValue = typeof editValue === 'string' ? editValue.trim() : editValue;
+    const trimmedValue =
+      typeof editValue === 'string' ? editValue.trim() : editValue;
 
     // Run validation
     if (trimmedValue) {
@@ -191,10 +218,14 @@ export function EntityProperties({
     // Check if value actually changed to avoid unnecessary API calls
     const isDate = property.fieldType === 'date';
     const currentValue = isDate
-      ? (property.value ? dayjs(property.value).format('YYYY-MM-DD') : '')
+      ? property.value
+        ? dayjs(property.value).format('YYYY-MM-DD')
+        : ''
       : (property.value ?? '');
     const newValue = isDate
-      ? (trimmedValue ? dayjs(trimmedValue).format('YYYY-MM-DD') : '')
+      ? trimmedValue
+        ? dayjs(trimmedValue).format('YYYY-MM-DD')
+        : ''
       : trimmedValue;
 
     if (currentValue === newValue) {
@@ -275,7 +306,9 @@ export function EntityProperties({
               disabled={isSaving}
             />
             {validationError && (
-              <span className="text-[11px] text-red-500 mt-1">{validationError}</span>
+              <span className="text-[11px] text-red-500 mt-1">
+                {validationError}
+              </span>
             )}
           </div>
         );
@@ -304,14 +337,21 @@ export function EntityProperties({
               disabled={isSaving}
             />
             {validationError && (
-              <span className="text-[11px] text-red-500 mt-1">{validationError}</span>
+              <span className="text-[11px] text-red-500 mt-1">
+                {validationError}
+              </span>
             )}
           </div>
         );
       }
       case 'currency': {
-        const currencyValue = editValue as { amount: any; currency: string } | null;
-        const currencyOptions = property.options?.currencyOptions ?? [{ code: 'USD', symbol: '$', name: 'US Dollar' }];
+        const currencyValue = editValue as {
+          amount: any;
+          currency: string;
+        } | null;
+        const currencyOptions = property.options?.currencyOptions ?? [
+          { code: 'USD', symbol: '$', name: 'US Dollar' },
+        ];
         return (
           <div
             className="flex flex-col"
@@ -324,9 +364,14 @@ export function EntityProperties({
             <div className="flex items-center gap-1">
               <Combobox
                 options={currencyOptions}
-                value={currencyOptions.find((c) => c.code === (currencyValue?.currency ?? 'USD')) || null}
+                value={
+                  currencyOptions.find(
+                    (c) => c.code === (currencyValue?.currency ?? 'USD'),
+                  ) || null
+                }
                 onChange={(value) => {
-                  if (value) setEditValue({ ...currencyValue, currency: value.code });
+                  if (value)
+                    setEditValue({ ...currencyValue, currency: value.code });
                 }}
                 displayValue={(value) => value?.code}
                 placeholder="Currency..."
@@ -363,14 +408,18 @@ export function EntityProperties({
               />
             </div>
             {validationError && (
-              <span className="text-[11px] text-red-500 mt-1">{validationError}</span>
+              <span className="text-[11px] text-red-500 mt-1">
+                {validationError}
+              </span>
             )}
           </div>
         );
       }
       case 'combobox': {
         const comboOptions = property.options?.comboboxOptions ?? [];
-        const selectedOption = comboOptions.find((o) => String(o.value) === String(editValue)) || null;
+        const selectedOption =
+          comboOptions.find((o) => String(o.value) === String(editValue)) ||
+          null;
         return (
           <div
             className="flex flex-col"
@@ -399,7 +448,9 @@ export function EntityProperties({
                 }
               }}
               displayValue={(opt) => opt?.label ?? ''}
-              filter={(opt, query) => (opt?.label ?? '').toLowerCase().includes(query.toLowerCase())}
+              filter={(opt, query) =>
+                (opt?.label ?? '').toLowerCase().includes(query.toLowerCase())
+              }
               placeholder={property.placeholder ?? 'Select...'}
               variant="plain"
               anchor="bottom start"

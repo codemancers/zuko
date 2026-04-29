@@ -1,13 +1,13 @@
-import { describe, it, expect, beforeEach } from "vitest";
-import type { TestingModule } from "@nestjs/testing";
-import { Test } from "@nestjs/testing";
-import { MeetingService } from "./meeting.service";
-import { PrismaService } from "../../prisma/prisma.service";
-import { MeetingGateway } from "./meeting.gateway";
-import { MeetingTranscriptIngestService } from "./meeting-transcript-ingest.service";
-import { MeetingNotifyService } from "./meeting-notify.service";
+import { describe, it, expect, beforeEach } from 'vitest';
+import type { TestingModule } from '@nestjs/testing';
+import { Test } from '@nestjs/testing';
+import { MeetingService } from './meeting.service';
+import { PrismaService } from '../../prisma/prisma.service';
+import { MeetingGateway } from './meeting.gateway';
+import { MeetingTranscriptIngestService } from './meeting-transcript-ingest.service';
+import { MeetingNotifyService } from './meeting-notify.service';
 
-describe("MeetingService", () => {
+describe('MeetingService', () => {
   let service: MeetingService;
 
   beforeEach(async () => {
@@ -45,7 +45,7 @@ describe("MeetingService", () => {
     service = module.get<MeetingService>(MeetingService);
   });
 
-  it("should be defined", () => {
+  it('should be defined', () => {
     expect(service).toBeDefined();
   });
 });

@@ -22,7 +22,11 @@ import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 export const MeetingList = () => {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const { inputValue: searchTerm, setInputValue: setSearchTerm, debouncedValue } = useSearchParam();
+  const {
+    inputValue: searchTerm,
+    setInputValue: setSearchTerm,
+    debouncedValue,
+  } = useSearchParam();
   const [meetingToDelete, setMeetingToDelete] = useState<number | null>(null);
 
   const { data: meetingsData, isLoading } = useQuery(

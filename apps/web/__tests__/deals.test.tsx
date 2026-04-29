@@ -75,23 +75,29 @@ vi.mock('@/lib/auth-client', () => ({
 
 vi.mock('@/lib/api/metadata', () => ({
   metadataApi: {
-    getCurrencies: vi.fn(() => Promise.resolve([
-      { code: 'USD', symbol: '$', name: 'US Dollar' },
-      { code: 'EUR', symbol: '€', name: 'Euro' },
-    ])),
-    getDealPriorities: vi.fn(() => Promise.resolve([
-      { value: 1, label: 'Low' },
-      { value: 2, label: 'Medium' },
-      { value: 3, label: 'High' },
-    ])),
-    getDealStages: vi.fn(() => Promise.resolve([
-      { value: 'prospecting', label: 'Prospecting' },
-      { value: 'qualification', label: 'Qualification' },
-      { value: 'proposal', label: 'Proposal' },
-      { value: 'negotiation', label: 'Negotiation' },
-      { value: 'closed_won', label: 'Closed Won' },
-      { value: 'closed_lost', label: 'Closed Lost' },
-    ])),
+    getCurrencies: vi.fn(() =>
+      Promise.resolve([
+        { code: 'USD', symbol: '$', name: 'US Dollar' },
+        { code: 'EUR', symbol: '€', name: 'Euro' },
+      ]),
+    ),
+    getDealPriorities: vi.fn(() =>
+      Promise.resolve([
+        { value: 1, label: 'Low' },
+        { value: 2, label: 'Medium' },
+        { value: 3, label: 'High' },
+      ]),
+    ),
+    getDealStages: vi.fn(() =>
+      Promise.resolve([
+        { value: 'prospecting', label: 'Prospecting' },
+        { value: 'qualification', label: 'Qualification' },
+        { value: 'proposal', label: 'Proposal' },
+        { value: 'negotiation', label: 'Negotiation' },
+        { value: 'closed_won', label: 'Closed Won' },
+        { value: 'closed_lost', label: 'Closed Lost' },
+      ]),
+    ),
   },
 }));
 
@@ -100,16 +106,36 @@ vi.mock('@zuko/ui-kit', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@zuko/ui-kit')>();
   return {
     ...actual,
-    ErrorMessage: ({ children, className }: React.PropsWithChildren<{ className?: string }>) =>
-      React.createElement('p', { className: `error-message ${className ?? ''}`.trim() }, children),
-    Description: ({ children, className }: React.PropsWithChildren<{ className?: string }>) =>
-      React.createElement('p', { className: `description ${className ?? ''}`.trim() }, children),
+    ErrorMessage: ({
+      children,
+      className,
+    }: React.PropsWithChildren<{ className?: string }>) =>
+      React.createElement(
+        'p',
+        { className: `error-message ${className ?? ''}`.trim() },
+        children,
+      ),
+    Description: ({
+      children,
+      className,
+    }: React.PropsWithChildren<{ className?: string }>) =>
+      React.createElement(
+        'p',
+        { className: `description ${className ?? ''}`.trim() },
+        children,
+      ),
     Combobox: ({ options, onChange, placeholder, value }: any) => (
       <select
-        value={value ? (typeof value === 'object' ? value.value ?? value.code ?? '' : value) : ''}
+        value={
+          value
+            ? typeof value === 'object'
+              ? (value.value ?? value.code ?? '')
+              : value
+            : ''
+        }
         onChange={(e) => {
           const selected = options.find(
-            (o: any) => String(o.value ?? o.code ?? o) === e.target.value
+            (o: any) => String(o.value ?? o.code ?? o) === e.target.value,
           );
           if (selected) onChange(selected);
         }}
@@ -129,7 +155,6 @@ vi.mock('@zuko/ui-kit', async (importOriginal) => {
   };
 });
 
-
 function createQueryClient() {
   return new QueryClient({
     defaultOptions: {
@@ -143,122 +168,120 @@ let queryClient: QueryClient;
 
 function wrapper({ children }: { children: React.ReactNode }) {
   return (
-    <QueryClientProvider client={queryClient}>
-      {children}
-    </QueryClientProvider>
+    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
   );
 }
 
 const mockMetadata = [
   {
-      id: "title",
-      header: "Title",
-      fieldType: "entity",
-      dataType: "text",
-      sortable: true,
-      filterable: true,
-      searchable: true,
-      editable: true,
-      isVisible: true,
-      default: true,
-      config: {
-          entityType: "deal",
-          hrefTemplate: "/deals/{id}"
-      }
+    id: 'title',
+    header: 'Title',
+    fieldType: 'entity',
+    dataType: 'text',
+    sortable: true,
+    filterable: true,
+    searchable: true,
+    editable: true,
+    isVisible: true,
+    default: true,
+    config: {
+      entityType: 'deal',
+      hrefTemplate: '/deals/{id}',
+    },
   },
   {
-      id: "value",
-      header: "Value",
-      fieldType: "currency",
-      dataType: "number",
-      sortable: true,
-      filterable: true,
-      searchable: true,
-      editable: true,
-      isVisible: true,
-      default: true,
-      config: {
-          currency: "USD",
-          format: "currency"
-      }
+    id: 'value',
+    header: 'Value',
+    fieldType: 'currency',
+    dataType: 'number',
+    sortable: true,
+    filterable: true,
+    searchable: true,
+    editable: true,
+    isVisible: true,
+    default: true,
+    config: {
+      currency: 'USD',
+      format: 'currency',
+    },
   },
   {
-      id: "stage",
-      header: "Stage",
-      fieldType: "select",
-      dataType: "text",
-      sortable: true,
-      filterable: true,
-      searchable: true,
-      editable: true,
-      isVisible: true,
-      default: true,
-      config: {
-          render: "badge",
-          format: "stage",
-          options: [
-              { label: "Negotiation", value: "negotiation" },
-              { label: "Proposal", value: "proposal" },
-              { label: "Qualification", value: "qualification" },
-              { label: "Prospecting", value: "prospecting" },
-              { label: "Closed Won", value: "closed_won" },
-              { label: "Closed Lost", value: "closed_lost" }
-          ],
-          colorMap: {
-              prospecting: "zinc",
-              qualification: "blue",
-              proposal: "yellow",
-              negotiation: "yellow",
-              closed_won: "green",
-              closed_lost: "red"
-          }
-      }
+    id: 'stage',
+    header: 'Stage',
+    fieldType: 'select',
+    dataType: 'text',
+    sortable: true,
+    filterable: true,
+    searchable: true,
+    editable: true,
+    isVisible: true,
+    default: true,
+    config: {
+      render: 'badge',
+      format: 'stage',
+      options: [
+        { label: 'Negotiation', value: 'negotiation' },
+        { label: 'Proposal', value: 'proposal' },
+        { label: 'Qualification', value: 'qualification' },
+        { label: 'Prospecting', value: 'prospecting' },
+        { label: 'Closed Won', value: 'closed_won' },
+        { label: 'Closed Lost', value: 'closed_lost' },
+      ],
+      colorMap: {
+        prospecting: 'zinc',
+        qualification: 'blue',
+        proposal: 'yellow',
+        negotiation: 'yellow',
+        closed_won: 'green',
+        closed_lost: 'red',
+      },
+    },
   },
   {
-      id: "probability",
-      header: "Probability",
-      fieldType: "number",
-      dataType: "number",
-      sortable: true,
-      filterable: true,
-      searchable: true,
-      editable: true,
-      isVisible: true,
-      default: true,
-      config: {
-          accessorKey: "probability"
-      }
+    id: 'probability',
+    header: 'Probability',
+    fieldType: 'number',
+    dataType: 'number',
+    sortable: true,
+    filterable: true,
+    searchable: true,
+    editable: true,
+    isVisible: true,
+    default: true,
+    config: {
+      accessorKey: 'probability',
+    },
   },
   {
-      id: "owners",
-      header: "Owner",
-      fieldType: "text",
-      dataType: "json",
-      sortable: false,
-      filterable: true,
-      searchable: true,
-      editable: false,
-      isVisible: true,
-      default: true,
-      config: {
-          format: "owner"
-      }
+    id: 'owners',
+    header: 'Owner',
+    fieldType: 'text',
+    dataType: 'json',
+    sortable: false,
+    filterable: true,
+    searchable: true,
+    editable: false,
+    isVisible: true,
+    default: true,
+    config: {
+      format: 'owner',
+    },
   },
   {
-      id: "expectedCloseDate",
-      header: "Expected Close",
-      fieldType: "date",
-      dataType: "date",
-      sortable: true,
-      filterable: true,
-      searchable: true,
-      editable: false,
-      isVisible: true,
-      default: true,
-      config: {
-          format: "date"
-      }
-  }
+    id: 'expectedCloseDate',
+    header: 'Expected Close',
+    fieldType: 'date',
+    dataType: 'date',
+    sortable: true,
+    filterable: true,
+    searchable: true,
+    editable: false,
+    isVisible: true,
+    default: true,
+    config: {
+      format: 'date',
+    },
+  },
 ];
 
 const emptyDealsResponse = {
@@ -272,19 +295,19 @@ const mockDeal = {
   organizationId: 1,
   title: 'Enterprise Deal',
   value: {
-      value: "100000",
-      display: "$100,000"
+    value: '100000',
+    display: '$100,000',
   },
   currency: 'USD',
   probability: 70,
   stage: {
-      value: 'negotiation',
-      display: 'Negotiation'
+    value: 'negotiation',
+    display: 'Negotiation',
   },
   summary: 'Deal summary',
   expectedCloseDate: {
-      value: '2025-12-31T00:00:00.000Z',
-      display: '31 Dec 2025'
+    value: '2025-12-31T00:00:00.000Z',
+    display: '31 Dec 2025',
   },
   actualCloseDate: null,
   lostReason: null,
@@ -294,21 +317,21 @@ const mockDeal = {
   createdAt: '2025-01-15T00:00:00Z',
   updatedAt: '2025-01-15T00:00:00Z',
   owners: {
-      value: {
-          id: 1,
-          dealId: 1,
-          userId: 1,
-          isPrimary: true,
-          assignedAt: '2025-01-15T00:00:00Z',
-          user: { id: 1, name: 'Alice', email: 'alice@example.com' },
-      },
-      display: 'Alice'
+    value: {
+      id: 1,
+      dealId: 1,
+      userId: 1,
+      isPrimary: true,
+      assignedAt: '2025-01-15T00:00:00Z',
+      user: { id: 1, name: 'Alice', email: 'alice@example.com' },
+    },
+    display: 'Alice',
   },
   companies: [],
   _count: {
-      companies: 0,
-      contacts: 0
-  }
+    companies: 0,
+    contacts: 0,
+  },
 };
 
 describe('DealsList', () => {
@@ -322,16 +345,14 @@ describe('DealsList', () => {
     render(<DealsList />, { wrapper });
     expect(screen.getByText('Deals')).toBeInTheDocument();
     expect(
-      screen.getByText(/manage your sales pipeline and track deal progress/i)
+      screen.getByText(/manage your sales pipeline and track deal progress/i),
     ).toBeInTheDocument();
   });
 
   it('renders search input', () => {
     render(<DealsList />, { wrapper });
     expect(
-      screen.getByPlaceholderText(
-        /search deals by title, summary, or source/i
-      )
+      screen.getByPlaceholderText(/search deals by title, summary, or source/i),
     ).toBeInTheDocument();
   });
 
@@ -343,13 +364,15 @@ describe('DealsList', () => {
       expect(screen.getByText('Title')).toBeInTheDocument();
       expect(screen.getByText('Stage')).toBeInTheDocument();
     });
-    
+
     // The table body should have no data rows
     const tbody = screen.getByRole('table').querySelector('tbody');
     expect(tbody?.children.length).toBe(0);
 
     // button with add row label should be present
-    expect(screen.getByRole('button', { name: /add row/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: /add row/i }),
+    ).toBeInTheDocument();
   });
 
   it('shows table with deal when data is returned', async () => {
@@ -386,7 +409,7 @@ describe('DealsList', () => {
 
   it('shows loading state', () => {
     mockGetTableViewDeals.mockImplementation(
-      () => new Promise<never>(() => undefined)
+      () => new Promise<never>(() => undefined),
     );
     render(<DealsList />, { wrapper });
     expect(screen.getByText(/loading deals/i)).toBeInTheDocument();
@@ -396,12 +419,12 @@ describe('DealsList', () => {
     const user = userEvent.setup();
     render(<DealsList />, { wrapper });
     const search = screen.getByPlaceholderText(
-      /search deals by title, summary, or source/i
+      /search deals by title, summary, or source/i,
     );
     await user.type(search, 'enterprise');
     await waitFor(() => {
       expect(mockGetTableViewDeals).toHaveBeenCalledWith(
-        expect.objectContaining({ search: 'enterprise' })
+        expect.objectContaining({ search: 'enterprise' }),
       );
     });
   });
@@ -416,9 +439,7 @@ describe('DealsList', () => {
     await waitFor(() => {
       expect(screen.getByText('Enterprise Deal')).toBeInTheDocument();
     });
-    expect(
-      screen.getByText(/showing 1 of 50 deals/i)
-    ).toBeInTheDocument();
+    expect(screen.getByText(/showing 1 of 50 deals/i)).toBeInTheDocument();
   });
 
   it('opens column creation modal when add column button is clicked', async () => {
@@ -432,15 +453,19 @@ describe('DealsList', () => {
     await waitFor(() => {
       expect(screen.getByText('Enterprise Deal')).toBeInTheDocument();
     });
-    
+
     await user.click(screen.getByRole('button', { name: /add column/i }));
-    
+
     // Verify the dialog title and input fields
     expect(screen.getByText('Add new field')).toBeInTheDocument();
     expect(screen.getByPlaceholderText('Field name')).toBeInTheDocument();
-    expect(screen.getByPlaceholderText(/unique column key/i)).toBeInTheDocument();
+    expect(
+      screen.getByPlaceholderText(/unique column key/i),
+    ).toBeInTheDocument();
     expect(screen.getByText('Field Type')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /create field/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: /create field/i }),
+    ).toBeInTheDocument();
   });
 
   // creates new deal when click on add row
@@ -451,7 +476,9 @@ describe('DealsList', () => {
     render(<DealsList />, { wrapper });
 
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: /add row/i })).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: /add row/i }),
+      ).toBeInTheDocument();
     });
 
     await user.click(screen.getByRole('button', { name: /add row/i }));
@@ -508,9 +535,7 @@ describe('DealDetail', () => {
   });
 
   it('shows loading state', () => {
-    mockGetDeal.mockImplementation(
-      () => new Promise<never>(() => undefined)
-    );
+    mockGetDeal.mockImplementation(() => new Promise<never>(() => undefined));
     render(<DealDetail dealId={7} currentUserId={1} />, { wrapper });
     expect(screen.getByText(/loading deal/i)).toBeInTheDocument();
   });
@@ -541,7 +566,9 @@ describe('DealDetail', () => {
     });
     await user.click(screen.getByRole('button', { name: /^hide$/i }));
     await waitFor(() =>
-      expect(screen.getByText(/are you sure you want to hide this deal/i)).toBeInTheDocument()
+      expect(
+        screen.getByText(/are you sure you want to hide this deal/i),
+      ).toBeInTheDocument(),
     );
     const hideButtons = screen.getAllByRole('button', { name: /^hide$/i });
     await user.click(hideButtons[hideButtons.length - 1]);
@@ -579,7 +606,11 @@ describe('DealDetail', () => {
       mockUpdateDeal.mockResolvedValue({});
 
       render(<DealDetail dealId={7} currentUserId={1} />, { wrapper });
-      await waitFor(() => expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Detail Deal'));
+      await waitFor(() =>
+        expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(
+          'Detail Deal',
+        ),
+      );
 
       fireEvent.blur(screen.getByRole('heading', { level: 1 }), {
         target: { innerText: 'Updated Deal' },
@@ -587,8 +618,13 @@ describe('DealDetail', () => {
       await new Promise((r) => setTimeout(r, 2100));
 
       await waitFor(() => {
-        expect(mockUpdateDeal).toHaveBeenCalledWith(7, expect.objectContaining({ title: 'Updated Deal' }));
-        expect(invalidateSpy).toHaveBeenCalledWith(expect.objectContaining({ queryKey: ['timeline', 'deal', 7] }));
+        expect(mockUpdateDeal).toHaveBeenCalledWith(
+          7,
+          expect.objectContaining({ title: 'Updated Deal' }),
+        );
+        expect(invalidateSpy).toHaveBeenCalledWith(
+          expect.objectContaining({ queryKey: ['timeline', 'deal', 7] }),
+        );
       });
     });
 
@@ -598,7 +634,9 @@ describe('DealDetail', () => {
       mockUpdateDeal.mockResolvedValue({});
 
       render(<DealDetail dealId={7} currentUserId={1} />, { wrapper });
-      await waitFor(() => expect(screen.getByText('Detail Deal')).toBeInTheDocument());
+      await waitFor(() =>
+        expect(screen.getByText('Detail Deal')).toBeInTheDocument(),
+      );
 
       // Stage is the 1st primary editable property (Owners has no pencil)
       await user.click(screen.getAllByTitle('Edit')[0]);
@@ -606,8 +644,13 @@ describe('DealDetail', () => {
       await user.selectOptions(select, 'negotiation');
 
       await waitFor(() => {
-        expect(mockUpdateDeal).toHaveBeenCalledWith(7, expect.objectContaining({ stage: 'negotiation' }));
-        expect(invalidateSpy).toHaveBeenCalledWith(expect.objectContaining({ queryKey: ['timeline', 'deal', 7] }));
+        expect(mockUpdateDeal).toHaveBeenCalledWith(
+          7,
+          expect.objectContaining({ stage: 'negotiation' }),
+        );
+        expect(invalidateSpy).toHaveBeenCalledWith(
+          expect.objectContaining({ queryKey: ['timeline', 'deal', 7] }),
+        );
       });
     });
 
@@ -617,7 +660,9 @@ describe('DealDetail', () => {
       mockUpdateDeal.mockResolvedValue({});
 
       render(<DealDetail dealId={7} currentUserId={1} />, { wrapper });
-      await waitFor(() => expect(screen.getByText('Detail Deal')).toBeInTheDocument());
+      await waitFor(() =>
+        expect(screen.getByText('Detail Deal')).toBeInTheDocument(),
+      );
 
       // Value is the 2nd primary editable property
       await user.click(screen.getAllByTitle('Edit')[1]);
@@ -636,8 +681,13 @@ describe('DealDetail', () => {
       });
 
       await waitFor(() => {
-        expect(mockUpdateDeal).toHaveBeenCalledWith(7, expect.objectContaining({ value: 30000, currency: 'USD' }));
-        expect(invalidateSpy).toHaveBeenCalledWith(expect.objectContaining({ queryKey: ['timeline', 'deal', 7] }));
+        expect(mockUpdateDeal).toHaveBeenCalledWith(
+          7,
+          expect.objectContaining({ value: 30000, currency: 'USD' }),
+        );
+        expect(invalidateSpy).toHaveBeenCalledWith(
+          expect.objectContaining({ queryKey: ['timeline', 'deal', 7] }),
+        );
       });
     });
 
@@ -647,7 +697,9 @@ describe('DealDetail', () => {
       mockUpdateDeal.mockResolvedValue({});
 
       render(<DealDetail dealId={7} currentUserId={1} />, { wrapper });
-      await waitFor(() => expect(screen.getByText('Detail Deal')).toBeInTheDocument());
+      await waitFor(() =>
+        expect(screen.getByText('Detail Deal')).toBeInTheDocument(),
+      );
 
       // Priority is the 3rd primary editable property
       await user.click(screen.getAllByTitle('Edit')[2]);
@@ -655,8 +707,13 @@ describe('DealDetail', () => {
       await user.selectOptions(select, '3');
 
       await waitFor(() => {
-        expect(mockUpdateDeal).toHaveBeenCalledWith(7, expect.objectContaining({ priority: 3 }));
-        expect(invalidateSpy).toHaveBeenCalledWith(expect.objectContaining({ queryKey: ['timeline', 'deal', 7] }));
+        expect(mockUpdateDeal).toHaveBeenCalledWith(
+          7,
+          expect.objectContaining({ priority: 3 }),
+        );
+        expect(invalidateSpy).toHaveBeenCalledWith(
+          expect.objectContaining({ queryKey: ['timeline', 'deal', 7] }),
+        );
       });
     });
 
@@ -666,19 +723,30 @@ describe('DealDetail', () => {
       mockUpdateDeal.mockResolvedValue({});
 
       render(<DealDetail dealId={7} currentUserId={1} />, { wrapper });
-      await waitFor(() => expect(screen.getByText('Detail Deal')).toBeInTheDocument());
+      await waitFor(() =>
+        expect(screen.getByText('Detail Deal')).toBeInTheDocument(),
+      );
 
       // Expected Close is the 4th primary editable property
       await user.click(screen.getAllByTitle('Edit')[3]);
 
-      const dateInput = document.querySelector('input[type="date"]') as HTMLInputElement;
+      const dateInput = document.querySelector(
+        'input[type="date"]',
+      ) as HTMLInputElement;
       expect(dateInput).toBeInTheDocument();
       fireEvent.change(dateInput, { target: { value: '2026-03-31' } });
       fireEvent.blur(dateInput);
 
       await waitFor(() => {
-        expect(mockUpdateDeal).toHaveBeenCalledWith(7, expect.objectContaining({ expectedCloseDate: expect.stringContaining('2026-03-31') }));
-        expect(invalidateSpy).toHaveBeenCalledWith(expect.objectContaining({ queryKey: ['timeline', 'deal', 7] }));
+        expect(mockUpdateDeal).toHaveBeenCalledWith(
+          7,
+          expect.objectContaining({
+            expectedCloseDate: expect.stringContaining('2026-03-31'),
+          }),
+        );
+        expect(invalidateSpy).toHaveBeenCalledWith(
+          expect.objectContaining({ queryKey: ['timeline', 'deal', 7] }),
+        );
       });
     });
 
@@ -688,23 +756,34 @@ describe('DealDetail', () => {
       mockUpdateDeal.mockResolvedValue({});
 
       render(<DealDetail dealId={7} currentUserId={1} />, { wrapper });
-      await waitFor(() => expect(screen.getByText('Detail Deal')).toBeInTheDocument());
+      await waitFor(() =>
+        expect(screen.getByText('Detail Deal')).toBeInTheDocument(),
+      );
 
       // Expand secondary properties
-      await user.click(screen.getByRole('button', { name: /more properties/i }));
+      await user.click(
+        screen.getByRole('button', { name: /more properties/i }),
+      );
 
       // Win Probability is null — click the dash span
       const probLabel = screen.getByText('Win Probability', { selector: 'dt' });
       await user.click(probLabel.closest('div')!.querySelector('span')!);
 
-      const input = document.querySelector('input[type="number"]') as HTMLInputElement;
+      const input = document.querySelector(
+        'input[type="number"]',
+      ) as HTMLInputElement;
       expect(input).toBeInTheDocument();
       fireEvent.change(input, { target: { value: '75' } });
       fireEvent.blur(input);
 
       await waitFor(() => {
-        expect(mockUpdateDeal).toHaveBeenCalledWith(7, expect.objectContaining({ probability: 75 }));
-        expect(invalidateSpy).toHaveBeenCalledWith(expect.objectContaining({ queryKey: ['timeline', 'deal', 7] }));
+        expect(mockUpdateDeal).toHaveBeenCalledWith(
+          7,
+          expect.objectContaining({ probability: 75 }),
+        );
+        expect(invalidateSpy).toHaveBeenCalledWith(
+          expect.objectContaining({ queryKey: ['timeline', 'deal', 7] }),
+        );
       });
     });
 
@@ -714,22 +793,35 @@ describe('DealDetail', () => {
       mockUpdateDeal.mockResolvedValue({});
 
       render(<DealDetail dealId={7} currentUserId={1} />, { wrapper });
-      await waitFor(() => expect(screen.getByText('Detail Deal')).toBeInTheDocument());
+      await waitFor(() =>
+        expect(screen.getByText('Detail Deal')).toBeInTheDocument(),
+      );
 
-      await user.click(screen.getByRole('button', { name: /more properties/i }));
+      await user.click(
+        screen.getByRole('button', { name: /more properties/i }),
+      );
 
       // Actual Close is null — click the dash span
       const actualLabel = screen.getByText('Actual Close', { selector: 'dt' });
       await user.click(actualLabel.closest('div')!.querySelector('span')!);
 
-      const dateInput = document.querySelector('input[type="date"]') as HTMLInputElement;
+      const dateInput = document.querySelector(
+        'input[type="date"]',
+      ) as HTMLInputElement;
       expect(dateInput).toBeInTheDocument();
       fireEvent.change(dateInput, { target: { value: '2026-04-01' } });
       fireEvent.blur(dateInput);
 
       await waitFor(() => {
-        expect(mockUpdateDeal).toHaveBeenCalledWith(7, expect.objectContaining({ actualCloseDate: expect.stringContaining('2026-04-01') }));
-        expect(invalidateSpy).toHaveBeenCalledWith(expect.objectContaining({ queryKey: ['timeline', 'deal', 7] }));
+        expect(mockUpdateDeal).toHaveBeenCalledWith(
+          7,
+          expect.objectContaining({
+            actualCloseDate: expect.stringContaining('2026-04-01'),
+          }),
+        );
+        expect(invalidateSpy).toHaveBeenCalledWith(
+          expect.objectContaining({ queryKey: ['timeline', 'deal', 7] }),
+        );
       });
     });
 
@@ -739,13 +831,19 @@ describe('DealDetail', () => {
       mockUpdateDeal.mockResolvedValue({});
 
       render(<DealDetail dealId={7} currentUserId={1} />, { wrapper });
-      await waitFor(() => expect(screen.getByText('Detail Deal')).toBeInTheDocument());
+      await waitFor(() =>
+        expect(screen.getByText('Detail Deal')).toBeInTheDocument(),
+      );
 
-      await user.click(screen.getByRole('button', { name: /more properties/i }));
+      await user.click(
+        screen.getByRole('button', { name: /more properties/i }),
+      );
 
       // Click the pencil inside the Source property cell
       const sourceLabel = screen.getByText('Source', { selector: 'dt' });
-      await user.click(sourceLabel.closest('div')!.querySelector('button[title="Edit"]')!);
+      await user.click(
+        sourceLabel.closest('div')!.querySelector('button[title="Edit"]')!,
+      );
 
       const input = screen.getByDisplayValue('Referral');
       await user.clear(input);
@@ -753,11 +851,14 @@ describe('DealDetail', () => {
       await user.tab();
 
       await waitFor(() => {
-        expect(mockUpdateDeal).toHaveBeenCalledWith(7, expect.objectContaining({ source: 'Outbound' }));
-        expect(invalidateSpy).toHaveBeenCalledWith(expect.objectContaining({ queryKey: ['timeline', 'deal', 7] }));
+        expect(mockUpdateDeal).toHaveBeenCalledWith(
+          7,
+          expect.objectContaining({ source: 'Outbound' }),
+        );
+        expect(invalidateSpy).toHaveBeenCalledWith(
+          expect.objectContaining({ queryKey: ['timeline', 'deal', 7] }),
+        );
       });
     });
   });
 });
-
-

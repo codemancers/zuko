@@ -43,7 +43,8 @@ vi.mock('@/lib/api/companies', () => ({
     createCompany: (...args: unknown[]) => mockCreateCompany(...args),
     updateCompany: (...args: unknown[]) => mockUpdateCompany(...args),
     getCompanies: (...args: unknown[]) => mockGetCompanies(...args),
-    getTableViewCompanies: (...args: unknown[]) => mockGetTableViewCompanies(...args),
+    getTableViewCompanies: (...args: unknown[]) =>
+      mockGetTableViewCompanies(...args),
     getCompany: (...args: unknown[]) => mockGetCompany(...args),
     hideCompany: (...args: unknown[]) => mockHideCompany(...args),
     updateContact: (...args: unknown[]) => mockUpdateContact(...args),
@@ -76,14 +77,26 @@ vi.mock('@zuko/ui-kit', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@zuko/ui-kit')>();
   return {
     ...actual,
-    ErrorMessage: ({ children, className }: React.PropsWithChildren<{ className?: string }>) =>
-      React.createElement('p', { className: `error-message ${className ?? ''}`.trim() }, children),
-    Description: ({ children, className }: React.PropsWithChildren<{ className?: string }>) =>
-      React.createElement('p', { className: `description ${className ?? ''}`.trim() }, children),
+    ErrorMessage: ({
+      children,
+      className,
+    }: React.PropsWithChildren<{ className?: string }>) =>
+      React.createElement(
+        'p',
+        { className: `error-message ${className ?? ''}`.trim() },
+        children,
+      ),
+    Description: ({
+      children,
+      className,
+    }: React.PropsWithChildren<{ className?: string }>) =>
+      React.createElement(
+        'p',
+        { className: `description ${className ?? ''}`.trim() },
+        children,
+      ),
   };
 });
-
-
 
 function createQueryClient() {
   return new QueryClient({
@@ -98,91 +111,89 @@ let queryClient: QueryClient;
 
 function wrapper({ children }: { children: React.ReactNode }) {
   return (
-    <QueryClientProvider client={queryClient}>
-      {children}
-    </QueryClientProvider>
+    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
   );
 }
 
 const mockMetadata = [
   {
-      id: "companyName",
-      header: "Company",
-      fieldType: "entity",
-      dataType: "text",
-      sortable: true,
-      filterable: true,
-      searchable: true,
-      editable: true,
-      isVisible: true,
-      default: true,
-      config: {
-          entityType: "company",
-          hrefTemplate: "/companies/{id}"
-      }
+    id: 'companyName',
+    header: 'Company',
+    fieldType: 'entity',
+    dataType: 'text',
+    sortable: true,
+    filterable: true,
+    searchable: true,
+    editable: true,
+    isVisible: true,
+    default: true,
+    config: {
+      entityType: 'company',
+      hrefTemplate: '/companies/{id}',
+    },
   },
   {
-      id: "website",
-      header: "Website",
-      fieldType: "text",
-      dataType: "text",
-      sortable: true,
-      filterable: true,
-      searchable: true,
-      editable: true,
-      isVisible: true,
-      default: true,
-      config: {
-          render: "link",
-          hrefTemplate: "{value}"
-      }
+    id: 'website',
+    header: 'Website',
+    fieldType: 'text',
+    dataType: 'text',
+    sortable: true,
+    filterable: true,
+    searchable: true,
+    editable: true,
+    isVisible: true,
+    default: true,
+    config: {
+      render: 'link',
+      hrefTemplate: '{value}',
+    },
   },
   {
-      id: "linkedinUrl",
-      header: "LinkedIn",
-      fieldType: "text",
-      dataType: "text",
-      sortable: false,
-      filterable: true,
-      searchable: true,
-      editable: true,
-      isVisible: true,
-      default: true,
-      config: {
-          render: "link",
-          hrefTemplate: "{value}"
-      }
+    id: 'linkedinUrl',
+    header: 'LinkedIn',
+    fieldType: 'text',
+    dataType: 'text',
+    sortable: false,
+    filterable: true,
+    searchable: true,
+    editable: true,
+    isVisible: true,
+    default: true,
+    config: {
+      render: 'link',
+      hrefTemplate: '{value}',
+    },
   },
   {
-      id: "owners",
-      header: "Owner",
-      fieldType: "text",
-      dataType: "json",
-      sortable: false,
-      filterable: true,
-      searchable: true,
-      editable: false,
-      isVisible: true,
-      default: true,
-      config: {
-          format: "owner"
-      }
+    id: 'owners',
+    header: 'Owner',
+    fieldType: 'text',
+    dataType: 'json',
+    sortable: false,
+    filterable: true,
+    searchable: true,
+    editable: false,
+    isVisible: true,
+    default: true,
+    config: {
+      format: 'owner',
+    },
   },
   {
-      id: "createdAt",
-      header: "Created",
-      fieldType: "date",
-      dataType: "date",
-      sortable: true,
-      filterable: true,
-      searchable: true,
-      editable: false,
-      isVisible: true,
-      default: true,
-      config: {
-          format: "date"
-      }
-  }
+    id: 'createdAt',
+    header: 'Created',
+    fieldType: 'date',
+    dataType: 'date',
+    sortable: true,
+    filterable: true,
+    searchable: true,
+    editable: false,
+    isVisible: true,
+    default: true,
+    config: {
+      format: 'date',
+    },
+  },
 ];
 
 const emptyCompaniesResponse = {
@@ -200,24 +211,24 @@ const mockCompany = {
   summary: undefined,
   isHidden: false,
   createdAt: {
-      value: "2025-01-15T00:00:00Z",
-      display: "15 Jan 2025"
+    value: '2025-01-15T00:00:00Z',
+    display: '15 Jan 2025',
   },
   updatedAt: '2025-01-15T00:00:00Z',
   owners: {
-      value: {
-          id: 1,
-          companyId: 1,
-          userId: 1,
-          isPrimary: true,
-          assignedAt: '',
-          user: { id: 1, name: 'Alice', email: 'alice@example.com' },
-      },
-      display: "Alice"
+    value: {
+      id: 1,
+      companyId: 1,
+      userId: 1,
+      isPrimary: true,
+      assignedAt: '',
+      user: { id: 1, name: 'Alice', email: 'alice@example.com' },
+    },
+    display: 'Alice',
   },
   _count: {
-      contacts: 0
-  }
+    contacts: 0,
+  },
 };
 
 describe('CompaniesList', () => {
@@ -231,7 +242,7 @@ describe('CompaniesList', () => {
     render(<CompaniesList />, { wrapper });
     expect(screen.getByText('Companies')).toBeInTheDocument();
     expect(
-      screen.getByText(/manage your sales companies and relationships/i)
+      screen.getByText(/manage your sales companies and relationships/i),
     ).toBeInTheDocument();
   });
 
@@ -239,8 +250,8 @@ describe('CompaniesList', () => {
     render(<CompaniesList />, { wrapper });
     expect(
       screen.getByPlaceholderText(
-        /search companies by name, website, or linkedin/i
-      )
+        /search companies by name, website, or linkedin/i,
+      ),
     ).toBeInTheDocument();
   });
 
@@ -252,13 +263,15 @@ describe('CompaniesList', () => {
       expect(screen.getByText('Company')).toBeInTheDocument();
       expect(screen.getByText('Website')).toBeInTheDocument();
     });
-    
+
     // The table body should have no data rows
     const tbody = screen.getByRole('table').querySelector('tbody');
     expect(tbody?.children.length).toBe(0);
 
     // button with add row label should be present
-    expect(screen.getByRole('button', { name: /add row/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: /add row/i }),
+    ).toBeInTheDocument();
   });
 
   it('shows table with company when data is returned', async () => {
@@ -292,7 +305,7 @@ describe('CompaniesList', () => {
 
   it('shows loading state', () => {
     mockGetTableViewCompanies.mockImplementation(
-      () => new Promise<void>(() => undefined)
+      () => new Promise<void>(() => undefined),
     );
     render(<CompaniesList />, { wrapper });
     expect(screen.getByText(/loading companies/i)).toBeInTheDocument();
@@ -302,12 +315,12 @@ describe('CompaniesList', () => {
     const user = userEvent.setup();
     render(<CompaniesList />, { wrapper });
     const search = screen.getByPlaceholderText(
-      /search companies by name, website, or linkedin/i
+      /search companies by name, website, or linkedin/i,
     );
     await user.type(search, 'acme');
     await waitFor(() => {
       expect(mockGetTableViewCompanies).toHaveBeenCalledWith(
-        expect.objectContaining({ search: 'acme' })
+        expect.objectContaining({ search: 'acme' }),
       );
     });
   });
@@ -322,11 +335,8 @@ describe('CompaniesList', () => {
     await waitFor(() => {
       expect(screen.getByText('Acme Inc')).toBeInTheDocument();
     });
-    expect(
-      screen.getByText(/showing 1 of 50 companies/i)
-    ).toBeInTheDocument();
+    expect(screen.getByText(/showing 1 of 50 companies/i)).toBeInTheDocument();
   });
-
 
   it('opens column creation modal when add column button is clicked', async () => {
     mockGetTableViewCompanies.mockResolvedValue({
@@ -339,16 +349,20 @@ describe('CompaniesList', () => {
     await waitFor(() => {
       expect(screen.getByText('Acme Inc')).toBeInTheDocument();
     });
-    
+
     // Click the "Add column" button in the table header
     await user.click(screen.getByRole('button', { name: /add column/i }));
-    
+
     // Verify the dialog title and input fields
     expect(screen.getByText('Add new field')).toBeInTheDocument();
     expect(screen.getByPlaceholderText('Field name')).toBeInTheDocument();
-    expect(screen.getByPlaceholderText(/unique column key/i)).toBeInTheDocument();
+    expect(
+      screen.getByPlaceholderText(/unique column key/i),
+    ).toBeInTheDocument();
     expect(screen.getByText('Field Type')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /create field/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: /create field/i }),
+    ).toBeInTheDocument();
   });
 
   // creates new company when click on add row
@@ -359,7 +373,9 @@ describe('CompaniesList', () => {
     render(<CompaniesList />, { wrapper });
 
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: /add row/i })).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: /add row/i }),
+      ).toBeInTheDocument();
     });
 
     await user.click(screen.getByRole('button', { name: /add row/i }));
@@ -411,7 +427,7 @@ describe('CompanyDetail', () => {
 
   it('shows loading state', () => {
     mockGetCompany.mockImplementation(
-      () => new Promise<never>(() => undefined)
+      () => new Promise<never>(() => undefined),
     );
     render(<CompanyDetail companyId={7} currentUserId={1} />, { wrapper });
     expect(screen.getByText(/loading company/i)).toBeInTheDocument();
@@ -427,10 +443,14 @@ describe('CompanyDetail', () => {
 
   it('renders company name and details when loaded', async () => {
     render(<CompanyDetail companyId={7} currentUserId={1} />, { wrapper });
-    expect(await screen.findByRole('heading', { level: 1 })).toHaveTextContent('Detail Company');
+    expect(await screen.findByRole('heading', { level: 1 })).toHaveTextContent(
+      'Detail Company',
+    );
     expect(screen.getByText('https://detail.com')).toBeInTheDocument();
     expect(screen.getByDisplayValue('Company summary')).toBeInTheDocument();
-    expect(screen.getByText('https://www.linkedin.com/company/detail')).toBeInTheDocument();
+    expect(
+      screen.getByText('https://www.linkedin.com/company/detail'),
+    ).toBeInTheDocument();
     expect(screen.getByText('Alice')).toBeInTheDocument();
   });
 
@@ -455,7 +475,9 @@ describe('CompanyDetail', () => {
     await user.click(screen.getByRole('button', { name: /^hide$/i }));
     // Confirm in the ConfirmDialog
     await waitFor(() =>
-      expect(screen.getByText(/are you sure you want to hide this company/i)).toBeInTheDocument()
+      expect(
+        screen.getByText(/are you sure you want to hide this company/i),
+      ).toBeInTheDocument(),
     );
     const hideButtons = screen.getAllByRole('button', { name: /^hide$/i });
     await user.click(hideButtons[hideButtons.length - 1]);
@@ -486,7 +508,9 @@ describe('CompanyDetail', () => {
       render(<CompanyDetail companyId={7} currentUserId={1} />, { wrapper });
 
       await waitFor(() => {
-        expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Detail Company');
+        expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(
+          'Detail Company',
+        );
       });
 
       fireEvent.blur(screen.getByRole('heading', { level: 1 }), {
@@ -496,7 +520,10 @@ describe('CompanyDetail', () => {
       await new Promise((r) => setTimeout(r, 2100)); // past 2000ms debounce
 
       await waitFor(() => {
-        expect(mockUpdateCompany).toHaveBeenCalledWith(7, expect.objectContaining({ companyName: 'Updated Company' }));
+        expect(mockUpdateCompany).toHaveBeenCalledWith(
+          7,
+          expect.objectContaining({ companyName: 'Updated Company' }),
+        );
         expect(invalidateSpy).toHaveBeenCalledWith(
           expect.objectContaining({ queryKey: ['timeline', 'company', 7] }),
         );
@@ -522,7 +549,10 @@ describe('CompanyDetail', () => {
       await user.tab();
 
       await waitFor(() => {
-        expect(mockUpdateCompany).toHaveBeenCalledWith(7, expect.objectContaining({ website: 'https://updated.com' }));
+        expect(mockUpdateCompany).toHaveBeenCalledWith(
+          7,
+          expect.objectContaining({ website: 'https://updated.com' }),
+        );
         expect(invalidateSpy).toHaveBeenCalledWith(
           expect.objectContaining({ queryKey: ['timeline', 'company', 7] }),
         );
@@ -537,18 +567,27 @@ describe('CompanyDetail', () => {
       render(<CompanyDetail companyId={7} currentUserId={1} />, { wrapper });
 
       await waitFor(() => {
-        expect(screen.getByText('https://www.linkedin.com/company/detail')).toBeInTheDocument();
+        expect(
+          screen.getByText('https://www.linkedin.com/company/detail'),
+        ).toBeInTheDocument();
       });
 
       await user.click(screen.getAllByTitle('Edit')[1]);
 
-      const input = screen.getByDisplayValue('https://www.linkedin.com/company/detail');
+      const input = screen.getByDisplayValue(
+        'https://www.linkedin.com/company/detail',
+      );
       await user.clear(input);
       await user.type(input, 'https://www.linkedin.com/company/updated');
       await user.tab();
 
       await waitFor(() => {
-        expect(mockUpdateCompany).toHaveBeenCalledWith(7, expect.objectContaining({ linkedinUrl: 'https://www.linkedin.com/company/updated' }));
+        expect(mockUpdateCompany).toHaveBeenCalledWith(
+          7,
+          expect.objectContaining({
+            linkedinUrl: 'https://www.linkedin.com/company/updated',
+          }),
+        );
         expect(invalidateSpy).toHaveBeenCalledWith(
           expect.objectContaining({ queryKey: ['timeline', 'company', 7] }),
         );
@@ -583,12 +622,16 @@ describe('CompanyDetail', () => {
       render(<CompanyDetail companyId={7} currentUserId={1} />, { wrapper });
 
       await waitFor(() => {
-        expect(screen.getByText('https://www.linkedin.com/company/detail')).toBeInTheDocument();
+        expect(
+          screen.getByText('https://www.linkedin.com/company/detail'),
+        ).toBeInTheDocument();
       });
 
       await user.click(screen.getAllByTitle('Edit')[1]);
 
-      const input = screen.getByDisplayValue('https://www.linkedin.com/company/detail');
+      const input = screen.getByDisplayValue(
+        'https://www.linkedin.com/company/detail',
+      );
       await user.clear(input);
       await user.type(input, 'not-a-url');
       await user.tab();
@@ -600,4 +643,3 @@ describe('CompanyDetail', () => {
     });
   });
 });
-

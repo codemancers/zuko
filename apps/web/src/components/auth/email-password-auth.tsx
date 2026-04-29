@@ -112,7 +112,12 @@ export function EmailPasswordAuth({ mode = 'signin' }: EmailPasswordAuthProps) {
         {/* GitHub OAuth button */}
         <div className="flex justify-center">
           <Button type="button" onClick={handleGitHubSignIn} outline>
-            <Image src="/icons/github.svg" alt="GitHub" width={20} height={20} />
+            <Image
+              src="/icons/github.svg"
+              alt="GitHub"
+              width={20}
+              height={20}
+            />
             Continue with GitHub
           </Button>
         </div>

@@ -43,7 +43,8 @@ vi.mock('@/lib/api/contacts', () => ({
     createContact: (...args: unknown[]) => mockCreateContact(...args),
     updateContact: (...args: unknown[]) => mockUpdateContact(...args),
     getContacts: (...args: unknown[]) => mockGetContacts(...args),
-    getTableViewContacts: (...args: unknown[]) => mockGetTableViewContacts(...args),
+    getTableViewContacts: (...args: unknown[]) =>
+      mockGetTableViewContacts(...args),
     getContact: (...args: unknown[]) => mockGetContact(...args),
     hideContact: (...args: unknown[]) => mockHideContact(...args),
   },
@@ -70,14 +71,26 @@ vi.mock('@zuko/ui-kit', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@zuko/ui-kit')>();
   return {
     ...actual,
-    ErrorMessage: ({ children, className }: React.PropsWithChildren<{ className?: string }>) =>
-      React.createElement('p', { className: `error-message ${className ?? ''}`.trim() }, children),
-    Description: ({ children, className }: React.PropsWithChildren<{ className?: string }>) =>
-      React.createElement('p', { className: `description ${className ?? ''}`.trim() }, children),
+    ErrorMessage: ({
+      children,
+      className,
+    }: React.PropsWithChildren<{ className?: string }>) =>
+      React.createElement(
+        'p',
+        { className: `error-message ${className ?? ''}`.trim() },
+        children,
+      ),
+    Description: ({
+      children,
+      className,
+    }: React.PropsWithChildren<{ className?: string }>) =>
+      React.createElement(
+        'p',
+        { className: `description ${className ?? ''}`.trim() },
+        children,
+      ),
   };
 });
-
-
 
 function createQueryClient() {
   return new QueryClient({
@@ -92,92 +105,89 @@ let queryClient: QueryClient;
 
 function wrapper({ children }: { children: React.ReactNode }) {
   return (
-    <QueryClientProvider client={queryClient}>
-      {children}
-    </QueryClientProvider>
+    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
   );
 }
 
-
 const mockMetadata = [
   {
-      id: "name",
-      header: "Name",
-      fieldType: "entity",
-      dataType: "text",
-      sortable: true,
-      filterable: true,
-      searchable: true,
-      editable: true,
-      isVisible: true,
-      default: true,
-      config: {
-          entityType: "contact",
-          hrefTemplate: "/contacts/{id}"
-      }
+    id: 'name',
+    header: 'Name',
+    fieldType: 'entity',
+    dataType: 'text',
+    sortable: true,
+    filterable: true,
+    searchable: true,
+    editable: true,
+    isVisible: true,
+    default: true,
+    config: {
+      entityType: 'contact',
+      hrefTemplate: '/contacts/{id}',
+    },
   },
   {
-      id: "email",
-      header: "Email",
-      fieldType: "text",
-      dataType: "text",
-      sortable: false,
-      filterable: true,
-      searchable: true,
-      editable: true,
-      isVisible: true,
-      default: true,
-      config: {
-          render: "email",
-          accessorKey: "email"
-      }
+    id: 'email',
+    header: 'Email',
+    fieldType: 'text',
+    dataType: 'text',
+    sortable: false,
+    filterable: true,
+    searchable: true,
+    editable: true,
+    isVisible: true,
+    default: true,
+    config: {
+      render: 'email',
+      accessorKey: 'email',
+    },
   },
   {
-      id: "phone",
-      header: "Phone",
-      fieldType: "text",
-      dataType: "text",
-      sortable: false,
-      filterable: true,
-      searchable: true,
-      editable: true,
-      isVisible: true,
-      default: true,
-      config: {
-          render: "phone",
-          accessorKey: "phone"
-      }
+    id: 'phone',
+    header: 'Phone',
+    fieldType: 'text',
+    dataType: 'text',
+    sortable: false,
+    filterable: true,
+    searchable: true,
+    editable: true,
+    isVisible: true,
+    default: true,
+    config: {
+      render: 'phone',
+      accessorKey: 'phone',
+    },
   },
   {
-      id: "owners",
-      header: "Owner",
-      fieldType: "text",
-      dataType: "json",
-      sortable: false,
-      filterable: true,
-      searchable: true,
-      editable: false,
-      isVisible: true,
-      default: true,
-      config: {
-          format: "owner"
-      }
+    id: 'owners',
+    header: 'Owner',
+    fieldType: 'text',
+    dataType: 'json',
+    sortable: false,
+    filterable: true,
+    searchable: true,
+    editable: false,
+    isVisible: true,
+    default: true,
+    config: {
+      format: 'owner',
+    },
   },
   {
-      id: "createdAt",
-      header: "Created",
-      fieldType: "date",
-      dataType: "date",
-      sortable: true,
-      filterable: true,
-      searchable: true,
-      editable: false,
-      isVisible: true,
-      default: true,
-      config: {
-          format: "date"
-      }
-  }
+    id: 'createdAt',
+    header: 'Created',
+    fieldType: 'date',
+    dataType: 'date',
+    sortable: true,
+    filterable: true,
+    searchable: true,
+    editable: false,
+    isVisible: true,
+    default: true,
+    config: {
+      format: 'date',
+    },
+  },
 ];
 
 const emptyContactsResponse = {
@@ -191,30 +201,30 @@ const mockContact = {
   organizationId: 1,
   name: 'John Doe',
   email: 'john@example.com',
-  phone: "+14155552671",
-  linkedinId: "john-doe-123",
-  notes: "test",
+  phone: '+14155552671',
+  linkedinId: 'john-doe-123',
+  notes: 'test',
   isHidden: false,
   createdAt: {
-      value: "2026-03-10T07:30:06.648Z",
-      display: "10 Mar 2026"
+    value: '2026-03-10T07:30:06.648Z',
+    display: '10 Mar 2026',
   },
-  updatedAt: "2026-03-10T07:30:06.648Z",
+  updatedAt: '2026-03-10T07:30:06.648Z',
   owners: {
-      value: {
-          id: 1,
-          contactId: 1,
-          userId: 1,
-          isPrimary: true,
-          assignedAt: "2026-03-10T07:30:06.648Z",
-          user: {
-              id: 1,
-              name: "Alice",
-              email: "alice@example.com"
-          }
+    value: {
+      id: 1,
+      contactId: 1,
+      userId: 1,
+      isPrimary: true,
+      assignedAt: '2026-03-10T07:30:06.648Z',
+      user: {
+        id: 1,
+        name: 'Alice',
+        email: 'alice@example.com',
       },
-      display: "Alice"
-  }
+    },
+    display: 'Alice',
+  },
 };
 
 describe('ContactsList', () => {
@@ -228,7 +238,7 @@ describe('ContactsList', () => {
     render(<ContactsList />, { wrapper });
     expect(screen.getByText('Contacts')).toBeInTheDocument();
     expect(
-      screen.getByText(/manage your sales contacts and relationships/i)
+      screen.getByText(/manage your sales contacts and relationships/i),
     ).toBeInTheDocument();
   });
 
@@ -236,8 +246,8 @@ describe('ContactsList', () => {
     render(<ContactsList />, { wrapper });
     expect(
       screen.getByPlaceholderText(
-        /search contacts by name, email, phone, or linkedin/i
-      )
+        /search contacts by name, email, phone, or linkedin/i,
+      ),
     ).toBeInTheDocument();
   });
 
@@ -245,7 +255,7 @@ describe('ContactsList', () => {
     const user = userEvent.setup();
     render(<ContactsList />, { wrapper });
     const search = screen.getByPlaceholderText(
-      /search contacts by name, email, phone, or linkedin/i
+      /search contacts by name, email, phone, or linkedin/i,
     );
     await user.type(search, 'john');
     expect(search).toHaveValue('john');
@@ -259,13 +269,15 @@ describe('ContactsList', () => {
       expect(screen.getByText('Name')).toBeInTheDocument();
       expect(screen.getByText('Email')).toBeInTheDocument();
     });
-    
+
     // The table body should have no data rows
     const tbody = screen.getByRole('table').querySelector('tbody');
     expect(tbody?.children.length).toBe(0);
 
     // button with add row label should be present
-    expect(screen.getByRole('button', { name: /add row/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: /add row/i }),
+    ).toBeInTheDocument();
   });
 
   it('shows table with contact when data is returned', async () => {
@@ -300,7 +312,7 @@ describe('ContactsList', () => {
 
   it('shows loading state while fetching contacts', () => {
     mockGetTableViewContacts.mockImplementation(
-      () => new Promise<never>(() => undefined) // never resolves
+      () => new Promise<never>(() => undefined), // never resolves
     );
     render(<ContactsList />, { wrapper });
     expect(screen.getByText(/loading contacts/i)).toBeInTheDocument();
@@ -310,12 +322,12 @@ describe('ContactsList', () => {
     const user = userEvent.setup();
     render(<ContactsList />, { wrapper });
     const search = screen.getByPlaceholderText(
-      /search contacts by name, email, phone, or linkedin/i
+      /search contacts by name, email, phone, or linkedin/i,
     );
     await user.type(search, 'alice');
     await vi.waitFor(() => {
       expect(mockGetTableViewContacts).toHaveBeenCalledWith(
-        expect.objectContaining({ search: 'alice' })
+        expect.objectContaining({ search: 'alice' }),
       );
     });
   });
@@ -330,9 +342,7 @@ describe('ContactsList', () => {
     await vi.waitFor(() => {
       expect(screen.getByText('John Doe')).toBeInTheDocument();
     });
-    expect(
-      screen.getByText(/showing 1 of 42 contacts/i)
-    ).toBeInTheDocument();
+    expect(screen.getByText(/showing 1 of 42 contacts/i)).toBeInTheDocument();
   });
 
   it('opens column creation modal when add column button is clicked', async () => {
@@ -346,16 +356,20 @@ describe('ContactsList', () => {
     await waitFor(() => {
       expect(screen.getByText('John Doe')).toBeInTheDocument();
     });
-    
+
     // Click the "Add column" button in the table header
     await user.click(screen.getByRole('button', { name: /add column/i }));
-    
+
     // Verify the dialog title and input fields
     expect(screen.getByText('Add new field')).toBeInTheDocument();
     expect(screen.getByPlaceholderText('Field name')).toBeInTheDocument();
-    expect(screen.getByPlaceholderText(/unique column key/i)).toBeInTheDocument();
+    expect(
+      screen.getByPlaceholderText(/unique column key/i),
+    ).toBeInTheDocument();
     expect(screen.getByText('Field Type')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /create field/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: /create field/i }),
+    ).toBeInTheDocument();
   });
 
   // creates new contact when click on add row
@@ -366,7 +380,9 @@ describe('ContactsList', () => {
     render(<ContactsList />, { wrapper });
 
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: /add row/i })).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: /add row/i }),
+      ).toBeInTheDocument();
     });
 
     await user.click(screen.getByRole('button', { name: /add row/i }));
@@ -418,7 +434,7 @@ describe('ContactDetail', () => {
 
   it('shows loading state while fetching contact', () => {
     mockGetContact.mockImplementation(
-      () => new Promise<never>(() => undefined)
+      () => new Promise<never>(() => undefined),
     );
     render(<ContactDetail contactId={7} currentUserId={1} />, { wrapper });
     expect(screen.getByText(/loading contact/i)).toBeInTheDocument();
@@ -434,7 +450,9 @@ describe('ContactDetail', () => {
 
   it('renders contact name and details when loaded', async () => {
     render(<ContactDetail contactId={7} currentUserId={1} />, { wrapper });
-    expect(await screen.findByRole('heading', { level: 1 })).toHaveTextContent('Detail Contact');
+    expect(await screen.findByRole('heading', { level: 1 })).toHaveTextContent(
+      'Detail Contact',
+    );
     expect(screen.getByText('detail@example.com')).toBeInTheDocument();
     expect(screen.getByText('+14155550000')).toBeInTheDocument();
     expect(screen.getByText('detail-linkedin')).toBeInTheDocument();
@@ -452,7 +470,9 @@ describe('ContactDetail', () => {
     await user.click(screen.getByRole('button', { name: /^hide$/i }));
     // Confirm in the ConfirmDialog
     await vi.waitFor(() =>
-      expect(screen.getByText(/are you sure you want to hide this contact/i)).toBeInTheDocument()
+      expect(
+        screen.getByText(/are you sure you want to hide this contact/i),
+      ).toBeInTheDocument(),
     );
     const hideButtons = screen.getAllByRole('button', { name: /^hide$/i });
     await user.click(hideButtons[hideButtons.length - 1]);
@@ -492,7 +512,9 @@ describe('ContactDetail', () => {
       render(<ContactDetail contactId={7} currentUserId={1} />, { wrapper });
 
       await waitFor(() => {
-        expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Detail Contact');
+        expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(
+          'Detail Contact',
+        );
       });
 
       fireEvent.blur(screen.getByRole('heading', { level: 1 }), {
@@ -502,7 +524,10 @@ describe('ContactDetail', () => {
       await new Promise((r) => setTimeout(r, 2100)); // past 2000ms debounce
 
       await waitFor(() => {
-        expect(mockUpdateContact).toHaveBeenCalledWith(7, expect.objectContaining({ name: 'Updated Contact' }));
+        expect(mockUpdateContact).toHaveBeenCalledWith(
+          7,
+          expect.objectContaining({ name: 'Updated Contact' }),
+        );
         expect(invalidateSpy).toHaveBeenCalledWith(
           expect.objectContaining({ queryKey: ['timeline', 'contact', 7] }),
         );
@@ -528,7 +553,10 @@ describe('ContactDetail', () => {
       await user.tab();
 
       await waitFor(() => {
-        expect(mockUpdateContact).toHaveBeenCalledWith(7, expect.objectContaining({ email: 'updated@example.com' }));
+        expect(mockUpdateContact).toHaveBeenCalledWith(
+          7,
+          expect.objectContaining({ email: 'updated@example.com' }),
+        );
         expect(invalidateSpy).toHaveBeenCalledWith(
           expect.objectContaining({ queryKey: ['timeline', 'contact', 7] }),
         );
@@ -554,7 +582,10 @@ describe('ContactDetail', () => {
       await user.tab();
 
       await waitFor(() => {
-        expect(mockUpdateContact).toHaveBeenCalledWith(7, expect.objectContaining({ phone: '+14155559999' }));
+        expect(mockUpdateContact).toHaveBeenCalledWith(
+          7,
+          expect.objectContaining({ phone: '+14155559999' }),
+        );
         expect(invalidateSpy).toHaveBeenCalledWith(
           expect.objectContaining({ queryKey: ['timeline', 'contact', 7] }),
         );
@@ -580,7 +611,10 @@ describe('ContactDetail', () => {
       await user.tab();
 
       await waitFor(() => {
-        expect(mockUpdateContact).toHaveBeenCalledWith(7, expect.objectContaining({ linkedinId: 'updated-linkedin' }));
+        expect(mockUpdateContact).toHaveBeenCalledWith(
+          7,
+          expect.objectContaining({ linkedinId: 'updated-linkedin' }),
+        );
         expect(invalidateSpy).toHaveBeenCalledWith(
           expect.objectContaining({ queryKey: ['timeline', 'contact', 7] }),
         );
@@ -632,5 +666,3 @@ describe('ContactDetail', () => {
     });
   });
 });
-
-

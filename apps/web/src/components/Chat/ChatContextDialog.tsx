@@ -11,7 +11,8 @@ import { useChatContextManager } from './ChatContextWrapper';
 export const ChatContextDialog = () => {
   const contextManager = useChatContextManager();
   const type = contextManager.dialogConfig.type ?? 'contact';
-  const labels = CHAT_ENTITY_DIALOG_LABELS[type] ?? CHAT_ENTITY_DIALOG_LABELS.contact;
+  const labels =
+    CHAT_ENTITY_DIALOG_LABELS[type] ?? CHAT_ENTITY_DIALOG_LABELS.contact;
 
   return (
     <EntitySelectorDialog

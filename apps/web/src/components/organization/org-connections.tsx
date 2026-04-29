@@ -2,7 +2,11 @@
 
 import Image from 'next/image';
 import { Button, Divider, Subheading, Text } from '@zuko/ui-kit';
-import { BaseTable, createColumnsFromMetadata, type BaseRow } from '@/components/Table';
+import {
+  BaseTable,
+  createColumnsFromMetadata,
+  type BaseRow,
+} from '@/components/Table';
 import type { ColumnDef } from '@tanstack/react-table';
 import type { ColumnMetadata } from '@/types/table-metadata';
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -41,7 +45,12 @@ const GitHubIcon = () => (
 );
 
 const GoogleCalendarIcon = () => (
-  <Image src="/icons/google-calendar.svg" alt="Google Calendar" width={20} height={20} />
+  <Image
+    src="/icons/google-calendar.svg"
+    alt="Google Calendar"
+    width={20}
+    height={20}
+  />
 );
 
 // ---------------------------------------------------------------------------
@@ -92,7 +101,8 @@ export const OrgConnections = () => {
   const session = authClient.useSession();
   const userEmail = (session?.data?.user as any)?.email as string | undefined;
 
-  const [ghAppStatus, setGhAppStatus] = useState<GitHubInstallationStatus | null>(null);
+  const [ghAppStatus, setGhAppStatus] =
+    useState<GitHubInstallationStatus | null>(null);
   const [loadingApp, setLoadingApp] = useState(true);
   const [accounts, setAccounts] = useState<AccountData[]>([]);
   const [loadingAccounts, setLoadingAccounts] = useState(true);
@@ -129,34 +139,35 @@ export const OrgConnections = () => {
   // Action handlers
   // -------------------------------------------------------------------------
 
-  const handleConnect = useCallback(
-    async (provider: 'github' | 'google') => {
-      setPendingAction(provider);
-      try {
-        const result = await authClient.linkSocial({
-          provider,
-          callbackURL: `${window.location.origin}/settings`,
-        });
-        if (result?.error) {
-          toast.error(result.error.message || `Failed to connect ${provider}`);
-        }
-      } catch (e) {
-        console.error('Connection error:', e);
-        toast.error(`Failed to connect ${provider}`);
-      } finally {
-        setPendingAction(null);
+  const handleConnect = useCallback(async (provider: 'github' | 'google') => {
+    setPendingAction(provider);
+    try {
+      const result = await authClient.linkSocial({
+        provider,
+        callbackURL: `${window.location.origin}/settings`,
+      });
+      if (result?.error) {
+        toast.error(result.error.message || `Failed to connect ${provider}`);
       }
-    },
-    [],
-  );
+    } catch (e) {
+      console.error('Connection error:', e);
+      toast.error(`Failed to connect ${provider}`);
+    } finally {
+      setPendingAction(null);
+    }
+  }, []);
 
   const handleDisconnect = useCallback(
     async (providerId: string) => {
       setPendingAction(`disconnect-${providerId}`);
       try {
-        const result = await (authClient as any).unlinkAccount?.({ providerId });
+        const result = await (authClient as any).unlinkAccount?.({
+          providerId,
+        });
         if (result?.error) {
-          toast.error(result.error.message || `Failed to disconnect ${providerId}`);
+          toast.error(
+            result.error.message || `Failed to disconnect ${providerId}`,
+          );
           return;
         }
         toast.success(`Disconnected ${providerId}`);
@@ -205,7 +216,9 @@ export const OrgConnections = () => {
             <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-zinc-100 dark:bg-zinc-800">
               {conn.icon}
             </div>
-            <span className="font-medium text-zinc-900 dark:text-zinc-100">{conn.name}</span>
+            <span className="font-medium text-zinc-900 dark:text-zinc-100">
+              {conn.name}
+            </span>
           </div>
         );
       },
@@ -222,12 +235,18 @@ export const OrgConnections = () => {
         const connected = status === 'connected';
         const isIntegration = id === 'github-app';
         const provider = id as 'github' | 'google';
-        const isPending = pendingAction === id || pendingAction === `disconnect-${id}`;
+        const isPending =
+          pendingAction === id || pendingAction === `disconnect-${id}`;
 
         if (isIntegration) {
           return (
             <div className="flex items-center gap-1">
-              <Button plain disabled={isPending} onClick={handleInstallApp} className="!text-blue-500 dark:!text-blue-400">
+              <Button
+                plain
+                disabled={isPending}
+                onClick={handleInstallApp}
+                className="!text-blue-500 dark:!text-blue-400"
+              >
                 {connected ? 'Re-install' : 'Install'}
               </Button>
             </div>
@@ -238,15 +257,30 @@ export const OrgConnections = () => {
           <div className="flex items-center gap-1">
             {connected ? (
               <>
-                <Button plain disabled={pendingAction === `disconnect-${id}`} onClick={() => handleDisconnect(id)} className="!text-red-500 dark:!text-red-400">
+                <Button
+                  plain
+                  disabled={pendingAction === `disconnect-${id}`}
+                  onClick={() => handleDisconnect(id)}
+                  className="!text-red-500 dark:!text-red-400"
+                >
                   Disconnect
                 </Button>
-                <Button plain disabled={pendingAction === provider} onClick={() => handleConnect(provider)} className="!text-blue-500 dark:!text-blue-400">
+                <Button
+                  plain
+                  disabled={pendingAction === provider}
+                  onClick={() => handleConnect(provider)}
+                  className="!text-blue-500 dark:!text-blue-400"
+                >
                   Reconnect
                 </Button>
               </>
             ) : (
-              <Button plain disabled={pendingAction === provider} onClick={() => handleConnect(provider)} className="!text-blue-500 dark:!text-blue-400">
+              <Button
+                plain
+                disabled={pendingAction === provider}
+                onClick={() => handleConnect(provider)}
+                className="!text-blue-500 dark:!text-blue-400"
+              >
                 {pendingAction === provider ? 'Connecting...' : 'Connect'}
               </Button>
             )}
@@ -258,7 +292,11 @@ export const OrgConnections = () => {
   );
 
   const columns = useMemo(
-    () => [nameColumn, ...createColumnsFromMetadata<BaseRow>(CONNECTION_TABLE_METADATA), actionsColumn],
+    () => [
+      nameColumn,
+      ...createColumnsFromMetadata<BaseRow>(CONNECTION_TABLE_METADATA),
+      actionsColumn,
+    ],
     [nameColumn, actionsColumn],
   );
 

@@ -161,10 +161,7 @@ export const companiesApi = {
   /**
    * Update an existing company
    */
-  async updateCompany(
-    id: number,
-    data: UpdateCompanyDto,
-  ): Promise<Company> {
+  async updateCompany(id: number, data: UpdateCompanyDto): Promise<Company> {
     return apiClient.patch(`/companies/${id}`, data);
   },
 

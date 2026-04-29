@@ -1,4 +1,4 @@
-import type { Cell} from '@tanstack/react-table';
+import type { Cell } from '@tanstack/react-table';
 import { flexRender } from '@tanstack/react-table';
 import { TableCell } from '@zuko/ui-kit';
 import clsx from 'clsx';
@@ -8,20 +8,24 @@ import { EditorRegistry, type EditorProps } from './CellEditors';
 
 interface BaseTableCellProps<TData> {
   cell: Cell<TData, unknown>;
-  onCellUpdate?: (rowId: string | number, columnId: string, value: unknown) => void;
+  onCellUpdate?: (
+    rowId: string | number,
+    columnId: string,
+    value: unknown,
+  ) => void;
 }
 
 /**
  * Internal component to handle the temporary state of an active editor.
  * Isolating this state to avoid complex useEffect logic in BaseTableCell.
  */
-function InlineEditor({ 
-  initialValue, 
-  onCommit, 
-  onCancel, 
+function InlineEditor({
+  initialValue,
+  onCommit,
+  onCancel,
   metadata,
-  Editor 
-}: { 
+  Editor,
+}: {
   initialValue: unknown;
   onCommit: (val: unknown) => void;
   onCancel: () => void;
@@ -57,25 +61,39 @@ function InlineEditor({
   );
 }
 
-export function BaseTableCell<TData extends BaseRow>({ cell, onCellUpdate }: BaseTableCellProps<TData>) {
+export function BaseTableCell<TData extends BaseRow>({
+  cell,
+  onCellUpdate,
+}: BaseTableCellProps<TData>) {
   const [isEditing, setIsEditing] = useState(false);
-  const metadata = (cell.column.columnDef as any).meta?.metadata as ColumnMetadata;
-  const isEditable = metadata?.editable !== false && EditorRegistry[metadata?.fieldType];
-  
-  const Editor = metadata?.fieldType ? EditorRegistry[metadata.fieldType] : null;
+  const metadata = (cell.column.columnDef as any).meta
+    ?.metadata as ColumnMetadata;
+  const isEditable =
+    metadata?.editable !== false && EditorRegistry[metadata?.fieldType];
+
+  const Editor = metadata?.fieldType
+    ? EditorRegistry[metadata.fieldType]
+    : null;
 
   // Decompose value for editing
   const rawData = cell.getValue();
-  const initialValue = typeof rawData === 'object' && rawData !== null && 'value' in rawData 
-    ? (rawData as { value: unknown }).value 
-    : rawData;
+  const initialValue =
+    typeof rawData === 'object' && rawData !== null && 'value' in rawData
+      ? (rawData as { value: unknown }).value
+      : rawData;
 
   const handleCommit = (newValue: unknown) => {
     setIsEditing(false);
-    
+
     // Check if anything actually changed
-    const isNewValueEmpty = newValue === null || newValue === undefined || (typeof newValue === 'string' && newValue.trim() === '');
-    const isInitialEmpty = initialValue === null || initialValue === undefined || (typeof initialValue === 'string' && initialValue.trim() === '');
+    const isNewValueEmpty =
+      newValue === null ||
+      newValue === undefined ||
+      (typeof newValue === 'string' && newValue.trim() === '');
+    const isInitialEmpty =
+      initialValue === null ||
+      initialValue === undefined ||
+      (typeof initialValue === 'string' && initialValue.trim() === '');
 
     // skip update if both are initial and new value is empty
     if (isInitialEmpty && isNewValueEmpty) return;
@@ -86,12 +104,18 @@ export function BaseTableCell<TData extends BaseRow>({ cell, onCellUpdate }: Bas
   };
 
   return (
-    <TableCell 
+    <TableCell
       className={clsx('align-middle', isEditable && 'cursor-text')}
-      style={{ 
+      style={{
         width: cell.column.id === 'sno' ? cell.column.getSize() : undefined,
-        minWidth: cell.column.id === 'sno' ? cell.column.getSize() : cell.column.columnDef.minSize,
-        maxWidth: cell.column.id === 'sno' ? cell.column.getSize() : cell.column.columnDef.maxSize,
+        minWidth:
+          cell.column.id === 'sno'
+            ? cell.column.getSize()
+            : cell.column.columnDef.minSize,
+        maxWidth:
+          cell.column.id === 'sno'
+            ? cell.column.getSize()
+            : cell.column.columnDef.maxSize,
       }}
       onClick={(e) => {
         if (isEditable) {

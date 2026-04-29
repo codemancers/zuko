@@ -1,5 +1,5 @@
-import { Page, Locator, expect } from "@playwright/test";
-import { BasePage } from "./BasePage";
+import { Page, Locator, expect } from '@playwright/test';
+import { BasePage } from './BasePage';
 
 export class DealsPage extends BasePage {
   readonly newDealButton: Locator;
@@ -7,12 +7,12 @@ export class DealsPage extends BasePage {
 
   constructor(page: Page) {
     super(page);
-    this.newDealButton = page.getByRole("button", { name: /New Deal/i });
+    this.newDealButton = page.getByRole('button', { name: /New Deal/i });
     this.searchInput = page.getByPlaceholder(/Search deals/i);
   }
 
   override async goto() {
-    await super.goto("/deals");
+    await super.goto('/deals');
     await this.waitForDealsToLoad();
   }
 
@@ -23,13 +23,13 @@ export class DealsPage extends BasePage {
   async getDealItems() {
     await this.waitForDealsToLoad();
     // Find all table rows except the header
-    const rows = this.page.locator("table tbody tr");
+    const rows = this.page.locator('table tbody tr');
     return rows.all();
   }
 
   async waitForDealsToLoad() {
     await this.page
-      .waitForSelector("table", { timeout: 5000 })
+      .waitForSelector('table', { timeout: 5000 })
       .catch(() => null);
   }
 
@@ -46,23 +46,25 @@ export class DealsPage extends BasePage {
    * Create a new deal row with given name
    */
   async createDealRow(dealName: string) {
-    await this.page.goto("/deals");
-    const initialRowCount = await this.page.locator("tbody tr").count();
+    await this.page.goto('/deals');
+    const initialRowCount = await this.page.locator('tbody tr').count();
 
-    await this.page.getByRole("button", { name: "Add row" }).click();
-    await expect(this.page.locator("tbody tr")).toHaveCount(initialRowCount + 1);
+    await this.page.getByRole('button', { name: 'Add row' }).click();
+    await expect(this.page.locator('tbody tr')).toHaveCount(
+      initialRowCount + 1,
+    );
 
     // Find the 'title' column index
-    const titleIndex = await this.getColumnIndex("title");
+    const titleIndex = await this.getColumnIndex('title');
 
-    const lastRow = this.page.locator("tbody tr").last();
-    const titleCell = lastRow.locator("td").nth(titleIndex);
+    const lastRow = this.page.locator('tbody tr').last();
+    const titleCell = lastRow.locator('td').nth(titleIndex);
     await titleCell.evaluate((node) => (node as any).click());
 
-    const input = titleCell.locator("input");
-    await input.waitFor({ state: "visible" });
+    const input = titleCell.locator('input');
+    await input.waitFor({ state: 'visible' });
     await input.fill(dealName);
-    await input.press("Enter");
+    await input.press('Enter');
     await expect(this.page.getByText(dealName)).toBeVisible();
   }
 
@@ -71,7 +73,7 @@ export class DealsPage extends BasePage {
    */
   async waitForDetailsPageToLoad() {
     await this.page.waitForURL(/\/deals\/\d+$/, { timeout: 10000 });
-    await this.page.waitForLoadState("domcontentloaded");
+    await this.page.waitForLoadState('domcontentloaded');
     const match = this.page.url().match(/\/deals\/(\d+)/);
     if (!match?.[1]) {
       throw new Error(`Failed to extract deal ID from URL: ${this.page.url()}`);

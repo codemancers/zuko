@@ -196,7 +196,11 @@ describe('DealActivityListener', () => {
         entityType: 'deal',
         entityId: DEAL_ID,
         actorId: ACTOR_ID,
-        metadata: { contactId: 7, contactName: 'Jane Smith', role: 'Decision Maker' },
+        metadata: {
+          contactId: 7,
+          contactName: 'Jane Smith',
+          role: 'Decision Maker',
+        },
       });
     });
 
@@ -208,7 +212,9 @@ describe('DealActivityListener', () => {
         contactName: 'Jane Smith',
       });
 
-      const call = (mockActivityService.create as Mock).mock.calls[0] as [{ metadata: Record<string, unknown> }];
+      const call = (mockActivityService.create as Mock).mock.calls[0] as [
+        { metadata: Record<string, unknown> },
+      ];
       expect(call[0].metadata).not.toHaveProperty('role');
     });
   });

@@ -20,35 +20,38 @@ function isCellValue(data: unknown): data is CellValue<unknown> {
  * Standardizes cell rendering and value decomposition.
  */
 export function createColumnsFromMetadata<TData extends BaseRow>(
-  metadata: ColumnMetadata[]
+  metadata: ColumnMetadata[],
 ): ColumnDef<TData, unknown>[] {
-  return metadata.map((col) => ({
-    id: col.id,
-    accessorKey: col.config?.accessorKey || col.id,
-    header: col.header,
-    meta: { metadata: col },
-    cell: (info) => {
-      const { row, getValue } = info;
-      const data = getValue();
-      
-      let value: unknown = data;
-      let display: string | undefined = undefined;
+  return metadata.map(
+    (col) =>
+      ({
+        id: col.id,
+        accessorKey: col.config?.accessorKey || col.id,
+        header: col.header,
+        meta: { metadata: col },
+        cell: (info) => {
+          const { row, getValue } = info;
+          const data = getValue();
 
-      // Handle decomposed values (standard for our API responses)
-      if (isCellValue(data)) {
-        value = data.value;
-        display = data.display ?? undefined;
-      }
-      
-      return (
-        <DataField 
-          value={value} 
-          display={display}
-          metadata={col} 
-          row={row.original} 
-        />
-      );
-    },
-    enableSorting: col.sortable !== false,
-  } as ColumnDef<TData, unknown>));
+          let value: unknown = data;
+          let display: string | undefined = undefined;
+
+          // Handle decomposed values (standard for our API responses)
+          if (isCellValue(data)) {
+            value = data.value;
+            display = data.display ?? undefined;
+          }
+
+          return (
+            <DataField
+              value={value}
+              display={display}
+              metadata={col}
+              row={row.original}
+            />
+          );
+        },
+        enableSorting: col.sortable !== false,
+      }) as ColumnDef<TData, unknown>,
+  );
 }

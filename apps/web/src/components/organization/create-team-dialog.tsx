@@ -84,10 +84,14 @@ export const CreateTeamDialog = ({
         console.error('Team operation error:', error);
         form.setError('root', {
           type: 'manual',
-          message: error.message || `Failed to ${isUpdating ? 'update' : 'create'} team`,
+          message:
+            error.message ||
+            `Failed to ${isUpdating ? 'update' : 'create'} team`,
         });
       } else {
-        toast.success(`Team "${data.name}" ${isUpdating ? 'updated' : 'created'} successfully`);
+        toast.success(
+          `Team "${data.name}" ${isUpdating ? 'updated' : 'created'} successfully`,
+        );
         queryClient.invalidateQueries({
           queryKey: ['organization', organizationId, 'teams'],
         });
@@ -113,8 +117,8 @@ export const CreateTeamDialog = ({
     <Dialog open={isOpen} onClose={handleClose}>
       <DialogTitle>{isUpdating ? 'Update Team' : 'Create Team'}</DialogTitle>
       <DialogDescription>
-        {isUpdating 
-          ? 'Update the details for this team.' 
+        {isUpdating
+          ? 'Update the details for this team.'
           : 'Teams allow you to group members within your organization.'}
       </DialogDescription>
       <form onSubmit={form.handleSubmit(onSubmit)}>
@@ -135,13 +139,21 @@ export const CreateTeamDialog = ({
           </Field>
         </DialogBody>
         <DialogActions>
-          <Button plain onClick={handleClose} disabled={form.formState.isSubmitting}>
+          <Button
+            plain
+            onClick={handleClose}
+            disabled={form.formState.isSubmitting}
+          >
             Cancel
           </Button>
           <Button type="submit" disabled={form.formState.isSubmitting}>
-            {form.formState.isSubmitting 
-              ? (isUpdating ? 'Updating...' : 'Creating...') 
-              : (isUpdating ? 'Update Team' : 'Create Team')}
+            {form.formState.isSubmitting
+              ? isUpdating
+                ? 'Updating...'
+                : 'Creating...'
+              : isUpdating
+                ? 'Update Team'
+                : 'Create Team'}
           </Button>
         </DialogActions>
       </form>

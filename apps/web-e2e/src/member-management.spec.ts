@@ -74,8 +74,12 @@ test.describe('Member Management', () => {
     await expect(userBRow).toBeVisible({ timeout: 15000 });
 
     // Add to team — only available when teams exist in the org
-    const addToTeamButton = userBRow.getByRole('button', { name: /add to team/i });
-    const hasTeams = await addToTeamButton.count() > 0 && await addToTeamButton.isVisible();
+    const addToTeamButton = userBRow.getByRole('button', {
+      name: /add to team/i,
+    });
+    const hasTeams =
+      (await addToTeamButton.count()) > 0 &&
+      (await addToTeamButton.isVisible());
     if (hasTeams) {
       await addToTeamButton.click();
       // Select first available team option
@@ -83,13 +87,17 @@ test.describe('Member Management', () => {
       await firstTeamOption.waitFor({ state: 'visible', timeout: 3000 });
       const teamName = await firstTeamOption.innerText();
       await firstTeamOption.click();
-      await expect(page.getByText(new RegExp(`added to ${teamName}`, 'i'))).toBeVisible();
+      await expect(
+        page.getByText(new RegExp(`added to ${teamName}`, 'i')),
+      ).toBeVisible();
 
       // Verify User B is now in the team list
       await settingsPage.switchTab('teams');
       await expect(page.getByLabel('Teams').getByText(teamName)).toBeVisible();
     } else {
-      console.log('No teams available in this org, skipping team assignment step');
+      console.log(
+        'No teams available in this org, skipping team assignment step',
+      );
     }
   });
 
@@ -100,10 +108,17 @@ test.describe('Member Management', () => {
     await settingsPage.switchTab('members');
 
     // Find an active member row with role "Member" (not Owner/Admin, not Invited)
-    const memberRows = page.locator('tr')
-      .filter({ has: page.locator('select[value="member"], select option[value="member"]:checked') })
+    const memberRows = page
+      .locator('tr')
+      .filter({
+        has: page.locator(
+          'select[value="member"], select option[value="member"]:checked',
+        ),
+      })
       .filter({ hasText: /Active/ })
-      .filter({ hasNot: page.locator('select[value="owner"], select[value="admin"]') });
+      .filter({
+        hasNot: page.locator('select[value="owner"], select[value="admin"]'),
+      });
     const count = await memberRows.count();
     if (count === 0) {
       test.skip();
@@ -113,9 +128,7 @@ test.describe('Member Management', () => {
     const memberRow = memberRows.first();
 
     // Click the icon button "Remove member" directly (no dropdown)
-    await memberRow
-      .getByRole('button', { name: /remove member/i })
-      .click();
+    await memberRow.getByRole('button', { name: /remove member/i }).click();
 
     // Wait for confirm dialog to appear, then click Remove
     const confirmButton = page.getByRole('button', { name: /^remove$/i });

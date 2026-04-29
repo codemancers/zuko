@@ -3,12 +3,18 @@
 import { useEffect, useState } from 'react';
 import { editorJsonToMarkdown } from '@/lib/editor-utils';
 
-
-export function MarkdownContent({ content }: { content: string | null | undefined }) {
+export function MarkdownContent({
+  content,
+}: {
+  content: string | null | undefined;
+}) {
   const [html, setHtml] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!content) { setHtml(null); return; }
+    if (!content) {
+      setHtml(null);
+      return;
+    }
 
     const markdown = editorJsonToMarkdown(content) ?? content;
 

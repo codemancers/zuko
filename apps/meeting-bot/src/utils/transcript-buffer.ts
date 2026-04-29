@@ -4,7 +4,7 @@ export type TranscriptBufferConfig = {
 };
 
 export class TranscriptBuffer {
-  private buffer = "";
+  private buffer = '';
   private readonly thresholdChars: number;
   private readonly overlapChars: number;
 
@@ -24,13 +24,13 @@ export class TranscriptBuffer {
       let chunk: string;
       if (this.overlapChars > 0 && this.buffer.length > this.overlapChars) {
         const flushLength = this.buffer.length - this.overlapChars;
-        const lastSpace = this.buffer.lastIndexOf(" ", flushLength);
+        const lastSpace = this.buffer.lastIndexOf(' ', flushLength);
         const cut = lastSpace > flushLength - 500 ? lastSpace : flushLength;
         chunk = this.buffer.slice(0, cut).trim();
         this.buffer = this.buffer.slice(cut).trim();
       } else {
         chunk = this.buffer;
-        this.buffer = "";
+        this.buffer = '';
       }
 
       if (chunk) {
@@ -40,7 +40,7 @@ export class TranscriptBuffer {
 
     if (isFinal && this.buffer.trim()) {
       chunks.push(this.buffer.trim());
-      this.buffer = "";
+      this.buffer = '';
     }
 
     return chunks;

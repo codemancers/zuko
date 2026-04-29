@@ -5,7 +5,7 @@
  * Browser → Next.js /api/proxy → Backend API
  */
 
-import type { NextRequest} from 'next/server';
+import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 
 const BACKEND_URL =

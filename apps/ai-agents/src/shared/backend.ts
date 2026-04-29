@@ -1,5 +1,5 @@
 interface BackendRequestConfig {
-  method?: "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
+  method?: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
   userId?: string;
   body?: any;
   organisationId?: string;
@@ -7,25 +7,25 @@ interface BackendRequestConfig {
 
 export const Backend = async (
   endpoint: string,
-  config: BackendRequestConfig
+  config: BackendRequestConfig,
 ) => {
-  const { method = "GET", userId, body, organisationId } = config;
+  const { method = 'GET', userId, body, organisationId } = config;
 
   // Build URL with query parameters
   const url = new URL(`${process.env.BACKEND_URL}/api/agents${endpoint}`);
 
   const AGENT_TOKEN = process.env.AGENT_TOKEN;
   if (!AGENT_TOKEN) {
-    throw new Error("AGENT_TOKEN is not set");
+    throw new Error('AGENT_TOKEN is not set');
   }
 
   const fetchConfig: RequestInit = {
     method,
     headers: {
-      "x-user-id": userId || "",
-      "x-agent-token": AGENT_TOKEN,
-      "Content-Type": "application/json",
-      "x-org-id": organisationId || "",
+      'x-user-id': userId || '',
+      'x-agent-token': AGENT_TOKEN,
+      'Content-Type': 'application/json',
+      'x-org-id': organisationId || '',
     },
   };
 
@@ -44,7 +44,7 @@ export const Backend = async (
     return { data: responseData, success: true };
   } catch (error) {
     return {
-      error: error instanceof Error ? error.message : "Request failed",
+      error: error instanceof Error ? error.message : 'Request failed',
       success: false,
     };
   }

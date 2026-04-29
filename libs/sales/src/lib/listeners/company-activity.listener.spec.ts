@@ -19,7 +19,10 @@ describe('CompanyActivityListener', () => {
 
   describe('handleCompanyCreated', () => {
     it('calls activityService.create with company_created', async () => {
-      await listener.handleCompanyCreated({ companyId: COMPANY_ID, actorId: ACTOR_ID });
+      await listener.handleCompanyCreated({
+        companyId: COMPANY_ID,
+        actorId: ACTOR_ID,
+      });
 
       expect(mockActivityService.create).toHaveBeenCalledWith({
         activityType: 'company_created',
@@ -31,7 +34,11 @@ describe('CompanyActivityListener', () => {
     });
 
     it('includes source in metadata when source is provided', async () => {
-      await listener.handleCompanyCreated({ companyId: COMPANY_ID, actorId: ACTOR_ID, source: 'ai' });
+      await listener.handleCompanyCreated({
+        companyId: COMPANY_ID,
+        actorId: ACTOR_ID,
+        source: 'ai',
+      });
 
       expect(mockActivityService.create).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -56,7 +63,11 @@ describe('CompanyActivityListener', () => {
         entityType: 'company',
         entityId: COMPANY_ID,
         actorId: ACTOR_ID,
-        metadata: { field: 'website', from: 'https://old.com', to: 'https://new.com' },
+        metadata: {
+          field: 'website',
+          from: 'https://old.com',
+          to: 'https://new.com',
+        },
       });
     });
   });
@@ -126,7 +137,9 @@ describe('CompanyActivityListener', () => {
         contactName: 'Eve',
       });
 
-      const call = (mockActivityService.create as Mock).mock.calls[0] as [{ metadata: Record<string, unknown> }];
+      const call = (mockActivityService.create as Mock).mock.calls[0] as [
+        { metadata: Record<string, unknown> },
+      ];
       expect(call[0].metadata).not.toHaveProperty('role');
     });
   });

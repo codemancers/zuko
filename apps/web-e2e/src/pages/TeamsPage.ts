@@ -25,7 +25,10 @@ export class TeamsPage extends BasePage {
     await addRowButton.click();
     // If a name is provided, rename inline by clicking the name cell
     if (name) {
-      const newTeamRow = this.page.locator('tr').filter({ hasText: 'New Team' }).last();
+      const newTeamRow = this.page
+        .locator('tr')
+        .filter({ hasText: 'New Team' })
+        .last();
       await newTeamRow.locator('span').filter({ hasText: 'New Team' }).click();
       const input = newTeamRow.locator('input');
       await input.waitFor({ state: 'visible', timeout: 3000 });

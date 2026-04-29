@@ -91,12 +91,16 @@ const TaskForm = ({ mode, task, defaultParentId }: TaskFormProps) => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
       if (mode === 'create') {
         if (result.parentId) {
-          queryClient.invalidateQueries({ queryKey: ['timeline', 'task', result.parentId] });
+          queryClient.invalidateQueries({
+            queryKey: ['timeline', 'task', result.parentId],
+          });
         }
         toast.success('Task created successfully');
         router.push('/tasks');
       } else {
-        queryClient.invalidateQueries({ queryKey: ['timeline', 'task', result.id] });
+        queryClient.invalidateQueries({
+          queryKey: ['timeline', 'task', result.id],
+        });
         toast.success('Task updated successfully');
         router.push(`/tasks/${result.id}`);
       }
@@ -144,7 +148,10 @@ const TaskForm = ({ mode, task, defaultParentId }: TaskFormProps) => {
               control={form.control}
               name="description"
               render={({ field }) => (
-                <div data-slot="control" className="rounded-lg border border-zinc-200 dark:border-zinc-800 p-4 min-h-32 bg-white dark:bg-zinc-900 shadow-sm transition-all focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-500">
+                <div
+                  data-slot="control"
+                  className="rounded-lg border border-zinc-200 dark:border-zinc-800 p-4 min-h-32 bg-white dark:bg-zinc-900 shadow-sm transition-all focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-500"
+                >
                   <Editor
                     holder="task-description-editor"
                     data={ensureOutputData(field.value)}
@@ -158,10 +165,7 @@ const TaskForm = ({ mode, task, defaultParentId }: TaskFormProps) => {
 
           <Field>
             <Label>Status</Label>
-            <Select
-              {...form.register('status')}
-              disabled={mutation.isPending}
-            >
+            <Select {...form.register('status')} disabled={mutation.isPending}>
               {STATUS_OPTIONS.map((opt) => (
                 <option key={opt.value} value={opt.value}>
                   {opt.label}
@@ -169,7 +173,9 @@ const TaskForm = ({ mode, task, defaultParentId }: TaskFormProps) => {
               ))}
             </Select>
             {form.formState.errors.status && (
-              <ErrorMessage>{form.formState.errors.status.message}</ErrorMessage>
+              <ErrorMessage>
+                {form.formState.errors.status.message}
+              </ErrorMessage>
             )}
           </Field>
 

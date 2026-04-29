@@ -1,9 +1,6 @@
 'use client';
 
-import {
-  CheckCircleIcon,
-  PlusIcon,
-} from '@heroicons/react/24/outline';
+import { CheckCircleIcon, PlusIcon } from '@heroicons/react/24/outline';
 import { Button } from '@zuko/ui-kit';
 import { PageHeader, SearchBar } from '@/components/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -32,7 +29,11 @@ const TasksList = () => {
   const router = useRouter();
   const queryClient = useQueryClient();
   const [taskToDelete, setTaskToDelete] = useState<TaskRow | null>(null);
-  const { inputValue: searchTerm, setInputValue: setSearchTerm, debouncedValue } = useSearchParam();
+  const {
+    inputValue: searchTerm,
+    setInputValue: setSearchTerm,
+    debouncedValue,
+  } = useSearchParam();
 
   const { data, isLoading } = useQuery(
     getTableViewTasks({ search: debouncedValue || undefined }),

@@ -62,7 +62,12 @@ export class TasksController {
           : Number(query.parentId)
         : undefined;
 
-    return this.taskService.getTasks(organizationId, { page, limit, parentId, search: query.search });
+    return this.taskService.getTasks(organizationId, {
+      page,
+      limit,
+      parentId,
+      search: query.search,
+    });
   }
 
   @Get(':id')
@@ -80,7 +85,12 @@ export class TasksController {
     @Body() dto: UpdateTaskDto,
     @Req() req: RequestWithUser,
   ) {
-    return this.taskService.updateTask(organizationId, id, dto, Number(req.user.id));
+    return this.taskService.updateTask(
+      organizationId,
+      id,
+      dto,
+      Number(req.user.id),
+    );
   }
 
   @Delete(':id')

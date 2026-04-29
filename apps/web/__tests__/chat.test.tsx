@@ -34,7 +34,7 @@ vi.mock('@/lib/api/contacts', () => ({
       Promise.resolve({
         contacts: [],
         pagination: { page: 1, limit: 100, total: 0, totalPages: 0 },
-      })
+      }),
     ),
   },
 }));
@@ -45,7 +45,7 @@ vi.mock('@/lib/api/companies', () => ({
       Promise.resolve({
         companies: [],
         pagination: { page: 1, limit: 100, total: 0, totalPages: 0 },
-      })
+      }),
     ),
   },
 }));
@@ -56,7 +56,7 @@ vi.mock('@/lib/api/deals', () => ({
       Promise.resolve({
         deals: [],
         pagination: { page: 1, limit: 100, total: 0, totalPages: 0 },
-      })
+      }),
     ),
   },
 }));
@@ -80,15 +80,17 @@ vi.stubGlobal(
 
 // Mock Speech Recognition so ChatInput's useEffect doesn't throw in jsdom
 beforeEach(() => {
-  const MockSpeechRecognition = vi.fn().mockImplementation(function (this: any) {
-    this.start = vi.fn();
-    this.stop = vi.fn();
-    this.continuous = true;
-    this.interimResults = true;
-    this.onresult = null;
-    this.onerror = null;
-    this.onend = null;
-  });
+  const MockSpeechRecognition = vi
+    .fn()
+    .mockImplementation(function (this: any) {
+      this.start = vi.fn();
+      this.stop = vi.fn();
+      this.continuous = true;
+      this.interimResults = true;
+      this.onresult = null;
+      this.onerror = null;
+      this.onend = null;
+    });
   (window as any).webkitSpeechRecognition = MockSpeechRecognition;
   (window as any).SpeechRecognition = MockSpeechRecognition;
 });
@@ -120,7 +122,7 @@ describe('ChatInput', () => {
     render(<ChatInput onSubmit={onSubmit} />, { wrapper });
 
     expect(
-      screen.getByPlaceholderText(/ask anything.*try typing @/i)
+      screen.getByPlaceholderText(/ask anything.*try typing @/i),
     ).toBeInTheDocument();
   });
 
@@ -128,11 +130,11 @@ describe('ChatInput', () => {
     const onSubmit = vi.fn();
     render(
       <ChatInput onSubmit={onSubmit} placeholder="Type your message..." />,
-      { wrapper }
+      { wrapper },
     );
 
     expect(
-      screen.getByPlaceholderText(/type your message/i)
+      screen.getByPlaceholderText(/type your message/i),
     ).toBeInTheDocument();
   });
 
@@ -156,11 +158,13 @@ describe('ChatInput', () => {
     // Voice button is identified by its tooltip which sets accessibility name or checking for svg
     const buttons = screen.getAllByRole('button');
     // In PromptInputButton, the tooltip string is often passed as a title, aria-label, or we can just look for the Mic icon's container.
-    // If testing-library doesn't see "Voice input" text, we'll fall back to checking if there is a button that contains an SVG but doesn't have "Submit" or "Search" text. 
+    // If testing-library doesn't see "Voice input" text, we'll fall back to checking if there is a button that contains an SVG but doesn't have "Submit" or "Search" text.
     // Usually the tooltip component adds the label, so let's try getting it by name, but just in case we can use querySelector('svg').
     // Since there are only a few buttons: attachments, web search, voice, submit.
     // Tooltip="Voice input"
-    const voiceButton = buttons.find((btn) => btn.querySelector('svg') && !btn.textContent);
+    const voiceButton = buttons.find(
+      (btn) => btn.querySelector('svg') && !btn.textContent,
+    );
     expect(voiceButton).toBeDefined();
     expect(voiceButton).toBeInTheDocument();
 
@@ -178,7 +182,7 @@ describe('ChatInput', () => {
 
     await vi.waitFor(() => {
       expect(onSubmit).toHaveBeenCalledWith(
-        expect.objectContaining({ text: 'Hello' })
+        expect.objectContaining({ text: 'Hello' }),
       );
     });
   });
@@ -212,7 +216,7 @@ describe('ChatInput', () => {
 
     await waitFor(() => {
       expect(onSubmit).toHaveBeenCalledWith(
-        expect.objectContaining({ text: 'Shift enter message' })
+        expect.objectContaining({ text: 'Shift enter message' }),
       );
     });
   });
@@ -234,7 +238,9 @@ describe('ChatInput', () => {
     const onSubmit = vi.fn().mockResolvedValue(undefined);
     render(<ChatInput onSubmit={onSubmit} />, { wrapper });
 
-    const input = screen.getByPlaceholderText(/ask anything.*try typing @/i) as HTMLTextAreaElement;
+    const input = screen.getByPlaceholderText(
+      /ask anything.*try typing @/i,
+    ) as HTMLTextAreaElement;
     await user.type(input, 'Hello');
     await user.click(screen.getByRole('button', { name: /submit/i }));
 
@@ -251,7 +257,9 @@ describe('ChatInput', () => {
     const onSubmit = vi.fn().mockRejectedValue(new Error('Send failed'));
     render(<ChatInput onSubmit={onSubmit} />, { wrapper });
 
-    const input = screen.getByPlaceholderText(/ask anything.*try typing @/i) as HTMLTextAreaElement;
+    const input = screen.getByPlaceholderText(
+      /ask anything.*try typing @/i,
+    ) as HTMLTextAreaElement;
     await user.type(input, 'Failed message');
     await user.click(screen.getByRole('button', { name: /submit/i }));
 
@@ -280,14 +288,16 @@ describe('ChatInput', () => {
 
   it('clicking Search button triggers web search handler', async () => {
     const user = userEvent.setup();
-    const alertSpy = vi.spyOn(window, 'alert').mockImplementation(() => undefined);
+    const alertSpy = vi
+      .spyOn(window, 'alert')
+      .mockImplementation(() => undefined);
     render(<ChatInput onSubmit={vi.fn()} />, { wrapper });
 
     await user.click(screen.getByRole('button', { name: /search/i }));
 
     await waitFor(() => {
       expect(alertSpy).toHaveBeenCalledWith(
-        'Web search feature - to be implemented'
+        'Web search feature - to be implemented',
       );
     });
     alertSpy.mockRestore();
@@ -304,7 +314,7 @@ describe('ChatInput', () => {
 
     await waitFor(() => {
       expect(onSubmit).toHaveBeenCalledWith(
-        expect.objectContaining({ text: 'My message' })
+        expect.objectContaining({ text: 'My message' }),
       );
     });
   });
@@ -314,7 +324,7 @@ describe('ChatInput', () => {
     const onStop = vi.fn();
     render(
       <ChatInput onSubmit={vi.fn()} status="streaming" onStop={onStop} />,
-      { wrapper }
+      { wrapper },
     );
 
     expect(screen.getByRole('button', { name: /stop/i })).toBeInTheDocument();
@@ -323,23 +333,26 @@ describe('ChatInput', () => {
   });
 
   it('shows Stop button when status is submitted', () => {
-    render(
-      <ChatInput onSubmit={vi.fn()} status="submitted" />,
-      { wrapper }
-    );
+    render(<ChatInput onSubmit={vi.fn()} status="submitted" />, { wrapper });
     expect(screen.getByRole('button', { name: /stop/i })).toBeInTheDocument();
   });
 
   it('accepts initialContext and renders with it', () => {
     const onSubmit = vi.fn();
     const initialContext = [
-      { type: 'contact' as const, id: 1, name: 'Pre-loaded Contact', metadata: { type: 'contact', entityId: 1 } },
+      {
+        type: 'contact' as const,
+        id: 1,
+        name: 'Pre-loaded Contact',
+        metadata: { type: 'contact', entityId: 1 },
+      },
     ];
-    render(
-      <ChatInput onSubmit={onSubmit} initialContext={initialContext} />,
-      { wrapper }
-    );
-    expect(screen.getByPlaceholderText(/ask anything.*try typing @/i)).toBeInTheDocument();
+    render(<ChatInput onSubmit={onSubmit} initialContext={initialContext} />, {
+      wrapper,
+    });
+    expect(
+      screen.getByPlaceholderText(/ask anything.*try typing @/i),
+    ).toBeInTheDocument();
     expect(screen.getByText('Pre-loaded Contact')).toBeInTheDocument();
   });
 });
@@ -412,7 +425,7 @@ describe('ChatInput mentions', () => {
       () => {
         expect(screen.getByText('Alice Smith')).toBeInTheDocument();
       },
-      { timeout: 3000 }
+      { timeout: 3000 },
     );
   });
 
@@ -430,7 +443,7 @@ describe('ChatInput mentions', () => {
       () => {
         expect(screen.getByText('Acme Inc')).toBeInTheDocument();
       },
-      { timeout: 3000 }
+      { timeout: 3000 },
     );
   });
 
@@ -447,7 +460,7 @@ describe('ChatInput mentions', () => {
       () => {
         expect(screen.getByText('Alice Smith')).toBeInTheDocument();
       },
-      { timeout: 3000 }
+      { timeout: 3000 },
     );
 
     await user.click(screen.getByText('Alice Smith'));
@@ -461,7 +474,7 @@ describe('ChatInput mentions', () => {
           metadata: {
             contextEntities: [{ type: 'contact', id: 1 }],
           },
-        })
+        }),
       );
     });
   });
@@ -479,7 +492,7 @@ describe('ChatInput mentions', () => {
       () => {
         expect(screen.getByText('Acme Inc')).toBeInTheDocument();
       },
-      { timeout: 3000 }
+      { timeout: 3000 },
     );
 
     await user.click(screen.getByText('Acme Inc'));
@@ -493,7 +506,7 @@ describe('ChatInput mentions', () => {
           metadata: {
             contextEntities: [{ type: 'company', id: 10 }],
           },
-        })
+        }),
       );
     });
   });
@@ -511,7 +524,7 @@ describe('ChatInput mentions', () => {
       () => {
         expect(screen.getByText('Enterprise License')).toBeInTheDocument();
       },
-      { timeout: 3000 }
+      { timeout: 3000 },
     );
   });
 
@@ -528,7 +541,7 @@ describe('ChatInput mentions', () => {
       () => {
         expect(screen.getByText('Enterprise License')).toBeInTheDocument();
       },
-      { timeout: 3000 }
+      { timeout: 3000 },
     );
 
     await user.click(screen.getByText('Enterprise License'));
@@ -542,7 +555,7 @@ describe('ChatInput mentions', () => {
           metadata: {
             contextEntities: [{ type: 'deal', id: 100 }],
           },
-        })
+        }),
       );
     });
   });
@@ -560,7 +573,7 @@ describe('ChatInput mentions', () => {
       () => {
         expect(screen.getByText('Alice Smith')).toBeInTheDocument();
       },
-      { timeout: 3000 }
+      { timeout: 3000 },
     );
     await user.click(screen.getByText('Alice Smith'));
 
@@ -569,7 +582,7 @@ describe('ChatInput mentions', () => {
       () => {
         expect(screen.getByText('Acme Inc')).toBeInTheDocument();
       },
-      { timeout: 3000 }
+      { timeout: 3000 },
     );
     await user.click(screen.getByText('Acme Inc'));
 
@@ -603,7 +616,7 @@ describe('ChatInput mentions', () => {
       () => {
         expect(screen.getByText('Alice Smith')).toBeInTheDocument();
       },
-      { timeout: 3000 }
+      { timeout: 3000 },
     );
     await user.click(screen.getByText('Alice Smith'));
 
@@ -612,7 +625,7 @@ describe('ChatInput mentions', () => {
       () => {
         expect(screen.getByText('Acme Inc')).toBeInTheDocument();
       },
-      { timeout: 3000 }
+      { timeout: 3000 },
     );
     await user.click(screen.getByText('Acme Inc'));
 
@@ -621,7 +634,7 @@ describe('ChatInput mentions', () => {
       () => {
         expect(screen.getByText('Enterprise License')).toBeInTheDocument();
       },
-      { timeout: 3000 }
+      { timeout: 3000 },
     );
     await user.click(screen.getByText('Enterprise License'));
 
@@ -675,7 +688,7 @@ describe('ChatInput mentions', () => {
       () => {
         expect(screen.getByText('Alice Smith')).toBeInTheDocument();
       },
-      { timeout: 3000 }
+      { timeout: 3000 },
     );
     expect(screen.queryByText('Bob Jones')).not.toBeInTheDocument();
   });
@@ -692,7 +705,7 @@ describe('Tool component', () => {
         <Tool>
           <span>Child</span>
         </Tool>,
-        { wrapper }
+        { wrapper },
       );
       const container = screen.getByText('Child').closest('[data-slot="tool"]');
       expect(container).toBeInTheDocument();
@@ -704,7 +717,7 @@ describe('Tool component', () => {
         <Tool defaultOpen>
           <span>Child</span>
         </Tool>,
-        { wrapper }
+        { wrapper },
       );
       const container = screen.getByText('Child').closest('[data-slot="tool"]');
       expect(container).toHaveAttribute('data-state', 'open');
@@ -715,7 +728,7 @@ describe('Tool component', () => {
         <Tool className="custom-class">
           <span>Child</span>
         </Tool>,
-        { wrapper }
+        { wrapper },
       );
       const container = screen.getByText('Child').closest('[data-slot="tool"]');
       expect(container).toHaveClass('custom-class');
@@ -732,7 +745,7 @@ describe('Tool component', () => {
             toolName="Search"
           />
         </Tool>,
-        { wrapper }
+        { wrapper },
       );
       expect(screen.getByText('Search')).toBeInTheDocument();
     });
@@ -746,7 +759,7 @@ describe('Tool component', () => {
             title="Custom title"
           />
         </Tool>,
-        { wrapper }
+        { wrapper },
       );
       expect(screen.getByText('Custom title')).toBeInTheDocument();
     });
@@ -760,7 +773,7 @@ describe('Tool component', () => {
             toolName="Test"
           />
         </Tool>,
-        { wrapper }
+        { wrapper },
       );
       expect(screen.getByText('Completed')).toBeInTheDocument();
     });
@@ -776,7 +789,7 @@ describe('Tool component', () => {
           />
           <ToolContent>Content inside</ToolContent>
         </Tool>,
-        { wrapper }
+        { wrapper },
       );
       expect(screen.queryByText('Content inside')).not.toBeInTheDocument();
       await user.click(screen.getByRole('button', { name: /toggle/i }));
@@ -797,7 +810,7 @@ describe('Tool component', () => {
           />
           <ToolContent>Hidden content</ToolContent>
         </Tool>,
-        { wrapper }
+        { wrapper },
       );
       expect(screen.queryByText('Hidden content')).not.toBeInTheDocument();
     });
@@ -807,7 +820,7 @@ describe('Tool component', () => {
         <Tool defaultOpen>
           <ToolContent>Visible content</ToolContent>
         </Tool>,
-        { wrapper }
+        { wrapper },
       );
       expect(screen.getByText('Visible content')).toBeInTheDocument();
     });
@@ -822,7 +835,7 @@ describe('Tool component', () => {
             <ToolInput input={input} />
           </ToolContent>
         </Tool>,
-        { wrapper }
+        { wrapper },
       );
       expect(screen.getByText('Parameters')).toBeInTheDocument();
       expect(screen.getByText(/"query":/)).toBeInTheDocument();
@@ -840,7 +853,7 @@ describe('Tool component', () => {
             <ToolOutput output={undefined} errorText={undefined} />
           </ToolContent>
         </Tool>,
-        { wrapper }
+        { wrapper },
       );
       expect(screen.queryByText('Result')).not.toBeInTheDocument();
       expect(screen.queryByText('Error')).not.toBeInTheDocument();
@@ -853,7 +866,7 @@ describe('Tool component', () => {
             <ToolOutput output={{ count: 5 }} errorText={undefined} />
           </ToolContent>
         </Tool>,
-        { wrapper }
+        { wrapper },
       );
       expect(screen.getByText('Result')).toBeInTheDocument();
       expect(screen.getByText(/"count":/)).toBeInTheDocument();
@@ -864,13 +877,10 @@ describe('Tool component', () => {
       render(
         <Tool defaultOpen>
           <ToolContent>
-            <ToolOutput
-              output={undefined}
-              errorText="Something went wrong"
-            />
+            <ToolOutput output={undefined} errorText="Something went wrong" />
           </ToolContent>
         </Tool>,
-        { wrapper }
+        { wrapper },
       );
       expect(screen.getByText('Error')).toBeInTheDocument();
       expect(screen.getByText('Something went wrong')).toBeInTheDocument();
@@ -883,7 +893,7 @@ describe('Tool component', () => {
             <ToolOutput output="Plain text result" errorText={undefined} />
           </ToolContent>
         </Tool>,
-        { wrapper }
+        { wrapper },
       );
       expect(screen.getByText('Result')).toBeInTheDocument();
       expect(screen.getByText('Plain text result')).toBeInTheDocument();
@@ -942,7 +952,7 @@ describe('NewChatPage', () => {
 
     expect(screen.getByText('Start a conversation')).toBeInTheDocument();
     expect(
-      screen.getByText(/ask me anything to get started/i)
+      screen.getByText(/ask me anything to get started/i),
     ).toBeInTheDocument();
   });
 
@@ -950,7 +960,7 @@ describe('NewChatPage', () => {
     render(<NewChatPage />, { wrapper });
 
     expect(
-      screen.getByPlaceholderText(/ask anything.*try typing @/i)
+      screen.getByPlaceholderText(/ask anything.*try typing @/i),
     ).toBeInTheDocument();
   });
 
@@ -975,7 +985,7 @@ describe('NewChatPage', () => {
           method: 'POST',
           credentials: 'include',
           headers: { 'Content-Type': 'application/json' },
-        })
+        }),
       );
     });
     await waitFor(() => {
@@ -990,7 +1000,18 @@ describe('NewChatPage', () => {
 
   it('stores contextEntities in localStorage when submitting with mentions', async () => {
     vi.mocked(contactsApi.getContacts).mockResolvedValue({
-      contacts: [{ id: 1, name: 'Alice', email: 'a@b.com', phone: '', isHidden: false, createdAt: '', updatedAt: '', owners: [] }],
+      contacts: [
+        {
+          id: 1,
+          name: 'Alice',
+          email: 'a@b.com',
+          phone: '',
+          isHidden: false,
+          createdAt: '',
+          updatedAt: '',
+          owners: [],
+        },
+      ],
       pagination: { page: 1, limit: 100, total: 1, totalPages: 1 },
     });
     vi.mocked(companiesApi.getCompanies).mockResolvedValue({
@@ -1059,7 +1080,10 @@ describe('NewChatPage', () => {
       expect(input).toBeDisabled();
     });
 
-    resolveFetch!({ ok: true, json: () => Promise.resolve({ id: 'slow-chat' }) });
+    resolveFetch!({
+      ok: true,
+      json: () => Promise.resolve({ id: 'slow-chat' }),
+    });
     await waitFor(() => {
       expect(mockReplace).toHaveBeenCalledWith('/chat/slow-chat');
     });

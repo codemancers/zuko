@@ -10,18 +10,26 @@ import {
   UseGuards,
   UsePipes,
   ParseIntPipe,
-} from "@nestjs/common";
-import { AuthGuard } from "@thallesp/nestjs-better-auth";
-import type { RequestWithUser } from "@zuko/core";
-import { MeetingService } from "./meeting.service";
-import { CallbackSchema, MeetingSchema, TranscriptChunkSchema } from "./dto/meeting.dto";
-import type { CallbackDto, MeetingDto, TranscriptChunkDto } from "./dto/meeting.dto";
-import { OrganizationGuard } from "../../common/auth/organization.guard";
-import { AgentGuard } from "../../common/auth/agent.guard";
-import { OrgId } from "../../common/auth/org-id.decorator";
-import { ZodPipe } from "../../common/pipes/zod.pipe";
+} from '@nestjs/common';
+import { AuthGuard } from '@thallesp/nestjs-better-auth';
+import type { RequestWithUser } from '@zuko/core';
+import { MeetingService } from './meeting.service';
+import {
+  CallbackSchema,
+  MeetingSchema,
+  TranscriptChunkSchema,
+} from './dto/meeting.dto';
+import type {
+  CallbackDto,
+  MeetingDto,
+  TranscriptChunkDto,
+} from './dto/meeting.dto';
+import { OrganizationGuard } from '../../common/auth/organization.guard';
+import { AgentGuard } from '../../common/auth/agent.guard';
+import { OrgId } from '../../common/auth/org-id.decorator';
+import { ZodPipe } from '../../common/pipes/zod.pipe';
 
-@Controller("meetings")
+@Controller('meetings')
 export class MeetingController {
   constructor(private readonly meetingService: MeetingService) {}
 
@@ -30,7 +38,7 @@ export class MeetingController {
   create(
     @Body(new ZodPipe(MeetingSchema)) meetingDto: MeetingDto,
     @OrgId() organizationId: number,
-    @Req() req: RequestWithUser
+    @Req() req: RequestWithUser,
   ) {
     const userId = parseInt(req.user.id, 10);
     return this.meetingService.create(meetingDto, organizationId, userId);
@@ -42,58 +50,58 @@ export class MeetingController {
     return this.meetingService.findAll(organizationId);
   }
 
-  @Post("webhook")
+  @Post('webhook')
   @UsePipes(new ZodPipe(CallbackSchema))
   async webhook(@Body() callbackDto: CallbackDto) {
     return this.meetingService.webhook(callbackDto);
   }
 
-  @Post(":meetingId/transcript-chunks")
+  @Post(':meetingId/transcript-chunks')
   @UseGuards(AgentGuard)
   async addTranscriptChunk(
-    @Param("meetingId") meetingId: string,
-    @Body(new ZodPipe(TranscriptChunkSchema)) body: TranscriptChunkDto
+    @Param('meetingId') meetingId: string,
+    @Body(new ZodPipe(TranscriptChunkSchema)) body: TranscriptChunkDto,
   ) {
     await this.meetingService.addTranscriptChunk(
       meetingId,
-      body.text || "",
-      body.isFinal ?? false
+      body.text || '',
+      body.isFinal ?? false,
     );
     return { ok: true };
   }
 
-  @Get(":id/transcript")
-  getTranscript(@Param("id") id: string) {
+  @Get(':id/transcript')
+  getTranscript(@Param('id') id: string) {
     return this.meetingService.getTranscript(id);
   }
 
-  @Get(":id")
+  @Get(':id')
   @UseGuards(AuthGuard, OrganizationGuard)
-  findOne(@Param("id") id: string, @OrgId() organizationId: number) {
+  findOne(@Param('id') id: string, @OrgId() organizationId: number) {
     return this.meetingService.findOne(id, organizationId);
   }
 
-  @Patch(":id")
+  @Patch(':id')
   @UseGuards(AuthGuard, OrganizationGuard)
   update(
-    @Param("id") id: string,
+    @Param('id') id: string,
     @OrgId() organizationId: number,
-    @Body() meetingDto: MeetingDto
+    @Body() meetingDto: MeetingDto,
   ) {
     return this.meetingService.update(id, organizationId, meetingDto);
   }
 
-  @Patch("action-items/:actionItemId")
+  @Patch('action-items/:actionItemId')
   @UseGuards(AuthGuard, OrganizationGuard)
   async updateActionItem(
-    @Param("actionItemId", ParseIntPipe) actionItemId: number,
+    @Param('actionItemId', ParseIntPipe) actionItemId: number,
     @OrgId() organizationId: number,
     @Body()
     body: {
       taskId: string;
       title: string;
       description?: string | null;
-    }
+    },
   ) {
     return this.meetingService.updateActionItem(actionItemId, organizationId, {
       taskId: body.taskId,
@@ -102,15 +110,15 @@ export class MeetingController {
     });
   }
 
-  @Post(":id/end")
+  @Post(':id/end')
   @UseGuards(AuthGuard, OrganizationGuard)
-  async endMeeting(@Param("id") id: string) {
+  async endMeeting(@Param('id') id: string) {
     return this.meetingService.endMeeting(id);
   }
 
-  @Delete(":id")
+  @Delete(':id')
   @UseGuards(AuthGuard, OrganizationGuard)
-  remove(@Param("id") id: string, @OrgId() organizationId: number) {
+  remove(@Param('id') id: string, @OrgId() organizationId: number) {
     return this.meetingService.remove(id, organizationId);
   }
 }

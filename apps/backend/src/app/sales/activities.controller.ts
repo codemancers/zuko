@@ -18,7 +18,6 @@ import { AuthGuard } from '@thallesp/nestjs-better-auth';
 import { ActivityService } from '@zuko/sales';
 import type { RequestWithUser } from '@zuko/core';
 
-
 // DTOs for API requests
 export class CreateCommentDto {
   content!: string;

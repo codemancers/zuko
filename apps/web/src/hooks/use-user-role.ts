@@ -16,12 +16,9 @@ export function useUserRole() {
   const orgRole = (orgMember?.role ?? 'none') as UserRole;
 
   // Org owner/admin counts as admin for app-level access
-  const effectiveRole: UserRole =
-    appRole !== 'none' ? appRole : orgRole;
+  const effectiveRole: UserRole = appRole !== 'none' ? appRole : orgRole;
 
-  const isAdmin =
-    effectiveRole === 'admin' ||
-    effectiveRole === 'owner';
+  const isAdmin = effectiveRole === 'admin' || effectiveRole === 'owner';
 
   return {
     role: effectiveRole,

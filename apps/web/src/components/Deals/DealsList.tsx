@@ -28,7 +28,11 @@ const DealsList = () => {
   const router = useRouter();
   const queryClient = useQueryClient();
   const openAddColumnRef = useRef<(() => void) | undefined>(undefined);
-  const { inputValue: searchTerm, setInputValue: setSearchTerm, debouncedValue } = useSearchParam();
+  const {
+    inputValue: searchTerm,
+    setInputValue: setSearchTerm,
+    debouncedValue,
+  } = useSearchParam();
   const [dealToDelete, setDealToDelete] = useState<number | null>(null);
   const { data: dealsData, isLoading } = useQuery(
     getTableViewDeals({ search: debouncedValue || undefined }),

@@ -4,7 +4,6 @@ import type { PrismaService } from '../modules/prisma.types';
 import type { PaginationOptions } from './types';
 import type { EditorData } from '../types/sales-api';
 
-
 export interface CreateCompanyInput {
   organizationId: number;
   companyName: string;
@@ -61,7 +60,8 @@ export class CompaniesRepository {
     const fields = (inputFields || {}) as Prisma.InputJsonValue;
 
     const actualPrimaryId =
-      primaryOwnerId ?? (ownerIds && ownerIds.length > 0 ? ownerIds[0] : undefined);
+      primaryOwnerId ??
+      (ownerIds && ownerIds.length > 0 ? ownerIds[0] : undefined);
 
     return this.prisma.company.create({
       data: {
@@ -140,16 +140,15 @@ export class CompaniesRepository {
   }
 
   async update(id: number, input: UpdateCompanyInput) {
-    const {
-      fields: existingFields,
-      ...otherData
-    } = input;
+    const { fields: existingFields, ...otherData } = input;
 
     return this.prisma.company.update({
       where: { id },
       data: {
         ...otherData,
-        ...(existingFields !== undefined ? { fields: existingFields as Prisma.InputJsonValue } : {}),
+        ...(existingFields !== undefined
+          ? { fields: existingFields as Prisma.InputJsonValue }
+          : {}),
       },
       include: {
         owners: {
@@ -175,12 +174,14 @@ export class CompaniesRepository {
     return this.update(id, { isHidden: false });
   }
 
-  async findAll(
-    filters: CompanyFilters,
-    pagination: PaginationOptions = {},
-  ) {
-    const { organizationId, isHidden = false, ownerIds, search, companyIds } =
-      filters;
+  async findAll(filters: CompanyFilters, pagination: PaginationOptions = {}) {
+    const {
+      organizationId,
+      isHidden = false,
+      ownerIds,
+      search,
+      companyIds,
+    } = filters;
     const { page = 1, limit = 50 } = pagination;
     const skip = (page - 1) * limit;
 

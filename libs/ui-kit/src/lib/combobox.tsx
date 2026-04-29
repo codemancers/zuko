@@ -31,7 +31,13 @@ export function Combobox<T>({
   onChange?: (value: T) => void;
   dropdownClassName?: string;
 } & Omit<Headless.ComboboxProps<T, false>, 'as' | 'multiple' | 'children'> & {
-    anchor?: 'top' | 'bottom' | 'top start' | 'top end' | 'bottom start' | 'bottom end';
+    anchor?:
+      | 'top'
+      | 'bottom'
+      | 'top start'
+      | 'top end'
+      | 'bottom start'
+      | 'bottom end';
   }) {
   const [query, setQuery] = useState('');
   const isPlain = variant === 'plain';
@@ -144,7 +150,9 @@ export function Combobox<T>({
           '[--anchor-gap:--spacing(2)] [--anchor-padding:--spacing(4)] sm:data-[anchor~=start]:[--anchor-offset:-4px]',
           // Base styles,
           'isolate scroll-py-1 rounded-xl p-1 select-none empty:invisible',
-          isPlain ? 'min-w-[200px] max-h-[200px]' : 'min-w-[calc(var(--input-width)+8px)]',
+          isPlain
+            ? 'min-w-[200px] max-h-[200px]'
+            : 'min-w-[calc(var(--input-width)+8px)]',
           // Invisible border that is only visible in `forced-colors` mode for accessibility purposes
           'outline outline-transparent focus:outline-hidden',
           // Handle scrolling when menu won't fit in viewport

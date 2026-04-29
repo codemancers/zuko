@@ -1,11 +1,11 @@
-import { test, expect } from "./fixtures";
-import { createFreshContact } from "./fixtures/helpers";
+import { test, expect } from './fixtures';
+import { createFreshContact } from './fixtures/helpers';
 
 /**
  * Contact Activity Timeline Tests.
  * Creates a fresh contact per describe block to ensure a clean activity state.
  */
-test.describe("Contact Activity Timeline - Authenticated", () => {
+test.describe('Contact Activity Timeline - Authenticated', () => {
   let contactId!: number;
 
   test.beforeAll(async ({ browser }) => {
@@ -13,7 +13,7 @@ test.describe("Contact Activity Timeline - Authenticated", () => {
   });
 
   // ── 1. Empty states (check before any creation) ───────────────────────────
-  test("should display activity timeline section", async ({
+  test('should display activity timeline section', async ({
     contactDetailPage,
   }) => {
     await contactDetailPage.goto(contactId);
@@ -22,13 +22,13 @@ test.describe("Contact Activity Timeline - Authenticated", () => {
     expect(isVisible).toBeTruthy();
   });
 
-  test("should display comment input form at the bottom", async ({
+  test('should display comment input form at the bottom', async ({
     contactDetailPage,
     page,
   }) => {
     await contactDetailPage.goto(contactId);
     await page
-      .getByRole("heading", { name: "Activity", exact: true })
+      .getByRole('heading', { name: 'Activity', exact: true })
       .scrollIntoViewIfNeeded();
     await expect(contactDetailPage.commentInput).toBeVisible({
       timeout: 10000,
@@ -49,7 +49,7 @@ test.describe("Contact Activity Timeline - Authenticated", () => {
     ).toBeVisible({ timeout: 10000 });
   });
 
-  test("should disable post button when comment is empty", async ({
+  test('should disable post button when comment is empty', async ({
     contactDetailPage,
   }) => {
     await contactDetailPage.goto(contactId);
@@ -58,7 +58,7 @@ test.describe("Contact Activity Timeline - Authenticated", () => {
     expect(isDisabled).toBeTruthy();
   });
 
-  test("should not submit empty or whitespace-only comments", async ({
+  test('should not submit empty or whitespace-only comments', async ({
     contactDetailPage,
     page,
   }) => {
@@ -68,13 +68,13 @@ test.describe("Contact Activity Timeline - Authenticated", () => {
     // Wait for activity section to stabilize before capturing baseline count
     await page
       .locator('[data-testid="activity-item"]')
-      .or(page.getByText("No activity yet"))
+      .or(page.getByText('No activity yet'))
       .first()
-      .waitFor({ state: "visible", timeout: 10000 });
+      .waitFor({ state: 'visible', timeout: 10000 });
 
     const initialCount = await contactDetailPage.getActivityCount();
 
-    await page.getByPlaceholder("Add a comment...").fill("   ");
+    await page.getByPlaceholder('Add a comment...').fill('   ');
 
     const isDisabled = await contactDetailPage.isPostButtonDisabled();
     expect(isDisabled).toBeTruthy();
@@ -84,7 +84,7 @@ test.describe("Contact Activity Timeline - Authenticated", () => {
   });
 
   // ── 2. Create ─────────────────────────────────────────────────────────────
-  test("should create a new comment successfully", async ({
+  test('should create a new comment successfully', async ({
     contactDetailPage,
   }) => {
     await contactDetailPage.goto(contactId);
@@ -101,31 +101,31 @@ test.describe("Contact Activity Timeline - Authenticated", () => {
 
   // ── 3. Check after creating ─────────────────────────────────────────────
 
-  test("should clear input after successful comment submission", async ({
+  test('should clear input after successful comment submission', async ({
     contactDetailPage,
     page,
   }) => {
     await contactDetailPage.goto(contactId);
 
-    const commentText = "This should clear after posting";
+    const commentText = 'This should clear after posting';
     await contactDetailPage.createComment(commentText);
 
-    const textarea = page.getByPlaceholder("Add a comment...");
-    await expect(textarea).toHaveValue("", { timeout: 5000 });
+    const textarea = page.getByPlaceholder('Add a comment...');
+    await expect(textarea).toHaveValue('', { timeout: 5000 });
   });
 
-  test("should successfully edit own comment", async ({
+  test('should successfully edit own comment', async ({
     contactDetailPage,
     page,
   }) => {
     await contactDetailPage.goto(contactId);
     await page
-      .getByRole("heading", { name: "Activity", exact: true })
+      .getByRole('heading', { name: 'Activity', exact: true })
       .scrollIntoViewIfNeeded();
     await contactDetailPage.showHistory();
 
-    const originalComment = "Original comment " + Date.now();
-    const editedComment = "Edited comment " + Date.now();
+    const originalComment = 'Original comment ' + Date.now();
+    const editedComment = 'Edited comment ' + Date.now();
 
     await contactDetailPage.createComment(originalComment);
     await expect(page.getByText(originalComment)).toBeVisible({
@@ -133,7 +133,7 @@ test.describe("Contact Activity Timeline - Authenticated", () => {
     });
 
     await expect(
-      contactDetailPage.activityItems.filter({ hasText: originalComment })
+      contactDetailPage.activityItems.filter({ hasText: originalComment }),
     ).toBeVisible({ timeout: 10000 });
     const items = await contactDetailPage.activityItems.all();
     let editIndex = -1;
@@ -150,14 +150,14 @@ test.describe("Contact Activity Timeline - Authenticated", () => {
     await expect(page.getByText(editedComment)).toBeVisible({ timeout: 10000 });
   });
 
-  test("should cancel editing a comment", async ({
+  test('should cancel editing a comment', async ({
     contactDetailPage,
     page,
   }) => {
     await contactDetailPage.goto(contactId);
     await contactDetailPage.openActivityHistory();
 
-    const originalComment = "Original comment for cancel test " + Date.now();
+    const originalComment = 'Original comment for cancel test ' + Date.now();
 
     await contactDetailPage.createComment(originalComment);
     await expect(contactDetailPage.activityItems.last()).toContainText(
@@ -167,12 +167,12 @@ test.describe("Contact Activity Timeline - Authenticated", () => {
 
     const items = await contactDetailPage.activityItems.all();
     const lastItem = items[items.length - 1];
-    const editButton = lastItem.getByRole("button", { name: /edit/i });
+    const editButton = lastItem.getByRole('button', { name: /edit/i });
     await editButton.click();
 
-    const textarea = lastItem.locator("textarea");
+    const textarea = lastItem.locator('textarea');
     await expect(textarea).toBeVisible({ timeout: 3000 });
-    await textarea.fill("This should not be saved");
+    await textarea.fill('This should not be saved');
 
     const count = await contactDetailPage.getActivityCount();
     await contactDetailPage.cancelEditComment(count - 1);
@@ -182,7 +182,7 @@ test.describe("Contact Activity Timeline - Authenticated", () => {
       originalComment,
     );
     await expect(contactDetailPage.activityItems.last()).not.toContainText(
-      "This should not be saved",
+      'This should not be saved',
     );
   });
 });

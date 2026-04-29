@@ -8,13 +8,7 @@ import {
   type CreateCompanyDto,
   type UpdateCompanyDto,
 } from '@/lib/api/companies';
-import {
-  Input,
-  Field,
-  Label,
-  Description,
-  ErrorMessage,
-} from '@zuko/ui-kit';
+import { Input, Field, Label, Description, ErrorMessage } from '@zuko/ui-kit';
 import { FormActions } from '@/components/shared';
 import { useRouter } from 'next/navigation';
 
@@ -57,7 +51,9 @@ export default function CompanyForm({
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['companies'] });
       queryClient.invalidateQueries({ queryKey: ['company', company!.id] });
-      queryClient.invalidateQueries({ queryKey: ['timeline', 'company', company!.id] });
+      queryClient.invalidateQueries({
+        queryKey: ['timeline', 'company', company!.id],
+      });
       router.push(`/companies/${company!.id}`);
     },
     onError: (error: any) => {

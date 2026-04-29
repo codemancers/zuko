@@ -20,7 +20,11 @@ import {
   type MentionTriggerConfig,
 } from '@zuko/ui-kit';
 import { getContacts, getCompanies, getDeals } from '@/server/query-options';
-import { UserIcon, BuildingOfficeIcon, BriefcaseIcon } from '@heroicons/react/24/outline';
+import {
+  UserIcon,
+  BuildingOfficeIcon,
+  BriefcaseIcon,
+} from '@heroicons/react/24/outline';
 
 // ============================================================================
 // Types
@@ -186,7 +190,9 @@ export const ChatInputWithMentions = React.forwardRef<
 
           const contactSuggestions: MentionSuggestion[] =
             contactsData?.contacts
-              .filter((contact) => !contextEntityIds.has(`contact-${contact.id}`))
+              .filter(
+                (contact) => !contextEntityIds.has(`contact-${contact.id}`),
+              )
               .map((contact) => ({
                 id: `contact-${contact.id}`,
                 display: contact.name,
@@ -251,7 +257,13 @@ export const ChatInputWithMentions = React.forwardRef<
         renderSuggestion,
       },
     ],
-    [contactsData, companiesData, dealsData, contextEntityIds, renderSuggestion],
+    [
+      contactsData,
+      companiesData,
+      dealsData,
+      contextEntityIds,
+      renderSuggestion,
+    ],
   );
 
   // Handle change: strip section-header "mentions" if selected, then notify parent

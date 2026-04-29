@@ -1,5 +1,5 @@
-import { Page, Locator, expect } from "@playwright/test";
-import { BasePage } from "./BasePage";
+import { Page, Locator, expect } from '@playwright/test';
+import { BasePage } from './BasePage';
 
 /**
  * Page Object Model for Contacts page
@@ -12,15 +12,15 @@ export class ContactsPage extends BasePage {
   constructor(page: Page) {
     super(page);
     // Selectors based on actual ContactsList component
-    this.newContactButton = page.getByRole("button", { name: "New Contact" });
-    this.contactsList = page.locator("table").or(page.locator("main"));
+    this.newContactButton = page.getByRole('button', { name: 'New Contact' });
+    this.contactsList = page.locator('table').or(page.locator('main'));
   }
 
   /**
    * Navigate to the contacts page
    */
   override async goto() {
-    await super.goto("/contacts");
+    await super.goto('/contacts');
     // Wait for page to be fully loaded and interactive
     await this.page.waitForLoadState('domcontentloaded');
     // Wait for either the table or the main content to be visible
@@ -41,7 +41,7 @@ export class ContactsPage extends BasePage {
    */
   async getContactItems() {
     // Table rows in tbody (excluding header row)
-    return this.page.locator("tbody tr").all();
+    return this.page.locator('tbody tr').all();
   }
 
   /**
@@ -56,7 +56,7 @@ export class ContactsPage extends BasePage {
    */
   async waitForContactsToLoad() {
     await this.page
-      .waitForSelector("table", { timeout: 5000 })
+      .waitForSelector('table', { timeout: 5000 })
       .catch(() => null);
   }
 
@@ -66,7 +66,7 @@ export class ContactsPage extends BasePage {
   async createNewContact() {
     const initialRowCount = await this.getRowCount();
     await this.createNewRecord();
-    return initialRowCount;  // 0-indexed, new row index will be equal to initial row count
+    return initialRowCount; // 0-indexed, new row index will be equal to initial row count
   }
 
   /**
@@ -77,15 +77,17 @@ export class ContactsPage extends BasePage {
     const initialRowCount = await this.page.locator('tbody tr').count();
 
     await this.page.getByRole('button', { name: 'Add row' }).click();
-    await expect(this.page.locator('tbody tr')).toHaveCount(initialRowCount + 1);
-    
+    await expect(this.page.locator('tbody tr')).toHaveCount(
+      initialRowCount + 1,
+    );
+
     // Find the 'name' column index
-    const nameIndex = await this.getColumnIndex("name");
+    const nameIndex = await this.getColumnIndex('name');
 
     const lastRow = this.page.locator('tbody tr').last();
-    const nameCell = lastRow.locator("td").nth(nameIndex);
-    await nameCell.evaluate(node => (node as any).click());
-    
+    const nameCell = lastRow.locator('td').nth(nameIndex);
+    await nameCell.evaluate((node) => (node as any).click());
+
     const input = nameCell.locator('input');
     await input.waitFor({ state: 'visible' });
     await input.fill(contactName);
@@ -96,14 +98,20 @@ export class ContactsPage extends BasePage {
   /**
    * Create a new contact column with given name, key and type
    */
-  async createContactColumn(columnName: string, columnKey: string, columnType: string) {
+  async createContactColumn(
+    columnName: string,
+    columnKey: string,
+    columnType: string,
+  ) {
     await this.page.goto('/contacts');
     await this.page.getByRole('button', { name: 'Add column' }).click();
     await this.page.getByLabel('Field Name').fill(columnName);
     await this.page.getByLabel('Column Key').fill(columnKey);
     await this.page.getByLabel('Field Type').selectOption(columnType);
     await this.page.getByRole('button', { name: 'Create field' }).click();
-    await expect(this.page.getByRole('columnheader', { name: columnName })).toBeVisible();
+    await expect(
+      this.page.getByRole('columnheader', { name: columnName }),
+    ).toBeVisible();
   }
 
   /**
@@ -115,7 +123,7 @@ export class ContactsPage extends BasePage {
     const match = this.page.url().match(/\/contacts\/(\d+)/);
     if (!match?.[1]) {
       throw new Error(
-        `Failed to extract contact ID from URL: ${this.page.url()}`
+        `Failed to extract contact ID from URL: ${this.page.url()}`,
       );
     }
     return Number(match[1]);

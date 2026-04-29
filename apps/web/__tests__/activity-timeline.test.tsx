@@ -50,7 +50,10 @@ function makeActivity(overrides: Record<string, unknown>) {
   };
 }
 
-async function renderTimeline(activities: object[] = [], { autoShow = true } = {}) {
+async function renderTimeline(
+  activities: object[] = [],
+  { autoShow = true } = {},
+) {
   mockGetTimeline.mockResolvedValue({ activities });
 
   const result = render(
@@ -75,7 +78,9 @@ describe('ActivityTimeline - system event text', () => {
   });
 
   it('renders collapsed view by default', async () => {
-    await renderTimeline([makeActivity({ content: 'hidden test' })], { autoShow: false });
+    await renderTimeline([makeActivity({ content: 'hidden test' })], {
+      autoShow: false,
+    });
     expect(screen.queryByText('hidden test')).not.toBeInTheDocument();
   });
 
@@ -87,7 +92,7 @@ describe('ActivityTimeline - system event text', () => {
     render(
       <QueryClientProvider client={createQueryClient()}>
         <ActivityTimeline entityType="deal" entityId={1} />
-      </QueryClientProvider>
+      </QueryClientProvider>,
     );
 
     // 1. Initial state: Collapsed
@@ -223,7 +228,11 @@ describe('ActivityTimeline - system event text', () => {
     renderTimeline([
       makeActivity({
         activityType: 'contact_linked',
-        metadata: { contactId: 7, contactName: 'Jane Smith', role: 'Decision Maker' },
+        metadata: {
+          contactId: 7,
+          contactName: 'Jane Smith',
+          role: 'Decision Maker',
+        },
       }),
     ]);
     expect(
@@ -262,9 +271,7 @@ describe('ActivityTimeline - system event text', () => {
         metadata: { userId: 3, userName: 'Bob' },
       }),
     ]);
-    expect(
-      await screen.findByText('removed Bob as owner'),
-    ).toBeInTheDocument();
+    expect(await screen.findByText('removed Bob as owner')).toBeInTheDocument();
   });
 
   it('renders "created this task" for task_created', async () => {
@@ -300,7 +307,9 @@ describe('ActivityTimeline - system event text', () => {
     ]);
 
     expect(await screen.findByText('created this deal')).toBeInTheDocument();
-    expect(screen.getByText('moved deal from Prospecting to Proposal')).toBeInTheDocument();
+    expect(
+      screen.getByText('moved deal from Prospecting to Proposal'),
+    ).toBeInTheDocument();
     expect(screen.getByText('linked company Acme Corp')).toBeInTheDocument();
   });
 });

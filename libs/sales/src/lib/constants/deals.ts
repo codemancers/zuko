@@ -7,7 +7,9 @@ export const DEAL_STAGES = [
   { label: 'Closed Lost', value: 'closed_lost' },
 ] as const;
 
-export const DEAL_STAGE_VALUES: string[] = DEAL_STAGES.map((s) => s.value as string);
+export const DEAL_STAGE_VALUES: string[] = DEAL_STAGES.map(
+  (s) => s.value as string,
+);
 
 export const DEAL_PRIORITIES = [
   { value: 0, label: 'P0 - Critical' },

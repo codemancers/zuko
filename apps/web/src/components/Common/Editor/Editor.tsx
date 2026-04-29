@@ -87,7 +87,11 @@ const Editor = ({
     return () => {
       isMounted.current = false;
       setTimeout(() => {
-        if (!isMounted.current && ejInstance.current && ejInstance.current.destroy) {
+        if (
+          !isMounted.current &&
+          ejInstance.current &&
+          ejInstance.current.destroy
+        ) {
           ejInstance.current.isReady
             .then(() => {
               try {
@@ -105,10 +109,7 @@ const Editor = ({
 
   return (
     <div className="w-full">
-      <div 
-        id={holder} 
-        className="max-w-none min-h-24 editor-js-container" 
-      />
+      <div id={holder} className="max-w-none min-h-24 editor-js-container" />
     </div>
   );
 };

@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, type Mock } from 'vitest';
 import { NotFoundException } from '@nestjs/common';
 import type { EventEmitter2 } from '@nestjs/event-emitter';
 import { TaskService } from './task.service';
-import type { TaskRepository} from '../repositories/task.repository';
+import type { TaskRepository } from '../repositories/task.repository';
 import { TaskStatus } from '../repositories/task.repository';
 
 const ORG_ID = 1;
@@ -84,9 +84,7 @@ describe('TaskService', () => {
         tasks: [mockTask],
         pagination: { page: 1, limit: 50, total: 1, totalPages: 1 },
       };
-      (mockRepo.findAll as Mock).mockResolvedValue(
-        paginatedResult as never,
-      );
+      (mockRepo.findAll as Mock).mockResolvedValue(paginatedResult as never);
 
       const result = await service.getTasks(ORG_ID, { page: 1, limit: 50 });
 
@@ -158,9 +156,7 @@ describe('TaskService', () => {
         subtasks: [{ id: 2 }, { id: 3 }],
       };
       (mockRepo.findById as Mock).mockResolvedValue(mockTask as never);
-      (mockRepo.update as Mock).mockResolvedValue(
-        taskWithSubtasks as never,
-      );
+      (mockRepo.update as Mock).mockResolvedValue(taskWithSubtasks as never);
       (mockRepo.updateSubtasksCompletedAt as Mock).mockResolvedValue(
         undefined as never,
       );

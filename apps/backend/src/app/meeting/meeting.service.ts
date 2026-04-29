@@ -3,17 +3,17 @@ import {
   ForbiddenException,
   Injectable,
   Logger,
-} from "@nestjs/common";
-import type { MeetingDto, CallbackDto } from "./dto/meeting.dto";
-import axios from "axios";
+} from '@nestjs/common';
+import type { MeetingDto, CallbackDto } from './dto/meeting.dto';
+import axios from 'axios';
 import {
   getPlatformFromUrl,
   generateUtcCronExpression,
-} from "../../utils/meeting";
-import { PrismaService } from "../../prisma/prisma.service";
-import { MeetingNotifyService } from "./meeting-notify.service";
-import { MeetingTranscriptIngestService } from "./meeting-transcript-ingest.service";
-import { MeetingStatus, MeetingPlatform } from "@prisma/client";
+} from '../../utils/meeting';
+import { PrismaService } from '../../prisma/prisma.service';
+import { MeetingNotifyService } from './meeting-notify.service';
+import { MeetingTranscriptIngestService } from './meeting-transcript-ingest.service';
+import { MeetingStatus, MeetingPlatform } from '@prisma/client';
 
 export interface TranscriptData {
   text: string;
@@ -40,7 +40,7 @@ export class MeetingService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly meetingTranscriptIngestService: MeetingTranscriptIngestService,
-    private readonly meetingNotifyService: MeetingNotifyService
+    private readonly meetingNotifyService: MeetingNotifyService,
   ) {}
 
   async create(meetingDto: MeetingDto, organizationId: number, userId: number) {
@@ -74,11 +74,11 @@ export class MeetingService {
         if (meetingDto.scheduledAt && meetingDto.timezone) {
           const cronExpression = generateUtcCronExpression(
             meetingDto.scheduledAt,
-            meetingDto.timezone
+            meetingDto.timezone,
           );
 
           this.logger.log(
-            `Scheduled meeting ${meeting.id} with cron: ${cronExpression}`
+            `Scheduled meeting ${meeting.id} with cron: ${cronExpression}`,
           );
 
           // Store cron expression in schedulerId for reference
@@ -92,11 +92,11 @@ export class MeetingService {
         break;
       }
       default:
-        throw new BadRequestException("Unsupported platform");
+        throw new BadRequestException('Unsupported platform');
     }
 
     return {
-      message: "Meeting created successfully",
+      message: 'Meeting created successfully',
       meeting,
     };
   }
@@ -107,7 +107,7 @@ export class MeetingService {
         organizationId,
         deletedAt: null,
       },
-      orderBy: { createdAt: "desc" },
+      orderBy: { createdAt: 'desc' },
     });
   }
 
@@ -120,7 +120,7 @@ export class MeetingService {
       },
     });
 
-    if (!meeting) throw new BadRequestException("Meeting not found");
+    if (!meeting) throw new BadRequestException('Meeting not found');
 
     if (meeting.organizationId !== organizationId) {
       throw new ForbiddenException("You don't have access to this resource");
@@ -142,7 +142,7 @@ export class MeetingService {
     }
 
     const recordingUrl = meeting.recording
-      ? `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION || "us-east-1"}.amazonaws.com/${meeting.recording}`
+      ? `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION || 'us-east-1'}.amazonaws.com/${meeting.recording}`
       : null;
 
     return {
@@ -158,7 +158,7 @@ export class MeetingService {
       where: { id: Number(id) },
     });
 
-    if (!meeting) throw new BadRequestException("Meeting not found");
+    if (!meeting) throw new BadRequestException('Meeting not found');
     if (meeting.organizationId !== organizationId) {
       throw new ForbiddenException("You don't have access to this resource");
     }
@@ -179,14 +179,14 @@ export class MeetingService {
   async updateActionItem(
     actionItemId: number,
     organizationId: number,
-    data: { taskId: string; title: string; description: string | null }
+    data: { taskId: string; title: string; description: string | null },
   ) {
     const actionItem = await this.prisma.meetingActionItem.findUnique({
       where: { id: actionItemId },
       include: { meeting: { select: { organizationId: true } } },
     });
 
-    if (!actionItem) throw new BadRequestException("Action item not found");
+    if (!actionItem) throw new BadRequestException('Action item not found');
 
     if (actionItem.meeting.organizationId !== organizationId) {
       throw new ForbiddenException("You don't have access to this resource");
@@ -209,7 +209,7 @@ export class MeetingService {
       where: { id: Number(id) },
     });
 
-    if (!meeting) throw new BadRequestException("Meeting not found");
+    if (!meeting) throw new BadRequestException('Meeting not found');
 
     if (meeting.organizationId !== organizationId) {
       throw new ForbiddenException("You don't have access to this resource");
@@ -217,7 +217,7 @@ export class MeetingService {
 
     await this.prisma.meeting.delete({ where: { id: Number(id) } });
 
-    return { message: "Meeting deleted successfully" };
+    return { message: 'Meeting deleted successfully' };
   }
 
   async webhook(callbackDto: CallbackDto) {
@@ -226,7 +226,7 @@ export class MeetingService {
       where: { id: Number(meetingId) },
     });
 
-    if (!meeting) throw new BadRequestException("Meeting not found");
+    if (!meeting) throw new BadRequestException('Meeting not found');
 
     const statusMap: Record<string, MeetingStatus> = {
       in_progress: MeetingStatus.IN_PROGRESS,
@@ -249,7 +249,7 @@ export class MeetingService {
       },
     });
 
-    if (event === "completed" && data?.transcript) {
+    if (event === 'completed' && data?.transcript) {
       try {
         const response = await axios.get(data.transcript);
         const multiline = this.jsonTranscriptToMultiline(response.data);
@@ -257,35 +257,35 @@ export class MeetingService {
         void this.storeMeetingSummaryFromTranscript(
           multiline,
           Number(meetingId),
-          meeting.organizationId
+          meeting.organizationId,
         );
       } catch (err) {
         this.logger.error(
           `Failed to process transcript for meeting ${meetingId}`,
-          err instanceof Error ? err.message : err
+          err instanceof Error ? err.message : err,
         );
       }
     }
 
-    return { message: "Meeting status updated successfully" };
+    return { message: 'Meeting status updated successfully' };
   }
 
   async addTranscriptChunk(
     meetingId: string,
     text: string,
-    isFinal = false
+    isFinal = false,
   ): Promise<void> {
     const meeting = await this.prisma.meeting.findUnique({
       where: { id: Number(meetingId) },
       select: { id: true, organizationId: true },
     });
 
-    if (!meeting) throw new BadRequestException("Meeting not found");
+    if (!meeting) throw new BadRequestException('Meeting not found');
 
     if (!text?.trim()) {
       if (isFinal) {
         this.logger.log(
-          `[Meeting ${meetingId}] Final transcript flush with no text`
+          `[Meeting ${meetingId}] Final transcript flush with no text`,
         );
       }
       return;
@@ -298,12 +298,12 @@ export class MeetingService {
         text,
       });
       this.logger.log(
-        `[Meeting ${meetingId}] Ingested transcript chunk (${text.length} chars)`
+        `[Meeting ${meetingId}] Ingested transcript chunk (${text.length} chars)`,
       );
     } catch (err) {
       this.logger.error(
         `[Meeting ${meetingId}] Ingest failed:`,
-        err instanceof Error ? err.message : err
+        err instanceof Error ? err.message : err,
       );
     }
   }
@@ -323,7 +323,7 @@ export class MeetingService {
       },
     });
 
-    if (!meeting) throw new BadRequestException("Meeting not found");
+    if (!meeting) throw new BadRequestException('Meeting not found');
 
     if (!meeting.transcript) {
       return {
@@ -335,7 +335,7 @@ export class MeetingService {
         scheduledAt: meeting.scheduledAt,
         status: meeting.status,
         transcript: null,
-        message: "No transcript available for this meeting",
+        message: 'No transcript available for this meeting',
       };
     }
 
@@ -353,7 +353,7 @@ export class MeetingService {
         chatMessages: response.data.chatMessages || null,
       };
     } catch {
-      throw new BadRequestException("Failed to fetch transcript");
+      throw new BadRequestException('Failed to fetch transcript');
     }
   }
 
@@ -362,11 +362,11 @@ export class MeetingService {
       where: { id: Number(meetingId) },
     });
 
-    if (!meeting) throw new BadRequestException("Meeting not found");
+    if (!meeting) throw new BadRequestException('Meeting not found');
 
     await this.meetingNotifyService.notifyMeetingEnd(meetingId);
 
-    return { message: "End command sent to bot", meetingId };
+    return { message: 'End command sent to bot', meetingId };
   }
 
   private jsonTranscriptToMultiline(payload: {
@@ -375,30 +375,32 @@ export class MeetingService {
   }): string {
     try {
       const lines = (payload.transcripts ?? []).map((t) => {
-        const speaker = t?.speaker_name || "Speaker";
-        const duration = t?.formatted_duration ? ` (${t.formatted_duration}s)` : "";
+        const speaker = t?.speaker_name || 'Speaker';
+        const duration = t?.formatted_duration
+          ? ` (${t.formatted_duration}s)`
+          : '';
         return `${speaker}${duration}: ${t.text}`;
       });
 
       const chatLines = (payload.chatMessages ?? []).map((c) => {
-        const author = c?.author || "Chat";
+        const author = c?.author || 'Chat';
         return `CHAT - ${author}: ${c.text}`;
       });
 
-      return [...lines, ...chatLines].join("\n");
+      return [...lines, ...chatLines].join('\n');
     } catch {
-      return "";
+      return '';
     }
   }
 
   private async storeMeetingSummaryFromTranscript(
     _transcript: string,
     meetingId: number,
-    _organizationId: number
+    _organizationId: number,
   ): Promise<void> {
     // Summarizer agent not configured; summary will be stored when agent is available.
     this.logger.log(
-      `[Meeting ${meetingId}] Transcript ready; summarizer agent not yet configured`
+      `[Meeting ${meetingId}] Transcript ready; summarizer agent not yet configured`,
     );
   }
 }

@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from '@playwright/test';
 
 /**
  * Role-Based Access Control (RBAC) E2E Tests
@@ -15,29 +15,29 @@ import { test, expect } from "@playwright/test";
  * 3. Update SQL to set roles: UPDATE "user" SET role = 'admin' WHERE email = 'test@example.com'
  */
 
-test.describe("RBAC - Unauthenticated Access", () => {
+test.describe('RBAC - Unauthenticated Access', () => {
   // Use a fresh context without authentication
   test.use({ storageState: { cookies: [], origins: [] } });
 
-  test("should redirect to sign-in when accessing admin page without auth", async ({
+  test('should redirect to sign-in when accessing admin page without auth', async ({
     page,
   }) => {
-    await page.goto("/admin");
+    await page.goto('/admin');
 
     // Should redirect to sign-in
-    await page.waitForURL("**/sign-in", { timeout: 10000 });
+    await page.waitForURL('**/sign-in', { timeout: 10000 });
 
-    await expect(page.locator("h1")).toContainText("Sign in to Zuko");
+    await expect(page.locator('h1')).toContainText('Sign in to Zuko');
   });
 
-  test("should not show admin navigation items when unauthenticated", async ({
+  test('should not show admin navigation items when unauthenticated', async ({
     page,
   }) => {
-    await page.goto("/sign-in");
+    await page.goto('/sign-in');
 
     // Admin-related navigation should not be visible on sign-in page
     // (navigation doesn't show up until authenticated)
-    const adminLink = page.getByRole("link", { name: /admin/i });
+    const adminLink = page.getByRole('link', { name: /admin/i });
     const isVisible = await adminLink.isVisible().catch(() => false);
 
     expect(isVisible).toBe(false);
@@ -50,12 +50,12 @@ test.describe('RBAC - User with "none" Role', () => {
    * Skip if authentication is not set up
    */
 
-  test.skip("should show access denied on admin page", async ({ page }) => {
+  test.skip('should show access denied on admin page', async ({ page }) => {
     // This test requires:
     // 1. Authenticated session with storageState
     // 2. User with role = 'none'
 
-    await page.goto("/admin");
+    await page.goto('/admin');
 
     // Should show access denied message
     await expect(page.getByText(/access denied/i)).toBeVisible();
@@ -69,29 +69,29 @@ test.describe('RBAC - User with "none" Role', () => {
     expect(hasAdminContent).toBe(false);
   });
 
-  test.skip("should not show admin navigation items", async ({ page }) => {
-    await page.goto("/chat");
+  test.skip('should not show admin navigation items', async ({ page }) => {
+    await page.goto('/chat');
 
     // Wait for page to load
-    await page.waitForLoadState("domcontentloaded");
+    await page.waitForLoadState('domcontentloaded');
 
     // Admin link should not be in navigation
-    const adminLink = page.getByRole("link", { name: /admin/i }).first();
+    const adminLink = page.getByRole('link', { name: /admin/i }).first();
     const isVisible = await adminLink.isVisible().catch(() => false);
 
     // Users with 'none' role should not see admin navigation
     expect(isVisible).toBe(false);
   });
 
-  test.skip("can access non-protected pages", async ({ page }) => {
+  test.skip('can access non-protected pages', async ({ page }) => {
     // User with 'none' role should still access regular pages
-    await page.goto("/chat");
+    await page.goto('/chat');
     await expect(page).toHaveURL(/.*chat/);
 
-    await page.goto("/contacts");
+    await page.goto('/contacts');
     await expect(page).toHaveURL(/.*contacts/);
 
-    await page.goto("/settings");
+    await page.goto('/settings');
     await expect(page).toHaveURL(/.*settings/);
   });
 });
@@ -103,12 +103,12 @@ test.describe('RBAC - User with "admin" Role', () => {
    * UPDATE "user" SET role = 'admin' WHERE email = 'test-admin@example.com';
    */
 
-  test.skip("should show admin page content", async ({ page }) => {
-    await page.goto("/admin");
+  test.skip('should show admin page content', async ({ page }) => {
+    await page.goto('/admin');
 
     // Should show admin dashboard heading
     await expect(
-      page.getByRole("heading", { name: /admin dashboard/i }),
+      page.getByRole('heading', { name: /admin dashboard/i }),
     ).toBeVisible();
 
     // Should show admin content sections
@@ -122,33 +122,33 @@ test.describe('RBAC - User with "admin" Role', () => {
     expect(isDenied).toBe(false);
   });
 
-  test.skip("should show admin navigation items", async ({ page }) => {
-    await page.goto("/chat");
+  test.skip('should show admin navigation items', async ({ page }) => {
+    await page.goto('/chat');
 
     // Wait for page to load
-    await page.waitForLoadState("domcontentloaded");
+    await page.waitForLoadState('domcontentloaded');
 
     // Admin link should be visible in navigation
-    const adminLink = page.getByRole("link", { name: /admin/i }).first();
+    const adminLink = page.getByRole('link', { name: /admin/i }).first();
     await expect(adminLink).toBeVisible();
   });
 
-  test.skip("can navigate to admin page from sidebar", async ({ page }) => {
-    await page.goto("/chat");
+  test.skip('can navigate to admin page from sidebar', async ({ page }) => {
+    await page.goto('/chat');
 
     // Click admin link in navigation
-    const adminLink = page.getByRole("link", { name: /admin/i }).first();
+    const adminLink = page.getByRole('link', { name: /admin/i }).first();
     await adminLink.click();
 
     // Should navigate to admin page
     await expect(page).toHaveURL(/.*admin/);
     await expect(
-      page.getByRole("heading", { name: /admin dashboard/i }),
+      page.getByRole('heading', { name: /admin dashboard/i }),
     ).toBeVisible();
   });
 
-  test.skip("can access all admin features", async ({ page }) => {
-    await page.goto("/admin");
+  test.skip('can access all admin features', async ({ page }) => {
+    await page.goto('/admin');
 
     // Verify all admin sections are clickable/interactive
     const userManagement = page.getByText(/user management/i);
@@ -169,34 +169,34 @@ test.describe('RBAC - User with "accountant" Role', () => {
    * UPDATE "user" SET role = 'accountant' WHERE email = 'test-accountant@example.com';
    */
 
-  test.skip("should NOT access admin page", async ({ page }) => {
-    await page.goto("/admin");
+  test.skip('should NOT access admin page', async ({ page }) => {
+    await page.goto('/admin');
 
     // Should show access denied (admin-only page)
     await expect(page.getByText(/access denied/i)).toBeVisible();
 
     // Should NOT show admin dashboard
-    const adminDashboard = page.getByRole("heading", {
+    const adminDashboard = page.getByRole('heading', {
       name: /admin dashboard/i,
     });
     const hasAccess = await adminDashboard.isVisible().catch(() => false);
     expect(hasAccess).toBe(false);
   });
 
-  test.skip("should not show admin navigation items", async ({ page }) => {
-    await page.goto("/chat");
+  test.skip('should not show admin navigation items', async ({ page }) => {
+    await page.goto('/chat');
 
     // Wait for page to load
-    await page.waitForLoadState("domcontentloaded");
+    await page.waitForLoadState('domcontentloaded');
 
     // Admin link should not be visible for accountant
-    const adminLink = page.getByRole("link", { name: /admin/i }).first();
+    const adminLink = page.getByRole('link', { name: /admin/i }).first();
     const isVisible = await adminLink.isVisible().catch(() => false);
 
     expect(isVisible).toBe(false);
   });
 
-  test.skip("should access financial/accountant features", async ({ page }) => {
+  test.skip('should access financial/accountant features', async ({ page }) => {
     // If you create accountant-specific pages, test them here
     // For example: /reports, /finances, etc.
     // await page.goto('/reports');
@@ -206,14 +206,14 @@ test.describe('RBAC - User with "accountant" Role', () => {
   });
 });
 
-test.describe("RBAC - Role Guard Component", () => {
+test.describe('RBAC - Role Guard Component', () => {
   /**
    * Tests for the RoleGuard component behavior
    */
 
-  test.skip("conditionally renders content based on role", async ({ page }) => {
+  test.skip('conditionally renders content based on role', async ({ page }) => {
     // Navigate to a page that uses RoleGuard
-    await page.goto("/admin");
+    await page.goto('/admin');
 
     // Admin-specific content should be wrapped in RoleGuard
     // and only visible to users with admin role
@@ -223,9 +223,9 @@ test.describe("RBAC - Role Guard Component", () => {
     // This test would need to run multiple times with different authenticated users
   });
 
-  test.skip("shows fallback content when access denied", async ({ page }) => {
+  test.skip('shows fallback content when access denied', async ({ page }) => {
     // User with 'none' role visiting admin page
-    await page.goto("/admin");
+    await page.goto('/admin');
 
     // Should show the fallback content (Access Denied)
     await expect(page.getByText(/access denied/i)).toBeVisible();
@@ -233,37 +233,37 @@ test.describe("RBAC - Role Guard Component", () => {
   });
 });
 
-test.describe("RBAC - API Integration", () => {
+test.describe('RBAC - API Integration', () => {
   /**
    * Tests that frontend correctly handles API responses based on roles
    */
 
-  test.skip("handles 403 forbidden responses gracefully", async ({ page }) => {
+  test.skip('handles 403 forbidden responses gracefully', async ({ page }) => {
     // Mock API call that returns 403
-    await page.route("**/api/admin/**", (route) => {
+    await page.route('**/api/admin/**', (route) => {
       route.fulfill({
         status: 403,
-        contentType: "application/json",
-        body: JSON.stringify({ message: "Forbidden" }),
+        contentType: 'application/json',
+        body: JSON.stringify({ message: 'Forbidden' }),
       });
     });
 
-    await page.goto("/admin");
+    await page.goto('/admin');
 
     // Should show appropriate error message
     // (Implementation depends on your error handling)
   });
 
-  test.skip("shows loading state while checking permissions", async ({
+  test.skip('shows loading state while checking permissions', async ({
     page,
   }) => {
     // Slow down API response to test loading state
-    await page.route("**/api/admin/**", async (route) => {
+    await page.route('**/api/admin/**', async (route) => {
       await new Promise((resolve) => setTimeout(resolve, 1000));
       route.continue();
     });
 
-    await page.goto("/admin");
+    await page.goto('/admin');
 
     // Should show loading indicator briefly
     page.getByText(/loading/i);

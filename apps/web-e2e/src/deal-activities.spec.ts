@@ -1,11 +1,11 @@
-import { test, expect } from "./fixtures";
-import { createFreshDeal } from "./fixtures/helpers";
+import { test, expect } from './fixtures';
+import { createFreshDeal } from './fixtures/helpers';
 
 /**
  * Deal Activity Timeline Tests.
  * Uses the deal created in data.spec.ts (e2e project runs after data).
  */
-test.describe("Deal Activity Timeline - Authenticated", () => {
+test.describe('Deal Activity Timeline - Authenticated', () => {
   let dealId!: number;
 
   test.beforeAll(async ({ browser }) => {
@@ -13,7 +13,7 @@ test.describe("Deal Activity Timeline - Authenticated", () => {
   });
 
   // ── 1. Empty states (check before any creation) ───────────────────────────
-  test("should display activity timeline section", async ({
+  test('should display activity timeline section', async ({
     dealDetailPage,
   }) => {
     await dealDetailPage.goto(dealId);
@@ -22,18 +22,18 @@ test.describe("Deal Activity Timeline - Authenticated", () => {
     expect(isVisible).toBeTruthy();
   });
 
-  test("should display comment input form at the bottom", async ({
+  test('should display comment input form at the bottom', async ({
     dealDetailPage,
     page,
   }) => {
     await dealDetailPage.goto(dealId);
     await page
-      .getByRole("heading", { name: /Activity/i })
+      .getByRole('heading', { name: /Activity/i })
       .scrollIntoViewIfNeeded();
     await expect(dealDetailPage.commentInput).toBeVisible({ timeout: 10000 });
   });
 
-  test("should disable post button when comment is empty", async ({
+  test('should disable post button when comment is empty', async ({
     dealDetailPage,
   }) => {
     await dealDetailPage.goto(dealId);
@@ -42,27 +42,27 @@ test.describe("Deal Activity Timeline - Authenticated", () => {
     expect(isDisabled).toBeTruthy();
   });
 
-  test("should not submit empty or whitespace-only comments", async ({
+  test('should not submit empty or whitespace-only comments', async ({
     dealDetailPage,
     page,
   }) => {
     await dealDetailPage.goto(dealId);
 
     await page
-      .getByRole("heading", { name: "Activity", exact: true })
+      .getByRole('heading', { name: 'Activity', exact: true })
       .scrollIntoViewIfNeeded();
     await dealDetailPage.showHistory();
 
     // Wait for activity section to stabilize before capturing baseline count
     await page
       .locator('[data-testid="activity-item"]')
-      .or(page.getByText("No activity yet"))
+      .or(page.getByText('No activity yet'))
       .first()
-      .waitFor({ state: "visible", timeout: 10000 });
+      .waitFor({ state: 'visible', timeout: 10000 });
 
     const initialCount = await dealDetailPage.getActivityCount();
 
-    await page.getByPlaceholder("Add a comment...").fill("   ");
+    await page.getByPlaceholder('Add a comment...').fill('   ');
 
     const isDisabled = await dealDetailPage.isPostButtonDisabled();
     expect(isDisabled).toBeTruthy();
@@ -72,14 +72,14 @@ test.describe("Deal Activity Timeline - Authenticated", () => {
   });
 
   // ── 2. Create ─────────────────────────────────────────────────────────────
-  test("should create a new comment successfully", async ({
+  test('should create a new comment successfully', async ({
     dealDetailPage,
-    page
+    page,
   }) => {
     await dealDetailPage.goto(dealId);
 
     await page
-      .getByRole("heading", { name: "Activity", exact: true })
+      .getByRole('heading', { name: 'Activity', exact: true })
       .scrollIntoViewIfNeeded();
     await dealDetailPage.showHistory();
 
@@ -93,31 +93,31 @@ test.describe("Deal Activity Timeline - Authenticated", () => {
   });
 
   // ── 3. Check after creating ─────────────────────────────────────────────
-  test("should clear input after successful comment submission", async ({
+  test('should clear input after successful comment submission', async ({
     dealDetailPage,
     page,
   }) => {
     await dealDetailPage.goto(dealId);
 
-    const commentText = "This should clear after posting";
+    const commentText = 'This should clear after posting';
     await dealDetailPage.createComment(commentText);
 
-    const textarea = page.getByPlaceholder("Add a comment...");
-    await expect(textarea).toHaveValue("", { timeout: 5000 });
+    const textarea = page.getByPlaceholder('Add a comment...');
+    await expect(textarea).toHaveValue('', { timeout: 5000 });
   });
 
-  test("should successfully edit own comment", async ({
+  test('should successfully edit own comment', async ({
     dealDetailPage,
     page,
   }) => {
     await dealDetailPage.goto(dealId);
     await page
-      .getByRole("heading", { name: "Activity", exact: true })
+      .getByRole('heading', { name: 'Activity', exact: true })
       .scrollIntoViewIfNeeded();
     await dealDetailPage.showHistory();
 
-    const originalComment = "Original comment " + Date.now();
-    const editedComment = "Edited comment " + Date.now();
+    const originalComment = 'Original comment ' + Date.now();
+    const editedComment = 'Edited comment ' + Date.now();
 
     await dealDetailPage.createComment(originalComment);
     await expect(page.getByText(originalComment)).toBeVisible({
@@ -139,17 +139,14 @@ test.describe("Deal Activity Timeline - Authenticated", () => {
     await expect(page.getByText(editedComment)).toBeVisible({ timeout: 10000 });
   });
 
-  test("should cancel editing a comment", async ({
-    dealDetailPage,
-    page,
-  }) => {
+  test('should cancel editing a comment', async ({ dealDetailPage, page }) => {
     await dealDetailPage.goto(dealId);
     await page
-      .getByRole("heading", { name: "Activity", exact: true })
+      .getByRole('heading', { name: 'Activity', exact: true })
       .scrollIntoViewIfNeeded();
     await dealDetailPage.showHistory();
 
-    const originalComment = "Original comment for cancel test " + Date.now();
+    const originalComment = 'Original comment for cancel test ' + Date.now();
 
     await dealDetailPage.createComment(originalComment);
     await expect(dealDetailPage.activityItems.last()).toContainText(
@@ -159,12 +156,12 @@ test.describe("Deal Activity Timeline - Authenticated", () => {
 
     const items = await dealDetailPage.activityItems.all();
     const lastItem = items[items.length - 1];
-    const editButton = lastItem.getByRole("button", { name: /edit/i });
+    const editButton = lastItem.getByRole('button', { name: /edit/i });
     await editButton.click();
 
-    const textarea = lastItem.locator("textarea");
+    const textarea = lastItem.locator('textarea');
     await expect(textarea).toBeVisible({ timeout: 3000 });
-    await textarea.fill("This should not be saved");
+    await textarea.fill('This should not be saved');
 
     const count = await dealDetailPage.getActivityCount();
     await dealDetailPage.cancelEditComment(count - 1);
@@ -174,7 +171,7 @@ test.describe("Deal Activity Timeline - Authenticated", () => {
       originalComment,
     );
     await expect(dealDetailPage.activityItems.last()).not.toContainText(
-      "This should not be saved",
+      'This should not be saved',
     );
   });
 });

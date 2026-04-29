@@ -10,7 +10,11 @@ interface UseAutosaveFieldOptions<T> {
 
 export function useAutosaveField<T>(
   initialValue: T | null | undefined,
-  { debounceMs = 2000, onSave, fieldName = 'field' }: UseAutosaveFieldOptions<T>
+  {
+    debounceMs = 2000,
+    onSave,
+    fieldName = 'field',
+  }: UseAutosaveFieldOptions<T>,
 ) {
   const [value, setValue] = useState<T>(initialValue as T);
   const [isSaving, setIsSaving] = useState(false);
@@ -33,21 +37,24 @@ export function useAutosaveField<T>(
     }
   }, [initialValue]);
 
-  const save = useCallback(async (val: T) => {
-    if (val === lastSavedValue.current) return;
-    
-    setIsSaving(true);
-    try {
-      await onSaveRef.current(val);
-      lastSavedValue.current = val;
-    } catch {
-      toast.error('Failed to save changes');
-      // Option A: Rollback
-      setValue(lastSavedValue.current);
-    } finally {
-      setIsSaving(false);
-    }
-  }, [fieldName]);
+  const save = useCallback(
+    async (val: T) => {
+      if (val === lastSavedValue.current) return;
+
+      setIsSaving(true);
+      try {
+        await onSaveRef.current(val);
+        lastSavedValue.current = val;
+      } catch {
+        toast.error('Failed to save changes');
+        // Option A: Rollback
+        setValue(lastSavedValue.current);
+      } finally {
+        setIsSaving(false);
+      }
+    },
+    [fieldName],
+  );
 
   useEffect(() => {
     if (debouncedValue !== lastSavedValue.current) {

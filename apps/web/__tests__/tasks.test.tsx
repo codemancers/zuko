@@ -55,7 +55,7 @@ vi.mock('@/lib/api/metadata', () => ({
         { value: 'IN_PROGRESS', label: 'In Progress' },
         { value: 'DONE', label: 'Done' },
         { value: 'CANCELLED', label: 'Cancelled' },
-      ])
+      ]),
     ),
   },
 }));
@@ -69,13 +69,26 @@ vi.mock('@zuko/ui-kit', async () => {
     ErrorMessage: ({ children }: { children: React.ReactNode }) => (
       <div role="alert">{children}</div>
     ),
-    Combobox: ({ options, onChange, placeholder, children: _children, value, displayValue }: any) => (
+    Combobox: ({
+      options,
+      onChange,
+      placeholder,
+      children: _children,
+      value,
+      displayValue,
+    }: any) => (
       <select
         data-testid="mock-combobox"
-        value={value ? (typeof value === 'object' ? value.value ?? value.code ?? '' : value) : ''}
+        value={
+          value
+            ? typeof value === 'object'
+              ? (value.value ?? value.code ?? '')
+              : value
+            : ''
+        }
         onChange={(e) => {
           const selected = options.find(
-            (o: any) => String(o.value ?? o.code ?? o) === e.target.value
+            (o: any) => String(o.value ?? o.code ?? o) === e.target.value,
           );
           if (selected) onChange(selected);
         }}
@@ -108,9 +121,7 @@ let queryClient: QueryClient;
 
 function wrapper({ children }: { children: React.ReactNode }) {
   return (
-    <QueryClientProvider client={queryClient}>
-      {children}
-    </QueryClientProvider>
+    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
   );
 }
 
@@ -118,7 +129,11 @@ const mockTask: Task = {
   id: 1,
   organizationId: 1,
   title: 'Test Task',
-  description: { blocks: [{ type: 'paragraph', data: { text: 'Test description' } }], version: '2.30.0', time: 123 },
+  description: {
+    blocks: [{ type: 'paragraph', data: { text: 'Test description' } }],
+    version: '2.30.0',
+    time: 123,
+  },
   status: 'TODO',
   completedAt: null,
   parentId: null,
@@ -143,9 +158,13 @@ describe('TaskForm', () => {
     render(<TaskForm mode="create" />, { wrapper });
 
     expect(screen.getByLabelText(/title \*/i)).toBeInTheDocument();
-    expect(screen.getByPlaceholderText(/optional description/i)).toBeInTheDocument();
+    expect(
+      screen.getByPlaceholderText(/optional description/i),
+    ).toBeInTheDocument();
     expect(screen.getByLabelText(/status/i)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /create task/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: /create task/i }),
+    ).toBeInTheDocument();
   });
 
   it('creates a task successfully', async () => {
@@ -155,12 +174,15 @@ describe('TaskForm', () => {
     render(<TaskForm mode="create" />, { wrapper });
 
     await user.type(screen.getByLabelText(/title \*/i), 'New Task');
-    await user.type(screen.getByPlaceholderText(/optional description/i), 'Description');
+    await user.type(
+      screen.getByPlaceholderText(/optional description/i),
+      'Description',
+    );
     await user.click(screen.getByRole('button', { name: /create task/i }));
 
     await waitFor(() => {
       expect(mockCreateTask).toHaveBeenCalledWith(
-        expect.objectContaining({ title: 'New Task' })
+        expect.objectContaining({ title: 'New Task' }),
       );
       expect(mockPush).toHaveBeenCalledWith('/tasks');
     });
@@ -185,7 +207,7 @@ describe('TaskForm', () => {
 
     await waitFor(() => {
       expect(mockCreateTask).toHaveBeenCalledWith(
-        expect.objectContaining({ title: 'Subtask', parentId: 5 })
+        expect.objectContaining({ title: 'Subtask', parentId: 5 }),
       );
     });
   });
@@ -199,20 +221,60 @@ describe('TaskForm', () => {
     await user.type(screen.getByLabelText(/title \*/i), 'New Task');
     await user.click(screen.getByRole('button', { name: /create task/i }));
 
-    await waitFor(() => {
-      expect(screen.getByRole('alert')).toHaveTextContent(/network error/i);
-    }, { timeout: 3000 });
+    await waitFor(
+      () => {
+        expect(screen.getByRole('alert')).toHaveTextContent(/network error/i);
+      },
+      { timeout: 3000 },
+    );
   });
 });
 
 const mockTableViewResponse = {
   data: [],
   metadata: [
-    { id: 'title', header: 'Title', fieldType: 'entity', dataType: 'text', editable: true },
-    { id: 'status', header: 'Status', fieldType: 'select', dataType: 'text', editable: true, config: { options: [{ value: 'TODO', label: 'Todo' }, { value: 'IN_PROGRESS', label: 'In Progress' }, { value: 'DONE', label: 'Done' }] } },
-    { id: 'assignee', header: 'Assignee', fieldType: 'text', dataType: 'text', editable: true },
-    { id: 'completedAt', header: 'Completed At', fieldType: 'date', dataType: 'date', editable: true },
-    { id: 'createdAt', header: 'Created', fieldType: 'date', dataType: 'date', editable: false },
+    {
+      id: 'title',
+      header: 'Title',
+      fieldType: 'entity',
+      dataType: 'text',
+      editable: true,
+    },
+    {
+      id: 'status',
+      header: 'Status',
+      fieldType: 'select',
+      dataType: 'text',
+      editable: true,
+      config: {
+        options: [
+          { value: 'TODO', label: 'Todo' },
+          { value: 'IN_PROGRESS', label: 'In Progress' },
+          { value: 'DONE', label: 'Done' },
+        ],
+      },
+    },
+    {
+      id: 'assignee',
+      header: 'Assignee',
+      fieldType: 'text',
+      dataType: 'text',
+      editable: true,
+    },
+    {
+      id: 'completedAt',
+      header: 'Completed At',
+      fieldType: 'date',
+      dataType: 'date',
+      editable: true,
+    },
+    {
+      id: 'createdAt',
+      header: 'Created',
+      fieldType: 'date',
+      dataType: 'date',
+      editable: false,
+    },
   ],
   pagination: { page: 1, limit: 0, total: 0, totalPages: 1 },
 };
@@ -236,7 +298,9 @@ describe('TasksList', () => {
       expect(screen.getByText('Actions')).toBeInTheDocument();
     });
 
-    expect(screen.getByRole('button', { name: /add row/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: /add row/i }),
+    ).toBeInTheDocument();
   });
 
   it('displays tasks in table', async () => {
@@ -280,7 +344,14 @@ describe('TasksList', () => {
     mockUpdateCell.mockResolvedValue({});
     mockGetTasks.mockResolvedValue({
       ...mockTableViewResponse,
-      data: [{ id: 1, title: 'Test Task', status: 'TODO', assignee: 'alice@example.com' }],
+      data: [
+        {
+          id: 1,
+          title: 'Test Task',
+          status: 'TODO',
+          assignee: 'alice@example.com',
+        },
+      ],
       pagination: { page: 1, limit: 1, total: 1, totalPages: 1 },
     });
 
@@ -300,7 +371,12 @@ describe('TasksList', () => {
     await user.tab();
 
     await waitFor(() => {
-      expect(mockUpdateCell).toHaveBeenCalledWith('tasks', 1, 'assignee', 'bob@example.com');
+      expect(mockUpdateCell).toHaveBeenCalledWith(
+        'tasks',
+        1,
+        'assignee',
+        'bob@example.com',
+      );
     });
   });
 
@@ -308,7 +384,14 @@ describe('TasksList', () => {
     const user = userEvent.setup();
     mockGetTasks.mockResolvedValue({
       ...mockTableViewResponse,
-      data: [{ id: 1, title: 'Test Task', status: 'TODO', assignee: 'alice@example.com' }],
+      data: [
+        {
+          id: 1,
+          title: 'Test Task',
+          status: 'TODO',
+          assignee: 'alice@example.com',
+        },
+      ],
       pagination: { page: 1, limit: 1, total: 1, totalPages: 1 },
     });
 
@@ -358,7 +441,14 @@ describe('TasksList', () => {
     mockUpdateCell.mockResolvedValue({});
     mockGetTasks.mockResolvedValue({
       ...mockTableViewResponse,
-      data: [{ id: 2, title: 'Another Task', status: 'TODO', assignee: 'carol@example.com' }],
+      data: [
+        {
+          id: 2,
+          title: 'Another Task',
+          status: 'TODO',
+          assignee: 'carol@example.com',
+        },
+      ],
       pagination: { page: 1, limit: 1, total: 1, totalPages: 1 },
     });
 
@@ -376,7 +466,12 @@ describe('TasksList', () => {
     await user.keyboard('{Enter}');
 
     await waitFor(() => {
-      expect(mockUpdateCell).toHaveBeenCalledWith('tasks', 2, 'assignee', 'dave@example.com');
+      expect(mockUpdateCell).toHaveBeenCalledWith(
+        'tasks',
+        2,
+        'assignee',
+        'dave@example.com',
+      );
     });
   });
 
@@ -384,7 +479,14 @@ describe('TasksList', () => {
     const user = userEvent.setup();
     mockGetTasks.mockResolvedValue({
       ...mockTableViewResponse,
-      data: [{ id: 1, title: 'Test Task', status: 'TODO', assignee: 'alice@example.com' }],
+      data: [
+        {
+          id: 1,
+          title: 'Test Task',
+          status: 'TODO',
+          assignee: 'alice@example.com',
+        },
+      ],
       pagination: { page: 1, limit: 1, total: 1, totalPages: 1 },
     });
 
@@ -470,14 +572,18 @@ describe('TaskDetail', () => {
     render(<TaskDetail taskId={1} />, { wrapper });
 
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: /delete/i })).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: /delete/i }),
+      ).toBeInTheDocument();
     });
 
     await user.click(screen.getByRole('button', { name: /delete/i }));
 
     await waitFor(() => {
       expect(screen.getByText(/delete task/i)).toBeInTheDocument();
-      expect(screen.getByText(/this action cannot be undone/i)).toBeInTheDocument();
+      expect(
+        screen.getByText(/this action cannot be undone/i),
+      ).toBeInTheDocument();
     });
 
     await user.click(screen.getByRole('button', { name: /^delete$/i }));
@@ -517,7 +623,10 @@ describe('TaskDetail', () => {
       await new Promise((r) => setTimeout(r, 2100)); // past 2000ms debounce
 
       await waitFor(() => {
-        expect(mockUpdateTask).toHaveBeenCalledWith(1, expect.objectContaining({ title: 'Updated Title' }));
+        expect(mockUpdateTask).toHaveBeenCalledWith(
+          1,
+          expect.objectContaining({ title: 'Updated Title' }),
+        );
         expect(invalidateSpy).toHaveBeenCalledWith(
           expect.objectContaining({ queryKey: ['timeline', 'task', 1] }),
         );
@@ -527,7 +636,10 @@ describe('TaskDetail', () => {
     it('edits assignee via inline text field', async () => {
       const user = userEvent.setup();
       const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
-      mockUpdateTask.mockResolvedValue({ ...mockTask, assignee: 'jane@example.com' });
+      mockUpdateTask.mockResolvedValue({
+        ...mockTask,
+        assignee: 'jane@example.com',
+      });
 
       render(<TaskDetail taskId={1} />, { wrapper });
 
@@ -543,7 +655,10 @@ describe('TaskDetail', () => {
       await user.tab();
 
       await waitFor(() => {
-        expect(mockUpdateTask).toHaveBeenCalledWith(1, expect.objectContaining({ assignee: 'jane@example.com' }));
+        expect(mockUpdateTask).toHaveBeenCalledWith(
+          1,
+          expect.objectContaining({ assignee: 'jane@example.com' }),
+        );
         expect(invalidateSpy).toHaveBeenCalledWith(
           expect.objectContaining({ queryKey: ['timeline', 'task', 1] }),
         );
@@ -569,7 +684,10 @@ describe('TaskDetail', () => {
       await user.selectOptions(select, 'IN_PROGRESS');
 
       await waitFor(() => {
-        expect(mockUpdateTask).toHaveBeenCalledWith(1, expect.objectContaining({ status: 'IN_PROGRESS' }));
+        expect(mockUpdateTask).toHaveBeenCalledWith(
+          1,
+          expect.objectContaining({ status: 'IN_PROGRESS' }),
+        );
         expect(invalidateSpy).toHaveBeenCalledWith(
           expect.objectContaining({ queryKey: ['timeline', 'task', 1] }),
         );
@@ -579,7 +697,10 @@ describe('TaskDetail', () => {
     it('edits completedAt via date picker', async () => {
       const user = userEvent.setup();
       const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
-      mockUpdateTask.mockResolvedValue({ ...mockTask, completedAt: '2026-04-15T00:00:00.000Z' });
+      mockUpdateTask.mockResolvedValue({
+        ...mockTask,
+        completedAt: '2026-04-15T00:00:00.000Z',
+      });
 
       render(<TaskDetail taskId={1} />, { wrapper });
 
@@ -592,7 +713,9 @@ describe('TaskDetail', () => {
       const completedCell = completedLabel.closest('div')!;
       await user.click(completedCell.querySelector('span')!);
 
-      const dateInput = document.querySelector('input[type="date"]') as HTMLInputElement;
+      const dateInput = document.querySelector(
+        'input[type="date"]',
+      ) as HTMLInputElement;
       expect(dateInput).toBeInTheDocument();
       fireEvent.change(dateInput, { target: { value: '2026-04-15' } });
       fireEvent.blur(dateInput);
@@ -600,7 +723,9 @@ describe('TaskDetail', () => {
       await waitFor(() => {
         expect(mockUpdateTask).toHaveBeenCalledWith(
           1,
-          expect.objectContaining({ completedAt: expect.stringContaining('2026-04-15') }),
+          expect.objectContaining({
+            completedAt: expect.stringContaining('2026-04-15'),
+          }),
         );
         expect(invalidateSpy).toHaveBeenCalledWith(
           expect.objectContaining({ queryKey: ['timeline', 'task', 1] }),
@@ -609,4 +734,3 @@ describe('TaskDetail', () => {
     });
   });
 });
-

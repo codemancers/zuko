@@ -1,4 +1,11 @@
-import { Input, Button, Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@zuko/ui-kit';
+import {
+  Input,
+  Button,
+  Tooltip,
+  TooltipTrigger,
+  TooltipContent,
+  TooltipProvider,
+} from '@zuko/ui-kit';
 import { Bars3Icon } from '@heroicons/react/24/outline';
 
 interface SearchBarProps {
@@ -8,7 +15,12 @@ interface SearchBarProps {
   onAddColumn?: () => void;
 }
 
-export function SearchBar({ value, onChange, placeholder, onAddColumn }: SearchBarProps) {
+export function SearchBar({
+  value,
+  onChange,
+  placeholder,
+  onAddColumn,
+}: SearchBarProps) {
   return (
     <div className="mt-6 flex items-center gap-3">
       <Input

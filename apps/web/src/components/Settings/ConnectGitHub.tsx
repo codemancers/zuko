@@ -55,7 +55,12 @@ export default function ConnectGitHub() {
       <div className="flex items-start justify-between">
         <div className="flex items-start gap-4">
           <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-gray-50 to-gray-100 ring-1 ring-gray-200 dark:from-gray-900/20 dark:to-gray-800/20 dark:ring-gray-800">
-            <Image src="/icons/github.svg" alt="GitHub" width={24} height={24} />
+            <Image
+              src="/icons/github.svg"
+              alt="GitHub"
+              width={24}
+              height={24}
+            />
           </div>
           <div className="min-w-0 flex-1">
             <div className="mb-2 flex items-center gap-3">

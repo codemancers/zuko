@@ -1,5 +1,5 @@
-import { test, expect } from "./fixtures";
-import { createFreshDeal } from "./fixtures/helpers";
+import { test, expect } from './fixtures';
+import { createFreshDeal } from './fixtures/helpers';
 
 /**
  * Deal Activity Timeline - System Events
@@ -8,7 +8,7 @@ import { createFreshDeal } from "./fixtures/helpers";
  * in the activity timeline: deal_created, stage_change, company_linked,
  * company_unlinked, contact_linked, contact_unlinked.
  */
-test.describe("Deal Activity Timeline - System Events", () => {
+test.describe('Deal Activity Timeline - System Events', () => {
   let dealId: number;
 
   test.beforeAll(async ({ browser }) => {
@@ -24,15 +24,18 @@ test.describe("Deal Activity Timeline - System Events", () => {
   }) => {
     const dealTitle = `Activity Event Test ${Date.now()}`;
     await dealsPage.goto();
-    
+
     // Create deal via add row
     await dealsPage.createDealRow(dealTitle);
-    
+
     // Get the ID of the newly created deal
-    const freshDealRow = page.getByRole("row").filter({ hasText: dealTitle }).first();
+    const freshDealRow = page
+      .getByRole('row')
+      .filter({ hasText: dealTitle })
+      .first();
     const freshDealLink = freshDealRow.locator('a[href^="/deals/"]');
     await freshDealLink.click();
-    
+
     await dealsPage.waitForDetailsPageToLoad();
 
     // Verify activity event on details page
@@ -48,16 +51,20 @@ test.describe("Deal Activity Timeline - System Events", () => {
     page,
   }) => {
     await dealDetailPage.goto(dealId);
-    const defaultNewStage = "Prospecting";
-    const targetStage = "Qualification";
+    const defaultNewStage = 'Prospecting';
+    const targetStage = 'Qualification';
 
     await dealDetailPage.openActivityHistory();
-    await dealDetailPage.updateProperty("Stage", targetStage, dealId);
-    await expect(dealDetailPage.propertyRow("Stage").locator("dd")).toHaveText(targetStage);
+    await dealDetailPage.updateProperty('Stage', targetStage, dealId);
+    await expect(dealDetailPage.propertyRow('Stage').locator('dd')).toHaveText(
+      targetStage,
+    );
 
     // Verify activity entry
-    await dealDetailPage.expectActivityEntry(`moved deal from ${defaultNewStage} to ${targetStage}`);
-    
+    await dealDetailPage.expectActivityEntry(
+      `moved deal from ${defaultNewStage} to ${targetStage}`,
+    );
+
     // Verify persistence
     await page.reload();
     const persistedStage = await dealDetailPage.getDealStage();
@@ -66,37 +73,37 @@ test.describe("Deal Activity Timeline - System Events", () => {
 
   // ── company_linked / company_unlinked ────────────────────────────────────
 
-  test.describe("company events", () => {
+  test.describe('company events', () => {
     test("shows 'linked company X' after a company is added", async ({
       dealDetailPage,
       page,
     }) => {
       await dealDetailPage.goto(dealId);
 
-      await page.getByRole("button", { name: /Add Company/i }).click();
+      await page.getByRole('button', { name: /Add Company/i }).click();
       await expect(
-        page.getByRole("heading", { name: /Add Company to Deal/i }),
+        page.getByRole('heading', { name: /Add Company to Deal/i }),
       ).toBeVisible();
 
-      const companySelect = page.locator("select").first();
-      const optionCount = await companySelect.locator("option").count();
+      const companySelect = page.locator('select').first();
+      const optionCount = await companySelect.locator('option').count();
 
       // Skip if no companies are available to link
       if (optionCount <= 1) {
-        await page.getByRole("button", { name: /Cancel/i }).click();
+        await page.getByRole('button', { name: /Cancel/i }).click();
         test.skip();
         return;
       }
 
       await companySelect.selectOption({ index: 1 });
-      await page.getByRole("button", { name: /^Add Company$/i }).click();
+      await page.getByRole('button', { name: /^Add Company$/i }).click();
 
       await expect(
-        page.getByRole("heading", { name: /Add Company to Deal/i }),
+        page.getByRole('heading', { name: /Add Company to Deal/i }),
       ).toBeHidden({ timeout: 5000 });
 
       await page
-        .getByRole("heading", { name: "Activity", exact: true })
+        .getByRole('heading', { name: 'Activity', exact: true })
         .scrollIntoViewIfNeeded();
       await dealDetailPage.showHistory();
 
@@ -124,14 +131,16 @@ test.describe("Deal Activity Timeline - System Events", () => {
 
       await removeButtons.first().click();
       // Confirm in ConfirmDialog
-      const confirmRemoveCompany = page.getByRole("button", { name: /^Remove$/ });
-      await confirmRemoveCompany.waitFor({ state: "visible", timeout: 5000 });
+      const confirmRemoveCompany = page.getByRole('button', {
+        name: /^Remove$/,
+      });
+      await confirmRemoveCompany.waitFor({ state: 'visible', timeout: 5000 });
       await confirmRemoveCompany.click();
       // Dialog doesn't auto-close after mutation; dismiss so aria-hidden is lifted
-      await page.keyboard.press("Escape");
+      await page.keyboard.press('Escape');
 
       await page
-        .getByRole("heading", { name: "Activity", exact: true })
+        .getByRole('heading', { name: 'Activity', exact: true })
         .scrollIntoViewIfNeeded();
       await dealDetailPage.showHistory();
 
@@ -146,36 +155,36 @@ test.describe("Deal Activity Timeline - System Events", () => {
 
   // ── contact_linked / contact_unlinked ────────────────────────────────────
 
-  test.describe("contact events", () => {
+  test.describe('contact events', () => {
     test("shows 'linked contact X' after a contact is added", async ({
       dealDetailPage,
       page,
     }) => {
       await dealDetailPage.goto(dealId);
 
-      await page.getByRole("button", { name: /Add Contact/i }).click();
+      await page.getByRole('button', { name: /Add Contact/i }).click();
       await expect(
-        page.getByRole("heading", { name: /Add Contact to Deal/i }),
+        page.getByRole('heading', { name: /Add Contact to Deal/i }),
       ).toBeVisible();
 
-      const contactSelect = page.locator("select").first();
-      const optionCount = await contactSelect.locator("option").count();
+      const contactSelect = page.locator('select').first();
+      const optionCount = await contactSelect.locator('option').count();
 
       if (optionCount <= 1) {
-        await page.getByRole("button", { name: /Cancel/i }).click();
+        await page.getByRole('button', { name: /Cancel/i }).click();
         test.skip();
         return;
       }
 
       await contactSelect.selectOption({ index: 1 });
-      await page.getByRole("button", { name: /^Add Contact$/i }).click();
+      await page.getByRole('button', { name: /^Add Contact$/i }).click();
 
       await expect(
-        page.getByRole("heading", { name: /Add Contact to Deal/i }),
+        page.getByRole('heading', { name: /Add Contact to Deal/i }),
       ).toBeHidden({ timeout: 5000 });
 
       await page
-        .getByRole("heading", { name: "Activity", exact: true })
+        .getByRole('heading', { name: 'Activity', exact: true })
         .scrollIntoViewIfNeeded();
       await dealDetailPage.showHistory();
 
@@ -203,14 +212,16 @@ test.describe("Deal Activity Timeline - System Events", () => {
 
       await removeButtons.first().click();
       // Confirm in ConfirmDialog
-      const confirmRemoveContact = page.getByRole("button", { name: /^Remove$/ });
-      await confirmRemoveContact.waitFor({ state: "visible", timeout: 5000 });
+      const confirmRemoveContact = page.getByRole('button', {
+        name: /^Remove$/,
+      });
+      await confirmRemoveContact.waitFor({ state: 'visible', timeout: 5000 });
       await confirmRemoveContact.click();
       // Dialog doesn't auto-close after mutation; dismiss so aria-hidden is lifted
-      await page.keyboard.press("Escape");
+      await page.keyboard.press('Escape');
 
       await page
-        .getByRole("heading", { name: "Activity", exact: true })
+        .getByRole('heading', { name: 'Activity', exact: true })
         .scrollIntoViewIfNeeded();
       await dealDetailPage.showHistory();
 

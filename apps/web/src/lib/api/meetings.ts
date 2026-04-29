@@ -94,7 +94,9 @@ export const meetingsApi = {
     const params = new URLSearchParams();
     if (filters?.search) params.append('search', filters.search);
     const queryString = params.toString();
-    return apiClient.get(`/tables/meetings${queryString ? `?${queryString}` : ''}`);
+    return apiClient.get(
+      `/tables/meetings${queryString ? `?${queryString}` : ''}`,
+    );
   },
 
   getMeeting: (id: number): Promise<Meeting> =>

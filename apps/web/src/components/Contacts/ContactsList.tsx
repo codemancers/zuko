@@ -28,7 +28,11 @@ const ContactsList = () => {
   const router = useRouter();
   const queryClient = useQueryClient();
   const openAddColumnRef = useRef<(() => void) | undefined>(undefined);
-  const { inputValue: searchTerm, setInputValue: setSearchTerm, debouncedValue } = useSearchParam();
+  const {
+    inputValue: searchTerm,
+    setInputValue: setSearchTerm,
+    debouncedValue,
+  } = useSearchParam();
   const [contactToDelete, setContactToDelete] = useState<number | null>(null);
   const { data: contactsData, isLoading } = useQuery(
     getTableViewContacts({ search: debouncedValue || undefined }),

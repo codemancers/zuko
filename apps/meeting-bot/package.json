@@ -6,7 +6,10 @@
   "nx": {
     "sourceRoot": "apps/meeting-bot/src",
     "projectType": "application",
-"tags": ["type:app", "scope:backend"],
+    "tags": [
+      "type:app",
+      "scope:backend"
+    ],
     "targets": {
       "build": {
         "executor": "@nx/esbuild:esbuild",

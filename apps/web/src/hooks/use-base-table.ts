@@ -61,36 +61,45 @@ export function useBaseTable<TData extends BaseRow>({
     onColumnFiltersChange: onFiltersChange,
     onRowSelectionChange,
     onColumnVisibilityChange,
-    
+
     // Core Models
     getCoreRowModel: getCoreRowModel(),
-    
+
     // Feature Models
-    getPaginationRowModel: manualPagination ? undefined : getPaginationRowModel(),
+    getPaginationRowModel: manualPagination
+      ? undefined
+      : getPaginationRowModel(),
     getSortedRowModel: manualSorting ? undefined : getSortedRowModel(),
     getFilteredRowModel: manualFiltering ? undefined : getFilteredRowModel(),
     getFacetedRowModel: getFacetedRowModel(),
     getFacetedUniqueValues: getFacetedUniqueValues(),
-    
+
     // Manual/Server-side flags
     manualPagination,
     manualSorting,
     manualFiltering,
 
     autoResetPageIndex: false,
-    
+
     // Selection
     enableRowSelection,
   });
 
-  const [isAddColumnDialogOpen, setIsAddColumnDialogOpen] = React.useState(false);
-  const openAddColumnDialog = React.useCallback(() => setIsAddColumnDialogOpen(true), []);
-  const closeAddColumnDialog = React.useCallback(() => setIsAddColumnDialogOpen(false), []);
+  const [isAddColumnDialogOpen, setIsAddColumnDialogOpen] =
+    React.useState(false);
+  const openAddColumnDialog = React.useCallback(
+    () => setIsAddColumnDialogOpen(true),
+    [],
+  );
+  const closeAddColumnDialog = React.useCallback(
+    () => setIsAddColumnDialogOpen(false),
+    [],
+  );
 
-  return { 
+  return {
     table,
     isAddColumnDialogOpen,
     openAddColumnDialog,
-    closeAddColumnDialog
+    closeAddColumnDialog,
   };
 }

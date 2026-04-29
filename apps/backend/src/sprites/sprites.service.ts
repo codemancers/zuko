@@ -1,4 +1,4 @@
-import { Injectable, InternalServerErrorException } from "@nestjs/common";
+import { Injectable, InternalServerErrorException } from '@nestjs/common';
 
 export type SpriteRecord = {
   id: string;
@@ -12,7 +12,6 @@ export type SpriteRecord = {
   last_started_at?: string | null;
   last_active_at?: string | null;
 };
-
 
 export type ExecPostOptions = {
   /** Command and arguments; sent as repeated `cmd` query parameters. */
@@ -38,7 +37,7 @@ export type ExecPostResult = {
   json?: unknown;
 };
 
-const DEFAULT_API_BASE = "https://api.sprites.dev";
+const DEFAULT_API_BASE = 'https://api.sprites.dev';
 
 @Injectable()
 export class SpritesService {
@@ -47,13 +46,13 @@ export class SpritesService {
   constructor() {
     this.baseUrl = (
       process.env.SPRITES_API_BASE_URL ?? DEFAULT_API_BASE
-    ).replace(/\/$/, "");
+    ).replace(/\/$/, '');
   }
 
   private bearerHeaders(): Record<string, string> {
     const token = process.env.SPRITES_TOKEN;
     if (!token) {
-      throw new InternalServerErrorException("SPRITES_TOKEN is not configured");
+      throw new InternalServerErrorException('SPRITES_TOKEN is not configured');
     }
     return {
       Authorization: `Bearer ${token}`,
@@ -63,7 +62,7 @@ export class SpritesService {
   private jsonHeaders(): Record<string, string> {
     return {
       ...this.bearerHeaders(),
-      "Content-Type": "application/json",
+      'Content-Type': 'application/json',
     };
   }
 
@@ -74,7 +73,7 @@ export class SpritesService {
   async createSprite(threadId: string): Promise<SpriteRecord> {
     const name = this.spriteName(threadId);
     const res = await fetch(`${this.baseUrl}/v1/sprites`, {
-      method: "POST",
+      method: 'POST',
       headers: this.jsonHeaders(),
       body: JSON.stringify({ name }),
     });
@@ -89,10 +88,10 @@ export class SpritesService {
 
   private async parseExecPostBody(res: Response): Promise<ExecPostResult> {
     const raw = await res.text();
-    const type = res.headers.get("content-type") ?? "";
+    const type = res.headers.get('content-type') ?? '';
     const trimmed = raw.trim();
 
-    if (type.includes("application/json") && trimmed) {
+    if (type.includes('application/json') && trimmed) {
       try {
         return { raw, json: JSON.parse(trimmed) as unknown };
       } catch {
@@ -102,8 +101,8 @@ export class SpritesService {
 
     if (
       trimmed &&
-      ((trimmed.startsWith("{") && trimmed.endsWith("}")) ||
-        (trimmed.startsWith("[") && trimmed.endsWith("]")))
+      ((trimmed.startsWith('{') && trimmed.endsWith('}')) ||
+        (trimmed.startsWith('[') && trimmed.endsWith(']')))
     ) {
       try {
         return { raw, json: JSON.parse(trimmed) as unknown };
@@ -125,40 +124,40 @@ export class SpritesService {
   ): Promise<ExecPostResult> {
     if (!options.cmd.length) {
       throw new InternalServerErrorException(
-        "Sprites exec POST requires at least one cmd segment",
+        'Sprites exec POST requires at least one cmd segment',
       );
     }
 
     const name = encodeURIComponent(this.spriteName(threadId));
     const params = new URLSearchParams();
     for (const part of options.cmd) {
-      params.append("cmd", part);
+      params.append('cmd', part);
     }
     if (options.path !== undefined) {
-      params.set("path", options.path);
+      params.set('path', options.path);
     }
     if (options.stdin === true) {
-      params.set("stdin", "true");
+      params.set('stdin', 'true');
     }
     if (options.dir !== undefined) {
-      params.set("dir", options.dir);
+      params.set('dir', options.dir);
     }
     if (options.env) {
       for (const [key, value] of Object.entries(options.env)) {
-        params.append("env", `${key}=${value}`);
+        params.append('env', `${key}=${value}`);
       }
     }
 
     const headers: Record<string, string> = this.bearerHeaders();
     let body: string | Uint8Array | undefined;
     if (options.stdin) {
-      body = options.stdinBody ?? "";
-      headers["Content-Type"] = "application/octet-stream";
+      body = options.stdinBody ?? '';
+      headers['Content-Type'] = 'application/octet-stream';
     }
 
     const url = `${this.baseUrl}/v1/sprites/${name}/exec?${params.toString()}`;
 
-    const res = await fetch(url, { method: "POST", headers, body });
+    const res = await fetch(url, { method: 'POST', headers, body });
     if (!res.ok) {
       const text = await res.text();
       throw new InternalServerErrorException(
@@ -171,56 +170,55 @@ export class SpritesService {
   async setupSprite(threadId: string): Promise<void> {
     // clone the repo
     await this.executeCommandPost(threadId, {
-      cmd: ["git", "clone", "https://github.com/codemancers/zuko.git"],
+      cmd: ['git', 'clone', 'https://github.com/codemancers/zuko.git'],
       env: this.getEnvironmentVariables(),
     });
 
-    console.log("repo cloned");
+    console.log('repo cloned');
     // install dependencies
- 
+
     await this.executeCommandPost(threadId, {
-      cmd: ["bash", "-c", "bun install"],
+      cmd: ['bash', '-c', 'bun install'],
       env: this.getEnvironmentVariables(),
-      dir: "/home/sprite/zuko",
+      dir: '/home/sprite/zuko',
     });
-    
-    console.log("dependencies installed");
+
+    console.log('dependencies installed');
 
     // start the server
     await this.startServer(threadId);
   }
 
   async startServer(threadId: string): Promise<void> {
-    await this.checkIsSandboxUp(threadId)
+    await this.checkIsSandboxUp(threadId);
 
     console.log(`starting server: ${threadId}`);
     await this.executeCommandPost(threadId, {
       cmd: [
-        "bash",
-        "-c",
-        "ss -tulnp | grep ':8080 ' > /dev/null || (nohup bunx nx dev ai-agents --host 0.0.0.0 > dev.log 2>&1 & until curl -s http://localhost:8080 > /dev/null; do sleep 1; done)"
+        'bash',
+        '-c',
+        "ss -tulnp | grep ':8080 ' > /dev/null || (nohup bunx nx dev ai-agents --host 0.0.0.0 > dev.log 2>&1 & until curl -s http://localhost:8080 > /dev/null; do sleep 1; done)",
       ],
       env: this.getEnvironmentVariables(),
-      dir: "/home/sprite/zuko",
+      dir: '/home/sprite/zuko',
     });
     console.log(`server started: ${threadId}`);
-
   }
 
   async checkIsSandboxUp(threadId: string): Promise<boolean> {
     const res = await this.executeCommandPost(threadId, {
-      cmd: ["ls"],
+      cmd: ['ls'],
     });
     console.log(`SandboxUp: ${threadId} - ${res}`);
-    return true
+    return true;
   }
 
   private getEnvironmentVariables(): Record<string, string> {
     return {
-      OPENAI_API_KEY: process.env.OPENAI_API_KEY ?? "",
-      OPENAI_MODEL: process.env.OPENAI_MODEL ?? "gpt-4.1",
-      BACKEND_URL: process.env.BACKEND_URL ?? "",
-      AGENT_TOKEN: process.env.AGENT_TOKEN ?? "",
+      OPENAI_API_KEY: process.env.OPENAI_API_KEY ?? '',
+      OPENAI_MODEL: process.env.OPENAI_MODEL ?? 'gpt-4.1',
+      BACKEND_URL: process.env.BACKEND_URL ?? '',
+      AGENT_TOKEN: process.env.AGENT_TOKEN ?? '',
     };
   }
 }

@@ -4,7 +4,12 @@ import type { ColumnMetadata } from '@/types/table-metadata';
 import { authClient } from '@/lib/auth-client';
 import { toast } from 'sonner';
 import { useQueryClient } from '@tanstack/react-query';
-import { Dropdown, DropdownButton, DropdownItem, DropdownMenu } from '@zuko/ui-kit';
+import {
+  Dropdown,
+  DropdownButton,
+  DropdownItem,
+  DropdownMenu,
+} from '@zuko/ui-kit';
 import { UserGroupIcon } from '@heroicons/react/24/outline';
 import { TableActionButton } from '../Table';
 
@@ -95,9 +100,14 @@ export function AddToTeamDropdown({
         userId: row.userId,
         teamId,
       });
-      if (error) { toast.error(error.message || 'Failed to add to team'); return; }
+      if (error) {
+        toast.error(error.message || 'Failed to add to team');
+        return;
+      }
       toast.success(`${row.name} added to ${teamName}`);
-      queryClient.invalidateQueries({ queryKey: ['organization', organizationId, 'teams'] });
+      queryClient.invalidateQueries({
+        queryKey: ['organization', organizationId, 'teams'],
+      });
       queryClient.invalidateQueries({ queryKey: ['team', teamId, 'members'] });
     } catch {
       toast.error('An error occurred');
@@ -106,7 +116,11 @@ export function AddToTeamDropdown({
 
   if (teams.length === 0) {
     return (
-      <TableActionButton onClick={Function.prototype as () => void} label="No teams available" disabled>
+      <TableActionButton
+        onClick={Function.prototype as () => void}
+        label="No teams available"
+        disabled
+      >
         <UserGroupIcon className="h-4 w-4" />
       </TableActionButton>
     );
