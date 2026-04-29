@@ -16,8 +16,9 @@ import {
 } from '@nestjs/common';
 import { AuthGuard } from '@thallesp/nestjs-better-auth';
 import type { RequestWithUser } from '@zuko/core';
+// eslint-disable-next-line @typescript-eslint/consistent-type-imports
+import { CompaniesService } from '@zuko/sales';
 import type {
-  CompaniesService,
   CreateCompanyInput,
   UpdateCompanyInput,
   AddContactToCompanyInput,
@@ -28,9 +29,10 @@ import { OrganizationGuard } from '../../common/auth/organization.guard';
 import { OrgId } from '../../common/auth/org-id.decorator';
 
 // DTOs for API requests (organizationId is set from session via OrganizationGuard)
-export class CreateCompanyDto
-  implements Omit<CreateCompanyInput, 'organizationId'>
-{
+export class CreateCompanyDto implements Omit<
+  CreateCompanyInput,
+  'organizationId'
+> {
   companyName!: string;
   website?: string;
   linkedinUrl?: string;
@@ -83,7 +85,11 @@ export class CompaniesController {
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  async create(@OrgId() organizationId: number, @Body() dto: CreateCompanyDto, @Req() req: RequestWithUser) {
+  async create(
+    @OrgId() organizationId: number,
+    @Body() dto: CreateCompanyDto,
+    @Req() req: RequestWithUser,
+  ) {
     this.logger.log('[CREATE_COMPANY] Request received');
     this.logger.debug(
       `[CREATE_COMPANY] Payload: ${JSON.stringify({
@@ -97,7 +103,10 @@ export class CompaniesController {
 
     try {
       const actorId = parseInt(req.user.id, 10);
-      const result = await this.companiesService.create({ ...dto, organizationId }, actorId);
+      const result = await this.companiesService.create(
+        { ...dto, organizationId },
+        actorId,
+      );
       this.logger.log(`[CREATE_COMPANY] Success - Company ID: ${result.id}`);
       return result;
     } catch (error: unknown) {
@@ -175,7 +184,13 @@ export class CompaniesController {
     @Req() req: RequestWithUser,
   ) {
     const actorId = parseInt(req.user.id, 10);
-    return this.companiesService.addOwner(id, organizationId, dto.userId, dto.isPrimary, actorId);
+    return this.companiesService.addOwner(
+      id,
+      organizationId,
+      dto.userId,
+      dto.isPrimary,
+      actorId,
+    );
   }
 
   @Delete(':id/owners/:userId')
@@ -187,7 +202,12 @@ export class CompaniesController {
     @Req() req: RequestWithUser,
   ) {
     const actorId = parseInt(req.user.id, 10);
-    await this.companiesService.removeOwner(id, organizationId, userId, actorId);
+    await this.companiesService.removeOwner(
+      id,
+      organizationId,
+      userId,
+      actorId,
+    );
   }
 
   @Post(':id/owners/:userId/set-primary')
@@ -232,7 +252,12 @@ export class CompaniesController {
 
     try {
       const actorId = parseInt(req.user.id, 10);
-      const result = await this.companiesService.addContact(id, organizationId, dto, actorId);
+      const result = await this.companiesService.addContact(
+        id,
+        organizationId,
+        dto,
+        actorId,
+      );
       this.logger.log(
         `[ADD_CONTACT_TO_COMPANY] Success - Contact ${dto.contactId} added to Company ${id}`,
       );
@@ -273,7 +298,12 @@ export class CompaniesController {
     @Req() req: RequestWithUser,
   ) {
     const actorId = parseInt(req.user.id, 10);
-    await this.companiesService.removeContact(id, organizationId, contactId, actorId);
+    await this.companiesService.removeContact(
+      id,
+      organizationId,
+      contactId,
+      actorId,
+    );
   }
 
   @Get(':id/contacts')

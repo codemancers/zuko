@@ -27,13 +27,17 @@ export class OrganizationGuard implements CanActivate {
   constructor(private readonly prisma: PrismaService) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const request = context.switchToHttp().getRequest<RequestWithOrganization>();
+    const request = context
+      .switchToHttp()
+      .getRequest<RequestWithOrganization>();
     const method = request.method;
     const path = request.path ?? request.url;
     this.logger.debug(`Resolving organization for ${method} ${path}`);
     const organizationId = await getActiveOrganizationId(request, this.prisma);
     request.organizationId = organizationId;
-    this.logger.debug(`Organization resolved: organizationId=${organizationId} for ${method} ${path}`);
+    this.logger.debug(
+      `Organization resolved: organizationId=${organizationId} for ${method} ${path}`,
+    );
     return true;
   }
 }

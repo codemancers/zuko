@@ -9,17 +9,17 @@ import {
   UseGuards,
   HttpCode,
   HttpStatus,
-} from "@nestjs/common";
-import { OrgId } from "../../common/auth/org-id.decorator";
-import { AgentGuard } from "../../common/auth/agent.guard";
-import type {
+} from '@nestjs/common';
+import { OrgId } from '../../common/auth/org-id.decorator';
+import { AgentGuard } from '../../common/auth/agent.guard';
+// eslint-disable-next-line @typescript-eslint/consistent-type-imports
+import {
   CompaniesService,
   ContactsService,
   DealsService,
-  EditorData} from "@zuko/sales";
-import {
-  ACTIVITY_SOURCES
-} from "@zuko/sales";
+  ACTIVITY_SOURCES,
+} from '@zuko/sales';
+import type { EditorData } from '@zuko/sales';
 
 // DTOs for agent API (organizationId from AgentGuard via @OrgId())
 class CompanyQueryDto {
@@ -33,7 +33,7 @@ class CompanyQueryDto {
     createdAfter?: string;
     createdBefore?: string;
   };
-  aggregation?: "count" | "list";
+  aggregation?: 'count' | 'list';
   limit?: number;
 }
 
@@ -64,8 +64,8 @@ class ContactQueryDto {
     createdAfter?: string;
     createdBefore?: string;
   };
-  aggregation?: "count" | "list";
-  groupBy?: "ownerId";
+  aggregation?: 'count' | 'list';
+  groupBy?: 'ownerId';
   limit?: number;
 }
 
@@ -102,8 +102,8 @@ class DealQueryDto {
     createdAfter?: string;
     createdBefore?: string;
   };
-  aggregation?: "count" | "list";
-  groupBy?: "stage" | "ownerId";
+  aggregation?: 'count' | 'list';
+  groupBy?: 'stage' | 'ownerId';
   limit?: number;
 }
 
@@ -135,32 +135,32 @@ class DealUpdateDto {
   priority?: number;
 }
 
-@Controller("agents")
+@Controller('agents')
 @UseGuards(AgentGuard)
 export class AgentsController {
   constructor(
     private readonly companiesService: CompaniesService,
     private readonly contactsService: ContactsService,
-    private readonly dealsService: DealsService
+    private readonly dealsService: DealsService,
   ) {}
 
   // --- Companies ---
-  @Get("companies/:id")
+  @Get('companies/:id')
   async findCompanyById(
     @OrgId() organizationId: number,
-    @Param("id", ParseIntPipe) id: number
+    @Param('id', ParseIntPipe) id: number,
   ) {
     return this.companiesService.findById(id, organizationId);
   }
 
-  @Post("companies/query")
+  @Post('companies/query')
   async queryCompanies(
     @OrgId() organizationId: number,
-    @Body() dto: CompanyQueryDto
+    @Body() dto: CompanyQueryDto,
   ) {
     const filters = dto.filters ?? {};
     const limit = Math.min(dto.limit ?? 100, 1000);
-    const companyFilters: Parameters<CompaniesService["findAll"]>[0] = {
+    const companyFilters: Parameters<CompaniesService['findAll']>[0] = {
       organizationId,
       search: filters.search,
       ownerIds: filters.ownerId != null ? [filters.ownerId] : undefined,
@@ -174,7 +174,7 @@ export class AgentsController {
 
     if (filters.hasWebsite !== undefined) {
       companies = companies.filter((a) =>
-        filters.hasWebsite ? !!a.website : !a.website
+        filters.hasWebsite ? !!a.website : !a.website,
       );
     }
     if (filters.createdAfter) {
@@ -187,16 +187,16 @@ export class AgentsController {
     }
     if (filters.contactCountMin !== undefined) {
       companies = companies.filter(
-        (a) => (a._count?.contacts ?? 0) >= filters.contactCountMin!
+        (a) => (a._count?.contacts ?? 0) >= filters.contactCountMin!,
       );
     }
     if (filters.contactCountMax !== undefined) {
       companies = companies.filter(
-        (a) => (a._count?.contacts ?? 0) <= filters.contactCountMax!
+        (a) => (a._count?.contacts ?? 0) <= filters.contactCountMax!,
       );
     }
 
-    if (dto.aggregation === "count") {
+    if (dto.aggregation === 'count') {
       return { count: companies.length, filters: dto.filters };
     }
     return {
@@ -212,49 +212,59 @@ export class AgentsController {
     };
   }
 
-  @Post("companies")
+  @Post('companies')
   @HttpCode(HttpStatus.CREATED)
   async createCompany(
     @OrgId() organizationId: number,
-    @Body() dto: CompanyCreateDto
+    @Body() dto: CompanyCreateDto,
   ) {
-    return this.companiesService.create({
-      organizationId,
-      companyName: dto.companyName,
-      website: dto.website,
-      linkedinUrl: dto.linkedinUrl,
-      summary: dto.summary,
-      ownerIds: dto.ownerIds,
-      primaryOwnerId: dto.primaryOwnerId,
-    }, undefined, ACTIVITY_SOURCES.AI);
+    return this.companiesService.create(
+      {
+        organizationId,
+        companyName: dto.companyName,
+        website: dto.website,
+        linkedinUrl: dto.linkedinUrl,
+        summary: dto.summary,
+        ownerIds: dto.ownerIds,
+        primaryOwnerId: dto.primaryOwnerId,
+      },
+      undefined,
+      ACTIVITY_SOURCES.AI,
+    );
   }
 
-  @Patch("companies/:id")
+  @Patch('companies/:id')
   async updateCompany(
     @OrgId() organizationId: number,
-    @Param("id", ParseIntPipe) id: number,
-    @Body() dto: CompanyUpdateDto
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: CompanyUpdateDto,
   ) {
-    return this.companiesService.update(id, organizationId, dto, undefined, ACTIVITY_SOURCES.AI);
+    return this.companiesService.update(
+      id,
+      organizationId,
+      dto,
+      undefined,
+      ACTIVITY_SOURCES.AI,
+    );
   }
 
   // --- Contacts ---
-  @Get("contacts/:id")
+  @Get('contacts/:id')
   async findContactById(
     @OrgId() organizationId: number,
-    @Param("id", ParseIntPipe) id: number
+    @Param('id', ParseIntPipe) id: number,
   ) {
     return this.contactsService.findById(id, organizationId);
   }
 
-  @Post("contacts/query")
+  @Post('contacts/query')
   async queryContacts(
     @OrgId() organizationId: number,
-    @Body() dto: ContactQueryDto
+    @Body() dto: ContactQueryDto,
   ) {
     const filters = dto.filters ?? {};
     const limit = Math.min(dto.limit ?? 100, 1000);
-    const contactFilters: Parameters<ContactsService["findAll"]>[0] = {
+    const contactFilters: Parameters<ContactsService['findAll']>[0] = {
       organizationId,
       search: filters.search,
       ownerIds: filters.ownerId != null ? [filters.ownerId] : undefined,
@@ -276,19 +286,19 @@ export class AgentsController {
     }
     if (filters.hasEmail !== undefined) {
       contacts = contacts.filter((c) =>
-        filters.hasEmail ? !!c.email : !c.email
+        filters.hasEmail ? !!c.email : !c.email,
       );
     }
 
-    if (dto.aggregation === "count") {
+    if (dto.aggregation === 'count') {
       return { count: contacts.length, filters: dto.filters };
     }
-    if (dto.groupBy === "ownerId") {
+    if (dto.groupBy === 'ownerId') {
       const grouped: Record<string, unknown[]> = {};
       for (const c of contacts) {
         const key =
           (c.owners?.[0] as { userId?: number })?.userId?.toString() ??
-          "no-owner";
+          'no-owner';
         if (!grouped[key]) grouped[key] = [];
         grouped[key].push({
           id: c.id,
@@ -317,50 +327,57 @@ export class AgentsController {
     };
   }
 
-  @Post("contacts")
+  @Post('contacts')
   @HttpCode(HttpStatus.CREATED)
   async createContact(
     @OrgId() organizationId: number,
-    @Body() dto: ContactCreateDto
+    @Body() dto: ContactCreateDto,
   ) {
-    return this.contactsService.create({
-      organizationId,
-      name: dto.name,
-      email: dto.email,
-      phone: dto.phone,
-      linkedinId: dto.linkedinId,
-      notes: dto.notes,
-      ownerIds: dto.ownerIds,
-      primaryOwnerId: dto.primaryOwnerId,
-    }, undefined, ACTIVITY_SOURCES.AI);
+    return this.contactsService.create(
+      {
+        organizationId,
+        name: dto.name,
+        email: dto.email,
+        phone: dto.phone,
+        linkedinId: dto.linkedinId,
+        notes: dto.notes,
+        ownerIds: dto.ownerIds,
+        primaryOwnerId: dto.primaryOwnerId,
+      },
+      undefined,
+      ACTIVITY_SOURCES.AI,
+    );
   }
 
-  @Patch("contacts/:id")
+  @Patch('contacts/:id')
   async updateContact(
     @OrgId() organizationId: number,
-    @Param("id", ParseIntPipe) id: number,
-    @Body() dto: ContactUpdateDto
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: ContactUpdateDto,
   ) {
-    return this.contactsService.update(id, organizationId, dto, undefined, ACTIVITY_SOURCES.AI);
+    return this.contactsService.update(
+      id,
+      organizationId,
+      dto,
+      undefined,
+      ACTIVITY_SOURCES.AI,
+    );
   }
 
   // --- Deals ---
-  @Get("deals/:id")
+  @Get('deals/:id')
   async findDealById(
     @OrgId() organizationId: number,
-    @Param("id", ParseIntPipe) id: number
+    @Param('id', ParseIntPipe) id: number,
   ) {
     return this.dealsService.findById(id, organizationId);
   }
 
-  @Post("deals/query")
-  async queryDeals(
-    @OrgId() organizationId: number,
-    @Body() dto: DealQueryDto
-  ) {
+  @Post('deals/query')
+  async queryDeals(@OrgId() organizationId: number, @Body() dto: DealQueryDto) {
     const filters = dto.filters ?? {};
     const limit = Math.min(dto.limit ?? 100, 1000);
-    const dealFilters: Parameters<DealsService["findAll"]>[0] = {
+    const dealFilters: Parameters<DealsService['findAll']>[0] = {
       organizationId,
       search: filters.search,
       ownerIds: filters.ownerId != null ? [filters.ownerId] : undefined,
@@ -392,7 +409,7 @@ export class AgentsController {
       deals = deals.filter((d) => new Date(d.createdAt) <= before);
     }
 
-    if (dto.aggregation === "count") {
+    if (dto.aggregation === 'count') {
       return { count: deals.length, filters: dto.filters };
     }
     if (dto.groupBy) {
@@ -407,9 +424,9 @@ export class AgentsController {
           createdAt: Date;
         };
         const key =
-          dto.groupBy === "ownerId"
-            ? deal.owners?.[0]?.userId?.toString() ?? "no-owner"
-            : deal.stage ?? "no-stage";
+          dto.groupBy === 'ownerId'
+            ? (deal.owners?.[0]?.userId?.toString() ?? 'no-owner')
+            : (deal.stage ?? 'no-stage');
         if (!grouped[key]) grouped[key] = [];
         grouped[key].push({
           id: deal.id,
@@ -426,7 +443,7 @@ export class AgentsController {
       };
     }
     return {
-      deals: deals.slice(0, limit).map((d: any) => ({
+      deals: deals.slice(0, limit).map((d: Record<string, any>) => ({
         id: d.id,
         title: d.title,
         value: d.value,
@@ -444,44 +461,54 @@ export class AgentsController {
     };
   }
 
-  @Post("deals")
+  @Post('deals')
   @HttpCode(HttpStatus.CREATED)
   async createDeal(
     @OrgId() organizationId: number,
-    @Body() dto: DealCreateDto
+    @Body() dto: DealCreateDto,
   ) {
-    return this.dealsService.create({
-      organizationId,
-      title: dto.title,
-      value: dto.value,
-      currency: dto.currency,
-      probability: dto.probability,
-      stage: dto.stage,
-      summary: dto.summary,
-      expectedCloseDate: dto.expectedCloseDate
-        ? new Date(dto.expectedCloseDate)
-        : undefined,
-      source: dto.source,
-      priority: dto.priority,
-      ownerIds: dto.ownerIds,
-      primaryOwnerId: dto.primaryOwnerId,
-    }, undefined, ACTIVITY_SOURCES.AI);
+    return this.dealsService.create(
+      {
+        organizationId,
+        title: dto.title,
+        value: dto.value,
+        currency: dto.currency,
+        probability: dto.probability,
+        stage: dto.stage,
+        summary: dto.summary,
+        expectedCloseDate: dto.expectedCloseDate
+          ? new Date(dto.expectedCloseDate)
+          : undefined,
+        source: dto.source,
+        priority: dto.priority,
+        ownerIds: dto.ownerIds,
+        primaryOwnerId: dto.primaryOwnerId,
+      },
+      undefined,
+      ACTIVITY_SOURCES.AI,
+    );
   }
 
-  @Patch("deals/:id")
+  @Patch('deals/:id')
   async updateDeal(
     @OrgId() organizationId: number,
-    @Param("id", ParseIntPipe) id: number,
-    @Body() dto: DealUpdateDto
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: DealUpdateDto,
   ) {
-    return this.dealsService.update(id, organizationId, {
-      ...dto,
-      expectedCloseDate: dto.expectedCloseDate
-        ? new Date(dto.expectedCloseDate)
-        : undefined,
-      actualCloseDate: dto.actualCloseDate
-        ? new Date(dto.actualCloseDate)
-        : undefined,
-    }, undefined, ACTIVITY_SOURCES.AI);
+    return this.dealsService.update(
+      id,
+      organizationId,
+      {
+        ...dto,
+        expectedCloseDate: dto.expectedCloseDate
+          ? new Date(dto.expectedCloseDate)
+          : undefined,
+        actualCloseDate: dto.actualCloseDate
+          ? new Date(dto.actualCloseDate)
+          : undefined,
+      },
+      undefined,
+      ACTIVITY_SOURCES.AI,
+    );
   }
 }
