@@ -9,4 +9,3 @@ export interface ContextEntityReference {
   type: 'contact' | 'company' | 'deal';
   id: number;
 }
-
