@@ -59,9 +59,7 @@ describe('TasksController', () => {
 
   describe('create', () => {
     it('should call createTask with orgId, dto and actorId', async () => {
-      (mockTaskService.createTask as Mock).mockResolvedValue(
-        mockTask as never,
-      );
+      (mockTaskService.createTask as Mock).mockResolvedValue(mockTask as never);
 
       const dto = { title: 'Test task' };
       const result = await controller.create(ORG_ID, dto, mockReq);
@@ -130,8 +128,10 @@ describe('TasksController', () => {
 
       await controller.list(ORG_ID, { parentId: '3' });
 
-      const [, options] = (mockTaskService.getTasks as Mock).mock
-        .calls[0] as [number, { parentId?: number | null }];
+      const [, options] = (mockTaskService.getTasks as Mock).mock.calls[0] as [
+        number,
+        { parentId?: number | null },
+      ];
       expect(options.parentId).toBe(3);
     });
 
@@ -143,8 +143,10 @@ describe('TasksController', () => {
 
       await controller.list(ORG_ID, { parentId: 'null' });
 
-      const [, options] = (mockTaskService.getTasks as Mock).mock
-        .calls[0] as [number, { parentId?: number | null }];
+      const [, options] = (mockTaskService.getTasks as Mock).mock.calls[0] as [
+        number,
+        { parentId?: number | null },
+      ];
       expect(options.parentId).toBeNull();
     });
 
@@ -156,8 +158,10 @@ describe('TasksController', () => {
 
       await controller.list(ORG_ID, { page: 2, limit: 10 });
 
-      const [, options] = (mockTaskService.getTasks as Mock).mock
-        .calls[0] as [number, { page: number; limit: number }];
+      const [, options] = (mockTaskService.getTasks as Mock).mock.calls[0] as [
+        number,
+        { page: number; limit: number },
+      ];
       expect(options.page).toBe(2);
       expect(options.limit).toBe(10);
     });
@@ -190,13 +194,16 @@ describe('TasksController', () => {
     it('should call updateTask with correct args including actorId', async () => {
       const dto = { title: 'Updated', status: TaskStatus.IN_PROGRESS };
       const updated = { ...mockTask, ...dto };
-      (mockTaskService.updateTask as Mock).mockResolvedValue(
-        updated as never,
-      );
+      (mockTaskService.updateTask as Mock).mockResolvedValue(updated as never);
 
       const result = await controller.update(ORG_ID, 1, dto, mockReq);
 
-      expect(mockTaskService.updateTask).toHaveBeenCalledWith(ORG_ID, 1, dto, 1);
+      expect(mockTaskService.updateTask).toHaveBeenCalledWith(
+        ORG_ID,
+        1,
+        dto,
+        1,
+      );
       expect(result).toEqual(updated);
     });
 

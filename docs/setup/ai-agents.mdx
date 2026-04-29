@@ -54,7 +54,9 @@ LANGSMITH_API_KEY=
 ```
 
 <Tip>
-  `AGENT_TOKEN` must be the same value in both `apps/backend/.env` and `apps/ai-agents/.env`. It authenticates the agents service when calling backend endpoints.
+  `AGENT_TOKEN` must be the same value in both `apps/backend/.env` and
+  `apps/ai-agents/.env`. It authenticates the agents service when calling
+  backend endpoints.
 </Tip>
 
 ---
@@ -68,7 +70,8 @@ bun nx run @zuko/ai-agents:dev
 The service starts at **http://localhost:8080** and also opens **LangGraph Studio** for visual debugging of agent graphs.
 
 <Note>
-  The first start may be slow — the LangGraph CLI downloads additional dependencies on first run.
+  The first start may be slow — the LangGraph CLI downloads additional
+  dependencies on first run.
 </Note>
 
 ---
@@ -103,21 +106,15 @@ bun nx run @zuko/ai-agents:lint     # Lint
     - The first start may be slow (downloading LangGraph CLI dependencies) — wait a minute before retrying
   </Accordion>
 
-  <Accordion title="Port already in use">
-    ```bash
-    lsof -ti:8080 | xargs kill -9
-    ```
-  </Accordion>
+<Accordion title="Port already in use">
+  ```bash lsof -ti:8080 | xargs kill -9 ```
+</Accordion>
 
-  <Accordion title="Enable LangSmith tracing">
-    To enable tracing for debugging:
-    ```env
-    LANGSMITH_TRACING=true
-    LANGSMITH_API_KEY=your-langsmith-api-key
-    LANGSMITH_PROJECT=zuko
-    ```
-    Sign up at [smith.langchain.com](https://smith.langchain.com) to get an API key.
-  </Accordion>
+<Accordion title="Enable LangSmith tracing">
+  To enable tracing for debugging: ```env LANGSMITH_TRACING=true
+  LANGSMITH_API_KEY=your-langsmith-api-key LANGSMITH_PROJECT=zuko ``` Sign up at
+  [smith.langchain.com](https://smith.langchain.com) to get an API key.
+</Accordion>
 
   <Accordion title="Database checkpoint errors">
     The agents service uses PostgreSQL for LangGraph checkpointing. Ensure `DATABASE_URL` is set and the `zuko_dev` database exists:

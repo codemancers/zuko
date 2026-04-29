@@ -7,7 +7,11 @@ import type { ColumnConfig, ColumnType } from '../types/table-metadata';
  * Custom field values are stored in json format. This method will ensure the data is stored in the correct data type format.
  */
 export function castFieldValue(value: unknown, fieldType: ColumnType): unknown {
-  if (value === null || value === undefined || (typeof value === 'string' && value.trim() === '')) {
+  if (
+    value === null ||
+    value === undefined ||
+    (typeof value === 'string' && value.trim() === '')
+  ) {
     return null;
   }
 
@@ -69,22 +73,30 @@ export function validateCellValue(
       // validate if update value is from the select-options
       const options = config?.options;
       if (Array.isArray(options)) {
-        const isValid = options.some((opt: { value: string }) => opt.value === value);
+        const isValid = options.some(
+          (opt: { value: string }) => opt.value === value,
+        );
         if (!isValid) {
-          throw new BadRequestException(`Invalid option "${value}" for select field`);
+          throw new BadRequestException(
+            `Invalid option "${value}" for select field`,
+          );
         }
       }
       break;
     }
     case 'number': {
       if (isNaN(Number(value))) {
-        throw new BadRequestException(`Invalid number "${value}" for number field`);
+        throw new BadRequestException(
+          `Invalid number "${value}" for number field`,
+        );
       }
       break;
     }
     case 'currency': {
       if (isNaN(Number(value))) {
-        throw new BadRequestException(`Invalid currency "${value}" for currency field`);
+        throw new BadRequestException(
+          `Invalid currency "${value}" for currency field`,
+        );
       }
       break;
     }

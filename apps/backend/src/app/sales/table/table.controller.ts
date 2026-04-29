@@ -102,6 +102,12 @@ export class TableController {
     @Body() dto: UpdateCellDto,
   ) {
     const actorId = parseInt(req.user.id, 10);
-    return this.tableService.updateCell(entity, rowId, organizationId, actorId, dto);
+    return this.tableService.updateCell(
+      entity,
+      rowId,
+      organizationId,
+      actorId,
+      dto,
+    );
   }
 }

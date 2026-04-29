@@ -129,7 +129,10 @@ export const EntitySelectorDialog = ({
                   className="inline-flex items-center gap-1.5 rounded-full bg-zinc-200 px-2.5 py-1 text-xs font-medium text-zinc-800 hover:bg-zinc-300 dark:bg-zinc-700 dark:text-zinc-100 dark:hover:bg-zinc-600"
                 >
                   <span className="truncate max-w-40">{item.label}</span>
-                  <span aria-hidden className="text-zinc-500 dark:text-zinc-300">
+                  <span
+                    aria-hidden
+                    className="text-zinc-500 dark:text-zinc-300"
+                  >
                     ×
                   </span>
                 </button>
@@ -150,7 +153,8 @@ export const EntitySelectorDialog = ({
             ) : (
               <div className="divide-y divide-zinc-200 dark:divide-zinc-800">
                 {filteredItems.map((item) => {
-                  const alreadyInContext = clickToAddMode && alreadyInContextIds.includes(item.id);
+                  const alreadyInContext =
+                    clickToAddMode && alreadyInContextIds.includes(item.id);
                   const handleClick = () => {
                     if (clickToAddMode) {
                       if (!alreadyInContext) onItemClick?.(item);
@@ -178,21 +182,21 @@ export const EntitySelectorDialog = ({
                         </span>
                         {item.description && (
                           <>
-                            <span className="shrink-0 text-zinc-500 dark:text-zinc-400">·</span>
+                            <span className="shrink-0 text-zinc-500 dark:text-zinc-400">
+                              ·
+                            </span>
                             <span className="truncate text-zinc-600 dark:text-zinc-400">
                               {item.description}
                             </span>
                           </>
                         )}
                       </div>
-
                     </button>
                   );
                 })}
               </div>
             )}
           </div>
-
         </div>
 
         <DialogFooter>

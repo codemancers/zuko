@@ -1,5 +1,5 @@
-import { Module } from "@nestjs/common";
-import { AudioService } from "./audio.service";
+import { Module } from '@nestjs/common';
+import { AudioService } from './audio.service';
 
 @Module({
   providers: [AudioService],

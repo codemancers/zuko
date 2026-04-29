@@ -36,9 +36,7 @@ export function getContextEntities(
  * Set by the chat controller from the user's session (active organization).
  * Required for all sales entity operations (contacts, companies, deals).
  */
-export function getOrganizationId(
-  config?: ToolRunConfig,
-): number | undefined {
+export function getOrganizationId(config?: ToolRunConfig): number | undefined {
   return config?.state?.organizationId ?? config?.configurable?.organizationId;
 }
 
@@ -47,14 +45,9 @@ export function getOrganizationId(
  * Set by the chat controller in the LangGraph input state.
  * Useful for default ownership assignment when creating entities from chat.
  */
-export function getUserId(
-  config?: ToolRunConfig,
-): number | undefined {
+export function getUserId(config?: ToolRunConfig): number | undefined {
   return config?.state?.userId ?? config?.configurable?.userId;
 }
-
-
-
 
 /**
  * LangChain tool that returns the current conversation context:
@@ -127,6 +120,5 @@ export const getConversationContextTool = tool(
     schema: z.object({}),
   },
 );
-
 
 export const contextTools = [getConversationContextTool];

@@ -36,9 +36,7 @@ export function DetailHeader({
         </Heading>
         <div className="flex items-center gap-2 mt-1">
           {createdAt && (
-            <Text>
-              Created {dayjs(createdAt).format('MMMM D, YYYY')}
-            </Text>
+            <Text>Created {dayjs(createdAt).format('MMMM D, YYYY')}</Text>
           )}
           {subtitle}
           {isSaving && (

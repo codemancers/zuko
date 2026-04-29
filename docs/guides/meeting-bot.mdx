@@ -70,11 +70,11 @@ Triggers the bot to join a Google Meet.
 }
 ```
 
-| Field | Type | Required | Description |
-|---|---|---|---|
-| `meetingId` | string | Yes | Meeting ID from the database |
-| `meetingUrl` | string | Yes | Full Google Meet URL |
-| `callbackUrl` | string | No | Webhook URL for status updates |
+| Field         | Type   | Required | Description                    |
+| ------------- | ------ | -------- | ------------------------------ |
+| `meetingId`   | string | Yes      | Meeting ID from the database   |
+| `meetingUrl`  | string | Yes      | Full Google Meet URL           |
+| `callbackUrl` | string | No       | Webhook URL for status updates |
 
 **Response**
 
@@ -99,14 +99,14 @@ The bot sends `POST` requests to `callbackUrl` (or `BACKEND_URL/api/meetings/web
 }
 ```
 
-| Event | Description |
-|---|---|
-| `fly-machine-launched` | Fly worker machine created |
-| `in_progress` | Bot successfully joined the meeting |
-| `processing` | Meeting ended; uploading artifacts to S3 |
-| `completed` | Recording and transcript uploaded; S3 keys in `data` |
-| `failed` | An error occurred |
-| `rejected` | Host denied the bot entry |
+| Event                  | Description                                          |
+| ---------------------- | ---------------------------------------------------- |
+| `fly-machine-launched` | Fly worker machine created                           |
+| `in_progress`          | Bot successfully joined the meeting                  |
+| `processing`           | Meeting ended; uploading artifacts to S3             |
+| `completed`            | Recording and transcript uploaded; S3 keys in `data` |
+| `failed`               | An error occurred                                    |
+| `rejected`             | Host denied the bot entry                            |
 
 ---
 
@@ -139,9 +139,9 @@ Chunks are buffered at ~600 characters with 100-character overlap to preserve co
 
 After a meeting, two files are written to S3:
 
-| File | Path | Description |
-|---|---|---|
-| Recording | `meetings/{meetingId}/recording.webm` | Raw WebM video; the backend transcodes this to MP4 asynchronously |
+| File       | Path                                   | Description                                                        |
+| ---------- | -------------------------------------- | ------------------------------------------------------------------ |
+| Recording  | `meetings/{meetingId}/recording.webm`  | Raw WebM video; the backend transcodes this to MP4 asynchronously  |
 | Transcript | `meetings/{meetingId}/transcript.json` | Full speaker-diarized transcript with timestamps and chat messages |
 
 ---

@@ -61,7 +61,11 @@ import { TableRowBuilder } from './table/row-builder/table-row.builder';
         eventEmitter: EventEmitter2,
         tableColumnRepository: TableColumnRepository,
       ) => {
-        return new ContactsService(contactsRepository, eventEmitter, tableColumnRepository);
+        return new ContactsService(
+          contactsRepository,
+          eventEmitter,
+          tableColumnRepository,
+        );
       },
       inject: [ContactsRepository, EventEmitter2, TableColumnRepository],
     },
@@ -79,7 +83,11 @@ import { TableRowBuilder } from './table/row-builder/table-row.builder';
         eventEmitter: EventEmitter2,
         tableColumnRepository: TableColumnRepository,
       ) => {
-        return new CompaniesService(companiesRepository, eventEmitter, tableColumnRepository);
+        return new CompaniesService(
+          companiesRepository,
+          eventEmitter,
+          tableColumnRepository,
+        );
       },
       inject: [CompaniesRepository, EventEmitter2, TableColumnRepository],
     },
@@ -111,7 +119,11 @@ import { TableRowBuilder } from './table/row-builder/table-row.builder';
         eventEmitter: EventEmitter2,
         tableColumnRepository: TableColumnRepository,
       ) => {
-        return new DealsService(dealsRepository, eventEmitter, tableColumnRepository);
+        return new DealsService(
+          dealsRepository,
+          eventEmitter,
+          tableColumnRepository,
+        );
       },
       inject: [DealsRepository, EventEmitter2, TableColumnRepository],
     },

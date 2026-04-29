@@ -1,12 +1,12 @@
-import axios from "axios";
-import { Injectable } from "@nestjs/common";
-import { BaseService } from "../../common/base/base.service";
-import type { MeetingSchema } from "../../common/schemas/meeting.schema";
+import axios from 'axios';
+import { Injectable } from '@nestjs/common';
+import { BaseService } from '../../common/base/base.service';
+import type { MeetingSchema } from '../../common/schemas/meeting.schema';
 
 @Injectable()
 export class FlyService extends BaseService {
   constructor() {
-    super("FlyService");
+    super('FlyService');
   }
   async launchFlyWorker(meetingSchema: MeetingSchema): Promise<any> {
     const FLY_API_TOKEN = process.env.FLY_API_TOKEN;
@@ -24,14 +24,14 @@ export class FlyService extends BaseService {
           MEETING_ID: String(meetingSchema.meetingId),
           MEETING_URL: meetingSchema.meetingUrl,
           CALLBACK_URL: meetingSchema.callbackUrl,
-          NODE_ENV: "production",
-          PLATFORM: "linux",
+          NODE_ENV: 'production',
+          PLATFORM: 'linux',
         },
         restart: {
-          policy: "no",
+          policy: 'no',
         },
         guest: {
-          cpu_kind: "performance",
+          cpu_kind: 'performance',
           cpus: 1,
           memory_mb: 2048,
         },
@@ -44,9 +44,9 @@ export class FlyService extends BaseService {
       {
         headers: {
           Authorization: `Bearer ${FLY_API_TOKEN}`,
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
-      }
+      },
     );
 
     return response;
@@ -71,14 +71,14 @@ export class FlyService extends BaseService {
 `;
 
     const response = await axios.post(
-      "https://api.fly.io/graphql",
+      'https://api.fly.io/graphql',
       { query },
       {
         headers: {
           Authorization: `Bearer ${FLY_API_TOKEN}`,
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
-      }
+      },
     );
 
     const release = response.data.data.app.releases.nodes[0];

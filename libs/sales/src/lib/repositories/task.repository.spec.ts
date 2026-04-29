@@ -35,11 +35,12 @@ describe('TaskRepository', () => {
     taskOwner: {
       create: vi.fn(),
     },
-    $transaction: vi.fn(async (fn: (tx: typeof mockPrisma) => Promise<unknown>) =>
-      fn({
-        task: mockPrisma.task,
-        taskOwner: mockPrisma.taskOwner,
-      } as never),
+    $transaction: vi.fn(
+      async (fn: (tx: typeof mockPrisma) => Promise<unknown>) =>
+        fn({
+          task: mockPrisma.task,
+          taskOwner: mockPrisma.taskOwner,
+        } as never),
     ),
   };
 
@@ -50,9 +51,7 @@ describe('TaskRepository', () => {
 
   describe('create', () => {
     it('should create a task and include subtasks', async () => {
-      (mockPrisma.task.create as Mock).mockResolvedValue(
-        mockTask as never,
-      );
+      (mockPrisma.task.create as Mock).mockResolvedValue(mockTask as never);
 
       const result = await repo.create({
         organizationId: ORG_ID,
@@ -71,9 +70,7 @@ describe('TaskRepository', () => {
 
   describe('findById', () => {
     it('should find a task by id scoped to org', async () => {
-      (mockPrisma.task.findFirst as Mock).mockResolvedValue(
-        mockTask as never,
-      );
+      (mockPrisma.task.findFirst as Mock).mockResolvedValue(mockTask as never);
 
       const result = await repo.findById(1, ORG_ID);
 
@@ -97,9 +94,7 @@ describe('TaskRepository', () => {
 
   describe('findAll', () => {
     it('should default to top-level tasks (parentId: null)', async () => {
-      (mockPrisma.task.findMany as Mock).mockResolvedValue(
-        [mockTask] as never,
-      );
+      (mockPrisma.task.findMany as Mock).mockResolvedValue([mockTask] as never);
       (mockPrisma.task.count as Mock).mockResolvedValue(1 as never);
 
       const result = await repo.findAll(ORG_ID);
@@ -150,9 +145,7 @@ describe('TaskRepository', () => {
   describe('update', () => {
     it('should update a task by id', async () => {
       const updated = { ...mockTask, title: 'Updated' };
-      (mockPrisma.task.update as Mock).mockResolvedValue(
-        updated as never,
-      );
+      (mockPrisma.task.update as Mock).mockResolvedValue(updated as never);
 
       const result = await repo.update(1, ORG_ID, { title: 'Updated' });
 
@@ -169,9 +162,7 @@ describe('TaskRepository', () => {
 
   describe('delete', () => {
     it('should delete a task by id', async () => {
-      (mockPrisma.task.delete as Mock).mockResolvedValue(
-        mockTask as never,
-      );
+      (mockPrisma.task.delete as Mock).mockResolvedValue(mockTask as never);
 
       await repo.delete(1, ORG_ID);
 

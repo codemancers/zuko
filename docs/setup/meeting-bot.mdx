@@ -34,7 +34,8 @@ chrome@139.0.7258.68 /Users/you/chrome/mac_arm-139.0.7258.68/chrome-mac-arm64/Go
 Copy everything after the version tag — that full path is your `PUPPETEER_EXECUTABLE_PATH`.
 
 <Tip>
-  On Apple Silicon the path contains `mac_arm-...`. On Intel Mac it will be `mac-...`. On Linux it will end in a plain `chrome` binary.
+  On Apple Silicon the path contains `mac_arm-...`. On Intel Mac it will be
+  `mac-...`. On Linux it will end in a plain `chrome` binary.
 </Tip>
 
 ---
@@ -113,7 +114,8 @@ FLY_REGION=sin
 ```
 
 <Tip>
-  `AGENT_TOKEN` must match the value set in `apps/backend/.env`. It authenticates the meeting bot when calling backend endpoints.
+  `AGENT_TOKEN` must match the value set in `apps/backend/.env`. It
+  authenticates the meeting bot when calling backend endpoints.
 </Tip>
 
 ---
@@ -164,15 +166,15 @@ bun nx run @zuko/meeting-bot:lint     # Lint
     - On Linux, you may need additional system dependencies for headless Chrome
   </Accordion>
 
-  <Accordion title="Transcription not working">
-    - Verify `DEEPGRAM_API_KEY` is valid and has transcription permissions
-    - Check the meeting bot logs for Deepgram connection errors
-  </Accordion>
+<Accordion title="Transcription not working">
+  - Verify `DEEPGRAM_API_KEY` is valid and has transcription permissions - Check
+  the meeting bot logs for Deepgram connection errors
+</Accordion>
 
-  <Accordion title="Can't connect to backend">
-    - Confirm `BACKEND_URL=http://localhost:3001` and that the backend is running
-    - Verify `AGENT_TOKEN` matches the value in `apps/backend/.env`
-  </Accordion>
+<Accordion title="Can't connect to backend">
+  - Confirm `BACKEND_URL=http://localhost:3001` and that the backend is running
+  - Verify `AGENT_TOKEN` matches the value in `apps/backend/.env`
+</Accordion>
 
   <Accordion title="Port already in use">
     ```bash

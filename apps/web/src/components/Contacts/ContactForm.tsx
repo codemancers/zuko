@@ -8,13 +8,7 @@ import {
   type CreateContactDto,
   type UpdateContactDto,
 } from '@/lib/api/contacts';
-import {
-  Input,
-  Field,
-  Label,
-  Description,
-  ErrorMessage,
-} from '@zuko/ui-kit';
+import { Input, Field, Label, Description, ErrorMessage } from '@zuko/ui-kit';
 import { FormActions } from '@/components/shared';
 import { useRouter } from 'next/navigation';
 
@@ -58,7 +52,9 @@ export default function ContactForm({
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['contacts'] });
       queryClient.invalidateQueries({ queryKey: ['contact', contact!.id] });
-      queryClient.invalidateQueries({ queryKey: ['timeline', 'contact', contact!.id] });
+      queryClient.invalidateQueries({
+        queryKey: ['timeline', 'contact', contact!.id],
+      });
       router.push(`/contacts/${contact!.id}`);
     },
     onError: (error: any) => {
@@ -176,7 +172,9 @@ export default function ContactForm({
         <Description>LinkedIn profile identifier</Description>
       </Field>
 
-      {errors.contactMethod && <ErrorMessage>{errors.contactMethod}</ErrorMessage>}
+      {errors.contactMethod && (
+        <ErrorMessage>{errors.contactMethod}</ErrorMessage>
+      )}
 
       {errors.submit && <ErrorMessage>{errors.submit}</ErrorMessage>}
 

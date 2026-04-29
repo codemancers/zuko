@@ -1,6 +1,6 @@
-import { test, expect } from "./fixtures";
-import type { Page } from "@playwright/test";
-import type { TasksPage } from "./pages/TasksPage";
+import { test, expect } from './fixtures';
+import type { Page } from '@playwright/test';
+import type { TasksPage } from './pages/TasksPage';
 
 /**
  * Task Activity Timeline - System Events
@@ -13,12 +13,12 @@ import type { TasksPage } from "./pages/TasksPage";
 async function createAndGetTaskId(
   page: Page,
   tasksPage: TasksPage,
-  opts: Parameters<TasksPage["createTask"]>[0],
+  opts: Parameters<TasksPage['createTask']>[0],
 ): Promise<number> {
   const responsePromise = page.waitForResponse(
     (resp) =>
-      resp.url().includes("/tasks") &&
-      resp.request().method() === "POST" &&
+      resp.url().includes('/tasks') &&
+      resp.request().method() === 'POST' &&
       resp.ok(),
     { timeout: 15000 },
   );
@@ -28,10 +28,10 @@ async function createAndGetTaskId(
   return createdTask.id;
 }
 
-test.describe("Task Activity Timeline - System Events", () => {
+test.describe('Task Activity Timeline - System Events', () => {
   // ── task_created ──────────────────────────────────────────────────────────
 
-  test.describe("task_created", () => {
+  test.describe('task_created', () => {
     test("shows 'created this task' after a new task is created", async ({
       tasksPage,
       taskDetailPage,
@@ -54,7 +54,7 @@ test.describe("Task Activity Timeline - System Events", () => {
 
   // ── task_status_changed ───────────────────────────────────────────────────
 
-  test.describe("task_status_changed", () => {
+  test.describe('task_status_changed', () => {
     test("shows 'moved task from X to Y' after status is changed", async ({
       tasksPage,
       taskDetailPage,
@@ -62,10 +62,10 @@ test.describe("Task Activity Timeline - System Events", () => {
     }) => {
       const taskId = await createAndGetTaskId(page, tasksPage, {
         title: `Status Change Task ${Date.now()}`,
-        status: "TODO",
+        status: 'TODO',
       });
       await taskDetailPage.goto(taskId);
-      await taskDetailPage.updateProperty("Status", "In Progress", taskId);
+      await taskDetailPage.updateProperty('Status', 'In Progress', taskId);
       await taskDetailPage.showHistory();
 
       await taskDetailPage.expectActivityEntry(
@@ -76,7 +76,7 @@ test.describe("Task Activity Timeline - System Events", () => {
 
   // ── field_update (title) ──────────────────────────────────────────────────
 
-  test.describe("field_update", () => {
+  test.describe('field_update', () => {
     test("shows 'updated title from X to Y' after title is changed", async ({
       tasksPage,
       taskDetailPage,

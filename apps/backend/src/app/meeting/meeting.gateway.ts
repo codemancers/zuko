@@ -1,19 +1,20 @@
 import type {
   OnGatewayConnection,
-  OnGatewayDisconnect} from "@nestjs/websockets";
+  OnGatewayDisconnect,
+} from '@nestjs/websockets';
 import {
   WebSocketGateway,
   WebSocketServer,
   SubscribeMessage,
-} from "@nestjs/websockets";
-import type { Server, Socket } from "socket.io";
-import { Logger } from "@nestjs/common";
+} from '@nestjs/websockets';
+import type { Server, Socket } from 'socket.io';
+import { Logger } from '@nestjs/common';
 
 @WebSocketGateway({
   cors: {
-    origin: "*",
+    origin: '*',
   },
-  namespace: "/meeting",
+  namespace: '/meeting',
 })
 export class MeetingGateway
   implements OnGatewayConnection, OnGatewayDisconnect
@@ -41,10 +42,10 @@ export class MeetingGateway
     }
   }
 
-  @SubscribeMessage("BOT_READY")
+  @SubscribeMessage('BOT_READY')
   handleBotReady(client: Socket, payload: { meetingId: string }) {
     this.logger.log(
-      `Bot ready for meeting: ${payload.meetingId}, socket: ${client.id}`
+      `Bot ready for meeting: ${payload.meetingId}, socket: ${client.id}`,
     );
     this.bots.set(payload.meetingId, client.id);
   }
@@ -58,7 +59,7 @@ export class MeetingGateway
     }
 
     this.logger.log(`Sending END command to bot for meeting: ${meetingId}`);
-    this.server.to(socketId).emit("END");
+    this.server.to(socketId).emit('END');
     return true;
   }
 }

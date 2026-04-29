@@ -1,6 +1,12 @@
 'use client';
 
-import { Alert, AlertTitle, AlertDescription, AlertActions, Button } from '@zuko/ui-kit';
+import {
+  Alert,
+  AlertTitle,
+  AlertDescription,
+  AlertActions,
+  Button,
+} from '@zuko/ui-kit';
 
 interface ConfirmDialogProps {
   open: boolean;
@@ -56,4 +62,3 @@ export const ConfirmDialog = ({
     </Alert>
   );
 };
-

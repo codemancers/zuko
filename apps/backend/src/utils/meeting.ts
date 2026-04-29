@@ -10,7 +10,10 @@ dayjs.extend(utc);
 export function getPlatformFromUrl(url: string): MeetingPlatform {
   const lowerUrl = url.toLowerCase();
 
-  if (lowerUrl.includes('meet.google.com') || lowerUrl.includes('google.com/meet')) {
+  if (
+    lowerUrl.includes('meet.google.com') ||
+    lowerUrl.includes('google.com/meet')
+  ) {
     return MeetingPlatform.GOOGLE_MEET;
   }
 
@@ -25,7 +28,10 @@ export function getPlatformFromUrl(url: string): MeetingPlatform {
   throw new BadRequestException('Unsupported platform');
 }
 
-export function generateUtcCronExpression(localStartTime: string, localTimeZone: string): string {
+export function generateUtcCronExpression(
+  localStartTime: string,
+  localTimeZone: string,
+): string {
   const startTime = dayjs(localStartTime).tz(localTimeZone).utc();
 
   const minute = startTime.minute();

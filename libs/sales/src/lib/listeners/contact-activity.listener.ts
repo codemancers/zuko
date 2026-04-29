@@ -6,10 +6,9 @@ import type {
   ContactCreatedEvent,
   ContactFieldUpdatedEvent,
   ContactOwnerAssignedEvent,
-  ContactOwnerRemovedEvent} from '../events/contact-events';
-import {
-  CONTACT_EVENTS
+  ContactOwnerRemovedEvent,
 } from '../events/contact-events';
+import { CONTACT_EVENTS } from '../events/contact-events';
 
 @Injectable()
 export class ContactActivityListener {
@@ -53,7 +52,11 @@ export class ContactActivityListener {
       entityType: 'contact',
       entityId: event.contactId,
       actorId: event.actorId,
-      metadata: { userId: event.userId, userName: event.userName, ...this.src(event) },
+      metadata: {
+        userId: event.userId,
+        userName: event.userName,
+        ...this.src(event),
+      },
     });
   }
 
@@ -64,7 +67,11 @@ export class ContactActivityListener {
       entityType: 'contact',
       entityId: event.contactId,
       actorId: event.actorId,
-      metadata: { userId: event.userId, userName: event.userName, ...this.src(event) },
+      metadata: {
+        userId: event.userId,
+        userName: event.userName,
+        ...this.src(event),
+      },
     });
   }
 }

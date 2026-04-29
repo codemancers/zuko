@@ -19,8 +19,10 @@ import { OrganizationGuard } from '../../common/auth/organization.guard';
     },
     {
       provide: TaskService,
-      useFactory: (taskRepository: TaskRepository, eventEmitter: EventEmitter2) =>
-        new TaskService(taskRepository, eventEmitter),
+      useFactory: (
+        taskRepository: TaskRepository,
+        eventEmitter: EventEmitter2,
+      ) => new TaskService(taskRepository, eventEmitter),
       inject: [TaskRepository, EventEmitter2],
     },
   ],

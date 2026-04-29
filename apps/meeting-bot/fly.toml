@@ -9,20 +9,20 @@ primary_region = 'sin'
 [build]
 
 [http_service]
-  internal_port = 8000
-  force_https = true
-  auto_stop_machines = 'stop'
-  auto_start_machines = true
-  min_machines_running = 1
-  processes = ['app']
+internal_port = 8000
+force_https = true
+auto_stop_machines = 'stop'
+auto_start_machines = true
+min_machines_running = 1
+processes = ['app']
 
 [[vm]]
-  memory = '1gb'
-  cpu_kind = 'shared'
-  cpus = 2
+memory = '1gb'
+cpu_kind = 'shared'
+cpus = 2
 
 # Enforce single instance
 [scale]
-  count = 1
-  regions = ["sin"]
+count = 1
+regions = ["sin"]
 

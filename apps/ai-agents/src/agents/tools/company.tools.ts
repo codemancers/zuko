@@ -1,15 +1,15 @@
-import { tool } from "langchain";
-import { Backend } from "../../shared/backend";
-import { z } from "zod";
+import { tool } from 'langchain';
+import { Backend } from '../../shared/backend';
+import { z } from 'zod';
 import {
   getOrganizationId,
   getContextEntities,
   getUserId,
-} from "./context.tools";
-import type { ToolRunConfig } from "./context.tools";
+} from './context.tools';
+import type { ToolRunConfig } from './context.tools';
 
 function orgHeader(organisationId: number | undefined): string {
-  return organisationId != null ? String(organisationId) : "";
+  return organisationId != null ? String(organisationId) : '';
 }
 
 export const getCompanyDetailsTool = tool(
@@ -17,13 +17,13 @@ export const getCompanyDetailsTool = tool(
     const organisationId = getOrganizationId(config);
     const contextEntities = getContextEntities(config);
     const contextCompanies =
-      contextEntities?.filter((e) => e.type === "company") ?? [];
+      contextEntities?.filter((e) => e.type === 'company') ?? [];
 
     if (contextCompanies.length > 1) {
       const ids = contextCompanies.map((c) => c.id);
       return {
         useQueryToolInstead: true,
-        message: `Multiple companies in context (${contextCompanies.length}). Use query_companies with filters.companyIds: [${ids.join(", ")}]`,
+        message: `Multiple companies in context (${contextCompanies.length}). Use query_companies with filters.companyIds: [${ids.join(', ')}]`,
         companyIds: ids,
       };
     }
@@ -35,40 +35,40 @@ export const getCompanyDetailsTool = tool(
     if (companyId === undefined) {
       return {
         error:
-          "No company in context and no companyId provided. Add a company or provide companyId.",
+          'No company in context and no companyId provided. Add a company or provide companyId.',
       };
     }
     if (!organisationId) {
-      return { error: "User context (organisationId) is required" };
+      return { error: 'User context (organisationId) is required' };
     }
 
     const result = await Backend(`/companies/${companyId}`, {
-      method: "GET",
+      method: 'GET',
       organisationId: orgHeader(organisationId),
     });
     if (!result.success || !result.data) {
       return {
-        error: result.error ?? "Failed to fetch company",
+        error: result.error ?? 'Failed to fetch company',
         company: null,
       };
     }
     return {
       success: true,
-      message: "Company fetched successfully",
+      message: 'Company fetched successfully',
       company: result.data,
     };
   },
   {
-    name: "get_company_details",
+    name: 'get_company_details',
     description:
-      "Get full details for a company. ID is optional; when omitted, uses the single company from context. Returns: id, companyName, website, linkedinUrl, summary, contactCount, createdAt, updatedAt.",
+      'Get full details for a company. ID is optional; when omitted, uses the single company from context. Returns: id, companyName, website, linkedinUrl, summary, contactCount, createdAt, updatedAt.',
     schema: z.object({
       companyId: z
         .number()
-        .describe("Optional. Company ID; when omitted, uses context.")
+        .describe('Optional. Company ID; when omitted, uses context.')
         .optional(),
     }),
-  }
+  },
 );
 
 export const queryCompaniesTool = tool(
@@ -84,30 +84,30 @@ export const queryCompaniesTool = tool(
         createdBefore?: string;
         search?: string;
       };
-      aggregation?: "count" | "list";
+      aggregation?: 'count' | 'list';
       limit?: number;
     },
-    config: ToolRunConfig
+    config: ToolRunConfig,
   ) => {
     const organisationId = getOrganizationId(config);
     if (!organisationId) {
-      return { error: "User context (organisationId) is required" };
+      return { error: 'User context (organisationId) is required' };
     }
-    const { filters = {}, aggregation = "list", limit = 100 } = input;
-    const result = await Backend("/companies/query", {
-      method: "POST",
+    const { filters = {}, aggregation = 'list', limit = 100 } = input;
+    const result = await Backend('/companies/query', {
+      method: 'POST',
       organisationId: orgHeader(organisationId),
       body: { filters, aggregation, limit },
     });
     if (!result.success) {
-      return { error: result.error ?? "Failed to query companies" };
+      return { error: result.error ?? 'Failed to query companies' };
     }
     return result.data;
   },
   {
-    name: "query_companies",
+    name: 'query_companies',
     description:
-      "Query companies with filters and aggregations. Use for: multiple companies (filters.companyIds), analytical questions (count, list). Supports filters: companyIds, ownerId, hasWebsite, contactCountMin/Max, createdAfter/Before, search. aggregation: count | list.",
+      'Query companies with filters and aggregations. Use for: multiple companies (filters.companyIds), analytical questions (count, list). Supports filters: companyIds, ownerId, hasWebsite, contactCountMin/Max, createdAfter/Before, search. aggregation: count | list.',
     schema: z.object({
       filters: z
         .object({
@@ -121,10 +121,10 @@ export const queryCompaniesTool = tool(
           search: z.string().optional(),
         })
         .optional(),
-      aggregation: z.enum(["count", "list"]).optional().default("list"),
+      aggregation: z.enum(['count', 'list']).optional().default('list'),
       limit: z.number().optional().default(100),
     }),
-  }
+  },
 );
 
 export const createCompanyTool = tool(
@@ -137,23 +137,26 @@ export const createCompanyTool = tool(
       ownerIds?: number[];
       primaryOwnerId?: number;
     },
-    config: ToolRunConfig
+    config: ToolRunConfig,
   ) => {
     const organisationId = getOrganizationId(config);
     const userId = getUserId(config);
     if (!organisationId) {
-      return { error: "User context (organisationId) is required" };
+      return { error: 'User context (organisationId) is required' };
     }
-    const ownerIds =
-      input.ownerIds?.length ? input.ownerIds : userId != null ? [userId] : [];
+    const ownerIds = input.ownerIds?.length
+      ? input.ownerIds
+      : userId != null
+        ? [userId]
+        : [];
     if (ownerIds.length === 0) {
       return {
         error:
-          "No owner available. Provide ownerIds or ensure userId is in context.",
+          'No owner available. Provide ownerIds or ensure userId is in context.',
       };
     }
-    const result = await Backend("/companies", {
-      method: "POST",
+    const result = await Backend('/companies', {
+      method: 'POST',
       organisationId: orgHeader(organisationId),
       body: {
         companyName: input.companyName,
@@ -165,27 +168,30 @@ export const createCompanyTool = tool(
       },
     });
     if (!result.success) {
-      return { error: result.error ?? "Failed to create company", company: null };
+      return {
+        error: result.error ?? 'Failed to create company',
+        company: null,
+      };
     }
     return {
       success: true,
-      message: "Company created.",
+      message: 'Company created.',
       company: result.data,
     };
   },
   {
-    name: "create_company",
+    name: 'create_company',
     description:
-      "Create a new company. companyName and website are required. ownerIds defaults to current user if omitted.",
+      'Create a new company. companyName and website are required. ownerIds defaults to current user if omitted.',
     schema: z.object({
-      companyName: z.string().min(1).describe("Company name (required)"),
-      website: z.string().min(1).describe("Company website URL (required)"),
+      companyName: z.string().min(1).describe('Company name (required)'),
+      website: z.string().min(1).describe('Company website URL (required)'),
       linkedinUrl: z.string().optional(),
       summary: z.string().optional(),
       ownerIds: z.array(z.number()).optional(),
       primaryOwnerId: z.number().optional(),
     }),
-  }
+  },
 );
 
 export const updateCompanyTool = tool(
@@ -197,12 +203,12 @@ export const updateCompanyTool = tool(
       linkedinUrl?: string;
       summary?: string;
     },
-    config: ToolRunConfig
+    config: ToolRunConfig,
   ) => {
     const organisationId = getOrganizationId(config);
     const contextEntities = getContextEntities(config);
     const contextCompanies =
-      contextEntities?.filter((e) => e.type === "company") ?? [];
+      contextEntities?.filter((e) => e.type === 'company') ?? [];
     const companyFromContext =
       contextCompanies.length === 1 ? contextCompanies[0] : undefined;
     const companyId = input.companyId ?? companyFromContext?.id;
@@ -210,42 +216,47 @@ export const updateCompanyTool = tool(
     if (companyId === undefined) {
       return {
         error:
-          "No company in context and no companyId provided. Provide companyId.",
+          'No company in context and no companyId provided. Provide companyId.',
       };
     }
     if (!organisationId) {
-      return { error: "User context (organisationId) is required" };
+      return { error: 'User context (organisationId) is required' };
     }
     const updates: Record<string, string | undefined> = {};
-    if (input.companyName !== undefined) updates.companyName = input.companyName;
+    if (input.companyName !== undefined)
+      updates.companyName = input.companyName;
     if (input.website !== undefined) updates.website = input.website;
-    if (input.linkedinUrl !== undefined) updates.linkedinUrl = input.linkedinUrl;
+    if (input.linkedinUrl !== undefined)
+      updates.linkedinUrl = input.linkedinUrl;
     if (input.summary !== undefined) updates.summary = input.summary;
     if (Object.keys(updates).length === 0) {
       return {
         error:
-          "Provide at least one field to update: companyName, website, linkedinUrl, or summary.",
+          'Provide at least one field to update: companyName, website, linkedinUrl, or summary.',
       };
     }
 
     const result = await Backend(`/companies/${companyId}`, {
-      method: "PATCH",
+      method: 'PATCH',
       organisationId: orgHeader(organisationId),
       body: updates,
     });
     if (!result.success) {
-      return { error: result.error ?? "Failed to update company", company: null };
+      return {
+        error: result.error ?? 'Failed to update company',
+        company: null,
+      };
     }
     return {
       success: true,
-      message: "Company updated.",
+      message: 'Company updated.',
       company: result.data,
     };
   },
   {
-    name: "update_company",
+    name: 'update_company',
     description:
-      "Update a company. Pass only fields to change. companyId optional if single company in context.",
+      'Update a company. Pass only fields to change. companyId optional if single company in context.',
     schema: z.object({
       companyId: z.number().optional(),
       companyName: z.string().optional(),
@@ -253,7 +264,7 @@ export const updateCompanyTool = tool(
       linkedinUrl: z.string().optional(),
       summary: z.string().optional(),
     }),
-  }
+  },
 );
 
 export const companyTools = [

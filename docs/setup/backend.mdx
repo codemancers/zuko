@@ -132,9 +132,9 @@ bun nx run @zuko/backend:serve
 
 The API is available at **http://localhost:3001**.
 
-| Endpoint | Description |
-|---|---|
-| `http://localhost:3001` | REST API |
+| Endpoint                     | Description        |
+| ---------------------------- | ------------------ |
+| `http://localhost:3001`      | REST API           |
 | `http://localhost:3001/auth` | Better Auth routes |
 
 ---
@@ -178,6 +178,7 @@ bun nx run @zuko/models:seed                              # Seed test data
     ```
 
     Check `DATABASE_URL` format: `postgres://user:password@host:port/dbname`
+
   </Accordion>
 
   <Accordion title="Prisma client errors">
@@ -187,13 +188,14 @@ bun nx run @zuko/models:seed                              # Seed test data
     rm -rf node_modules/.prisma/
     bun nx run @zuko/models:prisma:generate
     ```
+
   </Accordion>
 
-  <Accordion title="Auth / CORS errors">
-    - Ensure `TRUSTED_ORIGINS` includes both `http://localhost:3000` and `http://localhost:3001`
-    - Clear browser cookies and retry
-    - Confirm the GitHub OAuth callback URL is exactly `http://localhost:3001/auth/callback/github`
-  </Accordion>
+<Accordion title="Auth / CORS errors">
+  - Ensure `TRUSTED_ORIGINS` includes both `http://localhost:3000` and
+  `http://localhost:3001` - Clear browser cookies and retry - Confirm the GitHub
+  OAuth callback URL is exactly `http://localhost:3001/auth/callback/github`
+</Accordion>
 
   <Accordion title="Port already in use">
     ```bash

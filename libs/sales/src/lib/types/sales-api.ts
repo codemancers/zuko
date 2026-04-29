@@ -1,4 +1,11 @@
-import type { Contact, Company, User, ContactOwner, CompanyOwner, Deal } from '@prisma/client';
+import type {
+  Contact,
+  Company,
+  User,
+  ContactOwner,
+  CompanyOwner,
+  Deal,
+} from '@prisma/client';
 
 /**
  * Interface representing Editor.js output data structure.
@@ -9,7 +16,6 @@ export interface EditorData {
   version?: string;
   [key: string]: any;
 }
-
 
 /**
  * Shared interface for dynamic JSON fields in CRM entities.
@@ -48,7 +54,8 @@ export type FlattenedContact = Omit<ContactWithOwners, 'fields'> & CustomFields;
 /**
  * Flattened API response type for Companies.
  */
-export type FlattenedCompany = Omit<CompanyWithDetails, 'fields'> & CustomFields;
+export type FlattenedCompany = Omit<CompanyWithDetails, 'fields'> &
+  CustomFields;
 
 /**
  * Flattened API response type for Companies.

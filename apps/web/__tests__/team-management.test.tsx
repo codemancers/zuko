@@ -101,18 +101,22 @@ describe('CreateTeamDialog', () => {
   it('renders the dialog in create mode by default', () => {
     renderWithProviders(<CreateTeamDialog {...baseProps} />);
     // Use role heading to disambiguate from button
-    expect(screen.getByRole('heading', { name: /create team/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { name: /create team/i }),
+    ).toBeInTheDocument();
     expect(screen.getByLabelText(/team name/i)).toBeInTheDocument();
   });
 
   it('renders the dialog in update mode when initialData is provided', () => {
     renderWithProviders(
-      <CreateTeamDialog 
-        {...baseProps} 
-        initialData={{ id: 'team-1', name: 'Engineering' }} 
-      />
+      <CreateTeamDialog
+        {...baseProps}
+        initialData={{ id: 'team-1', name: 'Engineering' }}
+      />,
     );
-    expect(screen.getByRole('heading', { name: /update team/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { name: /update team/i }),
+    ).toBeInTheDocument();
     expect(screen.getByLabelText(/team name/i)).toHaveValue('Engineering');
   });
 
@@ -140,10 +144,10 @@ describe('CreateTeamDialog', () => {
     const user = userEvent.setup();
 
     renderWithProviders(
-      <CreateTeamDialog 
-        {...baseProps} 
-        initialData={{ id: 'team-1', name: 'Engineering' }} 
-      />
+      <CreateTeamDialog
+        {...baseProps}
+        initialData={{ id: 'team-1', name: 'Engineering' }}
+      />,
     );
 
     await user.clear(screen.getByLabelText(/team name/i));
@@ -181,7 +185,11 @@ describe('OrgTeams', () => {
 
   it('renders a table with teams', async () => {
     renderWithTeams([
-      { id: 'team-1', name: 'Engineering', createdAt: new Date().toISOString() },
+      {
+        id: 'team-1',
+        name: 'Engineering',
+        createdAt: new Date().toISOString(),
+      },
       { id: 'team-2', name: 'Marketing', createdAt: new Date().toISOString() },
     ]);
 
@@ -194,7 +202,9 @@ describe('OrgTeams', () => {
   it('shows empty state when no teams found', async () => {
     renderWithTeams([]);
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: /add row/i })).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: /add row/i }),
+      ).toBeInTheDocument();
     });
   });
 
@@ -203,16 +213,26 @@ describe('OrgTeams', () => {
     const user = userEvent.setup();
 
     renderWithTeams([
-      { id: 'team-1', name: 'Engineering', createdAt: new Date().toISOString() },
+      {
+        id: 'team-1',
+        name: 'Engineering',
+        createdAt: new Date().toISOString(),
+      },
     ]);
 
-    await waitFor(() => expect(screen.getByText('Engineering')).toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.getByText('Engineering')).toBeInTheDocument(),
+    );
 
     // Click Remove team icon button
     await user.click(screen.getByLabelText(/remove team/i));
 
     // Confirm in Alert
-    expect(screen.getByText(/are you sure you want to remove the team "engineering"/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        /are you sure you want to remove the team "engineering"/i,
+      ),
+    ).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: /^remove$/i }));
 
     await waitFor(() => {

@@ -1,7 +1,11 @@
 'use client';
 
 import { PromptInputActionMenuItem } from '@zuko/ui-kit';
-import { UserIcon, BuildingOfficeIcon, BriefcaseIcon } from '@heroicons/react/24/outline';
+import {
+  UserIcon,
+  BuildingOfficeIcon,
+  BriefcaseIcon,
+} from '@heroicons/react/24/outline';
 import { useChatContextManager } from './ChatContextWrapper';
 
 /**

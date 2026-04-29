@@ -13,7 +13,14 @@ export type ColumnType = (typeof COLUMN_TYPES)[number];
 
 export type DataType = 'text' | 'number' | 'boolean' | 'date' | 'json';
 
-export type ColumnRender = 'link' | 'badge' | 'email' | 'phone' | 'entity' | 'platform-icon' | 'join-button';
+export type ColumnRender =
+  | 'link'
+  | 'badge'
+  | 'email'
+  | 'phone'
+  | 'entity'
+  | 'platform-icon'
+  | 'join-button';
 
 export type ColumnFormat = 'date' | 'currency' | 'owner' | 'stage';
 

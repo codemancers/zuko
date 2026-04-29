@@ -24,7 +24,9 @@ test.describe('Team Management', () => {
     await expect(page.getByText('Team created')).toBeVisible();
 
     // Wait for the "New Team" row to appear
-    await expect(page.locator('table').getByText('New Team')).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('table').getByText('New Team')).toBeVisible({
+      timeout: 10000,
+    });
 
     // 4. Rename "New Team" inline — click the name span to enter edit mode
     await page.locator('table').getByText('New Team').last().click();
@@ -39,8 +41,11 @@ test.describe('Team Management', () => {
     await expect(page.locator('table')).toContainText(teamName);
 
     // 5. Remove the team
-    await page.locator('tr').filter({ hasText: teamName })
-      .getByRole('button', { name: /remove team/i }).click();
+    await page
+      .locator('tr')
+      .filter({ hasText: teamName })
+      .getByRole('button', { name: /remove team/i })
+      .click();
 
     // Confirm in Alert
     await page.getByRole('button', { name: /^remove$/i }).click();

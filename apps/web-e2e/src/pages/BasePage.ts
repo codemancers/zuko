@@ -42,7 +42,7 @@ export class BasePage {
    * Show history in the activity timeline if it exists and is hidden
    */
   async showHistory() {
-    const showBtn = this.page.getByRole("button", { name: /SHOW HISTORY/i });
+    const showBtn = this.page.getByRole('button', { name: /SHOW HISTORY/i });
     if (await showBtn.isVisible()) {
       await showBtn.click();
       // Wait for history to animate in
@@ -71,17 +71,19 @@ export class BasePage {
    create new record by clicking add row button
    */
   async createNewRecord() {
-    await this.page.getByRole("button", { name: /Add row/i }).click();
+    await this.page.getByRole('button', { name: /Add row/i }).click();
   }
 
   async getRowCount() {
-    return this.page.getByRole("row").count();
+    return this.page.getByRole('row').count();
   }
 
   async getColumnIndex(columnName: string) {
-    const headers = this.page.getByRole("columnheader");
+    const headers = this.page.getByRole('columnheader');
     const headerTexts = await headers.allInnerTexts();
-    const columnIndex = headerTexts.findIndex(h => h.toLowerCase().includes(columnName.toLowerCase()));
+    const columnIndex = headerTexts.findIndex((h) =>
+      h.toLowerCase().includes(columnName.toLowerCase()),
+    );
     return columnIndex;
   }
 
@@ -93,21 +95,23 @@ export class BasePage {
     const colIndex = await this.getColumnIndex(columnHeader);
     if (colIndex === -1) throw new Error(`Column "${columnHeader}" not found`);
 
-    const cell = row.locator("td").nth(colIndex);
+    const cell = row.locator('td').nth(colIndex);
     // Use evaluate click to avoid issues with elements being "obscured" by the cell itself
     await cell.evaluate((node) => (node as any).click());
 
     // Check if it's a combobox or a simple input
-    const combobox = cell.getByRole("combobox");
-    const input = cell.locator("input");
+    const combobox = cell.getByRole('combobox');
+    const input = cell.locator('input');
 
     if (await combobox.isVisible({ timeout: 2000 }).catch(() => false)) {
       await combobox.click();
-      await this.page.getByRole("option", { name: new RegExp(value, "i") }).click();
+      await this.page
+        .getByRole('option', { name: new RegExp(value, 'i') })
+        .click();
     } else {
-      await input.waitFor({ state: "visible" });
+      await input.waitFor({ state: 'visible' });
       await input.fill(value);
-      await input.press("Enter");
+      await input.press('Enter');
     }
   }
 
@@ -117,16 +121,18 @@ export class BasePage {
    * Get the EntityProperties container (the <dl> that holds all properties).
    */
   get propertiesSection() {
-    return this.page.locator("dl");
+    return this.page.locator('dl');
   }
 
   /**
    * Locate a property row (dt/dd pair) by its label text.
    */
   propertyRow(label: string) {
-    return this.propertiesSection
-      .locator("div")
-      .filter({ has: this.page.locator("dt", { hasText: new RegExp(`^${label}$`, "i") }) });
+    return this.propertiesSection.locator('div').filter({
+      has: this.page.locator('dt', {
+        hasText: new RegExp(`^${label}$`, 'i'),
+      }),
+    });
   }
 
   /**
@@ -135,12 +141,12 @@ export class BasePage {
    */
   async openPropertyEditor(label: string): Promise<Locator> {
     const row = this.propertyRow(label);
-    const dd = row.locator("dd");
+    const dd = row.locator('dd');
 
     // if dd has '-' as value then click it instead of hover
-    if ((await dd.textContent())?.trim() === "—") {
+    if ((await dd.textContent())?.trim() === '—') {
       // find the text inside dd and click it
-      const text = dd.locator("text=—");
+      const text = dd.locator('text=—');
       await text.click();
     } else {
       // Hover to reveal the pencil icon
@@ -150,7 +156,7 @@ export class BasePage {
       await pencilButton.click();
     }
 
-    const input = dd.locator("input");
+    const input = dd.locator('input');
     await expect(input).toBeVisible({ timeout: 3000 });
     return input;
   }
@@ -159,22 +165,17 @@ export class BasePage {
    * Update an EntityProperties text field inline and wait for the PATCH response.
    * @param entityPath  The API path fragment to match (e.g. "/companies/123")
    */
-  async updateEntityProperty(
-    label: string,
-    value: string,
-    entityPath: string,
-  ) {
+  async updateEntityProperty(label: string, value: string, entityPath: string) {
     const input = await this.openPropertyEditor(label);
 
     const patchPromise = this.page.waitForResponse(
       (resp) =>
-        resp.url().includes(entityPath) &&
-        resp.request().method() === "PATCH",
+        resp.url().includes(entityPath) && resp.request().method() === 'PATCH',
       { timeout: 10000 },
     );
 
     await input.fill(value);
-    await input.press("Enter");
+    await input.press('Enter');
 
     await patchPromise;
   }
@@ -184,8 +185,8 @@ export class BasePage {
    */
   async getPropertyValue(label: string): Promise<string> {
     const row = this.propertyRow(label);
-    const dd = row.locator("dd");
-    return ((await dd.textContent()) ?? "").trim();
+    const dd = row.locator('dd');
+    return ((await dd.textContent()) ?? '').trim();
   }
 
   /**
@@ -193,7 +194,7 @@ export class BasePage {
    */
   getPropertyLink(label: string): Locator {
     const row = this.propertyRow(label);
-    return row.locator("dd a");
+    return row.locator('dd a');
   }
 
   // ── Activity Timeline Helpers ─────────────────────────────────────────────
@@ -203,7 +204,7 @@ export class BasePage {
    */
   async openActivityHistory() {
     await this.page
-      .getByRole("heading", { name: "Activity", exact: true })
+      .getByRole('heading', { name: 'Activity', exact: true })
       .scrollIntoViewIfNeeded();
     await this.showHistory();
   }
@@ -213,10 +214,10 @@ export class BasePage {
    */
   async expectActivityEntry(textPattern: RegExp | string) {
     let pattern: RegExp;
-    if (typeof textPattern === "string") {
+    if (typeof textPattern === 'string') {
       // Escape special characters so that strings like "+123" match
-      const escaped = textPattern.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-      pattern = new RegExp(escaped, "i");
+      const escaped = textPattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      pattern = new RegExp(escaped, 'i');
     } else {
       pattern = textPattern;
     }

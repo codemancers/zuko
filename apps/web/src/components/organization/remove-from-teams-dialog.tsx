@@ -132,9 +132,7 @@ export const RemoveFromTeamsDialog = ({
             </Combobox>
             {error && <ErrorMessage>{error}</ErrorMessage>}
             {memberTeams.length === 0 && (
-              <Description>
-                This member is not in any teams.
-              </Description>
+              <Description>This member is not in any teams.</Description>
             )}
           </Field>
         </DialogBody>

@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { zodResolver } from '@hookform/resolvers/zod';
-import type { SubmitHandler} from 'react-hook-form';
+import type { SubmitHandler } from 'react-hook-form';
 import { useForm } from 'react-hook-form';
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
@@ -84,7 +84,11 @@ const AddMeeting = () => {
   ) => {
     const scheduledDate =
       !isJoinNow && formData.scheduledAt
-        ? dayjs(formData.scheduledAt).tz(formData.timezone).utc().toDate().toISOString()
+        ? dayjs(formData.scheduledAt)
+            .tz(formData.timezone)
+            .utc()
+            .toDate()
+            .toISOString()
         : undefined;
 
     createMutation.mutate({
@@ -122,7 +126,9 @@ const AddMeeting = () => {
                   {...register('name')}
                   autoComplete="off"
                 />
-                {errors.name && <ErrorMessage>{errors.name.message}</ErrorMessage>}
+                {errors.name && (
+                  <ErrorMessage>{errors.name.message}</ErrorMessage>
+                )}
               </Field>
 
               <Field className="w-full" data-error-id="url">
@@ -134,7 +140,9 @@ const AddMeeting = () => {
                   {...register('url')}
                   autoComplete="off"
                 />
-                {errors.url && <ErrorMessage>{errors.url.message}</ErrorMessage>}
+                {errors.url && (
+                  <ErrorMessage>{errors.url.message}</ErrorMessage>
+                )}
               </Field>
             </Fieldset>
 
@@ -167,7 +175,9 @@ const AddMeeting = () => {
                     id="scheduledAt"
                     {...register('scheduledAt')}
                   />
-                  {errors.scheduledAt && <ErrorMessage>{errors.scheduledAt.message}</ErrorMessage>}
+                  {errors.scheduledAt && (
+                    <ErrorMessage>{errors.scheduledAt.message}</ErrorMessage>
+                  )}
                 </Field>
 
                 <Field

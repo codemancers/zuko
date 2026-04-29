@@ -1,5 +1,13 @@
 'use client';
-import { Button, Divider, ErrorMessage, Field, Heading, Input, Subheading } from '@zuko/ui-kit';
+import {
+  Button,
+  Divider,
+  ErrorMessage,
+  Field,
+  Heading,
+  Input,
+  Subheading,
+} from '@zuko/ui-kit';
 import React from 'react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
@@ -124,17 +132,10 @@ export const CreateOrg = () => {
       </section>
 
       <div className="flex justify-end gap-4 mt-10">
-        <Button
-          type="button"
-          plain
-          onClick={() => form.reset()}
-        >
+        <Button type="button" plain onClick={() => form.reset()}>
           Reset
         </Button>
-        <Button
-          type="submit"
-          disabled={form.formState.isSubmitting}
-        >
+        <Button type="submit" disabled={form.formState.isSubmitting}>
           {form.formState.isSubmitting ? 'Saving...' : 'Save changes'}
         </Button>
       </div>

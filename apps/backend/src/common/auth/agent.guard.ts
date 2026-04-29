@@ -20,12 +20,16 @@ export class AgentGuard implements CanActivate {
   private readonly logger = new Logger(AgentGuard.name);
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const request = context.switchToHttp().getRequest<RequestWithOrganization>();
+    const request = context
+      .switchToHttp()
+      .getRequest<RequestWithOrganization>();
 
     const token = request.headers[AGENT_TOKEN_HEADER];
     const expectedToken = process.env.AGENT_TOKEN;
     if (!expectedToken || token !== expectedToken) {
-      this.logger.warn('Agent request rejected: invalid or missing x-agent-token');
+      this.logger.warn(
+        'Agent request rejected: invalid or missing x-agent-token',
+      );
       return false;
     }
 
@@ -35,7 +39,8 @@ export class AgentGuard implements CanActivate {
         'Missing or empty x-org-id header; organisationId is required for this route',
       );
     }
-    const id = typeof value === 'string' ? parseInt(String(value).trim(), 10) : NaN;
+    const id =
+      typeof value === 'string' ? parseInt(String(value).trim(), 10) : NaN;
     if (Number.isNaN(id) || id < 1) {
       throw new BadRequestException(
         'Invalid x-org-id header; must be a positive number',

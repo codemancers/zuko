@@ -341,16 +341,12 @@ describe('UserInvitations — accept / decline flow', () => {
     ]);
 
     await waitFor(() =>
-      expect(
-        screen.getByLabelText(/accept invitation/i),
-      ).toBeInTheDocument(),
+      expect(screen.getByLabelText(/accept invitation/i)).toBeInTheDocument(),
     );
     await user.click(screen.getByLabelText(/accept invitation/i));
 
     await waitFor(() => {
-      expect(
-        screen.getByLabelText(/accept invitation/i),
-      ).toBeDisabled();
+      expect(screen.getByLabelText(/accept invitation/i)).toBeDisabled();
     });
 
     resolve!({ error: null });

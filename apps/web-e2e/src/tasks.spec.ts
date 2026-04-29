@@ -19,10 +19,15 @@ test.describe('Tasks - CRUD', () => {
   test('displays tasks page with header', async ({ tasksPage, page }) => {
     await tasksPage.goto();
     await expect(page.getByRole('heading', { name: /^Tasks$/i })).toBeVisible();
-    await expect(page.getByRole('button', { name: /add row/i }).first()).toBeVisible();
+    await expect(
+      page.getByRole('button', { name: /add row/i }).first(),
+    ).toBeVisible();
   });
 
-  test('can create a task and see it in the list', async ({ tasksPage, page }) => {
+  test('can create a task and see it in the list', async ({
+    tasksPage,
+    page,
+  }) => {
     await tasksPage.createTask({
       title: 'TEST E2E TASK',
       description: 'Created by E2E test',
@@ -40,11 +45,15 @@ test.describe('Tasks - CRUD', () => {
     await tasksPage.goto();
     await tasksPage.openTask('Detail View Task');
 
-    await expect(page.getByRole('heading', { name: 'Detail View Task' })).toBeVisible();
+    await expect(
+      page.getByRole('heading', { name: 'Detail View Task' }),
+    ).toBeVisible();
   });
 
-
-  test('can delete a task via confirmation dialog', async ({ tasksPage, page }) => {
+  test('can delete a task via confirmation dialog', async ({
+    tasksPage,
+    page,
+  }) => {
     await tasksPage.createTask({ title: 'Task to Delete' });
 
     await tasksPage.goto();
@@ -60,7 +69,7 @@ test.describe('Tasks - CRUD', () => {
   });
 });
 
-test.describe("Task Detail - Inline Editing", () => {
+test.describe('Task Detail - Inline Editing', () => {
   let taskId: number;
 
   test.beforeAll(async ({ browser }) => {
@@ -72,7 +81,9 @@ test.describe("Task Detail - Inline Editing", () => {
     await taskDetailPage.goto(taskId);
 
     const updatePromise = page.waitForResponse(
-      (resp) => resp.url().includes(`/tasks/${taskId}`) && resp.request().method() === "PATCH"
+      (resp) =>
+        resp.url().includes(`/tasks/${taskId}`) &&
+        resp.request().method() === 'PATCH',
     );
     await taskDetailPage.updateTitle(newTitle);
     await updatePromise;
@@ -90,7 +101,9 @@ test.describe("Task Detail - Inline Editing", () => {
     await taskDetailPage.goto(taskId);
 
     const updatePromise = page.waitForResponse(
-      (resp) => resp.url().includes(`/tasks/${taskId}`) && resp.request().method() === "PATCH"
+      (resp) =>
+        resp.url().includes(`/tasks/${taskId}`) &&
+        resp.request().method() === 'PATCH',
     );
     // updateDescription has a hardcoded sleep but we rely on the API wait for safety
     await taskDetailPage.updateDescription(newDescription);
@@ -114,8 +127,13 @@ test.describe('Task Form Validation', () => {
 
   test('displays all status options', async ({ page }) => {
     await page.goto('/tasks/new');
-    await page.getByRole('combobox', { name: /status/i }).waitFor({ state: 'visible' });
-    const options = await page.getByRole('combobox', { name: /status/i }).locator('option').allTextContents();
+    await page
+      .getByRole('combobox', { name: /status/i })
+      .waitFor({ state: 'visible' });
+    const options = await page
+      .getByRole('combobox', { name: /status/i })
+      .locator('option')
+      .allTextContents();
     expect(options).toEqual(
       expect.arrayContaining(['To Do', 'In Progress', 'Done', 'Cancelled']),
     );
@@ -130,7 +148,6 @@ test.describe('Task Form Validation', () => {
 });
 
 test.describe('Task Actions (table dropdown)', () => {
-
   test('Complete from action dropdown marks task as done', async ({
     tasksPage,
     page,
@@ -141,7 +158,9 @@ test.describe('Task Actions (table dropdown)', () => {
     await tasksPage.clickTaskActionComplete('Task to Complete via Dropdown');
     // Task should show Done badge in the list
     await expect(
-      page.getByRole('row').filter({ hasText: 'Task to Complete via Dropdown' }),
+      page
+        .getByRole('row')
+        .filter({ hasText: 'Task to Complete via Dropdown' }),
     ).toContainText(/done/i);
   });
 
@@ -165,7 +184,10 @@ test.describe('Task Actions (table dropdown)', () => {
 });
 
 test.describe('Task Status Workflow', () => {
-  test('can progress task through full lifecycle', async ({ tasksPage, page }) => {
+  test('can progress task through full lifecycle', async ({
+    tasksPage,
+    page,
+  }) => {
     await tasksPage.createTask({ title: 'Lifecycle Task' });
 
     await tasksPage.goto();
@@ -219,7 +241,10 @@ test.describe('Hierarchical Tasks', () => {
     await expect(page.getByText('Sub B', { exact: true })).toBeVisible();
   });
 
-  test('can promote subtask to top-level by clearing parent', async ({ tasksPage, page }) => {
+  test('can promote subtask to top-level by clearing parent', async ({
+    tasksPage,
+    page,
+  }) => {
     await tasksPage.createTask({ title: 'Parent for Promotion' });
 
     await tasksPage.goto();

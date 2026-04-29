@@ -59,7 +59,8 @@ AGENT_TOKEN=your-agent-token
 ```
 
 <Tip>
-  NX automatically loads the root `.env` for all workspace commands. Set shared variables here once instead of repeating them in each service's `.env`.
+  NX automatically loads the root `.env` for all workspace commands. Set shared
+  variables here once instead of repeating them in each service's `.env`.
 </Tip>
 
 ### Backend `apps/backend/.env`
@@ -125,7 +126,9 @@ LANGSMITH_API_KEY=
 ```
 
 <Tip>
-  `AGENT_TOKEN` must be the same value in both `apps/backend/.env` and `apps/ai-agents/.env`. It authenticates the agents service when calling backend endpoints.
+  `AGENT_TOKEN` must be the same value in both `apps/backend/.env` and
+  `apps/ai-agents/.env`. It authenticates the agents service when calling
+  backend endpoints.
 </Tip>
 
 ---
@@ -190,11 +193,11 @@ bun nx run @zuko/web:dev
 
 This starts both the NestJS backend and the Next.js frontend with hot reload.
 
-| Service | URL |
-|---|---|
-| Frontend | http://localhost:3000 |
-| Backend API | http://localhost:3001 |
-| Auth | http://localhost:3001/auth |
+| Service     | URL                        |
+| ----------- | -------------------------- |
+| Frontend    | http://localhost:3000      |
+| Backend API | http://localhost:3001      |
+| Auth        | http://localhost:3001/auth |
 
 ---
 
@@ -209,7 +212,8 @@ bun nx run @zuko/ai-agents:dev
 This starts the LangGraph agent runtime at **http://localhost:8080** with LangGraph Studio for debugging.
 
 <Note>
-  The AI agents service is only needed if you want to use the agentic chat features. The core CRM (contacts, companies, deals) works without it.
+  The AI agents service is only needed if you want to use the agentic chat
+  features. The core CRM (contacts, companies, deals) works without it.
 </Note>
 
 ---
@@ -284,41 +288,35 @@ bun nx affected -t lint                                  # Lint affected project
     ```
 
     Check `DATABASE_URL` format: `postgres://user:password@host:port/dbname`
+
   </Accordion>
 
-  <Accordion title="Prisma client errors">
-    Clear the cached client and regenerate:
-    ```bash
-    rm -rf node_modules/.prisma/
-    bun nx run @zuko/models:prisma:generate
-    ```
-  </Accordion>
+<Accordion title="Prisma client errors">
+  Clear the cached client and regenerate: ```bash rm -rf node_modules/.prisma/
+  bun nx run @zuko/models:prisma:generate ```
+</Accordion>
 
-  <Accordion title="Auth / CORS errors">
-    - Ensure `TRUSTED_ORIGINS` in `apps/backend/.env` includes both `http://localhost:3000` and `http://localhost:3001`
-    - Clear browser cookies and retry
-    - Confirm the GitHub OAuth callback URL is exactly `http://localhost:3001/auth/callback/github`
-  </Accordion>
+<Accordion title="Auth / CORS errors">
+  - Ensure `TRUSTED_ORIGINS` in `apps/backend/.env` includes both
+  `http://localhost:3000` and `http://localhost:3001` - Clear browser cookies
+  and retry - Confirm the GitHub OAuth callback URL is exactly
+  `http://localhost:3001/auth/callback/github`
+</Accordion>
 
-  <Accordion title="Frontend can't connect to backend">
-    - Confirm `NEXT_PUBLIC_BACKEND_URL=http://localhost:3001` in `apps/web/.env`
-    - Make sure the backend started without errors before opening the frontend
-    - Check the backend terminal for startup errors
-  </Accordion>
+<Accordion title="Frontend can't connect to backend">
+  - Confirm `NEXT_PUBLIC_BACKEND_URL=http://localhost:3001` in `apps/web/.env` -
+  Make sure the backend started without errors before opening the frontend -
+  Check the backend terminal for startup errors
+</Accordion>
 
-  <Accordion title="Bun install fails or lock file issues">
-    ```bash
-    rm bun.lockb
-    bun install --force
-    ```
-  </Accordion>
+<Accordion title="Bun install fails or lock file issues">
+  ```bash rm bun.lockb bun install --force ```
+</Accordion>
 
-  <Accordion title="Port already in use">
-    Find and kill the process on the conflicting port:
-    ```bash
-    lsof -ti:3001 | xargs kill -9
-    ```
-  </Accordion>
+<Accordion title="Port already in use">
+  Find and kill the process on the conflicting port: ```bash lsof -ti:3001 |
+  xargs kill -9 ```
+</Accordion>
 
   <Accordion title="AI agents service won't start">
     - Ensure `OPENAI_API_KEY` is set in `apps/ai-agents/.env`

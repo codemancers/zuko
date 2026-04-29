@@ -43,7 +43,11 @@ export class ContactsService {
     private readonly tableColumnRepository: TableColumnRepository,
   ) {}
 
-  async create(input: CreateContactInput, actorId?: number, source?: ActivitySource) {
+  async create(
+    input: CreateContactInput,
+    actorId?: number,
+    source?: ActivitySource,
+  ) {
     this.logger.log('[SERVICE] Starting contact creation');
 
     // Default Name Support: If no name provided, use "New Contact"
@@ -68,7 +72,10 @@ export class ContactsService {
       this.logger.debug(
         `[SERVICE] Checking for duplicate email: ${input.email}`,
       );
-      const duplicate = await this.findByEmail(input.organizationId, input.email);
+      const duplicate = await this.findByEmail(
+        input.organizationId,
+        input.email,
+      );
       if (duplicate) {
         this.logger.warn(
           `[SERVICE] Duplicate email found: ${input.email} (existing ID: ${duplicate.id})`,
@@ -114,9 +121,18 @@ export class ContactsService {
     return contact;
   }
 
-  async update(id: number, organizationId: number, input: UpdateContactInput, actorId?: number, source?: ActivitySource) {
+  async update(
+    id: number,
+    organizationId: number,
+    input: UpdateContactInput,
+    actorId?: number,
+    source?: ActivitySource,
+  ) {
     // Check contact exists and belongs to org
-    const existingContact = await this.contactsRepository.findById(id, organizationId);
+    const existingContact = await this.contactsRepository.findById(
+      id,
+      organizationId,
+    );
     if (!existingContact) {
       throw new NotFoundException(`Contact with ID ${id} not found`);
     }
@@ -135,7 +151,10 @@ export class ContactsService {
 
     // Check for duplicate email if being updated (within same organization)
     if (input.email && input.email !== existingContact.email) {
-      const duplicateContact = await this.findByEmail(organizationId, input.email);
+      const duplicateContact = await this.findByEmail(
+        organizationId,
+        input.email,
+      );
       if (duplicateContact && duplicateContact.id !== id) {
         throw new BadRequestException(
           `A contact with email ${input.email} already exists (ID: ${duplicateContact.id})`,
@@ -158,7 +177,10 @@ export class ContactsService {
             column.fieldType as ColumnType,
             column.config as ColumnConfig,
           );
-          input.fields[key] = castFieldValue(value, column.fieldType as ColumnType);
+          input.fields[key] = castFieldValue(
+            value,
+            column.fieldType as ColumnType,
+          );
         }
       }
     }
@@ -214,7 +236,11 @@ export class ContactsService {
     actorId?: number,
   ) {
     await this.findById(contactId, organizationId);
-    const result = await this.contactsRepository.addOwner(contactId, userId, isPrimary);
+    const result = await this.contactsRepository.addOwner(
+      contactId,
+      userId,
+      isPrimary,
+    );
     await this.eventEmitter.emitAsync(CONTACT_EVENTS.OWNER_ASSIGNED, {
       contactId,
       actorId,

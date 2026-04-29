@@ -14,7 +14,9 @@ function createQueryClient() {
 
 function renderWithQuery(ui: React.ReactElement) {
   return render(
-    <QueryClientProvider client={createQueryClient()}>{ui}</QueryClientProvider>
+    <QueryClientProvider client={createQueryClient()}>
+      {ui}
+    </QueryClientProvider>,
   );
 }
 
@@ -41,7 +43,9 @@ const mockData: MockData[] = [
 ];
 
 const mockEmptyStateConfig = {
-  icon: ({ className }: { className?: string }) => <div data-testid="empty-icon" className={className} />,
+  icon: ({ className }: { className?: string }) => (
+    <div data-testid="empty-icon" className={className} />
+  ),
   title: 'No Data',
   description: 'Nothing to see here.',
   action: {
@@ -59,7 +63,7 @@ describe('BaseTable', () => {
         loading={true}
         entityName="items"
         emptyStateConfig={mockEmptyStateConfig}
-      />
+      />,
     );
 
     expect(screen.getByText(/Loading items.../i)).toBeInTheDocument();
@@ -72,11 +76,11 @@ describe('BaseTable', () => {
         data={[]}
         loading={false}
         emptyStateConfig={mockEmptyStateConfig}
-      />
+      />,
     );
 
     expect(screen.getByRole('table')).toBeInTheDocument();
-    
+
     // Check for empty body
     const tbody = screen.getByRole('table').querySelector('tbody');
     expect(tbody?.children.length).toBe(0);
@@ -89,14 +93,14 @@ describe('BaseTable', () => {
         data={mockData}
         loading={false}
         emptyStateConfig={mockEmptyStateConfig}
-      />
+      />,
     );
 
     expect(screen.getByText('John Doe')).toBeInTheDocument();
     expect(screen.getByText('Admin')).toBeInTheDocument();
     expect(screen.getByText('Jane Smith')).toBeInTheDocument();
     expect(screen.getByText('User')).toBeInTheDocument();
-    
+
     // Headers
     expect(screen.getByText('Name')).toBeInTheDocument();
     expect(screen.getByText('Role')).toBeInTheDocument();
@@ -111,7 +115,7 @@ describe('BaseTable', () => {
         loading={false}
         onRowClick={onRowClick}
         emptyStateConfig={mockEmptyStateConfig}
-      />
+      />,
     );
 
     fireEvent.click(screen.getByText('John Doe'));
@@ -127,7 +131,7 @@ describe('BaseTable', () => {
         totalCount={100}
         entityName="people"
         emptyStateConfig={mockEmptyStateConfig}
-      />
+      />,
     );
 
     expect(screen.getByText('Showing 2 of 100 people')).toBeInTheDocument();
@@ -144,12 +148,12 @@ describe('BaseTable', () => {
           showAddRow={true}
           onAddRow={onAddRow}
           emptyStateConfig={mockEmptyStateConfig}
-        />
+        />,
       );
 
       const addButton = screen.getByRole('button', { name: /Add row/i });
       expect(addButton).toBeInTheDocument();
-      
+
       fireEvent.click(addButton);
       expect(onAddRow).toHaveBeenCalled();
     });
@@ -164,10 +168,12 @@ describe('BaseTable', () => {
           loading={false}
           showAddColumn={true}
           emptyStateConfig={mockEmptyStateConfig}
-        />
+        />,
       );
 
-      const addColumnButton = screen.getByRole('button', { name: /Add column/i });
+      const addColumnButton = screen.getByRole('button', {
+        name: /Add column/i,
+      });
       expect(addColumnButton).toBeInTheDocument();
     });
 
@@ -181,10 +187,12 @@ describe('BaseTable', () => {
           showAddColumn={true}
           onAddColumn={onAddColumn}
           emptyStateConfig={mockEmptyStateConfig}
-        />
+        />,
       );
 
-      const headerPlusButton = screen.getByRole('button', { name: /Add column/i });
+      const headerPlusButton = screen.getByRole('button', {
+        name: /Add column/i,
+      });
       fireEvent.click(headerPlusButton);
 
       expect(screen.getByText('Add new field')).toBeInTheDocument();

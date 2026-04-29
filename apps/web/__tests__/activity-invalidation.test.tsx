@@ -85,9 +85,36 @@ const mockCompany = {
   isHidden: false,
   createdAt: '2025-01-01T00:00:00Z',
   updatedAt: '2025-01-02T00:00:00Z',
-  owners: [{ id: 1, userId: 1, companyId: 42, isPrimary: true, assignedAt: '', user: { id: 1, name: 'Alice', email: 'a@a.com' } }],
+  owners: [
+    {
+      id: 1,
+      userId: 1,
+      companyId: 42,
+      isPrimary: true,
+      assignedAt: '',
+      user: { id: 1, name: 'Alice', email: 'a@a.com' },
+    },
+  ],
   contacts: [
-    { id: 1, contactId: 5, companyId: 42, role: undefined, isPrimary: false, joinedAt: '2025-01-01T00:00:00Z', createdAt: '2025-01-01T00:00:00Z', updatedAt: '2025-01-01T00:00:00Z', contact: { id: 5, name: 'Jane Doe', email: 'jane@example.com', isHidden: false, createdAt: '', updatedAt: '', owners: [] } },
+    {
+      id: 1,
+      contactId: 5,
+      companyId: 42,
+      role: undefined,
+      isPrimary: false,
+      joinedAt: '2025-01-01T00:00:00Z',
+      createdAt: '2025-01-01T00:00:00Z',
+      updatedAt: '2025-01-01T00:00:00Z',
+      contact: {
+        id: 5,
+        name: 'Jane Doe',
+        email: 'jane@example.com',
+        isHidden: false,
+        createdAt: '',
+        updatedAt: '',
+        owners: [],
+      },
+    },
   ],
 };
 
@@ -108,7 +135,9 @@ beforeEach(() => {
   vi.clearAllMocks();
   mockGetCompany.mockResolvedValue(mockCompany);
   mockGetContact.mockResolvedValue(mockContact);
-  mockGetContacts.mockResolvedValue({ contacts: [{ id: 10, name: 'Free Contact', email: 'free@test.com' }] });
+  mockGetContacts.mockResolvedValue({
+    contacts: [{ id: 10, name: 'Free Contact', email: 'free@test.com' }],
+  });
   mockGetTasks.mockResolvedValue({ tasks: [] });
 });
 
@@ -120,7 +149,9 @@ describe('CompanyDetail – timeline invalidation on property update', () => {
     const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
     const user = userEvent.setup();
 
-    render(<CompanyDetail companyId={42} currentUserId={1} />, { wrapper: createWrapper() });
+    render(<CompanyDetail companyId={42} currentUserId={1} />, {
+      wrapper: createWrapper(),
+    });
 
     await waitFor(() => {
       expect(screen.getByText('https://acme.com')).toBeInTheDocument();
@@ -150,7 +181,9 @@ describe('ContactDetail – timeline invalidation on property update', () => {
     const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
     const user = userEvent.setup();
 
-    render(<ContactDetail contactId={99} currentUserId={1} />, { wrapper: createWrapper() });
+    render(<ContactDetail contactId={99} currentUserId={1} />, {
+      wrapper: createWrapper(),
+    });
 
     await waitFor(() => {
       expect(screen.getByText('bob@example.com')).toBeInTheDocument();
@@ -181,7 +214,9 @@ describe('CompanyDetail – removeContact timeline invalidation', () => {
     const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
     vi.spyOn(window, 'confirm').mockReturnValue(true);
 
-    render(<CompanyDetail companyId={42} currentUserId={1} />, { wrapper: createWrapper() });
+    render(<CompanyDetail companyId={42} currentUserId={1} />, {
+      wrapper: createWrapper(),
+    });
 
     await waitFor(() => {
       expect(screen.getByText('Jane Doe')).toBeInTheDocument();
@@ -192,7 +227,9 @@ describe('CompanyDetail – removeContact timeline invalidation', () => {
 
     // Confirm the removal in the ConfirmDialog
     await waitFor(() =>
-      expect(screen.getByRole('button', { name: /^remove$/i })).toBeInTheDocument()
+      expect(
+        screen.getByRole('button', { name: /^remove$/i }),
+      ).toBeInTheDocument(),
     );
     await user.click(screen.getByRole('button', { name: /^remove$/i }));
 
@@ -212,7 +249,9 @@ describe('CompanyDetail – updateContact timeline invalidation', () => {
     mockGetCompany.mockResolvedValue({ ...mockCompany });
     const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
 
-    render(<CompanyDetail companyId={42} currentUserId={1} />, { wrapper: createWrapper() });
+    render(<CompanyDetail companyId={42} currentUserId={1} />, {
+      wrapper: createWrapper(),
+    });
 
     await waitFor(() => {
       expect(screen.getByText('Jane Doe')).toBeInTheDocument();
@@ -255,10 +294,9 @@ describe('TaskForm – timeline invalidation', () => {
     const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
     const user = userEvent.setup();
 
-    render(
-      <TaskForm mode="edit" task={mockTask} />,
-      { wrapper: createWrapper() },
-    );
+    render(<TaskForm mode="edit" task={mockTask} />, {
+      wrapper: createWrapper(),
+    });
 
     const titleInput = screen.getByPlaceholderText(/task title/i);
     await user.clear(titleInput);
@@ -284,10 +322,9 @@ describe('AddContactDialog – timeline invalidation', () => {
     });
     const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
 
-    render(
-      <AddContactDialog companyId={42} existingContactIds={[]} />,
-      { wrapper: createWrapper() },
-    );
+    render(<AddContactDialog companyId={42} existingContactIds={[]} />, {
+      wrapper: createWrapper(),
+    });
 
     const user = userEvent.setup();
     await user.click(screen.getByRole('button', { name: /add contact/i }));
@@ -302,7 +339,9 @@ describe('AddContactDialog – timeline invalidation', () => {
     await user.selectOptions(select, '10');
 
     const dialog = await screen.findByRole('dialog');
-    await user.click(within(dialog).getByRole('button', { name: /add contact/i }));
+    await user.click(
+      within(dialog).getByRole('button', { name: /add contact/i }),
+    );
 
     await waitFor(() => {
       expect(invalidateSpy).toHaveBeenCalledWith(

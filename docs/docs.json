@@ -55,11 +55,6 @@
     }
   ],
   "contextual": {
-    "options": [
-      "copy",
-      "chatgpt",
-      "claude",
-      "cursor"
-    ]
+    "options": ["copy", "chatgpt", "claude", "cursor"]
   }
 }

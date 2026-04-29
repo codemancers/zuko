@@ -1,6 +1,6 @@
 'use client';
 
-import type { ReactNode} from 'react';
+import type { ReactNode } from 'react';
 import { createContext, useContext, useEffect, useRef } from 'react';
 import { usePromptInputReferencedSources } from '@zuko/ui-kit';
 import { CHAT_ENTITY_TYPE_LABEL } from '@/lib/constants';
@@ -64,8 +64,7 @@ export const ChatContextProvider = ({
           type: 'source-document',
           sourceId,
           mediaType: 'application/json',
-          title:
-            entity.name ?? CHAT_ENTITY_TYPE_LABEL[entity.type],
+          title: entity.name ?? CHAT_ENTITY_TYPE_LABEL[entity.type],
           metadata: { type: entity.type, entityId: entity.id },
         } as any);
       });

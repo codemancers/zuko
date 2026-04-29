@@ -37,11 +37,7 @@ test.describe('Deals - Authenticated', () => {
     expect(Array.isArray(deals)).toBe(true);
   });
 
-  test('can create a new deal', async ({
-    dealsPage,
-    dealDetailPage,
-    page,
-  }) => {
+  test('can create a new deal', async ({ dealsPage, dealDetailPage, page }) => {
     const dealName = `TEST E2E DEAL ${Date.now()}`;
     await dealsPage.goto();
 
@@ -61,7 +57,7 @@ test.describe('Deals - Authenticated', () => {
     // 4. Verify properties on the details page
     await expect(dealDetailPage.dealTitle).toHaveText(dealName);
     await expect(dealDetailPage.propertyRow('Stage').locator('dd')).toHaveText(
-      'Prospecting'
+      'Prospecting',
     );
   });
 
@@ -149,7 +145,7 @@ test.describe('Deal Detail', () => {
   test.beforeAll(async ({ browser }) => {
     dealId = await createFreshDeal(browser);
   });
-    
+
   // ── 1. Empty state (detail sections visible) ────────────────────────────
   test('displays deal detail page with information', async ({
     dealDetailPage,
@@ -169,7 +165,6 @@ test.describe('Deal Detail', () => {
     const value = await dealDetailPage.getDealValue().catch(() => '');
     expect(typeof value).toBe('string');
   });
-
 
   test('displays summary', async ({ dealDetailPage, page }) => {
     await dealDetailPage.goto(dealId);
@@ -197,13 +192,15 @@ test.describe('Deal Detail - Inline Editing', () => {
   test.beforeAll(async ({ browser }) => {
     dealId = await createFreshDeal(browser);
   });
-  
+
   test('can edit deal title inline', async ({ dealDetailPage, page }) => {
     const newTitle = `Updated Deal Title ${Date.now()}`;
     await dealDetailPage.goto(dealId);
 
     const updatePromise = page.waitForResponse(
-      (resp) => resp.url().includes(`/deals/${dealId}`) && resp.request().method() === "PATCH"
+      (resp) =>
+        resp.url().includes(`/deals/${dealId}`) &&
+        resp.request().method() === 'PATCH',
     );
     await dealDetailPage.updateTitle(newTitle);
     await updatePromise;
@@ -223,15 +220,21 @@ test.describe('Deal Detail - Inline Editing', () => {
     await dealDetailPage.goto(dealId);
 
     const updatePromise = page.waitForResponse(
-      (resp) => resp.url().includes(`/deals/${dealId}`) && resp.request().method() === "PATCH"
+      (resp) =>
+        resp.url().includes(`/deals/${dealId}`) &&
+        resp.request().method() === 'PATCH',
     );
 
     await dealDetailPage.openActivityHistory();
-    await dealDetailPage.updateProperty("Stage", newStage, dealId);
-    await expect(dealDetailPage.propertyRow("Stage").locator("dd")).toHaveText(newStage);
+    await dealDetailPage.updateProperty('Stage', newStage, dealId);
+    await expect(dealDetailPage.propertyRow('Stage').locator('dd')).toHaveText(
+      newStage,
+    );
 
     // Verify activity entry
-    await dealDetailPage.expectActivityEntry(`moved deal from ${defaultNewStage} to ${newStage}`);
+    await dealDetailPage.expectActivityEntry(
+      `moved deal from ${defaultNewStage} to ${newStage}`,
+    );
     await updatePromise;
   });
 });

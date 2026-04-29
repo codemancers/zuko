@@ -33,13 +33,13 @@ Copy the example env files and set values as needed:
 
 Key variables:
 
-| Variable | Description |
-|----------|-------------|
-| `DATABASE_URL` | PostgreSQL connection string (backend) |
-| `OPENAI_API_KEY` | Required for AI chat |
-| `GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET` | GitHub OAuth (see example comments) |
-| `BETTER_AUTH_*` | Auth config (see example files) |
-| `NEXT_PUBLIC_APP_URL` / `NEXT_PUBLIC_BACKEND_URL` | App and API URLs (web) |
+| Variable                                          | Description                            |
+| ------------------------------------------------- | -------------------------------------- |
+| `DATABASE_URL`                                    | PostgreSQL connection string (backend) |
+| `OPENAI_API_KEY`                                  | Required for AI chat                   |
+| `GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET`       | GitHub OAuth (see example comments)    |
+| `BETTER_AUTH_*`                                   | Auth config (see example files)        |
+| `NEXT_PUBLIC_APP_URL` / `NEXT_PUBLIC_BACKEND_URL` | App and API URLs (web)                 |
 
 ### 4. Database
 
@@ -102,21 +102,21 @@ bun nx run @zuko/ai-agents:build
 
 ## Project structure
 
-| Path | Description |
-|------|-------------|
-| **Apps** | |
-| `apps/backend` | NestJS API (auth, chat, sales: contacts/deals/companies) |
-| `apps/web` | Next.js frontend |
-| `apps/ai-agents` | LangGraph-based AI agents service |
-| `apps/backend-e2e` | Backend E2E tests |
-| `apps/web-e2e` | Web E2E tests (Playwright) |
-| `apps/ai-agents-e2e` | AI agents E2E tests |
-| **Libs** | |
-| `libs/core` | Shared core utilities |
-| `libs/models` | Prisma schema and client |
-| `libs/sales` | CRM domain (contacts, deals, companies) |
-| `libs/ui-kit` | Shared UI components |
-| `.beads/` | Beads issue-tracking system |
+| Path                 | Description                                              |
+| -------------------- | -------------------------------------------------------- |
+| **Apps**             |                                                          |
+| `apps/backend`       | NestJS API (auth, chat, sales: contacts/deals/companies) |
+| `apps/web`           | Next.js frontend                                         |
+| `apps/ai-agents`     | LangGraph-based AI agents service                        |
+| `apps/backend-e2e`   | Backend E2E tests                                        |
+| `apps/web-e2e`       | Web E2E tests (Playwright)                               |
+| `apps/ai-agents-e2e` | AI agents E2E tests                                      |
+| **Libs**             |                                                          |
+| `libs/core`          | Shared core utilities                                    |
+| `libs/models`        | Prisma schema and client                                 |
+| `libs/sales`         | CRM domain (contacts, deals, companies)                  |
+| `libs/ui-kit`        | Shared UI components                                     |
+| `.beads/`            | Beads issue-tracking system                              |
 
 ## Documentation
 

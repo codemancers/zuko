@@ -15,7 +15,12 @@ import type { TaskStatus, UpdateTaskDto } from '@/lib/api/tasks';
 import { useState } from 'react';
 import { useAutosaveField } from '@/hooks/useAutosaveField';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
-import { BackLink, DetailHeader, EntityProperties, LoadingState } from '@/components/shared';
+import {
+  BackLink,
+  DetailHeader,
+  EntityProperties,
+  LoadingState,
+} from '@/components/shared';
 import ActivityTimeline from '@/components/Activity/ActivityTimeline';
 import { toast } from 'sonner';
 import Editor, { ensureOutputData } from '@/components/Common/Editor/Editor';

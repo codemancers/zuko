@@ -102,7 +102,10 @@ export function MultiSelect({
                   {selectedLabels.length > 2 && (
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <Badge color="zinc" className="shrink-0 text-xs cursor-default">
+                        <Badge
+                          color="zinc"
+                          className="shrink-0 text-xs cursor-default"
+                        >
                           +{selectedLabels.length - 2}
                         </Badge>
                       </TooltipTrigger>

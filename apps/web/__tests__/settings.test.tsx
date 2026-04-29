@@ -73,7 +73,9 @@ describe('SettingsPage', () => {
     vi.clearAllMocks();
     global.fetch = vi.fn();
     mockGetGitHubInstallationStatus.mockResolvedValue({ installed: false });
-    mockGetGitHubInstallationUrl.mockResolvedValue('https://github.com/apps/test/installations/new');
+    mockGetGitHubInstallationUrl.mockResolvedValue(
+      'https://github.com/apps/test/installations/new',
+    );
     mockListAccounts.mockResolvedValue({ data: [] });
   });
 

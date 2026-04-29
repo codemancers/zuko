@@ -4,18 +4,16 @@ import type { PaginationOptions } from '../repositories/types';
 import type {
   TaskRepository,
   CreateTaskInput,
-  UpdateTaskInput} from '../repositories/task.repository';
-import {
-  TaskStatus,
+  UpdateTaskInput,
 } from '../repositories/task.repository';
+import { TaskStatus } from '../repositories/task.repository';
 import type {
   TaskCreatedEvent,
   TaskStatusChangedEvent,
   TaskFieldUpdatedEvent,
-  TaskSubtaskAddedEvent} from '../events/task-events';
-import {
-  TASK_EVENTS
+  TaskSubtaskAddedEvent,
 } from '../events/task-events';
+import { TASK_EVENTS } from '../events/task-events';
 
 @Injectable()
 export class TaskService {
@@ -49,7 +47,10 @@ export class TaskService {
 
   async getTasks(
     organizationId: number,
-    query: PaginationOptions & { parentId?: number | null; search?: string } = {},
+    query: PaginationOptions & {
+      parentId?: number | null;
+      search?: string;
+    } = {},
   ) {
     return this.taskRepository.findAll(organizationId, query);
   }

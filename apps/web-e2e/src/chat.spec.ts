@@ -1,37 +1,37 @@
-import { test, expect } from "./fixtures";
+import { test, expect } from './fixtures';
 
 /**
  * Chat tests run with project storage state (logged-in user).
  * Unauthenticated describe overrides with empty storage state.
  */
-test.describe("Chat - Unauthenticated", () => {
+test.describe('Chat - Unauthenticated', () => {
   test.use({ storageState: { cookies: [], origins: [] } });
 
-  test("redirects to sign-in when not authenticated", async ({ page }) => {
-    await page.goto("/chat");
-    await page.waitForURL("**/sign-in**", { timeout: 10000 });
-    expect(page.url()).toContain("/sign-in");
-    await expect(page.locator("h1")).toContainText("Sign in to Zuko");
+  test('redirects to sign-in when not authenticated', async ({ page }) => {
+    await page.goto('/chat');
+    await page.waitForURL('**/sign-in**', { timeout: 10000 });
+    expect(page.url()).toContain('/sign-in');
+    await expect(page.locator('h1')).toContainText('Sign in to Zuko');
   });
 
-  test("redirects to sign-in when accessing specific chat without auth", async ({
+  test('redirects to sign-in when accessing specific chat without auth', async ({
     page,
   }) => {
-    await page.goto("/chat/1");
-    await page.waitForURL("**/sign-in**", { timeout: 10000 });
-    expect(page.url()).toContain("/sign-in");
+    await page.goto('/chat/1');
+    await page.waitForURL('**/sign-in**', { timeout: 10000 });
+    expect(page.url()).toContain('/sign-in');
   });
 });
 
-test.describe("Chat", () => {
+test.describe('Chat', () => {
   let chatId: string;
 
   test.beforeEach(async ({ page }) => {
     const response = await page.request.post(
-      "http://localhost:3001/api/chats",
+      'http://localhost:3001/api/chats',
       {
         data: {
-          title: "E2E Test Chat",
+          title: 'E2E Test Chat',
         },
       },
     );
@@ -51,24 +51,24 @@ test.describe("Chat", () => {
     }
   });
 
-  test("chat page displays correctly with empty state", async ({ page }) => {
+  test('chat page displays correctly with empty state', async ({ page }) => {
     await page.goto(`/chat/${chatId}`);
 
     // Verify we're on the correct chat page
     await expect(page).toHaveURL(`/chat/${chatId}`);
 
     // Verify empty state is shown
-    await expect(page.getByText("Start a conversation")).toBeVisible();
+    await expect(page.getByText('Start a conversation')).toBeVisible();
     await expect(
-      page.getByText("Ask me anything to get started"),
+      page.getByText('Ask me anything to get started'),
     ).toBeVisible();
 
     // Verify input is present
-    const textarea = page.getByPlaceholder("Ask anything...");
+    const textarea = page.getByPlaceholder('Ask anything...');
     await expect(textarea).toBeVisible();
   });
 
-  test("chatId is correctly passed in request body when sending message", async ({
+  test('chatId is correctly passed in request body when sending message', async ({
     page,
   }) => {
     await page.goto(`/chat/${chatId}`);
@@ -76,20 +76,20 @@ test.describe("Chat", () => {
     // Set up request interception to capture the API call
     let capturedRequestBody: any = null;
 
-    page.on("request", (request) => {
-      if (request.url().includes("/api/chat") && request.method() === "POST") {
+    page.on('request', (request) => {
+      if (request.url().includes('/api/chat') && request.method() === 'POST') {
         capturedRequestBody = request.postDataJSON();
       }
     });
 
     // Type a message and send it
-    const textarea = page.getByPlaceholder("Ask anything...");
-    await textarea.fill("Hello, this is a test message");
+    const textarea = page.getByPlaceholder('Ask anything...');
+    await textarea.fill('Hello, this is a test message');
 
     // Find and click the submit button - wait for API request
     const submitButton = page.locator('button[type="submit"]').last();
     const requestPromise = page.waitForRequest(
-      (req) => req.url().includes("/api/chat") && req.method() === "POST",
+      (req) => req.url().includes('/api/chat') && req.method() === 'POST',
       { timeout: 5000 },
     );
     await submitButton.click();
@@ -104,41 +104,41 @@ test.describe("Chat", () => {
     // AI SDK v6 uses parts array instead of content
     expect(capturedRequestBody.messages[0].parts).toBeDefined();
     expect(capturedRequestBody.messages[0].parts[0].text).toBe(
-      "Hello, this is a test message",
+      'Hello, this is a test message',
     );
   });
 
-  test("message is sent and response is displayed", async ({ page }) => {
+  test('message is sent and response is displayed', async ({ page }) => {
     await page.goto(`/chat/${chatId}`);
 
     // Type and send a message
-    const textarea = page.getByPlaceholder("Ask anything...");
-    await textarea.fill("What is 2+2?");
+    const textarea = page.getByPlaceholder('Ask anything...');
+    await textarea.fill('What is 2+2?');
 
     const submitButton = page.locator('button[type="submit"]').last();
     await submitButton.click();
 
     // Wait for the user message to appear
-    await expect(page.getByText("What is 2+2?")).toBeVisible({ timeout: 5000 });
+    await expect(page.getByText('What is 2+2?')).toBeVisible({ timeout: 5000 });
 
     // Wait for AI response to start appearing (streaming)
     // The response should appear within a reasonable time
     await page.waitForSelector('[data-slot="content"]', { timeout: 10000 });
 
     // Verify the empty state is no longer visible
-    await expect(page.getByText("Start a conversation")).not.toBeVisible();
+    await expect(page.getByText('Start a conversation')).not.toBeVisible();
   });
 
-  test("multiple messages can be sent in sequence", async ({ page }) => {
+  test('multiple messages can be sent in sequence', async ({ page }) => {
     await page.goto(`/chat/${chatId}`);
 
-    const textarea = page.getByPlaceholder("Ask anything...");
+    const textarea = page.getByPlaceholder('Ask anything...');
     const submitButton = page.locator('button[type="submit"]').last();
 
     // Send first message
-    await textarea.fill("First message");
+    await textarea.fill('First message');
     await submitButton.click();
-    await expect(page.getByText("First message")).toBeVisible({
+    await expect(page.getByText('First message')).toBeVisible({
       timeout: 5000,
     });
 
@@ -147,39 +147,39 @@ test.describe("Chat", () => {
     await page.waitForSelector('[data-slot="content"]', { timeout: 15000 });
 
     // Send second message
-    const textareaInChatPage = page.getByPlaceholder("Ask anything...");
-    await textareaInChatPage.fill("Second message");
+    const textareaInChatPage = page.getByPlaceholder('Ask anything...');
+    await textareaInChatPage.fill('Second message');
     await submitButton.click();
 
     // Scope to chat log so we match the rendered message, not the textarea or highlights
-    const chatLog = page.getByRole("log");
-    await expect(chatLog.getByText("Second message")).toBeVisible({
+    const chatLog = page.getByRole('log');
+    await expect(chatLog.getByText('Second message')).toBeVisible({
       timeout: 5000,
     });
 
     // Verify both user messages are in the conversation
-    await expect(chatLog.getByText("First message")).toBeVisible();
-    await expect(chatLog.getByText("Second message")).toBeVisible();
+    await expect(chatLog.getByText('First message')).toBeVisible();
+    await expect(chatLog.getByText('Second message')).toBeVisible();
   });
 
-  test("backend receives correct chatId and validates participant", async ({
+  test('backend receives correct chatId and validates participant', async ({
     page,
   }) => {
     // Set up response interception to check for errors
     let hasAuthError = false;
     let hasParticipantError = false;
 
-    page.on("response", async (response) => {
-      if (response.url().includes("/api/chat")) {
+    page.on('response', async (response) => {
+      if (response.url().includes('/api/chat')) {
         const status = response.status();
         if (status === 401 || status === 403) {
-          const text = await response.text().catch(() => "");
-          if (text.includes("Not a participant")) {
+          const text = await response.text().catch(() => '');
+          if (text.includes('Not a participant')) {
             hasParticipantError = true;
-            console.error("❌ Participant validation error detected");
+            console.error('❌ Participant validation error detected');
           } else {
             hasAuthError = true;
-            console.error("❌ Authentication error detected");
+            console.error('❌ Authentication error detected');
           }
         }
       }
@@ -188,13 +188,13 @@ test.describe("Chat", () => {
     await page.goto(`/chat/${chatId}`);
 
     // Send a message
-    const textarea = page.getByPlaceholder("Ask anything...");
-    await textarea.fill("Testing participant validation");
+    const textarea = page.getByPlaceholder('Ask anything...');
+    await textarea.fill('Testing participant validation');
 
     // Wait for API response after submitting
     const submitButton = page.locator('button[type="submit"]').last();
     const responsePromise = page.waitForResponse(
-      (resp) => resp.url().includes("/api/chat"),
+      (resp) => resp.url().includes('/api/chat'),
       {
         timeout: 10000,
       },
@@ -207,31 +207,31 @@ test.describe("Chat", () => {
     expect(hasParticipantError).toBe(false);
   });
 
-  test("input is cleared after sending message", async ({ page }) => {
+  test('input is cleared after sending message', async ({ page }) => {
     await page.goto(`/chat/${chatId}`);
 
-    const textarea = page.getByPlaceholder("Ask anything...");
-    await textarea.fill("Test message");
+    const textarea = page.getByPlaceholder('Ask anything...');
+    await textarea.fill('Test message');
 
     const submitButton = page.locator('button[type="submit"]').last();
     await submitButton.click();
 
     // Verify textarea is cleared after sending
-    await expect(textarea).toHaveValue("");
+    await expect(textarea).toHaveValue('');
   });
 
-  test.describe("with mentions", () => {
-    test("can add a contact mention to a message", async ({ page }) => {
+  test.describe('with mentions', () => {
+    test('can add a contact mention to a message', async ({ page }) => {
       await page.goto(`/chat/${chatId}`);
 
-      const textarea = page.getByPlaceholder("Ask anything...");
+      const textarea = page.getByPlaceholder('Ask anything...');
       await textarea.click();
       // Type like a real user: @ plus min 3 chars to show the mentions dropdown
-      await textarea.type("Hello, ");
-      await textarea.type("@tes");
+      await textarea.type('Hello, ');
+      await textarea.type('@tes');
 
       // Wait for the seeded contact (seed: "TEST CONTACT") to appear in the mentions list
-      const mentionOption = page.getByRole("option", {
+      const mentionOption = page.getByRole('option', {
         name: /TEST CONTACT/i,
       });
       await expect(mentionOption).toBeVisible({ timeout: 10000 });
@@ -240,77 +240,81 @@ test.describe("Chat", () => {
       const submitButton = page.locator('button[type="submit"]').last();
       await submitButton.click();
 
-      const chatLog = page.getByRole("log");
+      const chatLog = page.getByRole('log');
       await expect(chatLog.getByText(/Hello,.*TEST CONTACT/)).toBeVisible({
         timeout: 10000,
       });
     });
   });
 
-  test.describe("with add-attachments context (contact, company, deal)", () => {
-    test("can add contact, company, and deal via Add attachments and submit", async ({
+  test.describe('with add-attachments context (contact, company, deal)', () => {
+    test('can add contact, company, and deal via Add attachments and submit', async ({
       page,
     }) => {
       await page.goto(`/chat/${chatId}`);
 
       // Open "Add attachments" menu
-      await page.getByRole("button", { name: "Add attachments" }).click();
+      await page.getByRole('button', { name: 'Add attachments' }).click();
 
       // Add contact: click "Add contact" in menu, select seeded contact, confirm
-      await page.getByRole("menuitem", { name: /add contact/i }).click();
+      await page.getByRole('menuitem', { name: /add contact/i }).click();
       await expect(
-        page.getByRole("dialog", { name: /add contacts/i }),
+        page.getByRole('dialog', { name: /add contacts/i }),
       ).toBeVisible({ timeout: 5000 });
-      const contactDialog = page.getByRole("dialog").filter({
-        has: page.getByText("Add Contacts"),
+      const contactDialog = page.getByRole('dialog').filter({
+        has: page.getByText('Add Contacts'),
       });
       await contactDialog
-        .getByRole("button", { name: /TEST CONTACT/i })
+        .getByRole('button', { name: /TEST CONTACT/i })
         .click();
-      await contactDialog.getByRole("button", { name: /^Add\s*(\(\d+\))?$/ }).click();
+      await contactDialog
+        .getByRole('button', { name: /^Add\s*(\(\d+\))?$/ })
+        .click();
       await expect(contactDialog).not.toBeVisible();
 
       // Add company: open menu again, "Add company", select seeded company, confirm
-      await page.getByRole("button", { name: "Add attachments" }).click();
-      await page.getByRole("menuitem", { name: /add company/i }).click();
+      await page.getByRole('button', { name: 'Add attachments' }).click();
+      await page.getByRole('menuitem', { name: /add company/i }).click();
       await expect(
-        page.getByRole("dialog", { name: /add companies/i }),
+        page.getByRole('dialog', { name: /add companies/i }),
       ).toBeVisible({ timeout: 5000 });
-      const companyDialog = page.getByRole("dialog").filter({
-        has: page.getByText("Add Companies"),
+      const companyDialog = page.getByRole('dialog').filter({
+        has: page.getByText('Add Companies'),
       });
       await companyDialog
-        .getByRole("button", { name: /TEST COMPANY/i })
+        .getByRole('button', { name: /TEST COMPANY/i })
         .click();
-      await companyDialog.getByRole("button", { name: /^Add\s*(\(\d+\))?$/ }).click();
+      await companyDialog
+        .getByRole('button', { name: /^Add\s*(\(\d+\))?$/ })
+        .click();
       await expect(companyDialog).not.toBeVisible();
 
       // Add deal: open menu again, "Add deal", select seeded deal, confirm
-      await page.getByRole("button", { name: "Add attachments" }).click();
-      await page.getByRole("menuitem", { name: /add deal/i }).click();
+      await page.getByRole('button', { name: 'Add attachments' }).click();
+      await page.getByRole('menuitem', { name: /add deal/i }).click();
       await expect(
-        page.getByRole("dialog", { name: /add deals/i }),
+        page.getByRole('dialog', { name: /add deals/i }),
       ).toBeVisible({ timeout: 5000 });
-      const dealDialog = page.getByRole("dialog").filter({
-        has: page.getByText("Add Deals"),
+      const dealDialog = page.getByRole('dialog').filter({
+        has: page.getByText('Add Deals'),
       });
+      await dealDialog.getByRole('button', { name: /TEST DEAL/i }).click();
       await dealDialog
-        .getByRole("button", { name: /TEST DEAL/i })
+        .getByRole('button', { name: /^Add\s*(\(\d+\))?$/ })
         .click();
-      await dealDialog.getByRole("button", { name: /^Add\s*(\(\d+\))?$/ }).click();
       await expect(dealDialog).not.toBeVisible();
 
       // Type a message and submit
-      const textarea = page.getByPlaceholder("Ask anything...");
-      await textarea.fill("get the details");
+      const textarea = page.getByPlaceholder('Ask anything...');
+      await textarea.fill('get the details');
       const submitButton = page.locator('button[type="submit"]').last();
       await submitButton.click();
 
       // User message appears in chat
-      const chatLog = page.getByRole("log");
-      await expect(
-        chatLog.getByText("get the details"),
-      ).toBeVisible({ timeout: 5000 });
+      const chatLog = page.getByRole('log');
+      await expect(chatLog.getByText('get the details')).toBeVisible({
+        timeout: 5000,
+      });
       // AI response starts appearing
       await page.waitForSelector('[data-slot="content"]', { timeout: 15000 });
     });

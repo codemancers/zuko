@@ -1,5 +1,5 @@
-import { test, expect } from "./fixtures";
-import { createFreshCompany, createFreshContact } from "./fixtures/helpers";
+import { test, expect } from './fixtures';
+import { createFreshCompany, createFreshContact } from './fixtures/helpers';
 
 /**
  * Company & Contact Activity Timeline – System Events
@@ -11,13 +11,13 @@ import { createFreshCompany, createFreshContact } from "./fixtures/helpers";
 
 // ── Helper ──────────────────────────────────────────────────────────────────
 
-test.describe("Company Activity Timeline - System Events", () => {
+test.describe('Company Activity Timeline - System Events', () => {
   let companyId: number;
   test.beforeAll(async ({ browser }) => {
     companyId = await createFreshCompany(browser);
   });
   // ── company_created ────────────────────────────────────────────────────────
-  test.describe("company_created", () => {
+  test.describe('company_created', () => {
     test("shows 'created this company' after a new company is created", async ({
       companyDetailPage,
     }) => {
@@ -30,7 +30,7 @@ test.describe("Company Activity Timeline - System Events", () => {
   });
 
   // ── company field_update ───────────────────────────────────────────────────
-  test.describe("field_update", () => {
+  test.describe('field_update', () => {
     test("shows 'updated' event after a company field is edited inline", async ({
       companyDetailPage,
     }) => {
@@ -46,14 +46,16 @@ test.describe("Company Activity Timeline - System Events", () => {
 
   // ── contact_linked ─────────────────────────────────────────────────────────
 
-  test.describe("contact_linked", () => {
+  test.describe('contact_linked', () => {
     test("shows 'linked contact' after adding a contact to a company", async ({
       companyDetailPage,
     }) => {
       await companyDetailPage.goto(companyId);
 
       // Check if there is a contact available to add
-      const hasAddButton = await companyDetailPage.addContactButton.isVisible().catch(() => false);
+      const hasAddButton = await companyDetailPage.addContactButton
+        .isVisible()
+        .catch(() => false);
       if (!hasAddButton) {
         test.skip();
         return;
@@ -74,14 +76,14 @@ test.describe("Company Activity Timeline - System Events", () => {
       // The activity text is "linked contact <name>"
       const baseName = contactName.split('(')[0].trim();
       await companyDetailPage.expectActivityEntry(
-        new RegExp(`linked contact ${baseName}`, 'i')
+        new RegExp(`linked contact ${baseName}`, 'i'),
       );
     });
   });
 
   // ── contact_unlinked ───────────────────────────────────────────────────────
 
-  test.describe("contact_unlinked", () => {
+  test.describe('contact_unlinked', () => {
     test("shows 'unlinked contact' after removing a contact from a company", async ({
       companyDetailPage,
     }) => {
@@ -110,20 +112,20 @@ test.describe("Company Activity Timeline - System Events", () => {
       await companyDetailPage.openActivityHistory();
       await expect(companyDetailPage.hideHistoryButton).toBeVisible();
       await companyDetailPage.expectActivityEntry(
-        new RegExp(`unlinked contact ${contactName}`, 'i')
+        new RegExp(`unlinked contact ${contactName}`, 'i'),
       );
     });
   });
 });
 
-test.describe("Contact Activity Timeline - System Events", () => {
+test.describe('Contact Activity Timeline - System Events', () => {
   let contactId: number;
   test.beforeAll(async ({ browser }) => {
     contactId = await createFreshContact(browser);
   });
   // ── contact_created ────────────────────────────────────────────────────────
 
-  test.describe("contact_created", () => {
+  test.describe('contact_created', () => {
     test("shows 'created this contact' after a new contact is created", async ({
       contactDetailPage,
     }) => {
@@ -137,7 +139,7 @@ test.describe("Contact Activity Timeline - System Events", () => {
 
   // ── contact field_update ───────────────────────────────────────────────────
 
-  test.describe("field_update", () => {
+  test.describe('field_update', () => {
     test("shows 'updated' event after a contact field is edited", async ({
       contactDetailPage,
     }) => {

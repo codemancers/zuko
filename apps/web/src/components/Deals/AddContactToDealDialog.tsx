@@ -62,7 +62,9 @@ export default function AddContactToDealDialog({
     onSuccess: async () => {
       await queryClient.refetchQueries({ queryKey: ['deal', dealId] });
       await queryClient.invalidateQueries({ queryKey: ['deals'] });
-      await queryClient.invalidateQueries({ queryKey: ['timeline', 'deal', dealId] });
+      await queryClient.invalidateQueries({
+        queryKey: ['timeline', 'deal', dealId],
+      });
       setIsOpen(false);
       resetForm();
     },

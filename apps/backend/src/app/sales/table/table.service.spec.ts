@@ -2,9 +2,7 @@ import { describe, it, expect, beforeEach, beforeAll, afterAll } from 'vitest';
 import type { TestingModule } from '@nestjs/testing';
 import { Test } from '@nestjs/testing';
 import { TableService } from './table.service';
-import type {
-  ColumnType,
-  ColumnMetadata} from '@zuko/sales';
+import type { ColumnType, ColumnMetadata } from '@zuko/sales';
 import {
   CompaniesService,
   ContactsService,
@@ -12,11 +10,18 @@ import {
   TableColumnRepository,
   CompaniesRepository,
   ContactsRepository,
-  DealsRepository
+  DealsRepository,
 } from '@zuko/sales';
 import { TableRowBuilder } from './row-builder/table-row.builder';
 import { PrismaService } from '../../../prisma/prisma.service';
-import type { Contact, Company, Organization, TableColumn, User, Deal } from '@prisma/client';
+import type {
+  Contact,
+  Company,
+  Organization,
+  TableColumn,
+  User,
+  Deal,
+} from '@prisma/client';
 import type { CreateColumnDto, UpdateCellDto } from './table.controller';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import type { CompanyListQueryDto } from '../companies.controller';
@@ -55,8 +60,14 @@ describe('TableService', () => {
   });
 
   afterAll(async () => {
-    if (testOrg?.id) await prisma.organization.delete({ where: { id: testOrg.id } }).catch(() => undefined);
-    if (testUser?.id) await prisma.user.delete({ where: { id: testUser.id } }).catch(() => undefined);
+    if (testOrg?.id)
+      await prisma.organization
+        .delete({ where: { id: testOrg.id } })
+        .catch(() => undefined);
+    if (testUser?.id)
+      await prisma.user
+        .delete({ where: { id: testUser.id } })
+        .catch(() => undefined);
 
     if (prisma) {
       await prisma.$disconnect();
@@ -78,7 +89,11 @@ describe('TableService', () => {
         },
         {
           provide: CompaniesService,
-          useFactory: (r: CompaniesRepository, e: EventEmitter2, t: TableColumnRepository) => new CompaniesService(r, e, t),
+          useFactory: (
+            r: CompaniesRepository,
+            e: EventEmitter2,
+            t: TableColumnRepository,
+          ) => new CompaniesService(r, e, t),
           inject: [CompaniesRepository, EventEmitter2, TableColumnRepository],
         },
         {
@@ -88,7 +103,11 @@ describe('TableService', () => {
         },
         {
           provide: ContactsService,
-          useFactory: (r: ContactsRepository, e: EventEmitter2, t: TableColumnRepository) => new ContactsService(r, e, t),
+          useFactory: (
+            r: ContactsRepository,
+            e: EventEmitter2,
+            t: TableColumnRepository,
+          ) => new ContactsService(r, e, t),
           inject: [ContactsRepository, EventEmitter2, TableColumnRepository],
         },
         {
@@ -98,12 +117,17 @@ describe('TableService', () => {
         },
         {
           provide: DealsService,
-          useFactory: (r: DealsRepository, e: EventEmitter2, t: TableColumnRepository) => new DealsService(r, e, t),
+          useFactory: (
+            r: DealsRepository,
+            e: EventEmitter2,
+            t: TableColumnRepository,
+          ) => new DealsService(r, e, t),
           inject: [DealsRepository, EventEmitter2, TableColumnRepository],
         },
         {
           provide: TableColumnRepository,
-          useFactory: (prisma: PrismaService) => new TableColumnRepository(prisma),
+          useFactory: (prisma: PrismaService) =>
+            new TableColumnRepository(prisma),
           inject: [PrismaService],
         },
       ],
@@ -192,7 +216,9 @@ describe('TableService', () => {
         await prisma.companyOwner.deleteMany({
           where: { company: { organizationId: testOrg2.id } },
         });
-        await prisma.company.deleteMany({ where: { organizationId: testOrg2.id } });
+        await prisma.company.deleteMany({
+          where: { organizationId: testOrg2.id },
+        });
         await prisma.organization
           .delete({ where: { id: testOrg2.id } })
           .catch(() => undefined);
@@ -205,8 +231,12 @@ describe('TableService', () => {
         limit: 50,
       } as CompanyListQueryDto);
 
-      expect(result.metadata.some((m: ColumnMetadata) => m.id === 'industry_type')).toBe(true);
-      expect(result.metadata.find((m: ColumnMetadata) => m.id === 'companyName')).toBeDefined();
+      expect(
+        result.metadata.some((m: ColumnMetadata) => m.id === 'industry_type'),
+      ).toBe(true);
+      expect(
+        result.metadata.find((m: ColumnMetadata) => m.id === 'companyName'),
+      ).toBeDefined();
     });
 
     it('returns company data with flattened custom fields', async () => {
@@ -326,8 +356,12 @@ describe('TableService', () => {
       }
 
       if (testOrg2?.id) {
-        await prisma.contact.deleteMany({ where: { organizationId: testOrg2.id } });
-        await prisma.organization.delete({ where: { id: testOrg2.id } }).catch(() => undefined);
+        await prisma.contact.deleteMany({
+          where: { organizationId: testOrg2.id },
+        });
+        await prisma.organization
+          .delete({ where: { id: testOrg2.id } })
+          .catch(() => undefined);
       }
     });
 
@@ -337,8 +371,12 @@ describe('TableService', () => {
         limit: 50,
       } as ContactListQueryDto);
 
-      expect(result.metadata.some((m: ColumnMetadata) => m.id === 'source')).toBe(true);
-      expect(result.metadata.find((m: ColumnMetadata) => m.id === 'name')).toBeDefined();
+      expect(
+        result.metadata.some((m: ColumnMetadata) => m.id === 'source'),
+      ).toBe(true);
+      expect(
+        result.metadata.find((m: ColumnMetadata) => m.id === 'name'),
+      ).toBeDefined();
     });
 
     it('returns contact data with flattened custom fields', async () => {
@@ -397,16 +435,11 @@ describe('TableService', () => {
         },
       });
 
-      customCol = await service.createColumn(
-        'deals',
-        testOrg.id,
-        testUser.id,
-        {
-          label: 'Priority Score',
-          columnKey: 'priority_score',
-          fieldType: 'number' as ColumnType,
-        },
-      );
+      customCol = await service.createColumn('deals', testOrg.id, testUser.id, {
+        label: 'Priority Score',
+        columnKey: 'priority_score',
+        fieldType: 'number' as ColumnType,
+      });
 
       deal1 = await prisma.deal.create({
         data: {
@@ -450,8 +483,12 @@ describe('TableService', () => {
       }
 
       if (testOrg2?.id) {
-        await prisma.deal.deleteMany({ where: { organizationId: testOrg2.id } });
-        await prisma.organization.delete({ where: { id: testOrg2.id } }).catch(() => undefined);
+        await prisma.deal.deleteMany({
+          where: { organizationId: testOrg2.id },
+        });
+        await prisma.organization
+          .delete({ where: { id: testOrg2.id } })
+          .catch(() => undefined);
       }
     });
 
@@ -461,8 +498,12 @@ describe('TableService', () => {
         limit: 50,
       } as DealListQueryDto);
 
-      expect(result.metadata.some((m: ColumnMetadata) => m.id === 'priority_score')).toBe(true);
-      expect(result.metadata.find((m: ColumnMetadata) => m.id === 'title')).toBeDefined();
+      expect(
+        result.metadata.some((m: ColumnMetadata) => m.id === 'priority_score'),
+      ).toBe(true);
+      expect(
+        result.metadata.find((m: ColumnMetadata) => m.id === 'title'),
+      ).toBeDefined();
     });
 
     it('returns deal data with flattened custom fields', async () => {
@@ -473,7 +514,7 @@ describe('TableService', () => {
 
       expect(result.data.length).toBe(2);
       const bigDeal = result.data.find((d) => d.title.startsWith('Big Deal'));
-      expect(bigDeal?.priority_score).toBe("SCORE_HIGH");
+      expect(bigDeal?.priority_score).toBe('SCORE_HIGH');
     });
 
     it('filters deals by stage and value', async () => {
@@ -502,7 +543,7 @@ describe('TableService', () => {
 
       expect(result.data.length).toBe(1);
       expect(result.data[0].title).toContain('Big Deal');
-    }); 
+    });
 
     it('handles pagination correctly', async () => {
       const result = await service.getDealsTable(testOrg.id, {
@@ -524,7 +565,12 @@ describe('TableService', () => {
 
     it('creates column for deals entity', async () => {
       const dto = getMockDto();
-      const result = await service.createColumn('deals', testOrg.id, testUser.id, dto);
+      const result = await service.createColumn(
+        'deals',
+        testOrg.id,
+        testUser.id,
+        dto,
+      );
 
       expect(result).toBeDefined();
       expect(result.columnKey).toBe(dto.columnKey);
@@ -554,7 +600,12 @@ describe('TableService', () => {
 
     it('creates column for contacts entity', async () => {
       const dto = getMockDto();
-      const result = await service.createColumn('contacts', testOrg.id, testUser.id, dto);
+      const result = await service.createColumn(
+        'contacts',
+        testOrg.id,
+        testUser.id,
+        dto,
+      );
 
       expect(result).toBeDefined();
       expect(result.columnKey).toBe(dto.columnKey);
@@ -584,8 +635,13 @@ describe('TableService', () => {
 
     it('creates column for companies entity', async () => {
       const dto = getMockDto();
-      const result = await service.createColumn('companies', testOrg.id, testUser.id, dto);
-      
+      const result = await service.createColumn(
+        'companies',
+        testOrg.id,
+        testUser.id,
+        dto,
+      );
+
       expect(result).toBeDefined();
       expect(result.columnKey).toBe(dto.columnKey);
 
@@ -615,15 +671,21 @@ describe('TableService', () => {
     describe('when invalid request body provided', () => {
       it('throws error if dto is missing required fields', async () => {
         await expect(
-          service.createColumn('deals', testOrg.id, testUser.id, { label: '' } as unknown as CreateColumnDto  ),
+          service.createColumn('deals', testOrg.id, testUser.id, {
+            label: '',
+          } as unknown as CreateColumnDto),
         ).rejects.toThrow('Invalid request body');
 
         await expect(
-          service.createColumn('deals', testOrg.id, testUser.id, { columnKey: '' } as unknown as CreateColumnDto),
+          service.createColumn('deals', testOrg.id, testUser.id, {
+            columnKey: '',
+          } as unknown as CreateColumnDto),
         ).rejects.toThrow('Invalid request body');
 
         await expect(
-          service.createColumn('deals', testOrg.id, testUser.id, { fieldType: '' } as unknown as CreateColumnDto),
+          service.createColumn('deals', testOrg.id, testUser.id, {
+            fieldType: '',
+          } as unknown as CreateColumnDto),
         ).rejects.toThrow('Invalid request body');
       });
     });
@@ -631,7 +693,12 @@ describe('TableService', () => {
     describe('when invalid entity provided', () => {
       it('throws error for unsupported entity', async () => {
         await expect(
-          service.createColumn('invalid', testOrg.id, testUser.id, getMockDto()),
+          service.createColumn(
+            'invalid',
+            testOrg.id,
+            testUser.id,
+            getMockDto(),
+          ),
         ).rejects.toThrow('Invalid entity');
       });
     });
@@ -675,7 +742,7 @@ describe('TableService', () => {
         const dto = getMockDto();
         // Create it first
         await service.createColumn('deals', testOrg.id, testUser.id, dto);
-        
+
         // Try to create it again with same column key
         await expect(
           service.createColumn('deals', testOrg.id, testUser.id, dto),
@@ -727,9 +794,17 @@ describe('TableService', () => {
         value: 'Updated Name',
       };
 
-      await service.updateCell('contacts', contact.id, testOrg.id, testUser.id, dto);
+      await service.updateCell(
+        'contacts',
+        contact.id,
+        testOrg.id,
+        testUser.id,
+        dto,
+      );
 
-      const dbContact = await prisma.contact.findUnique({ where: { id: contact.id } });
+      const dbContact = await prisma.contact.findUnique({
+        where: { id: contact.id },
+      });
       expect(dbContact?.name).toBe('Updated Name');
     });
 
@@ -756,10 +831,20 @@ describe('TableService', () => {
         value: 'New Source',
       };
 
-      await service.updateCell('contacts', contact.id, testOrg.id, testUser.id, dto);
+      await service.updateCell(
+        'contacts',
+        contact.id,
+        testOrg.id,
+        testUser.id,
+        dto,
+      );
 
-      const dbContact = await prisma.contact.findUnique({ where: { id: contact.id } });
-      expect((dbContact!.fields as Record<string, unknown>)[columnKey]).toBe('New Source');
+      const dbContact = await prisma.contact.findUnique({
+        where: { id: contact.id },
+      });
+      expect((dbContact!.fields as Record<string, unknown>)[columnKey]).toBe(
+        'New Source',
+      );
     });
 
     it('updates a default column for a company', async () => {
@@ -776,9 +861,17 @@ describe('TableService', () => {
         value: 'Updated Company',
       };
 
-      await service.updateCell('companies', company.id, testOrg.id, testUser.id, dto);
+      await service.updateCell(
+        'companies',
+        company.id,
+        testOrg.id,
+        testUser.id,
+        dto,
+      );
 
-      const dbCompany = await prisma.company.findUnique({ where: { id: company.id } });
+      const dbCompany = await prisma.company.findUnique({
+        where: { id: company.id },
+      });
       expect(dbCompany?.companyName).toBe('Updated Company');
     });
 
@@ -804,10 +897,20 @@ describe('TableService', () => {
         value: 'New Industry',
       };
 
-      await service.updateCell('companies', company.id, testOrg.id, testUser.id, dto);
+      await service.updateCell(
+        'companies',
+        company.id,
+        testOrg.id,
+        testUser.id,
+        dto,
+      );
 
-      const dbCompany = await prisma.company.findUnique({ where: { id: company.id } });
-      expect((dbCompany!.fields as Record<string, unknown>)[columnKey]).toBe('New Industry');
+      const dbCompany = await prisma.company.findUnique({
+        where: { id: company.id },
+      });
+      expect((dbCompany!.fields as Record<string, unknown>)[columnKey]).toBe(
+        'New Industry',
+      );
     });
 
     it('updates a default column for a deal', async () => {

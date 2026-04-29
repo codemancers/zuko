@@ -1,12 +1,12 @@
-import { describe, it, expect, beforeEach } from "vitest";
-import type { TestingModule } from "@nestjs/testing";
-import { Test } from "@nestjs/testing";
-import { MeetingController } from "./meeting.controller";
-import { MeetingService } from "./meeting.service";
-import { AuthGuard } from "@thallesp/nestjs-better-auth";
-import { OrganizationGuard } from "../../common/auth/organization.guard";
+import { describe, it, expect, beforeEach } from 'vitest';
+import type { TestingModule } from '@nestjs/testing';
+import { Test } from '@nestjs/testing';
+import { MeetingController } from './meeting.controller';
+import { MeetingService } from './meeting.service';
+import { AuthGuard } from '@thallesp/nestjs-better-auth';
+import { OrganizationGuard } from '../../common/auth/organization.guard';
 
-describe("MeetingController", () => {
+describe('MeetingController', () => {
   let controller: MeetingController;
 
   beforeEach(async () => {
@@ -36,7 +36,7 @@ describe("MeetingController", () => {
     controller = module.get<MeetingController>(MeetingController);
   });
 
-  it("should be defined", () => {
+  it('should be defined', () => {
     expect(controller).toBeDefined();
   });
 });

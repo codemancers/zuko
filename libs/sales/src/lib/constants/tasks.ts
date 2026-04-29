@@ -5,4 +5,6 @@ export const TASK_STATUSES = [
   { label: 'Cancelled', value: 'CANCELLED' },
 ] as const;
 
-export const TASK_STATUS_VALUES: string[] = TASK_STATUSES.map((s) => s.value as string);
+export const TASK_STATUS_VALUES: string[] = TASK_STATUSES.map(
+  (s) => s.value as string,
+);

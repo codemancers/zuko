@@ -63,7 +63,9 @@ export default function AddContactDialog({
       // Use refetchQueries to immediately refetch instead of just invalidating
       await queryClient.refetchQueries({ queryKey: ['company', companyId] });
       await queryClient.invalidateQueries({ queryKey: ['companies'] });
-      await queryClient.invalidateQueries({ queryKey: ['timeline', 'company', companyId] });
+      await queryClient.invalidateQueries({
+        queryKey: ['timeline', 'company', companyId],
+      });
       setIsOpen(false);
       resetForm();
     },

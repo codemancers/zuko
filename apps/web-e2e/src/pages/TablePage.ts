@@ -27,9 +27,12 @@ export class TablePage extends BasePage {
     this.fieldNameInput = page.getByPlaceholder('Field name');
     this.columnKeyInput = page.getByPlaceholder(/Unique column key/i);
     this.fieldTypeSelect = this.addColumnDialog.getByRole('combobox').first();
-    this.createFieldButton = page.getByRole('button', { name: /Create field/i });
+    this.createFieldButton = page.getByRole('button', {
+      name: /Create field/i,
+    });
     this.cancelButton = page.getByRole('button', { name: /Cancel/i });
-    this.currencyComboboxInput = this.addColumnDialog.getByPlaceholder('Search currency...');
+    this.currencyComboboxInput =
+      this.addColumnDialog.getByPlaceholder('Search currency...');
   }
 
   async openAddColumnDialog() {
@@ -37,7 +40,9 @@ export class TablePage extends BasePage {
     // Wait for visible content inside the dialog rather than the dialog element
     // itself — Headless UI keeps the dialog in the DOM during CSS transitions,
     // which makes Playwright's role-based visibility check unreliable.
-    await this.page.getByText('Add new field').waitFor({ state: 'visible', timeout: 10000 });
+    await this.page
+      .getByText('Add new field')
+      .waitFor({ state: 'visible', timeout: 10000 });
   }
 
   async fillColumnDetails(name: string, key: string) {
@@ -54,7 +59,10 @@ export class TablePage extends BasePage {
     await this.fillColumnDetails(name, key);
     await this.selectFieldType('currency');
 
-    await this.currencyComboboxInput.waitFor({ state: 'visible', timeout: 10000 });
+    await this.currencyComboboxInput.waitFor({
+      state: 'visible',
+      timeout: 10000,
+    });
 
     // The currency picker is a combobox. Keep the default USD untouched unless
     // the caller explicitly asks for a different code, in which case select the
@@ -62,11 +70,15 @@ export class TablePage extends BasePage {
     if (currencyCode !== 'USD') {
       await this.currencyComboboxInput.clear();
       await this.currencyComboboxInput.fill(currencyCode);
-      await this.page.getByRole('option', { name: new RegExp(`^${currencyCode}\\b`, 'i') }).click();
+      await this.page
+        .getByRole('option', { name: new RegExp(`^${currencyCode}\\b`, 'i') })
+        .click();
     }
 
     await this.createFieldButton.click();
-    await this.page.getByText('Add new field').waitFor({ state: 'hidden', timeout: 10000 });
+    await this.page
+      .getByText('Add new field')
+      .waitFor({ state: 'hidden', timeout: 10000 });
   }
 
   async addMultiSelectColumn(name: string, key: string, options: string[]) {
@@ -76,14 +88,18 @@ export class TablePage extends BasePage {
 
     for (let i = 0; i < options.length; i++) {
       if (i > 0) {
-        await this.addColumnDialog.getByRole('button', { name: /Add option/i }).click();
+        await this.addColumnDialog
+          .getByRole('button', { name: /Add option/i })
+          .click();
       }
       const inputs = this.addColumnDialog.getByPlaceholder('Option value');
       await inputs.nth(i).fill(options[i]);
     }
 
     await this.createFieldButton.click();
-    await this.page.getByText('Add new field').waitFor({ state: 'hidden', timeout: 10000 });
+    await this.page
+      .getByText('Add new field')
+      .waitFor({ state: 'hidden', timeout: 10000 });
   }
 
   async getColumnHeaders(): Promise<string[]> {
@@ -94,7 +110,9 @@ export class TablePage extends BasePage {
   async clickCell(rowIndex: number, columnHeader: string): Promise<Locator> {
     const headers = this.page.locator('table thead th');
     const headerTexts = await headers.allTextContents();
-    const colIndex = headerTexts.findIndex((h) => h.trim().includes(columnHeader));
+    const colIndex = headerTexts.findIndex((h) =>
+      h.trim().includes(columnHeader),
+    );
     if (colIndex === -1) throw new Error(`Column "${columnHeader}" not found`);
 
     const cell = this.page

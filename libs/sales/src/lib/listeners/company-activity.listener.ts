@@ -8,10 +8,9 @@ import type {
   CompanyOwnerAssignedEvent,
   CompanyOwnerRemovedEvent,
   CompanyContactLinkedEvent,
-  CompanyContactUnlinkedEvent} from '../events/company-events';
-import {
-  COMPANY_EVENTS
+  CompanyContactUnlinkedEvent,
 } from '../events/company-events';
+import { COMPANY_EVENTS } from '../events/company-events';
 
 @Injectable()
 export class CompanyActivityListener {
@@ -55,7 +54,11 @@ export class CompanyActivityListener {
       entityType: 'company',
       entityId: event.companyId,
       actorId: event.actorId,
-      metadata: { userId: event.userId, userName: event.userName, ...this.src(event) },
+      metadata: {
+        userId: event.userId,
+        userName: event.userName,
+        ...this.src(event),
+      },
     });
   }
 
@@ -66,7 +69,11 @@ export class CompanyActivityListener {
       entityType: 'company',
       entityId: event.companyId,
       actorId: event.actorId,
-      metadata: { userId: event.userId, userName: event.userName, ...this.src(event) },
+      metadata: {
+        userId: event.userId,
+        userName: event.userName,
+        ...this.src(event),
+      },
     });
   }
 
@@ -93,7 +100,11 @@ export class CompanyActivityListener {
       entityType: 'company',
       entityId: event.companyId,
       actorId: event.actorId,
-      metadata: { contactId: event.contactId, contactName: event.contactName, ...this.src(event) },
+      metadata: {
+        contactId: event.contactId,
+        contactName: event.contactName,
+        ...this.src(event),
+      },
     });
   }
 }

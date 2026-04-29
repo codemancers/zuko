@@ -12,10 +12,9 @@ import type {
   DealCompanyLinkedEvent,
   DealCompanyUnlinkedEvent,
   DealContactLinkedEvent,
-  DealContactUnlinkedEvent} from '../events/deal-events';
-import {
-  DEAL_EVENTS
+  DealContactUnlinkedEvent,
 } from '../events/deal-events';
+import { DEAL_EVENTS } from '../events/deal-events';
 
 @Injectable()
 export class DealActivityListener {
@@ -54,7 +53,11 @@ export class DealActivityListener {
       entityType: 'deal',
       entityId: event.dealId,
       actorId: event.actorId,
-      metadata: { outcome: event.outcome, lostReason: event.lostReason, ...this.src(event) },
+      metadata: {
+        outcome: event.outcome,
+        lostReason: event.lostReason,
+        ...this.src(event),
+      },
     });
   }
 
@@ -65,7 +68,12 @@ export class DealActivityListener {
       entityType: 'deal',
       entityId: event.dealId,
       actorId: event.actorId,
-      metadata: { field: event.field, from: event.from as Prisma.InputJsonValue, to: event.to as Prisma.InputJsonValue, ...this.src(event) },
+      metadata: {
+        field: event.field,
+        from: event.from as Prisma.InputJsonValue,
+        to: event.to as Prisma.InputJsonValue,
+        ...this.src(event),
+      },
     });
   }
 
@@ -76,7 +84,11 @@ export class DealActivityListener {
       entityType: 'deal',
       entityId: event.dealId,
       actorId: event.actorId,
-      metadata: { userId: event.userId, userName: event.userName, ...this.src(event) },
+      metadata: {
+        userId: event.userId,
+        userName: event.userName,
+        ...this.src(event),
+      },
     });
   }
 
@@ -87,7 +99,11 @@ export class DealActivityListener {
       entityType: 'deal',
       entityId: event.dealId,
       actorId: event.actorId,
-      metadata: { userId: event.userId, userName: event.userName, ...this.src(event) },
+      metadata: {
+        userId: event.userId,
+        userName: event.userName,
+        ...this.src(event),
+      },
     });
   }
 
@@ -98,7 +114,11 @@ export class DealActivityListener {
       entityType: 'deal',
       entityId: event.dealId,
       actorId: event.actorId,
-      metadata: { companyId: event.companyId, companyName: event.companyName, ...this.src(event) },
+      metadata: {
+        companyId: event.companyId,
+        companyName: event.companyName,
+        ...this.src(event),
+      },
     });
   }
 
@@ -109,7 +129,11 @@ export class DealActivityListener {
       entityType: 'deal',
       entityId: event.dealId,
       actorId: event.actorId,
-      metadata: { companyId: event.companyId, companyName: event.companyName, ...this.src(event) },
+      metadata: {
+        companyId: event.companyId,
+        companyName: event.companyName,
+        ...this.src(event),
+      },
     });
   }
 
@@ -136,7 +160,11 @@ export class DealActivityListener {
       entityType: 'deal',
       entityId: event.dealId,
       actorId: event.actorId,
-      metadata: { contactId: event.contactId, contactName: event.contactName, ...this.src(event) },
+      metadata: {
+        contactId: event.contactId,
+        contactName: event.contactName,
+        ...this.src(event),
+      },
     });
   }
 }

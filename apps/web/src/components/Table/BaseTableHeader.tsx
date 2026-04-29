@@ -1,4 +1,4 @@
-import type { HeaderGroup} from '@tanstack/react-table';
+import type { HeaderGroup } from '@tanstack/react-table';
 import { flexRender } from '@tanstack/react-table';
 import { TableHead, TableHeader, TableRow, Button } from '@zuko/ui-kit';
 import { PlusIcon } from '@heroicons/react/24/outline';
@@ -10,7 +10,11 @@ interface BaseTableHeaderProps<TData extends BaseRow> {
   onAddColumn?: () => void;
 }
 
-export function BaseTableHeader<TData extends BaseRow>({ headerGroups, showAddColumn, onAddColumn }: BaseTableHeaderProps<TData>) {
+export function BaseTableHeader<TData extends BaseRow>({
+  headerGroups,
+  showAddColumn,
+  onAddColumn,
+}: BaseTableHeaderProps<TData>) {
   return (
     <TableHead className="bg-zinc-50 dark:bg-zinc-900/50">
       {headerGroups.map((headerGroup) => (
@@ -20,24 +24,33 @@ export function BaseTableHeader<TData extends BaseRow>({ headerGroups, showAddCo
               <TableHeader
                 key={header.id}
                 colSpan={header.colSpan}
-                style={{ 
-                  width: header.column.id === 'sno' ? header.column.getSize() : undefined,
-                  minWidth: header.column.id === 'sno' ? header.column.getSize() : header.column.columnDef.minSize,
-                  maxWidth: header.column.id === 'sno' ? header.column.getSize() : header.column.columnDef.maxSize,
+                style={{
+                  width:
+                    header.column.id === 'sno'
+                      ? header.column.getSize()
+                      : undefined,
+                  minWidth:
+                    header.column.id === 'sno'
+                      ? header.column.getSize()
+                      : header.column.columnDef.minSize,
+                  maxWidth:
+                    header.column.id === 'sno'
+                      ? header.column.getSize()
+                      : header.column.columnDef.maxSize,
                 }}
               >
                 {header.isPlaceholder
                   ? null
                   : flexRender(
                       header.column.columnDef.header,
-                      header.getContext()
+                      header.getContext(),
                     )}
               </TableHeader>
             );
           })}
           {showAddColumn && (
             <TableHeader className="w-10 !p-0">
-              <Button 
+              <Button
                 plain
                 onClick={onAddColumn}
                 aria-label="Add column"

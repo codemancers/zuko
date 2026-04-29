@@ -13,7 +13,12 @@ vi.mock('@/lib/api', () => ({
     getCurrencies: vi.fn().mockResolvedValue([
       { code: 'USD', symbol: '$', label: 'US Dollar', name: 'US Dollar' },
       { code: 'EUR', symbol: '€', label: 'Euro', name: 'Euro' },
-      { code: 'GBP', symbol: '£', label: 'British Pound', name: 'British Pound' },
+      {
+        code: 'GBP',
+        symbol: '£',
+        label: 'British Pound',
+        name: 'British Pound',
+      },
     ]),
   },
 }));
@@ -22,10 +27,7 @@ import {
   MultiSelectField,
   SelectField,
 } from '@/components/Table/TableFields';
-import {
-  CurrencyEditor,
-  SelectEditor,
-} from '@/components/Table/CellEditors';
+import { CurrencyEditor, SelectEditor } from '@/components/Table/CellEditors';
 import { AddColumnDialog } from '@/components/Table/AddColumnDialog';
 import type { ColumnMetadata } from '@/components/Table/types';
 
@@ -57,7 +59,7 @@ describe('CurrencyField', () => {
         value={1234.5}
         metadata={makeMetadata({ fieldType: 'currency' })}
         row={baseRow}
-      />
+      />,
     );
     expect(screen.getByText('$1,234.50')).toBeInTheDocument();
   });
@@ -66,9 +68,12 @@ describe('CurrencyField', () => {
     render(
       <CurrencyField
         value={500}
-        metadata={makeMetadata({ fieldType: 'currency', config: { currency: 'EUR' } })}
+        metadata={makeMetadata({
+          fieldType: 'currency',
+          config: { currency: 'EUR' },
+        })}
         row={baseRow}
-      />
+      />,
     );
     // EUR formatting — just assert the value is present
     expect(screen.getByText(/500/)).toBeInTheDocument();
@@ -81,7 +86,7 @@ describe('CurrencyField', () => {
         display="$1,000.00"
         metadata={makeMetadata({ fieldType: 'currency' })}
         row={baseRow}
-      />
+      />,
     );
     expect(screen.getByText('$1,000.00')).toBeInTheDocument();
   });
@@ -92,7 +97,7 @@ describe('CurrencyField', () => {
         value={null}
         metadata={makeMetadata({ fieldType: 'currency' })}
         row={baseRow}
-      />
+      />,
     );
     expect(screen.getByText('—')).toBeInTheDocument();
   });
@@ -103,7 +108,7 @@ describe('CurrencyField', () => {
         value={undefined}
         metadata={makeMetadata({ fieldType: 'currency' })}
         row={baseRow}
-      />
+      />,
     );
     expect(screen.getByText('—')).toBeInTheDocument();
   });
@@ -114,7 +119,7 @@ describe('CurrencyField', () => {
         value={NaN}
         metadata={makeMetadata({ fieldType: 'currency' })}
         row={baseRow}
-      />
+      />,
     );
     expect(screen.getByText('—')).toBeInTheDocument();
   });
@@ -125,7 +130,7 @@ describe('CurrencyField', () => {
         value={0}
         metadata={makeMetadata({ fieldType: 'currency' })}
         row={baseRow}
-      />
+      />,
     );
     expect(screen.getByText('$0.00')).toBeInTheDocument();
   });
@@ -136,7 +141,7 @@ describe('CurrencyField', () => {
         value={-250}
         metadata={makeMetadata({ fieldType: 'currency' })}
         row={baseRow}
-      />
+      />,
     );
     expect(screen.getByText('-$250.00')).toBeInTheDocument();
   });
@@ -158,7 +163,11 @@ describe('MultiSelectField', () => {
 
   it('renders badges for each selected value', () => {
     render(
-      <MultiSelectField value={['hot', 'cold']} metadata={metadata} row={baseRow} />
+      <MultiSelectField
+        value={['hot', 'cold']}
+        metadata={metadata}
+        row={baseRow}
+      />,
     );
     expect(screen.getByText('Hot')).toBeInTheDocument();
     expect(screen.getByText('Cold')).toBeInTheDocument();
@@ -166,22 +175,22 @@ describe('MultiSelectField', () => {
 
   it('falls back to the raw value when no option label found', () => {
     render(
-      <MultiSelectField value={['unknown']} metadata={metadata} row={baseRow} />
+      <MultiSelectField
+        value={['unknown']}
+        metadata={metadata}
+        row={baseRow}
+      />,
     );
     expect(screen.getByText('unknown')).toBeInTheDocument();
   });
 
   it('renders dash for empty array', () => {
-    render(
-      <MultiSelectField value={[]} metadata={metadata} row={baseRow} />
-    );
+    render(<MultiSelectField value={[]} metadata={metadata} row={baseRow} />);
     expect(screen.getByText('—')).toBeInTheDocument();
   });
 
   it('wraps a single non-array string value in an array', () => {
-    render(
-      <MultiSelectField value="hot" metadata={metadata} row={baseRow} />
-    );
+    render(<MultiSelectField value="hot" metadata={metadata} row={baseRow} />);
     expect(screen.getByText('Hot')).toBeInTheDocument();
   });
 
@@ -192,7 +201,11 @@ describe('MultiSelectField', () => {
     });
     // Just verify it renders without throwing
     const { container } = render(
-      <MultiSelectField value={['hot', 'cold']} metadata={metaWithColors} row={baseRow} />
+      <MultiSelectField
+        value={['hot', 'cold']}
+        metadata={metaWithColors}
+        row={baseRow}
+      />,
     );
     expect(container).toBeTruthy();
     expect(screen.getByText('Hot')).toBeInTheDocument();
@@ -213,7 +226,7 @@ describe('SelectField', () => {
         value="prospecting"
         metadata={makeMetadata({ fieldType: 'select', config: { options } })}
         row={baseRow}
-      />
+      />,
     );
     expect(screen.getByText('Prospecting')).toBeInTheDocument();
   });
@@ -224,10 +237,14 @@ describe('SelectField', () => {
         value="prospecting"
         metadata={makeMetadata({
           fieldType: 'select',
-          config: { options, render: 'badge', colorMap: { prospecting: 'blue' } },
+          config: {
+            options,
+            render: 'badge',
+            colorMap: { prospecting: 'blue' },
+          },
         })}
         row={baseRow}
-      />
+      />,
     );
     expect(screen.getByText('Prospecting')).toBeInTheDocument();
   });
@@ -244,7 +261,7 @@ describe('CurrencyEditor', () => {
         onBlur={noop}
         onKeyDown={noopKeyDown}
         metadata={makeMetadata({ fieldType: 'currency' })}
-      />
+      />,
     );
     const input = screen.getByRole('spinbutton');
     expect(input).toBeInTheDocument();
@@ -259,7 +276,7 @@ describe('CurrencyEditor', () => {
         onBlur={noop}
         onKeyDown={noopKeyDown}
         metadata={makeMetadata({ fieldType: 'currency' })}
-      />
+      />,
     );
     expect(screen.getByText('$')).toBeInTheDocument();
   });
@@ -271,8 +288,11 @@ describe('CurrencyEditor', () => {
         onChange={noop}
         onBlur={noop}
         onKeyDown={noopKeyDown}
-        metadata={makeMetadata({ fieldType: 'currency', config: { currency: 'GBP' } })}
-      />
+        metadata={makeMetadata({
+          fieldType: 'currency',
+          config: { currency: 'GBP' },
+        })}
+      />,
     );
     expect(screen.getByText('£')).toBeInTheDocument();
   });
@@ -286,7 +306,7 @@ describe('CurrencyEditor', () => {
         onBlur={noop}
         onKeyDown={noopKeyDown}
         metadata={makeMetadata({ fieldType: 'currency' })}
-      />
+      />,
     );
     const input = screen.getByRole('spinbutton');
     fireEvent.change(input, { target: { value: '999' } });
@@ -302,7 +322,7 @@ describe('CurrencyEditor', () => {
         onBlur={noop}
         onKeyDown={noopKeyDown}
         metadata={makeMetadata({ fieldType: 'currency' })}
-      />
+      />,
     );
     const input = screen.getByRole('spinbutton');
     fireEvent.change(input, { target: { value: '' } });
@@ -318,7 +338,7 @@ describe('CurrencyEditor', () => {
         onBlur={onBlur}
         onKeyDown={noopKeyDown}
         metadata={makeMetadata({ fieldType: 'currency' })}
-      />
+      />,
     );
     const input = screen.getByRole('spinbutton');
     fireEvent.blur(input);
@@ -342,7 +362,7 @@ describe('SelectEditor', () => {
         onBlur={noop}
         onKeyDown={noopKeyDown}
         metadata={makeMetadata({ fieldType: 'select', config: { options } })}
-      />
+      />,
     );
     expect(screen.getByRole('combobox')).toBeInTheDocument();
     expect(screen.getByText('Prospecting')).toBeInTheDocument();
@@ -359,9 +379,11 @@ describe('SelectEditor', () => {
         onBlur={onBlur}
         onKeyDown={noopKeyDown}
         metadata={makeMetadata({ fieldType: 'select', config: { options } })}
-      />
+      />,
     );
-    fireEvent.change(screen.getByRole('combobox'), { target: { value: 'qualified' } });
+    fireEvent.change(screen.getByRole('combobox'), {
+      target: { value: 'qualified' },
+    });
     expect(onChange).toHaveBeenCalledWith('qualified');
     expect(onBlur).toHaveBeenCalled();
   });
@@ -383,7 +405,9 @@ describe('AddColumnDialog', () => {
   it('shows Currency and Multi-select in the field type options', () => {
     renderWithQuery(<AddColumnDialog isOpen onClose={noop} onAdd={noop} />);
     const select = screen.getByRole('combobox');
-    const options = Array.from(select.querySelectorAll('option')).map((o) => o.textContent);
+    const options = Array.from(select.querySelectorAll('option')).map(
+      (o) => o.textContent,
+    );
     expect(options).toContain('Currency');
     expect(options).toContain('Multi-select');
   });
@@ -392,7 +416,9 @@ describe('AddColumnDialog', () => {
     const user = userEvent.setup();
     renderWithQuery(<AddColumnDialog isOpen onClose={noop} onAdd={noop} />);
     await user.selectOptions(screen.getByRole('combobox'), 'currency');
-    expect(screen.getByPlaceholderText('Search currency...')).toBeInTheDocument();
+    expect(
+      screen.getByPlaceholderText('Search currency...'),
+    ).toBeInTheDocument();
   });
 
   it('defaults currency code to USD', async () => {
@@ -423,13 +449,21 @@ describe('AddColumnDialog', () => {
     renderWithQuery(<AddColumnDialog isOpen onClose={noop} onAdd={onAdd} />);
 
     await user.type(screen.getByPlaceholderText('Field name'), 'Deal Budget');
-    await user.type(screen.getByPlaceholderText(/Unique column key/), 'deal_budget');
+    await user.type(
+      screen.getByPlaceholderText(/Unique column key/),
+      'deal_budget',
+    );
     await user.selectOptions(screen.getByRole('combobox'), 'currency');
 
     // Default currency is USD — submit without changing it
     await user.click(screen.getByRole('button', { name: /Create field/i }));
 
-    expect(onAdd).toHaveBeenCalledWith('Deal Budget', 'deal_budget', 'currency', { currency: 'USD' });
+    expect(onAdd).toHaveBeenCalledWith(
+      'Deal Budget',
+      'deal_budget',
+      'currency',
+      { currency: 'USD' },
+    );
   });
 
   it('calls onAdd with options config when multiselect field is created', async () => {
@@ -461,9 +495,14 @@ describe('AddColumnDialog', () => {
     const user = userEvent.setup();
     renderWithQuery(<AddColumnDialog isOpen onClose={noop} onAdd={noop} />);
     await user.type(screen.getByPlaceholderText('Field name'), 'My Field');
-    await user.type(screen.getByPlaceholderText(/Unique column key/), 'My Field!');
+    await user.type(
+      screen.getByPlaceholderText(/Unique column key/),
+      'My Field!',
+    );
     await user.click(screen.getByRole('button', { name: /Create field/i }));
-    expect(screen.getByText(/lowercase letters, numbers, and underscores/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/lowercase letters, numbers, and underscores/i),
+    ).toBeInTheDocument();
   });
 
   it('resets form state when closed and reopened', async () => {

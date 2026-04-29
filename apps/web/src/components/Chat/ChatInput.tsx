@@ -26,7 +26,11 @@ import {
   PromptInputTools,
   usePromptInputReferencedSources,
 } from '@zuko/ui-kit';
-import { PhotoIcon, GlobeAltIcon, MicrophoneIcon } from '@heroicons/react/24/outline';
+import {
+  PhotoIcon,
+  GlobeAltIcon,
+  MicrophoneIcon,
+} from '@heroicons/react/24/outline';
 import {
   ChatContextDisplay,
   type ChatEntity,

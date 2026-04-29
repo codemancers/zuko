@@ -1,5 +1,5 @@
-import { Page, Locator, expect } from "@playwright/test";
-import { BasePage } from "./BasePage";
+import { Page, Locator, expect } from '@playwright/test';
+import { BasePage } from './BasePage';
 
 /**
  * Page Object Model for Sign In page
@@ -11,8 +11,8 @@ export class SignInPage extends BasePage {
 
   constructor(page: Page) {
     super(page);
-    this.heading = page.locator("h1");
-    this.githubSignInButton = page.getByRole("button", {
+    this.heading = page.locator('h1');
+    this.githubSignInButton = page.getByRole('button', {
       name: /continue with github/i,
     });
   }
@@ -21,14 +21,14 @@ export class SignInPage extends BasePage {
    * Navigate to the sign-in page
    */
   override async goto() {
-    await super.goto("/sign-in");
+    await super.goto('/sign-in');
   }
 
   /**
    * Verify the sign-in page is displayed correctly
    */
   async verifyPageLoaded() {
-    await expect(this.heading).toContainText("Sign in to Zuko");
+    await expect(this.heading).toContainText('Sign in to Zuko');
     await expect(this.githubSignInButton).toBeVisible();
   }
 
@@ -43,7 +43,7 @@ export class SignInPage extends BasePage {
    * Verify GitHub icon is present on the button
    */
   async verifyGitHubIcon() {
-    const svg = this.githubSignInButton.locator("svg");
+    const svg = this.githubSignInButton.locator('svg');
     await expect(svg).toBeVisible();
   }
 }

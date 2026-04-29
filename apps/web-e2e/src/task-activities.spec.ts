@@ -65,9 +65,9 @@ test.describe('Task Activity Timeline - Comments', () => {
     // Wait for activity section to stabilize before capturing baseline count
     await page
       .locator('[data-testid="activity-item"]')
-      .or(page.getByText("No activity yet"))
+      .or(page.getByText('No activity yet'))
       .first()
-      .waitFor({ state: "visible", timeout: 10000 });
+      .waitFor({ state: 'visible', timeout: 10000 });
 
     const initialCount = await taskDetailPage.getActivityCount();
 
@@ -116,7 +116,7 @@ test.describe('Task Activity Timeline - Comments', () => {
   }) => {
     await taskDetailPage.goto(taskId);
     await page
-      .getByRole("heading", { name: "Activity", exact: true })
+      .getByRole('heading', { name: 'Activity', exact: true })
       .scrollIntoViewIfNeeded();
     await taskDetailPage.showHistory();
 
@@ -146,7 +146,7 @@ test.describe('Task Activity Timeline - Comments', () => {
   test('should cancel editing a comment', async ({ taskDetailPage, page }) => {
     await taskDetailPage.goto(taskId);
     await page
-      .getByRole("heading", { name: "Activity", exact: true })
+      .getByRole('heading', { name: 'Activity', exact: true })
       .scrollIntoViewIfNeeded();
     await taskDetailPage.showHistory();
 

@@ -4,7 +4,6 @@ import type { PrismaService } from '../modules/prisma.types';
 import type { PaginationOptions } from './types';
 import type { EditorData } from '../types/sales-api';
 
-
 export interface CreateDealInput {
   organizationId: number;
   title: string;
@@ -84,7 +83,8 @@ export class DealsRepository {
     const fields = (inputFields || {}) as Prisma.InputJsonValue;
 
     const actualPrimaryId =
-      primaryOwnerId ?? (ownerIds && ownerIds.length > 0 ? ownerIds[0] : undefined);
+      primaryOwnerId ??
+      (ownerIds && ownerIds.length > 0 ? ownerIds[0] : undefined);
 
     return this.prisma.deal.create({
       data: {
@@ -198,16 +198,15 @@ export class DealsRepository {
   }
 
   async update(id: number, input: UpdateDealInput) {
-    const {
-      fields: existingFields,
-      ...otherData
-    } = input;
+    const { fields: existingFields, ...otherData } = input;
 
     return this.prisma.deal.update({
       where: { id },
       data: {
         ...otherData,
-        ...(existingFields !== undefined ? { fields: existingFields as Prisma.InputJsonValue } : {}),
+        ...(existingFields !== undefined
+          ? { fields: existingFields as Prisma.InputJsonValue }
+          : {}),
       },
       include: {
         owners: {

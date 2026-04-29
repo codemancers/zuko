@@ -28,7 +28,7 @@ vi.mock('@/hooks/use-search-param', () => ({
   useSearchParam: () => {
     const [val, setVal] = React.useState('');
     return { inputValue: val, setInputValue: setVal, debouncedValue: val };
-  }
+  },
 }));
 
 vi.mock('@/lib/api/metadata', () => ({
@@ -59,8 +59,20 @@ vi.mock('@/lib/api/metadata', () => ({
 }));
 
 vi.mock('@/components/Common/Editor/Editor', () => ({
-  default: ({ placeholder, holder, data }: { placeholder?: string; holder: string; data?: any }) => {
-    const text = data?.blocks?.map((b: any) => b.data?.text ?? '').filter(Boolean).join('\n') ?? '';
+  default: ({
+    placeholder,
+    holder,
+    data,
+  }: {
+    placeholder?: string;
+    holder: string;
+    data?: any;
+  }) => {
+    const text =
+      data?.blocks
+        ?.map((b: any) => b.data?.text ?? '')
+        .filter(Boolean)
+        .join('\n') ?? '';
     return React.createElement('textarea', {
       'data-testid': 'editor',
       'data-holder': holder,

@@ -8,15 +8,15 @@ Zuko is an **open-source agentic CRM** that combines a modern CRM data model (co
 
 ## Tech stack
 
-| Layer | Technology |
-|---|---|
-| Frontend | Next.js 16 + React 19 (App Router) |
-| Backend | NestJS 11 |
-| Database | PostgreSQL via Prisma ORM |
-| Auth | Better Auth (GitHub OAuth + optional email/password) |
-| AI agents | LangGraph (graph agents in TypeScript) |
-| Meeting bot | Puppeteer + Deepgram (Google Meet recording) |
-| Monorepo | Nx + Bun 1.3.10 workspaces |
+| Layer       | Technology                                           |
+| ----------- | ---------------------------------------------------- |
+| Frontend    | Next.js 16 + React 19 (App Router)                   |
+| Backend     | NestJS 11                                            |
+| Database    | PostgreSQL via Prisma ORM                            |
+| Auth        | Better Auth (GitHub OAuth + optional email/password) |
+| AI agents   | LangGraph (graph agents in TypeScript)               |
+| Meeting bot | Puppeteer + Deepgram (Google Meet recording)         |
+| Monorepo    | Nx + Bun 1.3.10 workspaces                           |
 
 ---
 
@@ -100,10 +100,12 @@ pg_isready
 ### API keys
 
 **Required:**
+
 - **OpenAI API key** — for AI chat. Get one at [platform.openai.com](https://platform.openai.com)
 - **GitHub OAuth credentials** — for authentication. Create an OAuth App at [github.com/settings/developers](https://github.com/settings/developers)
 
 **Optional:**
+
 - **LangSmith API key** — for agent tracing at [smith.langchain.com](https://smith.langchain.com)
 - **Deepgram API key** — only needed for the meeting bot
 

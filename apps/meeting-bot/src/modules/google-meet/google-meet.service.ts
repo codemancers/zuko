@@ -1,23 +1,23 @@
-import axios from "axios";
-import { Injectable } from "@nestjs/common";
-import { BaseService } from "../../common/base/base.service";
-import type { MeetingSchema } from "../../common/schemas/meeting.schema";
-import puppeteer from "puppeteer-extra";
-import StealthPlugin from "puppeteer-extra-plugin-stealth";
-import { launch, getStream } from "puppeteer-stream";
+import axios from 'axios';
+import { Injectable } from '@nestjs/common';
+import { BaseService } from '../../common/base/base.service';
+import type { MeetingSchema } from '../../common/schemas/meeting.schema';
+import puppeteer from 'puppeteer-extra';
+import StealthPlugin from 'puppeteer-extra-plugin-stealth';
+import { launch, getStream } from 'puppeteer-stream';
 import type {
   TranscriptionService,
   TranscriptData,
-} from "../transcription/transcription.service";
-import type { AwsService } from "../aws/aws.service";
-import type { FlyService } from "../fly/fly.service";
-import type { EventEmitter } from "events";
-import * as fs from "fs";
-import type { GoogleMeetHelper } from "./google-meet-helper";
-import type { AudioService } from "../audio/audio.service";
-import type { WebSocketService } from "../websocket/websocket.service";
-import * as path from "path";
-import { TranscriptBuffer } from "../../utils/transcript-buffer";
+} from '../transcription/transcription.service';
+import type { AwsService } from '../aws/aws.service';
+import type { FlyService } from '../fly/fly.service';
+import type { EventEmitter } from 'events';
+import * as fs from 'fs';
+import type { GoogleMeetHelper } from './google-meet-helper';
+import type { AudioService } from '../audio/audio.service';
+import type { WebSocketService } from '../websocket/websocket.service';
+import * as path from 'path';
+import { TranscriptBuffer } from '../../utils/transcript-buffer';
 
 declare global {
   interface Window {
@@ -39,20 +39,20 @@ export interface ChatMessage {
 }
 
 const ZUKO_CHAT_USER = {
-  displayName: "Zuko AI",
-  fullName: "Zuko Assistant",
-  profilePicture: "",
+  displayName: 'Zuko AI',
+  fullName: 'Zuko Assistant',
+  profilePicture: '',
 };
 
 const stealthPlugin = StealthPlugin();
-stealthPlugin.enabledEvasions.delete("iframe.contentWindow");
-stealthPlugin.enabledEvasions.delete("media.codecs");
+stealthPlugin.enabledEvasions.delete('iframe.contentWindow');
+stealthPlugin.enabledEvasions.delete('media.codecs');
 
 puppeteer.use(stealthPlugin);
 
 @Injectable()
 export class GoogleMeetService extends BaseService {
-  private static readonly JOIN_REJECTED_ERROR = "JOIN_REJECTED_BY_HOST";
+  private static readonly JOIN_REJECTED_ERROR = 'JOIN_REJECTED_BY_HOST';
   private browser: any;
   private page: any;
   private transcriptEmitter: EventEmitter | null = null;
@@ -81,15 +81,15 @@ export class GoogleMeetService extends BaseService {
     private readonly flyService: FlyService,
     private readonly googleMeetHelper: GoogleMeetHelper,
     private readonly audioService: AudioService,
-    private readonly websocketService: WebSocketService
+    private readonly websocketService: WebSocketService,
   ) {
-    super("GoogleService");
+    super('GoogleService');
   }
 
   private getZukoChatUser() {
     const participants = this.websocketService.getParticipantsInfo();
-    const botParticipant = Array.from(participants.values()).find((participant) =>
-      Boolean(participant?.isCurrentUser)
+    const botParticipant = Array.from(participants.values()).find(
+      (participant) => Boolean(participant?.isCurrentUser),
     );
 
     if (!botParticipant) return ZUKO_CHAT_USER;
@@ -112,51 +112,51 @@ export class GoogleMeetService extends BaseService {
     const windowSize = [1920, 1080];
 
     const args = [
-      "--no-sandbox",
-      "--disable-setuid-sandbox",
+      '--no-sandbox',
+      '--disable-setuid-sandbox',
       `--window-size=${windowSize[0]},${windowSize[1]}`,
-      "--start-fullscreen",
-      "--disable-extensions",
-      "--disable-application-cache",
-      "--disable-dev-shm-usage",
-      "--disable-gpu",
-      "--disable-background-timer-throttling",
-      "--autoplay-policy=no-user-gesture-required",
-      "--disable-backgrounding-occluded-windows",
-      "--disable-renderer-backgrounding",
+      '--start-fullscreen',
+      '--disable-extensions',
+      '--disable-application-cache',
+      '--disable-dev-shm-usage',
+      '--disable-gpu',
+      '--disable-background-timer-throttling',
+      '--autoplay-policy=no-user-gesture-required',
+      '--disable-backgrounding-occluded-windows',
+      '--disable-renderer-backgrounding',
       // Keep CSS/device pixels deterministic across Chrome builds (stable vs CFT)
-      "--force-device-scale-factor=1",
-      "--high-dpi-support=1",
-      "--allowlisted-extension-id=jjndjgheafjngoipoacpjgeicjeomjli",
+      '--force-device-scale-factor=1',
+      '--high-dpi-support=1',
+      '--allowlisted-extension-id=jjndjgheafjngoipoacpjgeicjeomjli',
     ];
 
     // Run in headless mode in production
-    if (process.env.NODE_ENV === "production") args.push("--headless=chrome");
+    if (process.env.NODE_ENV === 'production') args.push('--headless=chrome');
 
     this.browser = await launch(puppeteer, {
       executablePath: process.env.PUPPETEER_EXECUTABLE_PATH,
       args,
-      ignoreDefaultArgs: ["--enable-automation"],
+      ignoreDefaultArgs: ['--enable-automation'],
       // Respect the actual Chrome window size rather than Puppeteer's default viewport.
       defaultViewport: null,
     });
 
     const context = this.browser.defaultBrowserContext();
-    await context.overridePermissions("https://meet.google.com/", [
-      "microphone",
-      "camera",
-      "notifications",
+    await context.overridePermissions('https://meet.google.com/', [
+      'microphone',
+      'camera',
+      'notifications',
     ]);
   }
 
   async scheduleMeetingJoin(meetingSchema: MeetingSchema) {
     // Don't launch fly worker in development mode
-    if (process.env.NODE_ENV === "development") {
+    if (process.env.NODE_ENV === 'development') {
       setTimeout(async () => {
         this.joinMeeting(meetingSchema).catch((error: unknown) => {
           this.logger.error(
             `[Meeting - ${meetingSchema.meetingId}] Failed to join`,
-            error
+            error,
           );
         });
       }, 1000);
@@ -165,23 +165,23 @@ export class GoogleMeetService extends BaseService {
       if (response.status !== 200) {
         this.logger.error(
           `[Meeting - ${meetingSchema.meetingId}] Failed to launch fly worker`,
-          response.data
+          response.data,
         );
-        throw new Error("Failed to launch fly worker");
+        throw new Error('Failed to launch fly worker');
       } else {
         await this.callback(
           meetingSchema.callbackUrl,
           meetingSchema.meetingId.toString(),
-          "fly-machine-launched",
+          'fly-machine-launched',
           {
             flyMachineId: response.data.id,
-          }
+          },
         );
       }
     }
 
     return {
-      message: "Meeting scheduled",
+      message: 'Meeting scheduled',
     };
   }
 
@@ -189,20 +189,20 @@ export class GoogleMeetService extends BaseService {
     const { meetingId, meetingUrl, callbackUrl } = meetingSchema;
 
     if (attempt > this.maxAttempt) {
-      this.logger.error("Failed to join the call after max attempts");
-      await this.callback(callbackUrl, meetingId, "failed");
+      this.logger.error('Failed to join the call after max attempts');
+      await this.callback(callbackUrl, meetingId, 'failed');
 
       this.closeWebsocket();
-      if (process.env.NODE_ENV === "production") {
+      if (process.env.NODE_ENV === 'production') {
         process.exit(0);
       }
       return;
     }
 
-    const botName = process.env.BOT_NAME || "Zuko AI";
+    const botName = process.env.BOT_NAME || 'Zuko AI';
     this.meetingDetails = meetingSchema;
 
-    this.logger.log("[Meeting] Starting process", {
+    this.logger.log('[Meeting] Starting process', {
       meetingId,
       meetingUrl,
       callbackUrl,
@@ -231,28 +231,28 @@ export class GoogleMeetService extends BaseService {
 
         // --- INJECT CHROMEDRIVER PAYLOAD ---
         const videoFrameSize = [1280, 720];
-        const displayName = process.env.BOT_NAME || "Zuko AI";
+        const displayName = process.env.BOT_NAME || 'Zuko AI';
         const shouldCreateDebugRecording = false;
-        const recordingView = "gallery_view";
+        const recordingView = 'gallery_view';
         const addMixedAudioChunkCallback = true;
         const addAudioChunkCallback = true;
         const initialDataCode = `window.initialData = {websocketPort: ${wsPort}, videoFrameWidth: ${
           videoFrameSize[0]
         }, videoFrameHeight: ${videoFrameSize[1]}, botName: ${JSON.stringify(
-          displayName
+          displayName,
         )}, addClickRipple: ${
-          shouldCreateDebugRecording ? "true" : "false"
+          shouldCreateDebugRecording ? 'true' : 'false'
         }, recordingView: '${recordingView}', sendMixedAudio: ${
-          addMixedAudioChunkCallback ? "true" : "false"
+          addMixedAudioChunkCallback ? 'true' : 'false'
         }, sendPerParticipantAudio: ${
-          addAudioChunkCallback ? "true" : "false"
-        }, collectCaptions: ${addAudioChunkCallback ? "false" : "true"}};`;
+          addAudioChunkCallback ? 'true' : 'false'
+        }, collectCaptions: ${addAudioChunkCallback ? 'false' : 'true'}};`;
 
         // Load CDN libraries
         const protobufUrl =
-          "https://cdnjs.cloudflare.com/ajax/libs/protobufjs/7.4.0/protobuf.min.js";
+          'https://cdnjs.cloudflare.com/ajax/libs/protobufjs/7.4.0/protobuf.min.js';
         const pakoUrl =
-          "https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js";
+          'https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js';
         const protobufCode = (await axios.get(protobufUrl)).data;
         const pakoCode = (await axios.get(pakoUrl)).data;
 
@@ -261,31 +261,31 @@ export class GoogleMeetService extends BaseService {
         // relative to the built output directory.
         const payloadPath = path.join(
           __dirname,
-          "utils",
-          "google-meet-chrome-driver.js"
+          'utils',
+          'google-meet-chrome-driver.js',
         );
-        const payloadCode = fs.readFileSync(payloadPath, "utf-8");
+        const payloadCode = fs.readFileSync(payloadPath, 'utf-8');
 
         // Combine all code
         const combinedCode = `\n${initialDataCode}\n${protobufCode}\n${pakoCode}\n${payloadCode}`;
         await this.page.evaluateOnNewDocument(combinedCode);
 
         this.logger.log(`[Meeting - ${meetingId}] Navigating to meeting URL`);
-        await this.page.goto(meetingUrl, { waitUntil: "networkidle2" });
+        await this.page.goto(meetingUrl, { waitUntil: 'networkidle2' });
 
         this.logger.log(
-          `[Meeting - ${meetingId}] Attempting to disable camera and microphone`
+          `[Meeting - ${meetingId}] Attempting to disable camera and microphone`,
         );
         try {
           await this.page.click('[aria-label="Turn off camera"]');
           await this.page.click('[aria-label="Turn off microphone"]');
           this.logger.log(
-            `[Meeting - ${meetingId}] Camera and microphone disabled`
+            `[Meeting - ${meetingId}] Camera and microphone disabled`,
           );
         } catch (error) {
           this.logger.error(
             `[Meeting - ${meetingId}] Failed to disable camera and microphone`,
-            error
+            error,
           );
         }
 
@@ -303,16 +303,16 @@ export class GoogleMeetService extends BaseService {
         }
 
         const joinButton = (await this.page.evaluateHandle(() => {
-          const buttons = Array.from(document.querySelectorAll("button"));
+          const buttons = Array.from(document.querySelectorAll('button'));
           return buttons.find(
             (button) =>
-              button.textContent?.includes("Join now") ||
-              button.textContent?.includes("Ask to join")
+              button.textContent?.includes('Join now') ||
+              button.textContent?.includes('Ask to join'),
           );
         })) as any;
 
         if (!joinButton) {
-          throw new Error("Failed to find join button");
+          throw new Error('Failed to find join button');
         }
 
         await joinButton.asElement().click();
@@ -332,34 +332,34 @@ export class GoogleMeetService extends BaseService {
               () => {
                 const text = document.body.innerText.toLocaleLowerCase();
                 return (
-                  text.includes("people") || text.includes("in the meeting")
+                  text.includes('people') || text.includes('in the meeting')
                 );
               },
-              { timeout: 600000 }
+              { timeout: 600000 },
             ),
             this.page
               .waitForFunction(
                 () => {
-                  const text = document.body?.innerText?.toLowerCase() || "";
+                  const text = document.body?.innerText?.toLowerCase() || '';
                   return (
                     text.includes(
-                      "someone in the call denied your request to join"
+                      'someone in the call denied your request to join',
                     ) ||
                     text.includes("you can't join this call") ||
                     text.includes("you can't join this meeting") ||
-                    text.includes("you were denied entry") ||
+                    text.includes('you were denied entry') ||
                     text.includes("you've been denied entry") ||
-                    text.includes("the host has removed you")
+                    text.includes('the host has removed you')
                   );
                 },
-                { timeout: 600000 }
+                { timeout: 600000 },
               )
               .then(() => {
                 throw new Error(GoogleMeetService.JOIN_REJECTED_ERROR);
               }),
           ]);
           this.logger.log(
-            `[Meeting - ${meetingId}] Successfully joined meeting`
+            `[Meeting - ${meetingId}] Successfully joined meeting`,
           );
         } catch (error) {
           if (
@@ -368,7 +368,7 @@ export class GoogleMeetService extends BaseService {
           ) {
             throw error;
           }
-          throw new Error("Failed to join meeting", { cause: error });
+          throw new Error('Failed to join meeting', { cause: error });
         }
       } catch (error) {
         const rejectedByError =
@@ -377,14 +377,16 @@ export class GoogleMeetService extends BaseService {
 
         const rejectedByHost = await this.page
           ?.evaluate(() => {
-            const text = document.body?.innerText?.toLowerCase() || "";
+            const text = document.body?.innerText?.toLowerCase() || '';
             return (
               text.includes("you can't join this call") ||
               text.includes("you can't join this meeting") ||
-              text.includes("you were denied entry") ||
+              text.includes('you were denied entry') ||
               text.includes("you've been denied entry") ||
-              text.includes("someone in the call denied your request to join") ||
-              text.includes("the host has removed you")
+              text.includes(
+                'someone in the call denied your request to join',
+              ) ||
+              text.includes('the host has removed you')
             );
           })
           .catch(() => false);
@@ -392,18 +394,18 @@ export class GoogleMeetService extends BaseService {
         if (rejectedByError || rejectedByHost) {
           await this.cleanupPartialState();
           this.logger.log(
-            `[Meeting - ${meetingId}] Bot was rejected by host, skipping retry`
+            `[Meeting - ${meetingId}] Bot was rejected by host, skipping retry`,
           );
-          await this.callback(callbackUrl, meetingId, "rejected");
+          await this.callback(callbackUrl, meetingId, 'rejected');
 
           this.closeWebsocket();
-          if (process.env.NODE_ENV === "production") {
+          if (process.env.NODE_ENV === 'production') {
             process.exit(0);
           }
           return;
         }
 
-        this.logger.error("Failed to join the meeting", error);
+        this.logger.error('Failed to join the meeting', error);
 
         await this.cleanupPartialState();
 
@@ -415,14 +417,14 @@ export class GoogleMeetService extends BaseService {
         window.ws?.enableMediaSending?.();
       });
 
-      await this.callback(callbackUrl, meetingId, "in_progress");
+      await this.callback(callbackUrl, meetingId, 'in_progress');
 
       // Check if there is an "Others may see your video differently" popup and close it by selecting the "Got it" button. If it's not there, then continue.
       await this.googleMeetHelper.dismissVideoDiffersPopup(this.page);
 
       await this.googleMeetHelper.sendMessageToMeetChat(
         this.page,
-        "Hey Folks, Zuko AI is here to help you with your meeting. Say 'Hey Zuko AI' and ask me anything. or type @zuko to start a conversation."
+        "Hey Folks, Zuko AI is here to help you with your meeting. Say 'Hey Zuko AI' and ask me anything. or type @zuko to start a conversation.",
       );
 
       // re-check in case it appears late
@@ -433,12 +435,12 @@ export class GoogleMeetService extends BaseService {
             .catch(() => {
               // ignore
             }),
-        4000
+        4000,
       );
 
       // Initialize live transcription
       this.logger.log(
-        `[Meeting - ${meetingId}] Initializing live transcription`
+        `[Meeting - ${meetingId}] Initializing live transcription`,
       );
 
       // Start transcription
@@ -463,7 +465,7 @@ export class GoogleMeetService extends BaseService {
       const pollSpeaker = async () => {
         while (this.speakerPolling) {
           const speaker = await this.googleMeetHelper.getActiveSpeaker(
-            this.page
+            this.page,
           );
 
           if (speaker !== currentSpeaker) {
@@ -477,26 +479,26 @@ export class GoogleMeetService extends BaseService {
       };
 
       pollSpeaker().catch((err) =>
-        this.logger.error("Polling speaker failed", err)
+        this.logger.error('Polling speaker failed', err),
       );
 
       this.audioStream = this.audioService.extractAudioFromStream(
-        this.videoStream
+        this.videoStream,
       );
 
-      this.videoStream.on("data", (chunk: Buffer) => {
+      this.videoStream.on('data', (chunk: Buffer) => {
         this.recordingWriteStream.write(chunk);
       });
 
-      this.videoStream.on("end", () => {
+      this.videoStream.on('end', () => {
         this.logger.log(`[Recording] VideoStream ended`);
       });
 
-      this.videoStream.on("error", (err: Error) => {
+      this.videoStream.on('error', (err: Error) => {
         this.logger.error(`[Recording] VideoStream error`, err);
       });
 
-      this.audioStream.stdout.on("data", (audioChunk: Buffer) => {
+      this.audioStream.stdout.on('data', (audioChunk: Buffer) => {
         if (this.transcriptEmitter) {
           const currentTime = Date.now() / 1000;
           const relativeTimestamp = currentTime - meetingStartTime;
@@ -510,18 +512,18 @@ export class GoogleMeetService extends BaseService {
           if (speakerForChunk === null) {
             speakerForChunk = currentSpeaker;
           }
-          this.transcriptEmitter.emit("audio", {
+          this.transcriptEmitter.emit('audio', {
             chunk: audioChunk,
             speaker: speakerForChunk,
           });
         }
       });
 
-      this.audioStream.stdout.on("end", () => {
+      this.audioStream.stdout.on('end', () => {
         this.logger.log(`[Audio] AudioStream stdout ended`);
       });
 
-      this.audioStream.stderr.on("data", (err: Buffer) => {
+      this.audioStream.stderr.on('data', (err: Buffer) => {
         this.logger.error(`[Audio] ffmpeg stderr`, err.toString());
       });
 
@@ -532,10 +534,10 @@ export class GoogleMeetService extends BaseService {
       this.logger.error(`[Meeting - ${meetingId}] Error:`, error);
 
       if (this.videoStream) this.videoStream.destroy();
-      if (this.transcriptEmitter) this.transcriptEmitter.emit("close");
+      if (this.transcriptEmitter) this.transcriptEmitter.emit('close');
 
       await this.browser.close();
-      await this.callback(callbackUrl, meetingId, "failed");
+      await this.callback(callbackUrl, meetingId, 'failed');
       throw error;
     }
   }
@@ -544,7 +546,7 @@ export class GoogleMeetService extends BaseService {
     callbackUrl: string,
     meetingId: string,
     event: string,
-    data?: { recording?: string; transcript?: string; flyMachineId?: string }
+    data?: { recording?: string; transcript?: string; flyMachineId?: string },
   ) {
     if (!callbackUrl) return;
 
@@ -557,7 +559,11 @@ export class GoogleMeetService extends BaseService {
     } catch (error) {
       this.logger.error(
         `[Meeting - ${meetingId}] Callback error:`,
-        JSON.stringify((error as { response?: { data?: unknown } })?.response?.data, null, 2)
+        JSON.stringify(
+          (error as { response?: { data?: unknown } })?.response?.data,
+          null,
+          2,
+        ),
       );
     }
   }
@@ -567,7 +573,7 @@ export class GoogleMeetService extends BaseService {
     const agentToken = process.env.AGENT_TOKEN;
     if (!backendUrl || !agentToken) {
       this.logger.warn(
-        `[Meeting - ${this.meetingDetails.meetingId}] Skipping transcript chunks: BACKEND_URL or AGENT_TOKEN not set`
+        `[Meeting - ${this.meetingDetails.meetingId}] Skipping transcript chunks: BACKEND_URL or AGENT_TOKEN not set`,
       );
       return;
     }
@@ -585,20 +591,20 @@ export class GoogleMeetService extends BaseService {
           },
           {
             headers: {
-              "Content-Type": "application/json",
-              "x-agent-token": agentToken,
-              "x-user-provider": "google-meet",
+              'Content-Type': 'application/json',
+              'x-agent-token': agentToken,
+              'x-user-provider': 'google-meet',
             },
             timeout: 5000,
-          }
+          },
         );
         this.logger.log(
-          `[Meeting - ${this.meetingDetails.meetingId}] Transcript chunk sent (sequence ${sequence})`
+          `[Meeting - ${this.meetingDetails.meetingId}] Transcript chunk sent (sequence ${sequence})`,
         );
       } catch (err) {
         this.logger.warn(
           `[Meeting - ${this.meetingDetails.meetingId}] Failed to send transcript chunk:`,
-          err instanceof Error ? err.message : String(err)
+          err instanceof Error ? err.message : String(err),
         );
       }
     }
@@ -606,15 +612,15 @@ export class GoogleMeetService extends BaseService {
 
   async startTranscription() {
     this.transcriptEmitter = await this.transcriptionService.liveTranscription(
-      this.meetingDetails.meetingId
+      this.meetingDetails.meetingId,
     );
 
     // Handle transcription events
-    this.transcriptEmitter.on("transcript", async (data) => {
+    this.transcriptEmitter.on('transcript', async (data) => {
       this.liveTranscripts.push(data);
 
       this.logger.log(
-        `[Speaker - ${data.speaker_name}] , Duration: ${data.formatted_duration} seconds , Text: ${data.text}`
+        `[Speaker - ${data.speaker_name}] , Duration: ${data.formatted_duration} seconds , Text: ${data.text}`,
       );
 
       const chunks = this.transcriptBuffer.add(data.text, false);
@@ -624,30 +630,30 @@ export class GoogleMeetService extends BaseService {
 
       const cleanTranscript = data.text
         .toLowerCase()
-        .replace(/[^a-z\s]/g, "")
-        .replace(/\s+/g, " ")
+        .replace(/[^a-z\s]/g, '')
+        .replace(/\s+/g, ' ')
         .trim();
 
       if (
-        ["hey zuko", "hello zuko"].some((keyword) =>
-          cleanTranscript.includes(keyword)
+        ['hey zuko', 'hello zuko'].some((keyword) =>
+          cleanTranscript.includes(keyword),
         )
       ) {
         this.logger.log(
-          `[Meeting - ${this.meetingDetails.meetingId}] Hello Zuko detected`
+          `[Meeting - ${this.meetingDetails.meetingId}] Hello Zuko detected`,
         );
         await this.googleMeetHelper.handleHeyZuko(
           this.page,
           data.text,
-          String(this.meetingDetails.meetingId)
+          String(this.meetingDetails.meetingId),
         );
       }
     });
 
-    this.transcriptEmitter.on("error", (error) => {
+    this.transcriptEmitter.on('error', (error) => {
       this.logger.error(
         `[Meeting - ${this.meetingDetails.meetingId}] Transcription error:`,
-        error
+        error,
       );
     });
   }
@@ -657,17 +663,17 @@ export class GoogleMeetService extends BaseService {
     // --- Start WebSocket server for payload communication ---
     this.websocketEmitter = await this.websocketService.startServer(wsPort);
     this.logger.log(
-      `[Meeting - ${this.meetingDetails.meetingId}] WebSocket server started on port ${wsPort}`
+      `[Meeting - ${this.meetingDetails.meetingId}] WebSocket server started on port ${wsPort}`,
     );
 
-    this.websocketEmitter.on("chatMessage", async (data) => {
+    this.websocketEmitter.on('chatMessage', async (data) => {
       const user = this.websocketService.getParticipant(data.participant_uuid);
 
       const chatData: ChatMessage = {
         user: {
-          displayName: user?.displayName || user?.fullName || "Unknown",
-          fullName: user?.fullName || user?.displayName || "Unknown",
-          profilePicture: user?.profilePicture || "",
+          displayName: user?.displayName || user?.fullName || 'Unknown',
+          fullName: user?.fullName || user?.displayName || 'Unknown',
+          profilePicture: user?.profilePicture || '',
         },
         text: data.text,
         timeStamp: data.timeStamp || data.timestamp || Date.now(),
@@ -675,14 +681,14 @@ export class GoogleMeetService extends BaseService {
 
       this.chatMessages.push(chatData);
 
-      if (chatData.text?.toLowerCase().includes("@zuko")) {
+      if (chatData.text?.toLowerCase().includes('@zuko')) {
         const requestorName =
-          chatData.user.displayName || chatData.user.fullName || "Unknown user";
+          chatData.user.displayName || chatData.user.fullName || 'Unknown user';
         const zukoReply = await this.googleMeetHelper.handleHeyZuko(
           this.page,
           data.text,
           String(this.meetingDetails.meetingId),
-          requestorName
+          requestorName,
         );
 
         this.chatMessages.push({
@@ -693,19 +699,19 @@ export class GoogleMeetService extends BaseService {
       }
     });
 
-    this.websocketEmitter.on("meetingEnded", async () => {
+    this.websocketEmitter.on('meetingEnded', async () => {
       this.logger.log(
-        `[Meeting - ${this.meetingDetails.meetingId}] - Leaving call (meeting ended)`
+        `[Meeting - ${this.meetingDetails.meetingId}] - Leaving call (meeting ended)`,
       );
       await this.cleanup();
       this.logger.log(
-        `[Meeting - ${this.meetingDetails.meetingId}] - Recorded successfully`
+        `[Meeting - ${this.meetingDetails.meetingId}] - Recorded successfully`,
       );
 
       // Use shutdown callback if available, otherwise exit directly
       if (this.shutdownCallback) {
         await this.shutdownCallback();
-      } else if (process.env.NODE_ENV === "production") {
+      } else if (process.env.NODE_ENV === 'production') {
         process.exit(0);
       }
     });
@@ -727,13 +733,13 @@ export class GoogleMeetService extends BaseService {
       });
 
       if (this.videoStream) this.videoStream.destroy();
-      if (this.audioStream) this.audioStream.kill("SIGINT");
+      if (this.audioStream) this.audioStream.kill('SIGINT');
 
       if (this.recordingWriteStream) {
         this.recordingWriteStream.end();
         await new Promise<void>((resolve, reject) => {
-          this.recordingWriteStream.on("finish", resolve);
-          this.recordingWriteStream.on("error", reject);
+          this.recordingWriteStream.on('finish', resolve);
+          this.recordingWriteStream.on('error', reject);
         });
       }
 
@@ -742,7 +748,7 @@ export class GoogleMeetService extends BaseService {
       await this.callback(
         this.meetingDetails.callbackUrl,
         this.meetingDetails.meetingId,
-        "processing"
+        'processing',
       );
 
       if (this.browser) await this.browser.close();
@@ -750,54 +756,54 @@ export class GoogleMeetService extends BaseService {
       // 1) Upload transcript first so we never lose it even if video upload fails.
       const transcriptKey = `meetings/${this.meetingDetails.meetingId}/transcript.json`;
       await this.awsService.uploadToS3(
-        process.env.AWS_BUCKET_NAME ?? "",
+        process.env.AWS_BUCKET_NAME ?? '',
         transcriptKey,
         JSON.stringify({
           transcripts: this.liveTranscripts,
           chatMessages: this.chatMessages,
           meetingId: this.meetingDetails.meetingId,
           createdAt: new Date().toISOString(),
-        })
+        }),
       );
 
       this.logger.log(
-        `[Meeting - ${this.meetingDetails.meetingId}] - Transcript uploaded to S3`
+        `[Meeting - ${this.meetingDetails.meetingId}] - Transcript uploaded to S3`,
       );
 
       // 2) Upload raw WebM recording as-is. Backend will transcode it asynchronously.
       this.logger.log(
-        `[Meeting - ${this.meetingDetails.meetingId}] - Uploading raw recording to S3`
+        `[Meeting - ${this.meetingDetails.meetingId}] - Uploading raw recording to S3`,
       );
 
       if (fs.existsSync(this.recordingFilePath)) {
         const fileBuffer = fs.readFileSync(this.recordingFilePath);
         await this.awsService.uploadToS3(
-          process.env.AWS_BUCKET_NAME ?? "",
+          process.env.AWS_BUCKET_NAME ?? '',
           this.recordingKey,
-          fileBuffer
+          fileBuffer,
         );
 
         this.logger.log(
-          `[Meeting - ${this.meetingDetails.meetingId}] - Raw recording uploaded to S3`
+          `[Meeting - ${this.meetingDetails.meetingId}] - Raw recording uploaded to S3`,
         );
 
         fs.unlinkSync(this.recordingFilePath);
         this.logger.log(
-          `[Meeting - ${this.meetingDetails.meetingId}] - Local recording file cleaned up`
+          `[Meeting - ${this.meetingDetails.meetingId}] - Local recording file cleaned up`,
         );
       } else {
         this.logger.warn(
-          `[Meeting - ${this.meetingDetails.meetingId}] - Recording file not found on disk`
+          `[Meeting - ${this.meetingDetails.meetingId}] - Recording file not found on disk`,
         );
       }
 
       // 3) Before marking processing/completed, flush any remaining transcript
       // buffer from this meeting-bot instance so the tail isn't lost.
-      const finalChunks = this.transcriptBuffer.add("", true);
+      const finalChunks = this.transcriptBuffer.add('', true);
       if (finalChunks.length > 0) {
         await this.sendTranscriptChunks(finalChunks);
         this.logger.log(
-          `[Meeting - ${this.meetingDetails.meetingId}] Transcript buffer final flush sent (${finalChunks.length} chunks)`
+          `[Meeting - ${this.meetingDetails.meetingId}] Transcript buffer final flush sent (${finalChunks.length} chunks)`,
         );
       }
 
@@ -805,28 +811,28 @@ export class GoogleMeetService extends BaseService {
       await this.callback(
         this.meetingDetails.callbackUrl,
         this.meetingDetails.meetingId,
-        "completed",
+        'completed',
         {
           recording: this.recordingKey,
           transcript: transcriptKey,
-        }
+        },
       );
 
       // Close the video stream and transcript emitter
       if (this.videoStream) this.videoStream.destroy();
-      if (this.transcriptEmitter) this.transcriptEmitter.emit("close");
+      if (this.transcriptEmitter) this.transcriptEmitter.emit('close');
 
       this.logger.log(
-        `[Meeting - ${this.meetingDetails.meetingId}] Cleanup completed`
+        `[Meeting - ${this.meetingDetails.meetingId}] Cleanup completed`,
       );
     } catch (error) {
       await this.callback(
         this.meetingDetails.callbackUrl,
         this.meetingDetails.meetingId,
-        "failed"
+        'failed',
       );
       if (this.videoStream) this.videoStream.destroy();
-      if (this.transcriptEmitter) this.transcriptEmitter.emit("close");
+      if (this.transcriptEmitter) this.transcriptEmitter.emit('close');
       if (this.browser) await this.browser.close();
 
       throw error;
@@ -836,13 +842,13 @@ export class GoogleMeetService extends BaseService {
   async cleanupPartialState() {
     if (this.transcriptEmitter) {
       this.transcriptEmitter.removeAllListeners();
-      this.transcriptEmitter.emit("close");
+      this.transcriptEmitter.emit('close');
       this.transcriptEmitter = null;
     }
 
     if (this.websocketEmitter) {
       this.websocketEmitter.removeAllListeners();
-      this.websocketEmitter.emit("close");
+      this.websocketEmitter.emit('close');
       this.websocketEmitter = null;
     }
 
@@ -861,30 +867,30 @@ export class GoogleMeetService extends BaseService {
 
   async checkAndAutoLeave() {
     const intervalMs =
-      process.env.NODE_ENV === "production" ? 5 * 60 * 1000 : 5000;
+      process.env.NODE_ENV === 'production' ? 5 * 60 * 1000 : 5000;
 
     const statusCheckInterval = setInterval(async () => {
       // Check if there is no other participaths in call
       const participants = this.websocketService.getParticipantsInfo();
       const inMeetingCount = Array.from(participants.values()).filter(
-        (participant) => participant.humanized_status === "in_meeting"
+        (participant) => participant.humanized_status === 'in_meeting',
       ).length;
 
       if (inMeetingCount < 2) {
         this.logger.log(
-          `[Meeting - ${this.meetingDetails.meetingId}] - Auto-leaving call (no other participants)`
+          `[Meeting - ${this.meetingDetails.meetingId}] - Auto-leaving call (no other participants)`,
         );
         clearInterval(statusCheckInterval);
         await this.cleanup();
 
         this.logger.log(
-          `[Meeting - ${this.meetingDetails.meetingId}] - Recorded successfully`
+          `[Meeting - ${this.meetingDetails.meetingId}] - Recorded successfully`,
         );
 
         // Use shutdown callback if available (for proper cleanup), otherwise exit directly
         if (this.shutdownCallback) {
           await this.shutdownCallback();
-        } else if (process.env.NODE_ENV === "production") {
+        } else if (process.env.NODE_ENV === 'production') {
           process.exit(0);
         }
       }

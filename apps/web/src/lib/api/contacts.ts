@@ -112,7 +112,9 @@ export const contactsApi = {
     }
 
     const queryString = params.toString();
-    return apiClient.get(`/tables/contacts${queryString ? `?${queryString}` : ''}`);
+    return apiClient.get(
+      `/tables/contacts${queryString ? `?${queryString}` : ''}`,
+    );
   },
 
   /**

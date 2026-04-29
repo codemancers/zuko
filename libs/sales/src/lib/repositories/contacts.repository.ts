@@ -4,7 +4,6 @@ import type { PrismaService } from '../modules/prisma.types';
 import type { PaginationOptions } from './types';
 import type { EditorData } from '../types/sales-api';
 
-
 export interface CreateContactInput {
   organizationId: number;
   name: string;
@@ -51,7 +50,8 @@ export class ContactsRepository {
     const fields = (inputFields || {}) as Prisma.InputJsonValue;
 
     const actualPrimaryId =
-      primaryOwnerId ?? (ownerIds && ownerIds.length > 0 ? ownerIds[0] : undefined);
+      primaryOwnerId ??
+      (ownerIds && ownerIds.length > 0 ? ownerIds[0] : undefined);
 
     return this.prisma.contact.create({
       data: {
@@ -105,16 +105,15 @@ export class ContactsRepository {
   }
 
   async update(id: number, input: UpdateContactInput) {
-    const {
-      fields: existingFields,
-      ...otherData
-    } = input;
+    const { fields: existingFields, ...otherData } = input;
 
     return this.prisma.contact.update({
       where: { id },
       data: {
         ...otherData,
-        ...(existingFields !== undefined ? { fields: existingFields as Prisma.InputJsonValue } : {}),
+        ...(existingFields !== undefined
+          ? { fields: existingFields as Prisma.InputJsonValue }
+          : {}),
       },
       include: {
         owners: {
@@ -140,12 +139,14 @@ export class ContactsRepository {
     return this.update(id, { isHidden: false });
   }
 
-  async findAll(
-    filters: ContactFilters,
-    pagination: PaginationOptions = {},
-  ) {
-    const { organizationId, isHidden = false, ownerIds, search, contactIds } =
-      filters;
+  async findAll(filters: ContactFilters, pagination: PaginationOptions = {}) {
+    const {
+      organizationId,
+      isHidden = false,
+      ownerIds,
+      search,
+      contactIds,
+    } = filters;
     const { page = 1, limit = 50 } = pagination;
     const skip = (page - 1) * limit;
 

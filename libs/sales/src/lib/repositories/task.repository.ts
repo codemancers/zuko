@@ -4,7 +4,6 @@ import type { PrismaService } from '../modules/prisma.types';
 import type { PaginationOptions } from './types';
 import type { EditorData } from '../types/sales-api';
 
-
 export { TaskStatus };
 
 export interface CreateTaskInput {
@@ -71,15 +70,16 @@ export class TaskRepository {
 
   async findAll(
     organizationId: number,
-    options: PaginationOptions & { parentId?: number | null; search?: string } = {},
+    options: PaginationOptions & {
+      parentId?: number | null;
+      search?: string;
+    } = {},
   ) {
     const { page = 1, limit = 50, parentId, search } = options;
     const skip = (page - 1) * limit;
 
     const parentFilter =
-      parentId === undefined
-        ? { parentId: null }
-        : { parentId };
+      parentId === undefined ? { parentId: null } : { parentId };
 
     const searchFilter = search
       ? {
