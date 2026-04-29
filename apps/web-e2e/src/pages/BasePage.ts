@@ -128,13 +128,11 @@ export class BasePage {
    * Locate a property row (dt/dd pair) by its label text.
    */
   propertyRow(label: string) {
-    return this.propertiesSection
-      .locator('div')
-      .filter({
-        has: this.page.locator('dt', {
-          hasText: new RegExp(`^${label}$`, 'i'),
-        }),
-      });
+    return this.propertiesSection.locator('div').filter({
+      has: this.page.locator('dt', {
+        hasText: new RegExp(`^${label}$`, 'i'),
+      }),
+    });
   }
 
   /**
