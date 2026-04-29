@@ -4,7 +4,7 @@ import {
   Injectable,
   Logger,
 } from "@nestjs/common";
-import { MeetingDto, CallbackDto } from "./dto/meeting.dto";
+import type { MeetingDto, CallbackDto } from "./dto/meeting.dto";
 import axios from "axios";
 import {
   getPlatformFromUrl,

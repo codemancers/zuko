@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, type Mock } from 'vitest';
 import { CompanyActivityListener } from './company-activity.listener';
-import { ActivityService } from '../services/activity.service';
+import type { ActivityService } from '../services/activity.service';
 
 const COMPANY_ID = 30;
 const ACTOR_ID = 7;

@@ -5,6 +5,7 @@ import { PrismaModule } from '../../prisma/prisma.module';
 import { PrismaService } from '../../prisma/prisma.service';
 import { AgentsController } from './agents.controller';
 import {
+  TableColumnRepository,
   ContactsService,
   CompaniesService,
   DealsService,
@@ -13,13 +14,20 @@ import {
   CompaniesRepository,
   DealsRepository,
   ActivityRepository,
-  TableColumnRepository
 } from '@zuko/sales';
 
 @Module({
   imports: [PrismaModule],
   controllers: [AgentsController],
-  providers: [AgentGuard,
+  providers: [
+    AgentGuard,
+    {
+      provide: TableColumnRepository,
+      useFactory: (prismaService: PrismaService) => {
+        return new TableColumnRepository(prismaService);
+      },
+      inject: [PrismaService],
+    },
     {
       provide: ContactsRepository,
       useFactory: (prismaService: PrismaService) => {
@@ -29,10 +37,18 @@ import {
     },
     {
       provide: ContactsService,
-      useFactory: (contactsRepository: ContactsRepository, eventEmitter: EventEmitter2, tableColumnRepository: TableColumnRepository) => {
-        return new ContactsService(contactsRepository, eventEmitter, tableColumnRepository);
+      useFactory: (
+        contactsRepository: ContactsRepository,
+        eventEmitter: EventEmitter2,
+        tableColumnRepository: TableColumnRepository,
+      ) => {
+        return new ContactsService(
+          contactsRepository,
+          eventEmitter,
+          tableColumnRepository,
+        );
       },
-      inject: [ContactsRepository, EventEmitter2],
+      inject: [ContactsRepository, EventEmitter2, TableColumnRepository],
     },
     {
       provide: CompaniesRepository,
@@ -43,10 +59,18 @@ import {
     },
     {
       provide: CompaniesService,
-      useFactory: (companiesRepository: CompaniesRepository, eventEmitter: EventEmitter2, tableColumnRepository: TableColumnRepository) => {
-        return new CompaniesService(companiesRepository, eventEmitter, tableColumnRepository);
+      useFactory: (
+        companiesRepository: CompaniesRepository,
+        eventEmitter: EventEmitter2,
+        tableColumnRepository: TableColumnRepository,
+      ) => {
+        return new CompaniesService(
+          companiesRepository,
+          eventEmitter,
+          tableColumnRepository,
+        );
       },
-      inject: [CompaniesRepository, EventEmitter2],
+      inject: [CompaniesRepository, EventEmitter2, TableColumnRepository],
     },
     {
       provide: DealsRepository,
@@ -71,10 +95,18 @@ import {
     },
     {
       provide: DealsService,
-      useFactory: (dealsRepository: DealsRepository, eventEmitter: EventEmitter2, tableColumnRepository: TableColumnRepository) => {
-        return new DealsService(dealsRepository, eventEmitter, tableColumnRepository);
+      useFactory: (
+        dealsRepository: DealsRepository,
+        eventEmitter: EventEmitter2,
+        tableColumnRepository: TableColumnRepository,
+      ) => {
+        return new DealsService(
+          dealsRepository,
+          eventEmitter,
+          tableColumnRepository,
+        );
       },
-      inject: [DealsRepository, EventEmitter2],
+      inject: [DealsRepository, EventEmitter2, TableColumnRepository],
     },
   ],
 })

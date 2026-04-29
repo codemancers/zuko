@@ -1,8 +1,9 @@
 import { describe, it, expect, beforeEach, type Mock } from 'vitest';
 import { NotFoundException } from '@nestjs/common';
-import { EventEmitter2 } from '@nestjs/event-emitter';
+import type { EventEmitter2 } from '@nestjs/event-emitter';
 import { TaskService } from './task.service';
-import { TaskRepository, TaskStatus } from '../repositories/task.repository';
+import type { TaskRepository} from '../repositories/task.repository';
+import { TaskStatus } from '../repositories/task.repository';
 
 const ORG_ID = 1;
 

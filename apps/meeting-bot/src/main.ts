@@ -7,7 +7,8 @@ import { Logger } from "@nestjs/common";
 import { NestFactory } from "@nestjs/core";
 import { AppModule } from "./app/app.module";
 import { GoogleMeetService } from "./modules/google-meet/google-meet.service";
-import { io, Socket } from "socket.io-client";
+import type { Socket } from "socket.io-client";
+import { io } from "socket.io-client";
 
 async function bootstrap() {
   const meetingId = process.env.MEETING_ID;

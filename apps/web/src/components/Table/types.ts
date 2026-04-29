@@ -1,6 +1,6 @@
 import React from 'react';
-import { ColumnConfig } from '@/types/table-metadata';
-import {
+import type { ColumnConfig } from '@/types/table-metadata';
+import type {
   ColumnDef,
   PaginationState,
   SortingState,

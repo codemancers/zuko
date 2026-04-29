@@ -6,16 +6,17 @@ import {
 } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import type { PaginationOptions } from '../repositories/types';
-import {
-  ContactsRepository,
+import { ContactsRepository } from '../repositories/contacts.repository';
+import type {
   CreateContactInput,
   UpdateContactInput,
   ContactFilters,
 } from '../repositories/contacts.repository';
 import { TableColumnRepository } from '../repositories/table-column.repository';
-import { CONTACT_EVENTS, ContactFieldUpdatedEvent } from '../events/contact-events';
+import type { ContactFieldUpdatedEvent } from '../events/contact-events';
+import { CONTACT_EVENTS } from '../events/contact-events';
 import type { ActivitySource } from '../events/deal-events';
-import { ColumnConfig, ColumnType } from '../types/table-metadata';
+import type { ColumnConfig, ColumnType } from '../types/table-metadata';
 import { validateCellValue, castFieldValue } from '../utils/custom-fields';
 
 /**

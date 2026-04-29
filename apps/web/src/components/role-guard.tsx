@@ -1,7 +1,8 @@
 'use client';
 
-import { useUserRole, UserRole } from '@/hooks/use-user-role';
-import { ReactNode } from 'react';
+import type { UserRole } from '@/hooks/use-user-role';
+import { useUserRole } from '@/hooks/use-user-role';
+import type { ReactNode } from 'react';
 
 interface RoleGuardProps {
   /**

@@ -1,9 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
-import { Prisma } from '@prisma/client';
-import { ActivityService } from '../services/activity.service';
-import {
-  DEAL_EVENTS,
+import type { Prisma } from '@prisma/client';
+import type { ActivityService } from '../services/activity.service';
+import type {
   DealCreatedEvent,
   DealStageChangedEvent,
   DealClosedEvent,
@@ -13,7 +12,9 @@ import {
   DealCompanyLinkedEvent,
   DealCompanyUnlinkedEvent,
   DealContactLinkedEvent,
-  DealContactUnlinkedEvent,
+  DealContactUnlinkedEvent} from '../events/deal-events';
+import {
+  DEAL_EVENTS
 } from '../events/deal-events';
 
 @Injectable()

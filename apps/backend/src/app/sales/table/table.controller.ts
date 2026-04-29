@@ -14,10 +14,10 @@ import { AuthGuard } from '@thallesp/nestjs-better-auth';
 import { TableService } from './table.service';
 import { OrgId } from '../../../common/auth/org-id.decorator';
 import { OrganizationGuard } from '../../../common/auth/organization.guard';
-import { CompanyListQueryDto } from '../companies.controller';
-import { ContactListQueryDto } from '../contacts.controller';
-import { DealListQueryDto } from '../deals.controller';
-import { ColumnConfig, ColumnType } from '@zuko/sales';
+import type { CompanyListQueryDto } from '../companies.controller';
+import type { ContactListQueryDto } from '../contacts.controller';
+import type { DealListQueryDto } from '../deals.controller';
+import type { ColumnConfig, ColumnType } from '@zuko/sales';
 import type { RequestWithUser } from '@zuko/core';
 
 export class CreateColumnDto {

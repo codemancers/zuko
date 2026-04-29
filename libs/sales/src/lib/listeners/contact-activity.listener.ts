@@ -1,13 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
-import { Prisma } from '@prisma/client';
-import { ActivityService } from '../services/activity.service';
-import {
-  CONTACT_EVENTS,
+import type { Prisma } from '@prisma/client';
+import type { ActivityService } from '../services/activity.service';
+import type {
   ContactCreatedEvent,
   ContactFieldUpdatedEvent,
   ContactOwnerAssignedEvent,
-  ContactOwnerRemovedEvent,
+  ContactOwnerRemovedEvent} from '../events/contact-events';
+import {
+  CONTACT_EVENTS
 } from '../events/contact-events';
 
 @Injectable()

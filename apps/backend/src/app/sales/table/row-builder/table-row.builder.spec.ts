@@ -1,7 +1,8 @@
-import { Test, TestingModule } from '@nestjs/testing';
+import type { TestingModule } from '@nestjs/testing';
+import { Test } from '@nestjs/testing';
 import { describe, it, expect, beforeEach } from 'vitest';
 import { TableRowBuilder } from './table-row.builder';
-import { ColumnMetadata } from '@zuko/sales';
+import type { ColumnMetadata } from '@zuko/sales';
 
 describe('TableRowBuilder', () => {
   let builder: TableRowBuilder;

@@ -1,4 +1,5 @@
-import { ReactNode, useState } from 'react';
+import type { ReactNode} from 'react';
+import { useState } from 'react';
 import { Badge, Input, Combobox, ComboboxOption, ComboboxLabel, ComboboxDescription, Text } from '@zuko/ui-kit';
 import { formatCurrency } from '@/lib/format-utils';
 import dayjs from 'dayjs';

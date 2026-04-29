@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { Test, TestingModule } from "@nestjs/testing";
+import type { TestingModule } from "@nestjs/testing";
+import { Test } from "@nestjs/testing";
 import { MeetingService } from "./meeting.service";
 import { PrismaService } from "../../prisma/prisma.service";
 import { MeetingGateway } from "./meeting.gateway";

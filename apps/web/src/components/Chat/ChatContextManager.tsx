@@ -3,10 +3,11 @@
 import { useState, useCallback, useMemo, type ReactElement } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { UserIcon, BuildingOfficeIcon, BriefcaseIcon } from '@heroicons/react/24/outline';
+import type {
+  EntityItem} from '@zuko/ui-kit';
 import {
   Button,
   ContextChip,
-  EntityItem,
   usePromptInputReferencedSources,
 } from '@zuko/ui-kit';
 import { type Contact } from '@/lib/api/contacts';

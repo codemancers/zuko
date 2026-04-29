@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { tablesApi, CreateColumnDto } from '@/lib/api/tables';
+import type { CreateColumnDto } from '@/lib/api/tables';
+import { tablesApi } from '@/lib/api/tables';
 import { toast } from 'sonner';
 
 export function useAddColumn(entity: string) {

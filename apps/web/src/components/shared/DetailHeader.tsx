@@ -1,5 +1,5 @@
 import { Heading, Text } from '@zuko/ui-kit';
-import { ReactNode, ComponentType } from 'react';
+import type { ReactNode, ComponentType } from 'react';
 import dayjs from 'dayjs';
 
 interface DetailHeaderProps {

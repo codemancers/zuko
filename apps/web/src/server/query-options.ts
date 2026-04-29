@@ -1,8 +1,12 @@
 import { queryOptions } from '@tanstack/react-query';
-import { contactsApi, ContactFilters } from '@/lib/api/contacts';
-import { companiesApi, CompanyFilters } from '@/lib/api/companies';
-import { dealsApi, DealFilters } from '@/lib/api/deals';
-import { tasksApi, TaskFilters } from '@/lib/api/tasks';
+import type { ContactFilters } from '@/lib/api/contacts';
+import { contactsApi } from '@/lib/api/contacts';
+import type { CompanyFilters } from '@/lib/api/companies';
+import { companiesApi } from '@/lib/api/companies';
+import type { DealFilters } from '@/lib/api/deals';
+import { dealsApi } from '@/lib/api/deals';
+import type { TaskFilters } from '@/lib/api/tasks';
+import { tasksApi } from '@/lib/api/tasks';
 import { activitiesApi } from '@/lib/api/activities';
 import { meetingsApi, type MeetingFilters } from '@/lib/api/meetings';
 import { authClient } from '@/lib/auth-client';

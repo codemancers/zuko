@@ -1,6 +1,7 @@
 import '@testing-library/jest-dom/vitest';
 import { cleanup } from '@testing-library/react';
-import { afterEach } from 'vitest';
+import { afterEach, vi } from 'vitest';
+import React from 'react';
 
 class ResizeObserver {
   observe() {
@@ -22,8 +23,6 @@ afterEach(() => {
 // Globally mock the search param hook for component tests.
 // This prevents 'nuqs requires an adapter' errors, and returns a synchronous
 // debouncedValue so that components instantly fetch without needing fake timers in every test.
-import React from 'react';
-import { vi } from 'vitest';
 
 vi.mock('@/hooks/use-search-param', () => ({
   useSearchParam: () => {

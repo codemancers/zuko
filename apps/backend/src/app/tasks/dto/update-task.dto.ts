@@ -1,4 +1,4 @@
-import { TaskStatus, EditorData } from '@zuko/sales';
+import type { TaskStatus, EditorData } from '@zuko/sales';
 
 export class UpdateTaskDto {
   title?: string;

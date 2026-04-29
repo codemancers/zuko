@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { ColumnMetadata } from '@zuko/sales';
+import type { ColumnMetadata } from '@zuko/sales';
 import dayjs from 'dayjs';
 
 /**

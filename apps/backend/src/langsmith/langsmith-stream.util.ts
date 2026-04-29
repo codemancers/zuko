@@ -1,4 +1,4 @@
-import { Readable } from "node:stream";
+import type { Readable } from "node:stream";
 
 /**
  * Transform SSE stream from LangSmith / LangGraph agent server

@@ -18,8 +18,8 @@ import { TaskService } from '@zuko/sales';
 import type { RequestWithUser } from '@zuko/core';
 import { OrganizationGuard } from '../../common/auth/organization.guard';
 import { OrgId } from '../../common/auth/org-id.decorator';
-import { CreateTaskDto } from './dto/create-task.dto';
-import { UpdateTaskDto } from './dto/update-task.dto';
+import type { CreateTaskDto } from './dto/create-task.dto';
+import type { UpdateTaskDto } from './dto/update-task.dto';
 
 export class TaskListQueryDto {
   page?: number;

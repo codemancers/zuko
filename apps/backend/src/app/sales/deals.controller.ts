@@ -15,8 +15,8 @@ import {
   Logger,
 } from '@nestjs/common';
 import { AuthGuard } from '@thallesp/nestjs-better-auth';
-import {
-  DealsService,
+import { DealsService } from '@zuko/sales';
+import type {
   CreateDealInput,
   UpdateDealInput,
   AddCompanyToDealInput,
@@ -108,7 +108,11 @@ export class DealsController {
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  async create(@Req() req: RequestWithUser, @OrgId() organizationId: number, @Body() dto: CreateDealDto) {
+  async create(
+    @Req() req: RequestWithUser,
+    @OrgId() organizationId: number,
+    @Body() dto: CreateDealDto,
+  ) {
     this.logger.log('[CREATE_DEAL] Request received');
     this.logger.debug(
       `[CREATE_DEAL] Payload: ${JSON.stringify({
@@ -296,7 +300,12 @@ export class DealsController {
 
     try {
       const actorId = parseInt(req.user.id, 10);
-      const result = await this.dealsService.addCompany(id, organizationId, dto, actorId);
+      const result = await this.dealsService.addCompany(
+        id,
+        organizationId,
+        dto,
+        actorId,
+      );
       this.logger.log(
         `[ADD_COMPANY_TO_DEAL] Success - Company ${dto.companyId} added to Deal ${id}`,
       );
@@ -337,7 +346,12 @@ export class DealsController {
     @Param('companyId', ParseIntPipe) companyId: number,
   ) {
     const actorId = parseInt(req.user.id, 10);
-    await this.dealsService.removeCompany(id, organizationId, companyId, actorId);
+    await this.dealsService.removeCompany(
+      id,
+      organizationId,
+      companyId,
+      actorId,
+    );
   }
 
   @Get(':id/companies')
@@ -362,7 +376,12 @@ export class DealsController {
 
     try {
       const actorId = parseInt(req.user.id, 10);
-      const result = await this.dealsService.addContact(id, organizationId, dto, actorId);
+      const result = await this.dealsService.addContact(
+        id,
+        organizationId,
+        dto,
+        actorId,
+      );
       this.logger.log(
         `[ADD_CONTACT_TO_DEAL] Success - Contact ${dto.contactId} added to Deal ${id}`,
       );
@@ -398,7 +417,12 @@ export class DealsController {
     @Param('contactId', ParseIntPipe) contactId: number,
   ) {
     const actorId = parseInt(req.user.id, 10);
-    await this.dealsService.removeContact(id, organizationId, contactId, actorId);
+    await this.dealsService.removeContact(
+      id,
+      organizationId,
+      contactId,
+      actorId,
+    );
   }
 
   @Get(':id/contacts')

@@ -1,21 +1,21 @@
 import axios from "axios";
 import { Injectable } from "@nestjs/common";
 import { BaseService } from "../../common/base/base.service";
-import { MeetingSchema } from "../../common/schemas/meeting.schema";
+import type { MeetingSchema } from "../../common/schemas/meeting.schema";
 import puppeteer from "puppeteer-extra";
 import StealthPlugin from "puppeteer-extra-plugin-stealth";
 import { launch, getStream } from "puppeteer-stream";
-import {
+import type {
   TranscriptionService,
   TranscriptData,
 } from "../transcription/transcription.service";
-import { AwsService } from "../aws/aws.service";
-import { FlyService } from "../fly/fly.service";
-import { EventEmitter } from "events";
+import type { AwsService } from "../aws/aws.service";
+import type { FlyService } from "../fly/fly.service";
+import type { EventEmitter } from "events";
 import * as fs from "fs";
-import { GoogleMeetHelper } from "./google-meet-helper";
-import { AudioService } from "../audio/audio.service";
-import { WebSocketService } from "../websocket/websocket.service";
+import type { GoogleMeetHelper } from "./google-meet-helper";
+import type { AudioService } from "../audio/audio.service";
+import type { WebSocketService } from "../websocket/websocket.service";
 import * as path from "path";
 import { TranscriptBuffer } from "../../utils/transcript-buffer";
 
@@ -368,7 +368,7 @@ export class GoogleMeetService extends BaseService {
           ) {
             throw error;
           }
-          throw new Error("Failed to join meeting");
+          throw new Error("Failed to join meeting", { cause: error });
         }
       } catch (error) {
         const rejectedByError =
@@ -412,7 +412,7 @@ export class GoogleMeetService extends BaseService {
       }
 
       await this.page.evaluate(() => {
-        window.ws?.enableMediaSending && window.ws.enableMediaSending();
+        window.ws?.enableMediaSending?.();
       });
 
       await this.callback(callbackUrl, meetingId, "in_progress");
@@ -723,7 +723,7 @@ export class GoogleMeetService extends BaseService {
       this.speakerPolling = false;
 
       await this.page.evaluate(() => {
-        window.ws?.disableMediaSending && window.ws.disableMediaSending();
+        window.ws?.disableMediaSending?.();
       });
 
       if (this.videoStream) this.videoStream.destroy();

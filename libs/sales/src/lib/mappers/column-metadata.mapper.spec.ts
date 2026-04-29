@@ -1,4 +1,5 @@
-import { TableColumnRecord, mapTableColumnToMetadata, mapTableColumnsToMetadata } from './column-metadata.mapper';
+import type { TableColumnRecord} from './column-metadata.mapper';
+import { mapTableColumnToMetadata, mapTableColumnsToMetadata } from './column-metadata.mapper';
 
 describe('column-metadata.mapper', () => {
   const mockBaseRecord: TableColumnRecord = {

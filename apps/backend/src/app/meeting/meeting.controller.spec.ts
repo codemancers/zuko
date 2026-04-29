@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { Test, TestingModule } from "@nestjs/testing";
+import type { TestingModule } from "@nestjs/testing";
+import { Test } from "@nestjs/testing";
 import { MeetingController } from "./meeting.controller";
 import { MeetingService } from "./meeting.service";
 import { AuthGuard } from "@thallesp/nestjs-better-auth";

@@ -1,4 +1,4 @@
-import { Contact, Company, User, ContactOwner, CompanyOwner, Deal } from '@prisma/client';
+import type { Contact, Company, User, ContactOwner, CompanyOwner, Deal } from '@prisma/client';
 
 /**
  * Interface representing Editor.js output data structure.

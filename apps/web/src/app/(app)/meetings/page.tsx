@@ -1,6 +1,6 @@
 import React from 'react';
 import { dehydrate, HydrationBoundary } from '@tanstack/react-query';
-import { Metadata } from 'next';
+import type { Metadata } from 'next';
 import { MeetingList } from '@/components/meeting/meeting-list';
 import { getQueryClient } from '@/lib/react-query/get-query-client';
 import { getMeetings } from '@/server/query-options';

@@ -1,7 +1,7 @@
 import axios from "axios";
 import { Injectable } from "@nestjs/common";
 import { BaseService } from "../../common/base/base.service";
-import { MeetingSchema } from "../../common/schemas/meeting.schema";
+import type { MeetingSchema } from "../../common/schemas/meeting.schema";
 
 @Injectable()
 export class FlyService extends BaseService {

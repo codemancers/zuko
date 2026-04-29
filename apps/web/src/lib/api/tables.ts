@@ -1,6 +1,6 @@
-import { JSONValue } from 'next/dist/server/config-shared';
+import type { JSONValue } from 'next/dist/server/config-shared';
 import { apiClient } from '../api-client';
-import { ColumnConfig } from '@/types/table-metadata';
+import type { ColumnConfig } from '@/types/table-metadata';
 
 export interface CreateColumnDto {
   label: string;

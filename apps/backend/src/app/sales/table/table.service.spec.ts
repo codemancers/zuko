@@ -1,25 +1,27 @@
 import { describe, it, expect, beforeEach, beforeAll, afterAll } from 'vitest';
-import { Test, TestingModule } from '@nestjs/testing';
+import type { TestingModule } from '@nestjs/testing';
+import { Test } from '@nestjs/testing';
 import { TableService } from './table.service';
+import type {
+  ColumnType,
+  ColumnMetadata} from '@zuko/sales';
 import {
   CompaniesService,
   ContactsService,
   DealsService,
   TableColumnRepository,
-  ColumnType,
   CompaniesRepository,
   ContactsRepository,
-  DealsRepository,
-  ColumnMetadata,
+  DealsRepository
 } from '@zuko/sales';
 import { TableRowBuilder } from './row-builder/table-row.builder';
 import { PrismaService } from '../../../prisma/prisma.service';
-import { Contact, Company, Organization, TableColumn, User, Deal } from '@prisma/client';
-import { CreateColumnDto, UpdateCellDto } from './table.controller';
+import type { Contact, Company, Organization, TableColumn, User, Deal } from '@prisma/client';
+import type { CreateColumnDto, UpdateCellDto } from './table.controller';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { CompanyListQueryDto } from '../companies.controller';
-import { ContactListQueryDto } from '../contacts.controller';
-import { DealListQueryDto } from '../deals.controller';
+import type { CompanyListQueryDto } from '../companies.controller';
+import type { ContactListQueryDto } from '../contacts.controller';
+import type { DealListQueryDto } from '../deals.controller';
 
 describe('TableService', () => {
   let service: TableService;
@@ -757,7 +759,7 @@ describe('TableService', () => {
       await service.updateCell('contacts', contact.id, testOrg.id, testUser.id, dto);
 
       const dbContact = await prisma.contact.findUnique({ where: { id: contact.id } });
-      expect((dbContact?.fields as Record<string, unknown>)[columnKey]).toBe('New Source');
+      expect((dbContact!.fields as Record<string, unknown>)[columnKey]).toBe('New Source');
     });
 
     it('updates a default column for a company', async () => {
@@ -805,7 +807,7 @@ describe('TableService', () => {
       await service.updateCell('companies', company.id, testOrg.id, testUser.id, dto);
 
       const dbCompany = await prisma.company.findUnique({ where: { id: company.id } });
-      expect((dbCompany?.fields as Record<string, unknown>)[columnKey]).toBe('New Industry');
+      expect((dbCompany!.fields as Record<string, unknown>)[columnKey]).toBe('New Industry');
     });
 
     it('updates a default column for a deal', async () => {
@@ -856,7 +858,7 @@ describe('TableService', () => {
       await service.updateCell('deals', deal.id, testOrg.id, testUser.id, dto);
 
       const dbDeal = await prisma.deal.findUnique({ where: { id: deal.id } });
-      expect((dbDeal?.fields as Record<string, unknown>)[columnKey]).toBe(20);
+      expect((dbDeal!.fields as Record<string, unknown>)[columnKey]).toBe(20);
     });
 
     it('throws error when updating a custom column that does not exist', async () => {

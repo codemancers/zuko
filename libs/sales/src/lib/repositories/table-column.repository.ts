@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import type { PrismaService } from '../modules/prisma.types';
-import { ColumnConfig } from '../types';
+import type { ColumnConfig } from '../types';
 
 @Injectable()
 export class TableColumnRepository {

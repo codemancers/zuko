@@ -31,9 +31,11 @@ export class AudioService extends BaseService {
       ]);
 
       ffmpegExtract.on("close", (code) => {
-        code === 0
-          ? resolve(true)
-          : reject(new Error(`FFmpeg exited with code ${code}`));
+        if (code === 0) {
+          resolve(true);
+        } else {
+          reject(new Error(`FFmpeg exited with code ${code}`));
+        }
       });
     });
   }

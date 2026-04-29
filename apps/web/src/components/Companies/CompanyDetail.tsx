@@ -17,10 +17,11 @@ import {
   Text,
 } from '@zuko/ui-kit';
 import Editor, { ensureOutputData } from '@/components/Common/Editor/Editor';
-import { OutputData } from '@editorjs/editorjs';
+import type { OutputData } from '@editorjs/editorjs';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getCompany, getDealsByCompany } from '@/server/query-options';
-import { companiesApi, UpdateCompanyDto } from '@/lib/api/companies';
+import type { UpdateCompanyDto } from '@/lib/api/companies';
+import { companiesApi } from '@/lib/api/companies';
 import { toast } from 'sonner';
 import dayjs from 'dayjs';
 import { useRouter } from 'next/navigation';
@@ -29,12 +30,11 @@ import ActivityTimeline from '@/components/Activity/ActivityTimeline';
 import AddContactDialog from './AddContactDialog';
 
 import ConfirmDialog from '@/components/shared/ConfirmDialog';
-import { BackLink, DetailHeader, EntityProperties } from '@/components/shared';
+import { BackLink, DetailHeader, EntityProperties, LoadingState } from '@/components/shared';
 import {
   InlineSaveCancel,
   InlineEditRemove,
 } from '@/components/shared/InlineEditActions';
-import { LoadingState } from '@/components/shared';
 import { formatCurrency, getStageColor, formatStage } from '@/lib/format-utils';
 
 interface CompanyDetailProps {

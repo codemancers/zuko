@@ -2,17 +2,21 @@ import {
   ForbiddenException,
   Injectable,
   NotFoundException,
-} from "@nestjs/common";
-import { randomUUID } from "crypto";
-import type { RequestWithUser } from "@zuko/core";
-import type { UIMessage } from "ai";
-import { toBaseMessages } from "@ai-sdk/langchain";
-import { ContextEntityReference, MessageMetadata } from "../types/chat";
-import { getActiveOrganizationId } from "../common/auth/get-organization-id";
-import { PrismaService } from "../prisma/prisma.service";
-import { LangsmithService } from "../langsmith/langsmith.service";
-import { SpritesService } from "../sprites/sprites.service";
-import { ChatsRepository } from "./chats.repository";
+} from '@nestjs/common';
+import { randomUUID } from 'crypto';
+import type { RequestWithUser } from '@zuko/core';
+import type { UIMessage } from 'ai';
+import { toBaseMessages } from '@ai-sdk/langchain';
+import type { ContextEntityReference, MessageMetadata } from '../types/chat';
+import { getActiveOrganizationId } from '../common/auth/get-organization-id';
+// eslint-disable-next-line @typescript-eslint/consistent-type-imports
+import { PrismaService } from '../prisma/prisma.service';
+// eslint-disable-next-line @typescript-eslint/consistent-type-imports
+import { LangsmithService } from '../langsmith/langsmith.service';
+// eslint-disable-next-line @typescript-eslint/consistent-type-imports
+import { SpritesService } from '../sprites/sprites.service';
+// eslint-disable-next-line @typescript-eslint/consistent-type-imports
+import { ChatsRepository } from './chats.repository';
 
 @Injectable()
 export class ChatsService {
@@ -46,7 +50,7 @@ export class ChatsService {
     const chat = await this.chatsRepository.findChatById(chatId);
 
     if (!chat) {
-      throw new NotFoundException("Chat not found");
+      throw new NotFoundException('Chat not found');
     }
 
     return chat;
@@ -56,7 +60,10 @@ export class ChatsService {
    * Check if a user is a participant in a chat
    */
   async isParticipant(chatId: number, userId: number): Promise<boolean> {
-    const participant = await this.chatsRepository.findParticipant(chatId, userId);
+    const participant = await this.chatsRepository.findParticipant(
+      chatId,
+      userId,
+    );
     return !!participant;
   }
 
@@ -98,7 +105,7 @@ export class ChatsService {
     // Take first 25 chars for concise sidebar display
     const title =
       firstMessage.length > 25
-        ? firstMessage.substring(0, 22) + "..."
+        ? firstMessage.substring(0, 22) + '...'
         : firstMessage;
 
     return this.updateTitle(chatId, title);
@@ -107,7 +114,7 @@ export class ChatsService {
   async ensureUserIsParticipant(chatId: number, userId: number) {
     const isParticipant = await this.isParticipant(chatId, userId);
     if (!isParticipant) {
-      throw new ForbiddenException("Not a participant in this chat");
+      throw new ForbiddenException('Not a participant in this chat');
     }
   }
 
@@ -123,15 +130,15 @@ export class ChatsService {
   async getMessagesForUser(chatId: number, userId: number) {
     const chat = await this.getChatForUser(chatId, userId);
     const threadId = chat.threadId;
-    const sandboxUrl = chat.sandboxes[0]?.url ?? "";
+    const sandboxUrl = chat.sandboxes[0]?.url ?? '';
 
-    let values: { messages: any[]; contextEntities: any[] };
+    let values: { messages: unknown[]; contextEntities: unknown[] };
     if (!sandboxUrl) {
       values = { messages: [], contextEntities: [] };
     } else {
       const spriteName =
-        process.env.NODE_ENV === "test"
-          ? process.env.E2E_SANDBOX ?? ""
+        process.env.NODE_ENV === 'test'
+          ? (process.env.E2E_SANDBOX ?? '')
           : `${chatId}-${threadId}`;
       await this.spritesService.startServer(spriteName);
       const state: any = await this.langsmithService.getThreadState(
@@ -141,22 +148,24 @@ export class ChatsService {
       values = state?.values ?? { messages: [], contextEntities: [] };
     }
 
-    const rawMessages: any[] = Array.isArray(values.messages) ? values.messages : [];
+    const rawMessages: unknown[] = Array.isArray(values.messages)
+      ? values.messages
+      : [];
     const messages = rawMessages
-      .map((msg) => {
+      .map((msg: any) => {
         const role =
-          msg.type === "human"
-            ? "user"
-            : msg.type === "ai"
-              ? "assistant"
-              : msg.type ?? "system";
+          msg.type === 'human'
+            ? 'user'
+            : msg.type === 'ai'
+              ? 'assistant'
+              : (msg.type ?? 'system');
 
         const content =
-          typeof msg.content === "string"
+          typeof msg.content === 'string'
             ? msg.content
-            : typeof msg.text === "string"
+            : typeof msg.text === 'string'
               ? msg.text
-              : "";
+              : '';
 
         if (!content || !content.trim()) {
           return null;
@@ -168,7 +177,7 @@ export class ChatsService {
 
     const contextEntities =
       Array.isArray(values.contextEntities) && values.contextEntities.length > 0
-        ? values.contextEntities
+        ? (values.contextEntities as unknown[])
         : [];
 
     return { messages, contextEntities };
@@ -192,11 +201,11 @@ export class ChatsService {
     const spriteName = `${chatId}-${threadId}`;
 
     let sandbox = chat.sandboxes[0];
-    if (process.env.NODE_ENV === "test") {
+    if (process.env.NODE_ENV === 'test') {
       sandbox = await this.chatsRepository.createSandboxForChat(
         chat.id,
-        process.env.E2E_SANDBOX ?? "",
-        process.env.E2E_SANDBOX_URL ?? "",
+        process.env.E2E_SANDBOX ?? '',
+        process.env.E2E_SANDBOX_URL ?? '',
       );
     } else if (!sandbox) {
       const sprite = await this.spritesService.createSprite(spriteName);
@@ -212,19 +221,21 @@ export class ChatsService {
       const firstMessage = messages[0];
       const text =
         firstMessage.parts
-          ?.filter((part: any) => part.type === "text")
+          ?.filter((part: any) => part.type === 'text')
           .map((part: any) => part.text)
-          .join("") || ((firstMessage as any).content as string);
+          .join('') || ((firstMessage as any).content as string);
 
       if (text?.trim()) {
         this.autoGenerateTitle(chatId, text.trim()).catch((error) => {
-          console.error("Error auto-generating title", error);
+          console.error('Error auto-generating title', error);
         });
       }
     }
 
-    const supportedRoles = new Set(["user", "assistant", "system"]);
-    const filteredMessages = messages.filter((msg) => supportedRoles.has(msg.role));
+    const supportedRoles = new Set(['user', 'assistant', 'system']);
+    const filteredMessages = messages.filter((msg) =>
+      supportedRoles.has(msg.role),
+    );
     const langchainMessages = await toBaseMessages(filteredMessages);
 
     await this.spritesService.startServer(spriteName);
@@ -232,7 +243,7 @@ export class ChatsService {
     return {
       chatId,
       threadId,
-      sandboxUrl: sandbox?.url ?? "",
+      sandboxUrl: sandbox?.url ?? '',
       contextEntities,
       langchainMessages,
     };

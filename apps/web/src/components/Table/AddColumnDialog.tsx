@@ -22,7 +22,7 @@ import {
 import { useQuery } from '@tanstack/react-query';
 import { metadataApi } from '@/lib/api';
 import { PlusIcon, XMarkIcon } from '@heroicons/react/20/solid';
-import { ColumnConfig } from '@/types/table-metadata';
+import type { ColumnConfig } from '@/types/table-metadata';
 
 interface AddColumnDialogProps {
   isOpen: boolean;

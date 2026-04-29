@@ -1,14 +1,13 @@
-import {
-  Injectable,
-  Logger,
-  OnModuleDestroy,
-  OnModuleInit,
-} from "@nestjs/common";
-import { ConfigService } from "@nestjs/config";
-import pg from "pg";
-import { MeetingGateway } from "./meeting.gateway";
+import type { OnModuleDestroy, OnModuleInit } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
+// eslint-disable-next-line @typescript-eslint/consistent-type-imports
+import { ConfigService } from '@nestjs/config';
+import { Pool, Client } from 'pg';
+import type { Notification } from 'pg';
+// eslint-disable-next-line @typescript-eslint/consistent-type-imports
+import { MeetingGateway } from './meeting.gateway';
 
-const CHANNEL = "meeting_end";
+const CHANNEL = 'meeting_end';
 
 /**
  * Uses Postgres LISTEN/NOTIFY so that when any backend instance calls endMeeting,
@@ -19,14 +18,14 @@ const CHANNEL = "meeting_end";
 export class MeetingNotifyService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(MeetingNotifyService.name);
   /** Dedicated connection for LISTEN; must stay open to receive notifications. */
-  private listenClient: pg.Client | null = null;
+  private listenClient: Client | null = null;
   /** Separate connection used only for sending NOTIFY (avoids blocking the listener). */
-  private notifyPool: pg.Pool | null = null;
+  private notifyPool: Pool | null = null;
   private reconnectTimeout: ReturnType<typeof setTimeout> | null = null;
 
   constructor(
     private readonly configService: ConfigService,
-    private readonly meetingGateway: MeetingGateway
+    private readonly meetingGateway: MeetingGateway,
   ) {}
 
   async onModuleInit(): Promise<void> {
@@ -44,7 +43,7 @@ export class MeetingNotifyService implements OnModuleInit, OnModuleDestroy {
       this.listenClient
         .end()
         .catch((err) =>
-          this.logger.debug("Listen client end error (ignored)", err)
+          this.logger.debug('Listen client end error (ignored)', err),
         );
       this.listenClient = null;
     }
@@ -55,13 +54,13 @@ export class MeetingNotifyService implements OnModuleInit, OnModuleDestroy {
   }
 
   private get connectionString(): string | undefined {
-    return this.configService.get<string>("DATABASE_URL");
+    return this.configService.get<string>('DATABASE_URL');
   }
 
   private initNotifyPool(): void {
     const connectionString = this.connectionString;
     if (!connectionString) return;
-    this.notifyPool = new pg.Pool({
+    this.notifyPool = new Pool({
       connectionString,
       max: 1,
       idleTimeoutMillis: 60000,
@@ -72,35 +71,35 @@ export class MeetingNotifyService implements OnModuleInit, OnModuleDestroy {
     const connectionString = this.connectionString;
     if (!connectionString) {
       this.logger.warn(
-        "DATABASE_URL not set; meeting end LISTEN/NOTIFY disabled"
+        'DATABASE_URL not set; meeting end LISTEN/NOTIFY disabled',
       );
       return;
     }
 
-    this.listenClient = new pg.Client({ connectionString });
+    this.listenClient = new Client({ connectionString });
 
-    this.listenClient.on("notification", (msg: pg.Notification) => {
+    this.listenClient.on('notification', (msg: Notification) => {
       if (msg.channel !== CHANNEL) return;
       try {
-        const payload = JSON.parse(msg.payload ?? "{}");
+        const payload = JSON.parse(msg.payload ?? '{}');
         const meetingId = payload?.meetingId;
         if (!meetingId) {
           this.logger.warn(
-            "meeting_end notification payload missing meetingId"
+            'meeting_end notification payload missing meetingId',
           );
           return;
         }
         this.meetingGateway.sendEnd(meetingId);
       } catch (e) {
-        this.logger.warn("Invalid meeting_end notification payload", e);
+        this.logger.warn('Invalid meeting_end notification payload', e);
       }
     });
 
-    this.listenClient.on("error", (err) => {
-      this.logger.error("Meeting notify listen client error", err);
+    this.listenClient.on('error', (err) => {
+      this.logger.error('Meeting notify listen client error', err);
     });
 
-    this.listenClient.on("end", () => {
+    this.listenClient.on('end', () => {
       this.listenClient = null;
       this.scheduleReconnect();
     });
@@ -110,7 +109,7 @@ export class MeetingNotifyService implements OnModuleInit, OnModuleDestroy {
       await this.listenClient.query(`LISTEN ${CHANNEL}`);
       this.logger.log(`LISTEN ${CHANNEL} active`);
     } catch (err) {
-      this.logger.error("Failed to connect/listen for meeting_end", err);
+      this.logger.error('Failed to connect/listen for meeting_end', err);
       this.listenClient = null;
       this.scheduleReconnect();
     }
@@ -132,15 +131,15 @@ export class MeetingNotifyService implements OnModuleInit, OnModuleDestroy {
     const pool = this.notifyPool;
     if (!pool) {
       this.logger.warn(
-        "Notify pool not initialized; cannot NOTIFY meeting_end"
+        'Notify pool not initialized; cannot NOTIFY meeting_end',
       );
       return;
     }
     const payload = JSON.stringify({ meetingId });
     try {
-      await pool.query("SELECT pg_notify($1, $2)", [CHANNEL, payload]);
+      await pool.query('SELECT pg_notify($1, $2)', [CHANNEL, payload]);
     } catch (err) {
-      this.logger.error("Failed to NOTIFY meeting_end", err);
+      this.logger.error('Failed to NOTIFY meeting_end', err);
     }
   }
 }

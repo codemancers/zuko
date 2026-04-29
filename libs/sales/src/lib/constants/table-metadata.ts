@@ -1,4 +1,4 @@
-import { ColumnMetadata } from '../types/table-metadata';
+import type { ColumnMetadata } from '../types/table-metadata';
 import { DEAL_STAGES } from './deals';
 import { TASK_STATUSES } from './tasks';
 

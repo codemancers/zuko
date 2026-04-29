@@ -16,8 +16,9 @@ import {
 } from '@nestjs/common';
 import { AuthGuard } from '@thallesp/nestjs-better-auth';
 import type { RequestWithUser } from '@zuko/core';
-import {
-  ContactsService,
+// eslint-disable-next-line @typescript-eslint/consistent-type-imports
+import { ContactsService } from '@zuko/sales';
+import type {
   CreateContactInput,
   UpdateContactInput,
   EditorData,
@@ -26,9 +27,10 @@ import { OrganizationGuard } from '../../common/auth/organization.guard';
 import { OrgId } from '../../common/auth/org-id.decorator';
 
 // DTOs for API requests (organizationId is set from session via OrganizationGuard)
-export class CreateContactDto
-  implements Omit<CreateContactInput, 'organizationId'>
-{
+export class CreateContactDto implements Omit<
+  CreateContactInput,
+  'organizationId'
+> {
   name!: string;
   email?: string;
   phone?: string;
@@ -90,7 +92,10 @@ export class ContactsController {
 
     try {
       const actorId = parseInt(req.user.id, 10);
-      const result = await this.contactsService.create({ ...dto, organizationId }, actorId);
+      const result = await this.contactsService.create(
+        { ...dto, organizationId },
+        actorId,
+      );
       this.logger.log(`[CREATE_CONTACT] Success - Contact ID: ${result.id}`);
       return result;
     } catch (error: unknown) {
@@ -168,7 +173,13 @@ export class ContactsController {
     @Req() req: RequestWithUser,
   ) {
     const actorId = parseInt(req.user.id, 10);
-    return this.contactsService.addOwner(id, organizationId, dto.userId, dto.isPrimary, actorId);
+    return this.contactsService.addOwner(
+      id,
+      organizationId,
+      dto.userId,
+      dto.isPrimary,
+      actorId,
+    );
   }
 
   @Delete(':id/owners/:userId')

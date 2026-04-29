@@ -1,5 +1,5 @@
 import { Body, Controller, Post } from "@nestjs/common";
-import { GoogleMeetService } from "./google-meet.service";
+import type { GoogleMeetService } from "./google-meet.service";
 import { meetingSchema } from "../../common/schemas/meeting.schema";
 import type { MeetingSchema } from "../../common/schemas/meeting.schema";
 

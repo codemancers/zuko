@@ -13,13 +13,12 @@ import { useEffect, Suspense, useState } from 'react';
 import { AddMemberDialog } from '@/components/organization/add-member-dialog';
 import { CreateTeamDialog } from '@/components/organization/create-team-dialog';
 import { PageHeader } from '@/components/shared';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQueryClient, useQuery } from '@tanstack/react-query';
 import { authClient } from '@/lib/auth-client';
 import { OrgTeams } from '@/components/organization/org-teams';
 import { OrgMembers } from '@/components/organization/org-members';
 import { UserInvitations } from '@/components/organization/user-invitations';
 import { OrgConnections } from '@/components/organization/org-connections';
-import { useQuery } from '@tanstack/react-query';
 import { getUserInvitations } from '@/server/query-options';
 import { useQueryState, parseAsStringLiteral } from 'nuqs';
 

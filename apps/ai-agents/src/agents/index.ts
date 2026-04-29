@@ -1,6 +1,7 @@
 import { ChatOpenAI } from "@langchain/openai";
-import {  SubAgent, createDeepAgent } from "deepagents";
-import { Tool } from "langchain";
+import type {  SubAgent} from "deepagents";
+import { createDeepAgent } from "deepagents";
+import type { Tool } from "langchain";
 
 import { createPersistentContextMiddleware } from "../middleware";
 import { SYSTEM_PROMPT } from "../shared/prompts";

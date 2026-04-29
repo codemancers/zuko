@@ -1,8 +1,8 @@
 import React from 'react';
-import { RowModel } from '@tanstack/react-table';
+import type { RowModel } from '@tanstack/react-table';
 import { BaseTableRow } from './BaseTableRow';
 import { TableBody } from '@zuko/ui-kit';
-import { BaseRow } from './types';
+import type { BaseRow } from './types';
 
 interface BaseTableBodyProps<TData extends BaseRow> {
   rowModel: RowModel<TData>;

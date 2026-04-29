@@ -13,6 +13,7 @@ import {
   TableActions,
   DeleteAction,
   createColumnsFromMetadata,
+  BaseTable,
   type BaseRow,
 } from '../Table';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -25,11 +26,9 @@ import {
 import { useMemo, useState } from 'react';
 import { authClient } from '@/lib/auth-client';
 import { toast } from 'sonner';
-import { BaseTable } from '../Table';
 import type { ColumnDef } from '@tanstack/react-table';
 import { TEAM_TABLE_METADATA, type OrgTeam } from './team-columns';
-import { ConfirmDialog } from '@/components/shared';
-import { BackLink } from '@/components/shared';
+import { ConfirmDialog, BackLink } from '@/components/shared';
 
 export const OrgTeams = ({
   slug,

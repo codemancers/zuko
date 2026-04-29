@@ -1,6 +1,8 @@
-import { describe, it, expect, beforeEach, type Mock } from 'vitest';
-import { Test, TestingModule } from '@nestjs/testing';
-import { DealsController, CreateDealDto } from './deals.controller';
+import { describe, it, expect, beforeEach, vi, type Mock } from 'vitest';
+import type { TestingModule } from '@nestjs/testing';
+import { Test } from '@nestjs/testing';
+import type { CreateDealDto } from './deals.controller';
+import { DealsController } from './deals.controller';
 import { DealsService } from '@zuko/sales';
 import { AuthGuard } from '@thallesp/nestjs-better-auth';
 import { OrganizationGuard } from '../../common/auth/organization.guard';

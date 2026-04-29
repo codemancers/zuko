@@ -7,8 +7,7 @@
     ],
     "production": [
       "default",
-      "!{projectRoot}/.eslintrc.json",
-      "!{projectRoot}/eslint.config.mjs",
+      "!{projectRoot}/.oxlintrc.json",
       "!{projectRoot}/**/?(*.)+(spec|test).[jt]s?(x)?(.snap)",
       "!{projectRoot}/tsconfig.spec.json",
       "!{projectRoot}/src/test-setup.[jt]s",
@@ -51,10 +50,11 @@
       }
     },
     {
-      "plugin": "@nx/eslint/plugin",
+      "plugin": "nx-oxlint",
       "options": {
-        "targetName": "lint"
-      }
+        "lintTargetName": "lint"
+      },
+      "exclude": ["docs/**"]
     },
     {
       "plugin": "@nx/vitest",
@@ -132,8 +132,7 @@
   "generators": {
     "@nx/next": {
       "application": {
-        "style": "tailwind",
-        "linter": "eslint"
+        "style": "tailwind"
       }
     }
   }
