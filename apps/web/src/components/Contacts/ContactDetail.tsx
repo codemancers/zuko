@@ -20,8 +20,7 @@ import Editor, { ensureOutputData } from '@/components/Common/Editor/Editor';
 import type { OutputData } from '@editorjs/editorjs';
 
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
-import { BackLink, DetailHeader, EntityProperties } from '@/components/shared';
-import { LoadingState } from '@/components/shared';
+import { BackLink, DetailHeader, EntityProperties, LoadingState } from '@/components/shared';
 import { formatCurrency, getStageColor, formatStage } from '@/lib/format-utils';
 
 interface ContactDetailProps {

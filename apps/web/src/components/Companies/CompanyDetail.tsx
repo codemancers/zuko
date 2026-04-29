@@ -30,7 +30,7 @@ import ActivityTimeline from '@/components/Activity/ActivityTimeline';
 import AddContactDialog from './AddContactDialog';
 
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
-import { BackLink, DetailHeader, EntityProperties } from '@/components/shared';
+import { BackLink, DetailHeader, EntityProperties, LoadingState } from '@/components/shared';
 import {
   InlineSaveCancel,
   InlineEditRemove,
