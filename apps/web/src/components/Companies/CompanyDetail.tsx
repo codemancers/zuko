@@ -29,8 +29,8 @@ import Link from 'next/link';
 import ActivityTimeline from '@/components/Activity/ActivityTimeline';
 import AddContactDialog from './AddContactDialog';
 
-import ConfirmDialog from '@/components/shared/ConfirmDialog';
-import { BackLink, DetailHeader, EntityProperties, LoadingState } from '@/components/shared';
+import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
+import { BackLink, DetailHeader, EntityProperties } from '@/components/shared';
 import {
   InlineSaveCancel,
   InlineEditRemove,
@@ -61,7 +61,9 @@ export default function CompanyDetail({
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['company', companyId] });
       queryClient.invalidateQueries({ queryKey: ['companies'] });
-      queryClient.invalidateQueries({ queryKey: ['timeline', 'company', companyId] });
+      queryClient.invalidateQueries({
+        queryKey: ['timeline', 'company', companyId],
+      });
     },
     onError: (error) => {
       toast.error('Failed to save changes');
@@ -74,10 +76,13 @@ export default function CompanyDetail({
     onSave: (val) => updateMutation.mutateAsync({ companyName: val }),
   });
 
-  const summaryField = useAutosaveField<OutputData>(ensureOutputData(company?.summary), {
-    fieldName: 'summary',
-    onSave: (val) => updateMutation.mutateAsync({ summary: val }),
-  });
+  const summaryField = useAutosaveField<OutputData>(
+    ensureOutputData(company?.summary),
+    {
+      fieldName: 'summary',
+      onSave: (val) => updateMutation.mutateAsync({ summary: val }),
+    },
+  );
 
   const [showHideDialog, setShowHideDialog] = useState(false);
   const [contactToRemove, setContactToRemove] = useState<{
@@ -135,7 +140,6 @@ export default function CompanyDetail({
 
   const primaryOwner = company.owners.find((o) => o.isPrimary);
   const primaryOwnerName = primaryOwner?.user.name || 'Unassigned';
-
 
   const handleEdit = () => {
     router.push(`/companies/${companyId}/edit`);
@@ -238,8 +242,7 @@ export default function CompanyDetail({
             renderType: 'link',
             fieldType: 'text',
             placeholder: 'eg: https://example.com',
-            onSave: (val) =>
-              updateMutation.mutateAsync({ website: val }),
+            onSave: (val) => updateMutation.mutateAsync({ website: val }),
           },
           {
             label: 'LinkedIn',
@@ -250,12 +253,10 @@ export default function CompanyDetail({
             options: {
               validation: 'linkedin',
             },
-            onSave: (val) =>
-              updateMutation.mutateAsync({ linkedinUrl: val }),
+            onSave: (val) => updateMutation.mutateAsync({ linkedinUrl: val }),
           },
         ]}
       />
-
 
       {/* Summary */}
       <div className="mt-8">
@@ -401,7 +402,6 @@ export default function CompanyDetail({
           </div>
         </div>
       )}
-
 
       {/* Activity Timeline */}
       <ActivityTimeline
