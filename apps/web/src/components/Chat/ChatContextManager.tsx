@@ -2,14 +2,13 @@
 
 import { useState, useCallback, useMemo, type ReactElement } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { UserIcon, BuildingOfficeIcon, BriefcaseIcon } from '@heroicons/react/24/outline';
-import type {
-  EntityItem} from '@zuko/ui-kit';
 import {
-  Button,
-  ContextChip,
-  usePromptInputReferencedSources,
-} from '@zuko/ui-kit';
+  UserIcon,
+  BuildingOfficeIcon,
+  BriefcaseIcon,
+} from '@heroicons/react/24/outline';
+import type { EntityItem } from '@zuko/ui-kit';
+import { ContextChip, usePromptInputReferencedSources } from '@zuko/ui-kit';
 import { type Contact } from '@/lib/api/contacts';
 import { type Company } from '@/lib/api/companies';
 import { type Deal } from '@/lib/api/deals';
@@ -291,15 +290,17 @@ export const ChatContextDisplay = () => {
     <div className="flex flex-wrap gap-2">
       {sources.map((source) => {
         const type = (source as any).metadata?.type as ChatEntityType;
-        const color = CONTEXT_TYPE_COLOR_MAP[type] ?? CONTEXT_TYPE_COLOR_MAP.contact;
-        const icon = CONTEXT_TYPE_ICON_MAP[type] ?? CONTEXT_TYPE_ICON_MAP.contact;
+        const color =
+          CONTEXT_TYPE_COLOR_MAP[type] ?? CONTEXT_TYPE_COLOR_MAP.contact;
+        const icon =
+          CONTEXT_TYPE_ICON_MAP[type] ?? CONTEXT_TYPE_ICON_MAP.contact;
         const rawLabel = (source as any).title ?? '';
         const label =
           typeof rawLabel === 'string' &&
           rawLabel &&
           !rawLabel.includes('undefined')
             ? rawLabel
-            : CHAT_ENTITY_TYPE_LABEL[type] ?? CHAT_ENTITY_TYPE_LABEL.contact;
+            : (CHAT_ENTITY_TYPE_LABEL[type] ?? CHAT_ENTITY_TYPE_LABEL.contact);
 
         return (
           <ContextChip
@@ -313,46 +314,5 @@ export const ChatContextDisplay = () => {
         );
       })}
     </div>
-  );
-};
-
-// ============================================================================
-// Entity Selector Trigger Component
-// ============================================================================
-
-interface EntitySelectorTriggerProps {
-  onSelectType: (type: 'contact' | 'company' | 'deal') => void;
-}
-
-const EntitySelectorTrigger = ({
-  onSelectType,
-}: EntitySelectorTriggerProps) => {
-  return (
-    <>
-      <Button
-        plain
-        onClick={() => onSelectType('contact')}
-        className="w-full justify-start gap-2 px-3 py-2 text-sm font-normal"
-      >
-        <UserIcon className="size-4" />
-        Add contact
-      </Button>
-      <Button
-        plain
-        onClick={() => onSelectType('company')}
-        className="w-full justify-start gap-2 px-3 py-2 text-sm font-normal"
-      >
-        <BuildingOfficeIcon className="size-4" />
-        Add company
-      </Button>
-      <Button
-        plain
-        onClick={() => onSelectType('deal')}
-        className="w-full justify-start gap-2 px-3 py-2 text-sm font-normal"
-      >
-        <BriefcaseIcon className="size-4" />
-        Add deal
-      </Button>
-    </>
   );
 };
