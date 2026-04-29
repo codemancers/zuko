@@ -163,6 +163,6 @@ export const EditorRegistry: Record<string, (props: EditorProps) => ReactNode> =
   entity: TextEditor,
 };
 
-export function getEditor(type: string) {
+function getEditor(type: string) {
   return EditorRegistry[type];
 }

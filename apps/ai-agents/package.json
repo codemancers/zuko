@@ -114,8 +114,6 @@
     }
   },
   "dependencies": {
-    "@langchain/langgraph": "^1.2.3",
-    "@langchain/langgraph-checkpoint-postgres": "^1.0.0",
     "@langchain/openai": "^1.2.1",
     "deepagents": "^1.4.0",
     "langchain": "^1.2.7"

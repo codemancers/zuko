@@ -320,11 +320,11 @@ export const ChatContextDisplay = () => {
 // Entity Selector Trigger Component
 // ============================================================================
 
-export interface EntitySelectorTriggerProps {
+interface EntitySelectorTriggerProps {
   onSelectType: (type: 'contact' | 'company' | 'deal') => void;
 }
 
-export const EntitySelectorTrigger = ({
+const EntitySelectorTrigger = ({
   onSelectType,
 }: EntitySelectorTriggerProps) => {
   return (

@@ -71,7 +71,7 @@ interface ViewActionProps {
   label?: string;
 }
 
-export function ViewAction({ href, label = 'View' }: ViewActionProps) {
+function ViewAction({ href, label = 'View' }: ViewActionProps) {
   return (
     <Tooltip>
       <TooltipTrigger asChild>
@@ -98,7 +98,7 @@ interface EditActionProps {
   disabled?: boolean;
 }
 
-export function EditAction({ onClick, label = 'Edit', disabled }: EditActionProps) {
+function EditAction({ onClick, label = 'Edit', disabled }: EditActionProps) {
   return (
     <TableActionButton onClick={onClick} label={label} disabled={disabled}>
       <PencilSquareIcon className="h-4 w-4" />
