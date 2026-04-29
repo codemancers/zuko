@@ -1,9 +1,6 @@
 {
   "$schema": "https://raw.githubusercontent.com/oxc-project/oxc/main/npm/oxlint/configuration_schema.json",
-  "plugins": [
-    "typescript",
-    "import"
-  ],
+  "plugins": ["typescript", "import"],
   "env": {
     "node": true,
     "es2021": true
@@ -16,10 +13,7 @@
   "rules": {
     "no-console": "warn",
     "no-unused-vars": "warn",
-    "eqeqeq": [
-      "error",
-      "smart"
-    ],
+    "eqeqeq": ["error", "smart"],
     "prefer-const": "error",
     "no-var": "error",
     "typescript/no-explicit-any": "warn",
