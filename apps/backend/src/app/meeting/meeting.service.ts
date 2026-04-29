@@ -33,12 +33,6 @@ export interface ChatMessages {
   timeStamp?: string;
 }
 
-export interface ActionItems {
-  taskId: string | null;
-  title: string;
-  description: string | null;
-}
-
 @Injectable()
 export class MeetingService {
   private readonly logger = new Logger(MeetingService.name);

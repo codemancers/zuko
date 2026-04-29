@@ -14,7 +14,7 @@ import {
 import type { TaskStatus, UpdateTaskDto } from '@/lib/api/tasks';
 import { useState } from 'react';
 import { useAutosaveField } from '@/hooks/useAutosaveField';
-import ConfirmDialog from '@/components/shared/ConfirmDialog';
+import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { BackLink, DetailHeader, EntityProperties, LoadingState } from '@/components/shared';
 import ActivityTimeline from '@/components/Activity/ActivityTimeline';
 import { toast } from 'sonner';
@@ -70,10 +70,13 @@ const TaskDetail = ({ taskId, currentUserId }: TaskDetailProps) => {
     onSave: (val) => updateMutation.mutateAsync({ title: val }),
   });
 
-  const descriptionField = useAutosaveField<OutputData>(ensureOutputData(task?.description), {
-    fieldName: 'description',
-    onSave: (val) => updateMutation.mutateAsync({ description: val }),
-  });
+  const descriptionField = useAutosaveField<OutputData>(
+    ensureOutputData(task?.description),
+    {
+      fieldName: 'description',
+      onSave: (val) => updateMutation.mutateAsync({ description: val }),
+    },
+  );
 
   const deleteMutation = useMutation({
     mutationFn: () => tasksApi.deleteTask(taskId),
@@ -114,7 +117,11 @@ const TaskDetail = ({ taskId, currentUserId }: TaskDetailProps) => {
           icon={ClipboardDocumentCheckIcon}
           title={titleField.value}
           onTitleBlur={(val) => titleField.setValue(val)}
-          isSaving={titleField.isSaving || descriptionField.isSaving || updateMutation.isPending}
+          isSaving={
+            titleField.isSaving ||
+            descriptionField.isSaving ||
+            updateMutation.isPending
+          }
           createdAt={task.createdAt}
         />
         <div className="flex gap-2">
@@ -164,7 +171,10 @@ const TaskDetail = ({ taskId, currentUserId }: TaskDetailProps) => {
             fieldType: 'combobox',
             options: {
               badgeColor: statusCfg.color,
-              comboboxOptions: taskStatuses.map((s) => ({ value: s.value, label: s.label })),
+              comboboxOptions: taskStatuses.map((s) => ({
+                value: s.value,
+                label: s.label,
+              })),
             },
             onSave: (val: string) =>
               updateMutation.mutateAsync({ status: val as any }),
@@ -179,7 +189,8 @@ const TaskDetail = ({ taskId, currentUserId }: TaskDetailProps) => {
           {
             label: 'Parent Task',
             value: task.parentId
-              ? (allTasks.find((t) => t.id === task.parentId)?.title ?? String(task.parentId))
+              ? (allTasks.find((t) => t.id === task.parentId)?.title ??
+                String(task.parentId))
               : null,
             renderType: 'text',
             fieldType: 'combobox',
@@ -264,7 +275,6 @@ const TaskDetail = ({ taskId, currentUserId }: TaskDetailProps) => {
           </Button>
         </div>
       )}
-
 
       {/* Activity Timeline */}
       <ActivityTimeline

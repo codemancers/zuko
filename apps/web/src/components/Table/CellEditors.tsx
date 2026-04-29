@@ -13,11 +13,17 @@ export interface EditorProps {
   autoFocus?: boolean;
 }
 
-export function TextEditor({ value, onChange, onBlur, onKeyDown, autoFocus }: EditorProps) {
+export function TextEditor({
+  value,
+  onChange,
+  onBlur,
+  onKeyDown,
+  autoFocus,
+}: EditorProps) {
   return (
     <Input
       autoFocus={autoFocus}
-      value={value as string ?? ''}
+      value={(value as string) ?? ''}
       onChange={(e) => onChange(e.target.value)}
       onBlur={onBlur}
       onKeyDown={onKeyDown}
@@ -26,13 +32,21 @@ export function TextEditor({ value, onChange, onBlur, onKeyDown, autoFocus }: Ed
   );
 }
 
-export function NumberEditor({ value, onChange, onBlur, onKeyDown, autoFocus }: EditorProps) {
+export function NumberEditor({
+  value,
+  onChange,
+  onBlur,
+  onKeyDown,
+  autoFocus,
+}: EditorProps) {
   return (
     <Input
       autoFocus={autoFocus}
       type="number"
-      value={value as number ?? ''}
-      onChange={(e) => onChange(e.target.value === '' ? null : Number(e.target.value))}
+      value={(value as number) ?? ''}
+      onChange={(e) =>
+        onChange(e.target.value === '' ? null : Number(e.target.value))
+      }
       onBlur={onBlur}
       onKeyDown={onKeyDown}
       className="w-full !min-w-0"
@@ -40,11 +54,19 @@ export function NumberEditor({ value, onChange, onBlur, onKeyDown, autoFocus }: 
   );
 }
 
-export function CurrencyEditor({ value, onChange, onBlur, onKeyDown, autoFocus, metadata }: EditorProps) {
+export function CurrencyEditor({
+  value,
+  onChange,
+  onBlur,
+  onKeyDown,
+  autoFocus,
+  metadata,
+}: EditorProps) {
   const currency = metadata.config?.currency ?? 'USD';
-  const symbol = new Intl.NumberFormat('en-US', { style: 'currency', currency })
-    .formatToParts(0)
-    .find((p) => p.type === 'currency')?.value ?? '$';
+  const symbol =
+    new Intl.NumberFormat('en-US', { style: 'currency', currency })
+      .formatToParts(0)
+      .find((p) => p.type === 'currency')?.value ?? '$';
 
   return (
     <InputGroup className="w-full !min-w-0">
@@ -57,8 +79,10 @@ export function CurrencyEditor({ value, onChange, onBlur, onKeyDown, autoFocus, 
       <Input
         autoFocus={autoFocus}
         type="number"
-        value={value as number ?? ''}
-        onChange={(e) => onChange(e.target.value === '' ? null : Number(e.target.value))}
+        value={(value as number) ?? ''}
+        onChange={(e) =>
+          onChange(e.target.value === '' ? null : Number(e.target.value))
+        }
         onBlur={onBlur}
         onKeyDown={onKeyDown}
       />
@@ -66,11 +90,18 @@ export function CurrencyEditor({ value, onChange, onBlur, onKeyDown, autoFocus, 
   );
 }
 
-export function DateEditor({ value, onChange, onBlur, onKeyDown, autoFocus }: EditorProps) {
+export function DateEditor({
+  value,
+  onChange,
+  onBlur,
+  onKeyDown,
+  autoFocus,
+}: EditorProps) {
   // Format the date value to YYYY-MM-DD for the native browser date picker
-  const formattedValue = (value && !isNaN(new Date(value as string).getTime()))
-    ? new Date(value as string).toISOString().split('T')[0]
-    : '';
+  const formattedValue =
+    value && !isNaN(new Date(value as string).getTime())
+      ? new Date(value as string).toISOString().split('T')[0]
+      : '';
 
   return (
     <Input
@@ -85,7 +116,14 @@ export function DateEditor({ value, onChange, onBlur, onKeyDown, autoFocus }: Ed
   );
 }
 
-export function SelectEditor({ value, onChange, onBlur, onKeyDown, autoFocus, metadata }: EditorProps) {
+export function SelectEditor({
+  value,
+  onChange,
+  onBlur,
+  onKeyDown,
+  autoFocus,
+  metadata,
+}: EditorProps) {
   const options = metadata.config?.options ?? [];
 
   return (
@@ -100,7 +138,9 @@ export function SelectEditor({ value, onChange, onBlur, onKeyDown, autoFocus, me
       onKeyDown={onKeyDown}
       className="!min-w-0 border-0 bg-transparent py-0 focus:ring-0"
     >
-      <option value="" disabled>Select...</option>
+      <option value="" disabled>
+        Select...
+      </option>
       {options.map((option) => (
         <option key={option.value} value={option.value}>
           {option.label}
@@ -110,7 +150,12 @@ export function SelectEditor({ value, onChange, onBlur, onKeyDown, autoFocus, me
   );
 }
 
-export function MultiSelectEditor({ value, onChange, onBlur, metadata }: EditorProps) {
+export function MultiSelectEditor({
+  value,
+  onChange,
+  onBlur,
+  metadata,
+}: EditorProps) {
   const options = metadata.config?.options ?? [];
   const current = Array.isArray(value) ? (value as string[]) : [];
 
@@ -127,7 +172,14 @@ export function MultiSelectEditor({ value, onChange, onBlur, metadata }: EditorP
   );
 }
 
-export function RelationEditor({ value, onChange, onBlur, onKeyDown, autoFocus, metadata }: EditorProps) {
+export function RelationEditor({
+  value,
+  onChange,
+  onBlur,
+  onKeyDown,
+  autoFocus,
+  metadata,
+}: EditorProps) {
   const options = metadata.config?.options ?? [];
 
   return (
@@ -142,7 +194,9 @@ export function RelationEditor({ value, onChange, onBlur, onKeyDown, autoFocus, 
       onKeyDown={onKeyDown}
       className="!min-w-0 border-0 bg-transparent py-0 focus:ring-0"
     >
-      <option value="" disabled>Select...</option>
+      <option value="" disabled>
+        Select...
+      </option>
       {options.map((option) => (
         <option key={option.value} value={option.value}>
           {option.label}
@@ -152,17 +206,14 @@ export function RelationEditor({ value, onChange, onBlur, onKeyDown, autoFocus, 
   );
 }
 
-export const EditorRegistry: Record<string, (props: EditorProps) => ReactNode> = {
-  text: TextEditor,
-  number: NumberEditor,
-  select: SelectEditor,
-  multiselect: MultiSelectEditor,
-  relation: RelationEditor,
-  date: DateEditor,
-  currency: CurrencyEditor,
-  entity: TextEditor,
-};
-
-export function getEditor(type: string) {
-  return EditorRegistry[type];
-}
+export const EditorRegistry: Record<string, (props: EditorProps) => ReactNode> =
+  {
+    text: TextEditor,
+    number: NumberEditor,
+    select: SelectEditor,
+    multiselect: MultiSelectEditor,
+    relation: RelationEditor,
+    date: DateEditor,
+    currency: CurrencyEditor,
+    entity: TextEditor,
+  };

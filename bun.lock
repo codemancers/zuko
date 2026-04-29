@@ -111,8 +111,6 @@
       "name": "@zuko/ai-agents",
       "version": "0.0.1",
       "dependencies": {
-        "@langchain/langgraph": "^1.2.3",
-        "@langchain/langgraph-checkpoint-postgres": "^1.0.0",
         "@langchain/openai": "^1.2.1",
         "deepagents": "^1.4.0",
         "langchain": "^1.2.7",
@@ -137,13 +135,11 @@
         "@prisma/client": "^7.7.0",
         "@thallesp/nestjs-better-auth": "^2.5.1",
         "@zuko/core": "^0.0.1",
-        "@zuko/models": "^0.0.1",
         "@zuko/sales": "^0.0.1",
         "ai": "^6.0.70",
         "axios": "^1.6.0",
         "better-auth": "^1.5.4",
         "dayjs": "^1.11.19",
-        "dotenv": "^16.4.5",
         "graphql": "^16.12.0",
         "joi": "^17.13.3",
         "pg": "^8.16.3",
@@ -167,14 +163,10 @@
         "@editorjs/code": "^2.9.4",
         "@editorjs/delimiter": "^1.4.2",
         "@editorjs/editorjs": "^2.31.6",
-        "@editorjs/embed": "^2.8.0",
         "@editorjs/header": "^2.8.8",
-        "@editorjs/image": "^2.10.3",
         "@editorjs/inline-code": "^1.5.2",
-        "@editorjs/link": "^2.6.2",
         "@editorjs/list": "^2.0.9",
         "@editorjs/marker": "^1.4.0",
-        "@editorjs/paragraph": "^2.11.7",
         "@editorjs/quote": "^2.7.6",
         "@editorjs/table": "^2.4.5",
         "@editorjs/warning": "^1.4.1",
@@ -686,23 +678,15 @@
 
     "@editorjs/editorjs": ["@editorjs/editorjs@2.31.6", "", { "dependencies": { "@editorjs/caret": "^1.0.1", "codex-notifier": "^1.1.2", "codex-tooltip": "^1.0.5" } }, "sha512-j2nxuFCD3DnoJDUD0hPO5tirpuQ6sWmmuHATl3EI7fG1it3Ml7jk0WJtu3E+TRLBd7zfNeJhDThbP3LnBEn2GA=="],
 
-    "@editorjs/embed": ["@editorjs/embed@2.8.0", "", { "dependencies": { "@editorjs/editorjs": "^2.31.0" } }, "sha512-GkgL07M1GmRXq+vtYPkP9RLoij19mIMeyr5GrNo/0Km2XHmvDz2h6KHsDbiHXbq/5hZ5UgWi86kr+/aK165OBg=="],
-
     "@editorjs/header": ["@editorjs/header@2.8.8", "", { "dependencies": { "@codexteam/icons": "^0.0.5", "@editorjs/editorjs": "^2.29.1" } }, "sha512-bsMSs34u2hoi0UBuRoc5EGWXIFzJiwYgkFUYQGVm63y5FU+s8zPBmVx5Ip2sw1xgs0fqfDROqmteMvvmbCy62w=="],
 
     "@editorjs/helpers": ["@editorjs/helpers@0.0.4", "", {}, "sha512-ieg3dzo2m1/ELze/RMNADiAiC5amXxIlVXoJ5vvXITOu/p/dPsrF+Oi3h5gBYvtGk9vg5LJUSG5YWU0tBUO1tw=="],
 
-    "@editorjs/image": ["@editorjs/image@2.10.3", "", { "dependencies": { "@codexteam/icons": "^0.3.0" } }, "sha512-ekCsGICZOIdghF/U2T34H7CItqaWAoJDXbkRD+x8l/LIo/7Ozf7KovYm21qz+CluArgV4RurVFHqwlz+O0vfJA=="],
-
     "@editorjs/inline-code": ["@editorjs/inline-code@1.5.2", "", { "dependencies": { "@codexteam/icons": "^0.3.2" } }, "sha512-IpEvwMTP3q89T/6vTi3ACoSMOcTdywtMsci1w19+Z/lxQn/NVuVah++ro93wQ/1ZVTyCr+TPUCchxwzY1/xaMg=="],
-
-    "@editorjs/link": ["@editorjs/link@2.6.2", "", { "dependencies": { "@babel/runtime": "^7.10.2", "@codexteam/icons": "^0.0.4" } }, "sha512-3cPx6M4ZvwDDvsi0E0fvMR3rvveAV/C0GRo1JLeZJ9cG9QgyoNolj4eu5Eqx3/r1XTC/he54qYEIZ/Dc4Lr4Ow=="],
 
     "@editorjs/list": ["@editorjs/list@2.0.9", "", { "dependencies": { "@codexteam/icons": "^0.3.2" } }, "sha512-rUTgDSt5wygD3Dp24bNyp6vvye/Xf4UWju0ZuvWeP13Z4cu2z1Jb5JFSTEhCou72XUGuf4xVhtsd8cm/bwUS1g=="],
 
     "@editorjs/marker": ["@editorjs/marker@1.4.0", "", { "dependencies": { "@codexteam/icons": "^0.0.5" } }, "sha512-5ipEXfL44jTTRzgNp/p/YjMO7jT08S5z4V8qA3FFJTfdhKgQyM3mvP1zpdYKw47ZZpVWMCncvk5Nto3BxihEtg=="],
-
-    "@editorjs/paragraph": ["@editorjs/paragraph@2.11.7", "", { "dependencies": { "@codexteam/icons": "^0.0.4" } }, "sha512-qD6bbWvRc4VvP0mXDOm+hOhzzhUYR9ZjcAvgCuKWcCbUMpCvhVF1s8NX40zdjekPi6JEnuHTamCncTrSzVsVhw=="],
 
     "@editorjs/quote": ["@editorjs/quote@2.7.6", "", { "dependencies": { "@codexteam/icons": "^0.3.2", "@editorjs/dom": "^0.0.5" } }, "sha512-D01KUMSDj2r+6Z+xjDkQqI+y6URpeHCvj0+P4pah+GtkG040lWjFb2H4pgHFXuol2cbfyAoraYSw85fuPheCvw=="],
 
@@ -987,8 +971,6 @@
     "@langchain/langgraph": ["@langchain/langgraph@1.2.9", "", { "dependencies": { "@langchain/langgraph-checkpoint": "^1.0.1", "@langchain/langgraph-sdk": "~1.8.9", "@standard-schema/spec": "1.1.0", "uuid": "^10.0.0" }, "peerDependencies": { "@langchain/core": "^1.1.40", "zod": "^3.25.32 || ^4.2.0", "zod-to-json-schema": "^3.x" }, "optionalPeers": ["zod-to-json-schema"] }, "sha512-3c7BtGycHC2v9p6w/Hv8L7kEl1YnZYOQTDJtmAp3knk6JOedO7d2bYP3y0SRyhv5orUEGf/KGvx8ZsB/ideP7g=="],
 
     "@langchain/langgraph-checkpoint": ["@langchain/langgraph-checkpoint@1.0.1", "", { "dependencies": { "uuid": "^10.0.0" }, "peerDependencies": { "@langchain/core": "^1.0.1" } }, "sha512-HM0cJLRpIsSlWBQ/xuDC67l52SqZ62Bh2Y61DX+Xorqwoh5e1KxYvfCD7GnSTbWWhjBOutvnR0vPhu4orFkZfw=="],
-
-    "@langchain/langgraph-checkpoint-postgres": ["@langchain/langgraph-checkpoint-postgres@1.0.1", "", { "dependencies": { "pg": "^8.12.0" }, "peerDependencies": { "@langchain/core": "^1.0.1", "@langchain/langgraph-checkpoint": "^1.0.0" } }, "sha512-cRXOLYZc0egMjyAQfBblWXdoBS+WKwEbCEuE+/f88XHJ1bq5jVz7aycbpjF/7F5EykG7xmybQOz5eUdg3neRzg=="],
 
     "@langchain/langgraph-sdk": ["@langchain/langgraph-sdk@1.8.9", "", { "dependencies": { "@types/json-schema": "^7.0.15", "p-queue": "^9.0.1", "p-retry": "^7.1.1", "uuid": "^13.0.0" }, "peerDependencies": { "@langchain/core": "^1.1.16", "react": "^18 || ^19", "react-dom": "^18 || ^19", "svelte": "^4.0.0 || ^5.0.0", "vue": "^3.0.0" }, "optionalPeers": ["@langchain/core", "react", "react-dom", "svelte", "vue"] }, "sha512-vpz90auS4iFTNy2X/CFexOEoeFSvaK+MyI7iSmzYs9gGcfzwRjWUJ4MWsuc5ZNRecLStwho0PExVXRgGOXtcRw=="],
 
@@ -4638,11 +4620,7 @@
 
     "@editorjs/header/@codexteam/icons": ["@codexteam/icons@0.0.5", "", {}, "sha512-s6H2KXhLz2rgbMZSkRm8dsMJvyUNZsEjxobBEg9ztdrb1B2H3pEzY6iTwI4XUPJWJ3c3qRKwV4TrO3J5jUdoQA=="],
 
-    "@editorjs/link/@codexteam/icons": ["@codexteam/icons@0.0.4", "", {}, "sha512-V8N/TY2TGyas4wLrPIFq7bcow68b3gu8DfDt1+rrHPtXxcexadKauRJL6eQgfG7Z0LCrN4boLRawR4S9gjIh/Q=="],
-
     "@editorjs/marker/@codexteam/icons": ["@codexteam/icons@0.0.5", "", {}, "sha512-s6H2KXhLz2rgbMZSkRm8dsMJvyUNZsEjxobBEg9ztdrb1B2H3pEzY6iTwI4XUPJWJ3c3qRKwV4TrO3J5jUdoQA=="],
-
-    "@editorjs/paragraph/@codexteam/icons": ["@codexteam/icons@0.0.4", "", {}, "sha512-V8N/TY2TGyas4wLrPIFq7bcow68b3gu8DfDt1+rrHPtXxcexadKauRJL6eQgfG7Z0LCrN4boLRawR4S9gjIh/Q=="],
 
     "@editorjs/table/@codexteam/icons": ["@codexteam/icons@0.0.6", "", {}, "sha512-L7Q5PET8PjKcBT5wp7VR+FCjwCi5PUp7rd/XjsgQ0CI5FJz0DphyHGRILMuDUdCW2MQT9NHbVr4QP31vwAkS/A=="],
 

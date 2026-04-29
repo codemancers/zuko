@@ -30,7 +30,7 @@ import ActivityTimeline from '@/components/Activity/ActivityTimeline';
 import AddCompanyToDealDialog from './AddCompanyToDealDialog';
 import AddContactToDealDialog from './AddContactToDealDialog';
 
-import ConfirmDialog from '@/components/shared/ConfirmDialog';
+import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { BackLink, DetailHeader, EntityProperties, LoadingState } from '@/components/shared';
 import {
   InlineSaveCancel,
@@ -88,10 +88,13 @@ export default function DealDetail({ dealId, currentUserId }: DealDetailProps) {
     onSave: (val) => updateMutation.mutateAsync({ title: val }),
   });
 
-  const summaryField = useAutosaveField<OutputData>(ensureOutputData(deal?.summary), {
-    fieldName: 'summary',
-    onSave: (val) => updateMutation.mutateAsync({ summary: val }),
-  });
+  const summaryField = useAutosaveField<OutputData>(
+    ensureOutputData(deal?.summary),
+    {
+      fieldName: 'summary',
+      onSave: (val) => updateMutation.mutateAsync({ summary: val }),
+    },
+  );
 
   // Confirm dialog state
   const [showHideDialog, setShowHideDialog] = useState(false);
@@ -178,7 +181,6 @@ export default function DealDetail({ dealId, currentUserId }: DealDetailProps) {
 
   const primaryOwner = deal.owners.find((o) => o.isPrimary);
   const primaryOwnerName = primaryOwner?.user.name || 'Unassigned';
-
 
   const handleEdit = () => {
     router.push(`/deals/${dealId}/edit`);
@@ -334,11 +336,13 @@ export default function DealDetail({ dealId, currentUserId }: DealDetailProps) {
             fieldType: 'combobox',
             options: {
               badgeColor: getStageColor(deal.stage),
-              comboboxOptions: stages.map((s) => ({ value: s.value, label: s.label })),
+              comboboxOptions: stages.map((s) => ({
+                value: s.value,
+                label: s.label,
+              })),
             },
             isPrimary: true,
-            onSave: (val: string) =>
-              updateMutation.mutateAsync({ stage: val }),
+            onSave: (val: string) => updateMutation.mutateAsync({ stage: val }),
           },
           {
             label: 'Value',
@@ -347,18 +351,28 @@ export default function DealDetail({ dealId, currentUserId }: DealDetailProps) {
             fieldType: 'currency',
             options: {
               currency: deal.currency,
-              currencyOptions: currencies.map((c) => ({ code: c.code, symbol: c.symbol, name: c.name })),
+              currencyOptions: currencies.map((c) => ({
+                code: c.code,
+                symbol: c.symbol,
+                name: c.name,
+              })),
             },
             isPrimary: true,
             onSave: (val: { value: number; currency: string }) =>
-              updateMutation.mutateAsync({ value: val.value, currency: val.currency }),
+              updateMutation.mutateAsync({
+                value: val.value,
+                currency: val.currency,
+              }),
           },
           {
             label: 'Priority',
             value: getPriorityLabel(deal.priority),
             fieldType: 'combobox',
             options: {
-              comboboxOptions: priorities.map((p) => ({ value: p.value, label: p.label })),
+              comboboxOptions: priorities.map((p) => ({
+                value: p.value,
+                label: p.label,
+              })),
             },
             isPrimary: true,
             onSave: (val: number) =>
@@ -370,8 +384,7 @@ export default function DealDetail({ dealId, currentUserId }: DealDetailProps) {
             fieldType: 'number',
             placeholder: '0-100',
             options: { min: 0, max: 100 },
-            onSave: (val) =>
-              updateMutation.mutateAsync({ probability: val }),
+            onSave: (val) => updateMutation.mutateAsync({ probability: val }),
           },
           {
             label: 'Expected Close',
@@ -395,12 +408,10 @@ export default function DealDetail({ dealId, currentUserId }: DealDetailProps) {
             value: deal.source,
             fieldType: 'text',
             placeholder: 'e.g., Referral, Inbound, Outbound',
-            onSave: (val) =>
-              updateMutation.mutateAsync({ source: val }),
+            onSave: (val) => updateMutation.mutateAsync({ source: val }),
           },
         ]}
       />
-
 
       {/* Summary */}
       <div className="mt-8">
@@ -576,7 +587,6 @@ export default function DealDetail({ dealId, currentUserId }: DealDetailProps) {
           </div>
         )}
       </div>
-
 
       {/* Activity Timeline */}
       <ActivityTimeline

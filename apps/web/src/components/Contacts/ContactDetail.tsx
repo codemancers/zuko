@@ -7,12 +7,7 @@ import {
   PencilIcon,
   EyeSlashIcon,
 } from '@heroicons/react/24/outline';
-import {
-  Badge,
-  Button,
-  Divider,
-  Subheading,
-} from '@zuko/ui-kit';
+import { Badge, Button, Divider, Subheading } from '@zuko/ui-kit';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getContact, getDealsByContact } from '@/server/query-options';
 import type { UpdateContactDto } from '@/lib/api/contacts';
@@ -24,7 +19,7 @@ import ActivityTimeline from '@/components/Activity/ActivityTimeline';
 import Editor, { ensureOutputData } from '@/components/Common/Editor/Editor';
 import type { OutputData } from '@editorjs/editorjs';
 
-import ConfirmDialog from '@/components/shared/ConfirmDialog';
+import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { BackLink, DetailHeader, EntityProperties, LoadingState } from '@/components/shared';
 import { formatCurrency, getStageColor, formatStage } from '@/lib/format-utils';
 
@@ -47,7 +42,9 @@ export default function ContactDetail({
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['contact', contactId] });
       queryClient.invalidateQueries({ queryKey: ['contacts'] });
-      queryClient.invalidateQueries({ queryKey: ['timeline', 'contact', contactId] });
+      queryClient.invalidateQueries({
+        queryKey: ['timeline', 'contact', contactId],
+      });
     },
     onError: () => {
       toast.error('Failed to save changes');
@@ -60,10 +57,13 @@ export default function ContactDetail({
     onSave: (val) => updateMutation.mutateAsync({ name: val }),
   });
 
-  const notesField = useAutosaveField<OutputData>(ensureOutputData(contact?.notes), {
-    fieldName: 'notes',
-    onSave: (val) => updateMutation.mutateAsync({ notes: val }),
-  });
+  const notesField = useAutosaveField<OutputData>(
+    ensureOutputData(contact?.notes),
+    {
+      fieldName: 'notes',
+      onSave: (val) => updateMutation.mutateAsync({ notes: val }),
+    },
+  );
 
   const [showHideDialog, setShowHideDialog] = useState(false);
 
@@ -85,7 +85,6 @@ export default function ContactDetail({
 
   const primaryOwner = contact.owners.find((o) => o.isPrimary);
   const primaryOwnerName = primaryOwner?.user.name || 'Unassigned';
-
 
   const handleEdit = () => {
     router.push(`/contacts/${contactId}/edit`);
@@ -144,8 +143,7 @@ export default function ContactDetail({
             renderType: 'email',
             fieldType: 'text',
             placeholder: 'eg: john@example.com',
-            onSave: (val) =>
-              updateMutation.mutateAsync({ email: val }),
+            onSave: (val) => updateMutation.mutateAsync({ email: val }),
           },
           {
             label: 'Phone',
@@ -153,20 +151,17 @@ export default function ContactDetail({
             renderType: 'phone',
             fieldType: 'text',
             placeholder: 'eg: +14155552671',
-            onSave: (val) =>
-              updateMutation.mutateAsync({ phone: val }),
+            onSave: (val) => updateMutation.mutateAsync({ phone: val }),
           },
           {
             label: 'LinkedIn',
             value: contact.linkedinId,
             fieldType: 'text',
             placeholder: 'eg: john-doe-123456',
-            onSave: (val) =>
-              updateMutation.mutateAsync({ linkedinId: val }),
+            onSave: (val) => updateMutation.mutateAsync({ linkedinId: val }),
           },
         ]}
       />
-
 
       {/* Notes */}
       <div className="mt-8">
