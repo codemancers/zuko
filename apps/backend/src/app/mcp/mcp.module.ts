@@ -57,7 +57,8 @@ import {
         dealsRepository: DealsRepository,
         eventEmitter: EventEmitter2,
         tableColumnRepository: TableColumnRepository,
-      ) => new DealsService(dealsRepository, eventEmitter, tableColumnRepository),
+      ) =>
+        new DealsService(dealsRepository, eventEmitter, tableColumnRepository),
       inject: [DealsRepository, EventEmitter2, TableColumnRepository],
     },
     {

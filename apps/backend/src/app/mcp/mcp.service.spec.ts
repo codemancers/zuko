@@ -358,7 +358,11 @@ describe('McpService', () => {
           method: 'tools/call',
           params: {
             name: 'associate_companies_with_deal',
-            arguments: { dealId: 5, companyIds: [9, 9, 10], primaryCompanyId: 10 },
+            arguments: {
+              dealId: 5,
+              companyIds: [9, 9, 10],
+              primaryCompanyId: 10,
+            },
           },
         }),
       });
@@ -441,7 +445,12 @@ describe('McpService', () => {
           method: 'tools/call',
           params: {
             name: 'associate_contacts_with_deal',
-            arguments: { dealId: 5, contactIds: [21, 21, 22], primaryContactId: 22, role: 'buyer' },
+            arguments: {
+              dealId: 5,
+              contactIds: [21, 21, 22],
+              primaryContactId: 22,
+              role: 'buyer',
+            },
           },
         }),
       });

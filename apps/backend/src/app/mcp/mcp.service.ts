@@ -59,7 +59,9 @@ export class McpService {
     organizationId: number,
     userId: number,
   ): Promise<Response> {
-    this.logger.debug(`Handling MCP request orgId=${organizationId} userId=${userId}`);
+    this.logger.debug(
+      `Handling MCP request orgId=${organizationId} userId=${userId}`,
+    );
     const server = this.buildServer(organizationId, userId);
     const transport = new WebStandardStreamableHTTPServerTransport({
       sessionIdGenerator: undefined,
@@ -85,7 +87,11 @@ export class McpService {
   // Deals
   // ---------------------------------------------------------------------------
 
-  private registerDealTools(server: McpServer, organizationId: number, userId: number): void {
+  private registerDealTools(
+    server: McpServer,
+    organizationId: number,
+    userId: number,
+  ): void {
     server.tool(
       'list_deals',
       'List deals in the CRM, optionally filtered by search term or stage',
@@ -94,8 +100,17 @@ export class McpService {
         stages: z
           .array(z.string())
           .optional()
-          .describe('Filter by pipeline stages (e.g. ["qualified", "proposal"])'),
-        limit: z.number().int().min(1).max(200).optional().default(50).describe('Max results'),
+          .describe(
+            'Filter by pipeline stages (e.g. ["qualified", "proposal"])',
+          ),
+        limit: z
+          .number()
+          .int()
+          .min(1)
+          .max(200)
+          .optional()
+          .default(50)
+          .describe('Max results'),
       },
       async ({ search, stages, limit }) => {
         const result = await this.dealsRepository.findAll(
@@ -122,13 +137,39 @@ export class McpService {
       {
         title: z.string().describe('Deal title'),
         value: z.number().optional().describe('Monetary value'),
-        currency: z.string().optional().default('USD').describe('Currency code (e.g. USD, EUR)'),
-        stage: z.string().optional().describe('Pipeline stage (e.g. qualified, proposal, won)'),
-        probability: z.number().min(0).max(100).optional().describe('Win probability 0–100'),
-        expectedCloseDate: z.string().optional().describe('Expected close date (ISO 8601)'),
-        source: z.string().optional().describe('Deal source (e.g. inbound, referral)'),
+        currency: z
+          .string()
+          .optional()
+          .default('USD')
+          .describe('Currency code (e.g. USD, EUR)'),
+        stage: z
+          .string()
+          .optional()
+          .describe('Pipeline stage (e.g. qualified, proposal, won)'),
+        probability: z
+          .number()
+          .min(0)
+          .max(100)
+          .optional()
+          .describe('Win probability 0–100'),
+        expectedCloseDate: z
+          .string()
+          .optional()
+          .describe('Expected close date (ISO 8601)'),
+        source: z
+          .string()
+          .optional()
+          .describe('Deal source (e.g. inbound, referral)'),
       },
-      async ({ title, value, currency, stage, probability, expectedCloseDate, source }) => {
+      async ({
+        title,
+        value,
+        currency,
+        stage,
+        probability,
+        expectedCloseDate,
+        source,
+      }) => {
         const deal = await this.dealsRepository.create({
           organizationId,
           title,
@@ -136,7 +177,9 @@ export class McpService {
           currency,
           stage,
           probability,
-          expectedCloseDate: expectedCloseDate ? new Date(expectedCloseDate) : undefined,
+          expectedCloseDate: expectedCloseDate
+            ? new Date(expectedCloseDate)
+            : undefined,
           source,
           ownerIds: [userId],
           primaryOwnerId: userId,
@@ -154,25 +197,62 @@ export class McpService {
         value: z.number().optional().describe('New monetary value'),
         currency: z.string().optional().describe('Currency code'),
         stage: z.string().optional().describe('New pipeline stage'),
-        probability: z.number().min(0).max(100).optional().describe('Win probability 0–100'),
-        expectedCloseDate: z.string().optional().describe('Expected close date (ISO 8601)'),
-        actualCloseDate: z.string().optional().describe('Actual close date (ISO 8601)'),
+        probability: z
+          .number()
+          .min(0)
+          .max(100)
+          .optional()
+          .describe('Win probability 0–100'),
+        expectedCloseDate: z
+          .string()
+          .optional()
+          .describe('Expected close date (ISO 8601)'),
+        actualCloseDate: z
+          .string()
+          .optional()
+          .describe('Actual close date (ISO 8601)'),
         lostReason: z.string().optional().describe('Reason the deal was lost'),
         source: z.string().optional().describe('Deal source'),
         priority: z.number().int().optional().describe('Deal priority'),
-        fields: z.record(z.string(), z.unknown()).optional().describe('Custom field values'),
+        fields: z
+          .record(z.string(), z.unknown())
+          .optional()
+          .describe('Custom field values'),
       },
-      async ({ id, title, value, currency, stage, probability, expectedCloseDate, actualCloseDate, lostReason, source, priority, fields }) => {
-        const existing = await this.dealsRepository.findById(id, organizationId);
-        if (!existing) throw new NotFoundException(`Deal ${id} not found in this organization`);
+      async ({
+        id,
+        title,
+        value,
+        currency,
+        stage,
+        probability,
+        expectedCloseDate,
+        actualCloseDate,
+        lostReason,
+        source,
+        priority,
+        fields,
+      }) => {
+        const existing = await this.dealsRepository.findById(
+          id,
+          organizationId,
+        );
+        if (!existing)
+          throw new NotFoundException(
+            `Deal ${id} not found in this organization`,
+          );
         const deal = await this.dealsRepository.update(id, {
           title,
           value,
           currency,
           stage,
           probability,
-          expectedCloseDate: expectedCloseDate ? new Date(expectedCloseDate) : undefined,
-          actualCloseDate: actualCloseDate ? new Date(actualCloseDate) : undefined,
+          expectedCloseDate: expectedCloseDate
+            ? new Date(expectedCloseDate)
+            : undefined,
+          actualCloseDate: actualCloseDate
+            ? new Date(actualCloseDate)
+            : undefined,
           lostReason,
           source,
           priority,
@@ -338,7 +418,10 @@ export class McpService {
           .int()
           .optional()
           .describe('Optional contact ID to mark as primary'),
-        role: z.string().optional().describe('Optional role applied to each association'),
+        role: z
+          .string()
+          .optional()
+          .describe('Optional role applied to each association'),
       },
       async ({ dealId, contactIds, primaryContactId, role }) => {
         const uniqueContactIds = [...new Set(contactIds)];
@@ -402,8 +485,14 @@ export class McpService {
       'Soft-delete (hide) a deal by its numeric ID',
       { id: z.number().int().describe('The deal ID') },
       async ({ id }) => {
-        const existing = await this.dealsRepository.findById(id, organizationId);
-        if (!existing) throw new NotFoundException(`Deal ${id} not found in this organization`);
+        const existing = await this.dealsRepository.findById(
+          id,
+          organizationId,
+        );
+        if (!existing)
+          throw new NotFoundException(
+            `Deal ${id} not found in this organization`,
+          );
         await this.dealsRepository.hide(id);
         return textResult({ success: true, id });
       },
@@ -414,13 +503,27 @@ export class McpService {
   // Contacts
   // ---------------------------------------------------------------------------
 
-  private registerContactTools(server: McpServer, organizationId: number, userId: number): void {
+  private registerContactTools(
+    server: McpServer,
+    organizationId: number,
+    userId: number,
+  ): void {
     server.tool(
       'list_contacts',
       'List contacts in the CRM, optionally filtered by a search term',
       {
-        search: z.string().optional().describe('Search term for contact name or email'),
-        limit: z.number().int().min(1).max(200).optional().default(50).describe('Max results'),
+        search: z
+          .string()
+          .optional()
+          .describe('Search term for contact name or email'),
+        limit: z
+          .number()
+          .int()
+          .min(1)
+          .max(200)
+          .optional()
+          .default(50)
+          .describe('Max results'),
       },
       async ({ search, limit }) => {
         const result = await this.contactsRepository.findAll(
@@ -436,7 +539,10 @@ export class McpService {
       'Get a single contact by their numeric ID',
       { id: z.number().int().describe('The contact ID') },
       async ({ id }) => {
-        const contact = await this.contactsRepository.findById(id, organizationId);
+        const contact = await this.contactsRepository.findById(
+          id,
+          organizationId,
+        );
         return textResult(contact);
       },
     );
@@ -448,7 +554,10 @@ export class McpService {
         name: z.string().describe('Full name'),
         email: z.string().optional().describe('Email address'),
         phone: z.string().optional().describe('Phone number'),
-        linkedinId: z.string().optional().describe('LinkedIn profile URL or ID'),
+        linkedinId: z
+          .string()
+          .optional()
+          .describe('LinkedIn profile URL or ID'),
       },
       async ({ name, email, phone, linkedinId }) => {
         const contact = await this.contactsRepository.create({
@@ -472,13 +581,31 @@ export class McpService {
         name: z.string().optional().describe('New full name'),
         email: z.string().optional().describe('New email address'),
         phone: z.string().optional().describe('New phone number'),
-        linkedinId: z.string().optional().describe('New LinkedIn profile URL or ID'),
-        fields: z.record(z.string(), z.unknown()).optional().describe('Custom field values'),
+        linkedinId: z
+          .string()
+          .optional()
+          .describe('New LinkedIn profile URL or ID'),
+        fields: z
+          .record(z.string(), z.unknown())
+          .optional()
+          .describe('Custom field values'),
       },
       async ({ id, name, email, phone, linkedinId, fields }) => {
-        const existing = await this.contactsRepository.findById(id, organizationId);
-        if (!existing) throw new NotFoundException(`Contact ${id} not found in this organization`);
-        const contact = await this.contactsRepository.update(id, { name, email, phone, linkedinId, fields });
+        const existing = await this.contactsRepository.findById(
+          id,
+          organizationId,
+        );
+        if (!existing)
+          throw new NotFoundException(
+            `Contact ${id} not found in this organization`,
+          );
+        const contact = await this.contactsRepository.update(id, {
+          name,
+          email,
+          phone,
+          linkedinId,
+          fields,
+        });
         return textResult(contact);
       },
     );
@@ -488,8 +615,14 @@ export class McpService {
       'Soft-delete (hide) a contact by their numeric ID',
       { id: z.number().int().describe('The contact ID') },
       async ({ id }) => {
-        const existing = await this.contactsRepository.findById(id, organizationId);
-        if (!existing) throw new NotFoundException(`Contact ${id} not found in this organization`);
+        const existing = await this.contactsRepository.findById(
+          id,
+          organizationId,
+        );
+        if (!existing)
+          throw new NotFoundException(
+            `Contact ${id} not found in this organization`,
+          );
         await this.contactsRepository.hide(id);
         return textResult({ success: true, id });
       },
@@ -500,13 +633,24 @@ export class McpService {
   // Companies
   // ---------------------------------------------------------------------------
 
-  private registerCompanyTools(server: McpServer, organizationId: number, userId: number): void {
+  private registerCompanyTools(
+    server: McpServer,
+    organizationId: number,
+    userId: number,
+  ): void {
     server.tool(
       'list_companies',
       'List companies in the CRM, optionally filtered by a search term',
       {
         search: z.string().optional().describe('Search term for company name'),
-        limit: z.number().int().min(1).max(200).optional().default(50).describe('Max results'),
+        limit: z
+          .number()
+          .int()
+          .min(1)
+          .max(200)
+          .optional()
+          .default(50)
+          .describe('Max results'),
       },
       async ({ search, limit }) => {
         const result = await this.companiesRepository.findAll(
@@ -522,7 +666,10 @@ export class McpService {
       'Get a single company by its numeric ID',
       { id: z.number().int().describe('The company ID') },
       async ({ id }) => {
-        const company = await this.companiesRepository.findById(id, organizationId);
+        const company = await this.companiesRepository.findById(
+          id,
+          organizationId,
+        );
         return textResult(company);
       },
     );
@@ -533,7 +680,10 @@ export class McpService {
       {
         companyName: z.string().describe('Company name'),
         website: z.string().optional().describe('Website URL'),
-        linkedinUrl: z.string().optional().describe('LinkedIn company page URL'),
+        linkedinUrl: z
+          .string()
+          .optional()
+          .describe('LinkedIn company page URL'),
       },
       async ({ companyName, website, linkedinUrl }) => {
         const company = await this.companiesRepository.create({
@@ -555,13 +705,30 @@ export class McpService {
         id: z.number().int().describe('The company ID'),
         companyName: z.string().optional().describe('New company name'),
         website: z.string().optional().describe('New website URL'),
-        linkedinUrl: z.string().optional().describe('New LinkedIn company page URL'),
-        fields: z.record(z.string(), z.unknown()).optional().describe('Custom field values'),
+        linkedinUrl: z
+          .string()
+          .optional()
+          .describe('New LinkedIn company page URL'),
+        fields: z
+          .record(z.string(), z.unknown())
+          .optional()
+          .describe('Custom field values'),
       },
       async ({ id, companyName, website, linkedinUrl, fields }) => {
-        const existing = await this.companiesRepository.findById(id, organizationId);
-        if (!existing) throw new NotFoundException(`Company ${id} not found in this organization`);
-        const company = await this.companiesRepository.update(id, { companyName, website, linkedinUrl, fields });
+        const existing = await this.companiesRepository.findById(
+          id,
+          organizationId,
+        );
+        if (!existing)
+          throw new NotFoundException(
+            `Company ${id} not found in this organization`,
+          );
+        const company = await this.companiesRepository.update(id, {
+          companyName,
+          website,
+          linkedinUrl,
+          fields,
+        });
         return textResult(company);
       },
     );
@@ -573,8 +740,14 @@ export class McpService {
         companyId: z.number().int().describe('The company ID'),
         contactId: z.number().int().describe('The contact ID'),
         role: z.string().optional().describe('Optional relationship role'),
-        isPrimary: z.boolean().optional().describe('Whether this is the primary contact-company relation'),
-        joinedAt: z.string().optional().describe('Optional joined-at date (ISO 8601)'),
+        isPrimary: z
+          .boolean()
+          .optional()
+          .describe('Whether this is the primary contact-company relation'),
+        joinedAt: z
+          .string()
+          .optional()
+          .describe('Optional joined-at date (ISO 8601)'),
       },
       async ({ companyId, contactId, role, isPrimary, joinedAt }) => {
         const association = await this.companiesService.addContact(
@@ -624,8 +797,16 @@ export class McpService {
           .int()
           .optional()
           .describe('Optional contact ID to mark as primary'),
-        role: z.string().optional().describe('Optional role applied to each association'),
-        joinedAt: z.string().optional().describe('Optional joined-at date (ISO 8601) applied to each association'),
+        role: z
+          .string()
+          .optional()
+          .describe('Optional role applied to each association'),
+        joinedAt: z
+          .string()
+          .optional()
+          .describe(
+            'Optional joined-at date (ISO 8601) applied to each association',
+          ),
       },
       async ({ companyId, contactIds, primaryContactId, role, joinedAt }) => {
         const uniqueContactIds = [...new Set(contactIds)];
@@ -690,8 +871,14 @@ export class McpService {
       'Soft-delete (hide) a company by its numeric ID',
       { id: z.number().int().describe('The company ID') },
       async ({ id }) => {
-        const existing = await this.companiesRepository.findById(id, organizationId);
-        if (!existing) throw new NotFoundException(`Company ${id} not found in this organization`);
+        const existing = await this.companiesRepository.findById(
+          id,
+          organizationId,
+        );
+        if (!existing)
+          throw new NotFoundException(
+            `Company ${id} not found in this organization`,
+          );
         await this.companiesRepository.hide(id);
         return textResult({ success: true, id });
       },
@@ -702,7 +889,11 @@ export class McpService {
   // Tasks
   // ---------------------------------------------------------------------------
 
-  private registerTaskTools(server: McpServer, organizationId: number, userId: number): void {
+  private registerTaskTools(
+    server: McpServer,
+    organizationId: number,
+    userId: number,
+  ): void {
     server.tool(
       'list_tasks',
       'List tasks, optionally filtered by status or search term',
@@ -712,8 +903,21 @@ export class McpService {
           .enum(TASK_STATUS_VALUES)
           .optional()
           .describe('Filter by task status'),
-        limit: z.number().int().min(1).max(200).optional().default(50).describe('Max results'),
-        page: z.number().int().min(1).optional().default(1).describe('Page number'),
+        limit: z
+          .number()
+          .int()
+          .min(1)
+          .max(200)
+          .optional()
+          .default(50)
+          .describe('Max results'),
+        page: z
+          .number()
+          .int()
+          .min(1)
+          .optional()
+          .default(1)
+          .describe('Page number'),
       },
       async ({ search, status, limit, page }) => {
         const result = await this.taskRepository.findAll(organizationId, {
@@ -747,7 +951,11 @@ export class McpService {
           .default('TODO')
           .describe('Initial status'),
         assignee: z.string().optional().describe('Assignee name or email'),
-        parentId: z.number().int().optional().describe('Parent task ID for subtasks'),
+        parentId: z
+          .number()
+          .int()
+          .optional()
+          .describe('Parent task ID for subtasks'),
       },
       async ({ title, status, assignee, parentId }) => {
         const task = await this.taskRepository.create({
@@ -768,17 +976,16 @@ export class McpService {
       {
         id: z.number().int().describe('The task ID'),
         title: z.string().optional().describe('New title'),
-        status: z
-          .enum(TASK_STATUS_VALUES)
-          .optional()
-          .describe('New status'),
+        status: z.enum(TASK_STATUS_VALUES).optional().describe('New status'),
         assignee: z.string().optional().describe('New assignee name or email'),
       },
       async ({ id, title, status, assignee }) => {
         const completedAt =
-          status === 'DONE' ? new Date()
-          : status && status !== 'CANCELLED' ? null
-          : undefined;
+          status === 'DONE'
+            ? new Date()
+            : status && status !== 'CANCELLED'
+              ? null
+              : undefined;
         const task = await this.taskRepository.update(id, organizationId, {
           title,
           status: status as TaskStatus | undefined,

@@ -34,4 +34,3 @@ export async function fetchLinkedAccounts(): Promise<LinkedAccount[]> {
     return [];
   }
 }
-

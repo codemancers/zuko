@@ -8,7 +8,11 @@ import { toast } from 'sonner';
 // Types
 // ---------------------------------------------------------------------------
 
-export type StoredMcpToken = { accessToken: string; expiresAt: number; connectedAt: number };
+export type StoredMcpToken = {
+  accessToken: string;
+  expiresAt: number;
+  connectedAt: number;
+};
 
 // ---------------------------------------------------------------------------
 // Storage helpers
@@ -27,15 +31,20 @@ export function loadMcpToken(): StoredMcpToken | null {
   try {
     const raw = localStorage.getItem(MCP_STORAGE_KEY);
     return raw ? (JSON.parse(raw) as StoredMcpToken) : null;
-  } catch { return null; }
+  } catch {
+    return null;
+  }
 }
 
 function saveMcpToken(accessToken: string, expiresIn: number): void {
-  localStorage.setItem(MCP_STORAGE_KEY, JSON.stringify({
-    accessToken,
-    expiresAt: Date.now() + expiresIn * 1000,
-    connectedAt: Date.now(),
-  }));
+  localStorage.setItem(
+    MCP_STORAGE_KEY,
+    JSON.stringify({
+      accessToken,
+      expiresAt: Date.now() + expiresIn * 1000,
+      connectedAt: Date.now(),
+    }),
+  );
 }
 
 function clearMcpToken(): void {
@@ -51,7 +60,8 @@ export function isMcpExpired(t: StoredMcpToken): boolean {
 // ---------------------------------------------------------------------------
 
 export function getAuthBaseUrl(): string {
-  if (process.env.NODE_ENV === 'production') return `${window.location.origin}/auth`;
+  if (process.env.NODE_ENV === 'production')
+    return `${window.location.origin}/auth`;
   return 'http://localhost:3001/auth';
 }
 
@@ -70,12 +80,22 @@ export function getMcpEndpoint(): string {
 function generateCodeVerifier(): string {
   const arr = new Uint8Array(32);
   crypto.getRandomValues(arr);
-  return btoa(String.fromCharCode(...arr)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '').slice(0, 43);
+  return btoa(String.fromCharCode(...arr))
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=/g, '')
+    .slice(0, 43);
 }
 
 async function generateCodeChallenge(verifier: string): Promise<string> {
-  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(verifier));
-  return btoa(String.fromCharCode(...new Uint8Array(digest))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+  const digest = await crypto.subtle.digest(
+    'SHA-256',
+    new TextEncoder().encode(verifier),
+  );
+  return btoa(String.fromCharCode(...new Uint8Array(digest)))
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=/g, '');
 }
 
 // ---------------------------------------------------------------------------
@@ -87,7 +107,10 @@ type McpOAuthHandlerProps = {
   onPending: (pending: boolean) => void;
 };
 
-export function McpOAuthHandler({ onSuccess, onPending }: McpOAuthHandlerProps) {
+export function McpOAuthHandler({
+  onSuccess,
+  onPending,
+}: McpOAuthHandlerProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const exchangedRef = useRef(false);
@@ -154,8 +177,14 @@ export function useMcpOAuth() {
     else if (t) clearMcpToken();
   }, []);
 
-  const handleMcpSuccess = useCallback((token: StoredMcpToken) => setMcpToken(token), []);
-  const handleMcpPending = useCallback((pending: boolean) => setMcpPending(pending), []);
+  const handleMcpSuccess = useCallback(
+    (token: StoredMcpToken) => setMcpToken(token),
+    [],
+  );
+  const handleMcpPending = useCallback(
+    (pending: boolean) => setMcpPending(pending),
+    [],
+  );
 
   const handleMcpConnect = useCallback(async () => {
     setMcpPending(true);
