@@ -56,7 +56,8 @@ export function BaseTable<TData extends BaseRow>(props: BaseTableProps<TData>) {
     ...(props.columnReordering && columnOrder.length
       ? {
           columnOrder,
-          onColumnOrderChange: (updater) => setColumnOrder(functionalUpdate(updater, columnOrder)),
+          onColumnOrderChange: (updater) =>
+            setColumnOrder(functionalUpdate(updater, columnOrder)),
         }
       : {}),
   });

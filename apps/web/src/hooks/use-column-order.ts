@@ -46,9 +46,13 @@ export function useColumnOrder(key: string, columns: ColumnDef<any, any>[]) {
       const validIds = new Set(allColumnIds);
       const pinnedSet = new Set(pinnedColumnIds);
 
-      const reorderedStored = parsed.filter(id => validIds.has(id) && !pinnedSet.has(id));
+      const reorderedStored = parsed.filter(
+        (id) => validIds.has(id) && !pinnedSet.has(id),
+      );
       const storedSet = new Set(reorderedStored);
-      const newCols = allColumnIds.filter(id => !storedSet.has(id) && !pinnedSet.has(id));
+      const newCols = allColumnIds.filter(
+        (id) => !storedSet.has(id) && !pinnedSet.has(id),
+      );
 
       setColumnOrderState([...pinnedColumnIds, ...reorderedStored, ...newCols]);
     } catch {

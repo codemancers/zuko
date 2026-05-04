@@ -47,7 +47,7 @@ export function useBaseTable<TData extends BaseRow>({
       enableSorting: false,
       enableHiding: false,
       meta: {
-        metadata: { pinned: true } 
+        metadata: { pinned: true },
       },
     };
     return [snoColumn, ...columns];

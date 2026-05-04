@@ -25,26 +25,40 @@ interface DraggableHeaderCellProps<TData extends BaseRow> {
   isPinned: boolean;
 }
 
-const getHeaderStyles = <TData extends BaseRow>(header: Header<TData, unknown>) => {
+const getHeaderStyles = <TData extends BaseRow>(
+  header: Header<TData, unknown>,
+) => {
   const isSno = header.column.id === 'sno';
   return {
     width: isSno ? header.column.getSize() : undefined,
-    minWidth: isSno ? header.column.getSize() : (header.column.columnDef.minSize ?? 'auto'),
-    maxWidth: isSno ? header.column.getSize() : (header.column.columnDef.maxSize ?? 'auto'),
+    minWidth: isSno
+      ? header.column.getSize()
+      : (header.column.columnDef.minSize ?? 'auto'),
+    maxWidth: isSno
+      ? header.column.getSize()
+      : (header.column.columnDef.maxSize ?? 'auto'),
   };
 };
 
-function DraggableHeaderCell<TData extends BaseRow>({ header, isPinned }: DraggableHeaderCellProps<TData>) {
-  const { attributes, listeners, setNodeRef, transform, isDragging } = useSortable({
-    id: header.id,
-    disabled: isPinned,
-  });
+function DraggableHeaderCell<TData extends BaseRow>({
+  header,
+  isPinned,
+}: DraggableHeaderCellProps<TData>) {
+  const { attributes, listeners, setNodeRef, transform, isDragging } =
+    useSortable({
+      id: header.id,
+      disabled: isPinned,
+    });
   return (
     <TableHeader
       colSpan={header.colSpan}
       className={clsx(
         'relative select-none transition-opacity duration-200',
-        isPinned ? 'cursor-default' : isDragging ? 'cursor-grabbing' : 'cursor-grab',
+        isPinned
+          ? 'cursor-default'
+          : isDragging
+            ? 'cursor-grabbing'
+            : 'cursor-grab',
         isDragging && 'opacity-50 z-10',
       )}
       style={{
@@ -121,7 +135,10 @@ export function BaseTableHeader<TData extends BaseRow>({
                 >
                   {header.isPlaceholder
                     ? null
-                    : flexRender(header.column.columnDef.header, header.getContext())}
+                    : flexRender(
+                        header.column.columnDef.header,
+                        header.getContext(),
+                      )}
                 </TableHeader>
               ),
             )}
@@ -149,7 +166,10 @@ export function BaseTableHeader<TData extends BaseRow>({
             collisionDetection={closestCenter}
             onDragEnd={(event) => handleDragEnd(event, columnIds)}
           >
-            <SortableContext items={columnIds} strategy={horizontalListSortingStrategy}>
+            <SortableContext
+              items={columnIds}
+              strategy={horizontalListSortingStrategy}
+            >
               {headerRow}
             </SortableContext>
           </DndContext>
