@@ -156,6 +156,7 @@ const ContactsList = () => {
             'Add your first contact to start managing relationships.',
           action: { label: 'New Contact', onClick: handleNewContact },
         }}
+        columnReordering={{ storageKey: 'contacts-col-order' }}
       />
 
       <ConfirmDialog

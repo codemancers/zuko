@@ -27,6 +27,8 @@ export function useBaseTable<TData extends BaseRow>({
   onRowSelectionChange,
   columnVisibility,
   onColumnVisibilityChange,
+  columnOrder,
+  onColumnOrderChange,
   manualPagination,
   manualSorting,
   manualFiltering,
@@ -44,6 +46,9 @@ export function useBaseTable<TData extends BaseRow>({
       size: 64,
       enableSorting: false,
       enableHiding: false,
+      meta: {
+        metadata: { pinned: true } 
+      },
     };
     return [snoColumn, ...columns];
   }, [columns, pagination]);
@@ -58,13 +63,14 @@ export function useBaseTable<TData extends BaseRow>({
       columnFilters: filters ?? [],
       rowSelection: rowSelection ?? {},
       columnVisibility: columnVisibility ?? {},
+      ...(columnOrder?.length ? { columnOrder } : {}),
     },
     onPaginationChange,
     onSortingChange,
     onColumnFiltersChange: onFiltersChange,
     onRowSelectionChange,
     onColumnVisibilityChange,
-
+    onColumnOrderChange,
     // Core Models
     getCoreRowModel: getCoreRowModel(),
 

@@ -63,6 +63,7 @@ export interface ColumnMetadata {
   searchable?: boolean;
   editable?: boolean;
   isVisible?: boolean;
+  pinned?: boolean;
   width?: number;
   default?: boolean;
   config?: ColumnConfig;

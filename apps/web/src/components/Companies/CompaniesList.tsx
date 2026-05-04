@@ -155,6 +155,7 @@ const CompaniesList = () => {
           description: 'Add your first company to start managing accounts.',
           action: { label: 'New Company', onClick: handleNewCompany },
         }}
+        columnReordering={{ storageKey: 'companies-col-order' }}
       />
 
       <ConfirmDialog

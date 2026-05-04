@@ -156,6 +156,7 @@ const DealsList = () => {
             'Create your first deal to start tracking your pipeline.',
           action: { label: 'New Deal', onClick: handleNewDeal },
         }}
+        columnReordering={{ storageKey: 'deals-col-order' }}
       />
 
       <ConfirmDialog

@@ -13,6 +13,7 @@ export const COMPANY_TABLE_METADATA: ColumnMetadata[] = [
     searchable: true,
     editable: true,
     isVisible: true,
+    pinned: true,
     default: true,
     config: {
       entityType: 'company',
@@ -94,6 +95,7 @@ export const CONTACT_TABLE_METADATA: ColumnMetadata[] = [
     searchable: true,
     editable: true,
     isVisible: true,
+    pinned: true,
     default: true,
     config: {
       entityType: 'contact',
@@ -175,6 +177,7 @@ export const MEETING_TABLE_METADATA: ColumnMetadata[] = [
     searchable: true,
     editable: false,
     isVisible: true,
+    pinned: true,
     default: true,
     config: {
       hrefTemplate: '/meeting/{id}',
@@ -281,6 +284,7 @@ export const TASK_TABLE_METADATA: ColumnMetadata[] = [
     searchable: true,
     editable: true,
     isVisible: true,
+    pinned: true,
     default: true,
     config: {
       hrefTemplate: '/tasks/{id}',
@@ -364,6 +368,7 @@ export const DEAL_TABLE_METADATA: ColumnMetadata[] = [
     searchable: true,
     editable: true,
     isVisible: true,
+    pinned: true,
     default: true,
     config: {
       entityType: 'deal',

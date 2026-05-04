@@ -3,6 +3,7 @@
 import Image from 'next/image';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useBaseTable } from '@/hooks/use-base-table';
+import { useColumnOrder } from '@/hooks/use-column-order';
 import type { BaseTableProps, BaseRow } from './types';
 import { BaseTableHeader } from './BaseTableHeader';
 import { BaseTableBody } from './BaseTableBody';
@@ -10,6 +11,7 @@ import { BaseTableRow } from './BaseTableRow';
 import { Table, Button, TableBody } from '@zuko/ui-kit';
 import clsx from 'clsx';
 import { PlusIcon } from '@heroicons/react/24/outline';
+import { functionalUpdate } from '@tanstack/react-table';
 import type { PaginationState } from '@tanstack/react-table';
 import { AddColumnDialog } from './AddColumnDialog';
 import type { ColumnConfig } from '@/types/table-metadata';
@@ -39,12 +41,25 @@ export function BaseTable<TData extends BaseRow>(props: BaseTableProps<TData>) {
     manualPagination: isInfiniteScrollMode ? true : props.manualPagination,
   };
 
+  const [columnOrder, setColumnOrder, pinnedColumnIds] = useColumnOrder(
+    props.columnReordering?.storageKey ?? '',
+    props.columnReordering ? props.columns : [],
+  );
+
   const {
     table,
     isAddColumnDialogOpen,
     openAddColumnDialog,
     closeAddColumnDialog,
-  } = useBaseTable(effectiveProps);
+  } = useBaseTable({
+    ...effectiveProps,
+    ...(props.columnReordering && columnOrder.length
+      ? {
+          columnOrder,
+          onColumnOrderChange: (updater) => setColumnOrder(functionalUpdate(updater, columnOrder)),
+        }
+      : {}),
+  });
 
   const {
     loading,
@@ -62,6 +77,7 @@ export function BaseTable<TData extends BaseRow>(props: BaseTableProps<TData>) {
     openAddColumnRef,
     isFetchingNextPage,
     hasNextPage,
+    columnReordering,
   } = props;
 
   if (openAddColumnRef) {
@@ -194,6 +210,9 @@ export function BaseTable<TData extends BaseRow>(props: BaseTableProps<TData>) {
             headerGroups={table.getHeaderGroups()}
             showAddColumn={showAddColumn}
             onAddColumn={openAddColumnDialog}
+            columnReordering={columnReordering}
+            pinnedColumnIds={pinnedColumnIds}
+            onColumnReorder={setColumnOrder}
           />
           {isInfiniteScrollMode ? (
             <TableBody>
