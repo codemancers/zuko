@@ -9,9 +9,8 @@ import {
 } from '@/components/Table';
 import type { ColumnDef } from '@tanstack/react-table';
 import type { ColumnMetadata } from '@/types/table-metadata';
-import { Suspense, useMemo } from 'react';
+import { Suspense, useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
 import { McpSetupModal } from './mcp-setup-modal';
 import {
   githubStatusQueryOptions,

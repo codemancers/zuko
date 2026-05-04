@@ -1,7 +1,6 @@
 import { betterAuth, type BetterAuthPlugin } from 'better-auth';
 import { prismaAdapter } from 'better-auth/adapters/prisma';
-import { testUtils, organization } from 'better-auth/plugins';
-import { mcp } from 'better-auth/plugins';
+import { testUtils, organization, mcp } from 'better-auth/plugins';
 import { PrismaService } from '../../prisma/prisma.service';
 import { agentAuth, type Capability } from '@better-auth/agent-auth';
 
