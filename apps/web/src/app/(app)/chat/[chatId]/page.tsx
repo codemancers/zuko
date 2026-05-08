@@ -24,6 +24,7 @@ import { contactsApi } from '@/lib/api/contacts';
 import { companiesApi } from '@/lib/api/companies';
 import { dealsApi } from '@/lib/api/deals';
 import { CHAT_ENTITY_TYPE_LABEL } from '@/lib/constants';
+import { SandboxStatusBadge } from '@/components/Chat/SandboxStatusBadge';
 
 export default function ChatPage() {
   const params = useParams();
@@ -37,6 +38,7 @@ export default function ChatPage() {
   const invalidateChats = useInvalidateChats();
   const [firstMessageSent, setFirstMessageSent] = useState(false);
   const [messagesLoaded, setMessagesLoaded] = useState(false);
+  const [sandboxId, setSandboxId] = useState<number | null>(null);
 
   const hasMessages = messages.length > 0;
 
@@ -144,6 +146,7 @@ export default function ChatPage() {
         const data = await response.json();
         const historyMessages = data.messages || [];
         const contextRefs = data.contextEntities || [];
+        if (data.sandboxId) setSandboxId(data.sandboxId);
 
         // Convert to AI SDK v6 message format with parts array
         const formattedMessages = historyMessages.map(
@@ -248,6 +251,11 @@ export default function ChatPage() {
   return (
     <TooltipProvider>
       <div className="flex h-full flex-col overflow-hidden bg-zinc-50 dark:bg-zinc-900">
+        {sandboxId && (
+          <div className="flex items-center justify-end border-b border-zinc-200 px-4 py-1.5 dark:border-zinc-800">
+            <SandboxStatusBadge sandboxId={sandboxId} />
+          </div>
+        )}
         {hasMessages ? (
           <>
             {/* Messages Area - with scrolling, constrained width */}

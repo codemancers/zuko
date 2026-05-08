@@ -17,6 +17,8 @@ import { LangsmithService } from '../langsmith/langsmith.service';
 import { SpritesService } from '../sprites/sprites.service';
 // eslint-disable-next-line @typescript-eslint/consistent-type-imports
 import { ChatsRepository } from './chats.repository';
+// eslint-disable-next-line @typescript-eslint/consistent-type-imports
+import { SandboxLifecycleService } from '../sandbox-lifecycle/sandbox-lifecycle.service';
 
 @Injectable()
 export class ChatsService {
@@ -25,6 +27,7 @@ export class ChatsService {
     private readonly prisma: PrismaService,
     private readonly langsmithService: LangsmithService,
     private readonly spritesService: SpritesService,
+    private readonly sandboxLifecycle: SandboxLifecycleService,
   ) {}
 
   /**
@@ -180,7 +183,9 @@ export class ChatsService {
         ? (values.contextEntities as unknown[])
         : [];
 
-    return { messages, contextEntities };
+    const sandboxId = chat.sandboxes[0]?.id ?? null;
+
+    return { messages, contextEntities, sandboxId };
   }
 
   async prepareChatRun(input: {
@@ -215,6 +220,9 @@ export class ChatsService {
         spriteName,
         sprite.url,
       );
+      await this.sandboxLifecycle.markActive(sandbox.id);
+    } else if (sandbox.lifecycleState === 'hibernated') {
+      await this.sandboxLifecycle.resume(sandbox.id);
     }
 
     if (!chat.title && messages.length === 1) {
@@ -239,6 +247,9 @@ export class ChatsService {
     const langchainMessages = await toBaseMessages(filteredMessages);
 
     await this.spritesService.startServer(spriteName);
+
+    // Refresh inactivity deadline after each chat run
+    this.sandboxLifecycle.refreshActivity(sandbox.id).catch(() => {});
 
     return {
       chatId,

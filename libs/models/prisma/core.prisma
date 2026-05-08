@@ -276,15 +276,32 @@ model TaskOwner {
   @@schema("public")
 }
 
+enum SandboxLifecycleState {
+  provisioning
+  active
+  hibernating
+  hibernated
+  restoring
+  failed
+
+  @@schema("public")
+}
+
 model Sandbox {
-  id        Int      @id @default(autoincrement())
-  name      String   @unique
-  url       String
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  id             Int                   @id @default(autoincrement())
+  name           String                @unique
+  url            String
+  lifecycleState SandboxLifecycleState @default(provisioning) @map("lifecycle_state")
+  lifecycleError String?               @map("lifecycle_error")
+  lastActivityAt DateTime?             @map("last_activity_at")
+  hibernateAfter DateTime?             @map("hibernate_after")
+  createdAt      DateTime              @default(now()) @map("created_at")
+  updatedAt      DateTime              @updatedAt @map("updated_at")
 
   chats Chat[]
 
+  @@index([lifecycleState])
+  @@index([hibernateAfter])
   @@map("sandbox")
   @@schema("public")
 }

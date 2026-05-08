@@ -175,4 +175,19 @@ export class ChatsRepository {
       },
     });
   }
+
+  updateSandboxLifecycle(
+    sandboxId: number,
+    data: {
+      lifecycleState?: string;
+      lastActivityAt?: Date;
+      hibernateAfter?: Date | null;
+      lifecycleError?: string | null;
+    },
+  ) {
+    return this.prisma.sandbox.update({
+      where: { id: sandboxId },
+      data,
+    });
+  }
 }

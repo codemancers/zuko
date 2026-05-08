@@ -66,8 +66,102 @@ export class SpritesService {
     };
   }
 
-  private spriteName(threadId: string): string {
+  spriteName(threadId: string): string {
     return `zuko-${threadId}`;
+  }
+
+  async getSprite(name: string): Promise<SpriteRecord> {
+    const encoded = encodeURIComponent(name);
+    const res = await fetch(`${this.baseUrl}/v1/sprites/${encoded}`, {
+      headers: this.bearerHeaders(),
+    });
+    if (!res.ok) {
+      const text = await res.text();
+      throw new InternalServerErrorException(
+        `Sprites API get failed (${res.status}): ${text}`,
+      );
+    }
+    return (await res.json()) as SpriteRecord;
+  }
+
+  async stopSprite(name: string): Promise<void> {
+    const encoded = encodeURIComponent(name);
+    const res = await fetch(`${this.baseUrl}/v1/sprites/${encoded}/stop`, {
+      method: 'POST',
+      headers: this.bearerHeaders(),
+    });
+    if (!res.ok) {
+      const text = await res.text();
+      throw new InternalServerErrorException(
+        `Sprites API stop failed (${res.status}): ${text}`,
+      );
+    }
+  }
+
+  async startSprite(name: string): Promise<void> {
+    const encoded = encodeURIComponent(name);
+    const res = await fetch(`${this.baseUrl}/v1/sprites/${encoded}/start`, {
+      method: 'POST',
+      headers: this.bearerHeaders(),
+    });
+    if (!res.ok) {
+      const text = await res.text();
+      throw new InternalServerErrorException(
+        `Sprites API start failed (${res.status}): ${text}`,
+      );
+    }
+  }
+
+  async readFile(name: string, filePath: string): Promise<string> {
+    const encoded = encodeURIComponent(name);
+    const res = await fetch(
+      `${this.baseUrl}/v1/sprites/${encoded}/fs/${filePath}`,
+      { headers: this.bearerHeaders() },
+    );
+    if (!res.ok) {
+      const text = await res.text();
+      throw new InternalServerErrorException(
+        `Sprites API readFile failed (${res.status}): ${text}`,
+      );
+    }
+    return res.text();
+  }
+
+  async writeFile(
+    name: string,
+    filePath: string,
+    content: string,
+  ): Promise<void> {
+    const encoded = encodeURIComponent(name);
+    const res = await fetch(
+      `${this.baseUrl}/v1/sprites/${encoded}/fs/${filePath}`,
+      {
+        method: 'PUT',
+        headers: { ...this.bearerHeaders(), 'Content-Type': 'text/plain' },
+        body: content,
+      },
+    );
+    if (!res.ok) {
+      const text = await res.text();
+      throw new InternalServerErrorException(
+        `Sprites API writeFile failed (${res.status}): ${text}`,
+      );
+    }
+  }
+
+  async listDirectory(name: string, dirPath: string): Promise<unknown> {
+    const encoded = encodeURIComponent(name);
+    const res = await fetch(
+      `${this.baseUrl}/v1/sprites/${encoded}/fs/${dirPath}?list=true`,
+      { headers: this.bearerHeaders() },
+    );
+    if (!res.ok) {
+      const text = await res.text();
+      throw new InternalServerErrorException(
+        `Sprites API listDirectory failed (${res.status}): ${text}`,
+      );
+    }
+    return res.json();
   }
 
   async createSprite(threadId: string): Promise<SpriteRecord> {
