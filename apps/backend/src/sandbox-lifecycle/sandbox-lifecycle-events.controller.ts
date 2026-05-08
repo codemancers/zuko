@@ -10,7 +10,6 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { AuthGuard } from '@thallesp/nestjs-better-auth';
-import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import type { Request, Response } from 'express';
 import type { RequestWithUser } from '@zuko/core';
@@ -21,8 +20,6 @@ import {
 } from './sandbox-lifecycle.service';
 import { SANDBOX_LIFECYCLE_EVENT } from './sandbox-lifecycle.constants';
 
-@ApiTags('sandboxes')
-@ApiBearerAuth()
 @Controller('api/sandboxes')
 @UseGuards(AuthGuard)
 export class SandboxLifecycleEventsController {
@@ -38,7 +35,6 @@ export class SandboxLifecycleEventsController {
    * Sends the current state immediately on connect, then streams updates.
    */
   @Get(':id/lifecycle/events')
-  @ApiOperation({ summary: 'SSE stream of sandbox lifecycle state changes' })
   async lifecycleEvents(
     @Param('id') rawId: string,
     @Req() req: Request & RequestWithUser,
@@ -96,7 +92,6 @@ export class SandboxLifecycleEventsController {
    * Manually wake a hibernated sandbox.
    */
   @Post(':id/resume')
-  @ApiOperation({ summary: 'Resume a hibernated sandbox' })
   async resume(
     @Param('id') rawId: string,
     @Req() req: RequestWithUser,

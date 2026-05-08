@@ -11,13 +11,10 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { AuthGuard } from '@thallesp/nestjs-better-auth';
-import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import type { RequestWithUser } from '@zuko/core';
 import { PrismaService } from '../prisma/prisma.service';
 import { SpritesService } from '../sprites/sprites.service';
 
-@ApiTags('sandboxes')
-@ApiBearerAuth()
 @Controller('api/sandboxes')
 @UseGuards(AuthGuard)
 export class SandboxFilesystemController {
@@ -31,7 +28,6 @@ export class SandboxFilesystemController {
    * Read a file or list a directory (?list=true) inside the sandbox.
    */
   @Get(':id/fs/*path')
-  @ApiOperation({ summary: 'Read a file or list a directory in the sandbox' })
   async readOrList(
     @Param('id') rawId: string,
     @Param('path') filePath: string,
@@ -52,7 +48,6 @@ export class SandboxFilesystemController {
    * Write content to a file inside the sandbox.
    */
   @Put(':id/fs/*path')
-  @ApiOperation({ summary: 'Write a file in the sandbox' })
   async writeFile(
     @Param('id') rawId: string,
     @Param('path') filePath: string,
