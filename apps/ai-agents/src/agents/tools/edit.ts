@@ -12,7 +12,8 @@ export const editTool = defineTool({
     replaceAll: z.boolean().optional(),
   }),
   execute: async ({ path, oldString, newString, replaceAll }, ctx) => {
-    if (oldString === newString) throw new Error('oldString and newString must differ');
+    if (oldString === newString)
+      throw new Error('oldString and newString must differ');
     const raw = await ctx.sandbox.readFile(path);
     // readFile returns numbered lines — strip line numbers to get raw content
     const original = raw.replace(/^\d+\t/gm, '');
@@ -29,7 +30,10 @@ export const editTool = defineTool({
           `oldString appears more than once in ${path}. Use replaceAll:true or provide more context.`,
         );
       }
-      updated = original.slice(0, idx) + newString + original.slice(idx + oldString.length);
+      updated =
+        original.slice(0, idx) +
+        newString +
+        original.slice(idx + oldString.length);
     }
     await ctx.sandbox.writeFile(path, updated);
     return { ok: true } as const;

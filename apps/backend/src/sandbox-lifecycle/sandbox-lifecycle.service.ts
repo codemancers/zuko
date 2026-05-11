@@ -66,9 +66,7 @@ export class SandboxLifecycleService {
       this.emit(sandboxId, 'hibernated');
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
-      this.logger.error(
-        `Failed to hibernate sandbox ${sandboxId}: ${message}`,
-      );
+      this.logger.error(`Failed to hibernate sandbox ${sandboxId}: ${message}`);
       await this.prisma.sandbox.update({
         where: { id: sandboxId },
         data: { lifecycleState: 'failed', lifecycleError: message },
@@ -143,11 +141,7 @@ export class SandboxLifecycleService {
     }
   }
 
-  private emit(
-    sandboxId: number,
-    state: string,
-    error?: string | null,
-  ): void {
+  private emit(sandboxId: number, state: string, error?: string | null): void {
     const payload: SandboxLifecyclePayload = {
       sandboxId,
       lifecycleState: state,

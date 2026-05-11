@@ -12,7 +12,11 @@ export const grepTool = defineTool({
     caseSensitive: z.boolean().optional(),
   }),
   execute: async ({ pattern, path, glob, caseSensitive }, ctx) => {
-    const matches = await ctx.sandbox.grep(pattern, { path, glob, caseSensitive });
+    const matches = await ctx.sandbox.grep(pattern, {
+      path,
+      glob,
+      caseSensitive,
+    });
     return { matches };
   },
 });

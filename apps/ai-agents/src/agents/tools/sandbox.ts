@@ -87,7 +87,12 @@ export class LocalSandbox implements Sandbox {
         env: { ...process.env },
         signal: opts?.signal,
       });
-      return { success: true, exitCode: 0, stdout: stdout.trim(), stderr: stderr.trim() };
+      return {
+        success: true,
+        exitCode: 0,
+        stdout: stdout.trim(),
+        stderr: stderr.trim(),
+      };
     } catch (err: any) {
       return {
         success: false,
@@ -98,17 +103,27 @@ export class LocalSandbox implements Sandbox {
     }
   }
 
-  async readFile(path: string, opts?: { offset?: number; limit?: number }): Promise<string> {
-    const abs = path.startsWith('/') ? path : resolve(this.workingDirectory, path);
+  async readFile(
+    path: string,
+    opts?: { offset?: number; limit?: number },
+  ): Promise<string> {
+    const abs = path.startsWith('/')
+      ? path
+      : resolve(this.workingDirectory, path);
     const raw = readFileSync(abs, 'utf-8');
     const lines = raw.split('\n');
     const start = opts?.offset ?? 0;
-    const slice = opts?.limit != null ? lines.slice(start, start + opts.limit) : lines.slice(start);
+    const slice =
+      opts?.limit != null
+        ? lines.slice(start, start + opts.limit)
+        : lines.slice(start);
     return slice.map((line, i) => `${start + i + 1}\t${line}`).join('\n');
   }
 
   async writeFile(path: string, content: string): Promise<void> {
-    const abs = path.startsWith('/') ? path : resolve(this.workingDirectory, path);
+    const abs = path.startsWith('/')
+      ? path
+      : resolve(this.workingDirectory, path);
     mkdirSync(resolve(abs, '..'), { recursive: true });
     writeFileSync(abs, content, 'utf-8');
   }
@@ -125,7 +140,9 @@ export class LocalSandbox implements Sandbox {
     pattern: string,
     opts: { path: string; glob?: string; caseSensitive?: boolean },
   ): Promise<Array<{ file: string; line: number; match: string }>> {
-    const base = opts.path.startsWith('/') ? opts.path : resolve(this.workingDirectory, opts.path);
+    const base = opts.path.startsWith('/')
+      ? opts.path
+      : resolve(this.workingDirectory, opts.path);
     const flags = opts.caseSensitive ? '' : 'i';
     const re = new RegExp(pattern, flags);
     const globRe = opts.glob ? patternToRegex(opts.glob) : null;
@@ -135,7 +152,9 @@ export class LocalSandbox implements Sandbox {
   }
 
   async stat(path: string): Promise<StatResult> {
-    const abs = path.startsWith('/') ? path : resolve(this.workingDirectory, path);
+    const abs = path.startsWith('/')
+      ? path
+      : resolve(this.workingDirectory, path);
     const s = statSync(abs);
     return {
       isFile: s.isFile(),
@@ -146,22 +165,36 @@ export class LocalSandbox implements Sandbox {
   }
 
   async mkdir(path: string, opts?: { recursive?: boolean }): Promise<void> {
-    const abs = path.startsWith('/') ? path : resolve(this.workingDirectory, path);
+    const abs = path.startsWith('/')
+      ? path
+      : resolve(this.workingDirectory, path);
     mkdirSync(abs, { recursive: opts?.recursive ?? false });
   }
 
   async readdir(path: string): Promise<DirEntry[]> {
-    const abs = path.startsWith('/') ? path : resolve(this.workingDirectory, path);
-    const entries = readdirSync(abs, { withFileTypes: true, encoding: 'utf-8' });
+    const abs = path.startsWith('/')
+      ? path
+      : resolve(this.workingDirectory, path);
+    const entries = readdirSync(abs, {
+      withFileTypes: true,
+      encoding: 'utf-8',
+    });
     return (entries as import('node:fs').Dirent<string>[]).map((e) => ({
       name: e.name,
-      type: (e.isFile() ? 'file' : e.isDirectory() ? 'directory' : 'symlink') as DirEntry['type'],
+      type: (e.isFile()
+        ? 'file'
+        : e.isDirectory()
+          ? 'directory'
+          : 'symlink') as DirEntry['type'],
     }));
   }
 }
 
 function walk(root: string, dir: string, regex: RegExp, out: string[]) {
-  for (const entry of readdirSync(dir, { withFileTypes: true, encoding: 'utf-8' }) as import('node:fs').Dirent<string>[]) {
+  for (const entry of readdirSync(dir, {
+    withFileTypes: true,
+    encoding: 'utf-8',
+  }) as import('node:fs').Dirent<string>[]) {
     const rel = join(dir, entry.name).slice(root.length + 1);
     if (entry.isDirectory()) {
       if (entry.name === 'node_modules' || entry.name === '.git') continue;
@@ -179,7 +212,10 @@ function grepWalk(
   globRe: RegExp | null,
   out: Array<{ file: string; line: number; match: string }>,
 ) {
-  for (const entry of readdirSync(dir, { withFileTypes: true, encoding: 'utf-8' }) as import('node:fs').Dirent<string>[]) {
+  for (const entry of readdirSync(dir, {
+    withFileTypes: true,
+    encoding: 'utf-8',
+  }) as import('node:fs').Dirent<string>[]) {
     const abs = join(dir, entry.name);
     const rel = abs.slice(root.length + 1);
     if (entry.isDirectory()) {
@@ -190,9 +226,12 @@ function grepWalk(
       try {
         const lines = readFileSync(abs, 'utf-8').split('\n');
         lines.forEach((line, i) => {
-          if (pattern.test(line)) out.push({ file: rel, line: i + 1, match: line });
+          if (pattern.test(line))
+            out.push({ file: rel, line: i + 1, match: line });
         });
-      } catch { /* skip unreadable */ }
+      } catch {
+        /* skip unreadable */
+      }
     }
   }
 }
@@ -208,7 +247,8 @@ function patternToRegex(pattern: string): RegExp {
 
 // ─── Remote sandbox (routes through Sprites exec API) ────────────────────────
 
-const SPRITES_API_BASE = process.env.SPRITES_API_BASE_URL ?? 'https://api.sprites.dev';
+const SPRITES_API_BASE =
+  process.env.SPRITES_API_BASE_URL ?? 'https://api.sprites.dev';
 
 export class SpriteSandbox implements Sandbox {
   constructor(
@@ -227,11 +267,18 @@ export class SpriteSandbox implements Sandbox {
         headers: { Authorization: `Bearer ${this.token}` },
       },
     );
-    if (!res.ok) throw new Error(`Sprite exec failed (${res.status}): ${await res.text()}`);
+    if (!res.ok)
+      throw new Error(
+        `Sprite exec failed (${res.status}): ${await res.text()}`,
+      );
     return res.text();
   }
 
-  async exec(command: string, cwd: string, _timeoutMs: number): Promise<ExecResult> {
+  async exec(
+    command: string,
+    cwd: string,
+    _timeoutMs: number,
+  ): Promise<ExecResult> {
     try {
       const stdout = await this.execInSprite(['bash', '-c', command]);
       return { success: true, exitCode: 0, stdout: stdout.trim(), stderr: '' };
@@ -240,8 +287,13 @@ export class SpriteSandbox implements Sandbox {
     }
   }
 
-  async readFile(path: string, opts?: { offset?: number; limit?: number }): Promise<string> {
-    const abs = path.startsWith('/') ? path : `${this.workingDirectory}/${path}`;
+  async readFile(
+    path: string,
+    opts?: { offset?: number; limit?: number },
+  ): Promise<string> {
+    const abs = path.startsWith('/')
+      ? path
+      : `${this.workingDirectory}/${path}`;
     const res = await fetch(
       `${SPRITES_API_BASE}/v1/sprites/${encodeURIComponent(this.spriteName)}/fs/${abs}`,
       { headers: { Authorization: `Bearer ${this.token}` } },
@@ -250,17 +302,25 @@ export class SpriteSandbox implements Sandbox {
     const raw = await res.text();
     const lines = raw.split('\n');
     const start = opts?.offset ?? 0;
-    const slice = opts?.limit != null ? lines.slice(start, start + opts.limit) : lines.slice(start);
+    const slice =
+      opts?.limit != null
+        ? lines.slice(start, start + opts.limit)
+        : lines.slice(start);
     return slice.map((line, i) => `${start + i + 1}\t${line}`).join('\n');
   }
 
   async writeFile(path: string, content: string): Promise<void> {
-    const abs = path.startsWith('/') ? path : `${this.workingDirectory}/${path}`;
+    const abs = path.startsWith('/')
+      ? path
+      : `${this.workingDirectory}/${path}`;
     const res = await fetch(
       `${SPRITES_API_BASE}/v1/sprites/${encodeURIComponent(this.spriteName)}/fs/${abs}`,
       {
         method: 'PUT',
-        headers: { Authorization: `Bearer ${this.token}`, 'Content-Type': 'text/plain' },
+        headers: {
+          Authorization: `Bearer ${this.token}`,
+          'Content-Type': 'text/plain',
+        },
         body: content,
       },
     );
@@ -270,7 +330,8 @@ export class SpriteSandbox implements Sandbox {
   async glob(pattern: string, opts?: { cwd?: string }): Promise<string[]> {
     const dir = opts?.cwd ?? this.workingDirectory;
     const out = await this.execInSprite([
-      'bash', '-c',
+      'bash',
+      '-c',
       `find ${dir} -name '${pattern}' 2>/dev/null | sed 's|${dir}/||'`,
     ]);
     return out.split('\n').filter(Boolean);
@@ -280,29 +341,43 @@ export class SpriteSandbox implements Sandbox {
     pattern: string,
     opts: { path: string; glob?: string; caseSensitive?: boolean },
   ): Promise<Array<{ file: string; line: number; match: string }>> {
-    const dir = opts.path.startsWith('/') ? opts.path : `${this.workingDirectory}/${opts.path}`;
+    const dir = opts.path.startsWith('/')
+      ? opts.path
+      : `${this.workingDirectory}/${opts.path}`;
     const flags = opts.caseSensitive ? '' : '-i';
     const include = opts.glob ? `--include='${opts.glob}'` : '';
     const out = await this.execInSprite([
-      'bash', '-c',
+      'bash',
+      '-c',
       `grep -rn ${flags} ${include} '${pattern}' ${dir} 2>/dev/null || true`,
     ]);
-    return out.split('\n').filter(Boolean).map((line) => {
-      const m = line.match(/^(.+):(\d+):(.*)$/);
-      return m
-        ? { file: m[1].replace(dir + '/', ''), line: parseInt(m[2]), match: m[3] }
-        : { file: '', line: 0, match: line };
-    });
+    return out
+      .split('\n')
+      .filter(Boolean)
+      .map((line) => {
+        const m = line.match(/^(.+):(\d+):(.*)$/);
+        return m
+          ? {
+              file: m[1].replace(dir + '/', ''),
+              line: parseInt(m[2]),
+              match: m[3],
+            }
+          : { file: '', line: 0, match: line };
+      });
   }
 
   async stat(path: string): Promise<StatResult> {
-    const abs = path.startsWith('/') ? path : `${this.workingDirectory}/${path}`;
+    const abs = path.startsWith('/')
+      ? path
+      : `${this.workingDirectory}/${path}`;
     const out = await this.execInSprite([
-      'bash', '-c',
+      'bash',
+      '-c',
       `stat -c '%F %s %Y' '${abs}'`,
     ]);
     const [typeStr, sizeStr, mtimeStr] = out.trim().split(' ');
-    const isFile = typeStr === 'regular file' || typeStr === 'regular empty file';
+    const isFile =
+      typeStr === 'regular file' || typeStr === 'regular empty file';
     const isDirectory = typeStr === 'directory';
     return {
       isFile,
@@ -313,27 +388,35 @@ export class SpriteSandbox implements Sandbox {
   }
 
   async mkdir(path: string, opts?: { recursive?: boolean }): Promise<void> {
-    const abs = path.startsWith('/') ? path : `${this.workingDirectory}/${path}`;
+    const abs = path.startsWith('/')
+      ? path
+      : `${this.workingDirectory}/${path}`;
     const flag = opts?.recursive ? '-p' : '';
     await this.execInSprite(['bash', '-c', `mkdir ${flag} '${abs}'`]);
   }
 
   async readdir(path: string): Promise<DirEntry[]> {
-    const abs = path.startsWith('/') ? path : `${this.workingDirectory}/${path}`;
+    const abs = path.startsWith('/')
+      ? path
+      : `${this.workingDirectory}/${path}`;
     const out = await this.execInSprite([
-      'bash', '-c',
+      'bash',
+      '-c',
       `ls -1 --color=never '${abs}' | while read name; do
         if [ -d "${abs}/$name" ]; then echo "directory $name"
         elif [ -f "${abs}/$name" ]; then echo "file $name"
         else echo "symlink $name"; fi
       done`,
     ]);
-    return out.split('\n').filter(Boolean).map((line) => {
-      const space = line.indexOf(' ');
-      return {
-        type: line.slice(0, space) as DirEntry['type'],
-        name: line.slice(space + 1),
-      };
-    });
+    return out
+      .split('\n')
+      .filter(Boolean)
+      .map((line) => {
+        const space = line.indexOf(' ');
+        return {
+          type: line.slice(0, space) as DirEntry['type'],
+          name: line.slice(space + 1),
+        };
+      });
   }
 }

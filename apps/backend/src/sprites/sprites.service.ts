@@ -302,7 +302,7 @@ export class SpritesService {
         '-c',
         [
           // Kill any existing process on 8080 (might be bound to ::1 only)
-          "fuser -k 8080/tcp 2>/dev/null || true",
+          'fuser -k 8080/tcp 2>/dev/null || true',
           'sleep 1',
           'nohup bunx @langchain/langgraph-cli dev -p 8080 --host 0.0.0.0 > dev.log 2>&1 &',
           'DEADLINE=$((SECONDS+120))',

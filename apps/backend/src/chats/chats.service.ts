@@ -137,7 +137,8 @@ export class ChatsService {
 
     // Architecture 1: agent always runs on the backend process, not inside the sprite.
     // The sprite is used only for tool execution via its REST API.
-    const agentUrl = process.env.LANGSMITH_SERVER_URL ?? 'http://localhost:8080';
+    const agentUrl =
+      process.env.LANGSMITH_SERVER_URL ?? 'http://localhost:8080';
     let values: { messages: unknown[]; contextEntities: unknown[] };
     try {
       const state: any = await this.langsmithService.getThreadState(

@@ -20,10 +20,14 @@ export interface ToolContext {
  */
 function buildSandbox(c: Record<string, unknown>): Sandbox {
   const spriteName = c['spriteName'] as string | undefined;
-  const workingDir = (c['workingDirectory'] as string | undefined) ?? WORKING_DIR;
+  const workingDir =
+    (c['workingDirectory'] as string | undefined) ?? WORKING_DIR;
 
   if (spriteName) {
-    const token = (c['spritesToken'] as string | undefined) ?? process.env.SPRITES_TOKEN ?? '';
+    const token =
+      (c['spritesToken'] as string | undefined) ??
+      process.env.SPRITES_TOKEN ??
+      '';
     return new SpriteSandbox(workingDir, spriteName, token);
   }
 
@@ -34,13 +38,17 @@ function buildSandbox(c: Record<string, unknown>): Sandbox {
 export function getContextFromConfig(config?: RunnableConfig): ToolContext {
   const c = (config?.configurable ?? {}) as Record<string, unknown>;
   const s = ((config as any)?.state ?? {}) as Record<string, unknown>;
-  const workingDirectory = String(c['workingDirectory'] ?? s['workingDirectory'] ?? WORKING_DIR);
+  const workingDirectory = String(
+    c['workingDirectory'] ?? s['workingDirectory'] ?? WORKING_DIR,
+  );
 
   return {
     sandbox: buildSandbox({ ...c, workingDirectory }),
     workingDirectory,
     userId: String(c['userId'] ?? s['userId'] ?? ''),
     organizationId: String(c['organizationId'] ?? s['organizationId'] ?? ''),
-    contextEntities: (c['contextEntities'] ?? s['contextEntities'] ?? []) as Array<{ type: string; id: number }>,
+    contextEntities: (c['contextEntities'] ??
+      s['contextEntities'] ??
+      []) as Array<{ type: string; id: number }>,
   };
 }

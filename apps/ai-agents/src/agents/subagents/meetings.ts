@@ -28,7 +28,11 @@ const fetchMeetingsByOrg = tool(
       }
 
       const meetings = await res.json();
-      return { success: true, meetings, count: Array.isArray(meetings) ? meetings.length : 0 };
+      return {
+        success: true,
+        meetings,
+        count: Array.isArray(meetings) ? meetings.length : 0,
+      };
     } catch (err) {
       return {
         success: false,

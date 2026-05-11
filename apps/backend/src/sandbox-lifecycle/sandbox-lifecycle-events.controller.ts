@@ -92,10 +92,7 @@ export class SandboxLifecycleEventsController {
    * Manually wake a hibernated sandbox.
    */
   @Post(':id/resume')
-  async resume(
-    @Param('id') rawId: string,
-    @Req() req: RequestWithUser,
-  ) {
+  async resume(@Param('id') rawId: string, @Req() req: RequestWithUser) {
     const sandboxId = parseInt(rawId, 10);
     const sandbox = await this.prisma.sandbox.findUnique({
       where: { id: sandboxId },

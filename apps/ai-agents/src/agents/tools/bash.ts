@@ -21,7 +21,9 @@ export const bashTool = defineTool({
   execute: async ({ command, cwd, timeoutMs }, ctx) => {
     const base = ctx.workingDirectory ?? WORKING_DIR;
     const workingCwd = cwd
-      ? (cwd.startsWith('/') ? cwd : `${base}/${cwd}`)
+      ? cwd.startsWith('/')
+        ? cwd
+        : `${base}/${cwd}`
       : base;
     return ctx.sandbox.exec(command, workingCwd, timeoutMs ?? TIMEOUT_MS, {
       signal: ctx.abortSignal,

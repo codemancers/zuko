@@ -9,5 +9,5 @@ export const askUserQuestionTool = defineTool({
     question: z.string(),
     choices: z.array(z.string()).optional(),
   }),
-  execute: async () => ({ pending: true } as const),
+  execute: async () => ({ pending: true }) as const,
 });
