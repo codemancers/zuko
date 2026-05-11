@@ -286,9 +286,7 @@ export class SpritesService {
     });
 
     console.log('dependencies installed');
-
-    // start the server
-    await this.startServer(threadId);
+    // Architecture 1: sprite is a tool executor only — no server needed inside the sprite.
   }
 
   async startServer(threadId: string): Promise<void> {
