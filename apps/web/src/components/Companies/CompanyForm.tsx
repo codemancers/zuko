@@ -151,58 +151,58 @@ export default function CompanyForm({
       className={clsx(isSheet ? 'flex h-full flex-col' : 'space-y-6')}
     >
       <div className={clsx(isSheet ? 'flex-1 space-y-6' : 'contents')}>
-      <Field>
-        <Label>Company Name *</Label>
-        <Input
-          type="text"
-          value={formData.companyName}
-          onChange={(e) =>
-            setFormData({ ...formData, companyName: e.target.value })
-          }
-          placeholder="Acme Inc."
-          invalid={!!errors.companyName}
-          disabled={isLoading}
-        />
-        {errors.companyName && (
-          <ErrorMessage>{errors.companyName}</ErrorMessage>
-        )}
-      </Field>
+        <Field>
+          <Label>Company Name *</Label>
+          <Input
+            type="text"
+            value={formData.companyName}
+            onChange={(e) =>
+              setFormData({ ...formData, companyName: e.target.value })
+            }
+            placeholder="Acme Inc."
+            invalid={!!errors.companyName}
+            disabled={isLoading}
+          />
+          {errors.companyName && (
+            <ErrorMessage>{errors.companyName}</ErrorMessage>
+          )}
+        </Field>
 
-      <Field>
-        <Label>Website</Label>
-        <Input
-          type="url"
-          value={formData.website}
-          onChange={(e) =>
-            setFormData({ ...formData, website: e.target.value })
-          }
-          placeholder="https://example.com"
-          invalid={!!errors.website}
-          disabled={isLoading}
-        />
-        <Description>Company website URL</Description>
-        {errors.website && <ErrorMessage>{errors.website}</ErrorMessage>}
-      </Field>
+        <Field>
+          <Label>Website</Label>
+          <Input
+            type="url"
+            value={formData.website}
+            onChange={(e) =>
+              setFormData({ ...formData, website: e.target.value })
+            }
+            placeholder="https://example.com"
+            invalid={!!errors.website}
+            disabled={isLoading}
+          />
+          <Description>Company website URL</Description>
+          {errors.website && <ErrorMessage>{errors.website}</ErrorMessage>}
+        </Field>
 
-      <Field>
-        <Label>LinkedIn URL</Label>
-        <Input
-          type="url"
-          value={formData.linkedinUrl}
-          onChange={(e) =>
-            setFormData({ ...formData, linkedinUrl: e.target.value })
-          }
-          placeholder="https://www.linkedin.com/company/example"
-          invalid={!!errors.linkedinUrl}
-          disabled={isLoading}
-        />
-        <Description>Company LinkedIn page URL</Description>
-        {errors.linkedinUrl && (
-          <ErrorMessage>{errors.linkedinUrl}</ErrorMessage>
-        )}
-      </Field>
+        <Field>
+          <Label>LinkedIn URL</Label>
+          <Input
+            type="url"
+            value={formData.linkedinUrl}
+            onChange={(e) =>
+              setFormData({ ...formData, linkedinUrl: e.target.value })
+            }
+            placeholder="https://www.linkedin.com/company/example"
+            invalid={!!errors.linkedinUrl}
+            disabled={isLoading}
+          />
+          <Description>Company LinkedIn page URL</Description>
+          {errors.linkedinUrl && (
+            <ErrorMessage>{errors.linkedinUrl}</ErrorMessage>
+          )}
+        </Field>
 
-      {errors.submit && <ErrorMessage>{errors.submit}</ErrorMessage>}
+        {errors.submit && <ErrorMessage>{errors.submit}</ErrorMessage>}
       </div>
 
       <FormActions

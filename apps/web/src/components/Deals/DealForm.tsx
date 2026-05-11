@@ -50,7 +50,13 @@ const PRIORITIES = [
   { value: 4, label: 'P4 - Backlog' },
 ];
 
-export default function DealForm({ deal, mode, currentUserId, onSuccess, onCancel }: DealFormProps) {
+export default function DealForm({
+  deal,
+  mode,
+  currentUserId,
+  onSuccess,
+  onCancel,
+}: DealFormProps) {
   const router = useRouter();
   const queryClient = useQueryClient();
 
@@ -188,146 +194,152 @@ export default function DealForm({ deal, mode, currentUserId, onSuccess, onCance
       className={clsx(isSheet ? 'flex h-full flex-col' : 'space-y-6')}
     >
       <div className={clsx(isSheet ? 'flex-1 space-y-6' : 'contents')}>
-      <Field>
-        <Label>Deal Title *</Label>
-        <Input
-          type="text"
-          value={formData.title}
-          onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-          placeholder="Enterprise License Agreement"
-          invalid={!!errors.title}
-          disabled={isLoading}
-        />
-        {errors.title && <ErrorMessage>{errors.title}</ErrorMessage>}
-      </Field>
-
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
         <Field>
-          <Label>Deal Value</Label>
+          <Label>Deal Title *</Label>
           <Input
-            type="number"
-            step="0.01"
-            value={formData.value}
+            type="text"
+            value={formData.title}
             onChange={(e) =>
-              setFormData({ ...formData, value: e.target.value })
+              setFormData({ ...formData, title: e.target.value })
             }
-            placeholder="100000"
-            invalid={!!errors.value}
+            placeholder="Enterprise License Agreement"
+            invalid={!!errors.title}
             disabled={isLoading}
           />
-          <Description>Total value of the deal</Description>
-          {errors.value && <ErrorMessage>{errors.value}</ErrorMessage>}
+          {errors.title && <ErrorMessage>{errors.title}</ErrorMessage>}
         </Field>
 
-        <Field>
-          <Label>Currency</Label>
-          <Combobox
-            options={currencies}
-            value={currencies.find((c) => c.code === formData.currency) || null}
-            onChange={(value) => {
-              if (value) setFormData({ ...formData, currency: value.code });
-            }}
-            displayValue={(value) => value?.code}
-            disabled={isLoading}
-            placeholder="Search currency..."
-          >
-            {(currency) => (
-              <ComboboxOption key={currency.code} value={currency}>
-                <ComboboxLabel>{currency.code}</ComboboxLabel>
-                <ComboboxDescription>{currency.name}</ComboboxDescription>
-                <span className="text-zinc-500 text-xs ml-2">
-                  ({currency.symbol})
-                </span>
-              </ComboboxOption>
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+          <Field>
+            <Label>Deal Value</Label>
+            <Input
+              type="number"
+              step="0.01"
+              value={formData.value}
+              onChange={(e) =>
+                setFormData({ ...formData, value: e.target.value })
+              }
+              placeholder="100000"
+              invalid={!!errors.value}
+              disabled={isLoading}
+            />
+            <Description>Total value of the deal</Description>
+            {errors.value && <ErrorMessage>{errors.value}</ErrorMessage>}
+          </Field>
+
+          <Field>
+            <Label>Currency</Label>
+            <Combobox
+              options={currencies}
+              value={
+                currencies.find((c) => c.code === formData.currency) || null
+              }
+              onChange={(value) => {
+                if (value) setFormData({ ...formData, currency: value.code });
+              }}
+              displayValue={(value) => value?.code}
+              disabled={isLoading}
+              placeholder="Search currency..."
+            >
+              {(currency) => (
+                <ComboboxOption key={currency.code} value={currency}>
+                  <ComboboxLabel>{currency.code}</ComboboxLabel>
+                  <ComboboxDescription>{currency.name}</ComboboxDescription>
+                  <span className="text-zinc-500 text-xs ml-2">
+                    ({currency.symbol})
+                  </span>
+                </ComboboxOption>
+              )}
+            </Combobox>
+          </Field>
+        </div>
+
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+          <Field>
+            <Label>Stage *</Label>
+            <Select
+              value={formData.stage}
+              onChange={(e) =>
+                setFormData({ ...formData, stage: e.target.value })
+              }
+              disabled={isLoading}
+            >
+              {DEAL_STAGES.map((stage) => (
+                <option key={stage.value} value={stage.value}>
+                  {stage.label}
+                </option>
+              ))}
+            </Select>
+          </Field>
+
+          <Field>
+            <Label>Win Probability (%)</Label>
+            <Input
+              type="number"
+              min="0"
+              max="100"
+              value={formData.probability}
+              onChange={(e) =>
+                setFormData({ ...formData, probability: e.target.value })
+              }
+              placeholder="50"
+              invalid={!!errors.probability}
+              disabled={isLoading}
+            />
+            <Description>0-100%</Description>
+            {errors.probability && (
+              <ErrorMessage>{errors.probability}</ErrorMessage>
             )}
-          </Combobox>
-        </Field>
-      </div>
+          </Field>
+        </div>
 
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-        <Field>
-          <Label>Stage *</Label>
-          <Select
-            value={formData.stage}
-            onChange={(e) =>
-              setFormData({ ...formData, stage: e.target.value })
-            }
-            disabled={isLoading}
-          >
-            {DEAL_STAGES.map((stage) => (
-              <option key={stage.value} value={stage.value}>
-                {stage.label}
-              </option>
-            ))}
-          </Select>
-        </Field>
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+          <Field>
+            <Label>Expected Close Date</Label>
+            <Input
+              type="date"
+              value={formData.expectedCloseDate}
+              onChange={(e) =>
+                setFormData({ ...formData, expectedCloseDate: e.target.value })
+              }
+              disabled={isLoading}
+            />
+            <Description>When you expect to close this deal</Description>
+          </Field>
+
+          <Field>
+            <Label>Priority</Label>
+            <Select
+              value={formData.priority}
+              onChange={(e) =>
+                setFormData({ ...formData, priority: e.target.value })
+              }
+              disabled={isLoading}
+            >
+              {PRIORITIES.map((priority) => (
+                <option key={priority.value} value={priority.value}>
+                  {priority.label}
+                </option>
+              ))}
+            </Select>
+          </Field>
+        </div>
 
         <Field>
-          <Label>Win Probability (%)</Label>
+          <Label>Source</Label>
           <Input
-            type="number"
-            min="0"
-            max="100"
-            value={formData.probability}
+            type="text"
+            value={formData.source}
             onChange={(e) =>
-              setFormData({ ...formData, probability: e.target.value })
+              setFormData({ ...formData, source: e.target.value })
             }
-            placeholder="50"
-            invalid={!!errors.probability}
+            placeholder="Inbound, Referral, Cold Outreach, etc."
             disabled={isLoading}
           />
-          <Description>0-100%</Description>
-          {errors.probability && (
-            <ErrorMessage>{errors.probability}</ErrorMessage>
-          )}
-        </Field>
-      </div>
-
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-        <Field>
-          <Label>Expected Close Date</Label>
-          <Input
-            type="date"
-            value={formData.expectedCloseDate}
-            onChange={(e) =>
-              setFormData({ ...formData, expectedCloseDate: e.target.value })
-            }
-            disabled={isLoading}
-          />
-          <Description>When you expect to close this deal</Description>
+          <Description>How did this deal originate?</Description>
         </Field>
 
-        <Field>
-          <Label>Priority</Label>
-          <Select
-            value={formData.priority}
-            onChange={(e) =>
-              setFormData({ ...formData, priority: e.target.value })
-            }
-            disabled={isLoading}
-          >
-            {PRIORITIES.map((priority) => (
-              <option key={priority.value} value={priority.value}>
-                {priority.label}
-              </option>
-            ))}
-          </Select>
-        </Field>
-      </div>
-
-      <Field>
-        <Label>Source</Label>
-        <Input
-          type="text"
-          value={formData.source}
-          onChange={(e) => setFormData({ ...formData, source: e.target.value })}
-          placeholder="Inbound, Referral, Cold Outreach, etc."
-          disabled={isLoading}
-        />
-        <Description>How did this deal originate?</Description>
-      </Field>
-
-      {errors.submit && <ErrorMessage>{errors.submit}</ErrorMessage>}
+        {errors.submit && <ErrorMessage>{errors.submit}</ErrorMessage>}
       </div>
 
       <FormActions

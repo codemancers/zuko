@@ -118,7 +118,10 @@ export default function AddContactDialog({
           </Button>
         </SheetHeader>
 
-        <form onSubmit={handleSubmit} className="flex flex-col flex-1 overflow-hidden">
+        <form
+          onSubmit={handleSubmit}
+          className="flex flex-col flex-1 overflow-hidden"
+        >
           <SheetBody>
             <div className="space-y-4">
               <Field>

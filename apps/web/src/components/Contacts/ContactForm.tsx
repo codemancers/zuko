@@ -139,63 +139,67 @@ export default function ContactForm({
       className={clsx(isSheet ? 'flex h-full flex-col' : 'space-y-6')}
     >
       <div className={clsx(isSheet ? 'flex-1 space-y-6' : 'contents')}>
-      <Field>
-        <Label>Name *</Label>
-        <Input
-          type="text"
-          value={formData.name}
-          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-          placeholder="John Doe"
-          invalid={!!errors.name}
-          disabled={isLoading}
-        />
-        {errors.name && <ErrorMessage>{errors.name}</ErrorMessage>}
-      </Field>
+        <Field>
+          <Label>Name *</Label>
+          <Input
+            type="text"
+            value={formData.name}
+            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+            placeholder="John Doe"
+            invalid={!!errors.name}
+            disabled={isLoading}
+          />
+          {errors.name && <ErrorMessage>{errors.name}</ErrorMessage>}
+        </Field>
 
-      <Field>
-        <Label>Email</Label>
-        <Input
-          type="email"
-          value={formData.email}
-          onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-          placeholder="john@example.com"
-          disabled={isLoading}
-        />
-      </Field>
+        <Field>
+          <Label>Email</Label>
+          <Input
+            type="email"
+            value={formData.email}
+            onChange={(e) =>
+              setFormData({ ...formData, email: e.target.value })
+            }
+            placeholder="john@example.com"
+            disabled={isLoading}
+          />
+        </Field>
 
-      <Field>
-        <Label>Phone</Label>
-        <Input
-          type="tel"
-          value={formData.phone}
-          onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-          placeholder="+14155552671"
-          invalid={!!errors.phone}
-          disabled={isLoading}
-        />
-        <Description>E.164 format (e.g., +14155552671)</Description>
-        {errors.phone && <ErrorMessage>{errors.phone}</ErrorMessage>}
-      </Field>
+        <Field>
+          <Label>Phone</Label>
+          <Input
+            type="tel"
+            value={formData.phone}
+            onChange={(e) =>
+              setFormData({ ...formData, phone: e.target.value })
+            }
+            placeholder="+14155552671"
+            invalid={!!errors.phone}
+            disabled={isLoading}
+          />
+          <Description>E.164 format (e.g., +14155552671)</Description>
+          {errors.phone && <ErrorMessage>{errors.phone}</ErrorMessage>}
+        </Field>
 
-      <Field>
-        <Label>LinkedIn ID</Label>
-        <Input
-          type="text"
-          value={formData.linkedinId}
-          onChange={(e) =>
-            setFormData({ ...formData, linkedinId: e.target.value })
-          }
-          placeholder="john-doe-123456"
-          disabled={isLoading}
-        />
-        <Description>LinkedIn profile identifier</Description>
-      </Field>
+        <Field>
+          <Label>LinkedIn ID</Label>
+          <Input
+            type="text"
+            value={formData.linkedinId}
+            onChange={(e) =>
+              setFormData({ ...formData, linkedinId: e.target.value })
+            }
+            placeholder="john-doe-123456"
+            disabled={isLoading}
+          />
+          <Description>LinkedIn profile identifier</Description>
+        </Field>
 
-      {errors.contactMethod && (
-        <ErrorMessage>{errors.contactMethod}</ErrorMessage>
-      )}
+        {errors.contactMethod && (
+          <ErrorMessage>{errors.contactMethod}</ErrorMessage>
+        )}
 
-      {errors.submit && <ErrorMessage>{errors.submit}</ErrorMessage>}
+        {errors.submit && <ErrorMessage>{errors.submit}</ErrorMessage>}
       </div>
 
       <FormActions
