@@ -180,8 +180,17 @@ export class ChatsService {
         sprite.url,
       );
       await this.sandboxLifecycle.markActive(sandbox.id);
-    } else if (sandbox?.lifecycleState === 'hibernated' && spritesEnabled) {
-      await this.sandboxLifecycle.resume(sandbox.id);
+    } else if (sandbox && spritesEnabled) {
+      // Ensure the sprite is warm regardless of what our DB says — Fly can
+      // auto-suspend a sprite independently, causing a state mismatch where
+      // DB says 'active' but the sprite is actually cold. startSprite is
+      // idempotent (no-op if already running).
+      if (sandbox.lifecycleState === 'hibernated') {
+        await this.sandboxLifecycle.resume(sandbox.id);
+      } else {
+        await this.spritesService.startSprite(sandbox.name).catch(() => {});
+        await this.sandboxLifecycle.markActive(sandbox.id);
+      }
     } else if (
       sandbox &&
       !spritesEnabled &&
