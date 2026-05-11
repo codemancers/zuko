@@ -247,10 +247,12 @@ export default function ChatPage() {
 
   return (
     <TooltipProvider>
-      <div className="relative flex h-full flex-col overflow-hidden bg-zinc-50 dark:bg-zinc-900">
+      <div className="flex h-full flex-col overflow-hidden bg-zinc-50 dark:bg-zinc-900">
         {sandboxId && (
-          <div className="absolute right-3 top-3 z-10">
-            <SandboxStatusBadge sandboxId={sandboxId} />
+          <div className="relative z-10 h-0 shrink-0">
+            <div className="absolute right-3 top-3">
+              <SandboxStatusBadge sandboxId={sandboxId} />
+            </div>
           </div>
         )}
         {hasMessages ? (
