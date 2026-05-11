@@ -54,7 +54,9 @@ export class ChatController {
     });
 
     // Persist user message
-    const lastUserMessage = messages.findLast((m) => m.role === 'user');
+    const lastUserMessage = [...messages]
+      .reverse()
+      .find((m: UIMessage) => m.role === 'user');
     if (lastUserMessage) {
       const text =
         lastUserMessage.parts
