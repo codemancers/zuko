@@ -1,6 +1,6 @@
 # syntax=docker.io/docker/dockerfile:1
 
-FROM oven/bun:1.3.10-alpine
+FROM node:24-alpine
 
 WORKDIR /app
 
@@ -26,4 +26,4 @@ ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
 # The standalone build creates a server.js
-CMD ["bun", "run", "apps/web/server.js"]
+CMD ["node", "apps/web/server.js"]

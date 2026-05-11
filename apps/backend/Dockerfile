@@ -1,10 +1,11 @@
 # Build the docker image with `bunx nx docker:build @zuko/backend`.
 # This expects the build output from `bunx nx run @zuko/backend:build` and `bunx nx run @zuko/backend:prune`
 #
-FROM oven/bun:1.3.10-alpine AS base
+FROM node:24-bullseye AS base
 
-# Install openssl for Prisma and build tools for potential native modules
-RUN apk add --no-cache openssl
+RUN apt-get update && apt-get install -y openssl curl && \
+    curl -fsSL https://bun.sh/install | bash
+ENV PATH="/root/.bun/bin:$PATH"
 
 ENV HOST=0.0.0.0
 ENV PORT=3000
@@ -20,13 +21,16 @@ COPY apps/backend/dist .
 
 EXPOSE 3001
 
-# Install production dependencies using Bun
+# Install production dependencies using bun
 RUN bun install --production
 
+# Copy multi-file prisma schemas (not included by copy-workspace-modules)
+COPY libs/models/prisma ./workspace_modules/@zuko/models/prisma
+
 # Generate Prisma Client from the schemas in workspace_modules/@zuko/models/prisma
-# Point to directory (not file) for multi-file schema support
+# Point to directory for multi-file schema support
 # Use dummy DATABASE_URL since generate doesn't connect to database
 RUN DATABASE_URL="postgresql://dummy:dummy@localhost:5432/dummy" \
-    bunx prisma generate --config=./workspace_modules/@zuko/models/prisma.config.ts
+    bunx prisma generate --schema=./workspace_modules/@zuko/models/prisma
 
-CMD [ "bun", "run", "main.js" ]
+CMD [ "node", "main.js" ]
