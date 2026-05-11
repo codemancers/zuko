@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { useState } from 'react';
+import React, { useState } from 'react';
 import {
   Badge,
   Input,
@@ -40,6 +40,7 @@ export interface Property {
   onSave?: (value: any) => Promise<unknown> | unknown;
   placeholder?: string;
   isPrimary?: boolean; // New: explicitly mark as primary
+  customRender?: () => React.ReactNode;
   options?: {
     validation?: 'linkedin'; //special validations
     href?: string;
@@ -473,6 +474,10 @@ export function EntityProperties({
 
   const renderValue = (property: Property) => {
     const { value, renderType, options, fieldType, onSave } = property;
+
+    if (property.customRender) {
+      return <>{property.customRender()}</>;
+    }
 
     if (editingLabel === property.label) {
       return renderEditor(property);
