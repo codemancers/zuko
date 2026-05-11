@@ -42,12 +42,10 @@ export interface ActivityFilters {
 
 export interface CreateCommentDto {
   content: string;
-  userId: number;
 }
 
 export interface UpdateCommentDto {
   content: string;
-  userId: number;
 }
 
 export const activitiesApi = {

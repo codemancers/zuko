@@ -146,10 +146,7 @@ export default function ActivityTimeline({
       if (!currentUserId) {
         throw new Error('User ID is required to create a comment');
       }
-      return activitiesApi.createComment(entityType, entityId, {
-        content,
-        userId: currentUserId,
-      });
+      return activitiesApi.createComment(entityType, entityId, { content });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
@@ -173,10 +170,7 @@ export default function ActivityTimeline({
       if (!currentUserId) {
         throw new Error('User ID is required to update an activity');
       }
-      return activitiesApi.updateActivity(activityId, {
-        content,
-        userId: currentUserId,
-      });
+      return activitiesApi.updateActivity(activityId, { content });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
