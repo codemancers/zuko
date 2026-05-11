@@ -98,7 +98,14 @@ export class SandboxLifecycleService {
       this.emit(sandboxId, 'restoring');
 
       if (this.spritesEnabled) {
-        await this.sprites.startSprite(sandbox.name);
+        // Swallow errors — sprite may already be starting/running (API can return
+        // a non-2xx in that case). If startSprite truly failed the next command
+        // will reveal it; we still mark active so the badge isn't stuck.
+        await this.sprites.startSprite(sandbox.name).catch((err) => {
+          this.logger.warn(
+            `startSprite for ${sandbox.name} returned an error (may already be running): ${err}`,
+          );
+        });
       }
 
       const hibernateAfter = new Date(
