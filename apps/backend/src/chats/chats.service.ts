@@ -182,6 +182,14 @@ export class ChatsService {
       await this.sandboxLifecycle.markActive(sandbox.id);
     } else if (sandbox?.lifecycleState === 'hibernated' && spritesEnabled) {
       await this.sandboxLifecycle.resume(sandbox.id);
+    } else if (
+      sandbox &&
+      !spritesEnabled &&
+      sandbox.lifecycleState !== 'active'
+    ) {
+      // When sprites are disabled (local dev), always reset to active so the
+      // badge doesn't show a stale failed/hibernated state.
+      await this.sandboxLifecycle.markActive(sandbox.id);
     }
 
     if (!chat.title && messages.length === 1) {
