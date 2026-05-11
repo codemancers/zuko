@@ -13,7 +13,7 @@ import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { NuqsTestingAdapter } from 'nuqs/adapters/testing';
 import SettingsPage from '@/app/(app)/settings/page';
-import ConnectGitHub from '@/components/Settings/ConnectGitHub';
+import ConnectGoogle from '@/components/Settings/ConnectGoogle';
 import InstallGitHubApp from '@/components/Settings/InstallGitHubApp';
 
 // Helper to create a fresh QueryClient and render with required providers
@@ -126,12 +126,11 @@ describe('SettingsPage', () => {
     ).toBeInTheDocument();
   });
 
-  it('renders GitHub in Integrations and Google Calendar in Connections', async () => {
+  it('renders GitHub App in Integrations and Google Calendar in Connections', async () => {
     renderWithProviders(<SettingsPage />);
     await waitFor(() => {
       expect(screen.getByText('GitHub App')).toBeInTheDocument();
     });
-    expect(screen.getByText('GitHub')).toBeInTheDocument();
     expect(screen.getByText('Google Calendar')).toBeInTheDocument();
   });
 
@@ -158,7 +157,7 @@ describe('SettingsPage', () => {
   });
 });
 
-describe('ConnectGitHub', () => {
+describe('ConnectGoogle', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -167,33 +166,33 @@ describe('ConnectGitHub', () => {
     mockListAccounts.mockImplementation(
       () => new Promise<never>(() => undefined),
     );
-    render(<ConnectGitHub />);
+    render(<ConnectGoogle />);
     const skeleton = document.querySelector('.animate-pulse');
     expect(skeleton).toBeInTheDocument();
   });
 
-  it('shows GitHub and Connected badge when listAccounts returns github', async () => {
+  it('shows Google and Connected badge when listAccounts returns google', async () => {
     mockListAccounts.mockResolvedValue({
-      data: [{ providerId: 'github' }],
+      data: [{ providerId: 'google' }],
     });
-    render(<ConnectGitHub />);
+    render(<ConnectGoogle />);
     await waitFor(() => {
-      expect(screen.getByText('GitHub')).toBeInTheDocument();
+      expect(screen.getByText('Google')).toBeInTheDocument();
     });
     expect(screen.getByText('Connected')).toBeInTheDocument();
     expect(
-      screen.getByText(/your github account is connected for authentication/i),
+      screen.getByText(/your google account is connected for authentication/i),
     ).toBeInTheDocument();
   });
 
   it('shows Connect button when not connected', async () => {
     mockListAccounts.mockResolvedValue({ data: [] });
-    render(<ConnectGitHub />);
+    render(<ConnectGoogle />);
     await waitFor(() => {
-      expect(screen.getByText('GitHub')).toBeInTheDocument();
+      expect(screen.getByText('Google')).toBeInTheDocument();
     });
     expect(
-      screen.getByText(/connect github for authentication and profile access/i),
+      screen.getByText(/connect google for authentication and profile access/i),
     ).toBeInTheDocument();
     expect(
       screen.getByRole('button', { name: /connect/i }),
@@ -204,7 +203,7 @@ describe('ConnectGitHub', () => {
     mockListAccounts.mockResolvedValue({ data: [] });
     mockLinkSocial.mockResolvedValue(undefined);
     const user = userEvent.setup();
-    render(<ConnectGitHub />);
+    render(<ConnectGoogle />);
     await waitFor(() => {
       expect(
         screen.getByRole('button', { name: /connect/i }),
@@ -213,7 +212,7 @@ describe('ConnectGitHub', () => {
     await user.click(screen.getByRole('button', { name: /^connect$/i }));
     expect(mockLinkSocial).toHaveBeenCalledWith(
       expect.objectContaining({
-        provider: 'github',
+        provider: 'google',
         callbackURL: expect.any(String),
       }),
     );
@@ -231,7 +230,7 @@ describe('ConnectGitHub', () => {
         }),
     );
     const user = userEvent.setup();
-    render(<ConnectGitHub />);
+    render(<ConnectGoogle />);
     await waitFor(() => {
       expect(
         screen.getByRole('button', { name: /connect/i }),

@@ -6,28 +6,28 @@ import { Button, Subheading, Text, Badge } from '@zuko/ui-kit';
 import { authClient } from '@/lib/auth-client';
 import { SettingsCardSkeleton } from './SettingsCardSkeleton';
 
-export default function ConnectGitHub() {
+export default function ConnectGoogle() {
   const [connecting, setConnecting] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    checkGitHubConnection();
+    checkGoogleConnection();
   }, []);
 
-  const checkGitHubConnection = async () => {
+  const checkGoogleConnection = async () => {
     try {
       const result = await authClient.listAccounts();
 
       // Better Auth returns { data: [...], error: null }
       const accounts = result?.data || [];
 
-      const hasGitHub = accounts.some(
-        (account: any) => account.providerId === 'github',
+      const hasGoogle = accounts.some(
+        (account: any) => account.providerId === 'google',
       );
-      setIsConnected(hasGitHub);
+      setIsConnected(hasGoogle);
     } catch (error) {
-      console.error('Failed to check GitHub connection:', error);
+      console.error('Failed to check Google connection:', error);
     } finally {
       setLoading(false);
     }
@@ -37,7 +37,7 @@ export default function ConnectGitHub() {
     setConnecting(true);
     try {
       await authClient.linkSocial({
-        provider: 'github',
+        provider: 'google',
         callbackURL: `${window.location.origin}/settings`,
       });
     } catch (error) {
@@ -56,8 +56,8 @@ export default function ConnectGitHub() {
         <div className="flex items-start gap-4">
           <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-gray-50 to-gray-100 ring-1 ring-gray-200 dark:from-gray-900/20 dark:to-gray-800/20 dark:ring-gray-800">
             <Image
-              src="/icons/github.svg"
-              alt="GitHub"
+              src="/icons/google.svg"
+              alt="Google"
               width={24}
               height={24}
             />
@@ -65,7 +65,7 @@ export default function ConnectGitHub() {
           <div className="min-w-0 flex-1">
             <div className="mb-2 flex items-center gap-3">
               <Subheading className="text-zinc-900 dark:text-zinc-100">
-                GitHub
+                Google
               </Subheading>
               {isConnected && (
                 <Badge color="lime" className="text-xs">
@@ -77,13 +77,13 @@ export default function ConnectGitHub() {
             {isConnected ? (
               <div className="space-y-1">
                 <Text className="text-sm text-zinc-600 dark:text-zinc-400">
-                  Your GitHub account is connected for authentication
+                  Your Google account is connected for authentication
                 </Text>
               </div>
             ) : (
               <div className="space-y-1">
                 <Text className="text-sm text-zinc-600 dark:text-zinc-400">
-                  Connect GitHub for authentication and profile access
+                  Connect Google for authentication and profile access
                 </Text>
               </div>
             )}

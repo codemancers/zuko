@@ -14,7 +14,7 @@ export const agentsEnvSchema = Joi.object({
     .optional(),
   AGENTS_API_KEY: Joi.string().min(1).optional(),
   // Auth environment variables
-  GITHUB_CLIENT_ID: Joi.string().optional(),
-  GITHUB_CLIENT_SECRET: Joi.string().optional(),
+  GOOGLE_CLIENT_ID: Joi.string().optional(),
+  GOOGLE_CLIENT_SECRET: Joi.string().optional(),
   TRUSTED_ORIGINS: Joi.string().optional(),
 }).unknown(true);

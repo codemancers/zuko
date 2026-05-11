@@ -40,10 +40,6 @@ type AccountData = {
 // Icons
 // ---------------------------------------------------------------------------
 
-const GitHubIcon = () => (
-  <Image src="/icons/github.svg" alt="GitHub" width={20} height={20} />
-);
-
 const GoogleCalendarIcon = () => (
   <Image
     src="/icons/google-calendar.svg"
@@ -139,7 +135,7 @@ export const OrgConnections = () => {
   // Action handlers
   // -------------------------------------------------------------------------
 
-  const handleConnect = useCallback(async (provider: 'github' | 'google') => {
+  const handleConnect = useCallback(async (provider: 'google') => {
     setPendingAction(provider);
     try {
       const result = await authClient.linkSocial({
@@ -234,7 +230,7 @@ export const OrgConnections = () => {
         const { id, status } = row.original as ConnectionRow;
         const connected = status === 'connected';
         const isIntegration = id === 'github-app';
-        const provider = id as 'github' | 'google';
+        const provider = id as 'google';
         const isPending =
           pendingAction === id || pendingAction === `disconnect-${id}`;
 
@@ -304,7 +300,6 @@ export const OrgConnections = () => {
   // Row data
   // -------------------------------------------------------------------------
 
-  const ghAccount = accounts.find((a) => a.providerId === 'github');
   const googleAccount = accounts.find((a) => a.providerId === 'google');
   const ghAppInstalled = ghAppStatus?.installed ?? false;
 
@@ -312,7 +307,7 @@ export const OrgConnections = () => {
     {
       id: 'github-app',
       name: 'GitHub App',
-      icon: <GitHubIcon />,
+      icon: <Image src="/icons/github.svg" alt="GitHub" width={20} height={20} />,
       status: ghAppInstalled ? 'connected' : 'not-connected',
       connectedBy: ghAppInstalled
         ? ghAppStatus?.installation?.accountLogin
@@ -325,16 +320,6 @@ export const OrgConnections = () => {
   ];
 
   const connectionRows: ConnectionRow[] = [
-    {
-      id: 'github',
-      name: 'GitHub',
-      icon: <GitHubIcon />,
-      status: ghAccount ? 'connected' : 'not-connected',
-      connectedBy: ghAccount ? userEmail : undefined,
-      connectedAt: ghAccount?.createdAt
-        ? new Date(ghAccount.createdAt)
-        : undefined,
-    },
     {
       id: 'google',
       name: 'Google Calendar',
