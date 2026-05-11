@@ -133,7 +133,6 @@ export class ChatsService {
   async getMessagesForUser(chatId: number, userId: number) {
     const chat = await this.getChatForUser(chatId, userId);
     const threadId = chat.threadId;
-    const sandboxUrl = chat.sandboxes[0]?.url ?? '';
 
     // Architecture 1: agent always runs on the backend process, not inside the sprite.
     // The sprite is used only for tool execution via its REST API.

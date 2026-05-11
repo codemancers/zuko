@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { type SandboxLifecycleState } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
@@ -179,7 +180,7 @@ export class ChatsRepository {
   updateSandboxLifecycle(
     sandboxId: number,
     data: {
-      lifecycleState?: string;
+      lifecycleState?: SandboxLifecycleState;
       lastActivityAt?: Date;
       hibernateAfter?: Date | null;
       lifecycleError?: string | null;
