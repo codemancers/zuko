@@ -148,17 +148,14 @@ export default function ChatPage() {
         const contextRefs = data.contextEntities || [];
         if (data.sandboxId) setSandboxId(data.sandboxId);
 
-        // Convert to AI SDK v6 message format with parts array
+        // Messages from DB already have parts array (UIMessage shape)
         const formattedMessages = historyMessages.map(
           (msg: any, index: number) => ({
-            id: `msg-${index}`,
+            id: msg.id ?? `msg-${index}`,
             role: msg.role,
-            parts: [
-              {
-                type: 'text',
-                text: msg.content,
-              },
-            ],
+            parts: Array.isArray(msg.parts)
+              ? msg.parts
+              : [{ type: 'text', text: msg.content ?? '' }],
           }),
         );
 

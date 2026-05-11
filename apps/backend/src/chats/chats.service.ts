@@ -17,7 +17,11 @@ import { SpritesService } from '../sprites/sprites.service';
 import { ChatsRepository } from './chats.repository';
 // eslint-disable-next-line @typescript-eslint/consistent-type-imports
 import { SandboxLifecycleService } from '../sandbox-lifecycle/sandbox-lifecycle.service';
-import { LocalSandbox, SpriteSandbox, type Sandbox } from '../agent/tools/sandbox';
+import {
+  LocalSandbox,
+  SpriteSandbox,
+  type Sandbox,
+} from '../agent/tools/sandbox';
 
 const WORKING_DIR = process.env.WORKING_DIR ?? '/home/sprite/zuko';
 
@@ -133,9 +137,13 @@ export class ChatsService {
   async getMessagesForUser(chatId: number, userId: number) {
     const chat = await this.getChatForUser(chatId, userId);
     const sandboxId = chat.sandboxes[0]?.id ?? null;
-    // Message history is maintained by the frontend — return empty here.
-    // TODO: persist messages to DB for server-side history restoration.
-    return { messages: [], contextEntities: [], sandboxId };
+    const rows = await this.chatsRepository.listMessages(chatId);
+    const messages = rows.map((r) => ({
+      id: r.id,
+      role: r.role as 'user' | 'assistant' | 'system',
+      parts: r.parts,
+    }));
+    return { messages, contextEntities: [], sandboxId };
   }
 
   async prepareChatRun(input: {
@@ -203,9 +211,14 @@ export class ChatsService {
     }
 
     // Build sandbox instance — passed directly to graph.stream() configurable (gather-style).
-    const sandboxInstance: Sandbox = spritesEnabled && sandbox
-      ? new SpriteSandbox(WORKING_DIR, sandbox.name, process.env.SPRITES_TOKEN ?? '')
-      : new LocalSandbox(WORKING_DIR);
+    const sandboxInstance: Sandbox =
+      spritesEnabled && sandbox
+        ? new SpriteSandbox(
+            WORKING_DIR,
+            sandbox.name,
+            process.env.SPRITES_TOKEN ?? '',
+          )
+        : new LocalSandbox(WORKING_DIR);
 
     return {
       chatId,

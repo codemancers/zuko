@@ -19,7 +19,8 @@ export class AgentService {
    * The sandbox instance is passed directly in configurable (gather-style).
    */
   async stream(params: AgentStreamParams): Promise<AsyncIterable<any>> {
-    const { messages, contextEntities, userId, organizationId, sandbox } = params;
+    const { messages, contextEntities, userId, organizationId, sandbox } =
+      params;
 
     const graph = buildChatGraph();
 

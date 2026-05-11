@@ -10,6 +10,6 @@ import { SandboxLifecycleModule } from '../sandbox-lifecycle/sandbox-lifecycle.m
   imports: [PrismaModule, AgentsWrapperModule, SandboxLifecycleModule],
   controllers: [ChatsController],
   providers: [ChatsService, ChatsRepository],
-  exports: [ChatsService],
+  exports: [ChatsService, ChatsRepository],
 })
 export class ChatsModule {}

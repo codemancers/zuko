@@ -26,7 +26,8 @@ function buildSandbox(c: Record<string, unknown>): Sandbox {
   }
 
   const spriteName = c['spriteName'] as string | undefined;
-  const workingDir = (c['workingDirectory'] as string | undefined) ?? WORKING_DIR;
+  const workingDir =
+    (c['workingDirectory'] as string | undefined) ?? WORKING_DIR;
 
   if (spriteName) {
     const token =

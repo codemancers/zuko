@@ -106,6 +106,14 @@ model GithubApp {
   @@schema("public")
 }
 
+enum ChatMessageRole {
+  user
+  assistant
+  system
+
+  @@schema("public")
+}
+
 model Chat {
   id          Int      @id @default(autoincrement())
   threadId    String   @unique @map("thread_id")
@@ -117,8 +125,24 @@ model Chat {
   createdBy    User              @relation("ChatCreator", fields: [createdById], references: [id], onDelete: Cascade)
   participants ChatParticipant[]
   sandboxes    Sandbox[]
+  messages     ChatMessage[]
 
   @@map("chat")
+  @@schema("public")
+}
+
+model ChatMessage {
+  id        String          @id
+  chatId    Int             @map("chat_id")
+  role      ChatMessageRole
+  parts     Json
+  metadata  Json?
+  createdAt DateTime        @default(now()) @map("created_at")
+
+  chat Chat @relation(fields: [chatId], references: [id], onDelete: Cascade)
+
+  @@index([chatId, createdAt])
+  @@map("chat_message")
   @@schema("public")
 }
 

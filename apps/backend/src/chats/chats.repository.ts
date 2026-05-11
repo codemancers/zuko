@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { randomUUID } from 'crypto';
 import { type SandboxLifecycleState } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 
@@ -174,6 +175,41 @@ export class ChatsRepository {
           },
         },
       },
+    });
+  }
+
+  insertUserMessage(chatId: number, text: string): Promise<string> {
+    const id = randomUUID();
+    return this.prisma.chatMessage
+      .create({
+        data: {
+          id,
+          chatId,
+          role: 'user',
+          parts: [{ type: 'text', text }],
+        },
+      })
+      .then(() => id);
+  }
+
+  upsertAssistantMessage(
+    id: string,
+    chatId: number,
+    parts: unknown[],
+  ): Promise<void> {
+    return this.prisma.chatMessage
+      .upsert({
+        where: { id },
+        create: { id, chatId, role: 'assistant', parts: parts as any },
+        update: { parts: parts as any },
+      })
+      .then(() => undefined);
+  }
+
+  listMessages(chatId: number) {
+    return this.prisma.chatMessage.findMany({
+      where: { chatId },
+      orderBy: { createdAt: 'asc' },
     });
   }
 

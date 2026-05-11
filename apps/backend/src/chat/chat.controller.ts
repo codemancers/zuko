@@ -1,17 +1,20 @@
 import { Body, Controller, Post, Req, Res, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '@thallesp/nestjs-better-auth';
+import { generateId } from 'ai';
 import type { Response } from 'express';
 import type { ContextEntityReference } from '../types/chat';
 import { toUIMessageStream } from '@ai-sdk/langchain';
 import type { UIMessage } from 'ai';
 import type { RequestWithUser } from '@zuko/core';
 import { ChatsService } from '../chats/chats.service';
+import { ChatsRepository } from '../chats/chats.repository';
 import { AgentService } from '../agent/agent.service';
 
 @Controller('v1')
 export class ChatController {
   constructor(
     private readonly chatsService: ChatsService,
+    private readonly chatsRepository: ChatsRepository,
     private readonly agentService: AgentService,
   ) {}
 
@@ -39,6 +42,21 @@ export class ChatController {
       contextEntities: body.contextEntities,
     });
 
+    // Persist user message
+    const lastUserMessage = messages.findLast((m) => m.role === 'user');
+    if (lastUserMessage) {
+      const text =
+        lastUserMessage.parts
+          ?.filter((p: any) => p.type === 'text')
+          .map((p: any) => p.text)
+          .join('') ??
+        (lastUserMessage as any).content ??
+        '';
+      if (text.trim()) {
+        await this.chatsRepository.insertUserMessage(chatId, text);
+      }
+    }
+
     // Set SSE headers for the client
     response.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
     response.setHeader('Cache-Control', 'no-cache');
@@ -57,6 +75,8 @@ export class ChatController {
     });
 
     const uiStream = toUIMessageStream(graphStream as any);
+    const assistantId = generateId();
+    let accumulatedText = '';
 
     try {
       const reader = (uiStream as ReadableStream).getReader();
@@ -64,6 +84,9 @@ export class ChatController {
         while (true) {
           const { value, done } = await reader.read();
           if (done) break;
+          if ((value as any).type === 'text-delta') {
+            accumulatedText += (value as any).delta;
+          }
           response.write(`data: ${JSON.stringify(value)}\n\n`);
         }
       } finally {
@@ -72,6 +95,19 @@ export class ChatController {
     } catch (err) {
       console.error('[ChatController] streaming error:', err);
     } finally {
+      // Persist assistant response
+      if (accumulatedText.trim()) {
+        this.chatsRepository
+          .upsertAssistantMessage(assistantId, chatId, [
+            { type: 'text', text: accumulatedText },
+          ])
+          .catch((err) =>
+            console.error(
+              '[ChatController] failed to persist assistant message:',
+              err,
+            ),
+          );
+      }
       response.end();
     }
 

@@ -19,23 +19,43 @@ const organizationIdReducer = (
 
 const PersistentContextStateSchema = z.object({
   contextEntities: z
-    .array(z.object({ type: z.enum(['contact', 'company', 'deal']), id: z.number() }))
+    .array(
+      z.object({
+        type: z.enum(['contact', 'company', 'deal']),
+        id: z.number(),
+      }),
+    )
     .default([])
     .meta({
       reducer: {
         fn: contextEntitiesReducer,
-        schema: z.array(z.object({ type: z.enum(['contact', 'company', 'deal']), id: z.number() })).optional(),
+        schema: z
+          .array(
+            z.object({
+              type: z.enum(['contact', 'company', 'deal']),
+              id: z.number(),
+            }),
+          )
+          .optional(),
       },
     }),
-  userId: z.number().optional().meta({
-    reducer: { fn: userIdReducer, schema: z.number().optional() },
-  }),
-  organizationId: z.number().optional().meta({
-    reducer: { fn: organizationIdReducer, schema: z.number().optional() },
-  }),
+  userId: z
+    .number()
+    .optional()
+    .meta({
+      reducer: { fn: userIdReducer, schema: z.number().optional() },
+    }),
+  organizationId: z
+    .number()
+    .optional()
+    .meta({
+      reducer: { fn: organizationIdReducer, schema: z.number().optional() },
+    }),
 });
 
-export function createPersistentContextMiddleware(): ReturnType<typeof createMiddleware> {
+export function createPersistentContextMiddleware(): ReturnType<
+  typeof createMiddleware
+> {
   return createMiddleware({
     name: 'PersistentContextMiddleware',
     stateSchema: PersistentContextStateSchema,

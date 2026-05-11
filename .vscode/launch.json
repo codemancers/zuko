@@ -18,6 +18,6 @@
         "${workspaceFolder}/apps/backend/dist/**/*.(m|c|)js",
         "!**/node_modules/**"
       ]
-    },
+    }
   ]
 }
