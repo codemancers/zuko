@@ -178,32 +178,42 @@ export class ChatsRepository {
     });
   }
 
-  insertUserMessage(chatId: number, text: string): Promise<string> {
+  async insertUserMessage(
+    chatId: number,
+    text: string,
+  ): Promise<{ id: string; createdAt: Date }> {
     const id = randomUUID();
-    return this.prisma.chatMessage
-      .create({
-        data: {
-          id,
-          chatId,
-          role: 'user',
-          parts: [{ type: 'text', text }],
-        },
-      })
-      .then(() => id);
+    const partsJson = JSON.stringify([{ type: 'text', text }]);
+    const rows = await this.prisma.$queryRaw<Array<{ created_at: Date }>>`
+      INSERT INTO chat_message (id, chat_id, role, parts, created_at)
+      VALUES (${id}, ${chatId}, 'user'::"ChatMessageRole", ${partsJson}::jsonb, NOW())
+      RETURNING created_at;
+    `;
+    return { id, createdAt: rows[0]!.created_at };
   }
 
-  upsertAssistantMessage(
+  async upsertAssistantMessage(
     id: string,
     chatId: number,
     parts: unknown[],
+    metadata: unknown = null,
   ): Promise<void> {
-    return this.prisma.chatMessage
-      .upsert({
-        where: { id },
-        create: { id, chatId, role: 'assistant', parts: parts as any },
-        update: { parts: parts as any },
-      })
-      .then(() => undefined);
+    const partsJson = JSON.stringify(parts);
+    const metadataJson = metadata == null ? null : JSON.stringify(metadata);
+    await this.prisma.$executeRaw`
+      INSERT INTO chat_message (id, chat_id, role, parts, metadata, created_at)
+      VALUES (
+        ${id},
+        ${chatId},
+        'assistant'::"ChatMessageRole",
+        ${partsJson}::jsonb,
+        ${metadataJson}::jsonb,
+        NOW()
+      )
+      ON CONFLICT (id) DO UPDATE
+        SET parts = EXCLUDED.parts,
+            metadata = EXCLUDED.metadata;
+    `;
   }
 
   listMessages(chatId: number) {
