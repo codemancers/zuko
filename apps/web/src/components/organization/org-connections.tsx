@@ -307,7 +307,9 @@ export const OrgConnections = () => {
     {
       id: 'github-app',
       name: 'GitHub App',
-      icon: <Image src="/icons/github.svg" alt="GitHub" width={20} height={20} />,
+      icon: (
+        <Image src="/icons/github.svg" alt="GitHub" width={20} height={20} />
+      ),
       status: ghAppInstalled ? 'connected' : 'not-connected',
       connectedBy: ghAppInstalled
         ? ghAppStatus?.installation?.accountLogin
