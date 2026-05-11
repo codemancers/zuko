@@ -17,6 +17,7 @@ export interface SandboxLifecyclePayload {
 @Injectable()
 export class SandboxLifecycleService {
   private readonly logger = new Logger(SandboxLifecycleService.name);
+  private readonly spritesEnabled = process.env.SPRITES_ENABLED !== 'false';
 
   constructor(
     private readonly prisma: PrismaService,
@@ -57,7 +58,9 @@ export class SandboxLifecycleService {
       });
       this.emit(sandboxId, 'hibernating');
 
-      await this.sprites.stopSprite(sandbox.name);
+      if (this.spritesEnabled) {
+        await this.sprites.stopSprite(sandbox.name);
+      }
 
       await this.prisma.sandbox.update({
         where: { id: sandboxId },
@@ -89,7 +92,9 @@ export class SandboxLifecycleService {
       });
       this.emit(sandboxId, 'restoring');
 
-      await this.sprites.startSprite(sandbox.name);
+      if (this.spritesEnabled) {
+        await this.sprites.startSprite(sandbox.name);
+      }
 
       const hibernateAfter = new Date(
         Date.now() + SANDBOX_INACTIVITY_TIMEOUT_MS,
@@ -125,6 +130,7 @@ export class SandboxLifecycleService {
 
   @Cron(CronExpression.EVERY_MINUTE)
   async runAutoHibernation(): Promise<void> {
+    if (!this.spritesEnabled) return;
     const due = await this.prisma.sandbox.findMany({
       where: {
         lifecycleState: 'active',
