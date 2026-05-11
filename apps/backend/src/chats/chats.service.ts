@@ -174,9 +174,11 @@ export class ChatsService {
     } else if (!sandbox && spritesEnabled) {
       const sprite = await this.spritesService.createSprite(spriteName);
       await this.spritesService.setupSprite(spriteName);
+      // Store sprite.name from API response (e.g. "zuko-24-uuid"), not local
+      // spriteName variable ("24-uuid"), so start/stop calls use the correct name.
       sandbox = await this.chatsRepository.createSandboxForChat(
         chat.id,
-        spriteName,
+        sprite.name,
         sprite.url,
       );
       await this.sandboxLifecycle.markActive(sandbox.id);
