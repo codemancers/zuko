@@ -18,6 +18,8 @@ export interface SandboxLifecyclePayload {
 export class SandboxLifecycleService {
   private readonly logger = new Logger(SandboxLifecycleService.name);
   private readonly spritesEnabled = process.env.SPRITES_ENABLED !== 'false';
+  /** Debounce map: prevents reconcileWithFly from hammering Fly on SSE reconnects */
+  private readonly reconcileDebounce = new Map<number, number>();
 
   constructor(
     private readonly prisma: PrismaService,
@@ -142,10 +144,30 @@ export class SandboxLifecycleService {
    */
   async reconcileWithFly(sandboxId: number): Promise<void> {
     if (!this.spritesEnabled) return;
+
+    // Debounce: don't reconcile more than once per 60 s per sandbox.
+    // EventSource reconnects on every SSE drop, so without this the check
+    // fires repeatedly and can overwrite "active" back to "hibernated" while
+    // the sprite is still warming up after a resume.
+    const now = Date.now();
+    const last = this.reconcileDebounce.get(sandboxId) ?? 0;
+    if (now - last < 60_000) return;
+    this.reconcileDebounce.set(sandboxId, now);
+
     const sandbox = await this.prisma.sandbox.findUnique({
       where: { id: sandboxId },
     });
     if (!sandbox || sandbox.lifecycleState !== 'active') return;
+
+    // Skip if the sandbox was recently active — the sprite may still be warming
+    // after a resume() and Fly's status API lags behind the actual state.
+    const RECENTLY_ACTIVE_MS = 3 * 60 * 1000; // 3 minutes
+    if (
+      sandbox.lastActivityAt &&
+      now - sandbox.lastActivityAt.getTime() < RECENTLY_ACTIVE_MS
+    ) {
+      return;
+    }
 
     try {
       const sprite = await this.sprites.getSprite(sandbox.name);

@@ -84,16 +84,34 @@ export class SpritesService {
     return (await res.json()) as SpriteRecord;
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  async stopSprite(_name: string): Promise<void> {
-    // Sprites self-hibernate on idle — the Sprites API has no explicit stop
-    // endpoint. This is a no-op; DB lifecycle state is what drives the badge.
+  async stopSprite(name: string): Promise<void> {
+    const encoded = encodeURIComponent(name);
+    const res = await fetch(`${this.baseUrl}/v1/sprites/${encoded}/stop`, {
+      method: 'POST',
+      headers: this.bearerHeaders(),
+    });
+    // 404 = sprite not found or already stopped — treat as success
+    if (!res.ok && res.status !== 404) {
+      const text = await res.text();
+      throw new InternalServerErrorException(
+        `Sprites API stop failed (${res.status}): ${text}`,
+      );
+    }
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  async startSprite(_name: string): Promise<void> {
-    // Fly auto-resumes a sprite on the next inbound exec request — no explicit
-    // start endpoint exists. The sprite wakes automatically when a command runs.
+  async startSprite(name: string): Promise<void> {
+    const encoded = encodeURIComponent(name);
+    const res = await fetch(`${this.baseUrl}/v1/sprites/${encoded}/start`, {
+      method: 'POST',
+      headers: this.bearerHeaders(),
+    });
+    // 404 = sprite not found; any 4xx likely means already starting/running
+    if (!res.ok && res.status !== 404) {
+      const text = await res.text();
+      throw new InternalServerErrorException(
+        `Sprites API start failed (${res.status}): ${text}`,
+      );
+    }
   }
 
   async readFile(name: string, filePath: string): Promise<string> {
