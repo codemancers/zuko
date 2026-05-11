@@ -110,19 +110,6 @@
         "webpack-cli": "^5.1.4",
       },
     },
-    "apps/ai-agents": {
-      "name": "@zuko/ai-agents",
-      "version": "0.0.1",
-      "dependencies": {
-        "@langchain/openai": "^1.2.1",
-        "deepagents": "^1.4.0",
-        "langchain": "^1.2.7",
-      },
-    },
-    "apps/ai-agents-e2e": {
-      "name": "@zuko/ai-agents-e2e",
-      "version": "0.0.1",
-    },
     "apps/backend": {
       "name": "@zuko/backend",
       "version": "0.0.1",
@@ -2160,10 +2147,6 @@
     "@yarnpkg/parsers": ["@yarnpkg/parsers@3.0.2", "", { "dependencies": { "js-yaml": "^3.10.0", "tslib": "^2.4.0" } }, "sha512-/HcYgtUSiJiot/XWGLOlGxPYUG65+/31V8oqk17vZLW1xlCoR4PampyePljOxY2n8/3jz9+tIFzICsyGujJZoA=="],
 
     "@zkochan/js-yaml": ["@zkochan/js-yaml@0.0.7", "", { "dependencies": { "argparse": "^2.0.1" }, "bin": { "js-yaml": "bin/js-yaml.js" } }, "sha512-nrUSn7hzt7J6JWgWGz78ZYI8wj+gdIJdk0Ynjpp8l+trkn58Uqsf6RYrYkEK+3X18EX+TNdtJI0WxAtc+L84SQ=="],
-
-    "@zuko/ai-agents": ["@zuko/ai-agents@workspace:apps/ai-agents"],
-
-    "@zuko/ai-agents-e2e": ["@zuko/ai-agents-e2e@workspace:apps/ai-agents-e2e"],
 
     "@zuko/backend": ["@zuko/backend@workspace:apps/backend"],
 
