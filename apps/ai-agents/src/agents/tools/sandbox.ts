@@ -291,14 +291,13 @@ export class SpriteSandbox implements Sandbox {
     path: string,
     opts?: { offset?: number; limit?: number },
   ): Promise<string> {
-    const abs = path.startsWith('/')
-      ? path
-      : `${this.workingDirectory}/${path}`;
-    const res = await fetch(
-      `${SPRITES_API_BASE}/v1/sprites/${encodeURIComponent(this.spriteName)}/fs/${abs}`,
-      { headers: { Authorization: `Bearer ${this.token}` } },
-    );
-    if (!res.ok) throw new Error(`Sprite readFile failed (${res.status})`);
+    const abs = path.startsWith('/') ? path : `${this.workingDirectory}/${path}`;
+    const url = new URL(`${SPRITES_API_BASE}/v1/sprites/${encodeURIComponent(this.spriteName)}/fs/read`);
+    url.searchParams.set('path', abs);
+    const res = await fetch(url.toString(), {
+      headers: { authorization: `Bearer ${this.token}` },
+    });
+    if (!res.ok) throw new Error(`Sprite readFile failed (${res.status}): ${await res.text()}`);
     const raw = await res.text();
     const lines = raw.split('\n');
     const start = opts?.offset ?? 0;
@@ -310,21 +309,19 @@ export class SpriteSandbox implements Sandbox {
   }
 
   async writeFile(path: string, content: string): Promise<void> {
-    const abs = path.startsWith('/')
-      ? path
-      : `${this.workingDirectory}/${path}`;
-    const res = await fetch(
-      `${SPRITES_API_BASE}/v1/sprites/${encodeURIComponent(this.spriteName)}/fs/${abs}`,
-      {
-        method: 'PUT',
-        headers: {
-          Authorization: `Bearer ${this.token}`,
-          'Content-Type': 'text/plain',
-        },
-        body: content,
+    const abs = path.startsWith('/') ? path : `${this.workingDirectory}/${path}`;
+    const url = new URL(`${SPRITES_API_BASE}/v1/sprites/${encodeURIComponent(this.spriteName)}/fs/write`);
+    url.searchParams.set('path', abs);
+    url.searchParams.set('mkdir', 'true');
+    const res = await fetch(url.toString(), {
+      method: 'PUT',
+      headers: {
+        authorization: `Bearer ${this.token}`,
+        'content-type': 'application/octet-stream',
       },
-    );
-    if (!res.ok) throw new Error(`Sprite writeFile failed (${res.status})`);
+      body: content,
+    });
+    if (!res.ok) throw new Error(`Sprite writeFile failed (${res.status}): ${await res.text()}`);
   }
 
   async glob(pattern: string, opts?: { cwd?: string }): Promise<string[]> {
@@ -396,27 +393,18 @@ export class SpriteSandbox implements Sandbox {
   }
 
   async readdir(path: string): Promise<DirEntry[]> {
-    const abs = path.startsWith('/')
-      ? path
-      : `${this.workingDirectory}/${path}`;
-    const out = await this.execInSprite([
-      'bash',
-      '-c',
-      `ls -1 --color=never '${abs}' | while read name; do
-        if [ -d "${abs}/$name" ]; then echo "directory $name"
-        elif [ -f "${abs}/$name" ]; then echo "file $name"
-        else echo "symlink $name"; fi
-      done`,
-    ]);
-    return out
-      .split('\n')
-      .filter(Boolean)
-      .map((line) => {
-        const space = line.indexOf(' ');
-        return {
-          type: line.slice(0, space) as DirEntry['type'],
-          name: line.slice(space + 1),
-        };
-      });
+    const abs = path.startsWith('/') ? path : `${this.workingDirectory}/${path}`;
+    const url = new URL(`${SPRITES_API_BASE}/v1/sprites/${encodeURIComponent(this.spriteName)}/fs/list`);
+    url.searchParams.set('path', abs);
+    const res = await fetch(url.toString(), {
+      headers: { authorization: `Bearer ${this.token}` },
+    });
+    if (!res.ok) throw new Error(`Sprite readdir failed (${res.status}): ${await res.text()}`);
+    const data = await res.json() as { entries: Array<{ name: string; type: string }> | null };
+    return (data.entries ?? []).map((e) => ({
+      name: e.name,
+      type: (e.type === 'directory' ? 'directory' : e.type === 'symlink' ? 'symlink' : 'file') as DirEntry['type'],
+    }));
   }
+
 }
