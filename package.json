@@ -11,7 +11,7 @@
     "libs/core",
     "libs/ui-kit",
     "libs/models",
-    "libs/sales",
+    "libs/sales"
   ],
   "overrides": {
     "@langchain/core": "^1.1.43"
