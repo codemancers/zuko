@@ -20,7 +20,7 @@ import {
 } from './sandbox-lifecycle.service';
 import { SANDBOX_LIFECYCLE_EVENT } from './sandbox-lifecycle.constants';
 
-@Controller('api/sandboxes')
+@Controller('sandboxes')
 @UseGuards(AuthGuard)
 export class SandboxLifecycleEventsController {
   constructor(

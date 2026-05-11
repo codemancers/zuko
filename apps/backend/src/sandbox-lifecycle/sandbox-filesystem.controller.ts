@@ -15,7 +15,7 @@ import type { RequestWithUser } from '@zuko/core';
 import { PrismaService } from '../prisma/prisma.service';
 import { SpritesService } from '../sprites/sprites.service';
 
-@Controller('api/sandboxes')
+@Controller('sandboxes')
 @UseGuards(AuthGuard)
 export class SandboxFilesystemController {
   constructor(
