@@ -12,20 +12,20 @@ import { getActiveOrganizationId } from '../common/auth/get-organization-id';
 // eslint-disable-next-line @typescript-eslint/consistent-type-imports
 import { PrismaService } from '../prisma/prisma.service';
 // eslint-disable-next-line @typescript-eslint/consistent-type-imports
-import { LangsmithService } from '../langsmith/langsmith.service';
-// eslint-disable-next-line @typescript-eslint/consistent-type-imports
 import { SpritesService } from '../sprites/sprites.service';
 // eslint-disable-next-line @typescript-eslint/consistent-type-imports
 import { ChatsRepository } from './chats.repository';
 // eslint-disable-next-line @typescript-eslint/consistent-type-imports
 import { SandboxLifecycleService } from '../sandbox-lifecycle/sandbox-lifecycle.service';
+import { LocalSandbox, SpriteSandbox, type Sandbox } from '../agent/tools/sandbox';
+
+const WORKING_DIR = process.env.WORKING_DIR ?? '/home/sprite/zuko';
 
 @Injectable()
 export class ChatsService {
   constructor(
     private readonly chatsRepository: ChatsRepository,
     private readonly prisma: PrismaService,
-    private readonly langsmithService: LangsmithService,
     private readonly spritesService: SpritesService,
     private readonly sandboxLifecycle: SandboxLifecycleService,
   ) {}
@@ -132,58 +132,10 @@ export class ChatsService {
 
   async getMessagesForUser(chatId: number, userId: number) {
     const chat = await this.getChatForUser(chatId, userId);
-    const threadId = chat.threadId;
-
-    // Architecture 1: agent always runs on the backend process, not inside the sprite.
-    // The sprite is used only for tool execution via its REST API.
-    const agentUrl =
-      process.env.LANGSMITH_SERVER_URL ?? 'http://localhost:8080';
-    let values: { messages: unknown[]; contextEntities: unknown[] };
-    try {
-      const state: any = await this.langsmithService.getThreadState(
-        threadId,
-        agentUrl,
-      );
-      values = state?.values ?? { messages: [], contextEntities: [] };
-    } catch {
-      values = { messages: [], contextEntities: [] };
-    }
-
-    const rawMessages: unknown[] = Array.isArray(values.messages)
-      ? values.messages
-      : [];
-    const messages = rawMessages
-      .map((msg: any) => {
-        const role =
-          msg.type === 'human'
-            ? 'user'
-            : msg.type === 'ai'
-              ? 'assistant'
-              : (msg.type ?? 'system');
-
-        const content =
-          typeof msg.content === 'string'
-            ? msg.content
-            : typeof msg.text === 'string'
-              ? msg.text
-              : '';
-
-        if (!content || !content.trim()) {
-          return null;
-        }
-
-        return { role, content };
-      })
-      .filter((m): m is { role: string; content: string } => m !== null);
-
-    const contextEntities =
-      Array.isArray(values.contextEntities) && values.contextEntities.length > 0
-        ? (values.contextEntities as unknown[])
-        : [];
-
     const sandboxId = chat.sandboxes[0]?.id ?? null;
-
-    return { messages, contextEntities, sandboxId };
+    // Message history is maintained by the frontend — return empty here.
+    // TODO: persist messages to DB for server-side history restoration.
+    return { messages: [], contextEntities: [], sandboxId };
   }
 
   async prepareChatRun(input: {
@@ -250,16 +202,15 @@ export class ChatsService {
       this.sandboxLifecycle.refreshActivity(sandbox.id).catch(() => {});
     }
 
-    // Architecture 1: agent always runs on the backend process.
-    // sandboxUrl points to the local LangGraph server, NOT the sprite.
-    const sandboxUrl =
-      process.env.LANGSMITH_SERVER_URL ?? 'http://localhost:8080';
+    // Build sandbox instance — passed directly to graph.stream() configurable (gather-style).
+    const sandboxInstance: Sandbox = spritesEnabled && sandbox
+      ? new SpriteSandbox(WORKING_DIR, sandbox.name, process.env.SPRITES_TOKEN ?? '')
+      : new LocalSandbox(WORKING_DIR);
 
     return {
       chatId,
       threadId,
-      sandboxUrl,
-      spriteName: spritesEnabled ? spriteName : undefined,
+      sandbox: sandboxInstance,
       contextEntities,
       langchainMessages,
     };
