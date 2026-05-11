@@ -66,7 +66,7 @@ export class SandboxLifecycleEventsController {
     res.setHeader('Connection', 'keep-alive');
     res.flushHeaders();
 
-    // Send current state immediately
+    // Send current DB state immediately so the client has something to render
     res.write(
       `data: ${JSON.stringify({
         sandboxId,
@@ -74,6 +74,10 @@ export class SandboxLifecycleEventsController {
         lifecycleError: sandbox.lifecycleError,
       })}\n\n`,
     );
+
+    // Reconcile with actual Fly state asynchronously — if the sprite is cold
+    // but DB says active, this emits a correction event within milliseconds.
+    this.lifecycleService.reconcileWithFly(sandboxId).catch(() => {});
 
     const eventName = `${SANDBOX_LIFECYCLE_EVENT}.${sandboxId}`;
     const listener = (payload: SandboxLifecyclePayload) => {

@@ -59,7 +59,12 @@ export class SandboxLifecycleService {
       this.emit(sandboxId, 'hibernating');
 
       if (this.spritesEnabled) {
-        await this.sprites.stopSprite(sandbox.name);
+        // Ignore errors — sprite may already be cold (Fly auto-suspended it)
+        await this.sprites.stopSprite(sandbox.name).catch((err) => {
+          this.logger.warn(
+            `stopSprite for ${sandbox.name} failed (possibly already cold): ${err}`,
+          );
+        });
       }
 
       await this.prisma.sandbox.update({
@@ -120,6 +125,37 @@ export class SandboxLifecycleService {
     }
   }
 
+  /**
+   * Check the actual Fly sprite status and reconcile DB state if out of sync.
+   * Called fire-and-forget from the SSE connect handler so clients get the real
+   * state shortly after opening the stream without blocking the response.
+   *
+   * Only acts when DB says "active" — if Fly reports "cold" we write "hibernated"
+   * directly (no stopSprite call needed, the machine is already stopped).
+   */
+  async reconcileWithFly(sandboxId: number): Promise<void> {
+    if (!this.spritesEnabled) return;
+    const sandbox = await this.prisma.sandbox.findUnique({
+      where: { id: sandboxId },
+    });
+    if (!sandbox || sandbox.lifecycleState !== 'active') return;
+
+    try {
+      const sprite = await this.sprites.getSprite(sandbox.name);
+      const isWarm = sprite.status === 'running' || sprite.status === 'warm';
+      if (!isWarm) {
+        // Fly has auto-suspended the sprite — update DB without calling stopSprite
+        await this.prisma.sandbox.update({
+          where: { id: sandboxId },
+          data: { lifecycleState: 'hibernated', hibernateAfter: null },
+        });
+        this.emit(sandboxId, 'hibernated');
+      }
+    } catch {
+      // Ignore — reconciliation errors must not affect UX
+    }
+  }
+
   async refreshActivity(sandboxId: number): Promise<void> {
     const hibernateAfter = new Date(Date.now() + SANDBOX_INACTIVITY_TIMEOUT_MS);
     await this.prisma.sandbox.updateMany({
@@ -131,10 +167,15 @@ export class SandboxLifecycleService {
   @Cron(CronExpression.EVERY_MINUTE)
   async runAutoHibernation(): Promise<void> {
     if (!this.spritesEnabled) return;
+    const now = new Date();
     const due = await this.prisma.sandbox.findMany({
       where: {
         lifecycleState: 'active',
-        hibernateAfter: { lte: new Date() },
+        OR: [
+          { hibernateAfter: { lte: now } },
+          // Treat NULL hibernateAfter as overdue (sandbox pre-dates lifecycle tracking)
+          { hibernateAfter: null },
+        ],
       },
     });
 
