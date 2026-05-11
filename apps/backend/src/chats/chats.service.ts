@@ -135,18 +135,11 @@ export class ChatsService {
     const threadId = chat.threadId;
     const sandboxUrl = chat.sandboxes[0]?.url ?? '';
 
-    const agentUrl =
-      sandboxUrl || process.env.LANGSMITH_SERVER_URL || 'http://localhost:8080';
-    const spritesEnabled = process.env.SPRITES_ENABLED !== 'false';
+    // Architecture 1: agent always runs on the backend process, not inside the sprite.
+    // The sprite is used only for tool execution via its REST API.
+    const agentUrl = process.env.LANGSMITH_SERVER_URL ?? 'http://localhost:8080';
     let values: { messages: unknown[]; contextEntities: unknown[] };
     try {
-      if (spritesEnabled && sandboxUrl) {
-        const spriteName =
-          process.env.NODE_ENV === 'test'
-            ? (process.env.E2E_SANDBOX ?? '')
-            : `${chatId}-${threadId}`;
-        await this.spritesService.startServer(spriteName);
-      }
       const state: any = await this.langsmithService.getThreadState(
         threadId,
         agentUrl,
@@ -252,19 +245,15 @@ export class ChatsService {
     );
     const langchainMessages = await toBaseMessages(filteredMessages);
 
-    if (spritesEnabled) {
-      await this.spritesService.startServer(spriteName);
-    }
-
     // Refresh inactivity deadline after each chat run
     if (spritesEnabled && sandbox) {
       this.sandboxLifecycle.refreshActivity(sandbox.id).catch(() => {});
     }
 
+    // Architecture 1: agent always runs on the backend process.
+    // sandboxUrl points to the local LangGraph server, NOT the sprite.
     const sandboxUrl =
-      sandbox?.url ||
-      process.env.LANGSMITH_SERVER_URL ||
-      'http://localhost:8080';
+      process.env.LANGSMITH_SERVER_URL ?? 'http://localhost:8080';
 
     return {
       chatId,
