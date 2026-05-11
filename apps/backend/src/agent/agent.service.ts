@@ -23,7 +23,7 @@ export class AgentService {
 
     const graph = buildChatGraph();
 
-    return graph.stream(
+    return (graph as any).stream(
       { messages, contextEntities, userId, organizationId },
       {
         configurable: {
@@ -32,6 +32,7 @@ export class AgentService {
           organizationId: organizationId != null ? String(organizationId) : '',
           contextEntities,
         },
+        streamMode: ['values', 'messages'],
       },
     );
   }

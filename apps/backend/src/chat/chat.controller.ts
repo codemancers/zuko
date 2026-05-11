@@ -45,6 +45,7 @@ export class ChatController {
     response.setHeader('Connection', 'keep-alive');
     response.setHeader('X-Thread-Id', preparedRun.threadId);
     response.setHeader('X-Chat-Id', chatId);
+    response.flushHeaders();
 
     // Run agent in-process (gather-style) — no separate LangGraph server needed
     const graphStream = await this.agentService.stream({
@@ -58,11 +59,18 @@ export class ChatController {
     const uiStream = toUIMessageStream(graphStream as any);
 
     try {
-      for await (const chunk of uiStream) {
-        response.write(`data: ${JSON.stringify(chunk)}\n\n`);
+      const reader = (uiStream as ReadableStream).getReader();
+      try {
+        while (true) {
+          const { value, done } = await reader.read();
+          if (done) break;
+          response.write(`data: ${JSON.stringify(value)}\n\n`);
+        }
+      } finally {
+        reader.releaseLock();
       }
-    } catch (_err) {
-      // swallow streaming errors; connection will just end
+    } catch (err) {
+      console.error('[ChatController] streaming error:', err);
     } finally {
       response.end();
     }
