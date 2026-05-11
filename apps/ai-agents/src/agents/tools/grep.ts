@@ -70,7 +70,7 @@ function walkAndGrep(
 }
 
 export const grepTool = defineTool({
-  name: 'grep',
+  name: 'search_files',
   description:
     'Search files for a regex pattern. Returns up to 10 matches per file with line numbers.',
   schema: z.object({

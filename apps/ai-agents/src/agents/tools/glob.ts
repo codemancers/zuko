@@ -34,7 +34,7 @@ function walkDir(dir: string, rootDir: string, pattern: string, results: string[
 }
 
 export const globTool = defineTool({
-  name: 'glob',
+  name: 'find_files',
   description:
     'Match files by glob pattern (supports ** for recursive). Returns workspace-relative paths.',
   schema: z.object({

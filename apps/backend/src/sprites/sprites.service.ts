@@ -303,7 +303,7 @@ export class SpritesService {
     const res = await this.executeCommandPost(threadId, {
       cmd: ['ls'],
     });
-    console.log(`SandboxUp: ${threadId} - ${res}`);
+    console.log(`SandboxUp: ${threadId} - ${res.raw}`);
     return true;
   }
 
