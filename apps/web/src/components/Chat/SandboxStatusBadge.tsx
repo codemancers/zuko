@@ -1,12 +1,15 @@
 'use client';
 
+import { Badge } from '@zuko/ui-kit';
 import {
   useSandboxLifecycle,
   type SandboxLifecycleState,
 } from '@/hooks/use-sandbox-lifecycle';
 
+type BadgeColor = 'green' | 'blue' | 'zinc' | 'red' | 'yellow';
+
 const STATE_LABEL: Record<SandboxLifecycleState, string> = {
-  provisioning: 'Setting up workspace…',
+  provisioning: 'Setting up…',
   active: 'Workspace active',
   hibernating: 'Going to sleep…',
   hibernated: 'Workspace asleep',
@@ -14,25 +17,44 @@ const STATE_LABEL: Record<SandboxLifecycleState, string> = {
   failed: 'Workspace failed',
 };
 
-const STATE_COLOR: Record<SandboxLifecycleState, string> = {
-  provisioning: 'bg-yellow-100 text-yellow-800',
-  active: 'bg-green-100 text-green-800',
-  hibernating: 'bg-zinc-100 text-zinc-600',
-  hibernated: 'bg-zinc-100 text-zinc-500',
-  restoring: 'bg-blue-100 text-blue-800',
-  failed: 'bg-red-100 text-red-700',
+const STATE_COLOR: Record<SandboxLifecycleState, BadgeColor> = {
+  provisioning: 'yellow',
+  active: 'green',
+  hibernating: 'zinc',
+  hibernated: 'zinc',
+  restoring: 'blue',
+  failed: 'red',
 };
+
+const INDICATOR_COLOR: Record<SandboxLifecycleState, string> = {
+  provisioning: 'bg-yellow-400',
+  active: 'bg-green-500',
+  hibernating: 'bg-zinc-400',
+  hibernated: 'bg-zinc-400',
+  restoring: 'bg-blue-500',
+  failed: 'bg-red-500',
+};
+
+const PULSING_STATES = new Set<SandboxLifecycleState>([
+  'provisioning',
+  'hibernating',
+  'restoring',
+]);
 
 export function SandboxStatusBadge({ sandboxId }: { sandboxId: number }) {
   const { state, error } = useSandboxLifecycle(sandboxId);
   if (!state) return null;
 
+  const pulse = PULSING_STATES.has(state);
+
   return (
-    <span
-      className={`inline-flex items-center rounded px-2 py-0.5 text-xs font-medium ${STATE_COLOR[state]}`}
-      title={error ?? undefined}
-    >
+    <Badge color={STATE_COLOR[state]} title={error ?? undefined}>
+      <span className="relative flex items-center">
+        <span
+          className={`mr-1.5 inline-block h-1.5 w-1.5 rounded-full ${INDICATOR_COLOR[state]} ${pulse ? 'animate-pulse' : ''}`}
+        />
+      </span>
       {STATE_LABEL[state]}
-    </span>
+    </Badge>
   );
 }

@@ -247,9 +247,9 @@ export default function ChatPage() {
 
   return (
     <TooltipProvider>
-      <div className="flex h-full flex-col overflow-hidden bg-zinc-50 dark:bg-zinc-900">
+      <div className="relative flex h-full flex-col overflow-hidden bg-zinc-50 dark:bg-zinc-900">
         {sandboxId && (
-          <div className="flex items-center justify-end border-b border-zinc-200 px-4 py-1.5 dark:border-zinc-800">
+          <div className="absolute right-3 top-3 z-10">
             <SandboxStatusBadge sandboxId={sandboxId} />
           </div>
         )}
