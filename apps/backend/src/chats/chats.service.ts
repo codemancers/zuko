@@ -135,20 +135,25 @@ export class ChatsService {
     const threadId = chat.threadId;
     const sandboxUrl = chat.sandboxes[0]?.url ?? '';
 
+    const agentUrl =
+      sandboxUrl || process.env.LANGSMITH_SERVER_URL || 'http://localhost:8080';
+    const spritesEnabled = process.env.SPRITES_ENABLED !== 'false';
     let values: { messages: unknown[]; contextEntities: unknown[] };
-    if (!sandboxUrl) {
-      values = { messages: [], contextEntities: [] };
-    } else {
-      const spriteName =
-        process.env.NODE_ENV === 'test'
-          ? (process.env.E2E_SANDBOX ?? '')
-          : `${chatId}-${threadId}`;
-      await this.spritesService.startServer(spriteName);
+    try {
+      if (spritesEnabled && sandboxUrl) {
+        const spriteName =
+          process.env.NODE_ENV === 'test'
+            ? (process.env.E2E_SANDBOX ?? '')
+            : `${chatId}-${threadId}`;
+        await this.spritesService.startServer(spriteName);
+      }
       const state: any = await this.langsmithService.getThreadState(
         threadId,
-        sandboxUrl,
+        agentUrl,
       );
       values = state?.values ?? { messages: [], contextEntities: [] };
+    } catch {
+      values = { messages: [], contextEntities: [] };
     }
 
     const rawMessages: unknown[] = Array.isArray(values.messages)
@@ -205,6 +210,7 @@ export class ChatsService {
     const threadId = chat.threadId;
     const spriteName = `${chatId}-${threadId}`;
 
+    const spritesEnabled = process.env.SPRITES_ENABLED !== 'false';
     let sandbox = chat.sandboxes[0];
     if (process.env.NODE_ENV === 'test') {
       sandbox = await this.chatsRepository.createSandboxForChat(
@@ -212,7 +218,7 @@ export class ChatsService {
         process.env.E2E_SANDBOX ?? '',
         process.env.E2E_SANDBOX_URL ?? '',
       );
-    } else if (!sandbox) {
+    } else if (!sandbox && spritesEnabled) {
       const sprite = await this.spritesService.createSprite(spriteName);
       await this.spritesService.setupSprite(spriteName);
       sandbox = await this.chatsRepository.createSandboxForChat(
@@ -221,7 +227,7 @@ export class ChatsService {
         sprite.url,
       );
       await this.sandboxLifecycle.markActive(sandbox.id);
-    } else if (sandbox.lifecycleState === 'hibernated') {
+    } else if (sandbox?.lifecycleState === 'hibernated' && spritesEnabled) {
       await this.sandboxLifecycle.resume(sandbox.id);
     }
 
@@ -246,15 +252,25 @@ export class ChatsService {
     );
     const langchainMessages = await toBaseMessages(filteredMessages);
 
-    await this.spritesService.startServer(spriteName);
+    if (spritesEnabled) {
+      await this.spritesService.startServer(spriteName);
+    }
 
     // Refresh inactivity deadline after each chat run
-    this.sandboxLifecycle.refreshActivity(sandbox.id).catch(() => {});
+    if (spritesEnabled && sandbox) {
+      this.sandboxLifecycle.refreshActivity(sandbox.id).catch(() => {});
+    }
+
+    const sandboxUrl =
+      sandbox?.url ||
+      process.env.LANGSMITH_SERVER_URL ||
+      'http://localhost:8080';
 
     return {
       chatId,
       threadId,
-      sandboxUrl: sandbox?.url ?? '',
+      sandboxUrl,
+      spriteName: spritesEnabled ? spriteName : undefined,
       contextEntities,
       langchainMessages,
     };

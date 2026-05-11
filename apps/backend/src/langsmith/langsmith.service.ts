@@ -52,6 +52,9 @@ export class LangsmithService {
         },
       },
     );
+    if (response.status === 404) {
+      return null; // Thread not created yet — normal for new chats
+    }
     if (!response.ok) {
       this.logger.error('Failed to fetch thread state', response.statusText);
       throw new Error(`Failed to fetch thread state: ${response.statusText}`);
@@ -66,6 +69,7 @@ export class LangsmithService {
     userId: number;
     organizationId: number | null;
     sandboxUrl?: string;
+    spriteName?: string;
   }) {
     const {
       threadId,
@@ -74,10 +78,22 @@ export class LangsmithService {
       userId,
       organizationId,
       sandboxUrl,
+      spriteName,
     } = params;
 
     const assistantId = process.env.LANGSMITH_ASSISTANT_ID ?? 'agent';
     const url = `${sandboxUrl ?? this.langsmithServerUrl}/threads/${threadId}/runs/stream`;
+
+    const configurable: Record<string, unknown> = {
+      userId: String(userId),
+      organizationId: organizationId != null ? String(organizationId) : '',
+      contextEntities,
+    };
+
+    if (spriteName) {
+      configurable['spriteName'] = spriteName;
+      configurable['spritesToken'] = this.spritesToken;
+    }
 
     const payload = {
       assistant_id: assistantId,
@@ -87,6 +103,7 @@ export class LangsmithService {
         userId,
         organizationId,
       },
+      config: { configurable },
       stream_mode: ['values', 'messages'] as const,
       multitask_strategy: 'enqueue' as const,
       if_not_exists: 'create' as const,

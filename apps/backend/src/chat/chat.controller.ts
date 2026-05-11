@@ -55,6 +55,7 @@ export class ChatController {
       userId,
       organizationId,
       sandboxUrl: preparedRun.sandboxUrl,
+      spriteName: preparedRun.spriteName,
     });
 
     const nodeStream = Readable.fromWeb(

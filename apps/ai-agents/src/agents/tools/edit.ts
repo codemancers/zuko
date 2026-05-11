@@ -1,8 +1,5 @@
 import { z } from 'zod';
-import { readFileSync, writeFileSync } from 'node:fs';
-import { resolve } from 'node:path';
 import { defineTool } from './base';
-import { WORKING_DIR } from './context';
 
 export const editTool = defineTool({
   name: 'edit',
@@ -16,9 +13,9 @@ export const editTool = defineTool({
   }),
   execute: async ({ path, oldString, newString, replaceAll }, ctx) => {
     if (oldString === newString) throw new Error('oldString and newString must differ');
-    const base = ctx.workingDirectory ?? WORKING_DIR;
-    const abs = path.startsWith('/') ? path : resolve(base, path);
-    const original = readFileSync(abs, 'utf-8');
+    const raw = await ctx.sandbox.readFile(path);
+    // readFile returns numbered lines — strip line numbers to get raw content
+    const original = raw.replace(/^\d+\t/gm, '');
 
     let updated: string;
     if (replaceAll) {
@@ -34,7 +31,7 @@ export const editTool = defineTool({
       }
       updated = original.slice(0, idx) + newString + original.slice(idx + oldString.length);
     }
-    writeFileSync(abs, updated, 'utf-8');
+    await ctx.sandbox.writeFile(path, updated);
     return { ok: true } as const;
   },
 });
