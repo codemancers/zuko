@@ -12,8 +12,6 @@
     "libs/ui-kit",
     "libs/models",
     "libs/sales",
-    "apps/ai-agents",
-    "apps/ai-agents-e2e"
   ],
   "overrides": {
     "@langchain/core": "^1.1.43"

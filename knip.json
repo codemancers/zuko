@@ -72,9 +72,5 @@
       "webpack": false,
       "ignoreDependencies": ["@zuko/models"]
     },
-    "apps/ai-agents": {
-      "entry": ["src/agents/index.ts", "src/main.ts"],
-      "project": ["src/**/*.ts"]
-    }
   }
 }
