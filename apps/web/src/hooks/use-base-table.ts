@@ -1,4 +1,7 @@
+'use client';
+
 import React from 'react';
+import { useSheetState } from './use-sheet-state';
 import {
   getCoreRowModel,
   getPaginationRowModel,
@@ -86,14 +89,14 @@ export function useBaseTable<TData extends BaseRow>({
   });
 
   const [isAddColumnDialogOpen, setIsAddColumnDialogOpen] =
-    React.useState(false);
+    useSheetState('addField');
   const openAddColumnDialog = React.useCallback(
     () => setIsAddColumnDialogOpen(true),
-    [],
+    [setIsAddColumnDialogOpen],
   );
   const closeAddColumnDialog = React.useCallback(
     () => setIsAddColumnDialogOpen(false),
-    [],
+    [setIsAddColumnDialogOpen],
   );
 
   return {

@@ -1,13 +1,22 @@
 'use client';
 
-import { PlusIcon } from '@heroicons/react/24/outline';
-import { Button } from '@zuko/ui-kit';
+import { PlusIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import {
+  Button,
+  Sheet,
+  SheetHeader,
+  SheetTitle,
+  SheetBody,
+} from '@zuko/ui-kit';
 import { PageHeader, SearchBar } from '@/components/shared';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getTableViewCompanies } from '@/server/query-options';
 import { useState, useMemo, useRef } from 'react';
+import { useSheetState } from '@/hooks/use-sheet-state';
 import { useRouter } from 'next/navigation';
+import { authClient } from '@/lib/auth-client';
 import type { ColumnDef } from '@tanstack/react-table';
+import CompanyForm from './CompanyForm';
 import { toast } from 'sonner';
 import {
   BaseTable,
@@ -28,6 +37,8 @@ const CompaniesList = () => {
   const router = useRouter();
   const queryClient = useQueryClient();
   const openAddColumnRef = useRef<(() => void) | undefined>(undefined);
+  const [isSheetOpen, setIsSheetOpen] = useSheetState();
+  const session = authClient.useSession();
   const {
     inputValue: searchTerm,
     setInputValue: setSearchTerm,
@@ -85,7 +96,7 @@ const CompaniesList = () => {
   };
 
   const handleNewCompany = () => {
-    router.push('/companies/new');
+    setIsSheetOpen(true);
   };
 
   const handleNewColumn = (
@@ -150,6 +161,25 @@ const CompaniesList = () => {
         onClose={() => setCompanyToDelete(null)}
         isLoading={hideCompanyMutation.isPending}
       />
+
+      <Sheet open={isSheetOpen} onClose={setIsSheetOpen} side="right">
+        <SheetHeader>
+          <SheetTitle>New Company</SheetTitle>
+          <Button plain onClick={() => setIsSheetOpen(false)}>
+            <XMarkIcon className="h-5 w-5" />
+          </Button>
+        </SheetHeader>
+        <SheetBody>
+          {session.data && (
+            <CompanyForm
+              mode="create"
+              currentUserId={parseInt(session.data.user.id, 10)}
+              onSuccess={() => setIsSheetOpen(false)}
+              onCancel={() => setIsSheetOpen(false)}
+            />
+          )}
+        </SheetBody>
+      </Sheet>
     </>
   );
 };

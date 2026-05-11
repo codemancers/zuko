@@ -29,7 +29,7 @@ export function FormActions({
   onCancel,
 }: FormActionsProps) {
   return (
-    <div className="flex gap-3">
+    <div className="flex justify-end gap-3">
       <Button type="submit" disabled={isLoading}>
         {isLoading ? loadingLabel : submitLabel}
       </Button>

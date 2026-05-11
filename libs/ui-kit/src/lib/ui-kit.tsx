@@ -1,4 +1,5 @@
 export * from './alert';
+export * from './sheet';
 export * from './avatar';
 export * from './badge';
 export * from './button';

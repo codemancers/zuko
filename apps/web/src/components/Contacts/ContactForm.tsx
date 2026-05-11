@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import clsx from 'clsx';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   contactsApi,
@@ -16,12 +17,16 @@ interface ContactFormProps {
   contact?: Contact;
   mode: 'create' | 'edit';
   currentUserId: number;
+  onSuccess?: () => void;
+  onCancel?: () => void;
 }
 
 export default function ContactForm({
   contact,
   mode,
   currentUserId,
+  onSuccess,
+  onCancel,
 }: ContactFormProps) {
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -39,7 +44,11 @@ export default function ContactForm({
     mutationFn: (data: CreateContactDto) => contactsApi.createContact(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['contacts'] });
-      router.push('/contacts');
+      if (onSuccess) {
+        onSuccess();
+      } else {
+        router.push('/contacts');
+      }
     },
     onError: (error: any) => {
       setErrors({ submit: error.message || 'Failed to create contact' });
@@ -109,6 +118,10 @@ export default function ContactForm({
   };
 
   const handleCancel = () => {
+    if (onCancel) {
+      onCancel();
+      return;
+    }
     if (mode === 'edit' && contact) {
       router.push(`/contacts/${contact.id}`);
     } else {
@@ -118,8 +131,14 @@ export default function ContactForm({
 
   const isLoading = createMutation.isPending || updateMutation.isPending;
 
+  const isSheet = !!onSuccess;
+
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form
+      onSubmit={handleSubmit}
+      className={clsx(isSheet ? 'flex h-full flex-col' : 'space-y-6')}
+    >
+      <div className={clsx(isSheet ? 'flex-1 space-y-6' : 'contents')}>
       <Field>
         <Label>Name *</Label>
         <Input
@@ -177,6 +196,7 @@ export default function ContactForm({
       )}
 
       {errors.submit && <ErrorMessage>{errors.submit}</ErrorMessage>}
+      </div>
 
       <FormActions
         isLoading={isLoading}

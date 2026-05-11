@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import clsx from 'clsx';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import {
   dealsApi,
@@ -28,6 +29,8 @@ interface DealFormProps {
   deal?: Deal;
   mode: 'create' | 'edit';
   currentUserId: number;
+  onSuccess?: () => void;
+  onCancel?: () => void;
 }
 
 const DEAL_STAGES = [
@@ -47,7 +50,7 @@ const PRIORITIES = [
   { value: 4, label: 'P4 - Backlog' },
 ];
 
-export default function DealForm({ deal, mode, currentUserId }: DealFormProps) {
+export default function DealForm({ deal, mode, currentUserId, onSuccess, onCancel }: DealFormProps) {
   const router = useRouter();
   const queryClient = useQueryClient();
 
@@ -75,7 +78,11 @@ export default function DealForm({ deal, mode, currentUserId }: DealFormProps) {
     mutationFn: (data: CreateDealDto) => dealsApi.createDeal(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['deals'] });
-      router.push('/deals');
+      if (onSuccess) {
+        onSuccess();
+      } else {
+        router.push('/deals');
+      }
     },
     onError: (error: any) => {
       setErrors({ submit: error.message || 'Failed to create deal' });
@@ -161,6 +168,10 @@ export default function DealForm({ deal, mode, currentUserId }: DealFormProps) {
   };
 
   const handleCancel = () => {
+    if (onCancel) {
+      onCancel();
+      return;
+    }
     if (mode === 'edit' && deal) {
       router.push(`/deals/${deal.id}`);
     } else {
@@ -169,9 +180,14 @@ export default function DealForm({ deal, mode, currentUserId }: DealFormProps) {
   };
 
   const isLoading = createMutation.isPending || updateMutation.isPending;
+  const isSheet = !!onSuccess;
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form
+      onSubmit={handleSubmit}
+      className={clsx(isSheet ? 'flex h-full flex-col' : 'space-y-6')}
+    >
+      <div className={clsx(isSheet ? 'flex-1 space-y-6' : 'contents')}>
       <Field>
         <Label>Deal Title *</Label>
         <Input
@@ -312,6 +328,7 @@ export default function DealForm({ deal, mode, currentUserId }: DealFormProps) {
       </Field>
 
       {errors.submit && <ErrorMessage>{errors.submit}</ErrorMessage>}
+      </div>
 
       <FormActions
         isLoading={isLoading}
