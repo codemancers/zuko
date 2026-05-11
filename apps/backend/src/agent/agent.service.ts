@@ -10,6 +10,7 @@ export interface AgentStreamParams {
   userId: number;
   organizationId: number | null;
   sandbox: Sandbox;
+  signal?: AbortSignal;
 }
 
 @Injectable()
@@ -19,8 +20,14 @@ export class AgentService {
    * The sandbox instance is passed directly in configurable (gather-style).
    */
   async stream(params: AgentStreamParams): Promise<AsyncIterable<any>> {
-    const { messages, contextEntities, userId, organizationId, sandbox } =
-      params;
+    const {
+      messages,
+      contextEntities,
+      userId,
+      organizationId,
+      sandbox,
+      signal,
+    } = params;
 
     const graph = buildChatGraph();
 
@@ -34,6 +41,7 @@ export class AgentService {
           contextEntities,
         },
         streamMode: ['values', 'messages'],
+        signal,
       },
     );
   }

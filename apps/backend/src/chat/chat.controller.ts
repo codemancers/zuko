@@ -1,14 +1,24 @@
-import { Body, Controller, Post, Req, Res, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  HttpCode,
+  HttpStatus,
+  Post,
+  Req,
+  Res,
+  UseGuards,
+} from '@nestjs/common';
 import { AuthGuard } from '@thallesp/nestjs-better-auth';
 import { generateId } from 'ai';
+import type { UIMessageChunk, UIMessage } from 'ai';
 import type { Response } from 'express';
-import type { ContextEntityReference } from '../types/chat';
-import { toUIMessageStream } from '@ai-sdk/langchain';
-import type { UIMessage } from 'ai';
 import type { RequestWithUser } from '@zuko/core';
+import type { ContextEntityReference } from '../types/chat';
 import { ChatsService } from '../chats/chats.service';
 import { ChatsRepository } from '../chats/chats.repository';
 import { AgentService } from '../agent/agent.service';
+import { ChatStreamRegistry } from './chat-stream.registry';
+import { convertChatStreamToUiMessageStream } from './convert-stream';
 
 @Controller('v1')
 export class ChatController {
@@ -16,6 +26,7 @@ export class ChatController {
     private readonly chatsService: ChatsService,
     private readonly chatsRepository: ChatsRepository,
     private readonly agentService: AgentService,
+    private readonly streamRegistry: ChatStreamRegistry,
   ) {}
 
   @Post('chat')
@@ -57,7 +68,10 @@ export class ChatController {
       }
     }
 
-    // Set SSE headers for the client
+    // Claim stream slot — aborts any existing run for this chat (dedup)
+    const aborter = this.streamRegistry.claim(chatId);
+
+    // SSE headers
     response.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
     response.setHeader('Cache-Control', 'no-cache');
     response.setHeader('Connection', 'keep-alive');
@@ -65,21 +79,34 @@ export class ChatController {
     response.setHeader('X-Chat-Id', chatId);
     response.flushHeaders();
 
-    // Run agent in-process (gather-style) — no separate LangGraph server needed
+    // Stable assistant id — emit our own start chunk first so the client
+    // has a stable message id before the graph stream begins.
+    const assistantId = generateId();
+    const startChunk: UIMessageChunk = {
+      type: 'start',
+      messageId: assistantId,
+    };
+    response.write(`data: ${JSON.stringify(startChunk)}\n\n`);
+
     const graphStream = await this.agentService.stream({
       messages: preparedRun.langchainMessages,
       contextEntities: preparedRun.contextEntities,
       userId,
       organizationId,
       sandbox: preparedRun.sandbox,
+      signal: aborter.signal,
     });
 
-    const uiStream = toUIMessageStream(graphStream as any);
-    const assistantId = generateId();
+    // suppressStart: true — drop the converter's own start chunk so the
+    // client sees exactly one start (the one we emitted above with assistantId).
+    const uiStream = convertChatStreamToUiMessageStream(graphStream, {
+      suppressStart: true,
+    });
+
     let accumulatedText = '';
 
     try {
-      const reader = (uiStream as ReadableStream).getReader();
+      const reader = uiStream.getReader();
       try {
         while (true) {
           const { value, done } = await reader.read();
@@ -95,7 +122,8 @@ export class ChatController {
     } catch (err) {
       console.error('[ChatController] streaming error:', err);
     } finally {
-      // Persist assistant response
+      this.streamRegistry.release(chatId, aborter);
+
       if (accumulatedText.trim()) {
         this.chatsRepository
           .upsertAssistantMessage(assistantId, chatId, [
@@ -112,5 +140,25 @@ export class ChatController {
     }
 
     return;
+  }
+
+  /**
+   * Cancel the active agent run for this chat.
+   * POST /api/v1/chat/stop
+   */
+  @Post('chat/stop')
+  @UseGuards(AuthGuard)
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async stop(
+    @Body() body: { chatId: string | number },
+    @Req() req: RequestWithUser,
+  ) {
+    const chatId =
+      typeof body.chatId === 'string' ? parseInt(body.chatId, 10) : body.chatId;
+    const userId = parseInt(req.user.id, 10);
+
+    // Verify participant before allowing stop
+    await this.chatsService.ensureUserIsParticipant(chatId, userId);
+    this.streamRegistry.stop(chatId);
   }
 }
