@@ -525,12 +525,12 @@ describe('TasksList', () => {
     expect(mockUpdateCell).not.toHaveBeenCalled();
   });
 
-  it('navigates to new task page when "New Task" button is clicked', async () => {
+  it('opens new task sheet when "New Task" button is clicked', async () => {
     const user = userEvent.setup();
     mockGetTasks.mockResolvedValue(mockTableViewResponse);
     render(<TasksList />, { wrapper });
     await user.click(screen.getByRole('button', { name: /new task/i }));
-    expect(mockPush).toHaveBeenCalledWith('/tasks/new');
+    expect(mockPush).not.toHaveBeenCalledWith('/tasks/new');
   });
 });
 
