@@ -23,6 +23,9 @@
       "path": "../../libs/sales/tsconfig.lib.json"
     },
     {
+      "path": "../../libs/models/tsconfig.lib.json"
+    },
+    {
       "path": "../../libs/core/tsconfig.lib.json"
     }
   ]

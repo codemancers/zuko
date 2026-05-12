@@ -17,6 +17,29 @@ vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: mockPush, back: mockBack }),
 }));
 
+vi.mock('@/lib/auth-client', () => ({
+  authClient: {
+    useSession: vi.fn(() => ({ data: { user: { id: '1' } } })),
+    useActiveOrganization: vi.fn(() => ({ data: { id: 'org-1' } })),
+    organization: {
+      listMembers: vi.fn(() =>
+        Promise.resolve({
+          data: {
+            members: [
+              { user: { name: 'john@example.com' } },
+              { user: { name: 'jane@example.com' } },
+              { user: { name: 'alice@example.com' } },
+              { user: { name: 'bob@example.com' } },
+              { user: { name: 'carol@example.com' } },
+              { user: { name: 'dave@example.com' } },
+            ],
+          },
+        }),
+      ),
+    },
+  },
+}));
+
 const mockCreateTask = vi.fn();
 const mockUpdateTask = vi.fn();
 const mockGetTasks = vi.fn();
@@ -339,7 +362,7 @@ describe('TasksList', () => {
     }
   });
 
-  it('opens text editor when clicking assignee cell and commits on blur', async () => {
+  it('opens select editor when clicking assignee cell and commits on selection', async () => {
     const user = userEvent.setup();
     mockUpdateCell.mockResolvedValue({});
     mockGetTasks.mockResolvedValue({
@@ -363,12 +386,10 @@ describe('TasksList', () => {
 
     await user.click(screen.getByText('alice@example.com'));
 
-    const input = await screen.findByDisplayValue('alice@example.com');
-    expect(input).toBeInTheDocument();
+    const select = await screen.findByDisplayValue('alice@example.com');
+    expect(select).toBeInTheDocument();
 
-    await user.clear(input);
-    await user.type(input, 'bob@example.com');
-    await user.tab();
+    await user.selectOptions(select, 'bob@example.com');
 
     await waitFor(() => {
       expect(mockUpdateCell).toHaveBeenCalledWith(
@@ -436,7 +457,7 @@ describe('TasksList', () => {
     expect(dateInput).toBeInTheDocument();
   });
 
-  it('commits inline edit on Enter key', async () => {
+  it('commits inline edit when selecting a new assignee value', async () => {
     const user = userEvent.setup();
     mockUpdateCell.mockResolvedValue({});
     mockGetTasks.mockResolvedValue({
@@ -460,10 +481,8 @@ describe('TasksList', () => {
 
     await user.click(screen.getByText('carol@example.com'));
 
-    const input = await screen.findByDisplayValue('carol@example.com');
-    await user.clear(input);
-    await user.type(input, 'dave@example.com');
-    await user.keyboard('{Enter}');
+    const select = await screen.findByDisplayValue('carol@example.com');
+    await user.selectOptions(select, 'dave@example.com');
 
     await waitFor(() => {
       expect(mockUpdateCell).toHaveBeenCalledWith(
@@ -497,9 +516,7 @@ describe('TasksList', () => {
     });
 
     await user.click(screen.getByText('alice@example.com'));
-    const input = await screen.findByDisplayValue('alice@example.com');
-    await user.clear(input);
-    await user.type(input, 'changed@example.com');
+    await screen.findByDisplayValue('alice@example.com');
     await user.keyboard('{Escape}');
 
     await waitFor(() => {
@@ -633,7 +650,7 @@ describe('TaskDetail', () => {
       });
     });
 
-    it('edits assignee via inline text field', async () => {
+    it('edits assignee via combobox', async () => {
       const user = userEvent.setup();
       const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
       mockUpdateTask.mockResolvedValue({
@@ -649,10 +666,8 @@ describe('TaskDetail', () => {
 
       await user.click(screen.getAllByTitle('Edit')[0]);
 
-      const input = screen.getByDisplayValue('john@example.com');
-      await user.clear(input);
-      await user.type(input, 'jane@example.com');
-      await user.tab();
+      const select = await screen.findByRole('combobox');
+      await user.selectOptions(select, 'jane@example.com');
 
       await waitFor(() => {
         expect(mockUpdateTask).toHaveBeenCalledWith(
