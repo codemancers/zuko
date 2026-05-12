@@ -14,6 +14,7 @@ export class DealsPage extends BasePage {
   override async goto() {
     await super.goto('/deals');
     await this.waitForDealsToLoad();
+    await this.page.waitForLoadState('networkidle');
   }
 
   async searchDeal(query: string) {
@@ -52,6 +53,7 @@ export class DealsPage extends BasePage {
    */
   async createDealRow(dealName: string) {
     await this.page.goto('/deals');
+    await this.page.waitForLoadState('networkidle');
     const initialRowCount = await this.page.locator('tbody tr').count();
 
     await this.page.getByRole('button', { name: 'Add row' }).click();

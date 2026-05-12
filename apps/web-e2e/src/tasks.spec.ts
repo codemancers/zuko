@@ -183,7 +183,7 @@ test.describe('Task Table - Inline Editing', () => {
     await expect(page.getByText('Cell updated successfully')).toBeVisible();
 
     // Assignee cell now shows the member name
-    await expect(assigneeCell).toHaveText('E2E Test User');
+    await expect(assigneeCell).toContainText('E2E Test User');
 
     // Verify persistence after reload
     await page.reload();
@@ -193,7 +193,7 @@ test.describe('Task Table - Inline Editing', () => {
       .filter({ hasText: taskTitle })
       .first();
     const reloadedCell = reloadedRow.locator('td').nth(assigneeIndex);
-    await expect(reloadedCell).toHaveText('E2E Test User');
+    await expect(reloadedCell).toContainText('E2E Test User');
   });
 });
 

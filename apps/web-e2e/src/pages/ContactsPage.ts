@@ -21,10 +21,9 @@ export class ContactsPage extends BasePage {
    */
   override async goto() {
     await super.goto('/contacts');
-    // Wait for page to be fully loaded and interactive
-    await this.page.waitForLoadState('domcontentloaded');
-    // Wait for either the table or the main content to be visible
+    // Wait for the table to be visible and data to finish loading
     await this.page.waitForSelector('table, main', { state: 'visible' });
+    await this.page.waitForLoadState('networkidle');
   }
 
   /**
@@ -79,6 +78,7 @@ export class ContactsPage extends BasePage {
    */
   async createContactRow(contactName: string) {
     await this.page.goto('/contacts');
+    await this.page.waitForLoadState('networkidle');
     const initialRowCount = await this.page.locator('tbody tr').count();
 
     await this.page.getByRole('button', { name: 'Add row' }).click();
