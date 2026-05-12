@@ -63,7 +63,11 @@ export default function CompanyForm({
       queryClient.invalidateQueries({
         queryKey: ['timeline', 'company', company!.id],
       });
-      router.push(`/companies/${company!.id}`);
+      if (onSuccess) {
+        onSuccess();
+      } else {
+        router.push(`/companies/${company!.id}`);
+      }
     },
     onError: (error: any) => {
       setErrors({ submit: error.message || 'Failed to update company' });

@@ -245,17 +245,18 @@ test.describe('Task Status Workflow', () => {
     const taskId = page.url().match(/\/tasks\/(\d+)$/)?.[1];
 
     // TODO → IN_PROGRESS
-    await page.goto(`/tasks/${taskId}/edit`);
+    await page.getByRole('button', { name: /^edit$/i }).click();
+    await expect(page.getByText('Edit Task')).toBeVisible();
     await page.getByLabel(/status/i).selectOption('IN_PROGRESS');
     await page.getByRole('button', { name: /save changes/i }).click();
-    // Wait for redirect to task detail (not edit page) — regex ensures /tasks/123 not /tasks/123/edit
-    await page.waitForURL(/\/tasks\/\d+$/, { timeout: 10000 });
+    await expect(page.getByText('Edit Task')).toBeHidden({ timeout: 10000 });
 
     // IN_PROGRESS → DONE
-    await page.goto(`/tasks/${taskId}/edit`);
+    await page.getByRole('button', { name: /^edit$/i }).click();
+    await expect(page.getByText('Edit Task')).toBeVisible();
     await page.getByLabel(/status/i).selectOption('DONE');
     await page.getByRole('button', { name: /save changes/i }).click();
-    await page.waitForURL(/\/tasks\/\d+$/, { timeout: 10000 });
+    await expect(page.getByText('Edit Task')).toBeHidden({ timeout: 10000 });
 
     await expect(page.getByText('Done', { exact: true }).first()).toBeVisible();
   });
@@ -306,9 +307,10 @@ test.describe('Hierarchical Tasks', () => {
     await page.goto(`/tasks/${parentId}`);
     const subtaskId = await tasksPage.openTask('Subtask to Promote');
 
-    await page.goto(`/tasks/${subtaskId}/edit`);
+    await page.getByRole('button', { name: /^edit$/i }).click();
+    await expect(page.getByText('Edit Task')).toBeVisible();
     await page.getByLabel(/parent task/i).selectOption('');
     await page.getByRole('button', { name: /save changes/i }).click();
-    await page.waitForURL('**/tasks/**', { timeout: 10000 });
+    await expect(page.getByText('Edit Task')).toBeHidden({ timeout: 10000 });
   });
 });

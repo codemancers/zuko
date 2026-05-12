@@ -64,7 +64,11 @@ export default function ContactForm({
       queryClient.invalidateQueries({
         queryKey: ['timeline', 'contact', contact!.id],
       });
-      router.push(`/contacts/${contact!.id}`);
+      if (onSuccess) {
+        onSuccess();
+      } else {
+        router.push(`/contacts/${contact!.id}`);
+      }
     },
     onError: (error: any) => {
       setErrors({ submit: error.message || 'Failed to update contact' });

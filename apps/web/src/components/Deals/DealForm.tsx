@@ -103,7 +103,11 @@ export default function DealForm({
       queryClient.invalidateQueries({
         queryKey: ['timeline', 'deal', deal!.id],
       });
-      router.push(`/deals/${deal!.id}`);
+      if (onSuccess) {
+        onSuccess();
+      } else {
+        router.push(`/deals/${deal!.id}`);
+      }
     },
     onError: (error: any) => {
       setErrors({ submit: error.message || 'Failed to update deal' });

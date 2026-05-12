@@ -611,7 +611,7 @@ describe('TaskDetail', () => {
     });
   });
 
-  it('navigates to edit page when "Edit" button is clicked', async () => {
+  it('opens edit sheet when "Edit" button is clicked', async () => {
     const user = userEvent.setup();
     render(<TaskDetail taskId={1} />, { wrapper });
     await waitFor(() => {
@@ -619,7 +619,7 @@ describe('TaskDetail', () => {
     });
     const editButtons = screen.getAllByRole('button', { name: /^edit$/i });
     await user.click(editButtons[0]);
-    expect(mockPush).toHaveBeenCalledWith('/tasks/1/edit');
+    expect(mockPush).not.toHaveBeenCalledWith('/tasks/1/edit');
   });
 
   describe('Edit Task', () => {

@@ -493,7 +493,7 @@ describe('ContactDetail', () => {
     expect(mockHideContact).not.toHaveBeenCalled();
   });
 
-  it('navigates to edit page when "Edit" button is clicked', async () => {
+  it('opens edit sheet when "Edit" button is clicked', async () => {
     const user = userEvent.setup();
     render(<ContactDetail contactId={7} currentUserId={1} />, { wrapper });
     await vi.waitFor(() => {
@@ -501,7 +501,7 @@ describe('ContactDetail', () => {
     });
     const editButtons = screen.getAllByRole('button', { name: /^edit$/i });
     await user.click(editButtons[0]);
-    expect(mockPush).toHaveBeenCalledWith('/contacts/7/edit');
+    expect(mockPush).not.toHaveBeenCalledWith('/contacts/7/edit');
   });
 
   describe('Edit Contact', () => {

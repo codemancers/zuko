@@ -16,6 +16,8 @@ import {
   Combobox,
   ComboboxOption,
   ComboboxLabel,
+  SheetFooter,
+  Button,
 } from '@zuko/ui-kit';
 import { FormActions } from '@/components/shared';
 import { tasksApi, type Task, type TaskStatus } from '@/lib/api/tasks';
@@ -23,6 +25,7 @@ import { toast } from 'sonner';
 import { getTasks, getMembers } from '@/server/query-options';
 import Editor, { ensureOutputData } from '@/components/Common/Editor/Editor';
 import { authClient } from '@/lib/auth-client';
+import clsx from 'clsx';
 
 const taskFormSchema = z.object({
   title: z.string().min(1, 'Title is required'),
@@ -38,6 +41,8 @@ interface TaskFormProps {
   mode: 'create' | 'edit';
   task?: Task;
   defaultParentId?: number;
+  onSuccess?: () => void;
+  onCancel?: () => void;
 }
 
 const STATUS_OPTIONS: { value: TaskStatus; label: string }[] = [
@@ -49,7 +54,7 @@ const STATUS_OPTIONS: { value: TaskStatus; label: string }[] = [
 
 type MemberOption = { value: string; label: string };
 
-const TaskForm = ({ mode, task, defaultParentId }: TaskFormProps) => {
+const TaskForm = ({ mode, task, defaultParentId, onSuccess, onCancel }: TaskFormProps) => {
   const router = useRouter();
   const queryClient = useQueryClient();
 
@@ -114,13 +119,21 @@ const TaskForm = ({ mode, task, defaultParentId }: TaskFormProps) => {
           });
         }
         toast.success('Task created successfully');
-        router.push('/tasks');
+        if (onSuccess) {
+          onSuccess();
+        } else {
+          router.push('/tasks');
+        }
       } else {
         queryClient.invalidateQueries({
           queryKey: ['timeline', 'task', result.id],
         });
         toast.success('Task updated successfully');
-        router.push(`/tasks/${result.id}`);
+        if (onSuccess) {
+          onSuccess();
+        } else {
+          router.push(`/tasks/${result.id}`);
+        }
       }
     },
     onError: (err: Error) => {
@@ -137,6 +150,10 @@ const TaskForm = ({ mode, task, defaultParentId }: TaskFormProps) => {
   };
 
   const handleCancel = () => {
+    if (onCancel) {
+      onCancel();
+      return;
+    }
     if (mode === 'create' || !task) {
       router.push('/tasks');
     } else {
@@ -144,9 +161,14 @@ const TaskForm = ({ mode, task, defaultParentId }: TaskFormProps) => {
     }
   };
 
+  const isSheet = !!onSuccess;
+
   return (
-    <form onSubmit={form.handleSubmit(onSubmit)}>
-      <Fieldset>
+    <form
+      onSubmit={form.handleSubmit(onSubmit)}
+      className={clsx(isSheet ? 'flex flex-1 min-h-0 flex-col' : 'space-y-6')}
+    >
+      <Fieldset className={clsx(isSheet ? 'flex-1 overflow-y-auto p-6 space-y-6' : 'contents')}>
         <FieldGroup>
           <Field>
             <Label>Title *</Label>
@@ -168,7 +190,7 @@ const TaskForm = ({ mode, task, defaultParentId }: TaskFormProps) => {
               render={({ field }) => (
                 <div
                   data-slot="control"
-                  className="rounded-lg border border-zinc-200 dark:border-zinc-800 p-4 min-h-32 bg-white dark:bg-zinc-900 shadow-sm transition-all focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-500"
+                  className="rounded-lg border border-zinc-200 dark:border-zinc-800 p-3 min-h-20 max-h-32 overflow-y-auto bg-white dark:bg-zinc-900 shadow-sm transition-all focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-500"
                 >
                   <Editor
                     holder="task-description-editor"
@@ -250,14 +272,33 @@ const TaskForm = ({ mode, task, defaultParentId }: TaskFormProps) => {
             <ErrorMessage>{form.formState.errors.root.message}</ErrorMessage>
           )}
 
-          <FormActions
-            isLoading={mutation.isPending}
-            submitLabel={mode === 'create' ? 'Create Task' : 'Save Changes'}
-            loadingLabel={mode === 'create' ? 'Creating...' : 'Saving...'}
-            onCancel={handleCancel}
-          />
+          {!isSheet && (
+            <FormActions
+              isLoading={mutation.isPending}
+              submitLabel={mode === 'create' ? 'Create Task' : 'Save Changes'}
+              loadingLabel={mode === 'create' ? 'Creating...' : 'Saving...'}
+              onCancel={handleCancel}
+            />
+          )}
         </FieldGroup>
       </Fieldset>
+
+      {isSheet && (
+        <SheetFooter>
+          <Button type="submit" disabled={mutation.isPending}>
+            {mutation.isPending
+              ? mode === 'create'
+                ? 'Creating...'
+                : 'Saving...'
+              : mode === 'create'
+                ? 'Create Task'
+                : 'Save Changes'}
+          </Button>
+          <Button type="button" plain onClick={handleCancel} disabled={mutation.isPending}>
+            Cancel
+          </Button>
+        </SheetFooter>
+      )}
     </form>
   );
 };
