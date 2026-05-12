@@ -54,7 +54,11 @@ export class TasksPage extends BasePage {
       await this.page.getByLabel(/status/i).selectOption(status);
     }
     if (assignee) {
-      await this.page.getByLabel(/assignee/i).fill(assignee);
+      // Assignee uses a Combobox — fill to search, then Escape to close the
+      // dropdown without blocking the submit button
+      const assigneeInput = this.page.getByLabel(/assignee/i);
+      await assigneeInput.fill(assignee);
+      await assigneeInput.press('Escape');
     }
     if (parentId) {
       await this.page.getByLabel(/parent task/i).selectOption(parentId);
@@ -69,6 +73,11 @@ export class TasksPage extends BasePage {
   async createNewTask() {
     const initialRowCount = await this.getRowCount();
     await this.createNewRecord();
+    // Wait for the new row to appear in the DOM before returning its index
+    await this.page
+      .getByRole('row')
+      .nth(initialRowCount)
+      .waitFor({ state: 'visible', timeout: 10000 });
     return initialRowCount; // 0-indexed
   }
 
