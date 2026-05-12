@@ -69,7 +69,8 @@
     "apps/backend": {
       "entry": ["src/main.ts"],
       "project": ["src/**/*.ts"],
-      "webpack": false
+      "webpack": false,
+      "ignoreDependencies": ["@zuko/models"]
     },
     "apps/ai-agents": {
       "entry": ["src/agents/index.ts", "src/main.ts"],
