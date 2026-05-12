@@ -122,6 +122,9 @@ export default function AddContactToDealDialog({
         >
           <SheetBody>
             <div className="space-y-4">
+              <p className="text-sm text-zinc-500 dark:text-zinc-400">
+                Associate a contact person with this deal.
+              </p>
               <Field>
                 <Label>Contact *</Label>
                 <Select
