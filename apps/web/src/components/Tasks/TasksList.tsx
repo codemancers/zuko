@@ -1,6 +1,10 @@
 'use client';
 
-import { CheckCircleIcon, PlusIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import {
+  CheckCircleIcon,
+  PlusIcon,
+  XMarkIcon,
+} from '@heroicons/react/24/outline';
 import { Button, Sheet, SheetHeader, SheetTitle } from '@zuko/ui-kit';
 import { PageHeader, SearchBar } from '@/components/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -195,11 +199,11 @@ const TasksList = () => {
             <XMarkIcon className="h-5 w-5" />
           </Button>
         </SheetHeader>
-          <TaskForm
-            mode="create"
-            onSuccess={() => setIsSheetOpen(false)}
-            onCancel={() => setIsSheetOpen(false)}
-          />
+        <TaskForm
+          mode="create"
+          onSuccess={() => setIsSheetOpen(false)}
+          onCancel={() => setIsSheetOpen(false)}
+        />
       </Sheet>
     </>
   );

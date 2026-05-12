@@ -54,7 +54,13 @@ const STATUS_OPTIONS: { value: TaskStatus; label: string }[] = [
 
 type MemberOption = { value: string; label: string };
 
-const TaskForm = ({ mode, task, defaultParentId, onSuccess, onCancel }: TaskFormProps) => {
+const TaskForm = ({
+  mode,
+  task,
+  defaultParentId,
+  onSuccess,
+  onCancel,
+}: TaskFormProps) => {
   const router = useRouter();
   const queryClient = useQueryClient();
 
@@ -168,7 +174,11 @@ const TaskForm = ({ mode, task, defaultParentId, onSuccess, onCancel }: TaskForm
       onSubmit={form.handleSubmit(onSubmit)}
       className={clsx(isSheet ? 'flex flex-1 min-h-0 flex-col' : 'space-y-6')}
     >
-      <Fieldset className={clsx(isSheet ? 'flex-1 overflow-y-auto p-6 space-y-6' : 'contents')}>
+      <Fieldset
+        className={clsx(
+          isSheet ? 'flex-1 overflow-y-auto p-6 space-y-6' : 'contents',
+        )}
+      >
         <FieldGroup>
           <Field>
             <Label>Title *</Label>
@@ -294,7 +304,12 @@ const TaskForm = ({ mode, task, defaultParentId, onSuccess, onCancel }: TaskForm
                 ? 'Create Task'
                 : 'Save Changes'}
           </Button>
-          <Button type="button" plain onClick={handleCancel} disabled={mutation.isPending}>
+          <Button
+            type="button"
+            plain
+            onClick={handleCancel}
+            disabled={mutation.isPending}
+          >
             Cancel
           </Button>
         </SheetFooter>
