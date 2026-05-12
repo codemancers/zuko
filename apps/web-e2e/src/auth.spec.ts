@@ -14,18 +14,18 @@ test.describe('Authentication', () => {
     // Verify page title
     await expect(page.locator('h1')).toContainText('Sign in to Zuko');
 
-    // Verify GitHub sign-in button is present
-    const githubButton = page.getByRole('button', {
-      name: /continue with github/i,
+    // Verify Google sign-in button is present
+    const googleButton = page.getByRole('button', {
+      name: /continue with google/i,
     });
-    await expect(githubButton).toBeVisible();
+    await expect(googleButton).toBeVisible();
 
-    // Verify button has GitHub icon
-    const icon = githubButton.locator('img[alt="GitHub"]');
+    // Verify button has Google icon
+    const icon = googleButton.locator('img[alt="Google"]');
     await expect(icon).toBeVisible();
   });
 
-  test('clicking GitHub sign-in button initiates OAuth flow', async ({
+  test('clicking Google sign-in button initiates OAuth flow', async ({
     page,
     context,
   }) => {
@@ -36,16 +36,16 @@ test.describe('Authentication', () => {
       .waitForNavigation({ timeout: 5000 })
       .catch(() => null);
 
-    // Click the GitHub sign-in button
-    const githubButton = page.getByRole('button', {
-      name: /continue with github/i,
+    // Click the Google sign-in button
+    const googleButton = page.getByRole('button', {
+      name: /continue with google/i,
     });
-    await githubButton.click();
+    await googleButton.click();
 
     // Wait for navigation to complete or timeout
     await navigationPromise;
 
-    // Verify we're either on GitHub OAuth page or redirected somewhere
+    // Verify we're either on Google OAuth page or redirected somewhere
     // In a real test, you would mock the OAuth flow or test in a staging environment
     const url = page.url();
     expect(url).not.toBe('about:blank');
