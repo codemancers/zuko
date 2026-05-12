@@ -11,7 +11,6 @@ import {
   Button,
   Divider,
   Sheet,
-  SheetBody,
   SheetHeader,
   SheetTitle,
   Subheading,
