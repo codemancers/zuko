@@ -37,6 +37,7 @@ export class DealsPage extends BasePage {
    * Create a new deal and return the table row index
    */
   async createNewDeal() {
+    await this.page.waitForLoadState('networkidle');
     const initialRowCount = await this.getRowCount();
     await this.createNewRecord();
     // Wait for the new row to appear in the DOM before returning its index
@@ -52,6 +53,7 @@ export class DealsPage extends BasePage {
    */
   async createDealRow(dealName: string) {
     await this.page.goto('/deals');
+    await this.page.waitForLoadState('networkidle');
     const initialRowCount = await this.page.locator('tbody tr').count();
 
     await this.page.getByRole('button', { name: 'Add row' }).click();
