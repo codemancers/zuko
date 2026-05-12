@@ -394,11 +394,11 @@ describe('ContactsList', () => {
     });
   });
 
-  it('navigates to create new contact page when "New Contact" button is clicked', async () => {
+  it('opens new contact sheet when "New Contact" button is clicked', async () => {
     const user = userEvent.setup();
     render(<ContactsList />, { wrapper });
     await user.click(screen.getByRole('button', { name: /new contact/i }));
-    expect(mockPush).toHaveBeenCalledWith('/contacts/new');
+    expect(mockPush).not.toHaveBeenCalled();
   });
 });
 

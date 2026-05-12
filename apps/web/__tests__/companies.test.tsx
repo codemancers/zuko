@@ -387,11 +387,11 @@ describe('CompaniesList', () => {
     });
   });
 
-  it('navigates to new company page when "New Company" button is clicked', async () => {
+  it('opens new company sheet when "New Company" button is clicked', async () => {
     const user = userEvent.setup();
     render(<CompaniesList />, { wrapper });
     await user.click(screen.getByRole('button', { name: /new company/i }));
-    expect(mockPush).toHaveBeenCalledWith('/companies/new');
+    expect(mockPush).not.toHaveBeenCalled();
   });
 });
 
