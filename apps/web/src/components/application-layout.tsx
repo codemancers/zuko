@@ -79,7 +79,7 @@ function AccountDropdownMenu({
   );
 }
 
-const navigation = [
+const baseNavigation = [
   {
     name: 'New chat',
     href: '/chat',
@@ -92,12 +92,27 @@ const navigation = [
   { name: 'Deals', href: '/deals', icon: BriefcaseIcon },
   { divider: true },
   { name: 'Tasks', href: '/tasks', icon: ClipboardDocumentListIcon },
-  { name: 'Meetings', href: '/meetings', icon: CalendarIcon },
   { divider: true },
   { name: 'Settings', href: '/settings', icon: Cog6ToothIcon },
 ];
 
-export function ApplicationLayout({ children }: { children: React.ReactNode }) {
+const meetingsNavItem = { name: 'Meetings', href: '/meetings', icon: CalendarIcon };
+
+export function ApplicationLayout({
+  children,
+  showMeetings,
+}: {
+  children: React.ReactNode;
+  showMeetings: boolean;
+}) {
+  const navigation = showMeetings
+    ? [
+        ...baseNavigation.slice(0, 7),
+        meetingsNavItem,
+        ...baseNavigation.slice(7),
+      ]
+    : baseNavigation;
+
   const pathname = usePathname();
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -260,7 +275,7 @@ export function ApplicationLayout({ children }: { children: React.ReactNode }) {
                     key={item.href}
                     href={item.href}
                     current={
-                      item.exact
+                      'exact' in item && item.exact
                         ? pathname === item.href
                         : pathname.startsWith(item.href)
                     }
