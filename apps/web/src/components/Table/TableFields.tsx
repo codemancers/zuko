@@ -313,6 +313,38 @@ export function MultiSelectField({ value, metadata }: FieldProps<BaseRow>) {
   );
 }
 
+export function RelationField({ value, display }: FieldProps<BaseRow>) {
+  const name =
+    display ||
+    (typeof value === 'string' ? value : null) ||
+    (value as any)?.user?.name ||
+    (value as any)?.name ||
+    '';
+
+  if (!name) {
+    return <span className="text-sm text-zinc-400">{EMPTY_VALUE}</span>;
+  }
+
+  const initials = name
+    .split(' ')
+    .filter(Boolean)
+    .map((n: string) => n[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2);
+
+  return (
+    <div className="flex items-center gap-1.5">
+      <Avatar
+        initials={initials}
+        alt={name}
+        className="size-6 bg-zinc-900 text-zinc-50"
+      />
+      <span className="text-sm text-zinc-600 dark:text-zinc-400">{name}</span>
+    </div>
+  );
+}
+
 // Registry of field components
 export const FieldRegistry: Record<
   string,
@@ -324,6 +356,7 @@ export const FieldRegistry: Record<
   entity: EntityField,
   select: SelectField,
   multiselect: MultiSelectField,
+  relation: RelationField,
 };
 
 export function DataField(props: FieldProps) {
