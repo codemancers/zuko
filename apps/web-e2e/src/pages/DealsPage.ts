@@ -53,6 +53,14 @@ export class DealsPage extends BasePage {
    * Create a new deal row with given name
    */
   async createDealRow(dealName: string) {
+    // Register response listener before navigation so we don't miss it
+    const dealsResponsePromise = this.page.waitForResponse(
+      (resp) =>
+        resp.url().includes('/tables/deals') &&
+        resp.request().method() === 'GET' &&
+        resp.status() === 200,
+      { timeout: 15000 },
+    );
     await this.page.goto('/deals');
     await this.page.waitForLoadState('networkidle');
     // Wait for the table body to be visible and stable before counting rows
