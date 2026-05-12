@@ -4,7 +4,8 @@ import { CheckCircleIcon, PlusIcon } from '@heroicons/react/24/outline';
 import { Button } from '@zuko/ui-kit';
 import { PageHeader, SearchBar } from '@/components/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { getTableViewTasks } from '@/server/query-options';
+import { getTableViewTasks, getMembers } from '@/server/query-options';
+import { authClient } from '@/lib/auth-client';
 import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
 import { tasksApi } from '@/lib/api/tasks';
@@ -68,8 +69,39 @@ const TasksList = () => {
     },
   });
 
-  const metadata = data?.metadata || [];
+  const activeOrg = authClient.useActiveOrganization();
+  const orgId = activeOrg.data?.id ?? '';
+  const { data: members = [] } = useQuery({
+    ...getMembers(orgId),
+    enabled: !!orgId,
+  });
+
+  const rawMetadata = data?.metadata || [];
   const tasks = data?.data || [];
+
+  const metadata = useMemo(
+    () =>
+      rawMetadata.map((col) => {
+        if (col.id === 'assignee') {
+          return {
+            ...col,
+            fieldType: 'select' as const,
+            config: {
+              ...col.config,
+              options: [
+                { value: '', label: 'Unassigned' },
+                ...members.map((m) => ({
+                  value: m.user.name,
+                  label: m.user.name,
+                })),
+              ],
+            },
+          };
+        }
+        return col;
+      }),
+    [rawMetadata, members],
+  );
 
   const actionsColumn: ColumnDef<BaseRow> = useMemo(
     () => ({

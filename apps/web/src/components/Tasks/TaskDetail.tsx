@@ -1,7 +1,8 @@
 'use client';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getTask, getTasks } from '@/server/query-options';
+import { getTask, getTasks, getMembers } from '@/server/query-options';
+import { authClient } from '@/lib/auth-client';
 import { tasksApi } from '@/lib/api/tasks';
 import { metadataApi } from '@/lib/api/metadata';
 import { useRouter } from 'next/navigation';
@@ -51,6 +52,18 @@ const TaskDetail = ({ taskId, currentUserId }: TaskDetailProps) => {
   });
   const { data: tasksData } = useQuery(getTasks());
   const allTasks = tasksData?.tasks ?? [];
+
+  const activeOrg = authClient.useActiveOrganization();
+  const orgId = activeOrg.data?.id ?? '';
+  const { data: members = [] } = useQuery({
+    ...getMembers(orgId),
+    enabled: !!orgId,
+  });
+
+  const memberOptions = [
+    { value: '', label: 'Unassigned' },
+    ...members.map((m) => ({ value: m.user.name, label: m.user.name })),
+  ];
   const parentTaskOptions = allTasks
     .filter((t) => t.id !== taskId)
     .map((t) => ({ value: String(t.id), label: t.title }));
@@ -164,8 +177,11 @@ const TaskDetail = ({ taskId, currentUserId }: TaskDetailProps) => {
             label: 'Assignee',
             value: task.assignee,
             renderType: 'user',
-            fieldType: 'text',
-            placeholder: 'Person responsible',
+            fieldType: 'combobox',
+            placeholder: 'Select assignee...',
+            options: {
+              comboboxOptions: memberOptions,
+            },
             onSave: (val: string) =>
               updateMutation.mutateAsync({ assignee: val || null }),
           },

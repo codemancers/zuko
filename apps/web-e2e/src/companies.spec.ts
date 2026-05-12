@@ -31,8 +31,7 @@ test.describe('Companies - Authenticated', () => {
     const initialRowCount = await companiesPage.getRowCount();
     const newRowIndex = await companiesPage.createNewCompany();
     await expect(page.getByText('New company added')).toBeVisible();
-    const newRowCount = await companiesPage.getRowCount();
-    expect(newRowCount).toBe(initialRowCount + 1);
+    await expect(page.getByRole('row')).toHaveCount(initialRowCount + 1);
 
     const companyNameIndex = await companiesPage.getColumnIndex('Company');
     const newRow = page.getByRole('row').nth(newRowIndex);

@@ -13,12 +13,16 @@ import {
   Label,
   Select,
   ErrorMessage,
+  Combobox,
+  ComboboxOption,
+  ComboboxLabel,
 } from '@zuko/ui-kit';
 import { FormActions } from '@/components/shared';
 import { tasksApi, type Task, type TaskStatus } from '@/lib/api/tasks';
 import { toast } from 'sonner';
-import { getTasks } from '@/server/query-options';
+import { getTasks, getMembers } from '@/server/query-options';
 import Editor, { ensureOutputData } from '@/components/Common/Editor/Editor';
+import { authClient } from '@/lib/auth-client';
 
 const taskFormSchema = z.object({
   title: z.string().min(1, 'Title is required'),
@@ -43,9 +47,23 @@ const STATUS_OPTIONS: { value: TaskStatus; label: string }[] = [
   { value: 'CANCELLED', label: 'Cancelled' },
 ];
 
+type MemberOption = { value: string; label: string };
+
 const TaskForm = ({ mode, task, defaultParentId }: TaskFormProps) => {
   const router = useRouter();
   const queryClient = useQueryClient();
+
+  const activeOrg = authClient.useActiveOrganization();
+  const orgId = activeOrg.data?.id ?? '';
+  const { data: members = [] } = useQuery({
+    ...getMembers(orgId),
+    enabled: !!orgId,
+  });
+
+  const memberOptions: MemberOption[] = [
+    { value: '', label: 'Unassigned' },
+    ...members.map((m) => ({ value: m.user.name, label: m.user.name })),
+  ];
 
   const { data: tasksData } = useQuery(getTasks());
   const topLevelTasks = (tasksData?.tasks ?? []).filter(
@@ -181,10 +199,28 @@ const TaskForm = ({ mode, task, defaultParentId }: TaskFormProps) => {
 
           <Field>
             <Label>Assignee</Label>
-            <Input
-              placeholder="Person responsible"
-              {...form.register('assignee')}
-              disabled={mutation.isPending}
+            <Controller
+              control={form.control}
+              name="assignee"
+              render={({ field }) => (
+                <Combobox<MemberOption>
+                  options={memberOptions}
+                  value={
+                    memberOptions.find((o) => o.value === field.value) ??
+                    undefined
+                  }
+                  displayValue={(opt) => opt?.label ?? ''}
+                  onChange={(opt) => field.onChange(opt?.value ?? '')}
+                  placeholder="Select assignee..."
+                  disabled={mutation.isPending}
+                >
+                  {(option) => (
+                    <ComboboxOption key={option.value || 'none'} value={option}>
+                      <ComboboxLabel>{option.label}</ComboboxLabel>
+                    </ComboboxOption>
+                  )}
+                </Combobox>
+              )}
             />
           </Field>
 

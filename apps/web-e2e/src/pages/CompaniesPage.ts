@@ -63,6 +63,11 @@ export class CompaniesPage extends BasePage {
   async createNewCompany() {
     const initialRowCount = await this.getRowCount();
     await this.createNewRecord();
+    // Wait for the new row to appear in the DOM before returning its index
+    await this.page
+      .getByRole('row')
+      .nth(initialRowCount)
+      .waitFor({ state: 'visible', timeout: 10000 });
     return initialRowCount; // 0-indexed, new row index will be equal to initial row count
   }
 

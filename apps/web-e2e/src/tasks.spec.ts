@@ -147,6 +147,56 @@ test.describe('Task Form Validation', () => {
   });
 });
 
+test.describe('Task Table - Inline Editing', () => {
+  test('can edit assignee cell via select dropdown', async ({
+    tasksPage,
+    page,
+  }) => {
+    const taskTitle = `Assignee Edit Task ${Date.now()}`;
+    await tasksPage.createTask({ title: taskTitle });
+    await tasksPage.goto();
+
+    // Locate the row for our task
+    const row = page.getByRole('row').filter({ hasText: taskTitle }).first();
+
+    // Find the Assignee column index
+    const headers = page.getByRole('columnheader');
+    const headerTexts = await headers.allInnerTexts();
+    const assigneeIndex = headerTexts.findIndex((h) =>
+      h.toLowerCase().includes('assignee'),
+    );
+    expect(assigneeIndex).toBeGreaterThan(-1);
+
+    const assigneeCell = row.locator('td').nth(assigneeIndex);
+
+    // Click to enter edit mode
+    await assigneeCell.click();
+
+    // A <select> should appear (same UX as Status)
+    const select = assigneeCell.locator('select');
+    await expect(select).toBeVisible();
+
+    // The seeded e2e user is a member — select them
+    await select.selectOption({ label: 'E2E Test User' });
+
+    // Success toast confirms the save
+    await expect(page.getByText('Cell updated successfully')).toBeVisible();
+
+    // Assignee cell now shows the member name
+    await expect(assigneeCell).toHaveText('E2E Test User');
+
+    // Verify persistence after reload
+    await page.reload();
+    await tasksPage.waitForTasksToLoad();
+    const reloadedRow = page
+      .getByRole('row')
+      .filter({ hasText: taskTitle })
+      .first();
+    const reloadedCell = reloadedRow.locator('td').nth(assigneeIndex);
+    await expect(reloadedCell).toHaveText('E2E Test User');
+  });
+});
+
 test.describe('Task Actions (table dropdown)', () => {
   test('Complete from action dropdown marks task as done', async ({
     tasksPage,
