@@ -554,7 +554,6 @@ export function EntityProperties({
                   <div key={i} className="flex items-center gap-1.5">
                     <Avatar
                       initials={initials}
-                      alt={name}
                       className="size-6 bg-zinc-900 text-zinc-50"
                     />
                     <span className="text-sm">{name}</span>
