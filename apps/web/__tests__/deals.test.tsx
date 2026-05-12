@@ -490,11 +490,11 @@ describe('DealsList', () => {
     });
   });
 
-  it('navigates to new deal page when "New Deal" button is clicked', async () => {
+  it('opens new deal sheet when "New Deal" button is clicked', async () => {
     const user = userEvent.setup();
     render(<DealsList />, { wrapper });
     await user.click(screen.getByRole('button', { name: /new deal/i }));
-    expect(mockPush).toHaveBeenCalledWith('/deals/new');
+    expect(mockPush).not.toHaveBeenCalled();
   });
 });
 
