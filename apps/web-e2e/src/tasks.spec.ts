@@ -244,14 +244,20 @@ test.describe('Task Status Workflow', () => {
     await tasksPage.openTask('Lifecycle Task');
 
     // TODO → IN_PROGRESS
-    await page.getByRole('button', { name: /^edit$/i }).click();
+    await page
+      .getByRole('button', { name: /^edit$/i })
+      .first()
+      .click();
     await expect(page.getByText('Edit Task')).toBeVisible();
     await page.getByLabel(/status/i).selectOption('IN_PROGRESS');
     await page.getByRole('button', { name: /save changes/i }).click();
     await expect(page.getByText('Edit Task')).toBeHidden({ timeout: 10000 });
 
     // IN_PROGRESS → DONE
-    await page.getByRole('button', { name: /^edit$/i }).click();
+    await page
+      .getByRole('button', { name: /^edit$/i })
+      .first()
+      .click();
     await expect(page.getByText('Edit Task')).toBeVisible();
     await page.getByLabel(/status/i).selectOption('DONE');
     await page.getByRole('button', { name: /save changes/i }).click();
@@ -306,7 +312,10 @@ test.describe('Hierarchical Tasks', () => {
     await page.goto(`/tasks/${parentId}`);
     await tasksPage.openTask('Subtask to Promote');
 
-    await page.getByRole('button', { name: /^edit$/i }).click();
+    await page
+      .getByRole('button', { name: /^edit$/i })
+      .first()
+      .click();
     await expect(page.getByText('Edit Task')).toBeVisible();
     await page.getByLabel(/parent task/i).selectOption('');
     await page.getByRole('button', { name: /save changes/i }).click();
