@@ -148,7 +148,7 @@ export function EntityField<T extends BaseRow>({
   }
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center">
       <div className="flex shrink-0">
         {metadata.config?.useAvatar && metadata.config.avatarSrcField ? (
           <Avatar

@@ -3,7 +3,6 @@
 import * as Headless from '@headlessui/react';
 import React, { useState } from 'react';
 import { NavbarItem } from '../lib/navbar';
-import clsx from 'clsx';
 
 function OpenMenuIcon() {
   return (
@@ -34,9 +33,9 @@ function MobileSidebar({
       />
       <Headless.DialogPanel
         transition
-        className="fixed inset-y-0 w-full max-w-80 p-2 transition duration-300 ease-in-out data-closed:-translate-x-full"
+        className="fixed inset-y-0 w-full max-w-80 transition duration-300 ease-in-out data-closed:-translate-x-full"
       >
-        <div className="flex h-full flex-col rounded-lg bg-white shadow-xs ring-1 ring-zinc-950/5 dark:bg-zinc-900 dark:ring-white/10">
+        <div className="flex h-full flex-col bg-white shadow-xs ring-1 ring-zinc-950/5 dark:bg-zinc-900 dark:ring-white/10">
           <div className="-mb-3 px-4 pt-3">
             <Headless.CloseButton as={NavbarItem} aria-label="Close navigation">
               <CloseMenuIcon />
@@ -53,51 +52,51 @@ export function SidebarLayout({
   navbar,
   sidebar,
   children,
-  collapsed,
+  collapsed = false,
 }: React.PropsWithChildren<{
   navbar: React.ReactNode;
   sidebar: React.ReactNode;
   collapsed?: boolean;
 }>) {
   const [showSidebar, setShowSidebar] = useState(false);
+  const sidebarWidth = collapsed ? 'w-16' : 'w-56';
+  const mainPl = collapsed ? 'lg:pl-16' : 'lg:pl-56';
 
   return (
-    <div className="relative isolate flex min-h-svh w-full bg-white max-lg:flex-col lg:bg-zinc-100 dark:bg-zinc-900 dark:lg:bg-zinc-950">
+    <div className="relative isolate flex min-h-svh w-full max-lg:flex-col lg:bg-zinc-100 dark:bg-zinc-900 dark:lg:bg-zinc-950">
+      {/* Sidebar on desktop */}
+      <div
+        className={`fixed inset-y-0 left-0 transition-[width] duration-200 ease-out max-lg:hidden ${sidebarWidth}`}
+      >
+        {sidebar}
+      </div>
+
       {/* Sidebar on mobile */}
       <MobileSidebar open={showSidebar} close={() => setShowSidebar(false)}>
         {sidebar}
       </MobileSidebar>
 
-      {/* Sidebar on desktop */}
-      <aside className="fixed inset-y-0 left-0 max-lg:hidden">{sidebar}</aside>
-
-      {/* Content area */}
-      <div className="flex flex-1 flex-col lg:min-w-0">
-        {/* Navbar on mobile */}
-        <header className="flex items-center px-4 lg:hidden">
-          <div className="py-2.5">
-            <NavbarItem
-              onClick={() => setShowSidebar(true)}
-              aria-label="Open navigation"
-            >
-              <OpenMenuIcon />
-            </NavbarItem>
-          </div>
-          <div className="min-w-0 flex-1">{navbar}</div>
-        </header>
-
-        {/* Desktop content */}
-        <main className="flex flex-1 flex-col pb-2 lg:min-w-0 lg:pl-2 lg:pr-2 lg:pt-2">
-          <div
-            className={clsx(
-              'grow p-6 lg:rounded-lg lg:bg-white lg:p-10 lg:shadow-xs lg:ring-1 lg:ring-zinc-950/5 dark:lg:bg-zinc-900 dark:lg:ring-white/10 transition-all duration-300 ease-in-out',
-              collapsed ? 'lg:ml-20' : 'lg:ml-64',
-            )}
+      {/* Navbar on mobile */}
+      <header className="flex items-center px-4 sm:flex md:flex lg:!hidden xl:!hidden 2xl:!hidden">
+        <div className="py-2.5">
+          <NavbarItem
+            onClick={() => setShowSidebar(true)}
+            aria-label="Open navigation"
           >
-            <div className="mx-auto max-w-6xl">{children}</div>
-          </div>
-        </main>
-      </div>
+            <OpenMenuIcon />
+          </NavbarItem>
+        </div>
+        <div className="min-w-0 flex-1">{navbar}</div>
+      </header>
+
+      {/* Content */}
+      <main
+        className={`flex flex-1 flex-col transition-[padding] duration-200 ease-out lg:min-w-0 ${mainPl}`}
+      >
+        <div className="grow lg:bg-white lg:p-10 lg:shadow-xs lg:ring-1 lg:ring-zinc-950/5 dark:lg:bg-zinc-900 dark:lg:ring-white/10">
+          <div className="mx-auto max-w-6xl ">{children}</div>
+        </div>
+      </main>
     </div>
   );
 }

@@ -17,17 +17,13 @@ export const SIDEBAR_COLLAPSED_KEY = 'zuko-sidebar-collapsed';
 
 export function Sidebar({
   className,
-  collapsed,
+  collapsed: _collapsed,
   ...props
 }: React.ComponentPropsWithoutRef<'nav'> & { collapsed?: boolean }) {
   return (
     <nav
       {...props}
-      className={clsx(
-        className,
-        'flex h-full min-h-0 flex-col transition-all duration-300 ease-in-out',
-        collapsed ? 'w-20' : 'w-64',
-      )}
+      className={clsx(className, 'flex h-full min-h-0 flex-col')}
     />
   );
 }
@@ -42,7 +38,7 @@ export function SidebarHeader({
       {...props}
       className={clsx(
         className,
-        'flex flex-col border-b border-zinc-950/5 p-4 dark:border-white/5 [&>[data-slot=section]+[data-slot=section]]:mt-2.5 transition-all duration-300',
+        'flex flex-col border-b border-zinc-950/5 p-4 dark:border-white/5 [&>[data-slot=section]+[data-slot=section]]:mt-2.5',
         collapsed && 'items-center px-2',
       )}
     />
@@ -59,7 +55,7 @@ export function SidebarBody({
       {...props}
       className={clsx(
         className,
-        'flex flex-1 flex-col overflow-y-auto p-4 [&>[data-slot=section]+[data-slot=section]]:mt-8 transition-all duration-300',
+        'flex flex-1 flex-col overflow-y-auto p-4 [&>[data-slot=section]+[data-slot=section]]:mt-8',
         collapsed && 'items-center px-2',
       )}
     />
@@ -76,7 +72,7 @@ export function SidebarFooter({
       {...props}
       className={clsx(
         className,
-        'flex flex-col border-t border-zinc-950/5 p-4 dark:border-white/5 [&>[data-slot=section]+[data-slot=section]]:mt-2.5 transition-all duration-300',
+        'flex flex-col border-t border-zinc-950/5 p-4 dark:border-white/5 [&>[data-slot=section]+[data-slot=section]]:mt-2.5',
         collapsed && 'items-center px-2',
       )}
     />
@@ -97,7 +93,7 @@ export function SidebarSection({
         data-slot="section"
         className={clsx(
           className,
-          'flex flex-col gap-0.5 transition-all duration-300',
+          'flex flex-col gap-0.5',
           collapsed && 'items-center',
         )}
       />
@@ -176,7 +172,7 @@ export const SidebarItem = forwardRef(function SidebarItem(
 ) {
   const classes = clsx(
     // Base
-    'flex w-full items-center gap-3 rounded-lg px-2 py-2.5 text-left text-base/6 font-medium text-zinc-950 sm:py-2 sm:text-sm/5 transition-all duration-300',
+    'flex w-full items-center gap-3 rounded-lg px-2 py-2.5 text-left text-base/6 font-medium text-zinc-950 sm:py-2 sm:text-sm/5',
     // Leading icon/icon-only
     '*:data-[slot=icon]:size-6 *:data-[slot=icon]:shrink-0 *:data-[slot=icon]:fill-zinc-500 sm:*:data-[slot=icon]:size-5',
     // Trailing icon (down chevron or similar)

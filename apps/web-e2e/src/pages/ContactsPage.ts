@@ -64,6 +64,7 @@ export class ContactsPage extends BasePage {
    * Create a new contact and return the table row index
    */
   async createNewContact() {
+    await this.page.waitForLoadState('networkidle');
     const initialRowCount = await this.getRowCount();
     await this.createNewRecord();
     // Wait for the new row to appear in the DOM before returning its index
@@ -79,6 +80,7 @@ export class ContactsPage extends BasePage {
    */
   async createContactRow(contactName: string) {
     await this.page.goto('/contacts');
+    await this.page.waitForLoadState('networkidle');
     const initialRowCount = await this.page.locator('tbody tr').count();
 
     await this.page.getByRole('button', { name: 'Add row' }).click();
