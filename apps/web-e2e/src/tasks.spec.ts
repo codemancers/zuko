@@ -242,7 +242,6 @@ test.describe('Task Status Workflow', () => {
 
     await tasksPage.goto();
     await tasksPage.openTask('Lifecycle Task');
-    const taskId = page.url().match(/\/tasks\/(\d+)$/)?.[1];
 
     // TODO → IN_PROGRESS
     await page.getByRole('button', { name: /^edit$/i }).click();
@@ -305,7 +304,7 @@ test.describe('Hierarchical Tasks', () => {
 
     // Subtasks are not in the main list — find the subtask via parent detail page
     await page.goto(`/tasks/${parentId}`);
-    const subtaskId = await tasksPage.openTask('Subtask to Promote');
+    await tasksPage.openTask('Subtask to Promote');
 
     await page.getByRole('button', { name: /^edit$/i }).click();
     await expect(page.getByText('Edit Task')).toBeVisible();
