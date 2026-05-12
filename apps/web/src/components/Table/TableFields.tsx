@@ -335,10 +335,7 @@ export function RelationField({ value, display }: FieldProps<BaseRow>) {
 
   return (
     <div className="flex items-center gap-1.5">
-      <Avatar
-        initials={initials}
-        className="size-6 bg-zinc-900 text-zinc-50"
-      />
+      <Avatar initials={initials} className="size-6 bg-zinc-900 text-zinc-50" />
       <span className="text-sm text-zinc-600 dark:text-zinc-400">{name}</span>
     </div>
   );
