@@ -9,7 +9,6 @@ import {
   Sheet,
   SheetHeader,
   SheetTitle,
-  SheetDescription,
   SheetBody,
   SheetFooter,
   Field,
@@ -119,9 +118,9 @@ export default function AddCompanyToDealDialog({
         >
           <SheetBody>
             <div className="space-y-4">
-              <SheetDescription>
+              <p className="text-sm text-zinc-500 dark:text-zinc-400">
                 Associate a company with this deal.
-              </SheetDescription>
+              </p>
               <Field>
                 <Label>Company *</Label>
                 <Select
