@@ -36,10 +36,14 @@ export async function createFreshDeal(browser: Browser): Promise<number> {
   const context = await browser.newContext();
   const page = await context.newPage();
   const dealsPage = new DealsPage(page);
-  await dealsPage.goto();
-  const newDealIndex = await dealsPage.createNewDeal();
-  const newRow = page.getByRole('row').nth(newDealIndex);
-  await dealsPage.clickDeal(newRow);
+  const dealTitle = `E2E Deal ${Date.now()}`;
+  await dealsPage.createDealRow(dealTitle);
+  const freshDealRow = page
+    .getByRole('row')
+    .filter({ hasText: dealTitle })
+    .first();
+  await freshDealRow.locator('a[href^="/deals/"]').waitFor({ timeout: 10000 });
+  await dealsPage.clickDeal(freshDealRow);
   const dealId = await dealsPage.waitForDetailsPageToLoad();
   await page.close();
   await context.close();
