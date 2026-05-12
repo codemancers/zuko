@@ -85,7 +85,7 @@ const TasksList = () => {
         if (col.id === 'assignee') {
           return {
             ...col,
-            fieldType: 'select' as const,
+            fieldType: 'relation' as const,
             config: {
               ...col.config,
               options: [

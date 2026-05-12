@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import React, { useState } from 'react';
 import {
+  Avatar,
   Badge,
   Input,
   Combobox,
@@ -537,44 +538,28 @@ export function EntityProperties({
           return dayjs(value).format(options?.dateFormat || 'MMM D, YYYY');
         case 'user': {
           const users = Array.isArray(value) ? value : [value];
-          const displayUsers = users.slice(0, 3);
-          const remainingCount = users.length - 3;
 
           return (
-            <div className="flex items-center">
-              <div className="flex -space-x-2 overflow-hidden">
-                {displayUsers.map((user, i) => {
-                  const name = typeof user === 'string' ? user : user.name;
-                  const initials =
-                    name
-                      ?.split(' ')
-                      .map((n: string) => n[0])
-                      .join('')
-                      .toUpperCase() || '?';
+            <div className="flex flex-wrap items-center gap-2">
+              {users.map((user, i) => {
+                const name = typeof user === 'string' ? user : user.name;
+                const initials =
+                  name
+                    ?.split(' ')
+                    .map((n: string) => n[0])
+                    .join('')
+                    .toUpperCase() || '?';
 
-                  return (
-                    <div
-                      key={i}
-                      title={name}
-                      className="flex h-6 w-6 items-center justify-center rounded-full bg-zinc-900 text-[10px] font-bold text-zinc-50 ring-2 ring-white dark:bg-white dark:text-zinc-900 dark:ring-zinc-950"
-                    >
-                      {initials}
-                    </div>
-                  );
-                })}
-                {remainingCount > 0 && (
-                  <div className="flex h-6 w-6 items-center justify-center rounded-full bg-zinc-800 text-[10px] font-bold text-zinc-200 ring-2 ring-white dark:bg-zinc-200 dark:text-zinc-800 dark:ring-zinc-950">
-                    +{remainingCount}
+                return (
+                  <div key={i} className="flex items-center gap-1.5">
+                    <Avatar
+                      initials={initials}
+                      className="size-6 bg-zinc-900 text-zinc-50"
+                    />
+                    <span className="text-sm">{name}</span>
                   </div>
-                )}
-              </div>
-              <span className="ml-2">
-                {users.length === 1
-                  ? typeof users[0] === 'string'
-                    ? users[0]
-                    : users[0].name
-                  : `${users.length} Owners`}
-              </span>
+                );
+              })}
             </div>
           );
         }
