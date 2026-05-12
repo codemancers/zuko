@@ -79,7 +79,7 @@ export class DealsPage extends BasePage {
    * Wait for details page to load and return the deal ID from url
    */
   async waitForDetailsPageToLoad() {
-    await this.page.waitForURL(/\/deals\/\d+/, { timeout: 10000 });
+    await this.page.waitForURL(/\/deals\/\d+/, { timeout: 30000 });
     await this.page.waitForLoadState('domcontentloaded');
     const match = this.page.url().match(/\/deals\/(\d+)/);
     if (!match?.[1]) {

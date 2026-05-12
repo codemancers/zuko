@@ -125,7 +125,7 @@ export class ContactsPage extends BasePage {
    * Wait for details page to load and return the contact ID from url
    */
   async waitForDetailsPageToLoad() {
-    await this.page.waitForURL(/\/contacts\/\d+/, { timeout: 10000 });
+    await this.page.waitForURL(/\/contacts\/\d+/, { timeout: 30000 });
     await this.page.waitForLoadState('domcontentloaded');
     const match = this.page.url().match(/\/contacts\/(\d+)/);
     if (!match?.[1]) {

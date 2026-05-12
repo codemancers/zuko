@@ -248,20 +248,28 @@ test.describe('Task Status Workflow', () => {
       .getByRole('button', { name: /^edit$/i })
       .first()
       .click();
-    await expect(page.getByText('Edit Task')).toBeVisible();
+    await expect(
+      page.getByRole('heading', { name: 'Edit Task' }),
+    ).toBeVisible();
     await page.getByLabel(/status/i).selectOption('IN_PROGRESS');
     await page.getByRole('button', { name: /save changes/i }).click();
-    await expect(page.getByText('Edit Task')).toBeHidden({ timeout: 10000 });
+    await expect(page.getByRole('heading', { name: 'Edit Task' })).toBeHidden({
+      timeout: 10000,
+    });
 
     // IN_PROGRESS → DONE
     await page
       .getByRole('button', { name: /^edit$/i })
       .first()
       .click();
-    await expect(page.getByText('Edit Task')).toBeVisible();
+    await expect(
+      page.getByRole('heading', { name: 'Edit Task' }),
+    ).toBeVisible();
     await page.getByLabel(/status/i).selectOption('DONE');
     await page.getByRole('button', { name: /save changes/i }).click();
-    await expect(page.getByText('Edit Task')).toBeHidden({ timeout: 10000 });
+    await expect(page.getByRole('heading', { name: 'Edit Task' })).toBeHidden({
+      timeout: 10000,
+    });
 
     await expect(page.getByText('Done', { exact: true }).first()).toBeVisible();
   });
@@ -316,9 +324,13 @@ test.describe('Hierarchical Tasks', () => {
       .getByRole('button', { name: /^edit$/i })
       .first()
       .click();
-    await expect(page.getByText('Edit Task')).toBeVisible();
+    await expect(
+      page.getByRole('heading', { name: 'Edit Task' }),
+    ).toBeVisible();
     await page.getByLabel(/parent task/i).selectOption('');
     await page.getByRole('button', { name: /save changes/i }).click();
-    await expect(page.getByText('Edit Task')).toBeHidden({ timeout: 10000 });
+    await expect(page.getByRole('heading', { name: 'Edit Task' })).toBeHidden({
+      timeout: 10000,
+    });
   });
 });
