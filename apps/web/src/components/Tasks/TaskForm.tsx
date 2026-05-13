@@ -131,6 +131,7 @@ const TaskForm = ({
           router.push('/tasks');
         }
       } else {
+        queryClient.invalidateQueries({ queryKey: ['task', result.id] });
         queryClient.invalidateQueries({
           queryKey: ['timeline', 'task', result.id],
         });
