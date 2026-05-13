@@ -245,10 +245,10 @@ export function AddColumnDialog({
       </SheetBody>
 
       <SheetFooter>
+        <Button onClick={handleAdd}>Create field</Button>
         <Button plain onClick={onCloseDialog}>
           Cancel
         </Button>
-        <Button onClick={handleAdd}>Create field</Button>
       </SheetFooter>
     </Sheet>
   );
