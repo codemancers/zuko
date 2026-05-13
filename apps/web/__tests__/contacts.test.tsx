@@ -399,6 +399,8 @@ describe('ContactsList', () => {
     render(<ContactsList />, { wrapper });
     await user.click(screen.getByRole('button', { name: /new contact/i }));
     expect(mockPush).not.toHaveBeenCalled();
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /new contact/i })).toBeInTheDocument();
   });
 });
 
@@ -502,6 +504,8 @@ describe('ContactDetail', () => {
     const editButtons = screen.getAllByRole('button', { name: /^edit$/i });
     await user.click(editButtons[0]);
     expect(mockPush).not.toHaveBeenCalledWith('/contacts/7/edit');
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /edit contact/i })).toBeInTheDocument();
   });
 
   describe('Edit Contact', () => {
