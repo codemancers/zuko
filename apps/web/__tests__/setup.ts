@@ -20,6 +20,16 @@ afterEach(() => {
   cleanup();
 });
 
+// Globally mock the sheet state hook for component tests.
+// use-sheet-state (and use-base-table which calls it) uses nuqs, which requires
+// an adapter that doesn't exist in jsdom. This mock replaces it with plain React state.
+vi.mock('@/hooks/use-sheet-state', () => ({
+  useSheetState: (key?: string) => {
+    const [open, setOpen] = React.useState(false);
+    return [open, setOpen] as const;
+  },
+}));
+
 // Globally mock the search param hook for component tests.
 // This prevents 'nuqs requires an adapter' errors, and returns a synchronous
 // debouncedValue so that components instantly fetch without needing fake timers in every test.

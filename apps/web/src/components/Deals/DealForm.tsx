@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import clsx from 'clsx';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import {
   dealsApi,
@@ -20,6 +21,8 @@ import {
   ComboboxOption,
   ComboboxLabel,
   ComboboxDescription,
+  SheetFooter,
+  Button,
 } from '@zuko/ui-kit';
 import { FormActions } from '@/components/shared';
 import { useRouter } from 'next/navigation';
@@ -28,6 +31,8 @@ interface DealFormProps {
   deal?: Deal;
   mode: 'create' | 'edit';
   currentUserId: number;
+  onSuccess?: () => void;
+  onCancel?: () => void;
 }
 
 const DEAL_STAGES = [
@@ -47,7 +52,13 @@ const PRIORITIES = [
   { value: 4, label: 'P4 - Backlog' },
 ];
 
-export default function DealForm({ deal, mode, currentUserId }: DealFormProps) {
+export default function DealForm({
+  deal,
+  mode,
+  currentUserId,
+  onSuccess,
+  onCancel,
+}: DealFormProps) {
   const router = useRouter();
   const queryClient = useQueryClient();
 
@@ -75,7 +86,11 @@ export default function DealForm({ deal, mode, currentUserId }: DealFormProps) {
     mutationFn: (data: CreateDealDto) => dealsApi.createDeal(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['deals'] });
-      router.push('/deals');
+      if (onSuccess) {
+        onSuccess();
+      } else {
+        router.push('/deals');
+      }
     },
     onError: (error: any) => {
       setErrors({ submit: error.message || 'Failed to create deal' });
@@ -90,7 +105,11 @@ export default function DealForm({ deal, mode, currentUserId }: DealFormProps) {
       queryClient.invalidateQueries({
         queryKey: ['timeline', 'deal', deal!.id],
       });
-      router.push(`/deals/${deal!.id}`);
+      if (onSuccess) {
+        onSuccess();
+      } else {
+        router.push(`/deals/${deal!.id}`);
+      }
     },
     onError: (error: any) => {
       setErrors({ submit: error.message || 'Failed to update deal' });
@@ -161,6 +180,10 @@ export default function DealForm({ deal, mode, currentUserId }: DealFormProps) {
   };
 
   const handleCancel = () => {
+    if (onCancel) {
+      onCancel();
+      return;
+    }
     if (mode === 'edit' && deal) {
       router.push(`/deals/${deal.id}`);
     } else {
@@ -169,155 +192,193 @@ export default function DealForm({ deal, mode, currentUserId }: DealFormProps) {
   };
 
   const isLoading = createMutation.isPending || updateMutation.isPending;
+  const isSheet = !!onSuccess;
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      <Field>
-        <Label>Deal Title *</Label>
-        <Input
-          type="text"
-          value={formData.title}
-          onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-          placeholder="Enterprise License Agreement"
-          invalid={!!errors.title}
-          disabled={isLoading}
-        />
-        {errors.title && <ErrorMessage>{errors.title}</ErrorMessage>}
-      </Field>
-
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+    <form
+      onSubmit={handleSubmit}
+      className={clsx(isSheet ? 'flex flex-1 min-h-0 flex-col' : 'space-y-6')}
+    >
+      <div
+        className={clsx(
+          isSheet ? 'flex-1 overflow-y-auto p-6 space-y-6' : 'contents',
+        )}
+      >
         <Field>
-          <Label>Deal Value</Label>
+          <Label>Deal Title *</Label>
           <Input
-            type="number"
-            step="0.01"
-            value={formData.value}
+            type="text"
+            value={formData.title}
             onChange={(e) =>
-              setFormData({ ...formData, value: e.target.value })
+              setFormData({ ...formData, title: e.target.value })
             }
-            placeholder="100000"
-            invalid={!!errors.value}
+            placeholder="Enterprise License Agreement"
+            invalid={!!errors.title}
             disabled={isLoading}
           />
-          <Description>Total value of the deal</Description>
-          {errors.value && <ErrorMessage>{errors.value}</ErrorMessage>}
+          {errors.title && <ErrorMessage>{errors.title}</ErrorMessage>}
         </Field>
 
-        <Field>
-          <Label>Currency</Label>
-          <Combobox
-            options={currencies}
-            value={currencies.find((c) => c.code === formData.currency) || null}
-            onChange={(value) => {
-              if (value) setFormData({ ...formData, currency: value.code });
-            }}
-            displayValue={(value) => value?.code}
-            disabled={isLoading}
-            placeholder="Search currency..."
-          >
-            {(currency) => (
-              <ComboboxOption key={currency.code} value={currency}>
-                <ComboboxLabel>{currency.code}</ComboboxLabel>
-                <ComboboxDescription>{currency.name}</ComboboxDescription>
-                <span className="text-zinc-500 text-xs ml-2">
-                  ({currency.symbol})
-                </span>
-              </ComboboxOption>
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+          <Field>
+            <Label>Deal Value</Label>
+            <Input
+              type="number"
+              step="0.01"
+              value={formData.value}
+              onChange={(e) =>
+                setFormData({ ...formData, value: e.target.value })
+              }
+              placeholder="100000"
+              invalid={!!errors.value}
+              disabled={isLoading}
+            />
+            <Description>Total value of the deal</Description>
+            {errors.value && <ErrorMessage>{errors.value}</ErrorMessage>}
+          </Field>
+
+          <Field>
+            <Label>Currency</Label>
+            <Combobox
+              options={currencies}
+              value={
+                currencies.find((c) => c.code === formData.currency) || null
+              }
+              onChange={(value) => {
+                if (value) setFormData({ ...formData, currency: value.code });
+              }}
+              displayValue={(value) => value?.code}
+              disabled={isLoading}
+              placeholder="Search currency..."
+            >
+              {(currency) => (
+                <ComboboxOption key={currency.code} value={currency}>
+                  <ComboboxLabel>{currency.code}</ComboboxLabel>
+                  <ComboboxDescription>{currency.name}</ComboboxDescription>
+                  <span className="text-zinc-500 text-xs ml-2">
+                    ({currency.symbol})
+                  </span>
+                </ComboboxOption>
+              )}
+            </Combobox>
+          </Field>
+        </div>
+
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+          <Field>
+            <Label>Stage *</Label>
+            <Select
+              value={formData.stage}
+              onChange={(e) =>
+                setFormData({ ...formData, stage: e.target.value })
+              }
+              disabled={isLoading}
+            >
+              {DEAL_STAGES.map((stage) => (
+                <option key={stage.value} value={stage.value}>
+                  {stage.label}
+                </option>
+              ))}
+            </Select>
+          </Field>
+
+          <Field>
+            <Label>Win Probability (%)</Label>
+            <Input
+              type="number"
+              min="0"
+              max="100"
+              value={formData.probability}
+              onChange={(e) =>
+                setFormData({ ...formData, probability: e.target.value })
+              }
+              placeholder="50"
+              invalid={!!errors.probability}
+              disabled={isLoading}
+            />
+            <Description>0-100%</Description>
+            {errors.probability && (
+              <ErrorMessage>{errors.probability}</ErrorMessage>
             )}
-          </Combobox>
-        </Field>
-      </div>
+          </Field>
+        </div>
 
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-        <Field>
-          <Label>Stage *</Label>
-          <Select
-            value={formData.stage}
-            onChange={(e) =>
-              setFormData({ ...formData, stage: e.target.value })
-            }
-            disabled={isLoading}
-          >
-            {DEAL_STAGES.map((stage) => (
-              <option key={stage.value} value={stage.value}>
-                {stage.label}
-              </option>
-            ))}
-          </Select>
-        </Field>
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+          <Field>
+            <Label>Expected Close Date</Label>
+            <Input
+              type="date"
+              value={formData.expectedCloseDate}
+              onChange={(e) =>
+                setFormData({ ...formData, expectedCloseDate: e.target.value })
+              }
+              disabled={isLoading}
+            />
+            <Description>When you expect to close this deal</Description>
+          </Field>
+
+          <Field>
+            <Label>Priority</Label>
+            <Select
+              value={formData.priority}
+              onChange={(e) =>
+                setFormData({ ...formData, priority: e.target.value })
+              }
+              disabled={isLoading}
+            >
+              {PRIORITIES.map((priority) => (
+                <option key={priority.value} value={priority.value}>
+                  {priority.label}
+                </option>
+              ))}
+            </Select>
+          </Field>
+        </div>
 
         <Field>
-          <Label>Win Probability (%)</Label>
+          <Label>Source</Label>
           <Input
-            type="number"
-            min="0"
-            max="100"
-            value={formData.probability}
+            type="text"
+            value={formData.source}
             onChange={(e) =>
-              setFormData({ ...formData, probability: e.target.value })
+              setFormData({ ...formData, source: e.target.value })
             }
-            placeholder="50"
-            invalid={!!errors.probability}
+            placeholder="Inbound, Referral, Cold Outreach, etc."
             disabled={isLoading}
           />
-          <Description>0-100%</Description>
-          {errors.probability && (
-            <ErrorMessage>{errors.probability}</ErrorMessage>
-          )}
+          <Description>How did this deal originate?</Description>
         </Field>
+
+        {errors.submit && <ErrorMessage>{errors.submit}</ErrorMessage>}
+
+        {!isSheet && (
+          <FormActions
+            isLoading={isLoading}
+            submitLabel={mode === 'create' ? 'Create Deal' : 'Save Changes'}
+            onCancel={handleCancel}
+          />
+        )}
       </div>
 
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-        <Field>
-          <Label>Expected Close Date</Label>
-          <Input
-            type="date"
-            value={formData.expectedCloseDate}
-            onChange={(e) =>
-              setFormData({ ...formData, expectedCloseDate: e.target.value })
-            }
-            disabled={isLoading}
-          />
-          <Description>When you expect to close this deal</Description>
-        </Field>
-
-        <Field>
-          <Label>Priority</Label>
-          <Select
-            value={formData.priority}
-            onChange={(e) =>
-              setFormData({ ...formData, priority: e.target.value })
-            }
+      {isSheet && (
+        <SheetFooter>
+          <Button type="submit" disabled={isLoading}>
+            {isLoading
+              ? 'Saving...'
+              : mode === 'create'
+                ? 'Create Deal'
+                : 'Save Changes'}
+          </Button>
+          <Button
+            type="button"
+            plain
+            onClick={handleCancel}
             disabled={isLoading}
           >
-            {PRIORITIES.map((priority) => (
-              <option key={priority.value} value={priority.value}>
-                {priority.label}
-              </option>
-            ))}
-          </Select>
-        </Field>
-      </div>
-
-      <Field>
-        <Label>Source</Label>
-        <Input
-          type="text"
-          value={formData.source}
-          onChange={(e) => setFormData({ ...formData, source: e.target.value })}
-          placeholder="Inbound, Referral, Cold Outreach, etc."
-          disabled={isLoading}
-        />
-        <Description>How did this deal originate?</Description>
-      </Field>
-
-      {errors.submit && <ErrorMessage>{errors.submit}</ErrorMessage>}
-
-      <FormActions
-        isLoading={isLoading}
-        submitLabel={mode === 'create' ? 'Create Deal' : 'Save Changes'}
-        onCancel={handleCancel}
-      />
+            Cancel
+          </Button>
+        </SheetFooter>
+      )}
     </form>
   );
 }

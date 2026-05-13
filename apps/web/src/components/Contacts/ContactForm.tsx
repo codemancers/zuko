@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import clsx from 'clsx';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   contactsApi,
@@ -8,7 +9,15 @@ import {
   type CreateContactDto,
   type UpdateContactDto,
 } from '@/lib/api/contacts';
-import { Input, Field, Label, Description, ErrorMessage } from '@zuko/ui-kit';
+import {
+  Input,
+  Field,
+  Label,
+  Description,
+  ErrorMessage,
+  SheetFooter,
+  Button,
+} from '@zuko/ui-kit';
 import { FormActions } from '@/components/shared';
 import { useRouter } from 'next/navigation';
 
@@ -16,12 +25,16 @@ interface ContactFormProps {
   contact?: Contact;
   mode: 'create' | 'edit';
   currentUserId: number;
+  onSuccess?: () => void;
+  onCancel?: () => void;
 }
 
 export default function ContactForm({
   contact,
   mode,
   currentUserId,
+  onSuccess,
+  onCancel,
 }: ContactFormProps) {
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -39,7 +52,11 @@ export default function ContactForm({
     mutationFn: (data: CreateContactDto) => contactsApi.createContact(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['contacts'] });
-      router.push('/contacts');
+      if (onSuccess) {
+        onSuccess();
+      } else {
+        router.push('/contacts');
+      }
     },
     onError: (error: any) => {
       setErrors({ submit: error.message || 'Failed to create contact' });
@@ -55,7 +72,11 @@ export default function ContactForm({
       queryClient.invalidateQueries({
         queryKey: ['timeline', 'contact', contact!.id],
       });
-      router.push(`/contacts/${contact!.id}`);
+      if (onSuccess) {
+        onSuccess();
+      } else {
+        router.push(`/contacts/${contact!.id}`);
+      }
     },
     onError: (error: any) => {
       setErrors({ submit: error.message || 'Failed to update contact' });
@@ -109,6 +130,10 @@ export default function ContactForm({
   };
 
   const handleCancel = () => {
+    if (onCancel) {
+      onCancel();
+      return;
+    }
     if (mode === 'edit' && contact) {
       router.push(`/contacts/${contact.id}`);
     } else {
@@ -118,71 +143,108 @@ export default function ContactForm({
 
   const isLoading = createMutation.isPending || updateMutation.isPending;
 
+  const isSheet = !!onSuccess;
+
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      <Field>
-        <Label>Name *</Label>
-        <Input
-          type="text"
-          value={formData.name}
-          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-          placeholder="John Doe"
-          invalid={!!errors.name}
-          disabled={isLoading}
-        />
-        {errors.name && <ErrorMessage>{errors.name}</ErrorMessage>}
-      </Field>
+    <form
+      onSubmit={handleSubmit}
+      className={clsx(isSheet ? 'flex flex-1 min-h-0 flex-col' : 'space-y-6')}
+    >
+      <div
+        className={clsx(
+          isSheet ? 'flex-1 overflow-y-auto p-6 space-y-6' : 'contents',
+        )}
+      >
+        <Field>
+          <Label>Name *</Label>
+          <Input
+            type="text"
+            value={formData.name}
+            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+            placeholder="John Doe"
+            invalid={!!errors.name}
+            disabled={isLoading}
+          />
+          {errors.name && <ErrorMessage>{errors.name}</ErrorMessage>}
+        </Field>
 
-      <Field>
-        <Label>Email</Label>
-        <Input
-          type="email"
-          value={formData.email}
-          onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-          placeholder="john@example.com"
-          disabled={isLoading}
-        />
-      </Field>
+        <Field>
+          <Label>Email</Label>
+          <Input
+            type="email"
+            value={formData.email}
+            onChange={(e) =>
+              setFormData({ ...formData, email: e.target.value })
+            }
+            placeholder="john@example.com"
+            disabled={isLoading}
+          />
+        </Field>
 
-      <Field>
-        <Label>Phone</Label>
-        <Input
-          type="tel"
-          value={formData.phone}
-          onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-          placeholder="+14155552671"
-          invalid={!!errors.phone}
-          disabled={isLoading}
-        />
-        <Description>E.164 format (e.g., +14155552671)</Description>
-        {errors.phone && <ErrorMessage>{errors.phone}</ErrorMessage>}
-      </Field>
+        <Field>
+          <Label>Phone</Label>
+          <Input
+            type="tel"
+            value={formData.phone}
+            onChange={(e) =>
+              setFormData({ ...formData, phone: e.target.value })
+            }
+            placeholder="+14155552671"
+            invalid={!!errors.phone}
+            disabled={isLoading}
+          />
+          <Description>E.164 format (e.g., +14155552671)</Description>
+          {errors.phone && <ErrorMessage>{errors.phone}</ErrorMessage>}
+        </Field>
 
-      <Field>
-        <Label>LinkedIn ID</Label>
-        <Input
-          type="text"
-          value={formData.linkedinId}
-          onChange={(e) =>
-            setFormData({ ...formData, linkedinId: e.target.value })
-          }
-          placeholder="john-doe-123456"
-          disabled={isLoading}
-        />
-        <Description>LinkedIn profile identifier</Description>
-      </Field>
+        <Field>
+          <Label>LinkedIn ID</Label>
+          <Input
+            type="text"
+            value={formData.linkedinId}
+            onChange={(e) =>
+              setFormData({ ...formData, linkedinId: e.target.value })
+            }
+            placeholder="john-doe-123456"
+            disabled={isLoading}
+          />
+          <Description>LinkedIn profile identifier</Description>
+        </Field>
 
-      {errors.contactMethod && (
-        <ErrorMessage>{errors.contactMethod}</ErrorMessage>
+        {errors.contactMethod && (
+          <ErrorMessage>{errors.contactMethod}</ErrorMessage>
+        )}
+
+        {errors.submit && <ErrorMessage>{errors.submit}</ErrorMessage>}
+
+        {!isSheet && (
+          <FormActions
+            isLoading={isLoading}
+            submitLabel={mode === 'create' ? 'Create Contact' : 'Save Changes'}
+            onCancel={handleCancel}
+          />
+        )}
+      </div>
+
+      {isSheet && (
+        <SheetFooter>
+          <Button type="submit" disabled={isLoading}>
+            {isLoading
+              ? 'Saving...'
+              : mode === 'create'
+                ? 'Create Contact'
+                : 'Save Changes'}
+          </Button>
+          <Button
+            type="button"
+            plain
+            onClick={handleCancel}
+            disabled={isLoading}
+          >
+            Cancel
+          </Button>
+        </SheetFooter>
       )}
-
-      {errors.submit && <ErrorMessage>{errors.submit}</ErrorMessage>}
-
-      <FormActions
-        isLoading={isLoading}
-        submitLabel={mode === 'create' ? 'Create Contact' : 'Save Changes'}
-        onCancel={handleCancel}
-      />
     </form>
   );
 }

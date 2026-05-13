@@ -6,11 +6,11 @@ import { dealsApi } from '@/lib/api/deals';
 import { getCompanies } from '@/server/query-options';
 import {
   Button,
-  Dialog,
-  DialogActions,
-  DialogBody,
-  DialogDescription,
-  DialogTitle,
+  Sheet,
+  SheetHeader,
+  SheetTitle,
+  SheetBody,
+  SheetFooter,
   Field,
   Label,
   Description,
@@ -19,7 +19,7 @@ import {
   Switch,
   Text,
 } from '@zuko/ui-kit';
-import { PlusIcon } from '@heroicons/react/24/outline';
+import { PlusIcon, XMarkIcon } from '@heroicons/react/24/outline';
 
 interface AddCompanyToDealDialogProps {
   dealId: number;
@@ -76,6 +76,11 @@ export default function AddCompanyToDealDialog({
     setErrors({});
   };
 
+  const handleClose = () => {
+    setIsOpen(false);
+    resetForm();
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -99,22 +104,23 @@ export default function AddCompanyToDealDialog({
         Add Company
       </Button>
 
-      <Dialog
-        open={isOpen}
-        onClose={() => {
-          setIsOpen(false);
-          resetForm();
-        }}
-      >
-        <DialogTitle>Add Company to Deal</DialogTitle>
-        <DialogDescription>
-          Associate a company with this deal.
-        </DialogDescription>
+      <Sheet open={isOpen} onClose={handleClose} side="right">
+        <SheetHeader>
+          <SheetTitle>Add Company to Deal</SheetTitle>
+          <Button plain onClick={handleClose}>
+            <XMarkIcon className="h-5 w-5" />
+          </Button>
+        </SheetHeader>
 
-        <form onSubmit={handleSubmit}>
-          <DialogBody>
+        <form
+          onSubmit={handleSubmit}
+          className="flex flex-col flex-1 overflow-hidden"
+        >
+          <SheetBody>
             <div className="space-y-4">
-              {/* Company Selection */}
+              <p className="text-sm text-zinc-500 dark:text-zinc-400">
+                Associate a company with this deal.
+              </p>
               <Field>
                 <Label>Company *</Label>
                 <Select
@@ -139,7 +145,6 @@ export default function AddCompanyToDealDialog({
                 )}
               </Field>
 
-              {/* Primary Flag */}
               <Field>
                 <div className="flex items-center gap-2">
                   <Switch
@@ -155,21 +160,11 @@ export default function AddCompanyToDealDialog({
                 </Description>
               </Field>
 
-              {/* Submit Error */}
               {errors.submit && <ErrorMessage>{errors.submit}</ErrorMessage>}
             </div>
-          </DialogBody>
+          </SheetBody>
 
-          <DialogActions>
-            <Button
-              plain
-              onClick={() => {
-                setIsOpen(false);
-                resetForm();
-              }}
-            >
-              Cancel
-            </Button>
+          <SheetFooter>
             <Button
               type="submit"
               disabled={
@@ -178,9 +173,12 @@ export default function AddCompanyToDealDialog({
             >
               {addCompanyMutation.isPending ? 'Adding...' : 'Add Company'}
             </Button>
-          </DialogActions>
+            <Button plain onClick={handleClose}>
+              Cancel
+            </Button>
+          </SheetFooter>
         </form>
-      </Dialog>
+      </Sheet>
     </>
   );
 }

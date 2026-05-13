@@ -6,16 +6,21 @@ import {
   BuildingOfficeIcon,
   PencilIcon,
   EyeSlashIcon,
+  XMarkIcon,
 } from '@heroicons/react/24/outline';
 import {
   Badge,
   Divider,
   Button,
   Input,
+  Sheet,
+  SheetHeader,
+  SheetTitle,
   Subheading,
   Switch,
   Text,
 } from '@zuko/ui-kit';
+import CompanyForm from './CompanyForm';
 import Editor, { ensureOutputData } from '@/components/Common/Editor/Editor';
 import type { OutputData } from '@editorjs/editorjs';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -89,6 +94,7 @@ export default function CompanyDetail({
     },
   );
 
+  const [isEditSheetOpen, setIsEditSheetOpen] = useState(false);
   const [showHideDialog, setShowHideDialog] = useState(false);
   const [contactToRemove, setContactToRemove] = useState<{
     id: number;
@@ -147,7 +153,7 @@ export default function CompanyDetail({
   const primaryOwnerName = primaryOwner?.user.name || 'Unassigned';
 
   const handleEdit = () => {
-    router.push(`/companies/${companyId}/edit`);
+    setIsEditSheetOpen(true);
   };
 
   const handleHide = () => {
@@ -414,6 +420,22 @@ export default function CompanyDetail({
         entityId={companyId}
         currentUserId={currentUserId ?? undefined}
       />
+
+      <Sheet open={isEditSheetOpen} onClose={setIsEditSheetOpen} side="right">
+        <SheetHeader>
+          <SheetTitle>Edit Company</SheetTitle>
+          <Button plain onClick={() => setIsEditSheetOpen(false)}>
+            <XMarkIcon className="h-5 w-5" />
+          </Button>
+        </SheetHeader>
+        <CompanyForm
+          mode="edit"
+          company={company}
+          currentUserId={currentUserId ?? 0}
+          onSuccess={() => setIsEditSheetOpen(false)}
+          onCancel={() => setIsEditSheetOpen(false)}
+        />
+      </Sheet>
     </>
   );
 }

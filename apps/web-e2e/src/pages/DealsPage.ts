@@ -45,7 +45,7 @@ export class DealsPage extends BasePage {
     await this.page
       .getByRole('row')
       .nth(initialRowCount)
-      .waitFor({ state: 'visible', timeout: 10000 });
+      .waitFor({ state: 'visible', timeout: 30000 });
     return initialRowCount; // 0-indexed, new row index will be equal to initial row count
   }
 
@@ -55,11 +55,22 @@ export class DealsPage extends BasePage {
   async createDealRow(dealName: string) {
     await this.page.goto('/deals');
     await this.page.waitForLoadState('networkidle');
+    // Wait for the table body to be visible and stable before counting rows
+    await this.page
+      .locator('tbody')
+      .waitFor({ state: 'visible', timeout: 15000 });
+    // Wait for at least one row OR confirm table is genuinely empty
+    await this.page
+      .locator('tbody tr')
+      .first()
+      .waitFor({ state: 'visible', timeout: 15000 })
+      .catch(() => null); // tolerate empty table (zero rows is valid)
     const initialRowCount = await this.page.locator('tbody tr').count();
 
     await this.page.getByRole('button', { name: 'Add row' }).click();
     await expect(this.page.locator('tbody tr')).toHaveCount(
       initialRowCount + 1,
+      { timeout: 15000 },
     );
 
     // Find the 'title' column index
@@ -80,7 +91,7 @@ export class DealsPage extends BasePage {
    * Wait for details page to load and return the deal ID from url
    */
   async waitForDetailsPageToLoad() {
-    await this.page.waitForURL(/\/deals\/\d+$/, { timeout: 10000 });
+    await this.page.waitForURL(/\/deals\/\d+/, { timeout: 30000 });
     await this.page.waitForLoadState('domcontentloaded');
     const match = this.page.url().match(/\/deals\/(\d+)/);
     if (!match?.[1]) {

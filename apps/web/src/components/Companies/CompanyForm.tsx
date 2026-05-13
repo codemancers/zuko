@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import clsx from 'clsx';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   companiesApi,
@@ -8,7 +9,15 @@ import {
   type CreateCompanyDto,
   type UpdateCompanyDto,
 } from '@/lib/api/companies';
-import { Input, Field, Label, Description, ErrorMessage } from '@zuko/ui-kit';
+import {
+  Input,
+  Field,
+  Label,
+  Description,
+  ErrorMessage,
+  SheetFooter,
+  Button,
+} from '@zuko/ui-kit';
 import { FormActions } from '@/components/shared';
 import { useRouter } from 'next/navigation';
 
@@ -16,12 +25,16 @@ interface CompanyFormProps {
   company?: Company;
   mode: 'create' | 'edit';
   currentUserId: number;
+  onSuccess?: () => void;
+  onCancel?: () => void;
 }
 
 export default function CompanyForm({
   company,
   mode,
   currentUserId,
+  onSuccess,
+  onCancel,
 }: CompanyFormProps) {
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -38,7 +51,11 @@ export default function CompanyForm({
     mutationFn: (data: CreateCompanyDto) => companiesApi.createCompany(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['companies'] });
-      router.push('/companies');
+      if (onSuccess) {
+        onSuccess();
+      } else {
+        router.push('/companies');
+      }
     },
     onError: (error: any) => {
       setErrors({ submit: error.message || 'Failed to create company' });
@@ -54,7 +71,11 @@ export default function CompanyForm({
       queryClient.invalidateQueries({
         queryKey: ['timeline', 'company', company!.id],
       });
-      router.push(`/companies/${company!.id}`);
+      if (onSuccess) {
+        onSuccess();
+      } else {
+        router.push(`/companies/${company!.id}`);
+      }
     },
     onError: (error: any) => {
       setErrors({ submit: error.message || 'Failed to update company' });
@@ -122,6 +143,10 @@ export default function CompanyForm({
   };
 
   const handleCancel = () => {
+    if (onCancel) {
+      onCancel();
+      return;
+    }
     if (mode === 'edit' && company) {
       router.push(`/companies/${company.id}`);
     } else {
@@ -130,67 +155,99 @@ export default function CompanyForm({
   };
 
   const isLoading = createMutation.isPending || updateMutation.isPending;
+  const isSheet = !!onSuccess;
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      <Field>
-        <Label>Company Name *</Label>
-        <Input
-          type="text"
-          value={formData.companyName}
-          onChange={(e) =>
-            setFormData({ ...formData, companyName: e.target.value })
-          }
-          placeholder="Acme Inc."
-          invalid={!!errors.companyName}
-          disabled={isLoading}
-        />
-        {errors.companyName && (
-          <ErrorMessage>{errors.companyName}</ErrorMessage>
+    <form
+      onSubmit={handleSubmit}
+      className={clsx(isSheet ? 'flex flex-1 min-h-0 flex-col' : 'space-y-6')}
+    >
+      <div
+        className={clsx(
+          isSheet ? 'flex-1 overflow-y-auto p-6 space-y-6' : 'contents',
         )}
-      </Field>
+      >
+        <Field>
+          <Label>Company Name *</Label>
+          <Input
+            type="text"
+            value={formData.companyName}
+            onChange={(e) =>
+              setFormData({ ...formData, companyName: e.target.value })
+            }
+            placeholder="Acme Inc."
+            invalid={!!errors.companyName}
+            disabled={isLoading}
+          />
+          {errors.companyName && (
+            <ErrorMessage>{errors.companyName}</ErrorMessage>
+          )}
+        </Field>
 
-      <Field>
-        <Label>Website</Label>
-        <Input
-          type="url"
-          value={formData.website}
-          onChange={(e) =>
-            setFormData({ ...formData, website: e.target.value })
-          }
-          placeholder="https://example.com"
-          invalid={!!errors.website}
-          disabled={isLoading}
-        />
-        <Description>Company website URL</Description>
-        {errors.website && <ErrorMessage>{errors.website}</ErrorMessage>}
-      </Field>
+        <Field>
+          <Label>Website</Label>
+          <Input
+            type="url"
+            value={formData.website}
+            onChange={(e) =>
+              setFormData({ ...formData, website: e.target.value })
+            }
+            placeholder="https://example.com"
+            invalid={!!errors.website}
+            disabled={isLoading}
+          />
+          <Description>Company website URL</Description>
+          {errors.website && <ErrorMessage>{errors.website}</ErrorMessage>}
+        </Field>
 
-      <Field>
-        <Label>LinkedIn URL</Label>
-        <Input
-          type="url"
-          value={formData.linkedinUrl}
-          onChange={(e) =>
-            setFormData({ ...formData, linkedinUrl: e.target.value })
-          }
-          placeholder="https://www.linkedin.com/company/example"
-          invalid={!!errors.linkedinUrl}
-          disabled={isLoading}
-        />
-        <Description>Company LinkedIn page URL</Description>
-        {errors.linkedinUrl && (
-          <ErrorMessage>{errors.linkedinUrl}</ErrorMessage>
+        <Field>
+          <Label>LinkedIn URL</Label>
+          <Input
+            type="url"
+            value={formData.linkedinUrl}
+            onChange={(e) =>
+              setFormData({ ...formData, linkedinUrl: e.target.value })
+            }
+            placeholder="https://www.linkedin.com/company/example"
+            invalid={!!errors.linkedinUrl}
+            disabled={isLoading}
+          />
+          <Description>Company LinkedIn page URL</Description>
+          {errors.linkedinUrl && (
+            <ErrorMessage>{errors.linkedinUrl}</ErrorMessage>
+          )}
+        </Field>
+
+        {errors.submit && <ErrorMessage>{errors.submit}</ErrorMessage>}
+
+        {!isSheet && (
+          <FormActions
+            isLoading={isLoading}
+            submitLabel={mode === 'create' ? 'Create Company' : 'Save Changes'}
+            onCancel={handleCancel}
+          />
         )}
-      </Field>
+      </div>
 
-      {errors.submit && <ErrorMessage>{errors.submit}</ErrorMessage>}
-
-      <FormActions
-        isLoading={isLoading}
-        submitLabel={mode === 'create' ? 'Create Company' : 'Save Changes'}
-        onCancel={handleCancel}
-      />
+      {isSheet && (
+        <SheetFooter>
+          <Button type="submit" disabled={isLoading}>
+            {isLoading
+              ? 'Saving...'
+              : mode === 'create'
+                ? 'Create Company'
+                : 'Save Changes'}
+          </Button>
+          <Button
+            type="button"
+            plain
+            onClick={handleCancel}
+            disabled={isLoading}
+          >
+            Cancel
+          </Button>
+        </SheetFooter>
+      )}
     </form>
   );
 }

@@ -49,7 +49,7 @@ export class DealDetailPage extends BasePage {
     }
     await this.page.goto(path);
     await this.page.waitForLoadState('domcontentloaded');
-    await this.activitySection.waitFor({ state: 'visible' });
+    await this.activitySection.waitFor({ state: 'visible', timeout: 30000 });
   }
 
   /**

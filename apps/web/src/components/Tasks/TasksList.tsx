@@ -1,13 +1,19 @@
 'use client';
 
-import { CheckCircleIcon, PlusIcon } from '@heroicons/react/24/outline';
-import { Button } from '@zuko/ui-kit';
+import {
+  CheckCircleIcon,
+  PlusIcon,
+  XMarkIcon,
+} from '@heroicons/react/24/outline';
+import { Button, Sheet, SheetHeader, SheetTitle } from '@zuko/ui-kit';
 import { PageHeader, SearchBar } from '@/components/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { getTableViewTasks, getMembers } from '@/server/query-options';
 import { authClient } from '@/lib/auth-client';
 import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
+import { useSheetState } from '@/hooks/use-sheet-state';
+import TaskForm from './TaskForm';
 import { tasksApi } from '@/lib/api/tasks';
 import { useAddRow } from '@/hooks/use-add-row';
 import { useCellUpdate } from '@/hooks/use-cell-update';
@@ -29,6 +35,7 @@ type TaskRow = BaseRow & { status?: string };
 const TasksList = () => {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const [isSheetOpen, setIsSheetOpen] = useSheetState();
   const [taskToDelete, setTaskToDelete] = useState<TaskRow | null>(null);
   const {
     inputValue: searchTerm,
@@ -143,7 +150,7 @@ const TasksList = () => {
         title="Tasks"
         description="Manage and track your team's work"
         action={
-          <Button onClick={() => router.push('/tasks/new')}>
+          <Button onClick={() => setIsSheetOpen(true)}>
             <PlusIcon className="h-4 w-4" />
             New Task
           </Button>
@@ -184,6 +191,20 @@ const TasksList = () => {
         confirmColor="red"
         isLoading={isDeleting}
       />
+
+      <Sheet open={isSheetOpen} onClose={setIsSheetOpen} side="right">
+        <SheetHeader>
+          <SheetTitle>New Task</SheetTitle>
+          <Button plain onClick={() => setIsSheetOpen(false)}>
+            <XMarkIcon className="h-5 w-5" />
+          </Button>
+        </SheetHeader>
+        <TaskForm
+          mode="create"
+          onSuccess={() => setIsSheetOpen(false)}
+          onCancel={() => setIsSheetOpen(false)}
+        />
+      </Sheet>
     </>
   );
 };

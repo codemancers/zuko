@@ -242,20 +242,34 @@ test.describe('Task Status Workflow', () => {
 
     await tasksPage.goto();
     await tasksPage.openTask('Lifecycle Task');
-    const taskId = page.url().match(/\/tasks\/(\d+)$/)?.[1];
 
     // TODO → IN_PROGRESS
-    await page.goto(`/tasks/${taskId}/edit`);
+    await page
+      .getByRole('button', { name: /^edit$/i })
+      .first()
+      .click();
+    await expect(
+      page.getByRole('heading', { name: 'Edit Task' }),
+    ).toBeVisible();
     await page.getByLabel(/status/i).selectOption('IN_PROGRESS');
     await page.getByRole('button', { name: /save changes/i }).click();
-    // Wait for redirect to task detail (not edit page) — regex ensures /tasks/123 not /tasks/123/edit
-    await page.waitForURL(/\/tasks\/\d+$/, { timeout: 10000 });
+    await expect(page.getByRole('heading', { name: 'Edit Task' })).toBeHidden({
+      timeout: 10000,
+    });
 
     // IN_PROGRESS → DONE
-    await page.goto(`/tasks/${taskId}/edit`);
+    await page
+      .getByRole('button', { name: /^edit$/i })
+      .first()
+      .click();
+    await expect(
+      page.getByRole('heading', { name: 'Edit Task' }),
+    ).toBeVisible();
     await page.getByLabel(/status/i).selectOption('DONE');
     await page.getByRole('button', { name: /save changes/i }).click();
-    await page.waitForURL(/\/tasks\/\d+$/, { timeout: 10000 });
+    await expect(page.getByRole('heading', { name: 'Edit Task' })).toBeHidden({
+      timeout: 10000,
+    });
 
     await expect(page.getByText('Done', { exact: true }).first()).toBeVisible();
   });
@@ -304,11 +318,19 @@ test.describe('Hierarchical Tasks', () => {
 
     // Subtasks are not in the main list — find the subtask via parent detail page
     await page.goto(`/tasks/${parentId}`);
-    const subtaskId = await tasksPage.openTask('Subtask to Promote');
+    await tasksPage.openTask('Subtask to Promote');
 
-    await page.goto(`/tasks/${subtaskId}/edit`);
+    await page
+      .getByRole('button', { name: /^edit$/i })
+      .first()
+      .click();
+    await expect(
+      page.getByRole('heading', { name: 'Edit Task' }),
+    ).toBeVisible();
     await page.getByLabel(/parent task/i).selectOption('');
     await page.getByRole('button', { name: /save changes/i }).click();
-    await page.waitForURL('**/tasks/**', { timeout: 10000 });
+    await expect(page.getByRole('heading', { name: 'Edit Task' })).toBeHidden({
+      timeout: 10000,
+    });
   });
 });

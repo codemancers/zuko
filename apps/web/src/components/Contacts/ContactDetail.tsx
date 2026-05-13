@@ -6,8 +6,18 @@ import {
   UserIcon,
   PencilIcon,
   EyeSlashIcon,
+  XMarkIcon,
 } from '@heroicons/react/24/outline';
-import { Badge, Button, Divider, Subheading } from '@zuko/ui-kit';
+import {
+  Badge,
+  Button,
+  Divider,
+  Sheet,
+  SheetHeader,
+  SheetTitle,
+  Subheading,
+} from '@zuko/ui-kit';
+import ContactForm from './ContactForm';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getContact, getDealsByContact } from '@/server/query-options';
 import type { UpdateContactDto } from '@/lib/api/contacts';
@@ -70,6 +80,7 @@ export default function ContactDetail({
     },
   );
 
+  const [isEditSheetOpen, setIsEditSheetOpen] = useState(false);
   const [showHideDialog, setShowHideDialog] = useState(false);
 
   const hideMutation = useMutation({
@@ -92,7 +103,7 @@ export default function ContactDetail({
   const primaryOwnerName = primaryOwner?.user.name || 'Unassigned';
 
   const handleEdit = () => {
-    router.push(`/contacts/${contactId}/edit`);
+    setIsEditSheetOpen(true);
   };
 
   const handleHide = () => {
@@ -232,6 +243,22 @@ export default function ContactDetail({
         entityId={contactId}
         currentUserId={currentUserId ?? undefined}
       />
+
+      <Sheet open={isEditSheetOpen} onClose={setIsEditSheetOpen} side="right">
+        <SheetHeader>
+          <SheetTitle>Edit Contact</SheetTitle>
+          <Button plain onClick={() => setIsEditSheetOpen(false)}>
+            <XMarkIcon className="h-5 w-5" />
+          </Button>
+        </SheetHeader>
+        <ContactForm
+          mode="edit"
+          contact={contact}
+          currentUserId={currentUserId ?? 0}
+          onSuccess={() => setIsEditSheetOpen(false)}
+          onCancel={() => setIsEditSheetOpen(false)}
+        />
+      </Sheet>
     </>
   );
 }

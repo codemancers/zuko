@@ -387,11 +387,15 @@ describe('CompaniesList', () => {
     });
   });
 
-  it('navigates to new company page when "New Company" button is clicked', async () => {
+  it('opens new company sheet when "New Company" button is clicked', async () => {
     const user = userEvent.setup();
     render(<CompaniesList />, { wrapper });
     await user.click(screen.getByRole('button', { name: /new company/i }));
-    expect(mockPush).toHaveBeenCalledWith('/companies/new');
+    expect(mockPush).not.toHaveBeenCalled();
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { name: /new company/i }),
+    ).toBeInTheDocument();
   });
 });
 
@@ -454,7 +458,7 @@ describe('CompanyDetail', () => {
     expect(screen.getByText('Alice')).toBeInTheDocument();
   });
 
-  it('navigates to edit page when "Edit" button is clicked', async () => {
+  it('opens edit sheet when "Edit" button is clicked', async () => {
     const user = userEvent.setup();
     render(<CompanyDetail companyId={7} currentUserId={1} />, { wrapper });
     await waitFor(() => {
@@ -462,7 +466,11 @@ describe('CompanyDetail', () => {
     });
     const editButtons = screen.getAllByRole('button', { name: /^edit$/i });
     await user.click(editButtons[0]);
-    expect(mockPush).toHaveBeenCalledWith('/companies/7/edit');
+    expect(mockPush).not.toHaveBeenCalledWith('/companies/7/edit');
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { name: /edit company/i }),
+    ).toBeInTheDocument();
   });
 
   it('calls hideCompany and redirects when Hide is confirmed', async () => {

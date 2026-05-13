@@ -6,12 +6,22 @@ import { authClient } from '@/lib/auth-client';
 import { tasksApi } from '@/lib/api/tasks';
 import { metadataApi } from '@/lib/api/metadata';
 import { useRouter } from 'next/navigation';
-import { Badge, Button, Divider, Subheading } from '@zuko/ui-kit';
+import {
+  Badge,
+  Button,
+  Divider,
+  Sheet,
+  SheetHeader,
+  SheetTitle,
+  Subheading,
+} from '@zuko/ui-kit';
 import {
   TrashIcon,
   PencilIcon,
   ClipboardDocumentCheckIcon,
+  XMarkIcon,
 } from '@heroicons/react/24/outline';
+import TaskForm from './TaskForm';
 import type { TaskStatus, UpdateTaskDto } from '@/lib/api/tasks';
 import { useState } from 'react';
 import { useAutosaveField } from '@/hooks/useAutosaveField';
@@ -68,6 +78,7 @@ const TaskDetail = ({ taskId, currentUserId }: TaskDetailProps) => {
     .filter((t) => t.id !== taskId)
     .map((t) => ({ value: String(t.id), label: t.title }));
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [isEditSheetOpen, setIsEditSheetOpen] = useState(false);
 
   const updateMutation = useMutation({
     mutationFn: (updated: UpdateTaskDto) =>
@@ -143,7 +154,7 @@ const TaskDetail = ({ taskId, currentUserId }: TaskDetailProps) => {
           createdAt={task.createdAt}
         />
         <div className="flex gap-2">
-          <Button onClick={() => router.push(`/tasks/${taskId}/edit`)}>
+          <Button onClick={() => setIsEditSheetOpen(true)}>
             <PencilIcon className="h-4 w-4" />
             Edit
           </Button>
@@ -303,6 +314,21 @@ const TaskDetail = ({ taskId, currentUserId }: TaskDetailProps) => {
         entityId={taskId}
         currentUserId={currentUserId ?? undefined}
       />
+
+      <Sheet open={isEditSheetOpen} onClose={setIsEditSheetOpen} side="right">
+        <SheetHeader>
+          <SheetTitle>Edit Task</SheetTitle>
+          <Button plain onClick={() => setIsEditSheetOpen(false)}>
+            <XMarkIcon className="h-5 w-5" />
+          </Button>
+        </SheetHeader>
+        <TaskForm
+          mode="edit"
+          task={task}
+          onSuccess={() => setIsEditSheetOpen(false)}
+          onCancel={() => setIsEditSheetOpen(false)}
+        />
+      </Sheet>
     </>
   );
 };

@@ -394,11 +394,15 @@ describe('ContactsList', () => {
     });
   });
 
-  it('navigates to create new contact page when "New Contact" button is clicked', async () => {
+  it('opens new contact sheet when "New Contact" button is clicked', async () => {
     const user = userEvent.setup();
     render(<ContactsList />, { wrapper });
     await user.click(screen.getByRole('button', { name: /new contact/i }));
-    expect(mockPush).toHaveBeenCalledWith('/contacts/new');
+    expect(mockPush).not.toHaveBeenCalled();
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { name: /new contact/i }),
+    ).toBeInTheDocument();
   });
 });
 
@@ -493,7 +497,7 @@ describe('ContactDetail', () => {
     expect(mockHideContact).not.toHaveBeenCalled();
   });
 
-  it('navigates to edit page when "Edit" button is clicked', async () => {
+  it('opens edit sheet when "Edit" button is clicked', async () => {
     const user = userEvent.setup();
     render(<ContactDetail contactId={7} currentUserId={1} />, { wrapper });
     await vi.waitFor(() => {
@@ -501,7 +505,11 @@ describe('ContactDetail', () => {
     });
     const editButtons = screen.getAllByRole('button', { name: /^edit$/i });
     await user.click(editButtons[0]);
-    expect(mockPush).toHaveBeenCalledWith('/contacts/7/edit');
+    expect(mockPush).not.toHaveBeenCalledWith('/contacts/7/edit');
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { name: /edit contact/i }),
+    ).toBeInTheDocument();
   });
 
   describe('Edit Contact', () => {

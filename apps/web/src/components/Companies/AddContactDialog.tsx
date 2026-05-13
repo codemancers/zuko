@@ -6,11 +6,11 @@ import { companiesApi } from '@/lib/api/companies';
 import { getContacts } from '@/server/query-options';
 import {
   Button,
-  Dialog,
-  DialogActions,
-  DialogBody,
-  DialogDescription,
-  DialogTitle,
+  Sheet,
+  SheetHeader,
+  SheetTitle,
+  SheetBody,
+  SheetFooter,
   Field,
   Label,
   Description,
@@ -20,7 +20,7 @@ import {
   Switch,
   Text,
 } from '@zuko/ui-kit';
-import { PlusIcon } from '@heroicons/react/24/outline';
+import { PlusIcon, XMarkIcon } from '@heroicons/react/24/outline';
 
 interface AddContactDialogProps {
   companyId: number;
@@ -60,7 +60,6 @@ export default function AddContactDialog({
       });
     },
     onSuccess: async () => {
-      // Use refetchQueries to immediately refetch instead of just invalidating
       await queryClient.refetchQueries({ queryKey: ['company', companyId] });
       await queryClient.invalidateQueries({ queryKey: ['companies'] });
       await queryClient.invalidateQueries({
@@ -81,6 +80,11 @@ export default function AddContactDialog({
     setRole('');
     setIsPrimary(false);
     setErrors({});
+  };
+
+  const handleClose = () => {
+    setIsOpen(false);
+    resetForm();
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -106,23 +110,20 @@ export default function AddContactDialog({
         Add Contact
       </Button>
 
-      <Dialog
-        open={isOpen}
-        onClose={() => {
-          setIsOpen(false);
-          resetForm();
-        }}
-      >
-        <DialogTitle>Add Contact to Company</DialogTitle>
-        <DialogDescription>
-          Associate a contact with this company. Note: A contact can only be
-          associated with one company at a time.
-        </DialogDescription>
+      <Sheet open={isOpen} onClose={handleClose} side="right">
+        <SheetHeader>
+          <SheetTitle>Add Contact to Company</SheetTitle>
+          <Button plain onClick={handleClose}>
+            <XMarkIcon className="h-5 w-5" />
+          </Button>
+        </SheetHeader>
 
-        <form onSubmit={handleSubmit}>
-          <DialogBody>
+        <form
+          onSubmit={handleSubmit}
+          className="flex flex-col flex-1 overflow-hidden"
+        >
+          <SheetBody>
             <div className="space-y-4">
-              {/* Contact Selection */}
               <Field>
                 <Label>Contact *</Label>
                 <Select
@@ -147,7 +148,6 @@ export default function AddContactDialog({
                 )}
               </Field>
 
-              {/* Role */}
               <Field>
                 <Label>Role</Label>
                 <Input
@@ -162,7 +162,6 @@ export default function AddContactDialog({
                 </Description>
               </Field>
 
-              {/* Primary Flag */}
               <Field>
                 <div className="flex items-center gap-2">
                   <Switch
@@ -178,21 +177,11 @@ export default function AddContactDialog({
                 </Description>
               </Field>
 
-              {/* Submit Error */}
               {errors.submit && <ErrorMessage>{errors.submit}</ErrorMessage>}
             </div>
-          </DialogBody>
+          </SheetBody>
 
-          <DialogActions>
-            <Button
-              plain
-              onClick={() => {
-                setIsOpen(false);
-                resetForm();
-              }}
-            >
-              Cancel
-            </Button>
+          <SheetFooter>
             <Button
               type="submit"
               disabled={
@@ -201,9 +190,12 @@ export default function AddContactDialog({
             >
               {addContactMutation.isPending ? 'Adding...' : 'Add Contact'}
             </Button>
-          </DialogActions>
+            <Button plain onClick={handleClose}>
+              Cancel
+            </Button>
+          </SheetFooter>
         </form>
-      </Dialog>
+      </Sheet>
     </>
   );
 }

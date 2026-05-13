@@ -2,11 +2,11 @@
 
 import React, { useState } from 'react';
 import {
-  Dialog,
-  DialogTitle,
-  DialogDescription,
-  DialogBody,
-  DialogActions,
+  Sheet,
+  SheetHeader,
+  SheetTitle,
+  SheetBody,
+  SheetFooter,
   Button,
   Input,
   Select,
@@ -130,12 +130,18 @@ export function AddColumnDialog({
   };
 
   return (
-    <Dialog open={isOpen} onClose={onClose}>
-      <DialogTitle>Add new field</DialogTitle>
-      <DialogDescription>
-        Choose a field name, unique key and type for your new column.
-      </DialogDescription>
-      <DialogBody className="space-y-4">
+    <Sheet open={isOpen} onClose={onClose} side="right">
+      <SheetHeader>
+        <SheetTitle>Add new field</SheetTitle>
+        <Button plain onClick={onCloseDialog}>
+          <XMarkIcon className="h-5 w-5" />
+        </Button>
+      </SheetHeader>
+
+      <SheetBody className="space-y-4">
+        <p className="text-sm text-zinc-500 dark:text-zinc-400">
+          Choose a field name, unique key and type for your new column.
+        </p>
         <Field>
           <Label>Field Name</Label>
           <Input
@@ -236,13 +242,14 @@ export function AddColumnDialog({
             </div>
           </Field>
         )}
-      </DialogBody>
-      <DialogActions>
+      </SheetBody>
+
+      <SheetFooter>
+        <Button onClick={handleAdd}>Create field</Button>
         <Button plain onClick={onCloseDialog}>
           Cancel
         </Button>
-        <Button onClick={handleAdd}>Create field</Button>
-      </DialogActions>
-    </Dialog>
+      </SheetFooter>
+    </Sheet>
   );
 }

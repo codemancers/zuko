@@ -6,16 +6,21 @@ import {
   BriefcaseIcon,
   PencilIcon,
   EyeSlashIcon,
+  XMarkIcon,
 } from '@heroicons/react/24/outline';
 import {
   Badge,
   Divider,
   Button,
   Input,
+  Sheet,
+  SheetHeader,
+  SheetTitle,
   Subheading,
   Switch,
   Text,
 } from '@zuko/ui-kit';
+import DealForm from './DealForm';
 import Editor, { ensureOutputData } from '@/components/Common/Editor/Editor';
 import type { OutputData } from '@editorjs/editorjs';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -100,6 +105,8 @@ export default function DealDetail({ dealId, currentUserId }: DealDetailProps) {
       onSave: (val) => updateMutation.mutateAsync({ summary: val }),
     },
   );
+
+  const [isEditSheetOpen, setIsEditSheetOpen] = useState(false);
 
   // Confirm dialog state
   const [showHideDialog, setShowHideDialog] = useState(false);
@@ -188,7 +195,7 @@ export default function DealDetail({ dealId, currentUserId }: DealDetailProps) {
   const primaryOwnerName = primaryOwner?.user.name || 'Unassigned';
 
   const handleEdit = () => {
-    router.push(`/deals/${dealId}/edit`);
+    setIsEditSheetOpen(true);
   };
 
   const handleHide = () => {
@@ -599,6 +606,22 @@ export default function DealDetail({ dealId, currentUserId }: DealDetailProps) {
         entityId={dealId}
         currentUserId={currentUserId ?? undefined}
       />
+
+      <Sheet open={isEditSheetOpen} onClose={setIsEditSheetOpen} side="right">
+        <SheetHeader>
+          <SheetTitle>Edit Deal</SheetTitle>
+          <Button plain onClick={() => setIsEditSheetOpen(false)}>
+            <XMarkIcon className="h-5 w-5" />
+          </Button>
+        </SheetHeader>
+        <DealForm
+          mode="edit"
+          deal={deal}
+          currentUserId={currentUserId ?? 0}
+          onSuccess={() => setIsEditSheetOpen(false)}
+          onCancel={() => setIsEditSheetOpen(false)}
+        />
+      </Sheet>
     </>
   );
 }
