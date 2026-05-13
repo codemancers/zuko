@@ -461,26 +461,18 @@ describe('DealsList', () => {
     ).toBeInTheDocument();
   });
 
-  // creates new deal when click on add row
-  it('creates new deal when add row is clicked', async () => {
-    const user = userEvent.setup();
-    mockCreateDeal.mockResolvedValue({ id: 99 });
-
+  it('does not render the removed add row button', async () => {
     render(<DealsList />, { wrapper });
 
     await waitFor(() => {
       expect(
-        screen.getByRole('button', { name: /add row/i }),
+        screen.getByRole('button', { name: /new deal/i }),
       ).toBeInTheDocument();
     });
-
-    await user.click(screen.getByRole('button', { name: /add row/i }));
-
-    await waitFor(() => {
-      expect(mockCreateDeal).toHaveBeenCalledWith(
-        expect.objectContaining({ title: 'New Deal' }),
-      );
-    });
+    expect(
+      screen.queryByRole('button', { name: /add row/i }),
+    ).not.toBeInTheDocument();
+    expect(mockCreateDeal).not.toHaveBeenCalled();
   });
 
   it('opens new deal sheet when "New Deal" button is clicked', async () => {

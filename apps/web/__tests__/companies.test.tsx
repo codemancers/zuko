@@ -360,26 +360,18 @@ describe('CompaniesList', () => {
     ).toBeInTheDocument();
   });
 
-  // creates new company when click on add row
-  it('creates new company when add row is clicked', async () => {
-    const user = userEvent.setup();
-    mockCreateCompany.mockResolvedValue({ id: 99 });
-
+  it('does not render the removed add row button', async () => {
     render(<CompaniesList />, { wrapper });
 
     await waitFor(() => {
       expect(
-        screen.getByRole('button', { name: /add row/i }),
+        screen.getByRole('button', { name: /new company/i }),
       ).toBeInTheDocument();
     });
-
-    await user.click(screen.getByRole('button', { name: /add row/i }));
-
-    await waitFor(() => {
-      expect(mockCreateCompany).toHaveBeenCalledWith(
-        expect.objectContaining({ companyName: 'New Company' }),
-      );
-    });
+    expect(
+      screen.queryByRole('button', { name: /add row/i }),
+    ).not.toBeInTheDocument();
+    expect(mockCreateCompany).not.toHaveBeenCalled();
   });
 
   it('opens new company sheet when "New Company" button is clicked', async () => {

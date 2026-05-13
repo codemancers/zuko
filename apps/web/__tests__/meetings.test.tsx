@@ -416,13 +416,26 @@ describe('MeetingList', () => {
 
   it('shows empty state without add row plus when no meetings exist', async () => {
     const user = userEvent.setup();
-    mockGetTableViewMeetings.mockResolvedValue({
+    const emptyMeetings = {
       ...MOCK_TABLE_MEETINGS,
       data: [],
       pagination: { total: 0, page: 1, limit: 3, totalPages: 0 },
-    });
+    };
+    mockGetTableViewMeetings.mockResolvedValue(emptyMeetings);
+    function EmptyWrapper({ children }: { children: React.ReactNode }) {
+      const [queryClient] = useState(() => {
+        const qc = createQueryClient();
+        qc.setQueryData(['meetings', 'table', { search: undefined }], emptyMeetings);
+        return qc;
+      });
+      return (
+        <QueryClientProvider client={queryClient}>
+          {children}
+        </QueryClientProvider>
+      );
+    }
 
-    render(<MeetingList />, { wrapper: Wrapper });
+    render(<MeetingList />, { wrapper: EmptyWrapper });
     expect(await screen.findByText('No Meetings Found')).toBeInTheDocument();
     expect(screen.queryByRole('table')).not.toBeInTheDocument();
     expect(

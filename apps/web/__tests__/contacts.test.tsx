@@ -367,26 +367,18 @@ describe('ContactsList', () => {
     ).toBeInTheDocument();
   });
 
-  // creates new contact when click on add row
-  it('creates new company when add row is clicked', async () => {
-    const user = userEvent.setup();
-    mockCreateContact.mockResolvedValue({ id: 99 });
-
+  it('does not render the removed add row button', async () => {
     render(<ContactsList />, { wrapper });
 
     await waitFor(() => {
       expect(
-        screen.getByRole('button', { name: /add row/i }),
+        screen.getByRole('button', { name: /new contact/i }),
       ).toBeInTheDocument();
     });
-
-    await user.click(screen.getByRole('button', { name: /add row/i }));
-
-    await waitFor(() => {
-      expect(mockCreateContact).toHaveBeenCalledWith(
-        expect.objectContaining({ name: 'New Contact' }),
-      );
-    });
+    expect(
+      screen.queryByRole('button', { name: /add row/i }),
+    ).not.toBeInTheDocument();
+    expect(mockCreateContact).not.toHaveBeenCalled();
   });
 
   it('opens new contact sheet when "New Contact" button is clicked', async () => {
