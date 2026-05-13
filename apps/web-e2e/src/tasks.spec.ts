@@ -119,7 +119,10 @@ test.describe('Task Detail - Inline Editing', () => {
 });
 
 test.describe('Task Form Validation', () => {
-  test('shows validation error when title is empty', async ({ page, tasksPage }) => {
+  test('shows validation error when title is empty', async ({
+    page,
+    tasksPage,
+  }) => {
     await tasksPage.goto();
     await tasksPage.newTaskButton.click();
     await tasksPage.createTaskButton.click();
@@ -131,9 +134,7 @@ test.describe('Task Form Validation', () => {
     await tasksPage.newTaskButton.click();
     const statusSelect = page.getByLabel(/status/i);
     await expect(statusSelect).toBeVisible();
-    const options = await statusSelect
-      .locator('option')
-      .allTextContents();
+    const options = await statusSelect.locator('option').allTextContents();
     expect(options).toEqual(
       expect.arrayContaining(['To Do', 'In Progress', 'Done', 'Cancelled']),
     );
@@ -332,8 +333,12 @@ test.describe('Hierarchical Tasks', () => {
     }).toPass({ timeout: 15000 });
     await page.waitForTimeout(500);
     // Use a more specific locator to avoid ambiguity with the detail page properties
-    const editSheet = page.locator('[role="dialog"]').filter({ hasText: 'Edit Task' });
-    await editSheet.getByLabel(/parent task/i).selectOption('', { force: true });
+    const editSheet = page
+      .locator('[role="dialog"]')
+      .filter({ hasText: 'Edit Task' });
+    await editSheet
+      .getByLabel(/parent task/i)
+      .selectOption('', { force: true });
     await page.getByRole('button', { name: /save changes/i }).click();
     await expect(page.getByRole('heading', { name: 'Edit Task' })).toBeHidden({
       timeout: 10000,

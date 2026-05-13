@@ -1,6 +1,10 @@
 'use client';
 
-import { PlusIcon, XMarkIcon, CurrencyDollarIcon } from '@heroicons/react/24/outline';
+import {
+  PlusIcon,
+  XMarkIcon,
+  CurrencyDollarIcon,
+} from '@heroicons/react/24/outline';
 import { Button, Sheet, SheetHeader, SheetTitle } from '@zuko/ui-kit';
 import { PageHeader, SearchBar } from '@/components/shared';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -134,7 +138,8 @@ const DealsList = () => {
         emptyStateConfig={{
           icon: CurrencyDollarIcon,
           title: 'No deals yet',
-          description: 'Create your first deal to start tracking your pipeline.',
+          description:
+            'Create your first deal to start tracking your pipeline.',
           action: { label: 'New Deal', onClick: handleNewDeal },
         }}
       />

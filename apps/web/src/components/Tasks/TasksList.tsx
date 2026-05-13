@@ -176,7 +176,8 @@ const TasksList = () => {
         emptyStateConfig={{
           icon: ClipboardDocumentListIcon,
           title: 'No tasks yet',
-          description: "Create your first task to start tracking your team's work.",
+          description:
+            "Create your first task to start tracking your team's work.",
           action: { label: 'New Task', onClick: () => setIsSheetOpen(true) },
         }}
       />

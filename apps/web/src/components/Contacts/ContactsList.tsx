@@ -2,7 +2,11 @@
 
 import { useState, useMemo, useRef } from 'react';
 import { useSheetState } from '@/hooks/use-sheet-state';
-import { PlusIcon, XMarkIcon, UserGroupIcon } from '@heroicons/react/24/outline';
+import {
+  PlusIcon,
+  XMarkIcon,
+  UserGroupIcon,
+} from '@heroicons/react/24/outline';
 import { Button, Sheet, SheetHeader, SheetTitle } from '@zuko/ui-kit';
 import { PageHeader, SearchBar } from '@/components/shared';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -134,7 +138,8 @@ const ContactsList = () => {
         emptyStateConfig={{
           icon: UserGroupIcon,
           title: 'No contacts yet',
-          description: 'Add your first contact to start managing relationships.',
+          description:
+            'Add your first contact to start managing relationships.',
           action: { label: 'New Contact', onClick: handleNewContact },
         }}
       />
