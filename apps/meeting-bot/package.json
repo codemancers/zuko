@@ -25,9 +25,13 @@
               "input": "apps/meeting-bot/src/utils",
               "glob": "google-meet-chrome-driver.js",
               "output": "utils"
+            },
+            {
+              "input": "apps/meeting-bot",
+              "glob": "package.json",
+              "output": "."
             }
           ],
-          "generatePackageJson": true,
           "platform": "node",
           "bundle": true,
           "format": [
