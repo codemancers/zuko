@@ -165,9 +165,6 @@ export default function AddCompanyToDealDialog({
           </SheetBody>
 
           <SheetFooter>
-            <Button plain onClick={handleClose}>
-              Cancel
-            </Button>
             <Button
               type="submit"
               disabled={
@@ -175,6 +172,9 @@ export default function AddCompanyToDealDialog({
               }
             >
               {addCompanyMutation.isPending ? 'Adding...' : 'Add Company'}
+            </Button>
+            <Button plain onClick={handleClose}>
+              Cancel
             </Button>
           </SheetFooter>
         </form>

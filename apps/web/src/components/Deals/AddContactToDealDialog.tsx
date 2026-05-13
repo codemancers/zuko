@@ -183,9 +183,6 @@ export default function AddContactToDealDialog({
           </SheetBody>
 
           <SheetFooter>
-            <Button plain onClick={handleClose}>
-              Cancel
-            </Button>
             <Button
               type="submit"
               disabled={
@@ -193,6 +190,9 @@ export default function AddContactToDealDialog({
               }
             >
               {addContactMutation.isPending ? 'Adding...' : 'Add Contact'}
+            </Button>
+            <Button plain onClick={handleClose}>
+              Cancel
             </Button>
           </SheetFooter>
         </form>

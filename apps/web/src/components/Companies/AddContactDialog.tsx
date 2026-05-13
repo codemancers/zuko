@@ -182,9 +182,6 @@ export default function AddContactDialog({
           </SheetBody>
 
           <SheetFooter>
-            <Button plain onClick={handleClose}>
-              Cancel
-            </Button>
             <Button
               type="submit"
               disabled={
@@ -192,6 +189,9 @@ export default function AddContactDialog({
               }
             >
               {addContactMutation.isPending ? 'Adding...' : 'Add Contact'}
+            </Button>
+            <Button plain onClick={handleClose}>
+              Cancel
             </Button>
           </SheetFooter>
         </form>
