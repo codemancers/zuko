@@ -496,7 +496,9 @@ describe('DealsList', () => {
     await user.click(screen.getByRole('button', { name: /new deal/i }));
     expect(mockPush).not.toHaveBeenCalled();
     expect(screen.getByRole('dialog')).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: /new deal/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { name: /new deal/i }),
+    ).toBeInTheDocument();
   });
 });
 
@@ -601,7 +603,9 @@ describe('DealDetail', () => {
     await user.click(editButtons[0]);
     expect(mockPush).not.toHaveBeenCalledWith('/deals/7/edit');
     expect(screen.getByRole('dialog')).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: /edit deal/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { name: /edit deal/i }),
+    ).toBeInTheDocument();
   });
 
   describe('Edit Deal', () => {

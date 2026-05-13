@@ -532,7 +532,9 @@ describe('TasksList', () => {
     await user.click(screen.getByRole('button', { name: /new task/i }));
     expect(mockPush).not.toHaveBeenCalledWith('/tasks/new');
     expect(screen.getByRole('dialog')).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: /new task/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { name: /new task/i }),
+    ).toBeInTheDocument();
   });
 });
 
@@ -623,7 +625,9 @@ describe('TaskDetail', () => {
     await user.click(editButtons[0]);
     expect(mockPush).not.toHaveBeenCalledWith('/tasks/1/edit');
     expect(screen.getByRole('dialog')).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: /edit task/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { name: /edit task/i }),
+    ).toBeInTheDocument();
   });
 
   describe('Edit Task', () => {
