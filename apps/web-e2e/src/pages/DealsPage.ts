@@ -58,10 +58,11 @@ export class DealsPage extends BasePage {
     await this.page
       .locator('tbody')
       .waitFor({ state: 'visible', timeout: 15000 });
+    // Wait for at least one row OR confirm table is genuinely empty
     await this.page
-      .waitForFunction(() => document.querySelectorAll('tbody tr').length > 0, {
-        timeout: 15000,
-      })
+      .locator('tbody tr')
+      .first()
+      .waitFor({ state: 'visible', timeout: 15000 })
       .catch(() => null); // tolerate empty table (zero rows is valid)
     const initialRowCount = await this.page.locator('tbody tr').count();
 
