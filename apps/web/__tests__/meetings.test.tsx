@@ -425,7 +425,10 @@ describe('MeetingList', () => {
     function EmptyWrapper({ children }: { children: React.ReactNode }) {
       const [queryClient] = useState(() => {
         const qc = createQueryClient();
-        qc.setQueryData(['meetings', 'table', { search: undefined }], emptyMeetings);
+        qc.setQueryData(
+          ['meetings', 'table', { search: undefined }],
+          emptyMeetings,
+        );
         return qc;
       });
       return (
