@@ -60,12 +60,12 @@ test.describe('Meetings - Authenticated', () => {
     await expect(page.getByText('Weekly Product Sync')).toBeVisible();
   });
 
-  test('+ button navigates to add meeting page', async ({
+  test('meeting add page is accessible directly', async ({
     meetingsPage,
     page,
   }) => {
     await meetingsPage.goto();
-    await page.getByRole('button', { name: /add row/i }).click();
+    await page.goto('/meeting/add');
     await page.waitForURL('**/meeting/add', { timeout: 10000 });
     expect(page.url()).toContain('/meeting/add');
   });

@@ -20,7 +20,7 @@ test.describe('Tasks - CRUD', () => {
     await tasksPage.goto();
     await expect(page.getByRole('heading', { name: /^Tasks$/i })).toBeVisible();
     await expect(
-      page.getByRole('button', { name: /add row/i }).first(),
+      page.getByRole('button', { name: /new task/i }).first(),
     ).toBeVisible();
   });
 
@@ -119,19 +119,19 @@ test.describe('Task Detail - Inline Editing', () => {
 });
 
 test.describe('Task Form Validation', () => {
-  test('shows validation error when title is empty', async ({ page }) => {
-    await page.goto('/tasks/new');
-    await page.getByRole('button', { name: /create task/i }).click();
+  test('shows validation error when title is empty', async ({ page, tasksPage }) => {
+    await tasksPage.goto();
+    await tasksPage.newTaskButton.click();
+    await tasksPage.createTaskButton.click();
     await expect(page.getByText(/title is required/i)).toBeVisible();
   });
 
-  test('displays all status options', async ({ page }) => {
-    await page.goto('/tasks/new');
-    await page
-      .getByRole('combobox', { name: /status/i })
-      .waitFor({ state: 'visible' });
-    const options = await page
-      .getByRole('combobox', { name: /status/i })
+  test('displays all status options', async ({ page, tasksPage }) => {
+    await tasksPage.goto();
+    await tasksPage.newTaskButton.click();
+    const statusSelect = page.getByLabel(/status/i);
+    await expect(statusSelect).toBeVisible();
+    const options = await statusSelect
       .locator('option')
       .allTextContents();
     expect(options).toEqual(
@@ -139,10 +139,11 @@ test.describe('Task Form Validation', () => {
     );
   });
 
-  test('cancel returns to tasks list', async ({ page }) => {
-    await page.goto('/tasks/new');
+  test('cancel returns to tasks list', async ({ page, tasksPage }) => {
+    await tasksPage.goto();
+    await tasksPage.newTaskButton.click();
     await page.getByRole('button', { name: /cancel/i }).click();
-    await page.waitForURL('**/tasks');
+    await expect(page.getByRole('heading', { name: /New Task/i })).toBeHidden();
     expect(page.url()).toContain('/tasks');
   });
 });
@@ -320,14 +321,19 @@ test.describe('Hierarchical Tasks', () => {
     await page.goto(`/tasks/${parentId}`);
     await tasksPage.openTask('Subtask to Promote');
 
-    await page
-      .getByRole('button', { name: /^edit$/i })
-      .first()
-      .click();
-    await expect(
-      page.getByRole('heading', { name: 'Edit Task' }),
-    ).toBeVisible();
-    await page.getByLabel(/parent task/i).selectOption('');
+    await expect(async () => {
+      await page
+        .getByRole('button', { name: /^edit$/i })
+        .first()
+        .click();
+      await expect(
+        page.getByRole('heading', { name: 'Edit Task' }),
+      ).toBeVisible({ timeout: 2000 });
+    }).toPass({ timeout: 15000 });
+    await page.waitForTimeout(500);
+    // Use a more specific locator to avoid ambiguity with the detail page properties
+    const editSheet = page.locator('[role="dialog"]').filter({ hasText: 'Edit Task' });
+    await editSheet.getByLabel(/parent task/i).selectOption('', { force: true });
     await page.getByRole('button', { name: /save changes/i }).click();
     await expect(page.getByRole('heading', { name: 'Edit Task' })).toBeHidden({
       timeout: 10000,

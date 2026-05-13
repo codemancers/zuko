@@ -28,15 +28,18 @@ test.describe('Companies - Authenticated', () => {
   }) => {
     await companiesPage.goto();
 
-    const initialRowCount = await companiesPage.getRowCount();
-    const newRowIndex = await companiesPage.createNewCompany();
-    await expect(page.getByText('New company added')).toBeVisible();
-    await expect(page.getByRole('row')).toHaveCount(initialRowCount + 1);
+    const initialRowCount = (await companiesPage.getCompanyItems()).length;
+    const companyName = await companiesPage.createNewCompany('New Company');
+    const rows = await companiesPage.getCompanyItems();
+    expect(rows.length).toBe(initialRowCount + 1);
 
     const companyNameIndex = await companiesPage.getColumnIndex('Company');
-    const newRow = page.getByRole('row').nth(newRowIndex);
+    const newRow = page
+      .getByRole('row')
+      .filter({ hasText: companyName })
+      .first();
     await expect(newRow.locator('td').nth(companyNameIndex)).toHaveText(
-      'New Company',
+      companyName,
     );
   });
 
@@ -73,17 +76,15 @@ test.describe('Companies - Authenticated', () => {
     }
   });
 
-  test('Renders add row button at the bottom of the table', async ({
+  test('renders New Company button and does not render add row button', async ({
     companiesPage,
     page,
   }) => {
     await companiesPage.goto();
-    const companies = await companiesPage.getCompanyItems();
-
-    if (companies.length > 0) {
-      const addRowButton = page.getByRole('button', { name: /Add row/i });
-      await expect(addRowButton).toBeVisible();
-    }
+    await expect(
+      page.getByRole('button', { name: /New Company/i }).first(),
+    ).toBeVisible();
+    await expect(page.getByRole('button', { name: /Add row/i })).toHaveCount(0);
   });
 
   test('Opens add column dialog when header plus icon is clicked', async ({
@@ -520,24 +521,16 @@ test.describe.serial('Column Creation Flow', () => {
 });
 
 test.describe('Row Creation Flow', () => {
-  test('Creates new company row using add row button', async ({
+  test('Creates new company using the sheet flow', async ({
     companiesPage,
     page,
   }) => {
     await companiesPage.goto();
-    await companiesPage.getCompanyItems();
-
-    const initialRowCount = await page.getByRole('row').count();
-
-    const addRowButton = page.getByRole('button', { name: /Add row/i });
-    await addRowButton.click();
-
-    // validate success toast message
-    await expect(page.getByText(/New company added/i)).toBeVisible();
-
-    // validate if new row is created
-    await expect(page.getByRole('row')).toHaveCount(initialRowCount + 1);
-    const updatedRowCount = initialRowCount + 1;
+    const companyName = `Row Flow Company ${Date.now()}`;
+    const initialCount = (await companiesPage.getCompanyItems()).length;
+    await companiesPage.createNewRecord(companyName);
+    const rows = await companiesPage.getCompanyItems();
+    expect(rows.length).toBe(initialCount + 1);
 
     // Get the headers to find column indices
     const headers = page.getByRole('columnheader');
@@ -557,17 +550,20 @@ test.describe('Row Creation Flow', () => {
       h.toLowerCase().includes('created'),
     );
 
-    // nth() is 0-indexed, and initialRowCount counts the header + existing data rows.
-    const newCompanyRow = page.getByRole('row').nth(initialRowCount);
+    const newCompanyRow = page
+      .getByRole('row')
+      .filter({ hasText: companyName })
+      .first();
 
-    // Validate S.No field to be equal to the {updatedRowCount - 1} (row count also includes the header)
-    await expect(newCompanyRow.locator('td').nth(sNoIndex)).toHaveText(
-      (updatedRowCount - 1).toString(),
-    );
+    if (sNoIndex !== -1) {
+      await expect(newCompanyRow.locator('td').nth(sNoIndex)).toHaveText(
+        (initialCount + 1).toString(),
+      );
+    }
 
     // Validate Company name field
     await expect(newCompanyRow.locator('td').nth(companyNameIndex)).toHaveText(
-      'New Company',
+      companyName,
     );
 
     // Validate Owner field (current user name)

@@ -3,6 +3,15 @@
 import {
   Heading,
   Avatar,
+  Button,
+  ErrorMessage,
+  Field,
+  Input,
+  Label,
+  Sheet,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
   Text,
   Tooltip,
   TooltipTrigger,
@@ -16,6 +25,7 @@ import {
   BaseTable,
   type BaseRow,
 } from '../Table';
+import { RectangleGroupIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   getOrganizations,
@@ -23,12 +33,13 @@ import {
   getTeamMembers,
   getMembers,
 } from '@/server/query-options';
-import { useMemo, useState } from 'react';
+import { useMemo, useState, type FormEvent } from 'react';
 import { authClient } from '@/lib/auth-client';
 import { toast } from 'sonner';
 import type { ColumnDef } from '@tanstack/react-table';
 import { TEAM_TABLE_METADATA, type OrgTeam } from './team-columns';
 import { ConfirmDialog, BackLink } from '@/components/shared';
+import { useSheetState } from '@/hooks/use-sheet-state';
 
 export const OrgTeams = ({
   slug,
@@ -39,6 +50,10 @@ export const OrgTeams = ({
 }) => {
   const queryClient = useQueryClient();
   const [teamToRemove, setTeamToRemove] = useState<OrgTeam | null>(null);
+  const [isSheetOpen, setIsSheetOpen] = useSheetState();
+  const [teamName, setTeamName] = useState('');
+  const [teamNameError, setTeamNameError] = useState('');
+  const [isCreatingTeam, setIsCreatingTeam] = useState(false);
 
   const { data: organizations, isLoading: isLoadingOrgs } =
     useQuery(getOrganizations());
@@ -71,23 +86,44 @@ export const OrgTeams = ({
     }
   };
 
-  const handleAddTeam = async () => {
+  const openCreateTeamSheet = () => {
+    setTeamName('');
+    setTeamNameError('');
+    setIsSheetOpen(true);
+  };
+
+  const handleCreateTeam = async (event: FormEvent) => {
+    event.preventDefault();
     if (!activeOrg) return;
+
+    const trimmedName = teamName.trim();
+    if (!trimmedName) {
+      setTeamNameError('Name is required');
+      return;
+    }
+
+    setIsCreatingTeam(true);
+    setTeamNameError('');
+
     try {
       const { error } = await authClient.organization.createTeam({
-        name: 'New Team',
+        name: trimmedName,
         organizationId: activeOrg.id,
       });
       if (error) {
-        toast.error(error.message || 'Failed to create team');
+        setTeamNameError(error.message || 'Failed to create team');
         return;
       }
       toast.success('Team created');
       queryClient.invalidateQueries({
         queryKey: ['organization', activeOrg.id, 'teams'],
       });
+      setTeamName('');
+      setIsSheetOpen(false);
     } catch {
-      toast.error('An error occurred');
+      setTeamNameError('An error occurred');
+    } finally {
+      setIsCreatingTeam(false);
     }
   };
 
@@ -168,6 +204,7 @@ export const OrgTeams = ({
             <Heading>Teams</Heading>
             <Text className="mt-1">Manage teams within {activeOrg?.name}.</Text>
           </div>
+          <Button onClick={openCreateTeamSheet}>Create Team</Button>
         </div>
       )}
 
@@ -182,9 +219,13 @@ export const OrgTeams = ({
             handleRenameTeam(String(rowId), value as string);
           }
         }}
-        showAddRow
-        onAddRow={handleAddTeam}
-        showEmptyState={false}
+        showEmptyState
+        emptyStateConfig={{
+          icon: RectangleGroupIcon,
+          title: 'No teams yet',
+          description: 'Create your first team to organize members.',
+          action: { label: 'New Team', onClick: openCreateTeamSheet },
+        }}
       />
 
       <ConfirmDialog
@@ -196,6 +237,49 @@ export const OrgTeams = ({
         confirmText="Remove"
         confirmColor="red"
       />
+
+      <Sheet open={isSheetOpen} onClose={setIsSheetOpen} side="right">
+        <SheetHeader>
+          <SheetTitle>New Team</SheetTitle>
+          <Button plain onClick={() => setIsSheetOpen(false)}>
+            <XMarkIcon className="h-5 w-5" />
+          </Button>
+        </SheetHeader>
+
+        <form
+          onSubmit={handleCreateTeam}
+          className="flex flex-1 min-h-0 flex-col"
+        >
+          <div className="flex-1 overflow-y-auto p-6 space-y-6">
+            <Field>
+              <Label>Team Name *</Label>
+              <Input
+                type="text"
+                value={teamName}
+                onChange={(event) => setTeamName(event.target.value)}
+                placeholder="Engineering"
+                invalid={!!teamNameError}
+                disabled={isCreatingTeam}
+              />
+              {teamNameError && <ErrorMessage>{teamNameError}</ErrorMessage>}
+            </Field>
+          </div>
+
+          <SheetFooter>
+            <Button type="submit" disabled={isCreatingTeam}>
+              {isCreatingTeam ? 'Creating...' : 'Create Team'}
+            </Button>
+            <Button
+              type="button"
+              plain
+              onClick={() => setIsSheetOpen(false)}
+              disabled={isCreatingTeam}
+            >
+              Cancel
+            </Button>
+          </SheetFooter>
+        </form>
+      </Sheet>
     </div>
   );
 };

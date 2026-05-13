@@ -3,11 +3,10 @@
 import { useState } from 'react';
 import {
   Button,
-  Dialog,
-  DialogActions,
-  DialogBody,
-  DialogDescription,
-  DialogTitle,
+  Sheet,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
   Field,
   Label,
   Input,
@@ -18,6 +17,7 @@ import {
 } from '@zuko/ui-kit';
 import { authClient } from '@/lib/auth-client';
 import { toast } from 'sonner';
+import { XMarkIcon } from '@heroicons/react/24/outline';
 
 interface AddMemberDialogProps {
   organizationId: string;
@@ -68,13 +68,16 @@ export const AddMemberDialog = ({
   };
 
   return (
-    <Dialog open={isOpen} onClose={onClose}>
-      <DialogTitle>Add Member</DialogTitle>
-      <DialogDescription>
-        Add a new member to your organization by their email address.
-      </DialogDescription>
-      <form onSubmit={handleSubmit}>
-        <DialogBody className="space-y-4">
+    <Sheet open={isOpen} onClose={onClose} side="right">
+      <SheetHeader>
+        <SheetTitle>Invite to Org</SheetTitle>
+        <Button plain onClick={onClose} disabled={isLoading}>
+          <XMarkIcon className="h-5 w-5" />
+        </Button>
+      </SheetHeader>
+
+      <form onSubmit={handleSubmit} className="flex flex-1 min-h-0 flex-col">
+        <div className="flex-1 overflow-y-auto p-6 space-y-4">
           <Field>
             <Label>Email Address</Label>
             <Input
@@ -114,16 +117,16 @@ export const AddMemberDialog = ({
               )}
             </Combobox>
           </Field>
-        </DialogBody>
-        <DialogActions>
-          <Button plain onClick={onClose} disabled={isLoading}>
-            Cancel
-          </Button>
+        </div>
+        <SheetFooter>
           <Button type="submit" disabled={isLoading}>
             {isLoading ? 'Sending...' : 'Send Invitation'}
           </Button>
-        </DialogActions>
+          <Button type="button" plain onClick={onClose} disabled={isLoading}>
+            Cancel
+          </Button>
+        </SheetFooter>
       </form>
-    </Dialog>
+    </Sheet>
   );
 };

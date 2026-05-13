@@ -255,23 +255,18 @@ describe('CompaniesList', () => {
     ).toBeInTheDocument();
   });
 
-  it('renders empty table when no companies', async () => {
+  it('renders empty state when no companies', async () => {
     render(<CompaniesList />, { wrapper });
     await waitFor(() => {
-      expect(screen.getByRole('table')).toBeInTheDocument();
-      // Headers should still be there
-      expect(screen.getByText('Company')).toBeInTheDocument();
-      expect(screen.getByText('Website')).toBeInTheDocument();
+      expect(screen.getByText('No companies yet')).toBeInTheDocument();
     });
 
-    // The table body should have no data rows
-    const tbody = screen.getByRole('table').querySelector('tbody');
-    expect(tbody?.children.length).toBe(0);
-
-    // button with add row label should be present
-    expect(
-      screen.getByRole('button', { name: /add row/i }),
-    ).toBeInTheDocument();
+    expect(screen.queryByRole('table')).not.toBeInTheDocument();
+    expect(screen.queryByText('Company')).not.toBeInTheDocument();
+    expect(screen.queryByText('Website')).not.toBeInTheDocument();
+    expect(screen.getAllByRole('button', { name: /new company/i }).length).toBe(
+      2,
+    );
   });
 
   it('shows table with company when data is returned', async () => {

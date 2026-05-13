@@ -2,17 +2,17 @@
 
 import {
   Button,
-  Dialog,
-  DialogActions,
-  DialogBody,
-  DialogDescription,
-  DialogTitle,
+  Sheet,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
   Field,
   Label,
   Input,
   ErrorMessage,
 } from '@zuko/ui-kit';
 import React, { useEffect } from 'react';
+import { XMarkIcon } from '@heroicons/react/24/outline';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -114,15 +114,23 @@ export const CreateTeamDialog = ({
   };
 
   return (
-    <Dialog open={isOpen} onClose={handleClose}>
-      <DialogTitle>{isUpdating ? 'Update Team' : 'Create Team'}</DialogTitle>
-      <DialogDescription>
-        {isUpdating
-          ? 'Update the details for this team.'
-          : 'Teams allow you to group members within your organization.'}
-      </DialogDescription>
-      <form onSubmit={form.handleSubmit(onSubmit)}>
-        <DialogBody className="space-y-4">
+    <Sheet open={isOpen} onClose={handleClose} side="right">
+      <SheetHeader>
+        <SheetTitle>{isUpdating ? 'Update Team' : 'Create Team'}</SheetTitle>
+        <Button
+          plain
+          onClick={handleClose}
+          disabled={form.formState.isSubmitting}
+        >
+          <XMarkIcon className="h-5 w-5" />
+        </Button>
+      </SheetHeader>
+
+      <form
+        onSubmit={form.handleSubmit(onSubmit)}
+        className="flex flex-1 min-h-0 flex-col"
+      >
+        <div className="flex-1 overflow-y-auto p-6 space-y-4">
           <Field>
             <Label>Team Name</Label>
             <Input
@@ -137,15 +145,8 @@ export const CreateTeamDialog = ({
               <ErrorMessage>{form.formState.errors.root.message}</ErrorMessage>
             )}
           </Field>
-        </DialogBody>
-        <DialogActions>
-          <Button
-            plain
-            onClick={handleClose}
-            disabled={form.formState.isSubmitting}
-          >
-            Cancel
-          </Button>
+        </div>
+        <SheetFooter>
           <Button type="submit" disabled={form.formState.isSubmitting}>
             {form.formState.isSubmitting
               ? isUpdating
@@ -155,8 +156,16 @@ export const CreateTeamDialog = ({
                 ? 'Update Team'
                 : 'Create Team'}
           </Button>
-        </DialogActions>
+          <Button
+            type="button"
+            plain
+            onClick={handleClose}
+            disabled={form.formState.isSubmitting}
+          >
+            Cancel
+          </Button>
+        </SheetFooter>
       </form>
-    </Dialog>
+    </Sheet>
   );
 };

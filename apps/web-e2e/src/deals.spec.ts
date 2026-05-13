@@ -41,7 +41,7 @@ test.describe('Deals - Authenticated', () => {
     const dealName = `TEST E2E DEAL ${Date.now()}`;
     await dealsPage.goto();
 
-    // 1. Create new deal via table "Add row"
+    // 1. Create new deal via sheet
     await dealsPage.createDealRow(dealName);
     const newRow = page.getByRole('row').filter({ hasText: dealName }).first();
 
@@ -112,17 +112,15 @@ test.describe('Deals - Authenticated', () => {
     }
   });
 
-  test('Renders add row button at the bottom of the table', async ({
+  test('renders New Deal button and does not render add row button', async ({
     dealsPage,
     page,
   }) => {
     await dealsPage.goto();
-    const deals = await dealsPage.getDealItems();
-
-    if (deals.length > 0) {
-      const addRowButton = page.getByRole('button', { name: /Add row/i });
-      await expect(addRowButton).toBeVisible();
-    }
+    await expect(
+      page.getByRole('button', { name: /New Deal/i }).first(),
+    ).toBeVisible();
+    await expect(page.getByRole('button', { name: /Add row/i })).toHaveCount(0);
   });
 
   test('Opens add column dialog when header plus icon is clicked', async ({
@@ -669,24 +667,15 @@ test.describe.serial('Column Creation Flow', () => {
 });
 
 test.describe('Row Creation Flow', () => {
-  test('Creates new deal row using add row button', async ({
-    dealsPage,
-    page,
-  }) => {
+  test('Creates new deal using the sheet flow', async ({ dealsPage, page }) => {
     await dealsPage.goto();
-    await dealsPage.getDealItems();
+    const dealName = `Row Flow Deal ${Date.now()}`;
+    const initialCount = (await dealsPage.getDealItems()).length;
 
-    const initialRowCount = await page.getByRole('row').count();
+    await dealsPage.createNewRecord(dealName);
 
-    const addRowButton = page.getByRole('button', { name: /Add row/i });
-    await addRowButton.click();
-
-    // validate success toast message
-    await expect(page.getByText(/New deal added/i)).toBeVisible();
-
-    // validate if new row is created
-    await expect(page.getByRole('row')).toHaveCount(initialRowCount + 1);
-    const updatedRowCount = initialRowCount + 1;
+    const rows = await dealsPage.getDealItems();
+    expect(rows.length).toBe(initialCount + 1);
 
     // Get the headers to find column indices
     const headers = page.getByRole('columnheader');
@@ -709,17 +698,20 @@ test.describe('Row Creation Flow', () => {
       h.toLowerCase().includes('probability'),
     );
 
-    // nth() is 0-indexed, and initialRowCount counts the header + existing data rows.
-    const newDealRow = page.getByRole('row').nth(initialRowCount);
+    const newDealRow = page
+      .getByRole('row')
+      .filter({ hasText: dealName })
+      .first();
 
-    // Validate S.No field to be equal to the {updatedRowCount - 1} (row count also includes the header)
-    await expect(newDealRow.locator('td').nth(sNoIndex)).toHaveText(
-      (updatedRowCount - 1).toString(),
-    );
+    if (sNoIndex !== -1) {
+      await expect(newDealRow.locator('td').nth(sNoIndex)).toHaveText(
+        (initialCount + 1).toString(),
+      );
+    }
 
     // Validate deal title field
     await expect(newDealRow.locator('td').nth(dealTitleIndex)).toHaveText(
-      'New Deal',
+      dealName,
     );
 
     // Validate Owner field (current user name)
@@ -744,8 +736,8 @@ test.describe('Cell Editing Flow', () => {
     await dealsPage.goto();
     await dealsPage.getDealItems();
 
-    const initialRowCount = await page.getByRole('row').count();
-    if (initialRowCount === 1) {
+    const initialRowCount = await page.locator('table tbody tr').count();
+    if (initialRowCount === 0) {
       await dealsPage.createNewRecord();
     }
 
@@ -790,8 +782,8 @@ test.describe('Cell Editing Flow', () => {
     await dealsPage.goto();
     await dealsPage.getDealItems();
 
-    const initialRowCount = await page.getByRole('row').count();
-    if (initialRowCount === 1) {
+    const initialRowCount = await page.locator('table tbody tr').count();
+    if (initialRowCount === 0) {
       await dealsPage.createNewRecord();
     }
 
@@ -826,8 +818,8 @@ test.describe('Cell Editing Flow', () => {
     await dealsPage.goto();
     await dealsPage.getDealItems();
 
-    const initialRowCount = await page.getByRole('row').count();
-    if (initialRowCount === 1) {
+    const initialRowCount = await page.locator('table tbody tr').count();
+    if (initialRowCount === 0) {
       await dealsPage.createNewRecord();
     }
 
@@ -879,8 +871,8 @@ test.describe('Cell Editing Flow', () => {
     await dealsPage.goto();
     await dealsPage.getDealItems();
 
-    const initialRowCount = await page.getByRole('row').count();
-    if (initialRowCount === 1) {
+    const initialRowCount = await page.locator('table tbody tr').count();
+    if (initialRowCount === 0) {
       await dealsPage.createNewRecord();
     }
 
@@ -949,7 +941,6 @@ test.describe.serial('Custom Column Flow - Select Type', () => {
     const deals = await dealsPage.getDealItems();
     if (deals.length === 0) {
       await dealsPage.createNewRecord();
-      await expect(page.getByText(/New deal added/i)).toBeVisible();
     }
 
     // Open add column dialog
@@ -960,7 +951,7 @@ test.describe.serial('Custom Column Flow - Select Type', () => {
     // Fill column details
     await page.getByPlaceholder('Field name').fill(columnName);
     await page.getByPlaceholder(/Unique column key/i).fill(columnKey);
-    await page.locator('select').selectOption('select');
+    await page.getByLabel(/Field Type/i).selectOption('select');
 
     // Test option management: add and remove
     const addOptionButton = page.getByRole('button', { name: /Add option/i });

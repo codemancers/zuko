@@ -159,7 +159,7 @@ test.describe('Settings - Teams tab', () => {
 });
 
 test.describe('Settings - Members tab', () => {
-  test('clicking Invite to Org button opens the Add Member dialog', async ({
+  test('clicking Invite to Org button opens the Invite to Org sheet', async ({
     settingsPage,
     page,
   }) => {
@@ -168,7 +168,7 @@ test.describe('Settings - Members tab', () => {
 
     await settingsPage.inviteToOrgButton.click();
 
-    await expect(page.getByText('Add Member').first()).toBeVisible();
+    await expect(page.getByText('Invite to Org').first()).toBeVisible();
   });
 });
 

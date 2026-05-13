@@ -261,23 +261,18 @@ describe('ContactsList', () => {
     expect(search).toHaveValue('john');
   });
 
-  it('renders empty table when no contacts', async () => {
+  it('renders empty state when no contacts', async () => {
     render(<ContactsList />, { wrapper });
     await vi.waitFor(() => {
-      expect(screen.getByRole('table')).toBeInTheDocument();
-      // Headers should still be there
-      expect(screen.getByText('Name')).toBeInTheDocument();
-      expect(screen.getByText('Email')).toBeInTheDocument();
+      expect(screen.getByText('No contacts yet')).toBeInTheDocument();
     });
 
-    // The table body should have no data rows
-    const tbody = screen.getByRole('table').querySelector('tbody');
-    expect(tbody?.children.length).toBe(0);
-
-    // button with add row label should be present
-    expect(
-      screen.getByRole('button', { name: /add row/i }),
-    ).toBeInTheDocument();
+    expect(screen.queryByRole('table')).not.toBeInTheDocument();
+    expect(screen.queryByText('Name')).not.toBeInTheDocument();
+    expect(screen.queryByText('Email')).not.toBeInTheDocument();
+    expect(screen.getAllByRole('button', { name: /new contact/i }).length).toBe(
+      2,
+    );
   });
 
   it('shows table with contact when data is returned', async () => {

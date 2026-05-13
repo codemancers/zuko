@@ -356,23 +356,16 @@ describe('DealsList', () => {
     ).toBeInTheDocument();
   });
 
-  it('renders empty table even when no deals', async () => {
+  it('renders empty state when no deals', async () => {
     render(<DealsList />, { wrapper });
     await waitFor(() => {
-      expect(screen.getByRole('table')).toBeInTheDocument();
-      // Headers should still be there
-      expect(screen.getByText('Title')).toBeInTheDocument();
-      expect(screen.getByText('Stage')).toBeInTheDocument();
+      expect(screen.getByText('No deals yet')).toBeInTheDocument();
     });
 
-    // The table body should have no data rows
-    const tbody = screen.getByRole('table').querySelector('tbody');
-    expect(tbody?.children.length).toBe(0);
-
-    // button with add row label should be present
-    expect(
-      screen.getByRole('button', { name: /add row/i }),
-    ).toBeInTheDocument();
+    expect(screen.queryByRole('table')).not.toBeInTheDocument();
+    expect(screen.queryByText('Title')).not.toBeInTheDocument();
+    expect(screen.queryByText('Stage')).not.toBeInTheDocument();
+    expect(screen.getAllByRole('button', { name: /new deal/i }).length).toBe(2);
   });
 
   it('shows table with deal when data is returned', async () => {

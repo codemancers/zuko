@@ -4,6 +4,7 @@ import {
   CheckCircleIcon,
   PlusIcon,
   XMarkIcon,
+  ClipboardDocumentListIcon,
 } from '@heroicons/react/24/outline';
 import { Button, Sheet, SheetHeader, SheetTitle } from '@zuko/ui-kit';
 import { PageHeader, SearchBar } from '@/components/shared';
@@ -15,7 +16,6 @@ import { useMemo, useState } from 'react';
 import { useSheetState } from '@/hooks/use-sheet-state';
 import TaskForm from './TaskForm';
 import { tasksApi } from '@/lib/api/tasks';
-import { useAddRow } from '@/hooks/use-add-row';
 import { useCellUpdate } from '@/hooks/use-cell-update';
 import {
   BaseTable,
@@ -46,7 +46,6 @@ const TasksList = () => {
   const { data, isLoading } = useQuery(
     getTableViewTasks({ search: debouncedValue || undefined }),
   );
-  const { addRow: addTask } = useAddRow('tasks');
   const { updateCell } = useCellUpdate('tasks');
 
   const { mutate: deleteTask, isPending: isDeleting } = useMutation({
@@ -173,8 +172,13 @@ const TasksList = () => {
         onCellUpdate={(rowId, columnId, value) =>
           updateCell({ rowId, columnId, value })
         }
-        showAddRow
-        onAddRow={() => addTask()}
+        showEmptyState
+        emptyStateConfig={{
+          icon: ClipboardDocumentListIcon,
+          title: 'No tasks yet',
+          description: "Create your first task to start tracking your team's work.",
+          action: { label: 'New Task', onClick: () => setIsSheetOpen(true) },
+        }}
       />
 
       <ConfirmDialog

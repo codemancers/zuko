@@ -8,7 +8,7 @@ import {
   TableRow,
   TableCell,
 } from '@zuko/ui-kit';
-import { UserMinusIcon } from '@heroicons/react/24/outline';
+import { UserGroupIcon, UserMinusIcon } from '@heroicons/react/24/outline';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   getOrganizations,
@@ -288,11 +288,6 @@ export const OrgMembers = ({
             if (row) handleRoleChange(row, value as string);
           }
         }}
-        showAddRow={!isAddingRow}
-        onAddRow={() => {
-          setIsAddingRow(true);
-          setTimeout(() => emailInputRef.current?.focus(), 0);
-        }}
         addRowContent={
           isAddingRow ? (
             <TableRow
@@ -349,7 +344,7 @@ export const OrgMembers = ({
         }
         showEmptyState
         emptyStateConfig={{
-          icon: () => null,
+          icon: UserGroupIcon,
           title: 'No members yet',
           description:
             'Invite someone to your organization to give them access.',

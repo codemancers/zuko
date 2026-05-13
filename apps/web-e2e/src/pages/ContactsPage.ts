@@ -8,12 +8,20 @@ export class ContactsPage extends BasePage {
   // Common locators that might exist on contacts page
   readonly newContactButton: Locator;
   readonly contactsList: Locator;
+  readonly createContactButton: Locator;
+  readonly contactNameInput: Locator;
 
   constructor(page: Page) {
     super(page);
     // Selectors based on actual ContactsList component
-    this.newContactButton = page.getByRole('button', { name: 'New Contact' });
+    this.newContactButton = page
+      .getByRole('button', { name: 'New Contact' })
+      .first();
     this.contactsList = page.locator('table').or(page.locator('main'));
+    this.createContactButton = page.getByRole('button', {
+      name: /^Create Contact$/i,
+    });
+    this.contactNameInput = page.getByLabel(/^Name \*/i);
   }
 
   /**
@@ -39,7 +47,10 @@ export class ContactsPage extends BasePage {
    * Get all contact items
    */
   async getContactItems() {
-    // Table rows in tbody (excluding header row)
+    const table = this.page.locator('table');
+    if ((await table.count()) === 0) {
+      return [];
+    }
     return this.page.locator('tbody tr').all();
   }
 
@@ -54,51 +65,44 @@ export class ContactsPage extends BasePage {
    * Wait for contacts to load
    */
   async waitForContactsToLoad() {
-    await this.page
-      .waitForSelector('table', { timeout: 5000 })
-      .catch(() => null);
+    await Promise.race([
+      this.page.waitForSelector('table', { timeout: 10000 }),
+      this.page.getByText(/No contacts yet/i).waitFor({ timeout: 10000 }),
+    ]).catch(() => null);
   }
 
   /**
    * Create a new contact and return the table row index
    */
-  async createNewContact() {
+  async createNewContact(contactName = `New Contact ${Date.now()}`) {
     await this.page.waitForLoadState('networkidle');
-    const initialRowCount = await this.getRowCount();
-    await this.createNewRecord();
-    // Wait for the new row to appear in the DOM before returning its index
-    await this.page
-      .getByRole('row')
-      .nth(initialRowCount)
-      .waitFor({ state: 'visible', timeout: 10000 });
-    return initialRowCount; // 0-indexed, new row index will be equal to initial row count
+    await this.createNewRecord(contactName);
+    return contactName;
   }
 
   /**
    * Create a new contact row with given name
    */
   async createContactRow(contactName: string) {
-    await this.page.goto('/contacts');
-    await this.page.waitForLoadState('networkidle');
-    const initialRowCount = await this.page.locator('tbody tr').count();
-
-    await this.page.getByRole('button', { name: 'Add row' }).click();
-    await expect(this.page.locator('tbody tr')).toHaveCount(
-      initialRowCount + 1,
-    );
-
-    // Find the 'name' column index
-    const nameIndex = await this.getColumnIndex('name');
-
-    const lastRow = this.page.locator('tbody tr').last();
-    const nameCell = lastRow.locator('td').nth(nameIndex);
-    await nameCell.evaluate((node) => (node as any).click());
-
-    const input = nameCell.locator('input');
-    await input.waitFor({ state: 'visible' });
-    await input.fill(contactName);
-    await input.press('Enter');
+    await this.createNewRecord(contactName);
     await expect(this.page.getByText(contactName)).toBeVisible();
+  }
+
+  override async createNewRecord(contactName = `New Contact ${Date.now()}`) {
+    await this.newContactButton.click();
+    await expect(
+      this.page.getByRole('heading', { name: /New Contact/i }),
+    ).toBeVisible();
+    await this.contactNameInput.fill(contactName);
+    await this.page.getByLabel(/Email/i).fill(`e2e-${Date.now()}@example.com`);
+    await this.createContactButton.click();
+    await expect(
+      this.page.getByRole('heading', { name: /New Contact/i }),
+    ).toBeHidden({ timeout: 15000 });
+    await this.waitForContactsToLoad();
+    await expect(
+      this.page.getByRole('row').filter({ hasText: contactName }).first(),
+    ).toBeVisible({ timeout: 15000 });
   }
 
   /**
@@ -111,12 +115,12 @@ export class ContactsPage extends BasePage {
   ) {
     await this.page.goto('/contacts');
     await this.page.getByRole('button', { name: 'Add column' }).click();
-    await this.page.getByLabel('Field Name').fill(columnName);
-    await this.page.getByLabel('Column Key').fill(columnKey);
-    await this.page.getByLabel('Field Type').selectOption(columnType);
+    await this.page.getByPlaceholder('Field name').fill(columnName);
+    await this.page.getByPlaceholder(/Unique column key/i).fill(columnKey);
+    await this.page.getByLabel(/Field Type/i).selectOption(columnType);
     await this.page.getByRole('button', { name: 'Create field' }).click();
     await expect(
-      this.page.getByRole('columnheader', { name: columnName }),
+      this.page.getByText(/Column created successfully/i),
     ).toBeVisible();
   }
 

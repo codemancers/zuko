@@ -414,10 +414,22 @@ describe('MeetingList', () => {
     expect(mockPush).toHaveBeenCalledWith('/meeting/1');
   });
 
-  it('+ button navigates to add meeting page', async () => {
+  it('shows empty state without add row plus when no meetings exist', async () => {
     const user = userEvent.setup();
+    mockGetTableViewMeetings.mockResolvedValue({
+      ...MOCK_TABLE_MEETINGS,
+      data: [],
+      pagination: { total: 0, page: 1, limit: 3, totalPages: 0 },
+    });
+
     render(<MeetingList />, { wrapper: Wrapper });
-    await user.click(screen.getByRole('button', { name: /add row/i }));
+    expect(await screen.findByText('No Meetings Found')).toBeInTheDocument();
+    expect(screen.queryByRole('table')).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: /add row/i }),
+    ).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: /add to a meeting/i }));
     expect(mockPush).toHaveBeenCalledWith('/meeting/add');
   });
 

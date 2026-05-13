@@ -80,6 +80,46 @@ export function BaseTable<TData extends BaseRow>(props: BaseTableProps<TData>) {
     );
   }
 
+  const shouldShowEmptyState =
+    showEmptyState &&
+    emptyStateConfig &&
+    props.data.length === 0 &&
+    !addRowContent;
+
+  if (shouldShowEmptyState) {
+    return (
+      <div className={clsx('mt-8', className)}>
+        <div className="flex flex-col items-center justify-center py-16 text-center">
+          <div className="rounded-2xl border border-zinc-200 p-4 dark:border-white/10">
+            <emptyStateConfig.icon className="size-8 text-zinc-400" />
+          </div>
+          <div className="mt-6 text-base font-semibold text-zinc-950 dark:text-white">
+            {emptyStateConfig.title}
+          </div>
+          <div className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
+            {emptyStateConfig.description}
+          </div>
+          <Button className="mt-6" onClick={emptyStateConfig.action.onClick}>
+            {emptyStateConfig.action.label}
+          </Button>
+        </div>
+
+        <AddColumnDialog
+          isOpen={isAddColumnDialogOpen}
+          onClose={closeAddColumnDialog}
+          onAdd={(
+            name: string,
+            key: string,
+            type: string,
+            config?: ColumnConfig,
+          ) => {
+            onAddColumn?.(name, key, type, config);
+          }}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className={clsx('mt-8', className)}>
       <div className="flow-root overflow-hidden border border-zinc-200 dark:border-zinc-800 rounded-lg shadow-sm bg-white dark:bg-zinc-950">
@@ -102,29 +142,6 @@ export function BaseTable<TData extends BaseRow>(props: BaseTableProps<TData>) {
             addRowContent={addRowContent}
           />
         </Table>
-
-        {showEmptyState &&
-          emptyStateConfig &&
-          props.data.length === 0 &&
-          !loading && (
-            <div className="flex flex-col items-center justify-center py-16 text-center">
-              <div className="rounded-2xl border border-zinc-200 p-4 dark:border-white/10">
-                <emptyStateConfig.icon className="size-8 text-zinc-400" />
-              </div>
-              <div className="mt-6 text-base font-semibold text-zinc-950 dark:text-white">
-                {emptyStateConfig.title}
-              </div>
-              <div className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
-                {emptyStateConfig.description}
-              </div>
-              <Button
-                className="mt-6"
-                onClick={emptyStateConfig.action.onClick}
-              >
-                {emptyStateConfig.action.label}
-              </Button>
-            </div>
-          )}
 
         {showAddRow && (
           <div className="pl-2 py-1 h-10 border-zinc-200 dark:border-zinc-800 flex items-center bg-zinc-50/50 dark:bg-zinc-900/50">

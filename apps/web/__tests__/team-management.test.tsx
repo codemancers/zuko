@@ -202,9 +202,38 @@ describe('OrgTeams', () => {
   it('shows empty state when no teams found', async () => {
     renderWithTeams([]);
     await waitFor(() => {
-      expect(
-        screen.getByRole('button', { name: /add row/i }),
-      ).toBeInTheDocument();
+      expect(screen.getByText('No teams yet')).toBeInTheDocument();
+    });
+    expect(screen.queryByRole('table')).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: /add row/i }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: /new team/i }),
+    ).toBeInTheDocument();
+  });
+
+  it('opens a sheet and creates a team from the empty state', async () => {
+    mockCreateTeam.mockResolvedValue({ error: null });
+    const user = userEvent.setup();
+
+    renderWithTeams([]);
+
+    await user.click(await screen.findByRole('button', { name: /new team/i }));
+    expect(
+      screen.getByRole('heading', { name: /new team/i }),
+    ).toBeInTheDocument();
+
+    await user.type(screen.getByLabelText(/team name/i), 'Sales');
+    await user.click(screen.getByRole('button', { name: /^create team$/i }));
+
+    await waitFor(() => {
+      expect(mockCreateTeam).toHaveBeenCalledWith(
+        expect.objectContaining({
+          name: 'Sales',
+          organizationId: 'org-1',
+        }),
+      );
     });
   });
 

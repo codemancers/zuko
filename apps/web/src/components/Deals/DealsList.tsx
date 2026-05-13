@@ -1,6 +1,6 @@
 'use client';
 
-import { PlusIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import { PlusIcon, XMarkIcon, CurrencyDollarIcon } from '@heroicons/react/24/outline';
 import { Button, Sheet, SheetHeader, SheetTitle } from '@zuko/ui-kit';
 import { PageHeader, SearchBar } from '@/components/shared';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -20,7 +20,6 @@ import {
   DeleteAction,
 } from '../Table';
 import { useAddColumn } from '@/hooks/use-add-column';
-import { useAddRow } from '@/hooks/use-add-row';
 import { useCellUpdate } from '@/hooks/use-cell-update';
 import type { ColumnConfig } from '@/types/table-metadata';
 import { dealsApi } from '@/lib/api/deals';
@@ -45,7 +44,6 @@ const DealsList = () => {
 
   const { mutate: addColumn } = useAddColumn('deals');
 
-  const { addRow } = useAddRow('deals');
   const { updateCell } = useCellUpdate('deals');
 
   const hideDealMutation = useMutation({
@@ -83,10 +81,6 @@ const DealsList = () => {
 
   const handleDealClick = (dealId: number) => {
     router.push(`/deals/${dealId}`);
-  };
-
-  const handleNewDealRow = () => {
-    addRow();
   };
 
   const handleNewDeal = () => {
@@ -132,12 +126,17 @@ const DealsList = () => {
         }
         totalCount={dealsData?.pagination?.total}
         entityName="deals"
-        showAddRow
-        onAddRow={handleNewDealRow}
         showAddColumn={false}
         onAddColumn={handleNewColumn}
         openAddColumnRef={openAddColumnRef}
         disableRowClick={true}
+        showEmptyState
+        emptyStateConfig={{
+          icon: CurrencyDollarIcon,
+          title: 'No deals yet',
+          description: 'Create your first deal to start tracking your pipeline.',
+          action: { label: 'New Deal', onClick: handleNewDeal },
+        }}
       />
 
       <ConfirmDialog
