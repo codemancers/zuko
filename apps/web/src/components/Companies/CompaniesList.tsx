@@ -1,13 +1,7 @@
 'use client';
 
 import { PlusIcon, XMarkIcon } from '@heroicons/react/24/outline';
-import {
-  Button,
-  Sheet,
-  SheetHeader,
-  SheetTitle,
-  SheetBody,
-} from '@zuko/ui-kit';
+import { Button, Sheet, SheetHeader, SheetTitle } from '@zuko/ui-kit';
 import { PageHeader, SearchBar } from '@/components/shared';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getTableViewCompanies } from '@/server/query-options';
@@ -169,16 +163,14 @@ const CompaniesList = () => {
             <XMarkIcon className="h-5 w-5" />
           </Button>
         </SheetHeader>
-        <SheetBody>
-          {session.data && (
-            <CompanyForm
-              mode="create"
-              currentUserId={parseInt(session.data.user.id, 10)}
-              onSuccess={() => setIsSheetOpen(false)}
-              onCancel={() => setIsSheetOpen(false)}
-            />
-          )}
-        </SheetBody>
+        {session.data && (
+          <CompanyForm
+            mode="create"
+            currentUserId={parseInt(session.data.user.id, 10)}
+            onSuccess={() => setIsSheetOpen(false)}
+            onCancel={() => setIsSheetOpen(false)}
+          />
+        )}
       </Sheet>
     </>
   );

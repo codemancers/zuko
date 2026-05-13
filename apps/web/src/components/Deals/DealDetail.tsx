@@ -14,7 +14,6 @@ import {
   Button,
   Input,
   Sheet,
-  SheetBody,
   SheetHeader,
   SheetTitle,
   Subheading,
@@ -615,15 +614,13 @@ export default function DealDetail({ dealId, currentUserId }: DealDetailProps) {
             <XMarkIcon className="h-5 w-5" />
           </Button>
         </SheetHeader>
-        <SheetBody>
-          <DealForm
-            mode="edit"
-            deal={deal}
-            currentUserId={currentUserId ?? 0}
-            onSuccess={() => setIsEditSheetOpen(false)}
-            onCancel={() => setIsEditSheetOpen(false)}
-          />
-        </SheetBody>
+        <DealForm
+          mode="edit"
+          deal={deal}
+          currentUserId={currentUserId ?? 0}
+          onSuccess={() => setIsEditSheetOpen(false)}
+          onCancel={() => setIsEditSheetOpen(false)}
+        />
       </Sheet>
     </>
   );

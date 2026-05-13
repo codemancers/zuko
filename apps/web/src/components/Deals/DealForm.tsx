@@ -21,6 +21,8 @@ import {
   ComboboxOption,
   ComboboxLabel,
   ComboboxDescription,
+  SheetFooter,
+  Button,
 } from '@zuko/ui-kit';
 import { FormActions } from '@/components/shared';
 import { useRouter } from 'next/navigation';
@@ -195,9 +197,13 @@ export default function DealForm({
   return (
     <form
       onSubmit={handleSubmit}
-      className={clsx(isSheet ? 'flex h-full flex-col' : 'space-y-6')}
+      className={clsx(isSheet ? 'flex flex-1 min-h-0 flex-col' : 'space-y-6')}
     >
-      <div className={clsx(isSheet ? 'flex-1 space-y-6' : 'contents')}>
+      <div
+        className={clsx(
+          isSheet ? 'flex-1 overflow-y-auto p-6 space-y-6' : 'contents',
+        )}
+      >
         <Field>
           <Label>Deal Title *</Label>
           <Input
@@ -344,13 +350,35 @@ export default function DealForm({
         </Field>
 
         {errors.submit && <ErrorMessage>{errors.submit}</ErrorMessage>}
+
+        {!isSheet && (
+          <FormActions
+            isLoading={isLoading}
+            submitLabel={mode === 'create' ? 'Create Deal' : 'Save Changes'}
+            onCancel={handleCancel}
+          />
+        )}
       </div>
 
-      <FormActions
-        isLoading={isLoading}
-        submitLabel={mode === 'create' ? 'Create Deal' : 'Save Changes'}
-        onCancel={handleCancel}
-      />
+      {isSheet && (
+        <SheetFooter>
+          <Button type="submit" disabled={isLoading}>
+            {isLoading
+              ? 'Saving...'
+              : mode === 'create'
+                ? 'Create Deal'
+                : 'Save Changes'}
+          </Button>
+          <Button
+            type="button"
+            plain
+            onClick={handleCancel}
+            disabled={isLoading}
+          >
+            Cancel
+          </Button>
+        </SheetFooter>
+      )}
     </form>
   );
 }

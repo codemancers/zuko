@@ -14,7 +14,6 @@ import {
   Button,
   Input,
   Sheet,
-  SheetBody,
   SheetHeader,
   SheetTitle,
   Subheading,
@@ -429,15 +428,13 @@ export default function CompanyDetail({
             <XMarkIcon className="h-5 w-5" />
           </Button>
         </SheetHeader>
-        <SheetBody>
-          <CompanyForm
-            mode="edit"
-            company={company}
-            currentUserId={currentUserId ?? 0}
-            onSuccess={() => setIsEditSheetOpen(false)}
-            onCancel={() => setIsEditSheetOpen(false)}
-          />
-        </SheetBody>
+        <CompanyForm
+          mode="edit"
+          company={company}
+          currentUserId={currentUserId ?? 0}
+          onSuccess={() => setIsEditSheetOpen(false)}
+          onCancel={() => setIsEditSheetOpen(false)}
+        />
       </Sheet>
     </>
   );

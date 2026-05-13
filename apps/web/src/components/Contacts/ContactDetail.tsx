@@ -13,7 +13,6 @@ import {
   Button,
   Divider,
   Sheet,
-  SheetBody,
   SheetHeader,
   SheetTitle,
   Subheading,
@@ -252,15 +251,13 @@ export default function ContactDetail({
             <XMarkIcon className="h-5 w-5" />
           </Button>
         </SheetHeader>
-        <SheetBody>
-          <ContactForm
-            mode="edit"
-            contact={contact}
-            currentUserId={currentUserId ?? 0}
-            onSuccess={() => setIsEditSheetOpen(false)}
-            onCancel={() => setIsEditSheetOpen(false)}
-          />
-        </SheetBody>
+        <ContactForm
+          mode="edit"
+          contact={contact}
+          currentUserId={currentUserId ?? 0}
+          onSuccess={() => setIsEditSheetOpen(false)}
+          onCancel={() => setIsEditSheetOpen(false)}
+        />
       </Sheet>
     </>
   );

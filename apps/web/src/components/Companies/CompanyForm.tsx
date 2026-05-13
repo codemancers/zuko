@@ -9,7 +9,15 @@ import {
   type CreateCompanyDto,
   type UpdateCompanyDto,
 } from '@/lib/api/companies';
-import { Input, Field, Label, Description, ErrorMessage } from '@zuko/ui-kit';
+import {
+  Input,
+  Field,
+  Label,
+  Description,
+  ErrorMessage,
+  SheetFooter,
+  Button,
+} from '@zuko/ui-kit';
 import { FormActions } from '@/components/shared';
 import { useRouter } from 'next/navigation';
 
@@ -152,9 +160,13 @@ export default function CompanyForm({
   return (
     <form
       onSubmit={handleSubmit}
-      className={clsx(isSheet ? 'flex h-full flex-col' : 'space-y-6')}
+      className={clsx(isSheet ? 'flex flex-1 min-h-0 flex-col' : 'space-y-6')}
     >
-      <div className={clsx(isSheet ? 'flex-1 space-y-6' : 'contents')}>
+      <div
+        className={clsx(
+          isSheet ? 'flex-1 overflow-y-auto p-6 space-y-6' : 'contents',
+        )}
+      >
         <Field>
           <Label>Company Name *</Label>
           <Input
@@ -207,13 +219,35 @@ export default function CompanyForm({
         </Field>
 
         {errors.submit && <ErrorMessage>{errors.submit}</ErrorMessage>}
+
+        {!isSheet && (
+          <FormActions
+            isLoading={isLoading}
+            submitLabel={mode === 'create' ? 'Create Company' : 'Save Changes'}
+            onCancel={handleCancel}
+          />
+        )}
       </div>
 
-      <FormActions
-        isLoading={isLoading}
-        submitLabel={mode === 'create' ? 'Create Company' : 'Save Changes'}
-        onCancel={handleCancel}
-      />
+      {isSheet && (
+        <SheetFooter>
+          <Button type="submit" disabled={isLoading}>
+            {isLoading
+              ? 'Saving...'
+              : mode === 'create'
+                ? 'Create Company'
+                : 'Save Changes'}
+          </Button>
+          <Button
+            type="button"
+            plain
+            onClick={handleCancel}
+            disabled={isLoading}
+          >
+            Cancel
+          </Button>
+        </SheetFooter>
+      )}
     </form>
   );
 }
