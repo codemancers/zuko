@@ -331,15 +331,13 @@ test.describe('Hierarchical Tasks', () => {
         page.getByRole('heading', { name: 'Edit Task' }),
       ).toBeVisible({ timeout: 2000 });
     }).toPass({ timeout: 15000 });
-    await page.waitForTimeout(500);
-    // Use a more specific locator to avoid ambiguity with the detail page properties
     const editSheet = page
       .locator('[role="dialog"]')
       .filter({ hasText: 'Edit Task' });
-    await editSheet
-      .locator('[name="parentId"]')
-      .selectOption('', { force: true });
-    await page.getByRole('button', { name: /save changes/i }).click();
+    const parentSelect = editSheet.locator('[name="parentId"]');
+    await expect(parentSelect).toBeVisible({ timeout: 10000 });
+    await parentSelect.selectOption('');
+    await editSheet.getByRole('button', { name: /save changes/i }).click();
     await expect(page.getByRole('heading', { name: 'Edit Task' })).toBeHidden({
       timeout: 10000,
     });
