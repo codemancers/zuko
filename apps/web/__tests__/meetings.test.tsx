@@ -61,6 +61,14 @@ vi.mock('@/server/query-options', () => ({
     queryKey: ['organizations'],
     queryFn: async () => [],
   }),
+  getTableViewMeetings: (filters?: { search?: string }) => ({
+    queryKey: ['meetings', 'table', filters],
+    queryFn: async () => null,
+  }),
+  getMeeting: (id: number) => ({
+    queryKey: ['meeting', id],
+    queryFn: async () => null,
+  }),
 }));
 
 const mockToastSuccess = vi.fn();
