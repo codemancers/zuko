@@ -337,7 +337,7 @@ test.describe('Hierarchical Tasks', () => {
       .locator('[role="dialog"]')
       .filter({ hasText: 'Edit Task' });
     await editSheet
-      .getByLabel(/parent task/i)
+      .locator('[name="parentId"]')
       .selectOption('', { force: true });
     await page.getByRole('button', { name: /save changes/i }).click();
     await expect(page.getByRole('heading', { name: 'Edit Task' })).toBeHidden({
