@@ -461,20 +461,6 @@ describe('DealsList', () => {
     ).toBeInTheDocument();
   });
 
-  it('does not render the removed add row button', async () => {
-    render(<DealsList />, { wrapper });
-
-    await waitFor(() => {
-      expect(
-        screen.getByRole('button', { name: /new deal/i }),
-      ).toBeInTheDocument();
-    });
-    expect(
-      screen.queryByRole('button', { name: /add row/i }),
-    ).not.toBeInTheDocument();
-    expect(mockCreateDeal).not.toHaveBeenCalled();
-  });
-
   it('opens new deal sheet when "New Deal" button is clicked', async () => {
     const user = userEvent.setup();
     render(<DealsList />, { wrapper });

@@ -3,7 +3,7 @@
 import {
   PlusIcon,
   XMarkIcon,
-  CurrencyDollarIcon,
+  BriefcaseIcon,
 } from '@heroicons/react/24/outline';
 import { Button, Sheet, SheetHeader, SheetTitle } from '@zuko/ui-kit';
 import { PageHeader, SearchBar } from '@/components/shared';
@@ -136,7 +136,7 @@ const DealsList = () => {
         disableRowClick={true}
         showEmptyState
         emptyStateConfig={{
-          icon: CurrencyDollarIcon,
+          icon: BriefcaseIcon,
           title: 'No deals yet',
           description:
             'Create your first deal to start tracking your pipeline.',

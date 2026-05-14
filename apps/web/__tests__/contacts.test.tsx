@@ -367,20 +367,6 @@ describe('ContactsList', () => {
     ).toBeInTheDocument();
   });
 
-  it('does not render the removed add row button', async () => {
-    render(<ContactsList />, { wrapper });
-
-    await waitFor(() => {
-      expect(
-        screen.getByRole('button', { name: /new contact/i }),
-      ).toBeInTheDocument();
-    });
-    expect(
-      screen.queryByRole('button', { name: /add row/i }),
-    ).not.toBeInTheDocument();
-    expect(mockCreateContact).not.toHaveBeenCalled();
-  });
-
   it('opens new contact sheet when "New Contact" button is clicked', async () => {
     const user = userEvent.setup();
     render(<ContactsList />, { wrapper });

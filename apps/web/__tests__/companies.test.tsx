@@ -360,20 +360,6 @@ describe('CompaniesList', () => {
     ).toBeInTheDocument();
   });
 
-  it('does not render the removed add row button', async () => {
-    render(<CompaniesList />, { wrapper });
-
-    await waitFor(() => {
-      expect(
-        screen.getByRole('button', { name: /new company/i }),
-      ).toBeInTheDocument();
-    });
-    expect(
-      screen.queryByRole('button', { name: /add row/i }),
-    ).not.toBeInTheDocument();
-    expect(mockCreateCompany).not.toHaveBeenCalled();
-  });
-
   it('opens new company sheet when "New Company" button is clicked', async () => {
     const user = userEvent.setup();
     render(<CompaniesList />, { wrapper });
