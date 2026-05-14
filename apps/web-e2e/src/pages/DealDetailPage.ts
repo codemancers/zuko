@@ -48,7 +48,7 @@ export class DealDetailPage extends BasePage {
       return;
     }
     await this.page.goto(path);
-    await this.page.waitForLoadState('domcontentloaded');
+    await this.page.waitForLoadState('networkidle');
     await this.activitySection.waitFor({ state: 'visible', timeout: 30000 });
   }
 

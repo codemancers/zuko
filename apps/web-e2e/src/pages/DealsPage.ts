@@ -55,16 +55,12 @@ export class DealsPage extends BasePage {
   async createDealRow(dealName: string) {
     await this.page.goto('/deals');
     await this.page.waitForLoadState('networkidle');
-    // Wait for the table body to be visible and stable before counting rows
+    // Wait for the "Add row" button — it only renders once the table has fully
+    // mounted and data has loaded.  An empty <tbody> has zero height so
+    // Playwright considers it "hidden"; waiting for the button is more reliable.
     await this.page
-      .locator('tbody')
+      .getByRole('button', { name: 'Add row' })
       .waitFor({ state: 'visible', timeout: 15000 });
-    // Wait for at least one row OR confirm table is genuinely empty
-    await this.page
-      .locator('tbody tr')
-      .first()
-      .waitFor({ state: 'visible', timeout: 15000 })
-      .catch(() => null); // tolerate empty table (zero rows is valid)
     const initialRowCount = await this.page.locator('tbody tr').count();
 
     await this.page.getByRole('button', { name: 'Add row' }).click();

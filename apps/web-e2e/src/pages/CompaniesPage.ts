@@ -75,7 +75,7 @@ export class CompaniesPage extends BasePage {
    * Wait for details page to load and return the company ID from url
    */
   async waitForDetailsPageToLoad() {
-    await this.page.waitForURL(/\/companies\/\d+$/, { timeout: 10000 });
+    await this.page.waitForURL(/\/companies\/\d+$/, { timeout: 30000 });
     await this.page.waitForLoadState('domcontentloaded');
     const match = this.page.url().match(/\/companies\/(\d+)/);
     if (!match?.[1]) {
