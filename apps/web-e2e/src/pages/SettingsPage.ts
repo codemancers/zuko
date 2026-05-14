@@ -5,7 +5,7 @@ import { BasePage } from './BasePage';
  * Page Object Model for Settings page
  */
 export class SettingsPage extends BasePage {
-  readonly connectGitHubButton: Locator;
+  readonly connectGoogleButton: Locator;
   readonly settingsForm: Locator;
   readonly membersTab: Locator;
   readonly teamsTab: Locator;
@@ -22,8 +22,8 @@ export class SettingsPage extends BasePage {
 
   constructor(page: Page) {
     super(page);
-    this.connectGitHubButton = page.getByRole('button', {
-      name: /connect|github/i,
+    this.connectGoogleButton = page.getByRole('button', {
+      name: /connect|google/i,
     });
     this.settingsForm = page.locator('form').or(page.locator('main'));
     this.membersTab = page.getByRole('tab', { name: /members/i });
@@ -84,10 +84,10 @@ export class SettingsPage extends BasePage {
   }
 
   /**
-   * Click connect GitHub button
+   * Click connect Google button
    */
-  async clickConnectGitHub() {
-    await this.connectGitHubButton.click();
+  async clickConnectGoogle() {
+    await this.connectGoogleButton.click();
   }
 
   /**
