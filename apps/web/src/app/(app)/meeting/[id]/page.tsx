@@ -1,8 +1,10 @@
 import type { Metadata } from 'next';
+import { notFound } from 'next/navigation';
 import { dehydrate, HydrationBoundary } from '@tanstack/react-query';
 import { getQueryClient } from '@/lib/react-query/get-query-client';
 import MeetingDetail from '@/components/meeting/meeting-detail';
 import { getMeeting } from '@/server/query-options';
+import { meetingsFlag } from '@/lib/flags';
 
 interface MeetingPageProps {
   params: Promise<{ id: string }>;
@@ -23,6 +25,9 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 const MeetingPage = async ({ params }: MeetingPageProps) => {
+  const showMeetings = await meetingsFlag();
+  if (!showMeetings) notFound();
+
   const { id } = await params;
   const queryClient = getQueryClient();
   await queryClient.prefetchQuery(getMeeting(parseInt(id, 10)));

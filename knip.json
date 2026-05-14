@@ -64,7 +64,7 @@
         "src/app/**/route.{ts,tsx}"
       ],
       "project": ["src/**/*.{ts,tsx}"],
-      "ignoreDependencies": ["shiki"]
+      "ignoreDependencies": ["shiki", "@vercel/flags"]
     },
     "apps/backend": {
       "entry": ["src/main.ts"],

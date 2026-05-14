@@ -8,6 +8,7 @@ export default defineConfig({
   define: {
     // So React loads development build (with act) when tests import it
     'process.env.NODE_ENV': JSON.stringify('development'),
+    'process.env.MEETINGS_ENABLED': JSON.stringify('true'),
   },
   resolve: {
     alias: {

@@ -3,6 +3,9 @@ import * as dotenv from 'dotenv';
 
 dotenv.config({ path: path.join(__dirname, '.env') });
 
+// Mirror feature flags into the Playwright process so test.skip conditions work
+process.env.MEETINGS_ENABLED = 'true';
+
 import { defineConfig, devices } from '@playwright/test';
 import { nxE2EPreset } from '@nx/playwright/preset';
 import { workspaceRoot } from '@nx/devkit';
@@ -62,6 +65,7 @@ export default defineConfig({
         NEXT_PUBLIC_BACKEND_URL:
           process.env.NEXT_PUBLIC_BACKEND_URL ?? 'http://localhost:3001',
         NODE_ENV: 'test',
+        MEETINGS_ENABLED: 'true',
         SPRITES_API_BASE_URL: 'https://api.sprites.dev',
       },
     },
