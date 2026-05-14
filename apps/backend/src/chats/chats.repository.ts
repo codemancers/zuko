@@ -1,4 +1,6 @@
 import { Injectable } from '@nestjs/common';
+import { randomUUID } from 'crypto';
+import { type SandboxLifecycleState } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
@@ -173,6 +175,66 @@ export class ChatsRepository {
           },
         },
       },
+    });
+  }
+
+  async insertUserMessage(
+    chatId: number,
+    text: string,
+  ): Promise<{ id: string; createdAt: Date }> {
+    const id = randomUUID();
+    const partsJson = JSON.stringify([{ type: 'text', text }]);
+    const rows = await this.prisma.$queryRaw<Array<{ created_at: Date }>>`
+      INSERT INTO chat_message (id, chat_id, role, parts, created_at)
+      VALUES (${id}, ${chatId}, 'user'::"ChatMessageRole", ${partsJson}::jsonb, NOW())
+      RETURNING created_at;
+    `;
+    return { id, createdAt: rows[0]!.created_at };
+  }
+
+  async upsertAssistantMessage(
+    id: string,
+    chatId: number,
+    parts: unknown[],
+    metadata: unknown = null,
+  ): Promise<void> {
+    const partsJson = JSON.stringify(parts);
+    const metadataJson = metadata == null ? null : JSON.stringify(metadata);
+    await this.prisma.$executeRaw`
+      INSERT INTO chat_message (id, chat_id, role, parts, metadata, created_at)
+      VALUES (
+        ${id},
+        ${chatId},
+        'assistant'::"ChatMessageRole",
+        ${partsJson}::jsonb,
+        ${metadataJson}::jsonb,
+        NOW()
+      )
+      ON CONFLICT (id) DO UPDATE
+        SET parts = EXCLUDED.parts,
+            metadata = EXCLUDED.metadata;
+    `;
+  }
+
+  listMessages(chatId: number) {
+    return this.prisma.chatMessage.findMany({
+      where: { chatId },
+      orderBy: { createdAt: 'asc' },
+    });
+  }
+
+  updateSandboxLifecycle(
+    sandboxId: number,
+    data: {
+      lifecycleState?: SandboxLifecycleState;
+      lastActivityAt?: Date;
+      hibernateAfter?: Date | null;
+      lifecycleError?: string | null;
+    },
+  ) {
+    return this.prisma.sandbox.update({
+      where: { id: sandboxId },
+      data,
     });
   }
 }

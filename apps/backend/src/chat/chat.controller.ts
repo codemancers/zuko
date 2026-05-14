@@ -1,20 +1,32 @@
-import { Body, Controller, Post, Req, Res, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  HttpCode,
+  HttpStatus,
+  Post,
+  Req,
+  Res,
+  UseGuards,
+} from '@nestjs/common';
 import { AuthGuard } from '@thallesp/nestjs-better-auth';
+import { generateId } from 'ai';
+import type { UIMessageChunk, UIMessage } from 'ai';
 import type { Response } from 'express';
-import { Readable } from 'node:stream';
-import type { ContextEntityReference } from '../types/chat';
-import { toUIMessageStream } from '@ai-sdk/langchain';
-import type { UIMessage } from 'ai';
 import type { RequestWithUser } from '@zuko/core';
+import type { ContextEntityReference } from '../types/chat';
 import { ChatsService } from '../chats/chats.service';
-import { LangsmithService } from '../langsmith/langsmith.service';
-import { transformSSEToLangChainStreamFromNode } from '../langsmith/langsmith-stream.util';
+import { ChatsRepository } from '../chats/chats.repository';
+import { AgentService } from '../agent/agent.service';
+import { ChatStreamRegistry } from './chat-stream.registry';
+import { convertChatStreamToUiMessageStream } from './convert-stream';
 
 @Controller('v1')
 export class ChatController {
   constructor(
     private readonly chatsService: ChatsService,
-    private readonly langsmithService: LangsmithService,
+    private readonly chatsRepository: ChatsRepository,
+    private readonly agentService: AgentService,
+    private readonly streamRegistry: ChatStreamRegistry,
   ) {}
 
   @Post('chat')
@@ -41,38 +53,114 @@ export class ChatController {
       contextEntities: body.contextEntities,
     });
 
-    // Set SSE headers for the client
+    // Persist user message
+    const lastUserMessage = [...messages]
+      .reverse()
+      .find((m: UIMessage) => m.role === 'user');
+    if (lastUserMessage) {
+      const text =
+        lastUserMessage.parts
+          ?.filter((p: any) => p.type === 'text')
+          .map((p: any) => p.text)
+          .join('') ??
+        (lastUserMessage as any).content ??
+        '';
+      if (text.trim()) {
+        await this.chatsRepository.insertUserMessage(chatId, text);
+      }
+    }
+
+    // Claim stream slot — aborts any existing run for this chat (dedup)
+    const aborter = this.streamRegistry.claim(chatId);
+
+    // SSE headers
     response.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
     response.setHeader('Cache-Control', 'no-cache');
     response.setHeader('Connection', 'keep-alive');
     response.setHeader('X-Thread-Id', preparedRun.threadId);
     response.setHeader('X-Chat-Id', chatId);
+    response.flushHeaders();
 
-    const upstreamBody = await this.langsmithService.createRunStream({
-      threadId: preparedRun.threadId,
+    // Stable assistant id — emit our own start chunk first so the client
+    // has a stable message id before the graph stream begins.
+    const assistantId = generateId();
+    const startChunk: UIMessageChunk = {
+      type: 'start',
+      messageId: assistantId,
+    };
+    response.write(`data: ${JSON.stringify(startChunk)}\n\n`);
+
+    const graphStream = await this.agentService.stream({
       messages: preparedRun.langchainMessages,
       contextEntities: preparedRun.contextEntities,
       userId,
       organizationId,
-      sandboxUrl: preparedRun.sandboxUrl,
+      sandbox: preparedRun.sandbox,
+      signal: aborter.signal,
     });
 
-    const nodeStream = Readable.fromWeb(
-      upstreamBody as unknown as ReadableStream,
-    );
-    const langchainStream = transformSSEToLangChainStreamFromNode(nodeStream);
-    const uiStream = toUIMessageStream(langchainStream as any);
+    // suppressStart: true — drop the converter's own start chunk so the
+    // client sees exactly one start (the one we emitted above with assistantId).
+    const uiStream = convertChatStreamToUiMessageStream(graphStream, {
+      suppressStart: true,
+    });
+
+    let accumulatedText = '';
 
     try {
-      for await (const chunk of uiStream) {
-        response.write(`data: ${JSON.stringify(chunk)}\n\n`);
+      const reader = uiStream.getReader();
+      try {
+        while (true) {
+          const { value, done } = await reader.read();
+          if (done) break;
+          if ((value as any).type === 'text-delta') {
+            accumulatedText += (value as any).delta;
+          }
+          response.write(`data: ${JSON.stringify(value)}\n\n`);
+        }
+      } finally {
+        reader.releaseLock();
       }
     } catch (err) {
-      // swallow streaming errors for now; connection will just end
+      console.error('[ChatController] streaming error:', err);
     } finally {
+      this.streamRegistry.release(chatId, aborter);
+
+      if (accumulatedText.trim()) {
+        this.chatsRepository
+          .upsertAssistantMessage(assistantId, chatId, [
+            { type: 'text', text: accumulatedText },
+          ])
+          .catch((err) =>
+            console.error(
+              '[ChatController] failed to persist assistant message:',
+              err,
+            ),
+          );
+      }
       response.end();
     }
 
     return;
+  }
+
+  /**
+   * Cancel the active agent run for this chat.
+   * POST /api/v1/chat/stop
+   */
+  @Post('chat/stop')
+  @UseGuards(AuthGuard)
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async stop(
+    @Body() body: { chatId: string | number },
+    @Req() req: RequestWithUser,
+  ) {
+    const chatId =
+      typeof body.chatId === 'string' ? parseInt(body.chatId, 10) : body.chatId;
+    const userId = parseInt(req.user.id, 10);
+
+    // Verify participant before allowing stop
+    await this.chatsService.ensureUserIsParticipant(chatId, userId);
+    this.streamRegistry.stop(chatId);
   }
 }

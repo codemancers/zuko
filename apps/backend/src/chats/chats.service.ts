@@ -12,19 +12,26 @@ import { getActiveOrganizationId } from '../common/auth/get-organization-id';
 // eslint-disable-next-line @typescript-eslint/consistent-type-imports
 import { PrismaService } from '../prisma/prisma.service';
 // eslint-disable-next-line @typescript-eslint/consistent-type-imports
-import { LangsmithService } from '../langsmith/langsmith.service';
-// eslint-disable-next-line @typescript-eslint/consistent-type-imports
 import { SpritesService } from '../sprites/sprites.service';
 // eslint-disable-next-line @typescript-eslint/consistent-type-imports
 import { ChatsRepository } from './chats.repository';
+// eslint-disable-next-line @typescript-eslint/consistent-type-imports
+import { SandboxLifecycleService } from '../sandbox-lifecycle/sandbox-lifecycle.service';
+import {
+  LocalSandbox,
+  SpriteSandbox,
+  type Sandbox,
+} from '../agent/tools/sandbox';
+
+const WORKING_DIR = process.env.WORKING_DIR ?? '/home/sprite/zuko';
 
 @Injectable()
 export class ChatsService {
   constructor(
     private readonly chatsRepository: ChatsRepository,
     private readonly prisma: PrismaService,
-    private readonly langsmithService: LangsmithService,
     private readonly spritesService: SpritesService,
+    private readonly sandboxLifecycle: SandboxLifecycleService,
   ) {}
 
   /**
@@ -129,58 +136,14 @@ export class ChatsService {
 
   async getMessagesForUser(chatId: number, userId: number) {
     const chat = await this.getChatForUser(chatId, userId);
-    const threadId = chat.threadId;
-    const sandboxUrl = chat.sandboxes[0]?.url ?? '';
-
-    let values: { messages: unknown[]; contextEntities: unknown[] };
-    if (!sandboxUrl) {
-      values = { messages: [], contextEntities: [] };
-    } else {
-      const spriteName =
-        process.env.NODE_ENV === 'test'
-          ? (process.env.E2E_SANDBOX ?? '')
-          : `${chatId}-${threadId}`;
-      await this.spritesService.startServer(spriteName);
-      const state: any = await this.langsmithService.getThreadState(
-        threadId,
-        sandboxUrl,
-      );
-      values = state?.values ?? { messages: [], contextEntities: [] };
-    }
-
-    const rawMessages: unknown[] = Array.isArray(values.messages)
-      ? values.messages
-      : [];
-    const messages = rawMessages
-      .map((msg: any) => {
-        const role =
-          msg.type === 'human'
-            ? 'user'
-            : msg.type === 'ai'
-              ? 'assistant'
-              : (msg.type ?? 'system');
-
-        const content =
-          typeof msg.content === 'string'
-            ? msg.content
-            : typeof msg.text === 'string'
-              ? msg.text
-              : '';
-
-        if (!content || !content.trim()) {
-          return null;
-        }
-
-        return { role, content };
-      })
-      .filter((m): m is { role: string; content: string } => m !== null);
-
-    const contextEntities =
-      Array.isArray(values.contextEntities) && values.contextEntities.length > 0
-        ? (values.contextEntities as unknown[])
-        : [];
-
-    return { messages, contextEntities };
+    const sandboxId = chat.sandboxes[0]?.id ?? null;
+    const rows = await this.chatsRepository.listMessages(chatId);
+    const messages = rows.map((r) => ({
+      id: r.id,
+      role: r.role as 'user' | 'assistant' | 'system',
+      parts: r.parts,
+    }));
+    return { messages, contextEntities: [], sandboxId };
   }
 
   async prepareChatRun(input: {
@@ -200,6 +163,7 @@ export class ChatsService {
     const threadId = chat.threadId;
     const spriteName = `${chatId}-${threadId}`;
 
+    const spritesEnabled = process.env.SPRITES_ENABLED !== 'false';
     let sandbox = chat.sandboxes[0];
     if (process.env.NODE_ENV === 'test') {
       sandbox = await this.chatsRepository.createSandboxForChat(
@@ -207,14 +171,36 @@ export class ChatsService {
         process.env.E2E_SANDBOX ?? '',
         process.env.E2E_SANDBOX_URL ?? '',
       );
-    } else if (!sandbox) {
+    } else if (!sandbox && spritesEnabled) {
       const sprite = await this.spritesService.createSprite(spriteName);
       await this.spritesService.setupSprite(spriteName);
+      // Store sprite.name from API response (e.g. "zuko-24-uuid"), not local
+      // spriteName variable ("24-uuid"), so start/stop calls use the correct name.
       sandbox = await this.chatsRepository.createSandboxForChat(
         chat.id,
-        spriteName,
+        sprite.name,
         sprite.url,
       );
+      await this.sandboxLifecycle.markActive(sandbox.id);
+    } else if (sandbox && spritesEnabled) {
+      // Ensure the sprite is warm regardless of what our DB says — Fly can
+      // auto-suspend a sprite independently, causing a state mismatch where
+      // DB says 'active' but the sprite is actually cold. startSprite is
+      // idempotent (no-op if already running).
+      if (sandbox.lifecycleState === 'hibernated') {
+        await this.sandboxLifecycle.resume(sandbox.id);
+      } else {
+        await this.spritesService.startSprite(sandbox.name).catch(() => {});
+        await this.sandboxLifecycle.markActive(sandbox.id);
+      }
+    } else if (
+      sandbox &&
+      !spritesEnabled &&
+      sandbox.lifecycleState !== 'active'
+    ) {
+      // When sprites are disabled (local dev), always reset to active so the
+      // badge doesn't show a stale failed/hibernated state.
+      await this.sandboxLifecycle.markActive(sandbox.id);
     }
 
     if (!chat.title && messages.length === 1) {
@@ -238,12 +224,25 @@ export class ChatsService {
     );
     const langchainMessages = await toBaseMessages(filteredMessages);
 
-    await this.spritesService.startServer(spriteName);
+    // Refresh inactivity deadline after each chat run
+    if (spritesEnabled && sandbox) {
+      this.sandboxLifecycle.refreshActivity(sandbox.id).catch(() => {});
+    }
+
+    // Build sandbox instance — passed directly to graph.stream() configurable (gather-style).
+    const sandboxInstance: Sandbox =
+      spritesEnabled && sandbox
+        ? new SpriteSandbox(
+            WORKING_DIR,
+            sandbox.name,
+            process.env.SPRITES_TOKEN ?? '',
+          )
+        : new LocalSandbox(WORKING_DIR);
 
     return {
       chatId,
       threadId,
-      sandboxUrl: sandbox?.url ?? '',
+      sandbox: sandboxInstance,
       contextEntities,
       langchainMessages,
     };

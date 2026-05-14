@@ -24,6 +24,7 @@ import { contactsApi } from '@/lib/api/contacts';
 import { companiesApi } from '@/lib/api/companies';
 import { dealsApi } from '@/lib/api/deals';
 import { CHAT_ENTITY_TYPE_LABEL } from '@/lib/constants';
+import { SandboxStatusBadge } from '@/components/Chat/SandboxStatusBadge';
 
 export default function ChatPage() {
   const params = useParams();
@@ -37,6 +38,7 @@ export default function ChatPage() {
   const invalidateChats = useInvalidateChats();
   const [firstMessageSent, setFirstMessageSent] = useState(false);
   const [messagesLoaded, setMessagesLoaded] = useState(false);
+  const [sandboxId, setSandboxId] = useState<number | null>(null);
 
   const hasMessages = messages.length > 0;
 
@@ -144,18 +146,16 @@ export default function ChatPage() {
         const data = await response.json();
         const historyMessages = data.messages || [];
         const contextRefs = data.contextEntities || [];
+        if (data.sandboxId) setSandboxId(data.sandboxId);
 
-        // Convert to AI SDK v6 message format with parts array
+        // Messages from DB already have parts array (UIMessage shape)
         const formattedMessages = historyMessages.map(
           (msg: any, index: number) => ({
-            id: `msg-${index}`,
+            id: msg.id ?? `msg-${index}`,
             role: msg.role,
-            parts: [
-              {
-                type: 'text',
-                text: msg.content,
-              },
-            ],
+            parts: Array.isArray(msg.parts)
+              ? msg.parts
+              : [{ type: 'text', text: msg.content ?? '' }],
           }),
         );
 
@@ -248,6 +248,13 @@ export default function ChatPage() {
   return (
     <TooltipProvider>
       <div className="flex h-full flex-col overflow-hidden bg-zinc-50 dark:bg-zinc-900">
+        {sandboxId && (
+          <div className="relative z-10 h-0 shrink-0">
+            <div className="absolute right-3 top-3">
+              <SandboxStatusBadge sandboxId={sandboxId} />
+            </div>
+          </div>
+        )}
         {hasMessages ? (
           <>
             {/* Messages Area - with scrolling, constrained width */}

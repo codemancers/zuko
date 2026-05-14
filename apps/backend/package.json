@@ -5,6 +5,10 @@
   "type": "module",
   "dependencies": {
     "@ai-sdk/langchain": "^2.0.75",
+    "@langchain/anthropic": "^0.3.19",
+    "@langchain/openai": "^1.2.1",
+    "deepagents": "^1.4.0",
+    "langchain": "^1.2.7",
     "@nestjs/common": "^11.0.0",
     "@nestjs/config": "^4.0.0",
     "@nestjs/core": "^11.0.0",

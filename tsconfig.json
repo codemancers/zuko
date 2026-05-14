@@ -28,12 +28,6 @@
       "path": "./libs/sales"
     },
     {
-      "path": "./apps/ai-agents-e2e"
-    },
-    {
-      "path": "./apps/ai-agents"
-    },
-    {
       "path": "./apps/meeting-bot"
     }
   ]

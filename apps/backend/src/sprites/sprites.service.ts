@@ -66,8 +66,104 @@ export class SpritesService {
     };
   }
 
-  private spriteName(threadId: string): string {
+  spriteName(threadId: string): string {
     return `zuko-${threadId}`;
+  }
+
+  async getSprite(name: string): Promise<SpriteRecord> {
+    const encoded = encodeURIComponent(name);
+    const res = await fetch(`${this.baseUrl}/v1/sprites/${encoded}`, {
+      headers: this.bearerHeaders(),
+    });
+    if (!res.ok) {
+      const text = await res.text();
+      throw new InternalServerErrorException(
+        `Sprites API get failed (${res.status}): ${text}`,
+      );
+    }
+    return (await res.json()) as SpriteRecord;
+  }
+
+  async stopSprite(name: string): Promise<void> {
+    const encoded = encodeURIComponent(name);
+    const res = await fetch(`${this.baseUrl}/v1/sprites/${encoded}/stop`, {
+      method: 'POST',
+      headers: this.bearerHeaders(),
+    });
+    // 404 = sprite not found or already stopped — treat as success
+    if (!res.ok && res.status !== 404) {
+      const text = await res.text();
+      throw new InternalServerErrorException(
+        `Sprites API stop failed (${res.status}): ${text}`,
+      );
+    }
+  }
+
+  async startSprite(name: string): Promise<void> {
+    const encoded = encodeURIComponent(name);
+    const res = await fetch(`${this.baseUrl}/v1/sprites/${encoded}/start`, {
+      method: 'POST',
+      headers: this.bearerHeaders(),
+    });
+    // 404 = sprite not found; any 4xx likely means already starting/running
+    if (!res.ok && res.status !== 404) {
+      const text = await res.text();
+      throw new InternalServerErrorException(
+        `Sprites API start failed (${res.status}): ${text}`,
+      );
+    }
+  }
+
+  async readFile(name: string, filePath: string): Promise<string> {
+    const encoded = encodeURIComponent(name);
+    const res = await fetch(
+      `${this.baseUrl}/v1/sprites/${encoded}/fs/${filePath}`,
+      { headers: this.bearerHeaders() },
+    );
+    if (!res.ok) {
+      const text = await res.text();
+      throw new InternalServerErrorException(
+        `Sprites API readFile failed (${res.status}): ${text}`,
+      );
+    }
+    return res.text();
+  }
+
+  async writeFile(
+    name: string,
+    filePath: string,
+    content: string,
+  ): Promise<void> {
+    const encoded = encodeURIComponent(name);
+    const res = await fetch(
+      `${this.baseUrl}/v1/sprites/${encoded}/fs/${filePath}`,
+      {
+        method: 'PUT',
+        headers: { ...this.bearerHeaders(), 'Content-Type': 'text/plain' },
+        body: content,
+      },
+    );
+    if (!res.ok) {
+      const text = await res.text();
+      throw new InternalServerErrorException(
+        `Sprites API writeFile failed (${res.status}): ${text}`,
+      );
+    }
+  }
+
+  async listDirectory(name: string, dirPath: string): Promise<unknown> {
+    const encoded = encodeURIComponent(name);
+    const res = await fetch(
+      `${this.baseUrl}/v1/sprites/${encoded}/fs/${dirPath}?list=true`,
+      { headers: this.bearerHeaders() },
+    );
+    if (!res.ok) {
+      const text = await res.text();
+      throw new InternalServerErrorException(
+        `Sprites API listDirectory failed (${res.status}): ${text}`,
+      );
+    }
+    return res.json();
   }
 
   async createSprite(threadId: string): Promise<SpriteRecord> {
@@ -168,15 +264,23 @@ export class SpritesService {
   }
 
   async setupSprite(threadId: string): Promise<void> {
-    // clone the repo
+    const branch = process.env.AGENT_BRANCH ?? 'main';
+
+    // clone the repo on the correct branch
     await this.executeCommandPost(threadId, {
-      cmd: ['git', 'clone', 'https://github.com/codemancers/zuko.git'],
+      cmd: [
+        'git',
+        'clone',
+        '--branch',
+        branch,
+        'https://github.com/codemancers/zuko.git',
+      ],
       env: this.getEnvironmentVariables(),
     });
 
     console.log('repo cloned');
-    // install dependencies
 
+    // install dependencies
     await this.executeCommandPost(threadId, {
       cmd: ['bash', '-c', 'bun install'],
       env: this.getEnvironmentVariables(),
@@ -184,20 +288,31 @@ export class SpritesService {
     });
 
     console.log('dependencies installed');
-
-    // start the server
-    await this.startServer(threadId);
+    // Architecture 1: sprite is a tool executor only — no server needed inside the sprite.
   }
 
   async startServer(threadId: string): Promise<void> {
     await this.checkIsSandboxUp(threadId);
 
     console.log(`starting server: ${threadId}`);
+    // Start the LangGraph dev server in the background.
+    // Wait up to 120 s for it to become ready; if it doesn't respond in time
+    // we log a warning and continue — the server may still be warming up.
     await this.executeCommandPost(threadId, {
       cmd: [
         'bash',
         '-c',
-        "ss -tulnp | grep ':8080 ' > /dev/null || (nohup bunx nx dev ai-agents --host 0.0.0.0 > dev.log 2>&1 & until curl -s http://localhost:8080 > /dev/null; do sleep 1; done)",
+        [
+          // Kill any existing process on 8080 (might be bound to ::1 only)
+          'fuser -k 8080/tcp 2>/dev/null || true',
+          'sleep 1',
+          'nohup bunx @langchain/langgraph-cli dev -p 8080 --host 0.0.0.0 > dev.log 2>&1 &',
+          'DEADLINE=$((SECONDS+120))',
+          'until curl -s http://0.0.0.0:8080/info > /dev/null; do',
+          '  [ $SECONDS -ge $DEADLINE ] && echo "warn: agent server did not start within 120s" && exit 0',
+          '  sleep 2',
+          'done',
+        ].join('; '),
       ],
       env: this.getEnvironmentVariables(),
       dir: '/home/sprite/zuko',
@@ -209,7 +324,7 @@ export class SpritesService {
     const res = await this.executeCommandPost(threadId, {
       cmd: ['ls'],
     });
-    console.log(`SandboxUp: ${threadId} - ${res}`);
+    console.log(`SandboxUp: ${threadId} - ${res.raw}`);
     return true;
   }
 

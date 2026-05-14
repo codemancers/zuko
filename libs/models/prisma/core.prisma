@@ -106,6 +106,14 @@ model GithubApp {
   @@schema("public")
 }
 
+enum ChatMessageRole {
+  user
+  assistant
+  system
+
+  @@schema("public")
+}
+
 model Chat {
   id          Int      @id @default(autoincrement())
   threadId    String   @unique @map("thread_id")
@@ -117,8 +125,24 @@ model Chat {
   createdBy    User              @relation("ChatCreator", fields: [createdById], references: [id], onDelete: Cascade)
   participants ChatParticipant[]
   sandboxes    Sandbox[]
+  messages     ChatMessage[]
 
   @@map("chat")
+  @@schema("public")
+}
+
+model ChatMessage {
+  id        String          @id
+  chatId    Int             @map("chat_id")
+  role      ChatMessageRole
+  parts     Json
+  metadata  Json?
+  createdAt DateTime        @default(now()) @map("created_at")
+
+  chat Chat @relation(fields: [chatId], references: [id], onDelete: Cascade)
+
+  @@index([chatId, createdAt])
+  @@map("chat_message")
   @@schema("public")
 }
 
@@ -276,15 +300,32 @@ model TaskOwner {
   @@schema("public")
 }
 
+enum SandboxLifecycleState {
+  provisioning
+  active
+  hibernating
+  hibernated
+  restoring
+  failed
+
+  @@schema("public")
+}
+
 model Sandbox {
-  id        Int      @id @default(autoincrement())
-  name      String   @unique
-  url       String
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  id             Int                   @id @default(autoincrement())
+  name           String                @unique
+  url            String
+  lifecycleState SandboxLifecycleState @default(provisioning) @map("lifecycle_state")
+  lifecycleError String?               @map("lifecycle_error")
+  lastActivityAt DateTime?             @map("last_activity_at")
+  hibernateAfter DateTime?             @map("hibernate_after")
+  createdAt      DateTime              @default(now()) @map("created_at")
+  updatedAt      DateTime              @updatedAt @map("updated_at")
 
   chats Chat[]
 
+  @@index([lifecycleState])
+  @@index([hibernateAfter])
   @@map("sandbox")
   @@schema("public")
 }
