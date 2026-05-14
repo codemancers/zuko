@@ -3,6 +3,9 @@ import * as dotenv from 'dotenv';
 
 dotenv.config({ path: path.join(__dirname, '.env') });
 
+// Mirror feature flags into the Playwright process so test.skip conditions work
+process.env.MEETINGS_ENABLED = 'true';
+
 import { defineConfig, devices } from '@playwright/test';
 import { nxE2EPreset } from '@nx/playwright/preset';
 import { workspaceRoot } from '@nx/devkit';
