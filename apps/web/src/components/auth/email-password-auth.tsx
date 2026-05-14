@@ -111,7 +111,12 @@ export function EmailPasswordAuth({ mode = 'signin' }: EmailPasswordAuthProps) {
 
         {/* Google OAuth button */}
         <div className="flex justify-center">
-          <Button type="button" onClick={handleGoogleSignIn} outline>
+          <Button
+            type="button"
+            onClick={handleGoogleSignIn}
+            outline
+            className="flex gap-2 items-center"
+          >
             <Image
               src="/icons/google.svg"
               alt="Google"
