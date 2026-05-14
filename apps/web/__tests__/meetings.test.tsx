@@ -9,6 +9,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MeetingList } from '@/components/meeting/meeting-list';
 import AddMeeting from '@/components/meeting/add-meeting';
 import MeetingDetail from '@/components/meeting/meeting-detail';
+import { ApplicationLayout } from '@/components/application-layout';
 import type { Meeting } from '@/lib/api/meetings';
 
 if (typeof ResizeObserver === 'undefined') {
@@ -30,6 +31,35 @@ vi.mock('next/navigation', () => ({
     push: mockPush,
     replace: mockReplace,
     back: mockBack,
+  }),
+  usePathname: () => '/meetings',
+}));
+
+vi.mock('@/lib/auth-client', () => ({
+  authClient: {
+    getSession: vi.fn().mockResolvedValue({
+      data: {
+        user: { name: 'Test User', email: 'test@example.com', image: null },
+      },
+    }),
+    useActiveOrganization: () => ({ data: { name: 'Test Org', logo: null } }),
+    signOut: vi.fn(),
+    organization: { setActive: vi.fn() },
+  },
+}));
+
+vi.mock('@/lib/api-client', () => ({
+  apiClient: { setOrganizationId: vi.fn() },
+}));
+
+vi.mock('@/hooks/use-chats', () => ({
+  useChats: () => ({ data: [] }),
+}));
+
+vi.mock('@/server/query-options', () => ({
+  getOrganizations: () => ({
+    queryKey: ['organizations'],
+    queryFn: async () => [],
   }),
 }));
 
@@ -759,5 +789,41 @@ describe('MeetingDetail', () => {
     });
     await user.click(copyButtons[0]);
     expect(mockToastSuccess).toHaveBeenCalledWith('Copied to clipboard');
+  });
+});
+
+describe('ApplicationLayout - meetings feature flag', () => {
+  function LayoutWrapper({ showMeetings }: { showMeetings: boolean }) {
+    const [queryClient] = useState(
+      () =>
+        new QueryClient({
+          defaultOptions: { queries: { retry: false } },
+        }),
+    );
+    return (
+      <QueryClientProvider client={queryClient}>
+        <ApplicationLayout showMeetings={showMeetings}>
+          <div>content</div>
+        </ApplicationLayout>
+      </QueryClientProvider>
+    );
+  }
+
+  it('renders Meetings nav item when showMeetings is true', async () => {
+    render(<LayoutWrapper showMeetings={true} />);
+    await vi.waitFor(() => {
+      expect(
+        screen.getByRole('link', { name: /meetings/i }),
+      ).toBeInTheDocument();
+    });
+  });
+
+  it('does not render Meetings nav item when showMeetings is false', async () => {
+    render(<LayoutWrapper showMeetings={false} />);
+    await vi.waitFor(() => {
+      expect(
+        screen.queryByRole('link', { name: /^meetings$/i }),
+      ).not.toBeInTheDocument();
+    });
   });
 });

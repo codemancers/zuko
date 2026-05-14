@@ -96,7 +96,11 @@ const baseNavigation = [
   { name: 'Settings', href: '/settings', icon: Cog6ToothIcon },
 ];
 
-const meetingsNavItem = { name: 'Meetings', href: '/meetings', icon: CalendarIcon };
+const meetingsNavItem = {
+  name: 'Meetings',
+  href: '/meetings',
+  icon: CalendarIcon,
+};
 
 export function ApplicationLayout({
   children,

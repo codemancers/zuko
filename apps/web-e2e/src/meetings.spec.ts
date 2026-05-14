@@ -203,4 +203,47 @@ test.describe('Meetings - Authenticated', () => {
       page.getByText('Are you sure you want to delete this meeting?'),
     ).not.toBeVisible();
   });
+
+  test('Meetings sidebar nav link is visible when flag is enabled', async ({
+    meetingsPage,
+    page,
+  }) => {
+    await meetingsPage.goto();
+    await expect(page.getByRole('link', { name: /^meetings$/i })).toBeVisible({
+      timeout: 5000,
+    });
+  });
+});
+
+/**
+ * These tests verify behavior when the meetings feature flag is disabled
+ * (MEETINGS_ENABLED env var is not set to "true").
+ * Run against a server started without MEETINGS_ENABLED=true.
+ */
+test.describe('Meetings - Feature Flag Disabled', () => {
+  test.skip(
+    process.env.MEETINGS_ENABLED === 'true',
+    'Skipped when meetings flag is enabled',
+  );
+
+  test('returns 404 when visiting /meetings with flag disabled', async ({
+    page,
+  }) => {
+    const response = await page.goto('/meetings');
+    expect(response?.status()).toBe(404);
+  });
+
+  test('returns 404 when visiting /meeting/add with flag disabled', async ({
+    page,
+  }) => {
+    const response = await page.goto('/meeting/add');
+    expect(response?.status()).toBe(404);
+  });
+
+  test('returns 404 when visiting /meeting/1 with flag disabled', async ({
+    page,
+  }) => {
+    const response = await page.goto('/meeting/1');
+    expect(response?.status()).toBe(404);
+  });
 });
