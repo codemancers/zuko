@@ -2,7 +2,11 @@
 
 import { useState, useMemo, useRef } from 'react';
 import { useSheetState } from '@/hooks/use-sheet-state';
-import { PlusIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import {
+  PlusIcon,
+  XMarkIcon,
+  UserGroupIcon,
+} from '@heroicons/react/24/outline';
 import { Button, Sheet, SheetHeader, SheetTitle } from '@zuko/ui-kit';
 import { PageHeader, SearchBar } from '@/components/shared';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -20,7 +24,6 @@ import {
   DeleteAction,
 } from '../Table';
 import { useAddColumn } from '@/hooks/use-add-column';
-import { useAddRow } from '@/hooks/use-add-row';
 import { useCellUpdate } from '@/hooks/use-cell-update';
 import type { ColumnConfig } from '@/types/table-metadata';
 import { contactsApi } from '@/lib/api/contacts';
@@ -45,7 +48,6 @@ const ContactsList = () => {
 
   const { mutate: addColumn } = useAddColumn('contacts');
 
-  const { addRow } = useAddRow('contacts');
   const { updateCell } = useCellUpdate('contacts');
 
   const hideContactMutation = useMutation({
@@ -89,10 +91,6 @@ const ContactsList = () => {
     setIsSheetOpen(true);
   };
 
-  const handleNewContactRow = () => {
-    addRow();
-  };
-
   const handleNewColumn = (
     name: string,
     key: string,
@@ -132,12 +130,18 @@ const ContactsList = () => {
         }
         totalCount={contactsData?.pagination?.total}
         entityName="contacts"
-        showAddRow
-        onAddRow={handleNewContactRow}
         showAddColumn={false}
         onAddColumn={handleNewColumn}
         openAddColumnRef={openAddColumnRef}
         disableRowClick={true}
+        showEmptyState
+        emptyStateConfig={{
+          icon: UserGroupIcon,
+          title: 'No contacts yet',
+          description:
+            'Add your first contact to start managing relationships.',
+          action: { label: 'New Contact', onClick: handleNewContact },
+        }}
       />
 
       <ConfirmDialog

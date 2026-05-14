@@ -18,18 +18,16 @@ test.describe('Team Management', () => {
     // 2. Navigate to Teams page
     await teamsPage.goto(orgSlug);
 
-    // 3. Create a team via "Add row" — creates "New Team" directly
-    const addRowButton = page.getByRole('button', { name: /add row/i });
-    await addRowButton.click();
+    // 3. Create a team via sheet
+    const initialTeamName = `Initial Team ${Date.now()}`;
+    await teamsPage.createTeam(initialTeamName);
     await expect(page.getByText('Team created')).toBeVisible();
-
-    // Wait for the "New Team" row to appear
-    await expect(page.locator('table').getByText('New Team')).toBeVisible({
+    await expect(page.locator('table').getByText(initialTeamName)).toBeVisible({
       timeout: 10000,
     });
 
-    // 4. Rename "New Team" inline — click the name span to enter edit mode
-    await page.locator('table').getByText('New Team').last().click();
+    // 4. Rename inline
+    await page.locator('table').getByText(initialTeamName).last().click();
     // After clicking, the span is replaced by an input — find the first input in the table
     const nameInput = page.locator('table input').first();
     await nameInput.waitFor({ state: 'visible', timeout: 5000 });

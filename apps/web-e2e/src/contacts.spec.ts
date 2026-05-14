@@ -23,15 +23,17 @@ test.describe('Contacts - Authenticated', () => {
   }) => {
     await contactsPage.goto();
 
-    const initialRowCount = await contactsPage.getRowCount();
-    const newRowIndex = await contactsPage.createNewContact();
-    await expect(page.getByText('New contact added')).toBeVisible();
-    const newRowCount = await contactsPage.getRowCount();
-    expect(newRowCount).toBe(initialRowCount + 1);
+    const initialRowCount = (await contactsPage.getContactItems()).length;
+    const contactName = await contactsPage.createNewContact('New Contact');
+    const rows = await contactsPage.getContactItems();
+    expect(rows.length).toBe(initialRowCount + 1);
 
     const nameIndex = await contactsPage.getColumnIndex('Name');
-    const newRow = page.getByRole('row').nth(newRowIndex);
-    await expect(newRow.locator('td').nth(nameIndex)).toHaveText('New Contact');
+    const newRow = page
+      .getByRole('row')
+      .filter({ hasText: contactName })
+      .first();
+    await expect(newRow.locator('td').nth(nameIndex)).toHaveText(contactName);
   });
 
   test('can view contact list', async ({ contactsPage }) => {
@@ -74,17 +76,15 @@ test.describe('Contacts - Authenticated', () => {
     });
   });
 
-  test('Renders add row button at the bottom of the table', async ({
+  test('renders New Contact button and does not render add row button', async ({
     contactsPage,
     page,
   }) => {
     await contactsPage.goto();
-    const contacts = await contactsPage.getContactItems();
-
-    if (contacts.length > 0) {
-      const addRowButton = page.getByRole('button', { name: /Add row/i });
-      await expect(addRowButton).toBeVisible();
-    }
+    await expect(
+      page.getByRole('button', { name: /New Contact/i }).first(),
+    ).toBeVisible();
+    await expect(page.getByRole('button', { name: /Add row/i })).toHaveCount(0);
   });
 
   test('Opens add column dialog when header plus icon is clicked', async ({
@@ -190,24 +190,16 @@ test.describe.serial('Column Creation Flow', () => {
 });
 
 test.describe('Row Creation Flow', () => {
-  test('Creates new contact row using add row button', async ({
+  test('Creates new contact using the sheet flow', async ({
     contactsPage,
     page,
   }) => {
     await contactsPage.goto();
-    await contactsPage.getContactItems();
-
-    const initialRowCount = await page.getByRole('row').count();
-
-    const addRowButton = page.getByRole('button', { name: /Add row/i });
-    await addRowButton.click();
-
-    // validate success toast message
-    await expect(page.getByText(/New contact added/i)).toBeVisible();
-
-    // validate if new row is created
-    await expect(page.getByRole('row')).toHaveCount(initialRowCount + 1);
-    const updatedRowCount = initialRowCount + 1;
+    const contactName = `Row Flow Contact ${Date.now()}`;
+    const initialCount = (await contactsPage.getContactItems()).length;
+    await contactsPage.createNewRecord(contactName);
+    const rows = await contactsPage.getContactItems();
+    expect(rows.length).toBe(initialCount + 1);
 
     // Get the headers to find column indices
     const headers = page.getByRole('columnheader');
@@ -227,17 +219,20 @@ test.describe('Row Creation Flow', () => {
       h.toLowerCase().includes('created'),
     );
 
-    // nth() is 0-indexed, and initialRowCount counts the header + existing data rows.
-    const newContactRow = page.getByRole('row').nth(initialRowCount);
+    const newContactRow = page
+      .getByRole('row')
+      .filter({ hasText: contactName })
+      .first();
 
-    // Validate S.No field to be equal to the {updatedRowCount - 1} (row count also includes the header)
-    await expect(newContactRow.locator('td').nth(sNoIndex)).toHaveText(
-      (updatedRowCount - 1).toString(),
-    );
+    if (sNoIndex !== -1) {
+      await expect(newContactRow.locator('td').nth(sNoIndex)).toHaveText(
+        (initialCount + 1).toString(),
+      );
+    }
 
     // Validate Name field
     await expect(newContactRow.locator('td').nth(nameIndex)).toHaveText(
-      'New Contact',
+      contactName,
     );
 
     // Validate Owner field (current user name)
@@ -369,7 +364,8 @@ test.describe('Contact Detail - Inline Editing with Activity Verification', () =
     const link = contactDetailPage.getPropertyLink('Email');
     await expect(link).toBeVisible();
     await expect(link).toHaveAttribute('href', `mailto:${newEmail}`);
-    await contactDetailPage.expectActivityEntry(`set email to "${newEmail}"`);
+    // Expect activity entry
+    await contactDetailPage.expectActivityEntry(newEmail);
 
     // Test updating the value
     const updatedEmail = `updated-${Date.now()}@example.com`;

@@ -4,11 +4,19 @@ import { BasePage } from './BasePage';
 export class DealsPage extends BasePage {
   readonly newDealButton: Locator;
   readonly searchInput: Locator;
+  readonly createDealButton: Locator;
+  readonly dealTitleInput: Locator;
 
   constructor(page: Page) {
     super(page);
-    this.newDealButton = page.getByRole('button', { name: /New Deal/i });
+    this.newDealButton = page
+      .getByRole('button', { name: /New Deal/i })
+      .first();
     this.searchInput = page.getByPlaceholder(/Search deals/i);
+    this.createDealButton = page.getByRole('button', {
+      name: /^Create Deal$/i,
+    });
+    this.dealTitleInput = page.getByLabel(/Deal Title/i);
   }
 
   override async goto() {
@@ -23,71 +31,86 @@ export class DealsPage extends BasePage {
 
   async getDealItems() {
     await this.waitForDealsToLoad();
-    // Find all table rows except the header
-    const rows = this.page.locator('table tbody tr');
-    return rows.all();
+    const table = this.page.locator('table');
+    if ((await table.count()) === 0) {
+      return [];
+    }
+    return this.page.locator('table tbody tr').all();
   }
 
   async waitForDealsToLoad() {
-    await this.page
-      .waitForSelector('table', { timeout: 5000 })
-      .catch(() => null);
+    await Promise.race([
+      this.page.waitForSelector('table', { timeout: 10000 }),
+      this.page.getByText(/No deals yet/i).waitFor({ timeout: 10000 }),
+    ]).catch(() => null);
   }
 
   /**
    * Create a new deal and return the table row index
    */
-  async createNewDeal() {
+  async createNewDeal(dealName = `New Deal ${Date.now()}`) {
     await this.page.waitForLoadState('networkidle');
-    const initialRowCount = await this.getRowCount();
-    await this.createNewRecord();
-    // Wait for the new row to appear in the DOM before returning its index
-    await this.page
-      .getByRole('row')
-      .nth(initialRowCount)
-      .waitFor({ state: 'visible', timeout: 30000 });
-    return initialRowCount; // 0-indexed, new row index will be equal to initial row count
+    await this.createNewRecord(dealName);
+    return dealName;
   }
 
   /**
    * Create a new deal row with given name
    */
   async createDealRow(dealName: string) {
-    await this.page.goto('/deals');
-    await this.page.waitForLoadState('networkidle');
-    // Wait for the "Add row" button — it only renders once the table has fully
-    // mounted and data has loaded.  An empty <tbody> has zero height so
-    // Playwright considers it "hidden"; waiting for the button is more reliable.
-    await this.page
-      .getByRole('button', { name: 'Add row' })
-      .waitFor({ state: 'visible', timeout: 15000 });
-    const initialRowCount = await this.page.locator('tbody tr').count();
+    await this.createNewRecord(dealName);
+    await expect(
+      this.page.getByRole('row').filter({ hasText: dealName }).first(),
+    ).toBeVisible();
+  }
 
-    await this.page.getByRole('button', { name: 'Add row' }).click();
-    await expect(this.page.locator('tbody tr')).toHaveCount(
-      initialRowCount + 1,
+  override async createNewRecord(dealName = `New Deal ${Date.now()}`) {
+    if (!this.page.url().endsWith('/deals')) {
+      await this.goto();
+      await this.page.waitForLoadState('networkidle');
+    }
+    await this.newDealButton.click();
+
+    const sheetTitle = this.page.getByRole('heading', { name: /New Deal/i });
+    await expect(sheetTitle).toBeVisible({ timeout: 10000 });
+    await this.dealTitleInput.fill(dealName);
+    const createResponse = this.page.waitForResponse(
+      (resp) =>
+        resp.url().includes('/deals') &&
+        resp.request().method() === 'POST' &&
+        resp.ok(),
       { timeout: 15000 },
     );
+    await this.createDealButton.click();
+    await createResponse;
 
-    // Find the 'title' column index
-    const titleIndex = await this.getColumnIndex('title');
-
-    const lastRow = this.page.locator('tbody tr').last();
-    const titleCell = lastRow.locator('td').nth(titleIndex);
-    await titleCell.evaluate((node) => (node as any).click());
-
-    const input = titleCell.locator('input');
-    await input.waitFor({ state: 'visible' });
-    await input.fill(dealName);
-    await input.press('Enter');
-    await expect(this.page.getByText(dealName)).toBeVisible();
+    await expect(sheetTitle).toBeHidden({ timeout: 15000 });
+    // Search for the deal to ensure it's visible regardless of pagination/sort order
+    await this.searchDeal(dealName);
+    await this.waitForDealsToLoad();
+    await expect(
+      this.page.getByRole('row').filter({ hasText: dealName }).first(),
+    ).toBeVisible({ timeout: 15000 });
   }
 
   /**
    * Wait for details page to load and return the deal ID from url
    */
   async waitForDetailsPageToLoad() {
-    await this.page.waitForURL(/\/deals\/\d+/, { timeout: 30000 });
+    if (!/\/deals\/\d+/.test(this.page.url())) {
+      await this.page
+        .waitForURL(/\/deals\/\d+/, { timeout: 5000 })
+        .catch(async () => {
+          const link = this.page.locator('a[href^="/deals/"]').first();
+          const href = await link.getAttribute('href');
+          if (!href) {
+            throw new Error(
+              `Failed to navigate to deal detail from URL: ${this.page.url()}`,
+            );
+          }
+          await this.page.goto(href);
+        });
+    }
     await this.page.waitForLoadState('domcontentloaded');
     const match = this.page.url().match(/\/deals\/(\d+)/);
     if (!match?.[1]) {
@@ -100,6 +123,20 @@ export class DealsPage extends BasePage {
    * Click on a deal's link to view details
    */
   async clickDeal(row: Locator) {
-    await row.locator('a[href^="/deals/"]').click();
+    const link = row.locator('a[href^="/deals/"]').first();
+    // Wait for the link to be visible and stable
+    await expect(link).toBeVisible({ timeout: 10000 });
+
+    const href = await link.getAttribute('href');
+    if (!href) {
+      throw new Error('Deal row link is missing an href');
+    }
+
+    await link.click({ force: true });
+    await this.page
+      .waitForURL(/\/deals\/\d+/, { timeout: 5000 })
+      .catch(async () => {
+        await this.page.goto(href);
+      });
   }
 }

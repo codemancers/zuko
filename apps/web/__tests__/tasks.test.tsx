@@ -308,22 +308,21 @@ describe('TasksList', () => {
     vi.clearAllMocks();
   });
 
-  it('displays empty table when no tasks exist', async () => {
+  it('displays empty state when no tasks exist', async () => {
     mockGetTasks.mockResolvedValue(mockTableViewResponse);
 
     render(<TasksList />, { wrapper });
 
     await waitFor(() => {
-      expect(screen.getByRole('table')).toBeInTheDocument();
-      expect(screen.getByText('Title')).toBeInTheDocument();
-      expect(screen.getByText('Status')).toBeInTheDocument();
-      expect(screen.getByText('Assignee')).toBeInTheDocument();
-      expect(screen.getByText('Actions')).toBeInTheDocument();
+      expect(screen.getByText('No tasks yet')).toBeInTheDocument();
     });
 
-    expect(
-      screen.getByRole('button', { name: /add row/i }),
-    ).toBeInTheDocument();
+    expect(screen.queryByRole('table')).not.toBeInTheDocument();
+    expect(screen.queryByText('Title')).not.toBeInTheDocument();
+    expect(screen.queryByText('Status')).not.toBeInTheDocument();
+    expect(screen.queryByText('Assignee')).not.toBeInTheDocument();
+    expect(screen.queryByText('Actions')).not.toBeInTheDocument();
+    expect(screen.getAllByRole('button', { name: /new task/i }).length).toBe(2);
   });
 
   it('displays tasks in table', async () => {

@@ -1,6 +1,10 @@
 'use client';
 
-import { PlusIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import {
+  PlusIcon,
+  XMarkIcon,
+  BuildingOfficeIcon,
+} from '@heroicons/react/24/outline';
 import { Button, Sheet, SheetHeader, SheetTitle } from '@zuko/ui-kit';
 import { PageHeader, SearchBar } from '@/components/shared';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -20,7 +24,6 @@ import {
   DeleteAction,
 } from '../Table';
 import { useAddColumn } from '@/hooks/use-add-column';
-import { useAddRow } from '@/hooks/use-add-row';
 import { useCellUpdate } from '@/hooks/use-cell-update';
 import type { ColumnConfig } from '@/types/table-metadata';
 import { companiesApi } from '@/lib/api/companies';
@@ -45,7 +48,6 @@ const CompaniesList = () => {
 
   const { mutate: addColumn } = useAddColumn('companies');
 
-  const { addRow } = useAddRow('companies');
   const { updateCell } = useCellUpdate('companies');
 
   const hideCompanyMutation = useMutation({
@@ -83,10 +85,6 @@ const CompaniesList = () => {
 
   const handleCompanyClick = (companyId: number) => {
     router.push(`/companies/${companyId}`);
-  };
-
-  const handleNewCompanyRow = () => {
-    addRow();
   };
 
   const handleNewCompany = () => {
@@ -132,12 +130,17 @@ const CompaniesList = () => {
         }
         totalCount={companiesData?.pagination?.total}
         entityName="companies"
-        showAddRow
-        onAddRow={handleNewCompanyRow}
         showAddColumn={false}
         onAddColumn={handleNewColumn}
         openAddColumnRef={openAddColumnRef}
         disableRowClick={true}
+        showEmptyState
+        emptyStateConfig={{
+          icon: BuildingOfficeIcon,
+          title: 'No companies yet',
+          description: 'Add your first company to start managing accounts.',
+          action: { label: 'New Company', onClick: handleNewCompany },
+        }}
       />
 
       <ConfirmDialog

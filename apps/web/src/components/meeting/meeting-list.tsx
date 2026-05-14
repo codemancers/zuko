@@ -85,8 +85,7 @@ export const MeetingList = () => {
         entityName="meetings"
         onRowClick={(meeting) => router.push(`/meeting/${meeting.id}`)}
         totalCount={meetingsData?.pagination?.total}
-        showAddRow
-        onAddRow={() => router.push('/meeting/add')}
+        showEmptyState
         emptyStateConfig={{
           icon: VideoCameraSlashIcon,
           title: 'No Meetings Found',

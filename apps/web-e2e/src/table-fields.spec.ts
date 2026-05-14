@@ -153,6 +153,9 @@ test.describe('Table Fields - Add Column Dialog', () => {
     page,
   }) => {
     await dealsPage.goto();
+    if ((await dealsPage.getDealItems()).length === 0) {
+      await dealsPage.createNewRecord(`Table Field Deal ${Date.now()}`);
+    }
     await tablePage.addCurrencyColumn('Budget', 'budget', 'USD');
 
     // Verify the new column header appears
@@ -169,6 +172,9 @@ test.describe('Table Fields - Add Column Dialog', () => {
     page,
   }) => {
     await dealsPage.goto();
+    if ((await dealsPage.getDealItems()).length === 0) {
+      await dealsPage.createNewRecord(`Table Field Deal ${Date.now()}`);
+    }
     await tablePage.addMultiSelectColumn('Tags', 'tags', [
       'Hot',
       'Cold',
@@ -190,6 +196,9 @@ test.describe('Table Fields - Currency display', () => {
     page,
   }) => {
     await dealsPage.goto();
+    if ((await dealsPage.getDealItems()).length === 0) {
+      await dealsPage.createNewRecord(`Table Field Deal ${Date.now()}`);
+    }
 
     // Value column exists in the deals table and uses currency fieldType
     const valueHeader = page.getByRole('columnheader', { name: /Value/i });

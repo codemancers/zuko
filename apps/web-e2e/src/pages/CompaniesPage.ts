@@ -1,4 +1,4 @@
-import { Page, Locator } from '@playwright/test';
+import { Page, Locator, expect } from '@playwright/test';
 import { BasePage } from './BasePage';
 
 /**
@@ -8,12 +8,20 @@ export class CompaniesPage extends BasePage {
   readonly newCompanyButton: Locator;
   readonly companiesList: Locator;
   readonly searchInput: Locator;
+  readonly companyNameInput: Locator;
+  readonly createCompanyButton: Locator;
 
   constructor(page: Page) {
     super(page);
-    this.newCompanyButton = page.getByRole('button', { name: 'New Company' });
+    this.newCompanyButton = page
+      .getByRole('button', { name: 'New Company' })
+      .first();
     this.companiesList = page.locator('table').or(page.locator('main'));
     this.searchInput = page.getByPlaceholder(/Search companies/i);
+    this.companyNameInput = page.getByLabel(/Company Name/i);
+    this.createCompanyButton = page.getByRole('button', {
+      name: /^Create Company$/i,
+    });
   }
 
   /**
@@ -38,6 +46,10 @@ export class CompaniesPage extends BasePage {
    * Get all company items from the table
    */
   async getCompanyItems() {
+    const table = this.page.locator('table');
+    if ((await table.count()) === 0) {
+      return [];
+    }
     return this.page.locator('tbody tr').all();
   }
 
@@ -52,23 +64,34 @@ export class CompaniesPage extends BasePage {
    * Wait for companies to load
    */
   async waitForCompaniesToLoad() {
-    await this.page
-      .waitForSelector('table', { timeout: 5000 })
-      .catch(() => null);
+    await Promise.race([
+      this.page.waitForSelector('table', { timeout: 10000 }),
+      this.page.getByText(/No companies yet/i).waitFor({ timeout: 10000 }),
+    ]).catch(() => null);
   }
 
   /**
    * Create a new company and return the table row index
    */
-  async createNewCompany() {
-    const initialRowCount = await this.getRowCount();
-    await this.createNewRecord();
-    // Wait for the new row to appear in the DOM before returning its index
-    await this.page
-      .getByRole('row')
-      .nth(initialRowCount)
-      .waitFor({ state: 'visible', timeout: 10000 });
-    return initialRowCount; // 0-indexed, new row index will be equal to initial row count
+  async createNewCompany(companyName = `New Company ${Date.now()}`) {
+    await this.createNewRecord(companyName);
+    return companyName;
+  }
+
+  override async createNewRecord(companyName = `New Company ${Date.now()}`) {
+    await this.newCompanyButton.click();
+    await expect(
+      this.page.getByRole('heading', { name: /New Company/i }),
+    ).toBeVisible();
+    await this.companyNameInput.fill(companyName);
+    await this.createCompanyButton.click();
+    await expect(
+      this.page.getByRole('heading', { name: /New Company/i }),
+    ).toBeHidden({ timeout: 15000 });
+    await this.waitForCompaniesToLoad();
+    await expect(
+      this.page.getByRole('row').filter({ hasText: companyName }).first(),
+    ).toBeVisible({ timeout: 15000 });
   }
 
   /**
