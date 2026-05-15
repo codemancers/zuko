@@ -11,6 +11,8 @@ export interface AgentStreamParams {
   organizationId: number | null;
   sandbox: Sandbox;
   signal?: AbortSignal;
+  agentId?: number;
+  capabilities?: string[];
 }
 
 @Injectable()
@@ -27,6 +29,8 @@ export class AgentService {
       organizationId,
       sandbox,
       signal,
+      agentId,
+      capabilities,
     } = params;
 
     const graph = buildChatGraph();
@@ -39,6 +43,8 @@ export class AgentService {
           userId: String(userId),
           organizationId: organizationId != null ? String(organizationId) : '',
           contextEntities,
+          ...(agentId != null ? { agentId } : {}),
+          ...(capabilities != null ? { capabilities } : {}),
         },
         streamMode: ['values', 'messages'],
         signal,

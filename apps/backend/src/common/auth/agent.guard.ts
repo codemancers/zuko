@@ -6,14 +6,15 @@ import {
   Logger,
 } from '@nestjs/common';
 import type { RequestWithOrganization } from '@zuko/core';
+import { auth } from '../../libs/better-auth/auth';
+import type { AgentAuthApi } from '../../agent-auth-api';
 
-/** Header sent by ai-agents Backend() when calling /api/agents */
 const AGENT_ORG_ID_HEADER = 'x-org-id';
-const AGENT_TOKEN_HEADER = 'x-agent-token';
 
 /**
- * Guard for /api/agents routes. Validates x-agent-token and sets request.organizationId
- * from x-org-id so @OrgId() works without session (no AuthGuard/OrganizationGuard).
+ * Guard for /api/agents routes. Validates the agent JWT issued by the
+ * better-auth agent-auth plugin and sets request.organizationId from the
+ * x-org-id header so @OrgId() works without a user session.
  */
 @Injectable()
 export class AgentGuard implements CanActivate {
@@ -24,12 +25,19 @@ export class AgentGuard implements CanActivate {
       .switchToHttp()
       .getRequest<RequestWithOrganization>();
 
-    const token = request.headers[AGENT_TOKEN_HEADER];
-    const expectedToken = process.env.AGENT_TOKEN;
-    if (!expectedToken || token !== expectedToken) {
-      this.logger.warn(
-        'Agent request rejected: invalid or missing x-agent-token',
-      );
+    const authorization = request.headers['authorization'];
+    if (!authorization?.startsWith('Bearer ')) {
+      this.logger.warn('Agent request rejected: missing Bearer token');
+      return false;
+    }
+
+    const headers = new Headers({ authorization });
+    const agentSession = await (
+      auth as unknown as { api: AgentAuthApi }
+    ).api.getAgentSession({ headers });
+
+    if (!agentSession) {
+      this.logger.warn('Agent request rejected: invalid or expired agent JWT');
       return false;
     }
 

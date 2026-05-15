@@ -11,11 +11,13 @@ export type ToolRunConfig = {
     contextEntities?: ContextEntityReference[];
     organizationId?: number;
     userId?: number;
+    agentId?: number;
   };
   state?: {
     contextEntities?: ContextEntityReference[];
     organizationId?: number;
     userId?: number;
+    agentId?: number;
   };
 };
 
@@ -47,6 +49,14 @@ export function getOrganizationId(config?: ToolRunConfig): number | undefined {
  */
 export function getUserId(config?: ToolRunConfig): number | undefined {
   return config?.state?.userId ?? config?.configurable?.userId;
+}
+
+/**
+ * Get the per-chat delegated agent ID from LangGraph tool invocation config.
+ * Used by Backend() to sign JWTs with the chat's agent credentials.
+ */
+export function getAgentId(config?: ToolRunConfig): number | undefined {
+  return config?.state?.agentId ?? config?.configurable?.agentId;
 }
 
 /**

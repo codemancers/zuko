@@ -1,0 +1,158 @@
+// ============================================
+// AGENT AUTH MODELS (better-auth agent-auth plugin)
+// ============================================
+// Int PKs because the project uses generateId: "serial" globally (auth.ts:
+// advanced.database). String ids would be coerced to NaN by the
+// better-auth adapter's numeric-id coercion, breaking host-by-iss lookups.
+// DB column names follow the project's snake_case convention via @map / @@map.
+
+model AgentHost {
+  id                       Int       @id @default(autoincrement())
+  name                     String?
+  userId                   Int?      @map("user_id")
+  defaultCapabilities      String?   @map("default_capabilities")
+  publicKey                String?   @map("public_key")
+  kid                      String?
+  jwksUrl                  String?   @map("jwks_url")
+  enrollmentTokenHash      String?   @map("enrollment_token_hash")
+  enrollmentTokenExpiresAt DateTime? @map("enrollment_token_expires_at")
+  status                   String    @default("active")
+  activatedAt              DateTime? @map("activated_at")
+  expiresAt                DateTime? @map("expires_at")
+  lastUsedAt               DateTime? @map("last_used_at")
+  createdAt                DateTime  @default(now()) @map("created_at")
+  updatedAt                DateTime  @default(now()) @updatedAt @map("updated_at")
+
+  user             User?             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  agents           Agent[]
+  approvalRequests ApprovalRequest[]
+  signingKey       HostSigningKey?
+
+  @@index([userId])
+  @@index([kid])
+  @@index([enrollmentTokenHash])
+  @@index([status])
+  @@map("agent_hosts")
+  @@schema("public")
+}
+
+// Encrypted host private JWK for first-party hosts. The plugin's agentHost
+// stores publicKey only — backend-owned private keys live here. Encrypted
+// with symmetricEncrypt (better-auth/crypto) keyed by BETTER_AUTH_SECRET.
+model HostSigningKey {
+  id                  Int       @id @default(autoincrement())
+  agentHostId         Int       @unique @map("agent_host_id")
+  privateJwkEncrypted String    @map("private_jwk_encrypted")
+  createdAt           DateTime  @default(now()) @map("created_at")
+  rotatedAt           DateTime? @map("rotated_at")
+
+  agentHost AgentHost @relation(fields: [agentHostId], references: [id], onDelete: Cascade)
+
+  @@map("host_signing_keys")
+  @@schema("public")
+}
+
+// Encrypted agent private JWK, persisted so JWT signing survives restarts.
+// Same encryption pattern as HostSigningKey.
+model AgentSigningKey {
+  id                  Int       @id @default(autoincrement())
+  agentId             Int       @unique @map("agent_id")
+  privateJwkEncrypted String    @map("private_jwk_encrypted")
+  createdAt           DateTime  @default(now()) @map("created_at")
+  rotatedAt           DateTime? @map("rotated_at")
+
+  agent Agent @relation(fields: [agentId], references: [id], onDelete: Cascade)
+
+  @@map("agent_signing_keys")
+  @@schema("public")
+}
+
+model Agent {
+  id          Int       @id @default(autoincrement())
+  name        String
+  userId      Int?      @map("user_id")
+  hostId      Int       @map("host_id")
+  status      String    @default("active")
+  mode        String    @default("delegated")
+  publicKey   String    @map("public_key")
+  kid         String?
+  jwksUrl     String?   @map("jwks_url")
+  lastUsedAt  DateTime? @map("last_used_at")
+  activatedAt DateTime? @map("activated_at")
+  expiresAt   DateTime? @map("expires_at")
+  metadata    String?
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @default(now()) @updatedAt @map("updated_at")
+
+  user             User?                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  agentHost        AgentHost              @relation(fields: [hostId], references: [id], onDelete: Cascade)
+  agentCapabilityGrants AgentCapabilityGrant[]
+  approvalRequests ApprovalRequest[]
+  signingKey       AgentSigningKey?
+  chats            Chat[]
+  sandboxes        Sandbox[]
+
+  @@index([userId])
+  @@index([hostId])
+  @@index([status])
+  @@index([kid])
+  @@map("agents")
+  @@schema("public")
+}
+
+model AgentCapabilityGrant {
+  id          Int       @id @default(autoincrement())
+  agentId     Int       @map("agent_id")
+  capability  String
+  deniedBy    Int?      @map("denied_by")
+  grantedBy   Int?      @map("granted_by")
+  expiresAt   DateTime? @map("expires_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @default(now()) @updatedAt @map("updated_at")
+  status      String    @default("active")
+  reason      String?
+  constraints String?
+
+  agent         Agent @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  deniedByUser  User? @relation("AgentGrantsDenied", fields: [deniedBy], references: [id], onDelete: Cascade)
+  grantedByUser User? @relation("AgentGrantsGranted", fields: [grantedBy], references: [id], onDelete: Cascade)
+
+  @@index([agentId])
+  @@index([capability])
+  @@index([grantedBy])
+  @@index([status])
+  @@map("agent_capability_grants")
+  @@schema("public")
+}
+
+model ApprovalRequest {
+  id                         Int       @id @default(autoincrement())
+  method                     String
+  agentId                    Int?      @map("agent_id")
+  hostId                     Int?      @map("host_id")
+  userId                     Int?      @map("user_id")
+  capabilities               String?
+  status                     String    @default("pending")
+  userCodeHash               String?   @map("user_code_hash")
+  loginHint                  String?   @map("login_hint")
+  bindingMessage             String?   @map("binding_message")
+  clientNotificationToken    String?   @map("client_notification_token")
+  clientNotificationEndpoint String?   @map("client_notification_endpoint")
+  deliveryMode               String?   @map("delivery_mode")
+  interval                   Int
+  lastPolledAt               DateTime? @map("last_polled_at")
+  expiresAt                  DateTime  @map("expires_at")
+  createdAt                  DateTime  @default(now()) @map("created_at")
+  updatedAt                  DateTime  @default(now()) @updatedAt @map("updated_at")
+
+  agent Agent?     @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  host  AgentHost? @relation(fields: [hostId], references: [id], onDelete: Cascade)
+  user  User?      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([agentId])
+  @@index([hostId])
+  @@index([userId])
+  @@index([status])
+  @@map("approval_requests")
+  @@schema("public")
+}

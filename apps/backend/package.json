@@ -4,6 +4,8 @@
   "private": true,
   "type": "module",
   "dependencies": {
+    "@auth/agent": "^0.4.5",
+    "@better-auth/agent-auth": "^0.4.5",
     "@ai-sdk/langchain": "^2.0.75",
     "@langchain/anthropic": "^0.3.19",
     "@langchain/openai": "^1.2.1",

@@ -1,30 +1,29 @@
+import { signAgentJwt } from './agent-auth';
+
 interface BackendRequestConfig {
   method?: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
   userId?: string;
   body?: any;
   organisationId?: string;
+  agentId?: number;
 }
 
 export const Backend = async (
   endpoint: string,
   config: BackendRequestConfig,
 ) => {
-  const { method = 'GET', userId, body, organisationId } = config;
+  const { method = 'GET', userId, body, organisationId, agentId } = config;
 
-  // Build URL with query parameters
   const url = new URL(`${process.env.BACKEND_URL}/api/agents${endpoint}`);
 
-  const AGENT_TOKEN = process.env.AGENT_TOKEN;
-  if (!AGENT_TOKEN) {
-    throw new Error('AGENT_TOKEN is not set');
-  }
+  const token = await signAgentJwt(undefined, agentId);
 
   const fetchConfig: RequestInit = {
     method,
     headers: {
-      'x-user-id': userId || '',
-      'x-agent-token': AGENT_TOKEN,
+      Authorization: `Bearer ${token}`,
       'Content-Type': 'application/json',
+      'x-user-id': userId || '',
       'x-org-id': organisationId || '',
     },
   };

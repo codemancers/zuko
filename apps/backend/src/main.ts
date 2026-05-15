@@ -28,7 +28,7 @@ async function bootstrap() {
 
   const globalPrefix = 'api';
   // Exclude auth routes from global prefix
-  app.setGlobalPrefix(globalPrefix, { exclude: ['auth'] });
+  app.setGlobalPrefix(globalPrefix, { exclude: ['auth', '.well-known/(.*)'] });
 
   const basePort = process.env.PORT || 3000;
   const port = parseInt(basePort as string) + 1;

@@ -31,9 +31,14 @@ model User {
   invitations        Invitation[]
   createdTableColumns TableColumn[]    @relation("CreatedTableColumns")
 
-  teammembers TeamMember[]
-  taskOwners  TaskOwner[]
-  meetings    Meeting[]
+  teammembers      TeamMember[]
+  taskOwners       TaskOwner[]
+  meetings         Meeting[]
+  agentHosts          AgentHost[]
+  agents              Agent[]
+  approvalRequests    ApprovalRequest[]
+  agentGrantsDenied   AgentCapabilityGrant[] @relation("AgentGrantsDenied")
+  agentGrantsGranted  AgentCapabilityGrant[] @relation("AgentGrantsGranted")
 
   @@unique([email])
   @@map("user")
@@ -121,12 +126,15 @@ model Chat {
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
   createdById Int      @map("created_by_id")
+  agentId     Int?     @map("agent_id")
 
   createdBy    User              @relation("ChatCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  agent        Agent?            @relation(fields: [agentId], references: [id], onDelete: SetNull)
   participants ChatParticipant[]
   sandboxes    Sandbox[]
   messages     ChatMessage[]
 
+  @@index([agentId])
   @@map("chat")
   @@schema("public")
 }
@@ -315,6 +323,7 @@ model Sandbox {
   id             Int                   @id @default(autoincrement())
   name           String                @unique
   url            String
+  agentId        Int?                  @map("agent_id")
   lifecycleState SandboxLifecycleState @default(provisioning) @map("lifecycle_state")
   lifecycleError String?               @map("lifecycle_error")
   lastActivityAt DateTime?             @map("last_activity_at")
@@ -322,8 +331,10 @@ model Sandbox {
   createdAt      DateTime              @default(now()) @map("created_at")
   updatedAt      DateTime              @updatedAt @map("updated_at")
 
+  agent Agent? @relation(fields: [agentId], references: [id], onDelete: SetNull)
   chats Chat[]
 
+  @@index([agentId])
   @@index([lifecycleState])
   @@index([hibernateAfter])
   @@map("sandbox")

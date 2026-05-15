@@ -1,10 +1,8 @@
 import type { OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { Injectable, Logger } from '@nestjs/common';
-// eslint-disable-next-line @typescript-eslint/consistent-type-imports
 import { ConfigService } from '@nestjs/config';
 import { Pool, Client } from 'pg';
 import type { Notification } from 'pg';
-// eslint-disable-next-line @typescript-eslint/consistent-type-imports
 import { MeetingGateway } from './meeting.gateway';
 
 const CHANNEL = 'meeting_end';

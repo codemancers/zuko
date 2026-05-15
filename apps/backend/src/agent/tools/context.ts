@@ -11,6 +11,8 @@ export interface ToolContext {
   organizationId?: string;
   contextEntities?: Array<{ type: string; id: number }>;
   abortSignal?: AbortSignal;
+  agentId?: number;
+  capabilities?: string[];
 }
 
 /**
@@ -48,6 +50,10 @@ export function getContextFromConfig(config?: RunnableConfig): ToolContext {
     c['workingDirectory'] ?? s['workingDirectory'] ?? WORKING_DIR,
   );
 
+  const rawAgentId = c['agentId'] ?? s['agentId'];
+  const agentId =
+    rawAgentId != null && rawAgentId !== '' ? Number(rawAgentId) : undefined;
+
   return {
     sandbox: buildSandbox({ ...c, workingDirectory }),
     workingDirectory,
@@ -56,5 +62,9 @@ export function getContextFromConfig(config?: RunnableConfig): ToolContext {
     contextEntities: (c['contextEntities'] ??
       s['contextEntities'] ??
       []) as Array<{ type: string; id: number }>,
+    agentId: Number.isFinite(agentId) ? agentId : undefined,
+    capabilities: (c['capabilities'] ?? s['capabilities'] ?? undefined) as
+      | string[]
+      | undefined,
   };
 }
