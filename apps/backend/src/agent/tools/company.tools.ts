@@ -5,7 +5,7 @@ import {
   getOrganizationId,
   getContextEntities,
   getUserId,
-  getAgentId,
+  getSignJwt,
 } from './context.tools';
 import type { ToolRunConfig } from './context.tools';
 
@@ -16,7 +16,7 @@ function orgHeader(organisationId: number | undefined): string {
 export const getCompanyDetailsTool = tool(
   async (input: { companyId?: number }, config: ToolRunConfig) => {
     const organisationId = getOrganizationId(config);
-    const agentId = getAgentId(config);
+    const signJwt = getSignJwt(config);
     const contextEntities = getContextEntities(config);
     const contextCompanies =
       contextEntities?.filter((e) => e.type === 'company') ?? [];
@@ -47,7 +47,7 @@ export const getCompanyDetailsTool = tool(
     const result = await Backend(`/companies/${companyId}`, {
       method: 'GET',
       organisationId: orgHeader(organisationId),
-      agentId,
+      signJwt,
     });
     if (!result.success || !result.data) {
       return {
@@ -96,13 +96,13 @@ export const queryCompaniesTool = tool(
     if (!organisationId) {
       return { error: 'User context (organisationId) is required' };
     }
-    const agentId = getAgentId(config);
+    const signJwt = getSignJwt(config);
     const { filters = {}, aggregation = 'list', limit = 100 } = input;
     const result = await Backend('/companies/query', {
       method: 'POST',
       organisationId: orgHeader(organisationId),
       body: { filters, aggregation, limit },
-      agentId,
+      signJwt,
     });
     if (!result.success) {
       return { error: result.error ?? 'Failed to query companies' };
@@ -145,7 +145,7 @@ export const createCompanyTool = tool(
     config: ToolRunConfig,
   ) => {
     const organisationId = getOrganizationId(config);
-    const agentId = getAgentId(config);
+    const signJwt = getSignJwt(config);
     const userId = getUserId(config);
     if (!organisationId) {
       return { error: 'User context (organisationId) is required' };
@@ -164,7 +164,7 @@ export const createCompanyTool = tool(
     const result = await Backend('/companies', {
       method: 'POST',
       organisationId: orgHeader(organisationId),
-      agentId,
+      signJwt,
       body: {
         companyName: input.companyName,
         website: input.website,
@@ -213,7 +213,7 @@ export const updateCompanyTool = tool(
     config: ToolRunConfig,
   ) => {
     const organisationId = getOrganizationId(config);
-    const agentId = getAgentId(config);
+    const signJwt = getSignJwt(config);
     const contextEntities = getContextEntities(config);
     const contextCompanies =
       contextEntities?.filter((e) => e.type === 'company') ?? [];
@@ -247,7 +247,7 @@ export const updateCompanyTool = tool(
     const result = await Backend(`/companies/${companyId}`, {
       method: 'PATCH',
       organisationId: orgHeader(organisationId),
-      agentId,
+      signJwt,
       body: updates,
     });
     if (!result.success) {

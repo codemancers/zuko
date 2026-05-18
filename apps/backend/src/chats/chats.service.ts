@@ -1,6 +1,8 @@
 import {
   ForbiddenException,
   Injectable,
+  InternalServerErrorException,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { randomUUID } from 'crypto';
@@ -24,6 +26,8 @@ const WORKING_DIR = process.env.WORKING_DIR ?? '/home/sprite/zuko';
 
 @Injectable()
 export class ChatsService {
+  private readonly logger = new Logger(ChatsService.name);
+
   constructor(
     private readonly chatsRepository: ChatsRepository,
     private readonly prisma: PrismaService,
@@ -55,8 +59,14 @@ export class ChatsService {
       });
       return { ...chat, agentId };
     } catch (err) {
-      console.error('[ChatsService] failed to register delegated agent:', err);
-      return chat;
+      this.logger.error('Failed to register delegated agent for chat', {
+        chatId: chat.id,
+        userId,
+        err,
+      });
+      throw new InternalServerErrorException(
+        'Agent registration failed — please try again',
+      );
     }
   }
 

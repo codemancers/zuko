@@ -1,22 +1,35 @@
-import { signAgentJwt } from './agent-auth';
-
 interface BackendRequestConfig {
   method?: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
   userId?: string;
   body?: any;
   organisationId?: string;
-  agentId?: number;
+  signJwt?: (capabilities: string[]) => Promise<string>;
+  capabilities?: string[];
 }
 
 export const Backend = async (
   endpoint: string,
   config: BackendRequestConfig,
 ) => {
-  const { method = 'GET', userId, body, organisationId, agentId } = config;
+  const {
+    method = 'GET',
+    userId,
+    body,
+    organisationId,
+    signJwt,
+    capabilities = [],
+  } = config;
+
+  if (!signJwt) {
+    return {
+      error:
+        'signJwt not available in tool context — agent identity not initialised',
+      success: false,
+    };
+  }
 
   const url = new URL(`${process.env.BACKEND_URL}/api/agents${endpoint}`);
-
-  const token = await signAgentJwt(undefined, agentId);
+  const token = await signJwt(capabilities);
 
   const fetchConfig: RequestInit = {
     method,

@@ -13,6 +13,7 @@ export interface ToolContext {
   abortSignal?: AbortSignal;
   agentId?: number;
   capabilities?: string[];
+  signJwt?: (capabilities: string[]) => Promise<string>;
 }
 
 /**
@@ -65,6 +66,9 @@ export function getContextFromConfig(config?: RunnableConfig): ToolContext {
     agentId: Number.isFinite(agentId) ? agentId : undefined,
     capabilities: (c['capabilities'] ?? s['capabilities'] ?? undefined) as
       | string[]
+      | undefined,
+    signJwt: c['signJwt'] as
+      | ((capabilities: string[]) => Promise<string>)
       | undefined,
   };
 }

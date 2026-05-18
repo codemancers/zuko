@@ -12,6 +12,7 @@ export type ToolRunConfig = {
     organizationId?: number;
     userId?: number;
     agentId?: number;
+    signJwt?: (capabilities: string[]) => Promise<string>;
   };
   state?: {
     contextEntities?: ContextEntityReference[];
@@ -52,11 +53,13 @@ export function getUserId(config?: ToolRunConfig): number | undefined {
 }
 
 /**
- * Get the per-chat delegated agent ID from LangGraph tool invocation config.
- * Used by Backend() to sign JWTs with the chat's agent credentials.
+ * Get the JWT signing function from LangGraph tool invocation config.
+ * Bound to the chat's delegated agent by AgentService
  */
-export function getAgentId(config?: ToolRunConfig): number | undefined {
-  return config?.state?.agentId ?? config?.configurable?.agentId;
+export function getSignJwt(
+  config?: ToolRunConfig,
+): ((capabilities: string[]) => Promise<string>) | undefined {
+  return config?.configurable?.signJwt;
 }
 
 /**
