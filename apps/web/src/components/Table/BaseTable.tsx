@@ -197,25 +197,43 @@ export function BaseTable<TData extends BaseRow>(props: BaseTableProps<TData>) {
           />
           {isInfiniteScrollMode ? (
             <TableBody>
-              {paddingTop > 0 && (
-                <tr>
-                  <td colSpan={colCount} style={{ height: paddingTop }} />
-                </tr>
-              )}
-              {virtualItems.map((virtualRow) => (
-                <BaseTableRow<TData>
-                  key={rows[virtualRow.index].id}
-                  row={rows[virtualRow.index] as any}
-                  disableRowClick={disableRowClick}
-                  onRowClick={onRowClick}
-                  showAddColumn={showAddColumn}
-                  onCellUpdate={onCellUpdate}
-                />
-              ))}
-              {paddingBottom > 0 && (
-                <tr>
-                  <td colSpan={colCount} style={{ height: paddingBottom }} />
-                </tr>
+              {virtualItems.length > 0 ? (
+                <>
+                  {paddingTop > 0 && (
+                    <tr>
+                      <td colSpan={colCount} style={{ height: paddingTop }} />
+                    </tr>
+                  )}
+                  {virtualItems.map((virtualRow) => (
+                    <BaseTableRow<TData>
+                      key={rows[virtualRow.index].id}
+                      row={rows[virtualRow.index] as any}
+                      disableRowClick={disableRowClick}
+                      onRowClick={onRowClick}
+                      showAddColumn={showAddColumn}
+                      onCellUpdate={onCellUpdate}
+                    />
+                  ))}
+                  {paddingBottom > 0 && (
+                    <tr>
+                      <td
+                        colSpan={colCount}
+                        style={{ height: paddingBottom }}
+                      />
+                    </tr>
+                  )}
+                </>
+              ) : (
+                rows.map((row) => (
+                  <BaseTableRow<TData>
+                    key={row.id}
+                    row={row}
+                    disableRowClick={disableRowClick}
+                    onRowClick={onRowClick}
+                    showAddColumn={showAddColumn}
+                    onCellUpdate={onCellUpdate}
+                  />
+                ))
               )}
             </TableBody>
           ) : (

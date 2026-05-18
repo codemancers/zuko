@@ -61,9 +61,11 @@ vi.mock('@/server/query-options', () => ({
     queryKey: ['organizations'],
     queryFn: async () => [],
   }),
-  getTableViewMeetings: (filters?: { search?: string }) => ({
-    queryKey: ['meetings', 'table', filters],
+  getTableViewMeetingsInfinite: (filters?: { search?: string }) => ({
+    queryKey: ['meetings', 'table', 'infinite', filters],
     queryFn: async () => null,
+    initialPageParam: 1,
+    getNextPageParam: () => undefined,
   }),
   getMeeting: (id: number) => ({
     queryKey: ['meeting', id],
@@ -405,10 +407,10 @@ function createQueryClient() {
     },
   });
   qc.setQueryData(['meetings'], MOCK_MEETINGS);
-  qc.setQueryData(
-    ['meetings', 'table', { search: undefined }],
-    MOCK_TABLE_MEETINGS,
-  );
+  qc.setQueryData(['meetings', 'table', 'infinite', { search: undefined }], {
+    pages: [MOCK_TABLE_MEETINGS],
+    pageParams: [1],
+  });
   qc.setQueryData(['meeting', 1], MOCK_MEETING_DETAIL);
   qc.setQueryData(['meeting', 99], { ...MOCK_MEETING_DETAIL, id: 99 });
   return qc;
@@ -464,8 +466,8 @@ describe('MeetingList', () => {
       const [queryClient] = useState(() => {
         const qc = createQueryClient();
         qc.setQueryData(
-          ['meetings', 'table', { search: undefined }],
-          emptyMeetings,
+          ['meetings', 'table', 'infinite', { search: undefined }],
+          { pages: [emptyMeetings], pageParams: [1] },
         );
         return qc;
       });

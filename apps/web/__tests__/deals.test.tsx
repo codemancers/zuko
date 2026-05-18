@@ -422,17 +422,17 @@ describe('DealsList', () => {
     });
   });
 
-  it('shows pagination text', async () => {
+  it('shows total count when all data is loaded', async () => {
     mockGetTableViewDeals.mockResolvedValue({
       data: [mockDeal],
       metadata: mockMetadata,
-      pagination: { page: 1, limit: 10, total: 50, totalPages: 5 },
+      pagination: { page: 1, limit: 10, total: 1, totalPages: 1 },
     });
     render(<DealsList />, { wrapper });
     await waitFor(() => {
       expect(screen.getByText('Enterprise Deal')).toBeInTheDocument();
     });
-    expect(screen.getByText(/showing 1 of 50 deals/i)).toBeInTheDocument();
+    expect(screen.getByText(/showing all 1 deals/i)).toBeInTheDocument();
   });
 
   it('opens column creation modal when add column button is clicked', async () => {
