@@ -11,7 +11,7 @@ import { activitiesApi } from '@/lib/api/activities';
 import { meetingsApi, type MeetingFilters } from '@/lib/api/meetings';
 import { authClient } from '@/lib/auth-client';
 
-const TABLE_PAGE_SIZE = 50;
+const TABLE_PAGE_SIZE = 10;
 
 export const getContacts = (filters?: ContactFilters) =>
   queryOptions({
