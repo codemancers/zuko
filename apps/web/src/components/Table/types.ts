@@ -73,6 +73,11 @@ export interface BaseTableProps<TData extends BaseRow> {
   ) => void;
   openAddColumnRef?: React.MutableRefObject<(() => void) | undefined>;
   onCellUpdate?: (rowId: string | number, columnId: string, value: any) => void;
+  // Infinite scroll
+  isFetchingNextPage?: boolean;
+  hasNextPage?: boolean;
+  infiniteScrollRef?: React.RefObject<HTMLDivElement | null>;
+
   showEmptyState?: boolean;
   emptyStateConfig?: {
     icon: React.ElementType;

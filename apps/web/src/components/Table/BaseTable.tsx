@@ -50,7 +50,12 @@ export function BaseTable<TData extends BaseRow>(props: BaseTableProps<TData>) {
     showEmptyState,
     emptyStateConfig,
     openAddColumnRef,
+    isFetchingNextPage,
+    hasNextPage,
+    infiniteScrollRef,
   } = props;
+
+  const isInfiniteScrollMode = infiniteScrollRef !== undefined;
 
   if (openAddColumnRef) {
     openAddColumnRef.current = openAddColumnDialog;
@@ -170,96 +175,114 @@ export function BaseTable<TData extends BaseRow>(props: BaseTableProps<TData>) {
         }}
       />
 
-      {/* Pagination & Summary Footer */}
-      {(props.totalCount !== undefined ||
-        (!props.manualPagination &&
-          (table.getCanNextPage() || table.getCanPreviousPage()))) && (
-        <div className="mt-4 flex items-center justify-between">
-          <div className="flex-1 flex justify-between sm:hidden">
-            <Button
-              onClick={() => table.previousPage()}
-              disabled={!table.getCanPreviousPage()}
-              className="relative inline-flex items-center px-4 py-2 border border-zinc-300 dark:border-zinc-700 text-sm font-medium rounded-md text-zinc-700 dark:text-zinc-300 bg-white dark:bg-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-700 disabled:opacity-50 transition-colors"
-            >
-              Previous
-            </Button>
-            <Button
-              onClick={() => table.nextPage()}
-              disabled={!table.getCanNextPage()}
-              className="ml-3 relative inline-flex items-center px-4 py-2 border border-zinc-300 dark:border-zinc-700 text-sm font-medium rounded-md text-zinc-700 dark:text-zinc-300 bg-white dark:bg-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-700 disabled:opacity-50 transition-colors"
-            >
-              Next
-            </Button>
-          </div>
-          <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-            <div>
-              {props.totalCount !== undefined ? (
-                <p className="text-sm text-zinc-600 dark:text-zinc-400">
-                  Showing {props.data.length} of {props.totalCount}{' '}
-                  {props.entityName ?? 'results'}
-                </p>
-              ) : (
-                <p className="text-sm text-zinc-600 dark:text-zinc-400">
-                  Page {table.getState().pagination.pageIndex + 1} of{' '}
-                  {table.getPageCount() || 1}
-                </p>
+      {/* Infinite scroll sentinel & status */}
+      {isInfiniteScrollMode ? (
+        <div className="mt-2">
+          <div ref={infiniteScrollRef} className="h-1" />
+          {isFetchingNextPage && (
+            <p className="mt-2 text-center text-sm text-zinc-500 dark:text-zinc-400">
+              Loading more {props.entityName ?? 'records'}...
+            </p>
+          )}
+          {!hasNextPage && props.totalCount !== undefined && (
+            <p className="mt-2 text-center text-sm text-zinc-500 dark:text-zinc-400">
+              Showing all {props.totalCount}{' '}
+              {props.entityName ?? 'records'}
+            </p>
+          )}
+        </div>
+      ) : (
+        /* Pagination & Summary Footer */
+        (props.totalCount !== undefined ||
+          (!props.manualPagination &&
+            (table.getCanNextPage() || table.getCanPreviousPage()))) && (
+          <div className="mt-4 flex items-center justify-between">
+            <div className="flex-1 flex justify-between sm:hidden">
+              <Button
+                onClick={() => table.previousPage()}
+                disabled={!table.getCanPreviousPage()}
+                className="relative inline-flex items-center px-4 py-2 border border-zinc-300 dark:border-zinc-700 text-sm font-medium rounded-md text-zinc-700 dark:text-zinc-300 bg-white dark:bg-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-700 disabled:opacity-50 transition-colors"
+              >
+                Previous
+              </Button>
+              <Button
+                onClick={() => table.nextPage()}
+                disabled={!table.getCanNextPage()}
+                className="ml-3 relative inline-flex items-center px-4 py-2 border border-zinc-300 dark:border-zinc-700 text-sm font-medium rounded-md text-zinc-700 dark:text-zinc-300 bg-white dark:bg-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-700 disabled:opacity-50 transition-colors"
+              >
+                Next
+              </Button>
+            </div>
+            <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+              <div>
+                {props.totalCount !== undefined ? (
+                  <p className="text-sm text-zinc-600 dark:text-zinc-400">
+                    Showing {props.data.length} of {props.totalCount}{' '}
+                    {props.entityName ?? 'results'}
+                  </p>
+                ) : (
+                  <p className="text-sm text-zinc-600 dark:text-zinc-400">
+                    Page {table.getState().pagination.pageIndex + 1} of{' '}
+                    {table.getPageCount() || 1}
+                  </p>
+                )}
+              </div>
+              {(table.getCanNextPage() || table.getCanPreviousPage()) && (
+                <div className="flex items-center space-x-2">
+                  <span className="text-sm text-zinc-500 dark:text-zinc-500 mr-2 flex items-center">
+                    Rows per page:
+                    <select
+                      value={table.getState().pagination.pageSize}
+                      onChange={(e) => table.setPageSize(Number(e.target.value))}
+                      className="ml-2 bg-transparent border-none text-zinc-700 dark:text-zinc-300 font-medium focus:ring-0 cursor-pointer text-sm"
+                    >
+                      {[10, 20, 30, 40, 50].map((pageSize) => (
+                        <option
+                          key={pageSize}
+                          value={pageSize}
+                          className="dark:bg-zinc-900"
+                        >
+                          {pageSize}
+                        </option>
+                      ))}
+                    </select>
+                  </span>
+                  <nav
+                    className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px"
+                    aria-label="Pagination"
+                  >
+                    <Button
+                      onClick={() => table.previousPage()}
+                      disabled={!table.getCanPreviousPage()}
+                      className="relative inline-flex items-center px-3 py-2 rounded-l-md border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-sm font-medium text-zinc-500 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-700 disabled:opacity-50 transition-colors"
+                    >
+                      <span className="sr-only">Previous</span>
+                      <Image
+                        src={CHEVRON_LEFT}
+                        width={20}
+                        height={20}
+                        alt="Previous"
+                      />
+                    </Button>
+                    <Button
+                      onClick={() => table.nextPage()}
+                      disabled={!table.getCanNextPage()}
+                      className="relative inline-flex items-center px-3 py-2 rounded-r-md border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-sm font-medium text-zinc-500 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-700 disabled:opacity-50 transition-colors"
+                    >
+                      <span className="sr-only">Next</span>
+                      <Image
+                        src={CHEVRON_RIGHT}
+                        width={20}
+                        height={20}
+                        alt="Next"
+                      />
+                    </Button>
+                  </nav>
+                </div>
               )}
             </div>
-            {(table.getCanNextPage() || table.getCanPreviousPage()) && (
-              <div className="flex items-center space-x-2">
-                <span className="text-sm text-zinc-500 dark:text-zinc-500 mr-2 flex items-center">
-                  Rows per page:
-                  <select
-                    value={table.getState().pagination.pageSize}
-                    onChange={(e) => table.setPageSize(Number(e.target.value))}
-                    className="ml-2 bg-transparent border-none text-zinc-700 dark:text-zinc-300 font-medium focus:ring-0 cursor-pointer text-sm"
-                  >
-                    {[10, 20, 30, 40, 50].map((pageSize) => (
-                      <option
-                        key={pageSize}
-                        value={pageSize}
-                        className="dark:bg-zinc-900"
-                      >
-                        {pageSize}
-                      </option>
-                    ))}
-                  </select>
-                </span>
-                <nav
-                  className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px"
-                  aria-label="Pagination"
-                >
-                  <Button
-                    onClick={() => table.previousPage()}
-                    disabled={!table.getCanPreviousPage()}
-                    className="relative inline-flex items-center px-3 py-2 rounded-l-md border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-sm font-medium text-zinc-500 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-700 disabled:opacity-50 transition-colors"
-                  >
-                    <span className="sr-only">Previous</span>
-                    <Image
-                      src={CHEVRON_LEFT}
-                      width={20}
-                      height={20}
-                      alt="Previous"
-                    />
-                  </Button>
-                  <Button
-                    onClick={() => table.nextPage()}
-                    disabled={!table.getCanNextPage()}
-                    className="relative inline-flex items-center px-3 py-2 rounded-r-md border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-sm font-medium text-zinc-500 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-700 disabled:opacity-50 transition-colors"
-                  >
-                    <span className="sr-only">Next</span>
-                    <Image
-                      src={CHEVRON_RIGHT}
-                      width={20}
-                      height={20}
-                      alt="Next"
-                    />
-                  </Button>
-                </nav>
-              </div>
-            )}
           </div>
-        </div>
+        )
       )}
     </div>
   );

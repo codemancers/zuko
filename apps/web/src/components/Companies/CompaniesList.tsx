@@ -7,8 +7,9 @@ import {
 } from '@heroicons/react/24/outline';
 import { Button, Sheet, SheetHeader, SheetTitle } from '@zuko/ui-kit';
 import { PageHeader, SearchBar } from '@/components/shared';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getTableViewCompanies } from '@/server/query-options';
+import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { getTableViewCompaniesInfinite } from '@/server/query-options';
+import { useInfiniteScroll } from '@/hooks/use-infinite-scroll';
 import { useState, useMemo, useRef } from 'react';
 import { useSheetState } from '@/hooks/use-sheet-state';
 import { useRouter } from 'next/navigation';
@@ -42,9 +43,17 @@ const CompaniesList = () => {
     debouncedValue,
   } = useSearchParam();
   const [companyToDelete, setCompanyToDelete] = useState<number | null>(null);
-  const { data: companiesData, isLoading } = useQuery(
-    getTableViewCompanies({ search: debouncedValue || undefined }),
+  const {
+    data: companiesData,
+    isLoading,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useInfiniteQuery(
+    getTableViewCompaniesInfinite({ search: debouncedValue || undefined }),
   );
+
+  const sentinelRef = useInfiniteScroll(fetchNextPage, hasNextPage, isFetchingNextPage);
 
   const { mutate: addColumn } = useAddColumn('companies');
 
@@ -59,8 +68,9 @@ const CompaniesList = () => {
     onError: () => toast.error('Failed to remove company'),
   });
 
-  const companies = companiesData?.data || [];
-  const metadata = companiesData?.metadata || [];
+  const companies = companiesData?.pages.flatMap((p) => p.data) ?? [];
+  const metadata = companiesData?.pages[0]?.metadata ?? [];
+  const totalCount = companiesData?.pages[0]?.pagination?.total;
 
   const actionsColumn: ColumnDef<BaseRow> = useMemo(
     () => ({
@@ -128,12 +138,15 @@ const CompaniesList = () => {
         onCellUpdate={(rowId, columnId, value) =>
           updateCell({ rowId, columnId, value })
         }
-        totalCount={companiesData?.pagination?.total}
+        totalCount={totalCount}
         entityName="companies"
         showAddColumn={false}
         onAddColumn={handleNewColumn}
         openAddColumnRef={openAddColumnRef}
         disableRowClick={true}
+        isFetchingNextPage={isFetchingNextPage}
+        hasNextPage={hasNextPage}
+        infiniteScrollRef={sentinelRef}
         showEmptyState
         emptyStateConfig={{
           icon: BuildingOfficeIcon,

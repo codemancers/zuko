@@ -7,8 +7,9 @@ import {
 } from '@heroicons/react/24/outline';
 import { Button, Sheet, SheetHeader, SheetTitle } from '@zuko/ui-kit';
 import { PageHeader, SearchBar } from '@/components/shared';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getTableViewDeals } from '@/server/query-options';
+import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { getTableViewDealsInfinite } from '@/server/query-options';
+import { useInfiniteScroll } from '@/hooks/use-infinite-scroll';
 import { useState, useMemo, useRef } from 'react';
 import { useSheetState } from '@/hooks/use-sheet-state';
 import { useRouter } from 'next/navigation';
@@ -42,9 +43,17 @@ const DealsList = () => {
     debouncedValue,
   } = useSearchParam();
   const [dealToDelete, setDealToDelete] = useState<number | null>(null);
-  const { data: dealsData, isLoading } = useQuery(
-    getTableViewDeals({ search: debouncedValue || undefined }),
+  const {
+    data: dealsData,
+    isLoading,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useInfiniteQuery(
+    getTableViewDealsInfinite({ search: debouncedValue || undefined }),
   );
+
+  const sentinelRef = useInfiniteScroll(fetchNextPage, hasNextPage, isFetchingNextPage);
 
   const { mutate: addColumn } = useAddColumn('deals');
 
@@ -59,8 +68,9 @@ const DealsList = () => {
     onError: () => toast.error('Failed to remove deal'),
   });
 
-  const deals = dealsData?.data || [];
-  const metadata = dealsData?.metadata || [];
+  const deals = dealsData?.pages.flatMap((p) => p.data) ?? [];
+  const metadata = dealsData?.pages[0]?.metadata ?? [];
+  const totalCount = dealsData?.pages[0]?.pagination?.total;
 
   const actionsColumn: ColumnDef<BaseRow> = useMemo(
     () => ({
@@ -128,12 +138,15 @@ const DealsList = () => {
         onCellUpdate={(rowId, columnId, value) =>
           updateCell({ rowId, columnId, value })
         }
-        totalCount={dealsData?.pagination?.total}
+        totalCount={totalCount}
         entityName="deals"
         showAddColumn={false}
         onAddColumn={handleNewColumn}
         openAddColumnRef={openAddColumnRef}
         disableRowClick={true}
+        isFetchingNextPage={isFetchingNextPage}
+        hasNextPage={hasNextPage}
+        infiniteScrollRef={sentinelRef}
         showEmptyState
         emptyStateConfig={{
           icon: BriefcaseIcon,

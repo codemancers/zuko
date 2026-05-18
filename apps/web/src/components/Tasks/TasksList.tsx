@@ -8,8 +8,9 @@ import {
 } from '@heroicons/react/24/outline';
 import { Button, Sheet, SheetHeader, SheetTitle } from '@zuko/ui-kit';
 import { PageHeader, SearchBar } from '@/components/shared';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { getTableViewTasks, getMembers } from '@/server/query-options';
+import { useMutation, useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/react-query';
+import { getTableViewTasksInfinite, getMembers } from '@/server/query-options';
+import { useInfiniteScroll } from '@/hooks/use-infinite-scroll';
 import { authClient } from '@/lib/auth-client';
 import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
@@ -43,9 +44,17 @@ const TasksList = () => {
     debouncedValue,
   } = useSearchParam();
 
-  const { data, isLoading } = useQuery(
-    getTableViewTasks({ search: debouncedValue || undefined }),
+  const {
+    data,
+    isLoading,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useInfiniteQuery(
+    getTableViewTasksInfinite({ search: debouncedValue || undefined }),
   );
+
+  const sentinelRef = useInfiniteScroll(fetchNextPage, hasNextPage, isFetchingNextPage);
   const { updateCell } = useCellUpdate('tasks');
 
   const { mutate: deleteTask, isPending: isDeleting } = useMutation({
@@ -82,8 +91,9 @@ const TasksList = () => {
     enabled: !!orgId,
   });
 
-  const rawMetadata = data?.metadata || [];
-  const tasks = data?.data || [];
+  const rawMetadata = data?.pages[0]?.metadata ?? [];
+  const tasks = data?.pages.flatMap((p) => p.data) ?? [];
+  const totalCount = data?.pages[0]?.pagination?.total;
 
   const metadata = useMemo(
     () =>
@@ -167,11 +177,14 @@ const TasksList = () => {
         data={tasks}
         loading={isLoading}
         onRowClick={(task) => router.push(`/tasks/${task.id}`)}
-        totalCount={tasks.length}
+        totalCount={totalCount}
         entityName="tasks"
         onCellUpdate={(rowId, columnId, value) =>
           updateCell({ rowId, columnId, value })
         }
+        isFetchingNextPage={isFetchingNextPage}
+        hasNextPage={hasNextPage}
+        infiniteScrollRef={sentinelRef}
         showEmptyState
         emptyStateConfig={{
           icon: ClipboardDocumentListIcon,

@@ -66,16 +66,30 @@ export class TableController {
   async getTasksTable(
     @OrgId() organizationId: number,
     @Query('search') search?: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
   ) {
-    return this.tableService.getTasksTable(organizationId, search);
+    return this.tableService.getTasksTable(
+      organizationId,
+      search,
+      page ? Number(page) : 1,
+      limit ? Number(limit) : 50,
+    );
   }
 
   @Get('meetings')
   async getMeetingsTable(
     @OrgId() organizationId: number,
     @Query('search') search?: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
   ) {
-    return this.tableService.getMeetingsTable(organizationId, search);
+    return this.tableService.getMeetingsTable(
+      organizationId,
+      search,
+      page ? Number(page) : 1,
+      limit ? Number(limit) : 50,
+    );
   }
 
   @Post(':entity/columns')
