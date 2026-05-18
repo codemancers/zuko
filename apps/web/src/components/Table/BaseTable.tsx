@@ -23,10 +23,14 @@ export function BaseTable<TData extends BaseRow>(props: BaseTableProps<TData>) {
       pageSize: 10,
     });
 
+  const isInfiniteScrollMode = props.infiniteScrollRef !== undefined;
+
   const effectiveProps = {
     ...props,
     pagination: props.pagination ?? internalPagination,
     onPaginationChange: props.onPaginationChange ?? setInternalPagination,
+    // Disable internal pagination when using infinite scroll so all loaded rows are shown
+    manualPagination: isInfiniteScrollMode ? true : props.manualPagination,
   };
 
   const {
@@ -54,8 +58,6 @@ export function BaseTable<TData extends BaseRow>(props: BaseTableProps<TData>) {
     hasNextPage,
     infiniteScrollRef,
   } = props;
-
-  const isInfiniteScrollMode = infiniteScrollRef !== undefined;
 
   if (openAddColumnRef) {
     openAddColumnRef.current = openAddColumnDialog;
