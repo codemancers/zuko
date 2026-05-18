@@ -63,7 +63,11 @@ vi.mock('@/server/query-options', () => ({
   }),
   getTableViewMeetingsInfinite: (filters?: { search?: string }) => ({
     queryKey: ['meetings', 'table', 'infinite', filters],
-    queryFn: async () => null,
+    queryFn: async () => ({
+      data: [],
+      metadata: [],
+      pagination: { page: 1, limit: 10, total: 0, totalPages: 0 },
+    }),
     initialPageParam: 1,
     getNextPageParam: () => undefined,
   }),
