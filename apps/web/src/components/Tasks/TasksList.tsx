@@ -10,7 +10,6 @@ import { Button, Sheet, SheetHeader, SheetTitle } from '@zuko/ui-kit';
 import { PageHeader, SearchBar } from '@/components/shared';
 import { useMutation, useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/react-query';
 import { getTableViewTasksInfinite, getMembers } from '@/server/query-options';
-import { useInfiniteScroll } from '@/hooks/use-infinite-scroll';
 import { authClient } from '@/lib/auth-client';
 import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
@@ -54,7 +53,6 @@ const TasksList = () => {
     getTableViewTasksInfinite({ search: debouncedValue || undefined }),
   );
 
-  const sentinelRef = useInfiniteScroll(fetchNextPage, hasNextPage, isFetchingNextPage);
   const { updateCell } = useCellUpdate('tasks');
 
   const { mutate: deleteTask, isPending: isDeleting } = useMutation({
@@ -182,6 +180,7 @@ const TasksList = () => {
         onCellUpdate={(rowId, columnId, value) =>
           updateCell({ rowId, columnId, value })
         }
+        onFetchNextPage={fetchNextPage}
         isFetchingNextPage={isFetchingNextPage}
         hasNextPage={hasNextPage}
         showEmptyState
@@ -193,7 +192,6 @@ const TasksList = () => {
           action: { label: 'New Task', onClick: () => setIsSheetOpen(true) },
         }}
       />
-      <div ref={sentinelRef} className="h-1" />
 
       <ConfirmDialog
         open={!!taskToDelete}

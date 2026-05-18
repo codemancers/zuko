@@ -8,7 +8,6 @@ import { toast } from 'sonner';
 
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getTableViewMeetingsInfinite } from '@/server/query-options';
-import { useInfiniteScroll } from '@/hooks/use-infinite-scroll';
 import { meetingsApi } from '@/lib/api/meetings';
 import {
   BaseTable,
@@ -40,7 +39,6 @@ export const MeetingList = () => {
     getTableViewMeetingsInfinite({ search: debouncedValue || undefined }),
   );
 
-  const sentinelRef = useInfiniteScroll(fetchNextPage, hasNextPage, isFetchingNextPage);
 
   const deleteMeetingMutation = useMutation({
     mutationFn: (id: number) => meetingsApi.deleteMeeting(id),
@@ -95,6 +93,7 @@ export const MeetingList = () => {
         entityName="meetings"
         onRowClick={(meeting) => router.push(`/meeting/${meeting.id}`)}
         totalCount={totalCount}
+        onFetchNextPage={fetchNextPage}
         isFetchingNextPage={isFetchingNextPage}
         hasNextPage={hasNextPage}
         showEmptyState
@@ -108,7 +107,6 @@ export const MeetingList = () => {
           },
         }}
       />
-      <div ref={sentinelRef} className="h-1" />
 
       <ConfirmDialog
         open={meetingToDelete !== null}

@@ -9,7 +9,6 @@ import { Button, Sheet, SheetHeader, SheetTitle } from '@zuko/ui-kit';
 import { PageHeader, SearchBar } from '@/components/shared';
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getTableViewDealsInfinite } from '@/server/query-options';
-import { useInfiniteScroll } from '@/hooks/use-infinite-scroll';
 import { useState, useMemo, useRef } from 'react';
 import { useSheetState } from '@/hooks/use-sheet-state';
 import { useRouter } from 'next/navigation';
@@ -53,7 +52,6 @@ const DealsList = () => {
     getTableViewDealsInfinite({ search: debouncedValue || undefined }),
   );
 
-  const sentinelRef = useInfiniteScroll(fetchNextPage, hasNextPage, isFetchingNextPage);
 
   const { mutate: addColumn } = useAddColumn('deals');
 
@@ -144,6 +142,7 @@ const DealsList = () => {
         onAddColumn={handleNewColumn}
         openAddColumnRef={openAddColumnRef}
         disableRowClick={true}
+        onFetchNextPage={fetchNextPage}
         isFetchingNextPage={isFetchingNextPage}
         hasNextPage={hasNextPage}
         showEmptyState
@@ -155,7 +154,6 @@ const DealsList = () => {
           action: { label: 'New Deal', onClick: handleNewDeal },
         }}
       />
-      <div ref={sentinelRef} className="h-1" />
 
       <ConfirmDialog
         open={dealToDelete !== null}

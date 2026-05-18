@@ -1,7 +1,7 @@
 'use client';
 
 import Image from 'next/image';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useBaseTable } from '@/hooks/use-base-table';
 import type { BaseTableProps, BaseRow } from './types';
 import { BaseTableHeader } from './BaseTableHeader';
@@ -23,7 +23,7 @@ export function BaseTable<TData extends BaseRow>(props: BaseTableProps<TData>) {
       pageSize: 10,
     });
 
-  const isInfiniteScrollMode = props.isFetchingNextPage !== undefined;
+  const isInfiniteScrollMode = props.onFetchNextPage !== undefined;
 
   const effectiveProps = {
     ...props,
@@ -32,6 +32,36 @@ export function BaseTable<TData extends BaseRow>(props: BaseTableProps<TData>) {
     // Disable internal pagination when using infinite scroll so all loaded rows are shown
     manualPagination: isInfiniteScrollMode ? true : props.manualPagination,
   };
+
+  // Infinite scroll: scrollable container + sentinel observed within it
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const sentinelRef = useRef<HTMLDivElement>(null);
+
+  const onIntersect = useCallback(
+    (entries: IntersectionObserverEntry[]) => {
+      if (
+        entries[0].isIntersecting &&
+        props.hasNextPage &&
+        !props.isFetchingNextPage
+      ) {
+        props.onFetchNextPage!();
+      }
+    },
+    [props.onFetchNextPage, props.hasNextPage, props.isFetchingNextPage],
+  );
+
+  useEffect(() => {
+    if (!isInfiniteScrollMode) return;
+    const sentinel = sentinelRef.current;
+    const root = scrollContainerRef.current;
+    if (!sentinel || !root) return;
+    const observer = new IntersectionObserver(onIntersect, {
+      root,
+      rootMargin: '100px',
+    });
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [isInfiniteScrollMode, onIntersect]);
 
   const {
     table,
@@ -128,7 +158,13 @@ export function BaseTable<TData extends BaseRow>(props: BaseTableProps<TData>) {
 
   return (
     <div className={clsx('mt-8', className)}>
-      <div className="flow-root overflow-hidden border border-zinc-200 dark:border-zinc-800 rounded-lg shadow-sm bg-white dark:bg-zinc-950">
+      <div
+        ref={isInfiniteScrollMode ? scrollContainerRef : undefined}
+        className={clsx(
+          'flow-root overflow-hidden border border-zinc-200 dark:border-zinc-800 rounded-lg shadow-sm bg-white dark:bg-zinc-950',
+          isInfiniteScrollMode && 'overflow-y-auto max-h-[calc(100vh-260px)]',
+        )}
+      >
         <Table
           grid
           dense
@@ -161,6 +197,9 @@ export function BaseTable<TData extends BaseRow>(props: BaseTableProps<TData>) {
             </Button>
           </div>
         )}
+
+        {/* Infinite scroll sentinel — inside the scrollable container */}
+        {isInfiniteScrollMode && <div ref={sentinelRef} className="h-1" />}
       </div>
 
       <AddColumnDialog

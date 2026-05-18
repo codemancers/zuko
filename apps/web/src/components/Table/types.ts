@@ -74,6 +74,7 @@ export interface BaseTableProps<TData extends BaseRow> {
   openAddColumnRef?: React.MutableRefObject<(() => void) | undefined>;
   onCellUpdate?: (rowId: string | number, columnId: string, value: any) => void;
   // Infinite scroll
+  onFetchNextPage?: () => void;
   isFetchingNextPage?: boolean;
   hasNextPage?: boolean;
 

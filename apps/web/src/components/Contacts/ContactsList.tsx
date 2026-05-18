@@ -11,7 +11,6 @@ import { Button, Sheet, SheetHeader, SheetTitle } from '@zuko/ui-kit';
 import { PageHeader, SearchBar } from '@/components/shared';
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getTableViewContactsInfinite } from '@/server/query-options';
-import { useInfiniteScroll } from '@/hooks/use-infinite-scroll';
 import { useRouter } from 'next/navigation';
 import { authClient } from '@/lib/auth-client';
 import type { ColumnDef } from '@tanstack/react-table';
@@ -53,7 +52,6 @@ const ContactsList = () => {
     getTableViewContactsInfinite({ search: debouncedValue || undefined }),
   );
 
-  const sentinelRef = useInfiniteScroll(fetchNextPage, hasNextPage, isFetchingNextPage);
 
   const { mutate: addColumn } = useAddColumn('contacts');
 
@@ -144,6 +142,7 @@ const ContactsList = () => {
         onAddColumn={handleNewColumn}
         openAddColumnRef={openAddColumnRef}
         disableRowClick={true}
+        onFetchNextPage={fetchNextPage}
         isFetchingNextPage={isFetchingNextPage}
         hasNextPage={hasNextPage}
         showEmptyState
@@ -155,7 +154,6 @@ const ContactsList = () => {
           action: { label: 'New Contact', onClick: handleNewContact },
         }}
       />
-      <div ref={sentinelRef} className="h-1" />
 
       <ConfirmDialog
         open={contactToDelete !== null}

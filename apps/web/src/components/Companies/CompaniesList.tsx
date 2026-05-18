@@ -9,7 +9,6 @@ import { Button, Sheet, SheetHeader, SheetTitle } from '@zuko/ui-kit';
 import { PageHeader, SearchBar } from '@/components/shared';
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getTableViewCompaniesInfinite } from '@/server/query-options';
-import { useInfiniteScroll } from '@/hooks/use-infinite-scroll';
 import { useState, useMemo, useRef } from 'react';
 import { useSheetState } from '@/hooks/use-sheet-state';
 import { useRouter } from 'next/navigation';
@@ -53,7 +52,6 @@ const CompaniesList = () => {
     getTableViewCompaniesInfinite({ search: debouncedValue || undefined }),
   );
 
-  const sentinelRef = useInfiniteScroll(fetchNextPage, hasNextPage, isFetchingNextPage);
 
   const { mutate: addColumn } = useAddColumn('companies');
 
@@ -144,6 +142,7 @@ const CompaniesList = () => {
         onAddColumn={handleNewColumn}
         openAddColumnRef={openAddColumnRef}
         disableRowClick={true}
+        onFetchNextPage={fetchNextPage}
         isFetchingNextPage={isFetchingNextPage}
         hasNextPage={hasNextPage}
         showEmptyState
@@ -154,7 +153,6 @@ const CompaniesList = () => {
           action: { label: 'New Company', onClick: handleNewCompany },
         }}
       />
-      <div ref={sentinelRef} className="h-1" />
 
       <ConfirmDialog
         open={companyToDelete !== null}
