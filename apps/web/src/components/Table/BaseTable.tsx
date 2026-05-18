@@ -25,6 +25,11 @@ export function BaseTable<TData extends BaseRow>(props: BaseTableProps<TData>) {
 
   const isInfiniteScrollMode = props.onFetchNextPage !== undefined;
 
+  const [hasMounted, setHasMounted] = useState(false);
+  useEffect(() => {
+    setHasMounted(true);
+  }, []);
+
   const effectiveProps = {
     ...props,
     pagination: props.pagination ?? internalPagination,
@@ -91,11 +96,6 @@ export function BaseTable<TData extends BaseRow>(props: BaseTableProps<TData>) {
   if (openAddColumnRef) {
     openAddColumnRef.current = openAddColumnDialog;
   }
-  const [hasMounted, setHasMounted] = useState(false);
-
-  useEffect(() => {
-    setHasMounted(true);
-  }, []);
 
   if (!hasMounted) {
     return null; // Or a skeleton/placeholder
