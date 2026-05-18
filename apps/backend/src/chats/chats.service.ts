@@ -1,6 +1,8 @@
 import {
   ForbiddenException,
   Injectable,
+  InternalServerErrorException,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { randomUUID } from 'crypto';
@@ -9,14 +11,11 @@ import type { UIMessage } from 'ai';
 import { toBaseMessages } from '@ai-sdk/langchain';
 import type { ContextEntityReference, MessageMetadata } from '../types/chat';
 import { getActiveOrganizationId } from '../common/auth/get-organization-id';
-// eslint-disable-next-line @typescript-eslint/consistent-type-imports
 import { PrismaService } from '../prisma/prisma.service';
-// eslint-disable-next-line @typescript-eslint/consistent-type-imports
 import { SpritesService } from '../sprites/sprites.service';
-// eslint-disable-next-line @typescript-eslint/consistent-type-imports
 import { ChatsRepository } from './chats.repository';
-// eslint-disable-next-line @typescript-eslint/consistent-type-imports
 import { SandboxLifecycleService } from '../sandbox-lifecycle/sandbox-lifecycle.service';
+import { AgentAuthBridgeService } from '../app/agent-auth-bridge/agent-auth-bridge.service';
 import {
   LocalSandbox,
   SpriteSandbox,
@@ -27,20 +26,48 @@ const WORKING_DIR = process.env.WORKING_DIR ?? '/home/sprite/zuko';
 
 @Injectable()
 export class ChatsService {
+  private readonly logger = new Logger(ChatsService.name);
+
   constructor(
     private readonly chatsRepository: ChatsRepository,
     private readonly prisma: PrismaService,
     private readonly spritesService: SpritesService,
     private readonly sandboxLifecycle: SandboxLifecycleService,
+    private readonly agentAuthBridge: AgentAuthBridgeService,
   ) {}
 
   /**
-   * Create a new chat with a generated threadId
-   * Automatically adds the creator as a participant
+   * Create a new chat with a generated threadId.
+   * Registers a per-chat delegated agent tied to the user.
    */
   async create(userId: number, participantIds: number[] = []) {
     const threadId = randomUUID();
-    return this.chatsRepository.createChat(userId, participantIds, threadId);
+    const chat = await this.chatsRepository.createChat(
+      userId,
+      participantIds,
+      threadId,
+    );
+
+    try {
+      const { agentId } = await this.agentAuthBridge.registerDelegatedAgent({
+        userId,
+        chatId: chat.id,
+      });
+      await this.prisma.chat.update({
+        where: { id: chat.id },
+        data: { agentId },
+      });
+      return { ...chat, agentId };
+    } catch (err) {
+      this.logger.error('Failed to register delegated agent for chat', {
+        chatId: chat.id,
+        userId,
+        err,
+      });
+      throw new InternalServerErrorException(
+        'Agent registration failed — please try again',
+      );
+    }
   }
 
   /**
@@ -98,9 +125,13 @@ export class ChatsService {
   }
 
   /**
-   * Delete a chat
+   * Delete a chat — also revokes the associated delegated agent.
    */
   async delete(chatId: number) {
+    const chat = await this.chatsRepository.findChatById(chatId);
+    if (chat?.agentId) {
+      await this.agentAuthBridge.revokeAgent(chat.agentId);
+    }
     await this.chatsRepository.deleteChat(chatId);
     return { success: true };
   }
@@ -170,6 +201,7 @@ export class ChatsService {
         chat.id,
         process.env.E2E_SANDBOX ?? '',
         process.env.E2E_SANDBOX_URL ?? '',
+        chat.agentId,
       );
     } else if (!sandbox && spritesEnabled) {
       const sprite = await this.spritesService.createSprite(spriteName);
@@ -180,6 +212,7 @@ export class ChatsService {
         chat.id,
         sprite.name,
         sprite.url,
+        chat.agentId,
       );
       await this.sandboxLifecycle.markActive(sandbox.id);
     } else if (sandbox && spritesEnabled) {

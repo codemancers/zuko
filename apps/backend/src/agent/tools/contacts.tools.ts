@@ -5,6 +5,7 @@ import {
   getOrganizationId,
   getContextEntities,
   getUserId,
+  getSignJwt,
 } from './context.tools';
 import type { ToolRunConfig } from './context.tools';
 
@@ -15,6 +16,7 @@ function orgHeader(organisationId: number | undefined): string {
 export const getContactDetailsTool = tool(
   async (input: { contactId?: number }, config: ToolRunConfig) => {
     const organisationId = getOrganizationId(config);
+    const signJwt = getSignJwt(config);
     const contextEntities = getContextEntities(config);
     const contextContacts =
       contextEntities?.filter((e) => e.type === 'contact') ?? [];
@@ -45,6 +47,7 @@ export const getContactDetailsTool = tool(
     const result = await Backend(`/contacts/${contactId}`, {
       method: 'GET',
       organisationId: orgHeader(organisationId),
+      signJwt,
     });
     if (!result.success || !result.data) {
       return {
@@ -71,6 +74,7 @@ export const getContactDetailsTool = tool(
 export const getContactOwnerTool = tool(
   async (input: { contactId?: number }, config: ToolRunConfig) => {
     const organisationId = getOrganizationId(config);
+    const signJwt = getSignJwt(config);
     const contextEntities = getContextEntities(config);
     const contextContacts =
       contextEntities?.filter((e) => e.type === 'contact') ?? [];
@@ -91,6 +95,7 @@ export const getContactOwnerTool = tool(
     const result = await Backend(`/contacts/${contactId}`, {
       method: 'GET',
       organisationId: orgHeader(organisationId),
+      signJwt,
     });
     if (!result.success || !result.data) {
       return {
@@ -167,10 +172,12 @@ export const queryContactsTool = tool(
       return { error: 'User context (organisationId) is required' };
     }
     const { filters = {}, aggregation = 'list', groupBy, limit = 100 } = input;
+    const signJwt = getSignJwt(config);
     const result = await Backend('/contacts/query', {
       method: 'POST',
       organisationId: orgHeader(organisationId),
       body: { filters, aggregation, groupBy, limit },
+      signJwt,
     });
     if (!result.success) {
       return { error: result.error ?? 'Failed to query contacts' };
@@ -213,6 +220,7 @@ export const createContactTool = tool(
     config: ToolRunConfig,
   ) => {
     const organisationId = getOrganizationId(config);
+    const signJwt = getSignJwt(config);
     const userId = getUserId(config);
     if (!organisationId) {
       return { error: 'User context (organisationId) is required' };
@@ -231,6 +239,7 @@ export const createContactTool = tool(
     const result = await Backend('/contacts', {
       method: 'POST',
       organisationId: orgHeader(organisationId),
+      signJwt,
       body: {
         name: input.name,
         email: input.email,
@@ -282,6 +291,7 @@ export const updateContactTool = tool(
     config: ToolRunConfig,
   ) => {
     const organisationId = getOrganizationId(config);
+    const signJwt = getSignJwt(config);
     const contextEntities = getContextEntities(config);
     const contextContacts =
       contextEntities?.filter((e) => e.type === 'contact') ?? [];
@@ -314,6 +324,7 @@ export const updateContactTool = tool(
     const result = await Backend(`/contacts/${contactId}`, {
       method: 'PATCH',
       organisationId: orgHeader(organisationId),
+      signJwt,
       body: updates,
     });
     if (!result.success) {

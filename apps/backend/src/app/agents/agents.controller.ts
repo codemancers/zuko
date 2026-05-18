@@ -12,7 +12,6 @@ import {
 } from '@nestjs/common';
 import { OrgId } from '../../common/auth/org-id.decorator';
 import { AgentGuard } from '../../common/auth/agent.guard';
-// eslint-disable-next-line @typescript-eslint/consistent-type-imports
 import {
   CompaniesService,
   ContactsService,

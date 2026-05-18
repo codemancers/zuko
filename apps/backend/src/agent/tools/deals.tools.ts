@@ -6,6 +6,7 @@ import {
   getOrganizationId,
   getContextEntities,
   getUserId,
+  getSignJwt,
 } from './context.tools';
 
 function orgHeader(organisationId: number | undefined): string {
@@ -15,6 +16,7 @@ function orgHeader(organisationId: number | undefined): string {
 export const getDealDetailsTool = tool(
   async (input: { dealId?: number }, config: ToolRunConfig) => {
     const organisationId = getOrganizationId(config);
+    const signJwt = getSignJwt(config);
     const contextEntities = getContextEntities(config);
     const contextDeals =
       contextEntities?.filter((e) => e.type === 'deal') ?? [];
@@ -45,6 +47,7 @@ export const getDealDetailsTool = tool(
     const result = await Backend(`/deals/${dealId}`, {
       method: 'GET',
       organisationId: orgHeader(organisationId),
+      signJwt,
     });
     if (!result.success || !result.data) {
       return {
@@ -95,11 +98,13 @@ export const queryDealsTool = tool(
     if (!organisationId) {
       return { error: 'User context (organisationId) is required' };
     }
+    const signJwt = getSignJwt(config);
     const { filters = {}, aggregation = 'list', groupBy, limit = 100 } = input;
     const result = await Backend('/deals/query', {
       method: 'POST',
       organisationId: orgHeader(organisationId),
       body: { filters, aggregation, groupBy, limit },
+      signJwt,
     });
     if (!result.success) {
       return { error: result.error ?? 'Failed to query deals' };
@@ -152,6 +157,7 @@ export const createDealTool = tool(
     config: ToolRunConfig,
   ) => {
     const organisationId = getOrganizationId(config);
+    const signJwt = getSignJwt(config);
     const userId = getUserId(config);
     if (!organisationId) {
       return { error: 'User context (organisationId) is required' };
@@ -170,6 +176,7 @@ export const createDealTool = tool(
     const result = await Backend('/deals', {
       method: 'POST',
       organisationId: orgHeader(organisationId),
+      signJwt,
       body: {
         title: input.title,
         value: input.value,
@@ -232,6 +239,7 @@ export const updateDealTool = tool(
     config: ToolRunConfig,
   ) => {
     const organisationId = getOrganizationId(config);
+    const signJwt = getSignJwt(config);
     const contextEntities = getContextEntities(config);
     const contextDeals =
       contextEntities?.filter((e) => e.type === 'deal') ?? [];
@@ -272,6 +280,7 @@ export const updateDealTool = tool(
     const result = await Backend(`/deals/${dealId}`, {
       method: 'PATCH',
       organisationId: orgHeader(organisationId),
+      signJwt,
       body: updates,
     });
     if (!result.success) {

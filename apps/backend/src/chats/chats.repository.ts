@@ -1,17 +1,23 @@
 import { Injectable } from '@nestjs/common';
 import { randomUUID } from 'crypto';
-import { type SandboxLifecycleState } from '@prisma/client';
+import { SandboxLifecycleState } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class ChatsRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  createChat(userId: number, participantIds: number[], threadId: string) {
+  createChat(
+    userId: number,
+    participantIds: number[],
+    threadId: string,
+    agentId?: number,
+  ) {
     return this.prisma.chat.create({
       data: {
         threadId,
         createdById: userId,
+        agentId: agentId ?? null,
         participants: {
           create: [
             { userId },
@@ -164,11 +170,17 @@ export class ChatsRepository {
     });
   }
 
-  createSandboxForChat(chatId: number, name: string, url: string) {
+  createSandboxForChat(
+    chatId: number,
+    name: string,
+    url: string,
+    agentId?: number | null,
+  ) {
     return this.prisma.sandbox.create({
       data: {
         name,
         url,
+        ...(agentId != null ? { agentId } : {}),
         chats: {
           connect: {
             id: chatId,

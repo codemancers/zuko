@@ -3,28 +3,40 @@ interface BackendRequestConfig {
   userId?: string;
   body?: any;
   organisationId?: string;
+  signJwt?: (capabilities: string[]) => Promise<string>;
+  capabilities?: string[];
 }
 
 export const Backend = async (
   endpoint: string,
   config: BackendRequestConfig,
 ) => {
-  const { method = 'GET', userId, body, organisationId } = config;
+  const {
+    method = 'GET',
+    userId,
+    body,
+    organisationId,
+    signJwt,
+    capabilities = [],
+  } = config;
 
-  // Build URL with query parameters
-  const url = new URL(`${process.env.BACKEND_URL}/api/agents${endpoint}`);
-
-  const AGENT_TOKEN = process.env.AGENT_TOKEN;
-  if (!AGENT_TOKEN) {
-    throw new Error('AGENT_TOKEN is not set');
+  if (!signJwt) {
+    return {
+      error:
+        'signJwt not available in tool context — agent identity not initialised',
+      success: false,
+    };
   }
+
+  const url = new URL(`${process.env.BACKEND_URL}/api/agents${endpoint}`);
+  const token = await signJwt(capabilities);
 
   const fetchConfig: RequestInit = {
     method,
     headers: {
-      'x-user-id': userId || '',
-      'x-agent-token': AGENT_TOKEN,
+      Authorization: `Bearer ${token}`,
       'Content-Type': 'application/json',
+      'x-user-id': userId || '',
       'x-org-id': organisationId || '',
     },
   };

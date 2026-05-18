@@ -90,6 +90,9 @@ export class ChatController {
     };
     response.write(`data: ${JSON.stringify(startChunk)}\n\n`);
 
+    const chatForAgent = await this.chatsService.findOne(chatId);
+    const agentId = chatForAgent.agentId ?? undefined;
+
     const graphStream = await this.agentService.stream({
       messages: preparedRun.langchainMessages,
       contextEntities: preparedRun.contextEntities,
@@ -97,6 +100,7 @@ export class ChatController {
       organizationId,
       sandbox: preparedRun.sandbox,
       signal: aborter.signal,
+      agentId,
     });
 
     // suppressStart: true — drop the converter's own start chunk so the

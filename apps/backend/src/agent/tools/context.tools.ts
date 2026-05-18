@@ -11,11 +11,14 @@ export type ToolRunConfig = {
     contextEntities?: ContextEntityReference[];
     organizationId?: number;
     userId?: number;
+    agentId?: number;
+    signJwt?: (capabilities: string[]) => Promise<string>;
   };
   state?: {
     contextEntities?: ContextEntityReference[];
     organizationId?: number;
     userId?: number;
+    agentId?: number;
   };
 };
 
@@ -47,6 +50,16 @@ export function getOrganizationId(config?: ToolRunConfig): number | undefined {
  */
 export function getUserId(config?: ToolRunConfig): number | undefined {
   return config?.state?.userId ?? config?.configurable?.userId;
+}
+
+/**
+ * Get the JWT signing function from LangGraph tool invocation config.
+ * Bound to the chat's delegated agent by AgentService
+ */
+export function getSignJwt(
+  config?: ToolRunConfig,
+): ((capabilities: string[]) => Promise<string>) | undefined {
+  return config?.configurable?.signJwt;
 }
 
 /**
