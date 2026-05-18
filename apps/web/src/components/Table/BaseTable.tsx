@@ -51,7 +51,7 @@ export function BaseTable<TData extends BaseRow>(props: BaseTableProps<TData>) {
   );
 
   useEffect(() => {
-    if (!isInfiniteScrollMode) return;
+    if (!isInfiniteScrollMode || !hasMounted) return;
     const sentinel = sentinelRef.current;
     const root = scrollContainerRef.current;
     if (!sentinel || !root) return;
@@ -61,7 +61,7 @@ export function BaseTable<TData extends BaseRow>(props: BaseTableProps<TData>) {
     });
     observer.observe(sentinel);
     return () => observer.disconnect();
-  }, [isInfiniteScrollMode, onIntersect]);
+  }, [isInfiniteScrollMode, onIntersect, hasMounted]);
 
   const {
     table,
