@@ -184,7 +184,6 @@ const TasksList = () => {
         }
         isFetchingNextPage={isFetchingNextPage}
         hasNextPage={hasNextPage}
-        infiniteScrollRef={sentinelRef}
         showEmptyState
         emptyStateConfig={{
           icon: ClipboardDocumentListIcon,
@@ -194,6 +193,7 @@ const TasksList = () => {
           action: { label: 'New Task', onClick: () => setIsSheetOpen(true) },
         }}
       />
+      <div ref={sentinelRef} className="h-1" />
 
       <ConfirmDialog
         open={!!taskToDelete}

@@ -76,7 +76,6 @@ export interface BaseTableProps<TData extends BaseRow> {
   // Infinite scroll
   isFetchingNextPage?: boolean;
   hasNextPage?: boolean;
-  infiniteScrollRef?: React.RefObject<HTMLDivElement | null>;
 
   showEmptyState?: boolean;
   emptyStateConfig?: {

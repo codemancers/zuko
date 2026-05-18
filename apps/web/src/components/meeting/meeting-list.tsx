@@ -97,7 +97,6 @@ export const MeetingList = () => {
         totalCount={totalCount}
         isFetchingNextPage={isFetchingNextPage}
         hasNextPage={hasNextPage}
-        infiniteScrollRef={sentinelRef}
         showEmptyState
         emptyStateConfig={{
           icon: VideoCameraSlashIcon,
@@ -109,6 +108,7 @@ export const MeetingList = () => {
           },
         }}
       />
+      <div ref={sentinelRef} className="h-1" />
 
       <ConfirmDialog
         open={meetingToDelete !== null}

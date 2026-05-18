@@ -23,7 +23,7 @@ export function BaseTable<TData extends BaseRow>(props: BaseTableProps<TData>) {
       pageSize: 10,
     });
 
-  const isInfiniteScrollMode = props.infiniteScrollRef !== undefined;
+  const isInfiniteScrollMode = props.isFetchingNextPage !== undefined;
 
   const effectiveProps = {
     ...props,
@@ -56,7 +56,6 @@ export function BaseTable<TData extends BaseRow>(props: BaseTableProps<TData>) {
     openAddColumnRef,
     isFetchingNextPage,
     hasNextPage,
-    infiniteScrollRef,
   } = props;
 
   if (openAddColumnRef) {
@@ -177,10 +176,9 @@ export function BaseTable<TData extends BaseRow>(props: BaseTableProps<TData>) {
         }}
       />
 
-      {/* Infinite scroll sentinel & status */}
+      {/* Infinite scroll status */}
       {isInfiniteScrollMode ? (
         <div className="mt-2">
-          <div ref={infiniteScrollRef} className="h-1" />
           {isFetchingNextPage && (
             <p className="mt-2 text-center text-sm text-zinc-500 dark:text-zinc-400">
               Loading more {props.entityName ?? 'records'}...

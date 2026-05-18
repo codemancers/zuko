@@ -146,7 +146,6 @@ const CompaniesList = () => {
         disableRowClick={true}
         isFetchingNextPage={isFetchingNextPage}
         hasNextPage={hasNextPage}
-        infiniteScrollRef={sentinelRef}
         showEmptyState
         emptyStateConfig={{
           icon: BuildingOfficeIcon,
@@ -155,6 +154,7 @@ const CompaniesList = () => {
           action: { label: 'New Company', onClick: handleNewCompany },
         }}
       />
+      <div ref={sentinelRef} className="h-1" />
 
       <ConfirmDialog
         open={companyToDelete !== null}

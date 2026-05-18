@@ -146,7 +146,6 @@ const DealsList = () => {
         disableRowClick={true}
         isFetchingNextPage={isFetchingNextPage}
         hasNextPage={hasNextPage}
-        infiniteScrollRef={sentinelRef}
         showEmptyState
         emptyStateConfig={{
           icon: BriefcaseIcon,
@@ -156,6 +155,7 @@ const DealsList = () => {
           action: { label: 'New Deal', onClick: handleNewDeal },
         }}
       />
+      <div ref={sentinelRef} className="h-1" />
 
       <ConfirmDialog
         open={dealToDelete !== null}

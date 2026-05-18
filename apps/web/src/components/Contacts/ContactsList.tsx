@@ -146,7 +146,6 @@ const ContactsList = () => {
         disableRowClick={true}
         isFetchingNextPage={isFetchingNextPage}
         hasNextPage={hasNextPage}
-        infiniteScrollRef={sentinelRef}
         showEmptyState
         emptyStateConfig={{
           icon: UserGroupIcon,
@@ -156,6 +155,7 @@ const ContactsList = () => {
           action: { label: 'New Contact', onClick: handleNewContact },
         }}
       />
+      <div ref={sentinelRef} className="h-1" />
 
       <ConfirmDialog
         open={contactToDelete !== null}
