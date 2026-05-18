@@ -22,15 +22,6 @@ export const getContacts = (filters?: ContactFilters) =>
     },
   });
 
-export const getTableViewContacts = (filters?: ContactFilters) =>
-  queryOptions({
-    queryKey: ['contacts', 'table', filters],
-    queryFn: async () => {
-      const response = await contactsApi.getTableViewContacts(filters);
-      return response;
-    },
-  });
-
 export const getTableViewContactsInfinite = (
   filters?: Omit<ContactFilters, 'page' | 'limit'>,
 ) =>
@@ -62,15 +53,6 @@ export const getCompanies = (filters?: CompanyFilters) =>
     queryKey: ['companies', filters],
     queryFn: async () => {
       const response = await companiesApi.getCompanies(filters);
-      return response;
-    },
-  });
-
-export const getTableViewCompanies = (filters?: CompanyFilters) =>
-  queryOptions({
-    queryKey: ['companies', 'table', filters],
-    queryFn: async () => {
-      const response = await companiesApi.getTableViewCompanies(filters);
       return response;
     },
   });
@@ -116,12 +98,6 @@ export const getTasks = (filters?: TaskFilters) =>
     queryFn: () => tasksApi.getTasks(filters),
   });
 
-export const getTableViewTasks = (filters?: { search?: string }) =>
-  queryOptions({
-    queryKey: ['tasks', 'table', filters],
-    queryFn: () => tasksApi.getTableViewTasks(filters),
-  });
-
 export const getTableViewTasksInfinite = (filters?: { search?: string }) =>
   infiniteQueryOptions({
     queryKey: ['tasks', 'table', 'infinite', filters],
@@ -161,15 +137,6 @@ export const getTask = (id: number) =>
     queryKey: ['task', id],
     queryFn: () => tasksApi.getTask(id),
   });
-export const getTableViewDeals = (filters?: DealFilters) =>
-  queryOptions({
-    queryKey: ['deals', 'table', filters],
-    queryFn: async () => {
-      const response = await dealsApi.getTableViewDeals(filters);
-      return response;
-    },
-  });
-
 export const getTableViewDealsInfinite = (
   filters?: Omit<DealFilters, 'page' | 'limit'>,
 ) =>
@@ -300,12 +267,6 @@ export const getMeetings = queryOptions({
   queryKey: ['meetings'],
   queryFn: () => meetingsApi.getMeetings(),
 });
-
-export const getTableViewMeetings = (filters?: MeetingFilters) =>
-  queryOptions({
-    queryKey: ['meetings', 'table', filters],
-    queryFn: () => meetingsApi.getTableViewMeetings(filters),
-  });
 
 export const getMeeting = (id: number) =>
   queryOptions({
