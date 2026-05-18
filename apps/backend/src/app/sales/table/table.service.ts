@@ -163,7 +163,9 @@ export class TableService {
     const where = {
       organizationId,
       parentId: null,
-      ...(search ? { title: { contains: search, mode: 'insensitive' as const } } : {}),
+      ...(search
+        ? { title: { contains: search, mode: 'insensitive' as const } }
+        : {}),
     };
 
     const [total, tasks] = await Promise.all([
@@ -204,7 +206,9 @@ export class TableService {
     const where = {
       organizationId,
       deletedAt: null,
-      ...(search ? { name: { contains: search, mode: 'insensitive' as const } } : {}),
+      ...(search
+        ? { name: { contains: search, mode: 'insensitive' as const } }
+        : {}),
     };
 
     const [total, meetings] = await Promise.all([

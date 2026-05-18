@@ -137,7 +137,12 @@ export function BaseTable<TData extends BaseRow>(props: BaseTableProps<TData>) {
         <AddColumnDialog
           isOpen={isAddColumnDialogOpen}
           onClose={closeAddColumnDialog}
-          onAdd={(name: string, key: string, type: string, config?: ColumnConfig) => {
+          onAdd={(
+            name: string,
+            key: string,
+            type: string,
+            config?: ColumnConfig,
+          ) => {
             onAddColumn?.(name, key, type, config);
           }}
         />
@@ -196,7 +201,12 @@ export function BaseTable<TData extends BaseRow>(props: BaseTableProps<TData>) {
       <AddColumnDialog
         isOpen={isAddColumnDialogOpen}
         onClose={closeAddColumnDialog}
-        onAdd={(name: string, key: string, type: string, config?: ColumnConfig) => {
+        onAdd={(
+          name: string,
+          key: string,
+          type: string,
+          config?: ColumnConfig,
+        ) => {
           onAddColumn?.(name, key, type, config);
         }}
       />
@@ -257,7 +267,9 @@ export function BaseTable<TData extends BaseRow>(props: BaseTableProps<TData>) {
                     Rows per page:
                     <select
                       value={table.getState().pagination.pageSize}
-                      onChange={(e) => table.setPageSize(Number(e.target.value))}
+                      onChange={(e) =>
+                        table.setPageSize(Number(e.target.value))
+                      }
                       className="ml-2 bg-transparent border-none text-zinc-700 dark:text-zinc-300 font-medium focus:ring-0 cursor-pointer text-sm"
                     >
                       {[10, 20, 30, 40, 50].map((pageSize) => (

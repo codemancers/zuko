@@ -8,7 +8,12 @@ import {
 } from '@heroicons/react/24/outline';
 import { Button, Sheet, SheetHeader, SheetTitle } from '@zuko/ui-kit';
 import { PageHeader, SearchBar } from '@/components/shared';
-import { useMutation, useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  useMutation,
+  useInfiniteQuery,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query';
 import { getTableViewTasksInfinite, getMembers } from '@/server/query-options';
 import { authClient } from '@/lib/auth-client';
 import { useRouter } from 'next/navigation';
@@ -43,15 +48,10 @@ const TasksList = () => {
     debouncedValue,
   } = useSearchParam();
 
-  const {
-    data,
-    isLoading,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
-  } = useInfiniteQuery(
-    getTableViewTasksInfinite({ search: debouncedValue || undefined }),
-  );
+  const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } =
+    useInfiniteQuery(
+      getTableViewTasksInfinite({ search: debouncedValue || undefined }),
+    );
 
   const { updateCell } = useCellUpdate('tasks');
 

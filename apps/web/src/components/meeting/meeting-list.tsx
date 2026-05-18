@@ -6,7 +6,11 @@ import { PageHeader, SearchBar } from '@/components/shared';
 import type { ColumnDef } from '@tanstack/react-table';
 import { toast } from 'sonner';
 
-import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import {
+  useInfiniteQuery,
+  useMutation,
+  useQueryClient,
+} from '@tanstack/react-query';
 import { getTableViewMeetingsInfinite } from '@/server/query-options';
 import { meetingsApi } from '@/lib/api/meetings';
 import {
@@ -38,7 +42,6 @@ export const MeetingList = () => {
   } = useInfiniteQuery(
     getTableViewMeetingsInfinite({ search: debouncedValue || undefined }),
   );
-
 
   const deleteMeetingMutation = useMutation({
     mutationFn: (id: number) => meetingsApi.deleteMeeting(id),

@@ -138,7 +138,9 @@ export const getTableViewTasksInfinite = (filters?: { search?: string }) =>
     },
   });
 
-export const getTableViewMeetingsInfinite = (filters?: Omit<MeetingFilters, 'page' | 'limit'>) =>
+export const getTableViewMeetingsInfinite = (
+  filters?: Omit<MeetingFilters, 'page' | 'limit'>,
+) =>
   infiniteQueryOptions({
     queryKey: ['meetings', 'table', 'infinite', filters],
     queryFn: ({ pageParam }) =>

@@ -7,7 +7,11 @@ import {
 } from '@heroicons/react/24/outline';
 import { Button, Sheet, SheetHeader, SheetTitle } from '@zuko/ui-kit';
 import { PageHeader, SearchBar } from '@/components/shared';
-import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import {
+  useInfiniteQuery,
+  useMutation,
+  useQueryClient,
+} from '@tanstack/react-query';
 import { getTableViewDealsInfinite } from '@/server/query-options';
 import { useState, useMemo, useRef } from 'react';
 import { useSheetState } from '@/hooks/use-sheet-state';
@@ -51,7 +55,6 @@ const DealsList = () => {
   } = useInfiniteQuery(
     getTableViewDealsInfinite({ search: debouncedValue || undefined }),
   );
-
 
   const { mutate: addColumn } = useAddColumn('deals');
 
