@@ -6,12 +6,14 @@ import { useBaseTable } from '@/hooks/use-base-table';
 import type { BaseTableProps, BaseRow } from './types';
 import { BaseTableHeader } from './BaseTableHeader';
 import { BaseTableBody } from './BaseTableBody';
-import { Table, Button } from '@zuko/ui-kit';
+import { BaseTableRow } from './BaseTableRow';
+import { Table, Button, TableBody } from '@zuko/ui-kit';
 import clsx from 'clsx';
 import { PlusIcon } from '@heroicons/react/24/outline';
 import type { PaginationState } from '@tanstack/react-table';
 import { AddColumnDialog } from './AddColumnDialog';
 import type { ColumnConfig } from '@/types/table-metadata';
+import { useVirtualizer } from '@tanstack/react-virtual';
 
 const CHEVRON_LEFT = '/icons/chevron-left.svg';
 const CHEVRON_RIGHT = '/icons/chevron-right.svg';
@@ -68,6 +70,25 @@ export function BaseTable<TData extends BaseRow>(props: BaseTableProps<TData>) {
 
   // Scroll-event based fetch trigger (TanStack Virtual pattern)
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  const rows = table.getRowModel().rows;
+  const colCount = table.getAllColumns().length + (props.showAddColumn ? 1 : 0);
+
+  const rowVirtualizer = useVirtualizer({
+    count: rows.length,
+    getScrollElement: () =>
+      isInfiniteScrollMode ? scrollContainerRef.current : null,
+    estimateSize: () => 40,
+    overscan: 5,
+  });
+
+  const virtualItems = rowVirtualizer.getVirtualItems();
+  const paddingTop = virtualItems.length > 0 ? virtualItems[0].start : 0;
+  const paddingBottom =
+    virtualItems.length > 0
+      ? rowVirtualizer.getTotalSize() -
+        virtualItems[virtualItems.length - 1].end
+      : 0;
 
   const fetchMoreOnBottomReached = useCallback(
     (el?: HTMLDivElement | null) => {
@@ -174,14 +195,39 @@ export function BaseTable<TData extends BaseRow>(props: BaseTableProps<TData>) {
             showAddColumn={showAddColumn}
             onAddColumn={openAddColumnDialog}
           />
-          <BaseTableBody<TData>
-            rowModel={table.getRowModel()}
-            disableRowClick={disableRowClick}
-            onRowClick={onRowClick}
-            showAddColumn={showAddColumn}
-            onCellUpdate={onCellUpdate}
-            addRowContent={addRowContent}
-          />
+          {isInfiniteScrollMode ? (
+            <TableBody>
+              {paddingTop > 0 && (
+                <tr>
+                  <td colSpan={colCount} style={{ height: paddingTop }} />
+                </tr>
+              )}
+              {virtualItems.map((virtualRow) => (
+                <BaseTableRow<TData>
+                  key={rows[virtualRow.index].id}
+                  row={rows[virtualRow.index] as any}
+                  disableRowClick={disableRowClick}
+                  onRowClick={onRowClick}
+                  showAddColumn={showAddColumn}
+                  onCellUpdate={onCellUpdate}
+                />
+              ))}
+              {paddingBottom > 0 && (
+                <tr>
+                  <td colSpan={colCount} style={{ height: paddingBottom }} />
+                </tr>
+              )}
+            </TableBody>
+          ) : (
+            <BaseTableBody<TData>
+              rowModel={table.getRowModel()}
+              disableRowClick={disableRowClick}
+              onRowClick={onRowClick}
+              showAddColumn={showAddColumn}
+              onCellUpdate={onCellUpdate}
+              addRowContent={addRowContent}
+            />
+          )}
         </Table>
 
         {showAddRow && (
