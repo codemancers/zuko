@@ -70,7 +70,7 @@
       "entry": ["src/main.ts"],
       "project": ["src/**/*.ts"],
       "webpack": false,
-      "ignoreDependencies": ["@zuko/models"]
+      "ignoreDependencies": ["@zuko/models", "swagger-ui-express"]
     }
   }
 }
