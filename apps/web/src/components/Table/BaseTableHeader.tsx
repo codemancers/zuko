@@ -73,10 +73,12 @@ function DraggableHeaderCell<TData extends BaseRow>({
         transform: CSS.Transform.toString(transform),
         transition,
       }}
-      {...(isPinned ? {} : attributes)}
-      {...(isPinned ? {} : listeners)}
     >
-      <div ref={setNodeRef}>
+      <div
+        ref={setNodeRef}
+        {...(isPinned ? {} : attributes)}
+        {...(isPinned ? {} : listeners)}
+      >
         {header.isPlaceholder
           ? null
           : flexRender(header.column.columnDef.header, header.getContext())}

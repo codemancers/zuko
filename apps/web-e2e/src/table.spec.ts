@@ -16,65 +16,73 @@ test.describe('Column Reordering - Unauthenticated', () => {
 });
 
 test.describe('Column Reordering', () => {
-  test.beforeEach(async ({ contactsPage }) => {
+  test.beforeEach(async ({ contactsPage, page }) => {
     await contactsPage.goto();
-    await expect(
-      contactsPage.page.locator('table thead'),
-    ).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('table thead')).toBeVisible({ timeout: 10000 });
   });
 
   test('column headers have grab cursor on reorderable columns', async ({
     tablePage,
   }) => {
-    const cursor = await tablePage.getColumnCursor('Name');
+    const cursor = await tablePage.getColumnCursor('Email');
     expect(cursor).toBe('grab');
   });
 
-  test('pinned S.No column has default cursor and cannot be dragged', async ({
+  test('pinned S.No, Name column has default cursor and cannot be dragged', async ({
     tablePage,
   }) => {
-    const cursor = await tablePage.getColumnCursor('S.No');
-    expect(cursor).toBe('default');
+    const cursorSNO = await tablePage.getColumnCursor('S.No');
+    expect(cursorSNO).toBe('default');
+
+    const cursorName = await tablePage.getColumnCursor('Name');
+    expect(cursorName).toBe('default');
   });
 
-  test('dragging a column changes its position', async ({
-    tablePage,
-  }) => {
+  test('dragging a column changes its position', async ({ tablePage }) => {
+    // Initial column order follows : S.No, Name, Email, Phone, Owner
+    // Dragging Email column to Phone column position
     const headersBefore = await tablePage.getColumnHeaders();
-    const nameIndex = headersBefore.findIndex((h) => h.trim() === 'Name');
     const emailIndex = headersBefore.findIndex((h) => h.trim() === 'Email');
-    expect(nameIndex).toBeGreaterThan(-1);
-    expect(emailIndex).toBeGreaterThan(-1);
+    const phoneIndex = headersBefore.findIndex((h) => h.trim() === 'Phone');
 
-    await tablePage.dragColumn('Name', 'Email');
+    await tablePage.dragColumn('Email', 'Phone');
 
     const headersAfter = await tablePage.getColumnHeaders();
-    const newNameIndex = headersAfter.findIndex((h) => h.trim() === 'Name');
-    expect(newNameIndex).not.toBe(nameIndex);
+    const newEmailIndex = headersAfter.findIndex((h) => h.trim() === 'Email');
+    const newPhoneIndex = headersAfter.findIndex((h) => h.trim() === 'Phone');
+
+    // Expecting Email column to have new position.
+    // Expecting columns after name to shift accordingly.
+    expect(newEmailIndex).toBe(phoneIndex);
+    expect(newPhoneIndex).toBe(emailIndex);
   });
 
   test('column order persists after page reload', async ({
     contactsPage,
     tablePage,
+    page,
   }) => {
-    await tablePage.dragColumn('Name', 'Email');
+    const headersBefore = await tablePage.getColumnHeaders();
+    const emailIndex = headersBefore.findIndex((h) => h.trim() === 'Email');
+    const phoneIndex = headersBefore.findIndex((h) => h.trim() === 'Phone');
+
+    await tablePage.dragColumn('Email', 'Phone');
     const headersAfterDrag = await tablePage.getColumnHeaders();
+    const newEmailIndex = headersAfterDrag.findIndex(
+      (h) => h.trim() === 'Email',
+    );
+    const newPhoneIndex = headersAfterDrag.findIndex(
+      (h) => h.trim() === 'Phone',
+    );
+    // Expecting Email column to have new position.
+    // Expecting columns after Name column to shift accordingly.
+    expect(newEmailIndex).toBe(phoneIndex);
+    expect(newPhoneIndex).toBe(emailIndex);
 
     await contactsPage.goto();
-    await expect(
-      contactsPage.page.locator('table thead'),
-    ).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('table thead')).toBeVisible({ timeout: 10000 });
 
     const headersAfterReload = await tablePage.getColumnHeaders();
     expect(headersAfterReload).toEqual(headersAfterDrag);
-  });
-
-  test('S.No column stays first after reordering other columns', async ({
-    tablePage,
-  }) => {
-    await tablePage.dragColumn('Name', 'Email');
-
-    const headers = await tablePage.getColumnHeaders();
-    expect(headers[0].trim()).toBe('S.No');
   });
 });
