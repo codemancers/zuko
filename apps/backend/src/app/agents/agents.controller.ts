@@ -10,6 +10,13 @@ import {
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
+import {
+  ApiTags,
+  ApiBearerAuth,
+  ApiOperation,
+  ApiResponse,
+  ApiParam,
+} from '@nestjs/swagger';
 import { OrgId } from '../../common/auth/org-id.decorator';
 import { AgentGuard } from '../../common/auth/agent.guard';
 import {
@@ -134,6 +141,8 @@ class DealUpdateDto {
   priority?: number;
 }
 
+@ApiTags('Agents (Internal)')
+@ApiBearerAuth('agent-jwt')
 @Controller('agents')
 @UseGuards(AgentGuard)
 export class AgentsController {
@@ -145,6 +154,9 @@ export class AgentsController {
 
   // --- Companies ---
   @Get('companies/:id')
+  @ApiOperation({ summary: 'Get company by ID (agent)' })
+  @ApiParam({ name: 'id', type: Number })
+  @ApiResponse({ status: 200, description: 'Company details' })
   async findCompanyById(
     @OrgId() organizationId: number,
     @Param('id', ParseIntPipe) id: number,
@@ -153,6 +165,8 @@ export class AgentsController {
   }
 
   @Post('companies/query')
+  @ApiOperation({ summary: 'Query companies with filters (agent)' })
+  @ApiResponse({ status: 200, description: 'Company query results' })
   async queryCompanies(
     @OrgId() organizationId: number,
     @Body() dto: CompanyQueryDto,
@@ -213,6 +227,8 @@ export class AgentsController {
 
   @Post('companies')
   @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'Create a company (agent)' })
+  @ApiResponse({ status: 201, description: 'Company created' })
   async createCompany(
     @OrgId() organizationId: number,
     @Body() dto: CompanyCreateDto,
@@ -233,6 +249,9 @@ export class AgentsController {
   }
 
   @Patch('companies/:id')
+  @ApiOperation({ summary: 'Update a company (agent)' })
+  @ApiParam({ name: 'id', type: Number })
+  @ApiResponse({ status: 200, description: 'Company updated' })
   async updateCompany(
     @OrgId() organizationId: number,
     @Param('id', ParseIntPipe) id: number,
@@ -249,6 +268,9 @@ export class AgentsController {
 
   // --- Contacts ---
   @Get('contacts/:id')
+  @ApiOperation({ summary: 'Get contact by ID (agent)' })
+  @ApiParam({ name: 'id', type: Number })
+  @ApiResponse({ status: 200, description: 'Contact details' })
   async findContactById(
     @OrgId() organizationId: number,
     @Param('id', ParseIntPipe) id: number,
@@ -257,6 +279,8 @@ export class AgentsController {
   }
 
   @Post('contacts/query')
+  @ApiOperation({ summary: 'Query contacts with filters (agent)' })
+  @ApiResponse({ status: 200, description: 'Contact query results' })
   async queryContacts(
     @OrgId() organizationId: number,
     @Body() dto: ContactQueryDto,
@@ -328,6 +352,8 @@ export class AgentsController {
 
   @Post('contacts')
   @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'Create a contact (agent)' })
+  @ApiResponse({ status: 201, description: 'Contact created' })
   async createContact(
     @OrgId() organizationId: number,
     @Body() dto: ContactCreateDto,
@@ -349,6 +375,9 @@ export class AgentsController {
   }
 
   @Patch('contacts/:id')
+  @ApiOperation({ summary: 'Update a contact (agent)' })
+  @ApiParam({ name: 'id', type: Number })
+  @ApiResponse({ status: 200, description: 'Contact updated' })
   async updateContact(
     @OrgId() organizationId: number,
     @Param('id', ParseIntPipe) id: number,
@@ -365,6 +394,9 @@ export class AgentsController {
 
   // --- Deals ---
   @Get('deals/:id')
+  @ApiOperation({ summary: 'Get deal by ID (agent)' })
+  @ApiParam({ name: 'id', type: Number })
+  @ApiResponse({ status: 200, description: 'Deal details' })
   async findDealById(
     @OrgId() organizationId: number,
     @Param('id', ParseIntPipe) id: number,
@@ -373,6 +405,8 @@ export class AgentsController {
   }
 
   @Post('deals/query')
+  @ApiOperation({ summary: 'Query deals with filters (agent)' })
+  @ApiResponse({ status: 200, description: 'Deal query results' })
   async queryDeals(@OrgId() organizationId: number, @Body() dto: DealQueryDto) {
     const filters = dto.filters ?? {};
     const limit = Math.min(dto.limit ?? 100, 1000);
@@ -462,6 +496,8 @@ export class AgentsController {
 
   @Post('deals')
   @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'Create a deal (agent)' })
+  @ApiResponse({ status: 201, description: 'Deal created' })
   async createDeal(
     @OrgId() organizationId: number,
     @Body() dto: DealCreateDto,
@@ -489,6 +525,9 @@ export class AgentsController {
   }
 
   @Patch('deals/:id')
+  @ApiOperation({ summary: 'Update a deal (agent)' })
+  @ApiParam({ name: 'id', type: Number })
+  @ApiResponse({ status: 200, description: 'Deal updated' })
   async updateDeal(
     @OrgId() organizationId: number,
     @Param('id', ParseIntPipe) id: number,

@@ -9,6 +9,13 @@ import {
   Res,
   UseGuards,
 } from '@nestjs/common';
+import {
+  ApiTags,
+  ApiBearerAuth,
+  ApiOperation,
+  ApiResponse,
+  ApiParam,
+} from '@nestjs/swagger';
 import { AuthGuard } from '@thallesp/nestjs-better-auth';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import type { Request, Response } from 'express';
@@ -20,6 +27,8 @@ import {
 } from './sandbox-lifecycle.service';
 import { SANDBOX_LIFECYCLE_EVENT } from './sandbox-lifecycle.constants';
 
+@ApiTags('Sandboxes')
+@ApiBearerAuth('session')
 @Controller('sandboxes')
 @UseGuards(AuthGuard)
 export class SandboxLifecycleEventsController {
@@ -35,6 +44,15 @@ export class SandboxLifecycleEventsController {
    * Sends the current state immediately on connect, then streams updates.
    */
   @Get(':id/lifecycle/events')
+  @ApiOperation({ summary: 'SSE stream of sandbox lifecycle state changes' })
+  @ApiParam({ name: 'id', type: String, description: 'Sandbox ID' })
+  @ApiResponse({
+    status: 200,
+    description: 'Server-sent event stream of lifecycle state updates',
+    content: { 'text/event-stream': {} },
+  })
+  @ApiResponse({ status: 403, description: 'Not a chat participant' })
+  @ApiResponse({ status: 404, description: 'Sandbox not found' })
   async lifecycleEvents(
     @Param('id') rawId: string,
     @Req() req: Request & RequestWithUser,
@@ -96,6 +114,11 @@ export class SandboxLifecycleEventsController {
    * Manually wake a hibernated sandbox.
    */
   @Post(':id/resume')
+  @ApiOperation({ summary: 'Manually wake a hibernated sandbox' })
+  @ApiParam({ name: 'id', type: String })
+  @ApiResponse({ status: 200, description: 'Sandbox resumed' })
+  @ApiResponse({ status: 403, description: 'Not a chat participant' })
+  @ApiResponse({ status: 404, description: 'Sandbox not found' })
   async resume(@Param('id') rawId: string, @Req() req: RequestWithUser) {
     const sandboxId = parseInt(rawId, 10);
     const sandbox = await this.prisma.sandbox.findUnique({

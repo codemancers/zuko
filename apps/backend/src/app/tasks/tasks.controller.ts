@@ -13,6 +13,15 @@ import {
   HttpStatus,
   UseGuards,
 } from '@nestjs/common';
+import {
+  ApiTags,
+  ApiBearerAuth,
+  ApiOperation,
+  ApiResponse,
+  ApiParam,
+  ApiQuery,
+  ApiPropertyOptional,
+} from '@nestjs/swagger';
 import { AuthGuard } from '@thallesp/nestjs-better-auth';
 import { TaskService } from '@zuko/sales';
 import type { RequestWithUser } from '@zuko/core';
@@ -22,12 +31,24 @@ import type { CreateTaskDto } from './dto/create-task.dto';
 import type { UpdateTaskDto } from './dto/update-task.dto';
 
 export class TaskListQueryDto {
+  @ApiPropertyOptional({ type: Number, example: 1 })
   page?: number;
+
+  @ApiPropertyOptional({ type: Number, example: 50 })
   limit?: number;
+
+  @ApiPropertyOptional({
+    type: String,
+    description: 'Use "null" string for root-level tasks',
+  })
   parentId?: string;
+
+  @ApiPropertyOptional({ type: String, example: 'report' })
   search?: string;
 }
 
+@ApiTags('Tasks')
+@ApiBearerAuth('session')
 @Controller('tasks')
 @UseGuards(AuthGuard, OrganizationGuard)
 export class TasksController {
@@ -35,6 +56,9 @@ export class TasksController {
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'Create a new task' })
+  @ApiResponse({ status: 201, description: 'Task created successfully' })
+  @ApiResponse({ status: 401, description: 'Not authenticated' })
   async create(
     @OrgId() organizationId: number,
     @Body() dto: CreateTaskDto,
@@ -49,6 +73,20 @@ export class TasksController {
   }
 
   @Get()
+  @ApiOperation({
+    summary: 'List tasks with optional pagination and filtering',
+  })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiQuery({
+    name: 'parentId',
+    required: false,
+    type: String,
+    description: 'Use "null" for root-level tasks',
+  })
+  @ApiQuery({ name: 'search', required: false, type: String })
+  @ApiResponse({ status: 200, description: 'Paginated task list' })
+  @ApiResponse({ status: 401, description: 'Not authenticated' })
   async list(
     @OrgId() organizationId: number,
     @Query() query: TaskListQueryDto,
@@ -71,6 +109,11 @@ export class TasksController {
   }
 
   @Get(':id')
+  @ApiOperation({ summary: 'Get task by ID' })
+  @ApiParam({ name: 'id', type: Number })
+  @ApiResponse({ status: 200, description: 'Task details' })
+  @ApiResponse({ status: 401, description: 'Not authenticated' })
+  @ApiResponse({ status: 404, description: 'Task not found' })
   async findOne(
     @OrgId() organizationId: number,
     @Param('id', ParseIntPipe) id: number,
@@ -79,6 +122,11 @@ export class TasksController {
   }
 
   @Patch(':id')
+  @ApiOperation({ summary: 'Update a task' })
+  @ApiParam({ name: 'id', type: Number })
+  @ApiResponse({ status: 200, description: 'Updated task' })
+  @ApiResponse({ status: 401, description: 'Not authenticated' })
+  @ApiResponse({ status: 404, description: 'Task not found' })
   async update(
     @OrgId() organizationId: number,
     @Param('id', ParseIntPipe) id: number,
@@ -95,6 +143,11 @@ export class TasksController {
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Delete a task' })
+  @ApiParam({ name: 'id', type: Number })
+  @ApiResponse({ status: 204, description: 'Task deleted' })
+  @ApiResponse({ status: 401, description: 'Not authenticated' })
+  @ApiResponse({ status: 404, description: 'Task not found' })
   async remove(
     @OrgId() organizationId: number,
     @Param('id', ParseIntPipe) id: number,

@@ -10,11 +10,21 @@ import {
   Req,
   UseGuards,
 } from '@nestjs/common';
+import {
+  ApiTags,
+  ApiBearerAuth,
+  ApiOperation,
+  ApiResponse,
+  ApiParam,
+  ApiQuery,
+} from '@nestjs/swagger';
 import { AuthGuard } from '@thallesp/nestjs-better-auth';
 import type { RequestWithUser } from '@zuko/core';
 import { PrismaService } from '../prisma/prisma.service';
 import { SpritesService } from '../sprites/sprites.service';
 
+@ApiTags('Sandboxes')
+@ApiBearerAuth('session')
 @Controller('sandboxes')
 @UseGuards(AuthGuard)
 export class SandboxFilesystemController {
@@ -28,6 +38,25 @@ export class SandboxFilesystemController {
    * Read a file or list a directory (?list=true) inside the sandbox.
    */
   @Get(':id/fs/*path')
+  @ApiOperation({ summary: 'Read a file or list directory in a sandbox' })
+  @ApiParam({ name: 'id', type: String, description: 'Sandbox ID' })
+  @ApiParam({
+    name: 'path',
+    type: String,
+    description: 'File path within sandbox',
+  })
+  @ApiQuery({
+    name: 'list',
+    required: false,
+    type: Boolean,
+    description: 'Set to true to list directory',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'File content or directory listing',
+  })
+  @ApiResponse({ status: 403, description: 'Not a chat participant' })
+  @ApiResponse({ status: 404, description: 'Sandbox not found' })
   async readOrList(
     @Param('id') rawId: string,
     @Param('path') filePath: string,
@@ -48,6 +77,12 @@ export class SandboxFilesystemController {
    * Write content to a file inside the sandbox.
    */
   @Put(':id/fs/*path')
+  @ApiOperation({ summary: 'Write content to a file in a sandbox' })
+  @ApiParam({ name: 'id', type: String })
+  @ApiParam({ name: 'path', type: String })
+  @ApiResponse({ status: 200, description: 'File written' })
+  @ApiResponse({ status: 403, description: 'Not a chat participant' })
+  @ApiResponse({ status: 404, description: 'Sandbox not found' })
   async writeFile(
     @Param('id') rawId: string,
     @Param('path') filePath: string,

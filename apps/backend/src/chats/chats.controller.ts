@@ -9,10 +9,41 @@ import {
   Req,
   UseGuards,
 } from '@nestjs/common';
+import {
+  ApiTags,
+  ApiBearerAuth,
+  ApiOperation,
+  ApiResponse,
+  ApiParam,
+  ApiBody,
+  ApiProperty,
+  ApiPropertyOptional,
+} from '@nestjs/swagger';
 import { AuthGuard } from '@thallesp/nestjs-better-auth';
 import { ChatsService } from './chats.service';
 import type { RequestWithUser } from '@zuko/core';
 
+export class CreateChatBodyDto {
+  @ApiPropertyOptional({
+    type: [Number],
+    description: 'Optional list of participant user IDs',
+    example: [2, 3],
+  })
+  participantIds?: number[];
+}
+
+export class UpdateChatTitleDto {
+  @ApiProperty({ example: 'Project kickoff discussion' })
+  title!: string;
+}
+
+export class AddChatParticipantDto {
+  @ApiProperty({ type: Number, description: 'User ID to add', example: 5 })
+  userId!: number;
+}
+
+@ApiTags('Chats')
+@ApiBearerAuth('session')
 @Controller('chats')
 @UseGuards(AuthGuard)
 export class ChatsController {
@@ -23,6 +54,9 @@ export class ChatsController {
    * POST /api/chats
    */
   @Post()
+  @ApiOperation({ summary: 'Create a new chat' })
+  @ApiBody({ type: CreateChatBodyDto })
+  @ApiResponse({ status: 201, description: 'Chat created' })
   async create(
     @Req() req: RequestWithUser,
     @Body() body: { participantIds?: number[] },
@@ -50,6 +84,8 @@ export class ChatsController {
    * GET /api/chats
    */
   @Get()
+  @ApiOperation({ summary: 'List all chats for the current user' })
+  @ApiResponse({ status: 200, description: 'Chat list' })
   async findAll(@Req() req: RequestWithUser) {
     const userId = parseInt(req.user.id, 10);
     const chats = await this.chatsService.findAllByUser(userId);
@@ -78,6 +114,10 @@ export class ChatsController {
    * GET /api/chats/:id
    */
   @Get(':id')
+  @ApiOperation({ summary: 'Get a specific chat' })
+  @ApiParam({ name: 'id', type: String })
+  @ApiResponse({ status: 200, description: 'Chat details' })
+  @ApiResponse({ status: 403, description: 'Not a participant' })
   async findOne(@Req() req: RequestWithUser, @Param('id') id: string) {
     const userId = parseInt(req.user.id, 10);
     const chatId = parseInt(id, 10);
@@ -105,6 +145,9 @@ export class ChatsController {
    * GET /api/chats/:id/messages
    */
   @Get(':id/messages')
+  @ApiOperation({ summary: 'Get message history for a chat' })
+  @ApiParam({ name: 'id', type: String })
+  @ApiResponse({ status: 200, description: 'Message history' })
   async getMessages(@Req() req: RequestWithUser, @Param('id') id: string) {
     const userId = parseInt(req.user.id, 10);
     const chatId = parseInt(id, 10);
@@ -116,6 +159,10 @@ export class ChatsController {
    * PATCH /api/chats/:id
    */
   @Patch(':id')
+  @ApiOperation({ summary: 'Update chat title' })
+  @ApiParam({ name: 'id', type: String })
+  @ApiBody({ type: UpdateChatTitleDto })
+  @ApiResponse({ status: 200, description: 'Chat updated' })
   async update(
     @Req() req: RequestWithUser,
     @Param('id') id: string,
@@ -139,6 +186,9 @@ export class ChatsController {
    * DELETE /api/chats/:id
    */
   @Delete(':id')
+  @ApiOperation({ summary: 'Delete a chat' })
+  @ApiParam({ name: 'id', type: String })
+  @ApiResponse({ status: 200, description: 'Chat deleted' })
   async delete(@Req() req: RequestWithUser, @Param('id') id: string) {
     const userId = parseInt(req.user.id, 10);
     const chatId = parseInt(id, 10);
@@ -154,6 +204,10 @@ export class ChatsController {
    * POST /api/chats/:id/participants
    */
   @Post(':id/participants')
+  @ApiOperation({ summary: 'Add a participant to a chat' })
+  @ApiParam({ name: 'id', type: String })
+  @ApiBody({ type: AddChatParticipantDto })
+  @ApiResponse({ status: 201, description: 'Participant added' })
   async addParticipant(
     @Req() req: RequestWithUser,
     @Param('id') id: string,
@@ -182,6 +236,10 @@ export class ChatsController {
    * DELETE /api/chats/:id/participants/:userId
    */
   @Delete(':id/participants/:userId')
+  @ApiOperation({ summary: 'Remove a participant from a chat' })
+  @ApiParam({ name: 'id', type: String })
+  @ApiParam({ name: 'userId', type: String })
+  @ApiResponse({ status: 200, description: 'Participant removed' })
   async removeParticipant(
     @Req() req: RequestWithUser,
     @Param('id') id: string,

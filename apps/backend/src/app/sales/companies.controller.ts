@@ -14,6 +14,16 @@ import {
   UseGuards,
   Logger,
 } from '@nestjs/common';
+import {
+  ApiTags,
+  ApiBearerAuth,
+  ApiOperation,
+  ApiResponse,
+  ApiParam,
+  ApiQuery,
+  ApiProperty,
+  ApiPropertyOptional,
+} from '@nestjs/swagger';
 import { AuthGuard } from '@thallesp/nestjs-better-auth';
 import type { RequestWithUser } from '@zuko/core';
 import { CompaniesService } from '@zuko/sales';
@@ -32,49 +42,108 @@ export class CreateCompanyDto implements Omit<
   CreateCompanyInput,
   'organizationId'
 > {
+  @ApiProperty({ example: 'Acme Corp' })
   companyName!: string;
+
+  @ApiPropertyOptional({ example: 'https://acme.com' })
   website?: string;
+
+  @ApiPropertyOptional({ example: 'https://linkedin.com/company/acme' })
   linkedinUrl?: string;
+
+  @ApiPropertyOptional({
+    type: Object,
+    description: 'Rich-text summary (EditorJS format)',
+  })
   summary?: EditorData;
+
+  @ApiPropertyOptional({ type: [Number], example: [1, 2] })
   ownerIds?: number[];
+
+  @ApiPropertyOptional({ type: Number, example: 1 })
   primaryOwnerId?: number;
+
+  @ApiPropertyOptional({ type: Object, description: 'Custom field values' })
   fields?: Record<string, unknown>;
 }
 
 export class UpdateCompanyDto implements Partial<UpdateCompanyInput> {
+  @ApiPropertyOptional({ example: 'Acme Corp' })
   companyName?: string;
+
+  @ApiPropertyOptional({ example: 'https://acme.com' })
   website?: string;
+
+  @ApiPropertyOptional()
   linkedinUrl?: string;
+
+  @ApiPropertyOptional({ type: Object })
   summary?: EditorData;
+
+  @ApiPropertyOptional({ type: Boolean })
   isHidden?: boolean;
+
+  @ApiPropertyOptional({ type: Object })
   fields?: Record<string, unknown>;
 }
 
 export class CompanyListQueryDto {
+  @ApiPropertyOptional({ type: Number, example: 1 })
   page?: number;
+
+  @ApiPropertyOptional({ type: Number, example: 50 })
   limit?: number;
+
+  @ApiPropertyOptional({ type: String, example: 'acme' })
   search?: string;
-  ownerIds?: string; // comma-separated list
-  isHidden?: string; // 'true' or 'false'
+
+  @ApiPropertyOptional({
+    type: String,
+    description: 'Comma-separated owner user IDs',
+    example: '1,2,3',
+  })
+  ownerIds?: string;
+
+  @ApiPropertyOptional({
+    type: String,
+    enum: ['true', 'false'],
+    example: 'false',
+  })
+  isHidden?: string;
 }
 
 export class AddOwnerDto {
+  @ApiProperty({ type: Number, example: 1 })
   userId!: number;
+
+  @ApiPropertyOptional({ type: Boolean })
   isPrimary?: boolean;
 }
 
 export class AddContactDto implements AddContactToCompanyInput {
+  @ApiProperty({ type: Number, example: 5 })
   contactId!: number;
+
+  @ApiPropertyOptional({ example: 'CTO' })
   role?: string;
+
+  @ApiPropertyOptional({ type: Boolean })
   isPrimary?: boolean;
+
+  @ApiPropertyOptional({ type: String, format: 'date-time' })
   joinedAt?: Date;
 }
 
 export class UpdateContactDto implements UpdateContactCompanyInput {
+  @ApiPropertyOptional({ example: 'CTO' })
   role?: string;
+
+  @ApiPropertyOptional({ type: Boolean })
   isPrimary?: boolean;
 }
 
+@ApiTags('Companies')
+@ApiBearerAuth('session')
 @Controller('companies')
 @UseGuards(AuthGuard, OrganizationGuard)
 export class CompaniesController {
@@ -84,6 +153,9 @@ export class CompaniesController {
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'Create a new company' })
+  @ApiResponse({ status: 201, description: 'Company created' })
+  @ApiResponse({ status: 401, description: 'Not authenticated' })
   async create(
     @OrgId() organizationId: number,
     @Body() dto: CreateCompanyDto,
@@ -118,6 +190,24 @@ export class CompaniesController {
   }
 
   @Get()
+  @ApiOperation({ summary: 'List companies with optional filters' })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiQuery({ name: 'search', required: false, type: String })
+  @ApiQuery({
+    name: 'ownerIds',
+    required: false,
+    type: String,
+    description: 'Comma-separated owner IDs',
+  })
+  @ApiQuery({
+    name: 'isHidden',
+    required: false,
+    type: String,
+    enum: ['true', 'false'],
+  })
+  @ApiResponse({ status: 200, description: 'Paginated company list' })
+  @ApiResponse({ status: 401, description: 'Not authenticated' })
   async list(
     @OrgId() organizationId: number,
     @Query() query: CompanyListQueryDto,
@@ -140,6 +230,11 @@ export class CompaniesController {
   }
 
   @Get(':id')
+  @ApiOperation({ summary: 'Get a company by ID' })
+  @ApiParam({ name: 'id', type: Number })
+  @ApiResponse({ status: 200, description: 'Company details' })
+  @ApiResponse({ status: 401, description: 'Not authenticated' })
+  @ApiResponse({ status: 404, description: 'Company not found' })
   async findOne(
     @OrgId() organizationId: number,
     @Param('id', ParseIntPipe) id: number,
@@ -148,6 +243,11 @@ export class CompaniesController {
   }
 
   @Patch(':id')
+  @ApiOperation({ summary: 'Update a company' })
+  @ApiParam({ name: 'id', type: Number })
+  @ApiResponse({ status: 200, description: 'Updated company' })
+  @ApiResponse({ status: 401, description: 'Not authenticated' })
+  @ApiResponse({ status: 404, description: 'Company not found' })
   async update(
     @OrgId() organizationId: number,
     @Param('id', ParseIntPipe) id: number,
@@ -160,6 +260,10 @@ export class CompaniesController {
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Hide (soft-delete) a company' })
+  @ApiParam({ name: 'id', type: Number })
+  @ApiResponse({ status: 204, description: 'Company hidden' })
+  @ApiResponse({ status: 401, description: 'Not authenticated' })
   async hide(
     @OrgId() organizationId: number,
     @Param('id', ParseIntPipe) id: number,
@@ -168,6 +272,9 @@ export class CompaniesController {
   }
 
   @Post(':id/unhide')
+  @ApiOperation({ summary: 'Restore a hidden company' })
+  @ApiParam({ name: 'id', type: Number })
+  @ApiResponse({ status: 200, description: 'Company restored' })
   async unhide(
     @OrgId() organizationId: number,
     @Param('id', ParseIntPipe) id: number,
@@ -176,6 +283,9 @@ export class CompaniesController {
   }
 
   @Post(':id/owners')
+  @ApiOperation({ summary: 'Add an owner to a company' })
+  @ApiParam({ name: 'id', type: Number })
+  @ApiResponse({ status: 200, description: 'Owner added' })
   async addOwner(
     @OrgId() organizationId: number,
     @Param('id', ParseIntPipe) id: number,
@@ -194,6 +304,10 @@ export class CompaniesController {
 
   @Delete(':id/owners/:userId')
   @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Remove an owner from a company' })
+  @ApiParam({ name: 'id', type: Number })
+  @ApiParam({ name: 'userId', type: Number })
+  @ApiResponse({ status: 204, description: 'Owner removed' })
   async removeOwner(
     @OrgId() organizationId: number,
     @Param('id', ParseIntPipe) id: number,
@@ -210,6 +324,10 @@ export class CompaniesController {
   }
 
   @Post(':id/owners/:userId/set-primary')
+  @ApiOperation({ summary: 'Set a primary owner for a company' })
+  @ApiParam({ name: 'id', type: Number })
+  @ApiParam({ name: 'userId', type: Number })
+  @ApiResponse({ status: 200, description: 'Primary owner set' })
   async setPrimaryOwner(
     @OrgId() organizationId: number,
     @Param('id', ParseIntPipe) id: number,
@@ -220,6 +338,9 @@ export class CompaniesController {
   }
 
   @Get('user/:userId')
+  @ApiOperation({ summary: 'List companies owned by a specific user' })
+  @ApiParam({ name: 'userId', type: Number })
+  @ApiResponse({ status: 200, description: 'Company list' })
   async getCompaniesByOwner(
     @OrgId() organizationId: number,
     @Param('userId', ParseIntPipe) userId: number,
@@ -239,6 +360,9 @@ export class CompaniesController {
 
   @Post(':id/contacts')
   @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'Add a contact to a company' })
+  @ApiParam({ name: 'id', type: Number })
+  @ApiResponse({ status: 201, description: 'Contact added' })
   async addContact(
     @OrgId() organizationId: number,
     @Param('id', ParseIntPipe) id: number,
@@ -274,6 +398,10 @@ export class CompaniesController {
   }
 
   @Patch(':id/contacts/:contactId')
+  @ApiOperation({ summary: 'Update contact relationship with a company' })
+  @ApiParam({ name: 'id', type: Number })
+  @ApiParam({ name: 'contactId', type: Number })
+  @ApiResponse({ status: 200, description: 'Contact relationship updated' })
   async updateContact(
     @OrgId() organizationId: number,
     @Param('id', ParseIntPipe) id: number,
@@ -290,6 +418,10 @@ export class CompaniesController {
 
   @Delete(':id/contacts/:contactId')
   @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Remove a contact from a company' })
+  @ApiParam({ name: 'id', type: Number })
+  @ApiParam({ name: 'contactId', type: Number })
+  @ApiResponse({ status: 204, description: 'Contact removed' })
   async removeContact(
     @OrgId() organizationId: number,
     @Param('id', ParseIntPipe) id: number,
@@ -306,6 +438,9 @@ export class CompaniesController {
   }
 
   @Get(':id/contacts')
+  @ApiOperation({ summary: 'Get active contacts for a company' })
+  @ApiParam({ name: 'id', type: Number })
+  @ApiResponse({ status: 200, description: 'Active contacts list' })
   async getActiveContacts(
     @OrgId() organizationId: number,
     @Param('id', ParseIntPipe) id: number,
@@ -314,6 +449,9 @@ export class CompaniesController {
   }
 
   @Get(':id/contacts/history')
+  @ApiOperation({ summary: 'Get contact history for a company' })
+  @ApiParam({ name: 'id', type: Number })
+  @ApiResponse({ status: 200, description: 'Contact history' })
   async getContactHistory(
     @OrgId() organizationId: number,
     @Param('id', ParseIntPipe) id: number,
