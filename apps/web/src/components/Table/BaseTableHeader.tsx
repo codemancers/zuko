@@ -45,11 +45,17 @@ function DraggableHeaderCell<TData extends BaseRow>({
   header,
   isPinned,
 }: DraggableHeaderCellProps<TData>) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
-    useSortable({
-      id: header.id,
-      disabled: isPinned,
-    });
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({
+    id: header.id,
+    disabled: isPinned,
+  });
   return (
     <TableHeader
       colSpan={header.colSpan}

@@ -12,7 +12,9 @@ function deriveColumnIds(columns: ColumnDef<BaseRow, unknown>[]) {
   const pinned: string[] = [];
 
   for (const c of columns) {
-    const id = String(c.id ?? (c as { accessorKey?: string }).accessorKey ?? '');
+    const id = String(
+      c.id ?? (c as { accessorKey?: string }).accessorKey ?? '',
+    );
     if (!id) continue;
     all.push(id);
     if ((c.meta as { metadata?: ColumnMetadata })?.metadata?.pinned) {
@@ -20,10 +22,14 @@ function deriveColumnIds(columns: ColumnDef<BaseRow, unknown>[]) {
     }
   }
 
-  return { allColumnIds: ['sno', ...all], pinnedColumnIds: ['sno', ...pinned] };
+  return { allColumnIds: all, pinnedColumnIds: pinned };
 }
 
-export function useColumnOrder(userId: string, key: string, columns: ColumnDef<BaseRow, unknown>[]) {
+export function useColumnOrder(
+  userId: string,
+  key: string,
+  columns: ColumnDef<BaseRow, unknown>[],
+) {
   const { allColumnIds, pinnedColumnIds } = useMemo(
     () => deriveColumnIds(columns),
     [columns],
@@ -61,12 +67,19 @@ export function useColumnOrder(userId: string, key: string, columns: ColumnDef<B
     }
   }, [userId, key, serializedIds]);
 
-  const setColumnOrder = useCallback((newOrder: string[]) => {
-    setColumnOrderState(newOrder);
-    try {
-      if (userId) localStorage.setItem(buildStorageKey(userId, key), JSON.stringify(newOrder));
-    } catch {}
-  }, [userId, key]);
+  const setColumnOrder = useCallback(
+    (newOrder: string[]) => {
+      setColumnOrderState(newOrder);
+      try {
+        if (userId)
+          localStorage.setItem(
+            buildStorageKey(userId, key),
+            JSON.stringify(newOrder),
+          );
+      } catch {}
+    },
+    [userId, key],
+  );
 
   return [columnOrder, setColumnOrder, pinnedColumnIds] as const;
 }

@@ -3,8 +3,6 @@
 import Image from 'next/image';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useBaseTable } from '@/hooks/use-base-table';
-import { useColumnOrder } from '@/hooks/use-column-order';
-import { authClient } from '@/lib/auth-client';
 import type { BaseTableProps, BaseRow } from './types';
 import { BaseTableHeader } from './BaseTableHeader';
 import { BaseTableBody } from './BaseTableBody';
@@ -12,7 +10,6 @@ import { BaseTableRow } from './BaseTableRow';
 import { Table, Button, TableBody } from '@zuko/ui-kit';
 import clsx from 'clsx';
 import { PlusIcon } from '@heroicons/react/24/outline';
-import { functionalUpdate } from '@tanstack/react-table';
 import type { PaginationState } from '@tanstack/react-table';
 import { AddColumnDialog } from './AddColumnDialog';
 import type { ColumnConfig } from '@/types/table-metadata';
@@ -22,9 +19,6 @@ const CHEVRON_LEFT = '/icons/chevron-left.svg';
 const CHEVRON_RIGHT = '/icons/chevron-right.svg';
 
 export function BaseTable<TData extends BaseRow>(props: BaseTableProps<TData>) {
-  const { data: session } = authClient.useSession();
-  const userId = session?.user?.id ?? '';
-
   const [internalPagination, setInternalPagination] =
     React.useState<PaginationState>({
       pageIndex: 0,
@@ -45,27 +39,14 @@ export function BaseTable<TData extends BaseRow>(props: BaseTableProps<TData>) {
     manualPagination: isInfiniteScrollMode ? true : props.manualPagination,
   };
 
-  const [columnOrder, setColumnOrder, pinnedColumnIds] = useColumnOrder(
-    userId,
-    props.columnReordering?.storageKey ?? '',
-    props.columnReordering ? props.columns : [],
-  );
-
   const {
     table,
     isAddColumnDialogOpen,
     openAddColumnDialog,
     closeAddColumnDialog,
-  } = useBaseTable({
-    ...effectiveProps,
-    ...(props.columnReordering && columnOrder.length
-      ? {
-          columnOrder,
-          onColumnOrderChange: (updater) =>
-            setColumnOrder(functionalUpdate(updater, columnOrder)),
-        }
-      : {}),
-  });
+    setColumnOrder,
+    pinnedColumnIds,
+  } = useBaseTable(effectiveProps);
 
   const {
     loading,
