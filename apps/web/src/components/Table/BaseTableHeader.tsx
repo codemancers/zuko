@@ -132,6 +132,7 @@ export function BaseTableHeader<TData extends BaseRow>({
                 <TableHeader
                   key={header.id}
                   colSpan={header.colSpan}
+                  className="select-none"
                   style={getHeaderStyles(header)}
                 >
                   {header.isPlaceholder
@@ -160,6 +161,9 @@ export function BaseTableHeader<TData extends BaseRow>({
 
         if (!columnReordering) return headerRow;
 
+        // One DndContext per header group. For flat tables this is a single
+        // context. Grouped headers (multiple headerGroups) would produce sibling
+        // contexts with shared sensors — avoid grouped headers with reordering.
         return (
           <DndContext
             key={headerGroup.id}
