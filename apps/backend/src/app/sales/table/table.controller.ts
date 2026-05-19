@@ -11,6 +11,16 @@ import {
   DefaultValuePipe,
   UseGuards,
 } from '@nestjs/common';
+import {
+  ApiTags,
+  ApiBearerAuth,
+  ApiOperation,
+  ApiResponse,
+  ApiParam,
+  ApiQuery,
+  ApiProperty,
+  ApiPropertyOptional,
+} from '@nestjs/swagger';
 import { AuthGuard } from '@thallesp/nestjs-better-auth';
 import { TableService } from './table.service';
 import { OrgId } from '../../../common/auth/org-id.decorator';
@@ -22,24 +32,43 @@ import type { ColumnConfig, ColumnType } from '@zuko/sales';
 import type { RequestWithUser } from '@zuko/core';
 
 export class CreateColumnDto {
+  @ApiProperty({ example: 'Industry' })
   label!: string;
+
+  @ApiProperty({ example: 'industry' })
   columnKey!: string;
+
+  @ApiProperty({ example: 'text', description: 'Column field type' })
   fieldType!: ColumnType;
+
+  @ApiPropertyOptional({
+    type: Object,
+    description: 'Column configuration options',
+  })
   config?: ColumnConfig;
+
+  @ApiPropertyOptional({ type: Boolean })
   isRequired?: boolean;
 }
 
 export class UpdateCellDto {
+  @ApiProperty({ description: 'Column ID to update' })
   columnId!: string;
+
+  @ApiProperty({ type: Object, description: 'New cell value' })
   value!: unknown;
 }
 
+@ApiTags('Table Views')
+@ApiBearerAuth('session')
 @Controller('tables')
 @UseGuards(AuthGuard, OrganizationGuard)
 export class TableController {
   constructor(private readonly tableService: TableService) {}
 
   @Get('companies')
+  @ApiOperation({ summary: 'Get companies table view with custom columns' })
+  @ApiResponse({ status: 200, description: 'Companies table data' })
   async getCompaniesTable(
     @OrgId() organizationId: number,
     @Query() query: CompanyListQueryDto,
@@ -48,6 +77,8 @@ export class TableController {
   }
 
   @Get('contacts')
+  @ApiOperation({ summary: 'Get contacts table view with custom columns' })
+  @ApiResponse({ status: 200, description: 'Contacts table data' })
   async getContactsTable(
     @OrgId() organizationId: number,
     @Query() query: ContactListQueryDto,
@@ -56,6 +87,8 @@ export class TableController {
   }
 
   @Get('deals')
+  @ApiOperation({ summary: 'Get deals table view with custom columns' })
+  @ApiResponse({ status: 200, description: 'Deals table data' })
   async getDealsTable(
     @OrgId() organizationId: number,
     @Query() query: DealListQueryDto,
@@ -64,6 +97,11 @@ export class TableController {
   }
 
   @Get('tasks')
+  @ApiOperation({ summary: 'Get tasks table view' })
+  @ApiQuery({ name: 'search', required: false, type: String })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiResponse({ status: 200, description: 'Tasks table data' })
   async getTasksTable(
     @OrgId() organizationId: number,
     @Query('search') search?: string,
@@ -74,6 +112,11 @@ export class TableController {
   }
 
   @Get('meetings')
+  @ApiOperation({ summary: 'Get meetings table view' })
+  @ApiQuery({ name: 'search', required: false, type: String })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiResponse({ status: 200, description: 'Meetings table data' })
   async getMeetingsTable(
     @OrgId() organizationId: number,
     @Query('search') search?: string,
@@ -89,6 +132,13 @@ export class TableController {
   }
 
   @Post(':entity/columns')
+  @ApiOperation({ summary: 'Create a custom column for an entity table' })
+  @ApiParam({
+    name: 'entity',
+    type: String,
+    enum: ['companies', 'contacts', 'deals', 'tasks', 'meetings'],
+  })
+  @ApiResponse({ status: 201, description: 'Column created' })
   async createColumn(
     @Param('entity') entity: string,
     @OrgId() organizationId: number,
@@ -104,6 +154,14 @@ export class TableController {
   }
 
   @Patch(':entity/:rowId/cell')
+  @ApiOperation({ summary: 'Update a cell value in a table row' })
+  @ApiParam({
+    name: 'entity',
+    type: String,
+    enum: ['companies', 'contacts', 'deals', 'tasks', 'meetings'],
+  })
+  @ApiParam({ name: 'rowId', type: Number })
+  @ApiResponse({ status: 200, description: 'Cell updated' })
   async updateCell(
     @Param('entity') entity: string,
     @Param('rowId', ParseIntPipe) rowId: number,

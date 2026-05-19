@@ -14,27 +14,50 @@ import {
   UseGuards,
   Logger,
 } from '@nestjs/common';
+import {
+  ApiTags,
+  ApiBearerAuth,
+  ApiOperation,
+  ApiResponse,
+  ApiParam,
+  ApiQuery,
+  ApiProperty,
+  ApiPropertyOptional,
+} from '@nestjs/swagger';
 import { AuthGuard } from '@thallesp/nestjs-better-auth';
 import { ActivityService } from '@zuko/sales';
 import type { RequestWithUser } from '@zuko/core';
 
 // DTOs for API requests
 export class CreateCommentDto {
+  @ApiProperty({ example: 'Had a great call with the client today.' })
   content!: string;
 }
 
 export class UpdateCommentDto {
+  @ApiProperty({ example: 'Updated comment content.' })
   content!: string;
 }
 
 export class ActivityQueryDto {
+  @ApiPropertyOptional({ example: 'company' })
   entityType?: string;
+
+  @ApiPropertyOptional({ type: Number, example: 1 })
   entityId?: number;
+
+  @ApiPropertyOptional({ example: 'comment' })
   activityType?: string;
+
+  @ApiPropertyOptional({ type: Number, example: 50 })
   limit?: number;
+
+  @ApiPropertyOptional({ type: Number, example: 0 })
   offset?: number;
 }
 
+@ApiTags('Activities')
+@ApiBearerAuth('session')
 @Controller('activities')
 @UseGuards(AuthGuard)
 export class ActivitiesController {
@@ -43,6 +66,13 @@ export class ActivitiesController {
   constructor(private readonly activityService: ActivityService) {}
 
   @Get()
+  @ApiOperation({ summary: 'List activities with optional filters' })
+  @ApiQuery({ name: 'entityType', required: false, type: String })
+  @ApiQuery({ name: 'entityId', required: false, type: Number })
+  @ApiQuery({ name: 'activityType', required: false, type: String })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiQuery({ name: 'offset', required: false, type: Number })
+  @ApiResponse({ status: 200, description: 'Activity list' })
   async list(@Query() query: ActivityQueryDto) {
     this.logger.log('[LIST_ACTIVITIES] Request received');
 
@@ -61,6 +91,9 @@ export class ActivitiesController {
   }
 
   @Get(':id')
+  @ApiOperation({ summary: 'Get an activity by ID' })
+  @ApiParam({ name: 'id', type: Number })
+  @ApiResponse({ status: 200, description: 'Activity details' })
   async findOne(@Param('id', ParseIntPipe) id: number) {
     this.logger.log(`[GET_ACTIVITY] Request for ID: ${id}`);
     return this.activityService.findById(id);
@@ -68,6 +101,9 @@ export class ActivitiesController {
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Delete an activity' })
+  @ApiParam({ name: 'id', type: Number })
+  @ApiResponse({ status: 204, description: 'Activity deleted' })
   async delete(
     @Req() req: RequestWithUser,
     @Param('id', ParseIntPipe) id: number,
@@ -80,6 +116,9 @@ export class ActivitiesController {
   }
 
   @Patch(':id')
+  @ApiOperation({ summary: 'Update an activity (e.g. edit comment)' })
+  @ApiParam({ name: 'id', type: Number })
+  @ApiResponse({ status: 200, description: 'Updated activity' })
   async update(
     @Req() req: RequestWithUser,
     @Param('id', ParseIntPipe) id: number,
@@ -94,6 +133,8 @@ export class ActivitiesController {
 }
 
 // Nested routes for entity-specific activities
+@ApiTags('Contact Activities')
+@ApiBearerAuth('session')
 @Controller('contacts/:contactId/activities')
 @UseGuards(AuthGuard)
 export class ContactActivitiesController {
@@ -102,6 +143,10 @@ export class ContactActivitiesController {
   constructor(private readonly activityService: ActivityService) {}
 
   @Get()
+  @ApiOperation({ summary: 'Get activity timeline for a contact' })
+  @ApiParam({ name: 'contactId', type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiResponse({ status: 200, description: 'Activity timeline' })
   async getTimeline(
     @Param('contactId', ParseIntPipe) contactId: number,
     @Query('limit') limitStr?: string,
@@ -113,6 +158,9 @@ export class ContactActivitiesController {
 
   @Post('comments')
   @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'Add a comment to a contact' })
+  @ApiParam({ name: 'contactId', type: Number })
+  @ApiResponse({ status: 201, description: 'Comment created' })
   async createComment(
     @Req() req: RequestWithUser,
     @Param('contactId', ParseIntPipe) contactId: number,
@@ -143,6 +191,8 @@ export class ContactActivitiesController {
 }
 
 // Deal activities
+@ApiTags('Deal Activities')
+@ApiBearerAuth('session')
 @Controller('deals/:dealId/activities')
 @UseGuards(AuthGuard)
 export class DealActivitiesController {
@@ -151,6 +201,10 @@ export class DealActivitiesController {
   constructor(private readonly activityService: ActivityService) {}
 
   @Get()
+  @ApiOperation({ summary: 'Get activity timeline for a deal' })
+  @ApiParam({ name: 'dealId', type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiResponse({ status: 200, description: 'Activity timeline' })
   async getTimeline(
     @Param('dealId', ParseIntPipe) dealId: number,
     @Query('limit') limitStr?: string,
@@ -162,6 +216,9 @@ export class DealActivitiesController {
 
   @Post('comments')
   @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'Add a comment to a deal' })
+  @ApiParam({ name: 'dealId', type: Number })
+  @ApiResponse({ status: 201, description: 'Comment created' })
   async createComment(
     @Req() req: RequestWithUser,
     @Param('dealId', ParseIntPipe) dealId: number,
@@ -190,6 +247,8 @@ export class DealActivitiesController {
 }
 
 // Task activities
+@ApiTags('Task Activities')
+@ApiBearerAuth('session')
 @Controller('tasks/:taskId/activities')
 @UseGuards(AuthGuard)
 export class TaskActivitiesController {
@@ -198,6 +257,10 @@ export class TaskActivitiesController {
   constructor(private readonly activityService: ActivityService) {}
 
   @Get()
+  @ApiOperation({ summary: 'Get activity timeline for a task' })
+  @ApiParam({ name: 'taskId', type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiResponse({ status: 200, description: 'Activity timeline' })
   async getTimeline(
     @Param('taskId', ParseIntPipe) taskId: number,
     @Query('limit') limitStr?: string,
@@ -209,6 +272,9 @@ export class TaskActivitiesController {
 
   @Post('comments')
   @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'Add a comment to a task' })
+  @ApiParam({ name: 'taskId', type: Number })
+  @ApiResponse({ status: 201, description: 'Comment created' })
   async createComment(
     @Req() req: RequestWithUser,
     @Param('taskId', ParseIntPipe) taskId: number,
@@ -237,6 +303,8 @@ export class TaskActivitiesController {
 }
 
 // Company activities (entityType 'company': contact | company | deal).
+@ApiTags('Company Activities')
+@ApiBearerAuth('session')
 @Controller('companies/:companyId/activities')
 @UseGuards(AuthGuard)
 export class CompanyActivitiesController {
@@ -245,6 +313,10 @@ export class CompanyActivitiesController {
   constructor(private readonly activityService: ActivityService) {}
 
   @Get()
+  @ApiOperation({ summary: 'Get activity timeline for a company' })
+  @ApiParam({ name: 'companyId', type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiResponse({ status: 200, description: 'Activity timeline' })
   async getTimeline(
     @Param('companyId', ParseIntPipe) companyId: number,
     @Query('limit') limitStr?: string,
@@ -256,6 +328,9 @@ export class CompanyActivitiesController {
 
   @Post('comments')
   @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'Add a comment to a company' })
+  @ApiParam({ name: 'companyId', type: Number })
+  @ApiResponse({ status: 201, description: 'Comment created' })
   async createComment(
     @Req() req: RequestWithUser,
     @Param('companyId', ParseIntPipe) companyId: number,

@@ -8,18 +8,51 @@ import {
   Res,
   UseGuards,
 } from '@nestjs/common';
+import {
+  ApiTags,
+  ApiBearerAuth,
+  ApiOperation,
+  ApiResponse,
+  ApiBody,
+  ApiProperty,
+  ApiPropertyOptional,
+} from '@nestjs/swagger';
 import { AuthGuard } from '@thallesp/nestjs-better-auth';
 import { generateId } from 'ai';
 import type { UIMessageChunk, UIMessage } from 'ai';
 import type { Response } from 'express';
 import type { RequestWithUser } from '@zuko/core';
 import type { ContextEntityReference } from '../types/chat';
+
+export class ChatMessageDto {
+  @ApiProperty({
+    type: Array,
+    description: 'Array of AI SDK UIMessage objects',
+  })
+  messages!: UIMessage[];
+
+  @ApiProperty({ description: 'Chat ID (number or string)' })
+  chatId!: string | number;
+
+  @ApiPropertyOptional({
+    type: Array,
+    description: 'Context entity references for the AI agent',
+  })
+  contextEntities?: ContextEntityReference[];
+}
+
+export class StopChatDto {
+  @ApiProperty({ description: 'Chat ID (number or string)' })
+  chatId!: string | number;
+}
 import { ChatsService } from '../chats/chats.service';
 import { ChatsRepository } from '../chats/chats.repository';
 import { AgentService } from '../agent/agent.service';
 import { ChatStreamRegistry } from './chat-stream.registry';
 import { convertChatStreamToUiMessageStream } from './convert-stream';
 
+@ApiTags('Chat Stream')
+@ApiBearerAuth('session')
 @Controller('v1')
 export class ChatController {
   constructor(
@@ -31,6 +64,14 @@ export class ChatController {
 
   @Post('chat')
   @UseGuards(AuthGuard)
+  @ApiOperation({ summary: 'Start an AI chat stream (SSE)' })
+  @ApiBody({ type: ChatMessageDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Server-sent event stream of UIMessageChunks',
+    content: { 'text/event-stream': {} },
+  })
+  @ApiResponse({ status: 401, description: 'Not authenticated' })
   async chat(
     @Body()
     body: {
@@ -155,6 +196,10 @@ export class ChatController {
   @Post('chat/stop')
   @UseGuards(AuthGuard)
   @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Cancel the active agent run for a chat' })
+  @ApiBody({ type: StopChatDto })
+  @ApiResponse({ status: 204, description: 'Stream cancelled' })
+  @ApiResponse({ status: 401, description: 'Not authenticated' })
   async stop(
     @Body() body: { chatId: string | number },
     @Req() req: RequestWithUser,
