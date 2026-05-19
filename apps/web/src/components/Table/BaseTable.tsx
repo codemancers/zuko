@@ -4,6 +4,7 @@ import Image from 'next/image';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useBaseTable } from '@/hooks/use-base-table';
 import { useColumnOrder } from '@/hooks/use-column-order';
+import { authClient } from '@/lib/auth-client';
 import type { BaseTableProps, BaseRow } from './types';
 import { BaseTableHeader } from './BaseTableHeader';
 import { BaseTableBody } from './BaseTableBody';
@@ -21,6 +22,9 @@ const CHEVRON_LEFT = '/icons/chevron-left.svg';
 const CHEVRON_RIGHT = '/icons/chevron-right.svg';
 
 export function BaseTable<TData extends BaseRow>(props: BaseTableProps<TData>) {
+  const { data: session } = authClient.useSession();
+  const userId = session?.user?.id ?? '';
+
   const [internalPagination, setInternalPagination] =
     React.useState<PaginationState>({
       pageIndex: 0,
@@ -42,6 +46,7 @@ export function BaseTable<TData extends BaseRow>(props: BaseTableProps<TData>) {
   };
 
   const [columnOrder, setColumnOrder, pinnedColumnIds] = useColumnOrder(
+    userId,
     props.columnReordering?.storageKey ?? '',
     props.columnReordering ? props.columns : [],
   );

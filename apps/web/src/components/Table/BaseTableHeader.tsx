@@ -44,7 +44,7 @@ function DraggableHeaderCell<TData extends BaseRow>({
   header,
   isPinned,
 }: DraggableHeaderCellProps<TData>) {
-  const { attributes, listeners, setNodeRef, transform, isDragging } =
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({
       id: header.id,
       disabled: isPinned,
@@ -64,6 +64,7 @@ function DraggableHeaderCell<TData extends BaseRow>({
       style={{
         ...getHeaderStyles(header),
         transform: CSS.Transform.toString(transform),
+        transition,
       }}
       {...(isPinned ? {} : attributes)}
       {...(isPinned ? {} : listeners)}

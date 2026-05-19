@@ -2,8 +2,8 @@ import { useState, useEffect, useMemo } from 'react';
 import type { ColumnDef } from '@tanstack/react-table';
 import type { ColumnMetadata } from '@/types/table-metadata';
 
-function storageKey(entity: string) {
-  return `zuko:column-order:${entity}`;
+function storageKey(userId: string, entity: string) {
+  return `zuko:column-order:${userId}:${entity}`;
 }
 
 function deriveColumnIds(columns: ColumnDef<any, any>[]) {
@@ -22,7 +22,7 @@ function deriveColumnIds(columns: ColumnDef<any, any>[]) {
   return { allColumnIds: ['sno', ...all], pinnedColumnIds: ['sno', ...pinned] };
 }
 
-export function useColumnOrder(key: string, columns: ColumnDef<any, any>[]) {
+export function useColumnOrder(userId: string, key: string, columns: ColumnDef<any, any>[]) {
   const { allColumnIds, pinnedColumnIds } = useMemo(
     () => deriveColumnIds(columns),
     [columns],
@@ -33,10 +33,10 @@ export function useColumnOrder(key: string, columns: ColumnDef<any, any>[]) {
   const serializedIds = allColumnIds.join(',');
 
   useEffect(() => {
-    if (!allColumnIds.length) return;
+    if (!allColumnIds.length || !userId) return;
 
     try {
-      const stored = localStorage.getItem(storageKey(key));
+      const stored = localStorage.getItem(storageKey(userId, key));
       if (!stored) {
         setColumnOrderState(allColumnIds);
         return;
@@ -58,12 +58,12 @@ export function useColumnOrder(key: string, columns: ColumnDef<any, any>[]) {
     } catch {
       setColumnOrderState(allColumnIds);
     }
-  }, [key, serializedIds]);
+  }, [userId, key, serializedIds]);
 
   function setColumnOrder(newOrder: string[]) {
     setColumnOrderState(newOrder);
     try {
-      localStorage.setItem(storageKey(key), JSON.stringify(newOrder));
+      if (userId) localStorage.setItem(storageKey(userId, key), JSON.stringify(newOrder));
     } catch {}
   }
 
