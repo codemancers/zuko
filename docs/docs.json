@@ -29,12 +29,13 @@
               "setup/frontend",
               "setup/backend",
               "setup/meeting-bot",
-              "setup/ai-agents"
+              "setup/ai-agents",
+              "setup/sandbox"
             ]
           },
           {
             "group": "Concepts",
-            "pages": ["concepts/architecture"]
+            "pages": ["concepts/architecture", "concepts/sandbox"]
           },
           {
             "group": "Guides",

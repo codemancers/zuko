@@ -1,0 +1,145 @@
+---
+title: Sandbox Setup
+description: Configure the Sprites sandbox integration for isolated AI agent execution.
+---
+
+Zuko sandboxes provide isolated execution environments for AI agent tool calls. In production, sandboxes run on [Sprites](https://sprites.fly.dev) — a managed cloud execution platform built on Fly.io. For local development, a local fallback runs commands directly on the backend host.
+
+---
+
+## Prerequisites
+
+- Backend running (see [Backend Setup](/setup/backend))
+- A Sprites account and API token (production only)
+
+---
+
+## Environment variables
+
+Add these to `apps/backend/.env`:
+
+```env
+# ── Sprites (sandbox) ─────────────────────────────────────────────────────────
+
+# Set to true to use remote Sprites sandboxes (recommended for production)
+# Set to false to fall back to local Node.js execution (development only)
+SPRITES_ENABLED=false
+
+# API token from your Sprites account (required when SPRITES_ENABLED=true)
+SPRITES_TOKEN=
+
+# Sprites API base URL (default shown — only change if self-hosting)
+SPRITES_API_BASE_URL=https://sprites.fly.dev
+
+# Git branch used when provisioning a new sprite
+AGENT_BRANCH=main
+
+# Working directory inside the sandbox
+WORKING_DIR=/home/sprite/zuko
+```
+
+<Tip>
+  For local development, `SPRITES_ENABLED=false` is the default and no Sprites
+  account is needed. The agent will execute commands on your local machine using
+  Node.js.
+</Tip>
+
+---
+
+## Development (local mode)
+
+No additional setup is required. With `SPRITES_ENABLED=false`, the backend uses `LocalSandbox` — commands run via `child_process.exec` on the backend host, isolated to the `WORKING_DIR` path.
+
+This mode is only suitable for development. Multiple concurrent chats will share the same filesystem.
+
+---
+
+## Production (Sprites)
+
+### 1. Create a Sprites account
+
+Sign up at [sprites.fly.dev](https://sprites.fly.dev) and obtain an API token from your account settings.
+
+### 2. Configure the backend
+
+```env
+SPRITES_ENABLED=true
+SPRITES_TOKEN=your-sprites-token
+SPRITES_API_BASE_URL=https://sprites.fly.dev
+AGENT_BRANCH=main
+WORKING_DIR=/home/sprite/zuko
+```
+
+### 3. How sandboxes are provisioned
+
+When a chat first needs a sandbox, the backend:
+
+1. Calls the Sprites API to create (or reuse) a sprite named `zuko-{chatId}-{threadId}`
+2. Sets up the working directory and installs dependencies
+3. Marks the sandbox `active` in the database
+4. Starts the SSE lifecycle stream so the frontend reflects the current state
+
+You do not need to pre-create sandboxes — they are provisioned automatically on demand.
+
+---
+
+## E2E / testing
+
+For end-to-end tests, you can pin a specific sandbox instead of provisioning a new one:
+
+```env
+# Name of an existing sandbox to reuse during tests
+E2E_SANDBOX=zuko-test-sandbox
+
+# URL override for that sandbox (if different from what Sprites returns)
+E2E_SANDBOX_URL=http://localhost:9999
+```
+
+---
+
+## Verifying the setup
+
+Start the backend and open a chat. The `SandboxStatusBadge` in the top-right of the chat window shows the current state:
+
+- **Yellow / pulsing** — sandbox is being provisioned
+- **Green** — sandbox is active and ready
+- **Zinc** — sandbox is hibernated (click Resume or send a message to wake it)
+- **Red** — an error occurred (hover the badge for details)
+
+---
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Badge shows 'failed'">
+    Check the backend logs for a `SandboxLifecycleService` error. Common causes:
+
+    - `SPRITES_TOKEN` is missing or invalid
+    - `SPRITES_API_BASE_URL` is unreachable
+    - The sandbox name already exists on Sprites with a conflicting state
+
+    Fix the underlying issue, then call `POST /api/sandboxes/:id/resume` or create a new chat to reprovision.
+
+  </Accordion>
+
+<Accordion title="Sandbox stays 'hibernated' and won't wake">
+  Confirm `SPRITES_ENABLED=true` and that `SPRITES_TOKEN` is valid. If the
+  Sprites API is unreachable, `startSprite` will fail silently and the sandbox
+  will remain hibernated. Check backend logs for `startSprite returned an
+  error`.
+</Accordion>
+
+<Accordion title="Local mode: commands fail with permission errors">
+  In local mode, commands run as the backend process user. Ensure the backend
+  has read/write access to `WORKING_DIR` and that the directory exists.
+</Accordion>
+
+  <Accordion title="SSE badge never updates">
+    The frontend proxies SSE through `/api/proxy/sandboxes/:id/lifecycle/events`. Confirm:
+
+    - The backend is running and reachable from the Next.js server
+    - `BACKEND_URL` in `apps/web/.env` points to the correct backend address
+    - No reverse proxy is buffering the SSE stream (set `X-Accel-Buffering: no` if using nginx)
+
+  </Accordion>
+</AccordionGroup>

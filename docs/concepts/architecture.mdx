@@ -10,9 +10,9 @@ Zuko is organized as an Nx monorepo. This page gives a high-level view of the ma
 
 `apps/backend` — NestJS API that handles auth, chat, and the sales domain (contacts, companies, deals).
 
-### AI Agents
+### AI Agent
 
-`apps/ai-agents` — Agent runtime service. Hosts the LLM agent and exposes tools that call the backend `/api/agents/*` endpoints (machine-to-machine via `AGENT_TOKEN`).
+The AI agent runs **in-process inside the backend** (`apps/backend/src/agent/`). It is built on [DeepAgents](https://www.npmjs.com/package/deepagents) and uses a hierarchical sub-agent model (Contacts, Companies, Deals, Meetings). The agent activates when a user sends a chat message — no separate service is required. See the [AI Agents guide](/guides/ai-agents) for full details.
 
 ### Web
 
@@ -54,8 +54,9 @@ Zuko is organized as an Nx monorepo. This page gives a high-level view of the ma
 
 1. The **web app** calls the **backend** (NestJS) for auth, chat, and CRM operations.
 2. The backend uses **Prisma** (from `libs/models`) to read and write to PostgreSQL.
-3. AI chat endpoints can incorporate CRM context from `libs/sales`. The backend can also delegate tool execution to the **ai-agents** service via `/api/agents/*`.
+3. AI chat endpoints incorporate CRM context from `libs/sales`. The in-process **AI agent** executes CRM tool calls through the backend's `/api/agents/*` endpoints (authenticated via `AGENT_TOKEN`) and can run code inside a [sandbox](/concepts/sandbox).
 4. UI components from `libs/ui-kit` render CRM entities and chat interfaces in the web app.
+5. When the agent needs to execute code or access files, it does so inside a **sandbox** — an isolated environment managed by `SandboxLifecycleService`. In production, sandboxes run on Sprites (Fly.io); in development they fall back to local `child_process` execution. See [Sandbox](/concepts/sandbox) for details.
 
 ---
 

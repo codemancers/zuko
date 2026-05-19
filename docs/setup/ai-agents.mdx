@@ -1,126 +1,117 @@
 ---
 title: AI Agents Setup
-description: Configure and run the LangGraph AI agents service locally.
+description: Configure the AI agent that runs inside the NestJS backend.
 ---
 
-The AI agents service lives in `apps/ai-agents`. It runs a **LangGraph** agent runtime that powers agentic CRM chat and meeting intelligence features.
+The AI agent runs **in-process inside the NestJS backend** (`apps/backend/src/agent/`). There is no separate service to start — it activates automatically when a user sends a chat message.
+
+All agent configuration is done via environment variables in `apps/backend/.env`.
 
 ---
 
 ## Prerequisites
 
-- Repo cloned and dependencies installed (`bun install`)
-- Backend running at `http://localhost:3001`
-- `OPENAI_API_KEY` available
+- Backend running (see [Backend Setup](/setup/backend))
+- An OpenAI or Anthropic API key
 
 ---
 
 ## Environment variables
 
-Copy the example file:
-
-```bash
-cp apps/ai-agents/.env.example apps/ai-agents/.env
-```
-
-### Database
+Add these to `apps/backend/.env`:
 
 ```env
-# PostgreSQL — used for LangGraph checkpoint storage
-# Can be omitted if set in root .env
-DATABASE_URL=postgres://postgres:password@localhost:5432/zuko_dev
-```
+# ── Model ─────────────────────────────────────────────────────────────────────
 
-### OpenAI
+# Format: "<provider>/<model>"
+# Supported providers: openai, anthropic
+AGENT_MODEL=openai/gpt-4.1
 
-```env
-# Can be omitted if set in root .env
+# ── OpenAI ────────────────────────────────────────────────────────────────────
 OPENAI_API_KEY=sk-...
-OPENAI_MODEL=gpt-4.1
-```
 
-### Backend connection
+# ── Anthropic (only needed if using anthropic/* models) ───────────────────────
+# ANTHROPIC_API_KEY=sk-ant-...
 
-```env
-BACKEND_URL=http://localhost:3001
-AGENT_TOKEN=your-agent-token
-```
-
-### Tracing (optional)
-
-```env
+# ── Tracing (optional) ────────────────────────────────────────────────────────
 LANGSMITH_TRACING=false
 LANGSMITH_API_KEY=
+LANGSMITH_PROJECT=zuko
 ```
 
 <Tip>
-  `AGENT_TOKEN` must be the same value in both `apps/backend/.env` and
-  `apps/ai-agents/.env`. It authenticates the agents service when calling
-  backend endpoints.
+  `AGENT_MODEL` defaults to `openai/gpt-4.1` if not set. To switch to Claude,
+  set `AGENT_MODEL=anthropic/claude-sonnet-4-5` and add `ANTHROPIC_API_KEY`.
 </Tip>
 
 ---
 
-## Start the development server
+## Model format
 
-```bash
-bun nx run @zuko/ai-agents:dev
-```
+The `AGENT_MODEL` variable uses `provider/model` format:
 
-The service starts at **http://localhost:8080** and also opens **LangGraph Studio** for visual debugging of agent graphs.
-
-<Note>
-  The first start may be slow — the LangGraph CLI downloads additional
-  dependencies on first run.
-</Note>
+| Value                         | Provider  | Model             |
+| ----------------------------- | --------- | ----------------- |
+| `openai/gpt-4.1`              | OpenAI    | GPT-4.1           |
+| `openai/gpt-4o`               | OpenAI    | GPT-4o            |
+| `anthropic/claude-sonnet-4-5` | Anthropic | Claude Sonnet 4.5 |
+| `anthropic/claude-opus-4-6`   | Anthropic | Claude Opus 4.6   |
 
 ---
 
-## LangGraph Studio
+## Start the backend
 
-When the service is running, open LangGraph Studio at **http://localhost:8080** to:
+The agent starts with the backend — no extra step needed:
 
-- Visualize agent execution graphs
-- Inspect state at each step
-- Replay and debug agent runs
-- Test individual graph nodes
+```bash
+bun nx run @zuko/backend:serve
+```
+
+Once running, open Zuko in the browser, create a chat, and send a message to verify the agent responds.
 
 ---
 
-## Useful commands
+## Sandbox configuration
 
-```bash
-bun nx run @zuko/ai-agents:dev      # Start with LangGraph Studio
-bun nx run @zuko/ai-agents:build    # Production build
-bun nx run @zuko/ai-agents:lint     # Lint
+The agent uses a [sandbox](/concepts/sandbox) for filesystem and shell tools. For local development no extra setup is needed (`SPRITES_ENABLED=false`). For production, see [Sandbox Setup](/setup/sandbox).
+
+---
+
+## Tracing with LangSmith (optional)
+
+To trace agent runs visually:
+
+```env
+LANGSMITH_TRACING=true
+LANGSMITH_API_KEY=your-langsmith-api-key
+LANGSMITH_PROJECT=zuko
 ```
+
+Sign up at [smith.langchain.com](https://smith.langchain.com) to get an API key.
 
 ---
 
 ## Troubleshooting
 
 <AccordionGroup>
-  <Accordion title="Service won't start">
-    - Ensure `OPENAI_API_KEY` is set in `apps/ai-agents/.env` or root `.env`
-    - Ensure `AGENT_TOKEN` matches the value in `apps/backend/.env`
-    - The first start may be slow (downloading LangGraph CLI dependencies) — wait a minute before retrying
+  <Accordion title="Agent doesn't respond in chat">
+    - Confirm `OPENAI_API_KEY` (or `ANTHROPIC_API_KEY`) is set in `apps/backend/.env`
+    - Check the backend logs for errors from `AgentService` or `ChatController`
+    - Ensure the database is running and migrations are applied — the agent uses LangGraph checkpointing backed by PostgreSQL
   </Accordion>
 
-<Accordion title="Port already in use">
-  ```bash lsof -ti:8080 | xargs kill -9 ```
+<Accordion title="'invalid selectedModelId' error at startup">
+  `AGENT_MODEL` must use the `provider/model` format, e.g. `openai/gpt-4.1`. A
+  plain model name like `gpt-4o` is not valid.
 </Accordion>
 
-<Accordion title="Enable LangSmith tracing">
-  To enable tracing for debugging: ```env LANGSMITH_TRACING=true
-  LANGSMITH_API_KEY=your-langsmith-api-key LANGSMITH_PROJECT=zuko ``` Sign up at
-  [smith.langchain.com](https://smith.langchain.com) to get an API key.
+<Accordion title="Anthropic model not working">
+  Set `ANTHROPIC_API_KEY` in `apps/backend/.env`. The `OPENAI_API_KEY` is only
+  needed for OpenAI models.
 </Accordion>
 
-  <Accordion title="Database checkpoint errors">
-    The agents service uses PostgreSQL for LangGraph checkpointing. Ensure `DATABASE_URL` is set and the `zuko_dev` database exists:
-    ```bash
-    createdb zuko_dev
-    bun nx run @zuko/models:prisma:migrate -- --name init
-    ```
+  <Accordion title="Agent turns get stuck or don't stream">
+    - Check for `AbortError` in logs — a previous run may still be active. Call `POST /api/v1/chat/stop` to cancel it.
+    - Verify `FRONTEND_URL` and `TRUSTED_ORIGINS` in `apps/backend/.env` are correct, as SSE responses may be blocked by CORS.
   </Accordion>
 </AccordionGroup>

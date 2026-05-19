@@ -1,80 +1,174 @@
 ---
-title: AI Agents Service
+title: AI Agents
+description: How Zuko's AI agent works — architecture, tools, sub-agents, and human-in-the-loop.
 ---
 
-Zuko includes a separate service, **ai-agents** (`apps/ai-agents`), that hosts the LLM agent runtime and executes CRM tools by calling the backend **Agents API** (`/api/agents/*`).
-
-## When you need it
-
-Use `apps/ai-agents` when you want:
-
-- The agent runtime to run as a standalone service (separate from the NestJS backend)
-- Tool execution to happen through the backend's **agent-scoped** endpoints (`/api/agents/*`)
+Zuko's AI agent runs **in-process inside the NestJS backend** (`apps/backend/src/agent/`). It is built on [DeepAgents](https://www.npmjs.com/package/deepagents), which extends LangGraph with a hierarchical sub-agent model. There is no separate agent service to start — the agent activates when a user sends a chat message.
 
 ---
 
-## Environment variables
+## Architecture
 
-`apps/ai-agents` reads:
-
-- `BACKEND_URL` — backend base URL (e.g. `http://localhost:3001`)
-- `AGENT_TOKEN` — shared token used to authenticate requests to `/api/agents/*`
-- `OPENAI_API_KEY` and `OPENAI_MODEL` — model credentials and config for the agent runtime
-
-The backend must also have the same `AGENT_TOKEN` configured so it can validate incoming requests.
-
----
-
-## Run locally
-
-```bash
-npx nx run @zuko/ai-agents:dev
+```
+Chat message (SSE)
+       │
+       ▼
+ChatController  ─── AgentService.stream()
+                           │
+                           ▼
+                    buildChatGraph()
+                           │
+                    DeepAgent (root)
+                    ├── Persistent context middleware
+                    ├── CRM tools (company / contact / deal / context)
+                    ├── Filesystem tools (read / write / bash / glob / grep / …)
+                    ├── Web tool (web_fetch)
+                    └── Sub-agents
+                         ├── Contacts Agent
+                         ├── Companies Agent
+                         ├── Deals Agent
+                         └── Meetings Agent
 ```
 
----
-
-## How tool calls reach the backend
-
-`apps/ai-agents` uses `apps/ai-agents/src/shared/backend.ts` to call the backend.
-
-### Request headers
-
-Every request includes:
-
-- `x-agent-token` — must match `AGENT_TOKEN` on the backend
-- `x-org-id` — the active organization ID (required for CRM operations)
-- `x-user-id` — optional, used when tools default ownership to the current user
-
-### Backend validation
-
-`AgentGuard` validates the token and sets `request.organizationId` from `x-org-id`, so routes can keep using the `@OrgId()` decorator.
+The root agent handles the conversation turn. When a task falls within a specialist's responsibility, the root agent delegates to a sub-agent. Each sub-agent has its own system prompt and a scoped set of tools.
 
 ---
 
-## Available CRM tools
+## Sub-agents
 
-### Companies
+| Sub-agent           | Responsibilities                           |
+| ------------------- | ------------------------------------------ |
+| **Contacts Agent**  | Fetch, query, create, and update contacts  |
+| **Companies Agent** | Fetch, query, create, and update companies |
+| **Deals Agent**     | Fetch, query, create, and update deals     |
+| **Meetings Agent**  | Retrieve meeting records from the backend  |
 
-- `get_company_details`
-- `query_companies`
-- `create_company`
-- `update_company`
+Sub-agents share the same authentication context (org ID, user ID) as the root agent and always operate within the active organization.
 
-### Contacts
+---
 
-- `get_contact_details`
-- `get_contact_owner`
-- `query_contacts`
-- `create_contact`
-- `update_contact`
+## Tool reference
 
-### Deals
+### CRM tools
 
-- `get_deal_details`
-- `query_deals`
-- `create_deal`
-- `update_deal`
+These call `/api/agents/*` endpoints on the backend and write audit log entries with source `AI`.
 
-### Context
+#### Contacts
 
-- `get_conversation_context` — lists the contact/company/deal IDs currently attached as context in the conversation
+| Tool                  | Description                                                   |
+| --------------------- | ------------------------------------------------------------- |
+| `get_contact_details` | Fetch a single contact by ID                                  |
+| `get_contact_owner`   | Look up the owner/assignee of a contact                       |
+| `query_contacts`      | Filter contacts by name, email, company, owner, date range    |
+| `create_contact`      | Create a new contact                                          |
+| `update_contact`      | Update contact fields (name, email, phone, linkedinId, notes) |
+
+#### Companies
+
+| Tool                  | Description                                   |
+| --------------------- | --------------------------------------------- |
+| `get_company_details` | Fetch a single company by ID                  |
+| `query_companies`     | Filter companies by name, domain, owner, etc. |
+| `create_company`      | Create a new company                          |
+| `update_company`      | Update company fields                         |
+
+#### Deals
+
+| Tool               | Description                                                |
+| ------------------ | ---------------------------------------------------------- |
+| `get_deal_details` | Fetch a single deal by ID                                  |
+| `query_deals`      | Filter deals by stage, contact, company, owner, date range |
+| `create_deal`      | Create a new deal                                          |
+| `update_deal`      | Update deal fields                                         |
+
+#### Context
+
+| Tool                       | Description                                                                                             |
+| -------------------------- | ------------------------------------------------------------------------------------------------------- |
+| `get_conversation_context` | Returns the contact/company/deal IDs currently attached to the chat. The agent always calls this first. |
+
+---
+
+### Filesystem tools
+
+These run inside the chat's [sandbox](/concepts/sandbox) — an isolated execution environment. In production, sandboxes are remote Sprites machines; in development they run locally.
+
+| Tool      | Description                                        |
+| --------- | -------------------------------------------------- |
+| `bash`    | Run a shell command in the sandbox. 120 s timeout. |
+| `read`    | Read a file                                        |
+| `write`   | Write a file                                       |
+| `edit`    | Apply a targeted edit to a file                    |
+| `stat`    | Get file metadata (size, mtime, type)              |
+| `mkdir`   | Create a directory                                 |
+| `readdir` | List directory contents                            |
+| `glob`    | Match files by glob pattern                        |
+| `grep`    | Search file contents by regex                      |
+
+<Warning>
+  `bash` and `read` have a `needsApproval` check. Commands that match `rm -rf`
+  or reference `.env` files are blocked until the user explicitly approves them.
+</Warning>
+
+---
+
+### Web tool
+
+| Tool        | Description                                         |
+| ----------- | --------------------------------------------------- |
+| `web_fetch` | GET a URL and return its text body. Capped at 2 MB. |
+
+---
+
+### Interactive tools
+
+| Tool                | Description                                                                                                                         |
+| ------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| `ask_user_question` | Pause the agent and ask the user a question. Supports optional predefined choices. The agent waits for the reply before continuing. |
+| `todo_write`        | Write a structured to-do list back to the conversation.                                                                             |
+
+---
+
+## Tool approval (human-in-the-loop)
+
+Tools can declare a `needsApproval` function. When it returns `true`, the tool returns `{ pending: true }` instead of executing, and the frontend surfaces an approval prompt to the user. Execution continues only after the user approves.
+
+Approval is currently required for:
+
+- `bash` commands that include `rm -rf`
+- `bash` commands or `read` calls that reference `.env` files
+
+---
+
+## Persistent context
+
+Context entities (contacts, companies, deals) attached to a chat thread are stored in LangGraph checkpoint state and **persist across turns**. The `get_conversation_context` tool always returns the current set, even after a page reload.
+
+This is handled by `PersistentContextMiddleware` (`apps/backend/src/agent/middleware/persistent-context.middleware.ts`), which merges context entity arrays via a LangGraph state reducer.
+
+---
+
+## Model selection
+
+The model is selected via the `AGENT_MODEL` environment variable using the format `provider/model`:
+
+```env
+AGENT_MODEL=openai/gpt-4.1          # OpenAI (default)
+AGENT_MODEL=openai/gpt-4o           # GPT-4o
+AGENT_MODEL=anthropic/claude-sonnet-4-5  # Anthropic Claude
+```
+
+Supported providers: `openai`, `anthropic`. An invalid format throws at startup.
+
+---
+
+## Streaming
+
+The backend streams agent output to the frontend as SSE. The response includes:
+
+- `X-Thread-Id` — LangGraph thread ID for this run
+- `X-Chat-Id` — Zuko chat ID
+
+The raw LangGraph stream (modes: `values` + `messages`) is converted to the AI SDK `UIMessageStream` format via `@ai-sdk/langchain`, then piped to the browser.
+
+To stop a running agent turn, call `POST /api/v1/chat/stop`. The backend signals cancellation via `AbortSignal`, which is passed through to all tool `execute` calls.
