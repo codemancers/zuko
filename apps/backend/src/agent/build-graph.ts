@@ -34,7 +34,7 @@ export function buildChatGraph(opts: BuildChatGraphOpts = {}): any {
     kind: 'chat-deepagents',
     selectedModelId: modelId,
     apiKey: opts.apiKey,
-  }) as BaseLanguageModel;
+  }) as unknown as BaseLanguageModel;
 
   const crmTools = [
     ...companyTools,

@@ -1,4 +1,4 @@
-import { queryOptions } from '@tanstack/react-query';
+import { queryOptions, infiniteQueryOptions } from '@tanstack/react-query';
 import type { ContactFilters } from '@/lib/api/contacts';
 import { contactsApi } from '@/lib/api/contacts';
 import type { CompanyFilters } from '@/lib/api/companies';
@@ -11,6 +11,8 @@ import { activitiesApi } from '@/lib/api/activities';
 import { meetingsApi, type MeetingFilters } from '@/lib/api/meetings';
 import { authClient } from '@/lib/auth-client';
 
+const TABLE_PAGE_SIZE = 10;
+
 export const getContacts = (filters?: ContactFilters) =>
   queryOptions({
     queryKey: ['contacts', filters],
@@ -20,12 +22,21 @@ export const getContacts = (filters?: ContactFilters) =>
     },
   });
 
-export const getTableViewContacts = (filters?: ContactFilters) =>
-  queryOptions({
-    queryKey: ['contacts', 'table', filters],
-    queryFn: async () => {
-      const response = await contactsApi.getTableViewContacts(filters);
-      return response;
+export const getTableViewContactsInfinite = (
+  filters?: Omit<ContactFilters, 'page' | 'limit'>,
+) =>
+  infiniteQueryOptions({
+    queryKey: ['contacts', 'table', 'infinite', filters],
+    queryFn: ({ pageParam }) =>
+      contactsApi.getTableViewContacts({
+        ...filters,
+        page: pageParam,
+        limit: TABLE_PAGE_SIZE,
+      }),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) => {
+      const { page, totalPages } = lastPage.pagination;
+      return page < totalPages ? page + 1 : undefined;
     },
   });
 
@@ -46,12 +57,21 @@ export const getCompanies = (filters?: CompanyFilters) =>
     },
   });
 
-export const getTableViewCompanies = (filters?: CompanyFilters) =>
-  queryOptions({
-    queryKey: ['companies', 'table', filters],
-    queryFn: async () => {
-      const response = await companiesApi.getTableViewCompanies(filters);
-      return response;
+export const getTableViewCompaniesInfinite = (
+  filters?: Omit<CompanyFilters, 'page' | 'limit'>,
+) =>
+  infiniteQueryOptions({
+    queryKey: ['companies', 'table', 'infinite', filters],
+    queryFn: ({ pageParam }) =>
+      companiesApi.getTableViewCompanies({
+        ...filters,
+        page: pageParam,
+        limit: TABLE_PAGE_SIZE,
+      }),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) => {
+      const { page, totalPages } = lastPage.pagination;
+      return page < totalPages ? page + 1 : undefined;
     },
   });
 
@@ -78,10 +98,38 @@ export const getTasks = (filters?: TaskFilters) =>
     queryFn: () => tasksApi.getTasks(filters),
   });
 
-export const getTableViewTasks = (filters?: { search?: string }) =>
-  queryOptions({
-    queryKey: ['tasks', 'table', filters],
-    queryFn: () => tasksApi.getTableViewTasks(filters),
+export const getTableViewTasksInfinite = (filters?: { search?: string }) =>
+  infiniteQueryOptions({
+    queryKey: ['tasks', 'table', 'infinite', filters],
+    queryFn: ({ pageParam }) =>
+      tasksApi.getTableViewTasks({
+        ...filters,
+        page: pageParam,
+        limit: TABLE_PAGE_SIZE,
+      }),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) => {
+      const { page, totalPages } = lastPage.pagination;
+      return page < totalPages ? page + 1 : undefined;
+    },
+  });
+
+export const getTableViewMeetingsInfinite = (
+  filters?: Omit<MeetingFilters, 'page' | 'limit'>,
+) =>
+  infiniteQueryOptions({
+    queryKey: ['meetings', 'table', 'infinite', filters],
+    queryFn: ({ pageParam }) =>
+      meetingsApi.getTableViewMeetings({
+        ...filters,
+        page: pageParam,
+        limit: TABLE_PAGE_SIZE,
+      }),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) => {
+      const { page, totalPages } = lastPage.pagination;
+      return page < totalPages ? page + 1 : undefined;
+    },
   });
 
 export const getTask = (id: number) =>
@@ -89,12 +137,21 @@ export const getTask = (id: number) =>
     queryKey: ['task', id],
     queryFn: () => tasksApi.getTask(id),
   });
-export const getTableViewDeals = (filters?: DealFilters) =>
-  queryOptions({
-    queryKey: ['deals', 'table', filters],
-    queryFn: async () => {
-      const response = await dealsApi.getTableViewDeals(filters);
-      return response;
+export const getTableViewDealsInfinite = (
+  filters?: Omit<DealFilters, 'page' | 'limit'>,
+) =>
+  infiniteQueryOptions({
+    queryKey: ['deals', 'table', 'infinite', filters],
+    queryFn: ({ pageParam }) =>
+      dealsApi.getTableViewDeals({
+        ...filters,
+        page: pageParam,
+        limit: TABLE_PAGE_SIZE,
+      }),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) => {
+      const { page, totalPages } = lastPage.pagination;
+      return page < totalPages ? page + 1 : undefined;
     },
   });
 
@@ -210,12 +267,6 @@ export const getMeetings = queryOptions({
   queryKey: ['meetings'],
   queryFn: () => meetingsApi.getMeetings(),
 });
-
-export const getTableViewMeetings = (filters?: MeetingFilters) =>
-  queryOptions({
-    queryKey: ['meetings', 'table', filters],
-    queryFn: () => meetingsApi.getTableViewMeetings(filters),
-  });
 
 export const getMeeting = (id: number) =>
   queryOptions({

@@ -6,8 +6,12 @@ import { PageHeader, SearchBar } from '@/components/shared';
 import type { ColumnDef } from '@tanstack/react-table';
 import { toast } from 'sonner';
 
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getTableViewMeetings } from '@/server/query-options';
+import {
+  useInfiniteQuery,
+  useMutation,
+  useQueryClient,
+} from '@tanstack/react-query';
+import { getTableViewMeetingsInfinite } from '@/server/query-options';
 import { meetingsApi } from '@/lib/api/meetings';
 import {
   BaseTable,
@@ -29,8 +33,14 @@ export const MeetingList = () => {
   } = useSearchParam();
   const [meetingToDelete, setMeetingToDelete] = useState<number | null>(null);
 
-  const { data: meetingsData, isLoading } = useQuery(
-    getTableViewMeetings({ search: debouncedValue || undefined }),
+  const {
+    data: meetingsData,
+    isLoading,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useInfiniteQuery(
+    getTableViewMeetingsInfinite({ search: debouncedValue || undefined }),
   );
 
   const deleteMeetingMutation = useMutation({
@@ -42,8 +52,9 @@ export const MeetingList = () => {
     onError: () => toast.error('Failed to delete meeting'),
   });
 
-  const meetings = meetingsData?.data || [];
-  const metadata = meetingsData?.metadata || [];
+  const meetings = meetingsData?.pages.flatMap((p) => p.data) ?? [];
+  const metadata = meetingsData?.pages[0]?.metadata ?? [];
+  const totalCount = meetingsData?.pages[0]?.pagination?.total;
 
   const actionsColumn: ColumnDef<BaseRow> = useMemo(
     () => ({
@@ -84,7 +95,10 @@ export const MeetingList = () => {
         loading={isLoading}
         entityName="meetings"
         onRowClick={(meeting) => router.push(`/meeting/${meeting.id}`)}
-        totalCount={meetingsData?.pagination?.total}
+        totalCount={totalCount}
+        onFetchNextPage={fetchNextPage}
+        isFetchingNextPage={isFetchingNextPage}
+        hasNextPage={hasNextPage}
         showEmptyState
         emptyStateConfig={{
           icon: VideoCameraSlashIcon,

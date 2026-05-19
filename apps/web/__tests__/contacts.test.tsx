@@ -327,17 +327,17 @@ describe('ContactsList', () => {
     });
   });
 
-  it('shows pagination text when data has pagination', async () => {
+  it('shows total count when all data is loaded', async () => {
     mockGetTableViewContacts.mockResolvedValue({
       data: [mockContact],
       metadata: mockMetadata,
-      pagination: { page: 1, limit: 10, total: 42, totalPages: 5 },
+      pagination: { page: 1, limit: 10, total: 1, totalPages: 1 },
     });
     render(<ContactsList />, { wrapper });
     await vi.waitFor(() => {
       expect(screen.getByText('John Doe')).toBeInTheDocument();
     });
-    expect(screen.getByText(/showing 1 of 42 contacts/i)).toBeInTheDocument();
+    expect(screen.getByText(/showing all 1 contacts/i)).toBeInTheDocument();
   });
 
   it('opens column creation modal when add column button is clicked', async () => {

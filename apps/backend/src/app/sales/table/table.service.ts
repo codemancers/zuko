@@ -154,18 +154,30 @@ export class TableService {
     };
   }
 
-  async getTasksTable(organizationId: number, search?: string) {
-    const tasks = await this.prisma.task.findMany({
-      where: {
-        organizationId,
-        parentId: null,
-        ...(search ? { title: { contains: search, mode: 'insensitive' } } : {}),
-      },
-      include: {
-        owners: { include: { user: true } },
-      },
-      orderBy: { createdAt: 'desc' },
-    });
+  async getTasksTable(
+    organizationId: number,
+    search?: string,
+    page = 1,
+    limit = 50,
+  ) {
+    const where = {
+      organizationId,
+      parentId: null,
+      ...(search
+        ? { title: { contains: search, mode: 'insensitive' as const } }
+        : {}),
+    };
+
+    const [total, tasks] = await Promise.all([
+      this.prisma.task.count({ where }),
+      this.prisma.task.findMany({
+        where,
+        include: { owners: { include: { user: true } } },
+        orderBy: { createdAt: 'desc' },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+    ]);
 
     const { metadata, data } = this.buildMergedTable(
       tasks as unknown as Record<string, unknown>[],
@@ -177,23 +189,37 @@ export class TableService {
       metadata,
       data,
       pagination: {
-        total: tasks.length,
-        page: 1,
-        limit: tasks.length,
-        totalPages: 1,
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
       },
     };
   }
 
-  async getMeetingsTable(organizationId: number, search?: string) {
-    const meetings = await this.prisma.meeting.findMany({
-      where: {
-        organizationId,
-        deletedAt: null,
-        ...(search ? { name: { contains: search, mode: 'insensitive' } } : {}),
-      },
-      orderBy: { createdAt: 'desc' },
-    });
+  async getMeetingsTable(
+    organizationId: number,
+    search?: string,
+    page = 1,
+    limit = 50,
+  ) {
+    const where = {
+      organizationId,
+      deletedAt: null,
+      ...(search
+        ? { name: { contains: search, mode: 'insensitive' as const } }
+        : {}),
+    };
+
+    const [total, meetings] = await Promise.all([
+      this.prisma.meeting.count({ where }),
+      this.prisma.meeting.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+    ]);
 
     const meetingsWithDateFallback = meetings.map((m) => ({
       ...m,
@@ -210,10 +236,10 @@ export class TableService {
       metadata,
       data,
       pagination: {
-        total: meetings.length,
-        page: 1,
-        limit: meetings.length,
-        totalPages: 1,
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
       },
     };
   }

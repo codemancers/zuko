@@ -320,17 +320,17 @@ describe('CompaniesList', () => {
     });
   });
 
-  it('shows pagination text', async () => {
+  it('shows total count when all data is loaded', async () => {
     mockGetTableViewCompanies.mockResolvedValue({
       data: [mockCompany],
       metadata: mockMetadata,
-      pagination: { page: 1, limit: 10, total: 50, totalPages: 5 },
+      pagination: { page: 1, limit: 10, total: 1, totalPages: 1 },
     });
     render(<CompaniesList />, { wrapper });
     await waitFor(() => {
       expect(screen.getByText('Acme Inc')).toBeInTheDocument();
     });
-    expect(screen.getByText(/showing 1 of 50 companies/i)).toBeInTheDocument();
+    expect(screen.getByText(/showing all 1 companies/i)).toBeInTheDocument();
   });
 
   it('opens column creation modal when add column button is clicked', async () => {

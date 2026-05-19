@@ -9,8 +9,12 @@ import {
 } from '@heroicons/react/24/outline';
 import { Button, Sheet, SheetHeader, SheetTitle } from '@zuko/ui-kit';
 import { PageHeader, SearchBar } from '@/components/shared';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getTableViewContacts } from '@/server/query-options';
+import {
+  useInfiniteQuery,
+  useMutation,
+  useQueryClient,
+} from '@tanstack/react-query';
+import { getTableViewContactsInfinite } from '@/server/query-options';
 import { useRouter } from 'next/navigation';
 import { authClient } from '@/lib/auth-client';
 import type { ColumnDef } from '@tanstack/react-table';
@@ -42,8 +46,14 @@ const ContactsList = () => {
     debouncedValue,
   } = useSearchParam();
   const [contactToDelete, setContactToDelete] = useState<number | null>(null);
-  const { data: contactsData, isLoading } = useQuery(
-    getTableViewContacts({ search: debouncedValue || undefined }),
+  const {
+    data: contactsData,
+    isLoading,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useInfiniteQuery(
+    getTableViewContactsInfinite({ search: debouncedValue || undefined }),
   );
 
   const { mutate: addColumn } = useAddColumn('contacts');
@@ -59,8 +69,9 @@ const ContactsList = () => {
     onError: () => toast.error('Failed to remove contact'),
   });
 
-  const contacts = contactsData?.data || [];
-  const metadata = contactsData?.metadata || [];
+  const contacts = contactsData?.pages.flatMap((p) => p.data) ?? [];
+  const metadata = contactsData?.pages[0]?.metadata ?? [];
+  const totalCount = contactsData?.pages[0]?.pagination?.total;
 
   const actionsColumn: ColumnDef<BaseRow> = useMemo(
     () => ({
@@ -128,12 +139,15 @@ const ContactsList = () => {
         onCellUpdate={(rowId, columnId, value) =>
           updateCell({ rowId, columnId, value })
         }
-        totalCount={contactsData?.pagination?.total}
+        totalCount={totalCount}
         entityName="contacts"
         showAddColumn={false}
         onAddColumn={handleNewColumn}
         openAddColumnRef={openAddColumnRef}
         disableRowClick={true}
+        onFetchNextPage={fetchNextPage}
+        isFetchingNextPage={isFetchingNextPage}
+        hasNextPage={hasNextPage}
         showEmptyState
         emptyStateConfig={{
           icon: UserGroupIcon,

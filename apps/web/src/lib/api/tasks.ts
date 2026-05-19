@@ -105,11 +105,17 @@ export const tasksApi = {
 
   async getTableViewTasks(filters?: {
     search?: string;
+    page?: number;
+    limit?: number;
   }): Promise<
     TableViewResponse<Record<string, unknown> & { id: string | number }>
   > {
     const params = new URLSearchParams();
     if (filters?.search) params.append('search', filters.search);
+    if (filters?.page !== undefined)
+      params.append('page', String(filters.page));
+    if (filters?.limit !== undefined)
+      params.append('limit', String(filters.limit));
     const qs = params.toString();
     return apiClient.get(`/tables/tasks${qs ? `?${qs}` : ''}`);
   },
