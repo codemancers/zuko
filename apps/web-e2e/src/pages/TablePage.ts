@@ -107,6 +107,17 @@ export class TablePage extends BasePage {
     return headers.allTextContents();
   }
 
+  async dragColumn(sourceHeader: string, targetHeader: string) {
+    const source = this.page.getByRole('columnheader', { name: sourceHeader });
+    const target = this.page.getByRole('columnheader', { name: targetHeader });
+    await source.dragTo(target);
+  }
+
+  async getColumnCursor(headerName: string): Promise<string> {
+    const header = this.page.getByRole('columnheader', { name: headerName });
+    return header.evaluate((el) => getComputedStyle(el).cursor);
+  }
+
   async clickCell(rowIndex: number, columnHeader: string): Promise<Locator> {
     const headers = this.page.locator('table thead th');
     const headerTexts = await headers.allTextContents();
