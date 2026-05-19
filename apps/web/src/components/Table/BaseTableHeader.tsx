@@ -1,6 +1,7 @@
 import type { Header, HeaderGroup } from '@tanstack/react-table';
 import { flexRender } from '@tanstack/react-table';
 import clsx from 'clsx';
+import { useMemo } from 'react';
 import { TableHead, TableHeader, TableRow, Button } from '@zuko/ui-kit';
 import { PlusIcon } from '@heroicons/react/24/outline';
 import {
@@ -99,7 +100,7 @@ export function BaseTableHeader<TData extends BaseRow>({
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
   );
 
-  const pinnedSet = new Set(pinnedColumnIds);
+  const pinnedSet = useMemo(() => new Set(pinnedColumnIds), [pinnedColumnIds]);
 
   function handleDragEnd(event: DragEndEvent, columnIds: string[]) {
     const { active, over } = event;

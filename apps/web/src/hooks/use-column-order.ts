@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import type { ColumnDef } from '@tanstack/react-table';
 import type { ColumnMetadata } from '@/types/table-metadata';
 import type { BaseRow } from '@/components/Table/types';
@@ -12,7 +12,7 @@ function deriveColumnIds(columns: ColumnDef<BaseRow, unknown>[]) {
   const pinned: string[] = [];
 
   for (const c of columns) {
-    const id = String(c.id ?? (c as any).accessorKey ?? '');
+    const id = String(c.id ?? (c as { accessorKey?: string }).accessorKey ?? '');
     if (!id) continue;
     all.push(id);
     if ((c.meta as { metadata?: ColumnMetadata })?.metadata?.pinned) {
@@ -61,12 +61,12 @@ export function useColumnOrder(userId: string, key: string, columns: ColumnDef<B
     }
   }, [userId, key, serializedIds]);
 
-  function setColumnOrder(newOrder: string[]) {
+  const setColumnOrder = useCallback((newOrder: string[]) => {
     setColumnOrderState(newOrder);
     try {
       if (userId) localStorage.setItem(buildStorageKey(userId, key), JSON.stringify(newOrder));
     } catch {}
-  }
+  }, [userId, key]);
 
   return [columnOrder, setColumnOrder, pinnedColumnIds] as const;
 }
