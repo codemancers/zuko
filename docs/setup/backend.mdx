@@ -60,7 +60,11 @@ TRUSTED_ORIGINS=http://localhost:3000,http://localhost:3001
 ```env
 OPENAI_API_KEY=sk-...
 
-# Shared secret token used by the ai-agents service to call /api/agents/*
+# Model for the in-process AI agent. Format: "<provider>/<model>"
+# Supported: openai/gpt-4.1, openai/gpt-4o, anthropic/claude-sonnet-4-5, etc.
+AGENT_MODEL=openai/gpt-4.1
+
+# Shared secret that authenticates /api/agents/* endpoint calls
 AGENT_TOKEN=your-agent-token
 ```
 
@@ -71,6 +75,20 @@ LANGSMITH_TRACING=false
 LANGSMITH_API_KEY=
 LANGSMITH_PROJECT=zuko
 ```
+
+### Sandbox (Sprites)
+
+```env
+# false = local Node.js execution (development default)
+# true  = remote Sprites sandboxes (production)
+SPRITES_ENABLED=false
+SPRITES_TOKEN=
+SPRITES_API_BASE_URL=https://sprites.fly.dev
+AGENT_BRANCH=main
+WORKING_DIR=/home/sprite/zuko
+```
+
+See [Sandbox Setup](/setup/sandbox) for full configuration details.
 
 ---
 

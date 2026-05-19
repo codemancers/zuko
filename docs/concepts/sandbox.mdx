@@ -1,0 +1,124 @@
+---
+title: Sandbox
+description: How Zuko creates and manages isolated execution environments for AI agents.
+---
+
+A **sandbox** is an isolated execution environment that Zuko provisions for each chat thread. When an AI agent needs to run code, read files, or execute shell commands, it does so inside the chat's sandbox — keeping execution safe and scoped to that conversation.
+
+---
+
+## Why sandboxes exist
+
+AI agents in Zuko can use tools that run real code: executing shell commands, reading and writing files, running grep, and more. Without isolation, concurrent agent runs would share a filesystem and interfere with each other. Sandboxes solve this by giving every chat its own environment.
+
+---
+
+## Two execution backends
+
+Zuko supports two sandbox implementations selected at runtime:
+
+| Mode | When used | How it runs |
+|---|---|---|
+| **Sprites** (remote) | `SPRITES_ENABLED=true` | Cloud machine managed by [Sprites](https://sprites.fly.dev) — isolated VM per chat |
+| **Local** | `SPRITES_ENABLED=false` | Node.js `child_process.exec` on the backend host — for development only |
+
+In production you should use Sprites. Local mode is for local development when you don't need full isolation.
+
+---
+
+## Lifecycle states
+
+Each sandbox moves through a lifecycle managed by `SandboxLifecycleService`:
+
+```
+provisioning → active → hibernating → hibernated
+                  ↑                        |
+                  └──────── restoring ─────┘
+```
+
+| State | Meaning |
+|---|---|
+| `provisioning` | Sandbox is being created for the first time |
+| `active` | Running and available for agent tool calls |
+| `hibernating` | In the process of being suspended |
+| `hibernated` | Suspended — Sprites machine is stopped, no cost accrues |
+| `restoring` | Waking from hibernation in response to a resume request |
+| `failed` | An error occurred; the error message is stored in the database |
+
+### Auto-hibernation
+
+A background job runs every minute and hibernates any sandbox that has been inactive for **30 minutes** (configurable via `SANDBOX_INACTIVITY_TIMEOUT_MS`). Activity is refreshed each time the agent executes a tool in that sandbox.
+
+### Resuming a hibernated sandbox
+
+When a user opens a chat whose sandbox is hibernated, the frontend detects the `hibernated` state via SSE and can call `POST /api/sandboxes/:id/resume` to wake it. The sandbox transitions through `restoring → active`.
+
+---
+
+## How sandboxes are named
+
+Every sandbox is named after its chat:
+
+```
+zuko-{chatId}-{threadId}
+```
+
+This name is used as the Sprites machine identifier, so it is stable across hibernation cycles.
+
+---
+
+## Real-time status via SSE
+
+The frontend connects to a Server-Sent Events stream to receive live state updates:
+
+```
+GET /api/proxy/sandboxes/:id/lifecycle/events
+```
+
+The `SandboxStatusBadge` component in the chat UI uses this stream to show the current state with color-coded badges:
+
+| Color | States |
+|---|---|
+| Green | `active` |
+| Yellow (pulsing) | `provisioning` |
+| Blue (pulsing) | `restoring` |
+| Zinc | `hibernated` |
+| Yellow (pulsing) | `hibernating` |
+| Red | `failed` |
+
+---
+
+## State reconciliation
+
+When an SSE client connects, the backend performs a background reconciliation check. If the database says `active` but Sprites reports the machine is cold (e.g., auto-suspended by Fly), the backend writes `hibernated` to the database and emits the corrected state to all listeners.
+
+Reconciliation is debounced to once per 60 seconds per sandbox to prevent SSE reconnects from hammering the Sprites API.
+
+---
+
+## Sandbox tools available to agents
+
+The `Sandbox` interface exposed to agent tools provides:
+
+| Method | Description |
+|---|---|
+| `exec(command, cwd, timeoutMs)` | Run a shell command |
+| `readFile(path)` | Read a file |
+| `writeFile(path, content)` | Write a file |
+| `glob(pattern)` | Glob for files |
+| `grep(pattern, opts)` | Search file contents |
+| `stat(path)` | Get file metadata |
+| `mkdir(path)` | Create a directory |
+| `readdir(path)` | List directory contents |
+
+---
+
+## Filesystem API
+
+The backend also exposes a REST API for reading and writing sandbox files directly (used by the frontend and debugging tools):
+
+| Method | Endpoint | Description |
+|---|---|---|
+| `GET` | `/api/sandboxes/:id/fs/*path?list=true` | List directory |
+| `GET` | `/api/sandboxes/:id/fs/*path` | Read file |
+| `PUT` | `/api/sandboxes/:id/fs/*path` | Write file |
