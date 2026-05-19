@@ -37,6 +37,7 @@ vi.mock('next/navigation', () => ({
 
 vi.mock('@/lib/auth-client', () => ({
   authClient: {
+    useSession: vi.fn(() => ({ data: { user: { id: '1' } } })),
     getSession: vi.fn().mockResolvedValue({
       data: {
         user: { name: 'Test User', email: 'test@example.com', image: null },

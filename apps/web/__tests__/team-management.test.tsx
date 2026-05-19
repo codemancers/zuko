@@ -28,6 +28,7 @@ global.ResizeObserver = class {
 
 vi.mock('@/lib/auth-client', () => ({
   authClient: {
+    useSession: vi.fn(() => ({ data: { user: { id: '1' } } })),
     organization: {
       createTeam: (...args: unknown[]) => mockCreateTeam(...args),
       updateTeam: (...args: unknown[]) => mockUpdateTeam(...args),
