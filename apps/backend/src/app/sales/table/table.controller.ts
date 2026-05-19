@@ -8,6 +8,7 @@ import {
   Query,
   Req,
   ParseIntPipe,
+  DefaultValuePipe,
   UseGuards,
 } from '@nestjs/common';
 import { AuthGuard } from '@thallesp/nestjs-better-auth';
@@ -66,29 +67,24 @@ export class TableController {
   async getTasksTable(
     @OrgId() organizationId: number,
     @Query('search') search?: string,
-    @Query('page') page?: string,
-    @Query('limit') limit?: string,
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number = 1,
+    @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number = 10,
   ) {
-    return this.tableService.getTasksTable(
-      organizationId,
-      search,
-      page ? Number(page) : 1,
-      limit ? Number(limit) : 50,
-    );
+    return this.tableService.getTasksTable(organizationId, search, page, limit);
   }
 
   @Get('meetings')
   async getMeetingsTable(
     @OrgId() organizationId: number,
     @Query('search') search?: string,
-    @Query('page') page?: string,
-    @Query('limit') limit?: string,
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number = 1,
+    @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number = 10,
   ) {
     return this.tableService.getMeetingsTable(
       organizationId,
       search,
-      page ? Number(page) : 1,
-      limit ? Number(limit) : 50,
+      page,
+      limit,
     );
   }
 
