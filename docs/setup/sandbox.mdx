@@ -39,7 +39,9 @@ WORKING_DIR=/home/sprite/zuko
 ```
 
 <Tip>
-  For local development, `SPRITES_ENABLED=false` is the default and no Sprites account is needed. The agent will execute commands on your local machine using Node.js.
+  For local development, `SPRITES_ENABLED=false` is the default and no Sprites
+  account is needed. The agent will execute commands on your local machine using
+  Node.js.
 </Tip>
 
 ---
@@ -117,15 +119,20 @@ Start the backend and open a chat. The `SandboxStatusBadge` in the top-right of 
     - The sandbox name already exists on Sprites with a conflicting state
 
     Fix the underlying issue, then call `POST /api/sandboxes/:id/resume` or create a new chat to reprovision.
+
   </Accordion>
 
-  <Accordion title="Sandbox stays 'hibernated' and won't wake">
-    Confirm `SPRITES_ENABLED=true` and that `SPRITES_TOKEN` is valid. If the Sprites API is unreachable, `startSprite` will fail silently and the sandbox will remain hibernated. Check backend logs for `startSprite returned an error`.
-  </Accordion>
+<Accordion title="Sandbox stays 'hibernated' and won't wake">
+  Confirm `SPRITES_ENABLED=true` and that `SPRITES_TOKEN` is valid. If the
+  Sprites API is unreachable, `startSprite` will fail silently and the sandbox
+  will remain hibernated. Check backend logs for `startSprite returned an
+  error`.
+</Accordion>
 
-  <Accordion title="Local mode: commands fail with permission errors">
-    In local mode, commands run as the backend process user. Ensure the backend has read/write access to `WORKING_DIR` and that the directory exists.
-  </Accordion>
+<Accordion title="Local mode: commands fail with permission errors">
+  In local mode, commands run as the backend process user. Ensure the backend
+  has read/write access to `WORKING_DIR` and that the directory exists.
+</Accordion>
 
   <Accordion title="SSE badge never updates">
     The frontend proxies SSE through `/api/proxy/sandboxes/:id/lifecycle/events`. Confirm:
@@ -133,5 +140,6 @@ Start the backend and open a chat. The `SandboxStatusBadge` in the top-right of 
     - The backend is running and reachable from the Next.js server
     - `BACKEND_URL` in `apps/web/.env` points to the correct backend address
     - No reverse proxy is buffering the SSE stream (set `X-Accel-Buffering: no` if using nginx)
+
   </Accordion>
 </AccordionGroup>

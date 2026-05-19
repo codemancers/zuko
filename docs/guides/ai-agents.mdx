@@ -36,12 +36,12 @@ The root agent handles the conversation turn. When a task falls within a special
 
 ## Sub-agents
 
-| Sub-agent | Responsibilities |
-|---|---|
-| **Contacts Agent** | Fetch, query, create, and update contacts |
+| Sub-agent           | Responsibilities                           |
+| ------------------- | ------------------------------------------ |
+| **Contacts Agent**  | Fetch, query, create, and update contacts  |
 | **Companies Agent** | Fetch, query, create, and update companies |
-| **Deals Agent** | Fetch, query, create, and update deals |
-| **Meetings Agent** | Retrieve meeting records from the backend |
+| **Deals Agent**     | Fetch, query, create, and update deals     |
+| **Meetings Agent**  | Retrieve meeting records from the backend  |
 
 Sub-agents share the same authentication context (org ID, user ID) as the root agent and always operate within the active organization.
 
@@ -54,33 +54,37 @@ Sub-agents share the same authentication context (org ID, user ID) as the root a
 These call `/api/agents/*` endpoints on the backend and write audit log entries with source `AI`.
 
 #### Contacts
-| Tool | Description |
-|---|---|
-| `get_contact_details` | Fetch a single contact by ID |
-| `get_contact_owner` | Look up the owner/assignee of a contact |
-| `query_contacts` | Filter contacts by name, email, company, owner, date range |
-| `create_contact` | Create a new contact |
-| `update_contact` | Update contact fields (name, email, phone, linkedinId, notes) |
+
+| Tool                  | Description                                                   |
+| --------------------- | ------------------------------------------------------------- |
+| `get_contact_details` | Fetch a single contact by ID                                  |
+| `get_contact_owner`   | Look up the owner/assignee of a contact                       |
+| `query_contacts`      | Filter contacts by name, email, company, owner, date range    |
+| `create_contact`      | Create a new contact                                          |
+| `update_contact`      | Update contact fields (name, email, phone, linkedinId, notes) |
 
 #### Companies
-| Tool | Description |
-|---|---|
-| `get_company_details` | Fetch a single company by ID |
-| `query_companies` | Filter companies by name, domain, owner, etc. |
-| `create_company` | Create a new company |
-| `update_company` | Update company fields |
+
+| Tool                  | Description                                   |
+| --------------------- | --------------------------------------------- |
+| `get_company_details` | Fetch a single company by ID                  |
+| `query_companies`     | Filter companies by name, domain, owner, etc. |
+| `create_company`      | Create a new company                          |
+| `update_company`      | Update company fields                         |
 
 #### Deals
-| Tool | Description |
-|---|---|
-| `get_deal_details` | Fetch a single deal by ID |
-| `query_deals` | Filter deals by stage, contact, company, owner, date range |
-| `create_deal` | Create a new deal |
-| `update_deal` | Update deal fields |
+
+| Tool               | Description                                                |
+| ------------------ | ---------------------------------------------------------- |
+| `get_deal_details` | Fetch a single deal by ID                                  |
+| `query_deals`      | Filter deals by stage, contact, company, owner, date range |
+| `create_deal`      | Create a new deal                                          |
+| `update_deal`      | Update deal fields                                         |
 
 #### Context
-| Tool | Description |
-|---|---|
+
+| Tool                       | Description                                                                                             |
+| -------------------------- | ------------------------------------------------------------------------------------------------------- |
 | `get_conversation_context` | Returns the contact/company/deal IDs currently attached to the chat. The agent always calls this first. |
 
 ---
@@ -89,38 +93,39 @@ These call `/api/agents/*` endpoints on the backend and write audit log entries 
 
 These run inside the chat's [sandbox](/concepts/sandbox) — an isolated execution environment. In production, sandboxes are remote Sprites machines; in development they run locally.
 
-| Tool | Description |
-|---|---|
-| `bash` | Run a shell command in the sandbox. 120 s timeout. |
-| `read` | Read a file |
-| `write` | Write a file |
-| `edit` | Apply a targeted edit to a file |
-| `stat` | Get file metadata (size, mtime, type) |
-| `mkdir` | Create a directory |
-| `readdir` | List directory contents |
-| `glob` | Match files by glob pattern |
-| `grep` | Search file contents by regex |
+| Tool      | Description                                        |
+| --------- | -------------------------------------------------- |
+| `bash`    | Run a shell command in the sandbox. 120 s timeout. |
+| `read`    | Read a file                                        |
+| `write`   | Write a file                                       |
+| `edit`    | Apply a targeted edit to a file                    |
+| `stat`    | Get file metadata (size, mtime, type)              |
+| `mkdir`   | Create a directory                                 |
+| `readdir` | List directory contents                            |
+| `glob`    | Match files by glob pattern                        |
+| `grep`    | Search file contents by regex                      |
 
 <Warning>
-  `bash` and `read` have a `needsApproval` check. Commands that match `rm -rf` or reference `.env` files are blocked until the user explicitly approves them.
+  `bash` and `read` have a `needsApproval` check. Commands that match `rm -rf`
+  or reference `.env` files are blocked until the user explicitly approves them.
 </Warning>
 
 ---
 
 ### Web tool
 
-| Tool | Description |
-|---|---|
+| Tool        | Description                                         |
+| ----------- | --------------------------------------------------- |
 | `web_fetch` | GET a URL and return its text body. Capped at 2 MB. |
 
 ---
 
 ### Interactive tools
 
-| Tool | Description |
-|---|---|
+| Tool                | Description                                                                                                                         |
+| ------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
 | `ask_user_question` | Pause the agent and ask the user a question. Supports optional predefined choices. The agent waits for the reply before continuing. |
-| `todo_write` | Write a structured to-do list back to the conversation. |
+| `todo_write`        | Write a structured to-do list back to the conversation.                                                                             |
 
 ---
 
@@ -129,6 +134,7 @@ These run inside the chat's [sandbox](/concepts/sandbox) — an isolated executi
 Tools can declare a `needsApproval` function. When it returns `true`, the tool returns `{ pending: true }` instead of executing, and the frontend surfaces an approval prompt to the user. Execution continues only after the user approves.
 
 Approval is currently required for:
+
 - `bash` commands that include `rm -rf`
 - `bash` commands or `read` calls that reference `.env` files
 

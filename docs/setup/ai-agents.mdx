@@ -40,7 +40,8 @@ LANGSMITH_PROJECT=zuko
 ```
 
 <Tip>
-  `AGENT_MODEL` defaults to `openai/gpt-4.1` if not set. To switch to Claude, set `AGENT_MODEL=anthropic/claude-sonnet-4-5` and add `ANTHROPIC_API_KEY`.
+  `AGENT_MODEL` defaults to `openai/gpt-4.1` if not set. To switch to Claude,
+  set `AGENT_MODEL=anthropic/claude-sonnet-4-5` and add `ANTHROPIC_API_KEY`.
 </Tip>
 
 ---
@@ -49,12 +50,12 @@ LANGSMITH_PROJECT=zuko
 
 The `AGENT_MODEL` variable uses `provider/model` format:
 
-| Value | Provider | Model |
-|---|---|---|
-| `openai/gpt-4.1` | OpenAI | GPT-4.1 |
-| `openai/gpt-4o` | OpenAI | GPT-4o |
+| Value                         | Provider  | Model             |
+| ----------------------------- | --------- | ----------------- |
+| `openai/gpt-4.1`              | OpenAI    | GPT-4.1           |
+| `openai/gpt-4o`               | OpenAI    | GPT-4o            |
 | `anthropic/claude-sonnet-4-5` | Anthropic | Claude Sonnet 4.5 |
-| `anthropic/claude-opus-4-6` | Anthropic | Claude Opus 4.6 |
+| `anthropic/claude-opus-4-6`   | Anthropic | Claude Opus 4.6   |
 
 ---
 
@@ -99,13 +100,15 @@ Sign up at [smith.langchain.com](https://smith.langchain.com) to get an API key.
     - Ensure the database is running and migrations are applied — the agent uses LangGraph checkpointing backed by PostgreSQL
   </Accordion>
 
-  <Accordion title="'invalid selectedModelId' error at startup">
-    `AGENT_MODEL` must use the `provider/model` format, e.g. `openai/gpt-4.1`. A plain model name like `gpt-4o` is not valid.
-  </Accordion>
+<Accordion title="'invalid selectedModelId' error at startup">
+  `AGENT_MODEL` must use the `provider/model` format, e.g. `openai/gpt-4.1`. A
+  plain model name like `gpt-4o` is not valid.
+</Accordion>
 
-  <Accordion title="Anthropic model not working">
-    Set `ANTHROPIC_API_KEY` in `apps/backend/.env`. The `OPENAI_API_KEY` is only needed for OpenAI models.
-  </Accordion>
+<Accordion title="Anthropic model not working">
+  Set `ANTHROPIC_API_KEY` in `apps/backend/.env`. The `OPENAI_API_KEY` is only
+  needed for OpenAI models.
+</Accordion>
 
   <Accordion title="Agent turns get stuck or don't stream">
     - Check for `AbortError` in logs — a previous run may still be active. Call `POST /api/v1/chat/stop` to cancel it.

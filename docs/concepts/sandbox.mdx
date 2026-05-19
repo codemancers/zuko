@@ -17,10 +17,10 @@ AI agents in Zuko can use tools that run real code: executing shell commands, re
 
 Zuko supports two sandbox implementations selected at runtime:
 
-| Mode | When used | How it runs |
-|---|---|---|
-| **Sprites** (remote) | `SPRITES_ENABLED=true` | Cloud machine managed by [Sprites](https://sprites.fly.dev) — isolated VM per chat |
-| **Local** | `SPRITES_ENABLED=false` | Node.js `child_process.exec` on the backend host — for development only |
+| Mode                 | When used               | How it runs                                                                        |
+| -------------------- | ----------------------- | ---------------------------------------------------------------------------------- |
+| **Sprites** (remote) | `SPRITES_ENABLED=true`  | Cloud machine managed by [Sprites](https://sprites.fly.dev) — isolated VM per chat |
+| **Local**            | `SPRITES_ENABLED=false` | Node.js `child_process.exec` on the backend host — for development only            |
 
 In production you should use Sprites. Local mode is for local development when you don't need full isolation.
 
@@ -36,14 +36,14 @@ provisioning → active → hibernating → hibernated
                   └──────── restoring ─────┘
 ```
 
-| State | Meaning |
-|---|---|
-| `provisioning` | Sandbox is being created for the first time |
-| `active` | Running and available for agent tool calls |
-| `hibernating` | In the process of being suspended |
-| `hibernated` | Suspended — Sprites machine is stopped, no cost accrues |
-| `restoring` | Waking from hibernation in response to a resume request |
-| `failed` | An error occurred; the error message is stored in the database |
+| State          | Meaning                                                        |
+| -------------- | -------------------------------------------------------------- |
+| `provisioning` | Sandbox is being created for the first time                    |
+| `active`       | Running and available for agent tool calls                     |
+| `hibernating`  | In the process of being suspended                              |
+| `hibernated`   | Suspended — Sprites machine is stopped, no cost accrues        |
+| `restoring`    | Waking from hibernation in response to a resume request        |
+| `failed`       | An error occurred; the error message is stored in the database |
 
 ### Auto-hibernation
 
@@ -77,14 +77,14 @@ GET /api/proxy/sandboxes/:id/lifecycle/events
 
 The `SandboxStatusBadge` component in the chat UI uses this stream to show the current state with color-coded badges:
 
-| Color | States |
-|---|---|
-| Green | `active` |
+| Color            | States         |
+| ---------------- | -------------- |
+| Green            | `active`       |
 | Yellow (pulsing) | `provisioning` |
-| Blue (pulsing) | `restoring` |
-| Zinc | `hibernated` |
-| Yellow (pulsing) | `hibernating` |
-| Red | `failed` |
+| Blue (pulsing)   | `restoring`    |
+| Zinc             | `hibernated`   |
+| Yellow (pulsing) | `hibernating`  |
+| Red              | `failed`       |
 
 ---
 
@@ -100,16 +100,16 @@ Reconciliation is debounced to once per 60 seconds per sandbox to prevent SSE re
 
 The `Sandbox` interface exposed to agent tools provides:
 
-| Method | Description |
-|---|---|
-| `exec(command, cwd, timeoutMs)` | Run a shell command |
-| `readFile(path)` | Read a file |
-| `writeFile(path, content)` | Write a file |
-| `glob(pattern)` | Glob for files |
-| `grep(pattern, opts)` | Search file contents |
-| `stat(path)` | Get file metadata |
-| `mkdir(path)` | Create a directory |
-| `readdir(path)` | List directory contents |
+| Method                          | Description             |
+| ------------------------------- | ----------------------- |
+| `exec(command, cwd, timeoutMs)` | Run a shell command     |
+| `readFile(path)`                | Read a file             |
+| `writeFile(path, content)`      | Write a file            |
+| `glob(pattern)`                 | Glob for files          |
+| `grep(pattern, opts)`           | Search file contents    |
+| `stat(path)`                    | Get file metadata       |
+| `mkdir(path)`                   | Create a directory      |
+| `readdir(path)`                 | List directory contents |
 
 ---
 
@@ -117,8 +117,8 @@ The `Sandbox` interface exposed to agent tools provides:
 
 The backend also exposes a REST API for reading and writing sandbox files directly (used by the frontend and debugging tools):
 
-| Method | Endpoint | Description |
-|---|---|---|
-| `GET` | `/api/sandboxes/:id/fs/*path?list=true` | List directory |
-| `GET` | `/api/sandboxes/:id/fs/*path` | Read file |
-| `PUT` | `/api/sandboxes/:id/fs/*path` | Write file |
+| Method | Endpoint                                | Description    |
+| ------ | --------------------------------------- | -------------- |
+| `GET`  | `/api/sandboxes/:id/fs/*path?list=true` | List directory |
+| `GET`  | `/api/sandboxes/:id/fs/*path`           | Read file      |
+| `PUT`  | `/api/sandboxes/:id/fs/*path`           | Write file     |
