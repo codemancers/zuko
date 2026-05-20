@@ -11,7 +11,6 @@ import Quote from '@editorjs/quote';
 import Marker from '@editorjs/marker';
 import Warning from '@editorjs/warning';
 import Delimiter from '@editorjs/delimiter';
-import './Editor.css';
 
 interface EditorProps {
   data?: OutputData;
@@ -27,7 +26,7 @@ const Editor = ({
   onChange,
   onReady,
   holder,
-  placeholder = 'Start writing...',
+  placeholder = 'Write something... or type / for commands',
   readOnly = false,
 }: EditorProps) => {
   const ejInstance = useRef<EditorJS | null>(null);
@@ -45,6 +44,10 @@ const Editor = ({
         tools: {
           header: {
             class: Header as unknown as EditorJS.ToolConstructable,
+            config: {
+              placeholder: 'Enter a header',
+              defaultLevel: 1,
+            },
             inlineToolbar: ['link'],
           },
           list: {
@@ -58,12 +61,22 @@ const Editor = ({
           checklist: {
             class: Checklist as unknown as EditorJS.ToolConstructable,
             inlineToolbar: true,
+            toolbox: false,
           },
           inlineCode: InlineCode as unknown as EditorJS.ToolConstructable,
-          code: Code as unknown as EditorJS.ToolConstructable,
+          code: {
+            class: Code as unknown as EditorJS.ToolConstructable,
+            inlineToolbar: true,
+            config: {
+              placeholder: 'Enter a code',
+            },
+          },
           quote: {
             class: Quote as unknown as EditorJS.ToolConstructable,
             inlineToolbar: true,
+            config: {
+              placeholder: 'Enter a quote',
+            },
           },
           marker: Marker,
           warning: Warning,
@@ -78,6 +91,7 @@ const Editor = ({
             onChange(content);
           }
         },
+        minHeight: 0,
         autofocus: false,
       });
 

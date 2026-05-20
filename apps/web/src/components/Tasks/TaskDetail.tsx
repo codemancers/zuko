@@ -247,13 +247,12 @@ const TaskDetail = ({ taskId, currentUserId }: TaskDetailProps) => {
         <div className="flex items-center justify-between mb-2">
           <Subheading>Description</Subheading>
         </div>
-        <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 p-4 min-h-32 bg-white dark:bg-zinc-900 shadow-sm transition-all focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-500">
+        <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 p-4 min-h-32 bg-white dark:bg-zinc-900 shadow-sm">
           <Editor
             key={taskId}
             holder={`task-description-editor-${taskId}`}
             data={descriptionField.value}
             onChange={(val) => descriptionField.setValue(val)}
-            placeholder="Add a detailed description..."
           />
         </div>
       </div>
