@@ -39,7 +39,8 @@ export function useBaseTable<TData extends BaseRow>({
   manualFiltering,
   enableRowSelection,
 }: BaseTableProps<TData>) {
-  const { data: session } = authClient.useSession();
+  const { data: session, isPending: isSessionPending } =
+    authClient.useSession();
   const userId = session?.user?.id ?? '';
 
   const tableColumns = React.useMemo(() => {
@@ -66,6 +67,10 @@ export function useBaseTable<TData extends BaseRow>({
     columnReordering?.storageKey ?? '',
     columnReordering ? (tableColumns as ColumnDef<BaseRow, unknown>[]) : [],
   );
+
+  const isColumnOrderReady = columnReordering
+    ? !isSessionPending && internalColumnOrder.length > 0
+    : true;
 
   const columnOrder = columnReordering
     ? internalColumnOrder.length
@@ -139,5 +144,6 @@ export function useBaseTable<TData extends BaseRow>({
     closeAddColumnDialog,
     setColumnOrder,
     pinnedColumnIds,
+    isColumnOrderReady,
   };
 }

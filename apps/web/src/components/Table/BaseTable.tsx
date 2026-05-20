@@ -46,6 +46,7 @@ export function BaseTable<TData extends BaseRow>(props: BaseTableProps<TData>) {
     closeAddColumnDialog,
     setColumnOrder,
     pinnedColumnIds,
+    isColumnOrderReady,
   } = useBaseTable(effectiveProps);
 
   const {
@@ -117,6 +118,21 @@ export function BaseTable<TData extends BaseRow>(props: BaseTableProps<TData>) {
 
   if (!hasMounted) {
     return null;
+  }
+
+  if (props.columnReordering && !isColumnOrderReady) {
+    return (
+      <div
+        className={clsx(
+          'flex flex-col items-center justify-center mt-8',
+          props.className,
+        )}
+      >
+        <div className="text-sm text-zinc-600 dark:text-zinc-400">
+          Loading {props.entityName ?? 'data'}...
+        </div>
+      </div>
+    );
   }
 
   if (loading) {
