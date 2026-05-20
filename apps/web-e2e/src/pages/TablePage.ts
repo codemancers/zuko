@@ -107,6 +107,44 @@ export class TablePage extends BasePage {
     return headers.allTextContents();
   }
 
+  async dragColumn(sourceHeader: string, targetHeader: string) {
+    // dnd-kit spreads role="button" onto <th> elements, overriding columnheader.
+    // Target the <th> directly by text content instead.
+    const source = this.page
+      .locator('table thead th')
+      .filter({ hasText: sourceHeader });
+    const target = this.page
+      .locator('table thead th')
+      .filter({ hasText: targetHeader });
+
+    const sourceBox = await source.boundingBox();
+    const targetBox = await target.boundingBox();
+    if (!sourceBox || !targetBox)
+      throw new Error(
+        `Could not find column headers: "${sourceHeader}", "${targetHeader}"`,
+      );
+
+    const sx = sourceBox.x + sourceBox.width / 2;
+    const sy = sourceBox.y + sourceBox.height / 2;
+    const tx = targetBox.x + targetBox.width / 2;
+    const ty = targetBox.y + targetBox.height / 2;
+
+    // dnd-kit PointerSensor requires pointer events with gradual movement.
+    // dragTo() uses HTML5 drag events which dnd-kit ignores.
+    await this.page.mouse.move(sx, sy);
+    await this.page.mouse.down();
+    await this.page.mouse.move(sx + 6, sy, { steps: 3 }); // pass 5px activation threshold
+    await this.page.mouse.move(tx, ty, { steps: 20 });
+    await this.page.mouse.up();
+  }
+
+  async getColumnCursor(headerName: string): Promise<string> {
+    const header = this.page
+      .locator('table thead th')
+      .filter({ hasText: headerName });
+    return header.evaluate((el) => getComputedStyle(el).cursor);
+  }
+
   async clickCell(rowIndex: number, columnHeader: string): Promise<Locator> {
     const headers = this.page.locator('table thead th');
     const headerTexts = await headers.allTextContents();

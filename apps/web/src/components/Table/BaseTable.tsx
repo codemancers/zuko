@@ -44,6 +44,9 @@ export function BaseTable<TData extends BaseRow>(props: BaseTableProps<TData>) {
     isAddColumnDialogOpen,
     openAddColumnDialog,
     closeAddColumnDialog,
+    setColumnOrder,
+    pinnedColumnIds,
+    isColumnOrderReady,
   } = useBaseTable(effectiveProps);
 
   const {
@@ -62,6 +65,7 @@ export function BaseTable<TData extends BaseRow>(props: BaseTableProps<TData>) {
     openAddColumnRef,
     isFetchingNextPage,
     hasNextPage,
+    columnReordering,
   } = props;
 
   if (openAddColumnRef) {
@@ -114,6 +118,21 @@ export function BaseTable<TData extends BaseRow>(props: BaseTableProps<TData>) {
 
   if (!hasMounted) {
     return null;
+  }
+
+  if (props.columnReordering && !isColumnOrderReady) {
+    return (
+      <div
+        className={clsx(
+          'flex flex-col items-center justify-center mt-8',
+          props.className,
+        )}
+      >
+        <div className="text-sm text-zinc-600 dark:text-zinc-400">
+          Loading {props.entityName ?? 'data'}...
+        </div>
+      </div>
+    );
   }
 
   if (loading) {
@@ -194,6 +213,9 @@ export function BaseTable<TData extends BaseRow>(props: BaseTableProps<TData>) {
             headerGroups={table.getHeaderGroups()}
             showAddColumn={showAddColumn}
             onAddColumn={openAddColumnDialog}
+            columnReordering={columnReordering}
+            pinnedColumnIds={pinnedColumnIds}
+            onColumnReorder={setColumnOrder}
           />
           {isInfiniteScrollMode ? (
             <TableBody>

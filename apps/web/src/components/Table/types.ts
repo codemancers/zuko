@@ -50,6 +50,10 @@ export interface BaseTableProps<TData extends BaseRow> {
   columnVisibility?: VisibilityState;
   onColumnVisibilityChange?: OnChangeFn<VisibilityState>;
 
+  // Column order
+  columnOrder?: string[];
+  onColumnOrderChange?: OnChangeFn<string[]>;
+
   // Server-side flag
   manualPagination?: boolean;
   manualSorting?: boolean;
@@ -78,6 +82,7 @@ export interface BaseTableProps<TData extends BaseRow> {
   isFetchingNextPage?: boolean;
   hasNextPage?: boolean;
 
+  columnReordering?: { storageKey: string };
   showEmptyState?: boolean;
   emptyStateConfig?: {
     icon: React.ElementType;

@@ -44,7 +44,7 @@ test.describe('Table Fields - Add Column Dialog', () => {
     await tablePage.openAddColumnDialog();
 
     const optionValues = await tablePage.fieldTypeSelect.evaluate((el) => {
-      const select = el as { options: ArrayLike<{ value: string }> };
+      const select = el as HTMLSelectElement;
       return Array.from(select.options).map((o) => o.value);
     });
 
