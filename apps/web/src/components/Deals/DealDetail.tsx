@@ -430,13 +430,12 @@ export default function DealDetail({ dealId, currentUserId }: DealDetailProps) {
         <div className="flex items-center justify-between mb-4">
           <Subheading>Summary</Subheading>
         </div>
-        <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 p-4 min-h-32 bg-white dark:bg-zinc-900 shadow-sm transition-all focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-500">
+        <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 p-4 min-h-32 bg-white dark:bg-zinc-900 shadow-sm">
           <Editor
             key={`deal-summary-${dealId}`}
             holder="deal-summary-editor"
             data={summaryField.value}
             onChange={(val) => summaryField.setValue(val)}
-            placeholder="No summary yet. Add one..."
           />
         </div>
       </div>

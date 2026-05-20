@@ -89,3 +89,197 @@
   --chart-4: 280 65% 60%;
   --chart-5: 340 75% 55%;
 }
+
+/* ===== EDITOR.JS STYLES ===== */
+
+/* Layout */
+.editor-js-container .ce-block__content,
+.editor-js-container .ce-toolbar__content {
+  @apply max-w-none!;
+}
+
+.editor-js-container .ce-paragraph {
+  font-size: 1rem;
+  line-height: 1.6;
+  color: inherit;
+}
+
+/* Placeholder: first block only */
+.editor-js-container
+  .ce-block:first-child
+  .ce-paragraph[data-placeholder]:empty::before {
+  content: attr(data-placeholder);
+  @apply text-zinc-500! font-normal! pointer-events-none!;
+  opacity: 0.5;
+  display: inline-block;
+  vertical-align: top;
+}
+
+.editor-js-container
+  .ce-block:not(:first-child)
+  .ce-paragraph[data-placeholder]::before {
+  content: none !important;
+}
+
+.editor-js-container .ce-paragraph[data-placeholder]:empty:focus::before {
+  opacity: 0.3 !important;
+}
+
+/* Headers */
+.editor-js-container h1 {
+  font-size: 2em;
+  font-weight: bold;
+  margin: 0;
+}
+.editor-js-container h2 {
+  font-size: 1.5em;
+  font-weight: bold;
+  margin: 0;
+}
+.editor-js-container h3 {
+  font-size: 1.17em;
+  font-weight: bold;
+  margin: 0;
+}
+
+/* Lists */
+.editor-js-container ul {
+  list-style-type: disc;
+  padding-left: 40px;
+}
+.editor-js-container ol {
+  list-style-type: decimal;
+  padding-left: 40px;
+}
+
+/* z-index fixes */
+.ce-popover {
+  z-index: 50;
+}
+.tc-toolbox {
+  z-index: 10 !important;
+}
+
+/* Block selection */
+.editor-js-container .ce-block--selected .ce-block__content {
+  @apply bg-blue-600/8!;
+}
+
+.dark .editor-js-container .ce-block--selected .ce-block__content {
+  @apply bg-white/6!;
+}
+
+.editor-js-container .ce-block--selected .ce-block__content * {
+  color: inherit !important;
+}
+
+.editor-js-container ::selection {
+  @apply bg-blue-600/30!;
+}
+
+/* Block toolbar + / settings buttons */
+.ce-toolbar__plus,
+.ce-toolbar__settings-btn {
+  @apply bg-zinc-100! border-zinc-200! dark:bg-zinc-800! dark:border-zinc-700! dark:text-zinc-200!;
+}
+
+.ce-toolbar__plus:hover,
+.ce-toolbar__plus--active,
+.ce-toolbar__settings-btn:hover,
+.ce-toolbar__settings-btn--active {
+  @apply bg-zinc-200! dark:bg-zinc-700!;
+}
+
+/* Inline toolbar buttons */
+.ce-inline-tool {
+  @apply dark:text-zinc-200!;
+}
+
+.ce-inline-tool:hover {
+  @apply dark:bg-zinc-700!;
+}
+
+/* Link input */
+.ce-inline-tool-input {
+  @apply dark:bg-zinc-900! dark:border-zinc-700! dark:text-zinc-200!;
+}
+
+.ce-inline-tool-input::placeholder {
+  @apply dark:text-zinc-500!;
+}
+
+/* List "starts with" field */
+.cdx-list-start-with-field {
+  @apply dark:bg-zinc-800! dark:border-zinc-700!;
+}
+
+.cdx-list-start-with-field__input {
+  @apply dark:text-zinc-200!;
+}
+
+/* Code block */
+.ce-code__textarea {
+  @apply dark:bg-zinc-800! dark:text-zinc-300! dark:border-zinc-700! rounded-lg!;
+}
+
+/* Block popover (/ menu) — direct background + EditorJS CSS variables */
+.ce-popover,
+.ce-popover__container {
+  @apply dark:bg-zinc-800! dark:border-zinc-700!;
+}
+
+.dark .ce-popover {
+  --color-border: var(--color-zinc-700);
+  --color-shadow: rgba(0, 0, 0, 0.4);
+  --color-background: var(--color-zinc-800);
+  --color-text-primary: var(--color-zinc-200);
+  --color-text-secondary: var(--color-zinc-400);
+  --color-border-icon: rgba(255, 255, 255, 0.1);
+  --color-border-icon-disabled: var(--color-zinc-700);
+  --color-text-icon-active: var(--color-zinc-200);
+  --color-background-icon-active: var(--color-zinc-700);
+  --color-background-item-focus: rgba(255, 255, 255, 0.06);
+  --color-background-item-hover: var(--color-zinc-700);
+  --color-background-item-confirm: #e24a4a;
+  --color-background-item-confirm-hover: #ce4343;
+}
+
+/* Search field */
+.cdx-search-field {
+  @apply dark:bg-zinc-900! dark:border-zinc-700! dark:text-zinc-200!;
+}
+
+.cdx-search-field__icon svg {
+  @apply dark:text-zinc-400!;
+}
+
+.cdx-search-field__input::placeholder {
+  @apply dark:text-zinc-500!;
+}
+
+/* Table plugin */
+.dark .tc-wrap {
+  --color-background: var(--color-zinc-800);
+  --color-text-secondary: var(--color-zinc-400);
+  --color-border: var(--color-zinc-700);
+  --toggler-dots-color: var(--color-zinc-500);
+  --toggler-dots-color-hovered: var(--color-zinc-200);
+}
+
+.dark .tc-popover {
+  --color-border: var(--color-zinc-700);
+  --color-background: var(--color-zinc-800);
+  --color-background-hover: rgba(255, 255, 255, 0.08);
+  --color-background-confirm: #e24a4a;
+  --color-background-confirm-hover: #d54040;
+  --color-text-confirm: #fff;
+  box-shadow: 0 3px 15px -3px rgba(0, 0, 0, 0.5);
+}
+
+.tc-popover__item-label {
+  @apply dark:text-zinc-200;
+}
+
+.tc-popover__item-icon svg {
+  @apply dark:text-zinc-400;
+}
