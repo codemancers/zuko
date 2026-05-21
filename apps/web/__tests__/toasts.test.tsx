@@ -168,7 +168,9 @@ describe('ContactForm toasts', () => {
     await user.click(screen.getByRole('button', { name: /create contact/i }));
 
     await waitFor(() => {
-      expect(toast.success).toHaveBeenCalledWith('Contact created successfully');
+      expect(toast.success).toHaveBeenCalledWith(
+        'Contact created successfully',
+      );
       expect(onSuccess).toHaveBeenCalled();
     });
   });
@@ -178,11 +180,7 @@ describe('ContactForm toasts', () => {
     mockCreateContact.mockRejectedValue(new Error('Server error'));
 
     render(
-      <ContactForm
-        mode="create"
-        currentUserId={1}
-        onSuccess={vi.fn()}
-      />,
+      <ContactForm mode="create" currentUserId={1} onSuccess={vi.fn()} />,
       { wrapper },
     );
 
@@ -223,7 +221,9 @@ describe('ContactForm toasts', () => {
     await user.click(screen.getByRole('button', { name: /save changes/i }));
 
     await waitFor(() => {
-      expect(toast.success).toHaveBeenCalledWith('Contact updated successfully');
+      expect(toast.success).toHaveBeenCalledWith(
+        'Contact updated successfully',
+      );
       expect(onSuccess).toHaveBeenCalled();
     });
   });
@@ -278,7 +278,9 @@ describe('CompanyForm toasts', () => {
     await user.click(screen.getByRole('button', { name: /create company/i }));
 
     await waitFor(() => {
-      expect(toast.success).toHaveBeenCalledWith('Company created successfully');
+      expect(toast.success).toHaveBeenCalledWith(
+        'Company created successfully',
+      );
       expect(onSuccess).toHaveBeenCalled();
     });
   });
@@ -324,7 +326,9 @@ describe('CompanyForm toasts', () => {
     await user.click(screen.getByRole('button', { name: /save changes/i }));
 
     await waitFor(() => {
-      expect(toast.success).toHaveBeenCalledWith('Company updated successfully');
+      expect(toast.success).toHaveBeenCalledWith(
+        'Company updated successfully',
+      );
       expect(onSuccess).toHaveBeenCalled();
     });
   });
@@ -369,10 +373,9 @@ describe('DealForm toasts', () => {
     const onSuccess = vi.fn();
     mockCreateDeal.mockResolvedValue({ id: 1, title: 'New Deal' });
 
-    render(
-      <DealForm mode="create" currentUserId={1} onSuccess={onSuccess} />,
-      { wrapper },
-    );
+    render(<DealForm mode="create" currentUserId={1} onSuccess={onSuccess} />, {
+      wrapper,
+    });
 
     await user.type(
       screen.getByPlaceholderText(/enterprise license agreement/i),
@@ -390,10 +393,9 @@ describe('DealForm toasts', () => {
     const user = userEvent.setup();
     mockCreateDeal.mockRejectedValue(new Error('Server error'));
 
-    render(
-      <DealForm mode="create" currentUserId={1} onSuccess={vi.fn()} />,
-      { wrapper },
-    );
+    render(<DealForm mode="create" currentUserId={1} onSuccess={vi.fn()} />, {
+      wrapper,
+    });
 
     await user.type(
       screen.getByPlaceholderText(/enterprise license agreement/i),
