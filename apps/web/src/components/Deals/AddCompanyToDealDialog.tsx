@@ -20,6 +20,7 @@ import {
   Text,
 } from '@zuko/ui-kit';
 import { PlusIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import { toast } from 'sonner';
 
 interface AddCompanyToDealDialogProps {
   dealId: number;
@@ -62,10 +63,12 @@ export default function AddCompanyToDealDialog({
       await queryClient.invalidateQueries({
         queryKey: ['timeline', 'deal', dealId],
       });
+      toast.success('Company added to deal');
       setIsOpen(false);
       resetForm();
     },
     onError: (error: any) => {
+      toast.error(error.message || 'Failed to add company to deal');
       setErrors({ submit: error.message || 'Failed to add company to deal' });
     },
   });

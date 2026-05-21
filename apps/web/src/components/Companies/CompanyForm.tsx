@@ -20,6 +20,7 @@ import {
 } from '@zuko/ui-kit';
 import { FormActions } from '@/components/shared';
 import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
 
 interface CompanyFormProps {
   company?: Company;
@@ -51,6 +52,7 @@ export default function CompanyForm({
     mutationFn: (data: CreateCompanyDto) => companiesApi.createCompany(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['companies'] });
+      toast.success('Company created successfully');
       if (onSuccess) {
         onSuccess();
       } else {
@@ -58,6 +60,7 @@ export default function CompanyForm({
       }
     },
     onError: (error: any) => {
+      toast.error(error.message || 'Failed to create company');
       setErrors({ submit: error.message || 'Failed to create company' });
     },
   });
@@ -71,6 +74,7 @@ export default function CompanyForm({
       queryClient.invalidateQueries({
         queryKey: ['timeline', 'company', company!.id],
       });
+      toast.success('Company updated successfully');
       if (onSuccess) {
         onSuccess();
       } else {
@@ -78,6 +82,7 @@ export default function CompanyForm({
       }
     },
     onError: (error: any) => {
+      toast.error(error.message || 'Failed to update company');
       setErrors({ submit: error.message || 'Failed to update company' });
     },
   });
