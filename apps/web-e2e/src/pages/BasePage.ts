@@ -45,8 +45,11 @@ export class BasePage {
     const showBtn = this.page.getByRole('button', { name: /SHOW HISTORY/i });
     if (await showBtn.isVisible()) {
       await showBtn.click();
-      // Wait for history to animate in
-      await this.page.waitForTimeout(500);
+      await this.page
+        .locator('[data-testid="activity-item"]')
+        .or(this.page.getByText('No activity yet'))
+        .first()
+        .waitFor({ state: 'visible', timeout: 500 });
     }
   }
 

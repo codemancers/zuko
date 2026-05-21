@@ -79,6 +79,8 @@ const TaskDetail = ({ taskId, currentUserId }: TaskDetailProps) => {
     .map((t) => ({ value: String(t.id), label: t.title }));
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isEditSheetOpen, setIsEditSheetOpen] = useState(false);
+  const [isCreateSubtaskSheetOpen, setIsCreateSubtaskSheetOpen] =
+    useState(false);
 
   const updateMutation = useMutation({
     mutationFn: (updated: UpdateTaskDto) =>
@@ -285,10 +287,7 @@ const TaskDetail = ({ taskId, currentUserId }: TaskDetailProps) => {
               })}
             </div>
             <div className="mt-4">
-              <Button
-                outline
-                onClick={() => router.push(`/tasks/new?parentId=${task.id}`)}
-              >
+              <Button outline onClick={() => setIsCreateSubtaskSheetOpen(true)}>
                 Add subtask
               </Button>
             </div>
@@ -298,10 +297,7 @@ const TaskDetail = ({ taskId, currentUserId }: TaskDetailProps) => {
 
       {task.subtasks.length === 0 && (
         <div className="mt-6">
-          <Button
-            outline
-            onClick={() => router.push(`/tasks/new?parentId=${task.id}`)}
-          >
+          <Button outline onClick={() => setIsCreateSubtaskSheetOpen(true)}>
             Add subtask
           </Button>
         </div>
@@ -326,6 +322,25 @@ const TaskDetail = ({ taskId, currentUserId }: TaskDetailProps) => {
           task={task}
           onSuccess={() => setIsEditSheetOpen(false)}
           onCancel={() => setIsEditSheetOpen(false)}
+        />
+      </Sheet>
+
+      <Sheet
+        open={isCreateSubtaskSheetOpen}
+        onClose={setIsCreateSubtaskSheetOpen}
+        side="right"
+      >
+        <SheetHeader>
+          <SheetTitle>New Subtask</SheetTitle>
+          <Button plain onClick={() => setIsCreateSubtaskSheetOpen(false)}>
+            <XMarkIcon className="h-5 w-5" />
+          </Button>
+        </SheetHeader>
+        <TaskForm
+          mode="create"
+          defaultParentId={task.id}
+          onSuccess={() => setIsCreateSubtaskSheetOpen(false)}
+          onCancel={() => setIsCreateSubtaskSheetOpen(false)}
         />
       </Sheet>
     </>

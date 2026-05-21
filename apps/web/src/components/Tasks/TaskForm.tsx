@@ -121,6 +121,9 @@ const TaskForm = ({
       if (mode === 'create') {
         if (result.parentId) {
           queryClient.invalidateQueries({
+            queryKey: ['task', result.parentId],
+          });
+          queryClient.invalidateQueries({
             queryKey: ['timeline', 'task', result.parentId],
           });
         }
