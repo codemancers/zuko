@@ -16,6 +16,20 @@ class ResizeObserver {
 }
 window.ResizeObserver = ResizeObserver;
 
+class IntersectionObserver {
+  observe() {
+    // mock
+  }
+  unobserve() {
+    // mock
+  }
+  disconnect() {
+    // mock
+  }
+}
+window.IntersectionObserver =
+  IntersectionObserver as unknown as typeof window.IntersectionObserver;
+
 afterEach(() => {
   cleanup();
 });
