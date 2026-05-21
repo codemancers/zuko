@@ -1,7 +1,13 @@
 'use client';
 
 import Image from 'next/image';
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, {
+  useState,
+  useEffect,
+  useRef,
+  useCallback,
+  useMemo,
+} from 'react';
 import { useBaseTable } from '@/hooks/use-base-table';
 import type { BaseTableProps, BaseRow } from './types';
 import { BaseTableHeader } from './BaseTableHeader';
@@ -11,6 +17,15 @@ import { Table, Button, TableBody } from '@zuko/ui-kit';
 import clsx from 'clsx';
 import { PlusIcon } from '@heroicons/react/24/outline';
 import type { PaginationState } from '@tanstack/react-table';
+import {
+  DndContext,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  closestCenter,
+  type DragEndEvent,
+} from '@dnd-kit/core';
+import { arrayMove } from '@dnd-kit/sortable';
 import { AddColumnDialog } from './AddColumnDialog';
 import type { ColumnConfig } from '@/types/table-metadata';
 import { useVirtualizer } from '@tanstack/react-virtual';
@@ -49,6 +64,25 @@ export function BaseTable<TData extends BaseRow>(props: BaseTableProps<TData>) {
     isColumnOrderReady,
   } = useBaseTable(effectiveProps);
 
+  // DndContext lives here (outside <table>) so its hidden accessibility <div>
+  // is never a child of a table element, which would be invalid HTML.
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+  );
+  const pinnedSet = useMemo(() => new Set(pinnedColumnIds), [pinnedColumnIds]);
+
+  function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    if (pinnedSet.has(String(over.id))) return;
+    const columnIds =
+      table.getHeaderGroups()[0]?.headers.map((h) => h.id) ?? [];
+    const oldIndex = columnIds.indexOf(String(active.id));
+    const newIndex = columnIds.indexOf(String(over.id));
+    if (oldIndex === -1 || newIndex === -1 || oldIndex === newIndex) return;
+    setColumnOrder(arrayMove(columnIds, oldIndex, newIndex));
+  }
+
   const {
     loading,
     className,
@@ -72,8 +106,17 @@ export function BaseTable<TData extends BaseRow>(props: BaseTableProps<TData>) {
     openAddColumnRef.current = openAddColumnDialog;
   }
 
-  // Scroll-event based fetch trigger (TanStack Virtual pattern)
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const sentinelRef = useRef<HTMLDivElement>(null);
+  // Track the scroll container element as state so it can be used as an
+  // IntersectionObserver root dep — plain refs don't trigger effect re-runs.
+  const [scrollContainerEl, setScrollContainerEl] =
+    useState<HTMLDivElement | null>(null);
+
+  const scrollContainerCallback = useCallback((el: HTMLDivElement | null) => {
+    scrollContainerRef.current = el;
+    setScrollContainerEl(el);
+  }, []);
 
   const rows = table.getRowModel().rows;
   const colCount = table.getAllColumns().length + (props.showAddColumn ? 1 : 0);
@@ -94,27 +137,39 @@ export function BaseTable<TData extends BaseRow>(props: BaseTableProps<TData>) {
         virtualItems[virtualItems.length - 1].end
       : 0;
 
-  const fetchMoreOnBottomReached = useCallback(
-    (el?: HTMLDivElement | null) => {
-      if (!el) return;
-      const { scrollHeight, scrollTop, clientHeight } = el;
-      if (
-        scrollHeight - scrollTop - clientHeight < 300 &&
-        hasNextPage &&
-        !isFetchingNextPage
-      ) {
-        props.onFetchNextPage?.();
-      }
-    },
-    [props.onFetchNextPage, hasNextPage, isFetchingNextPage],
-  );
-
-  // Also check on mount / when fetch state changes (handles short lists)
+  // IntersectionObserver on a sentinel element placed after the last row.
+  // This fires when the sentinel enters the scroll container's viewport, which
+  // happens in two cases:
+  //   1. On initial load when the first page doesn't fill the container (the
+  //      sentinel is immediately visible) — fixes the hard-refresh case.
+  //   2. When the user scrolls to the bottom.
+  // Recreating the observer whenever hasNextPage/isFetchingNextPage changes
+  // re-checks visibility immediately, cascading page loads until the container
+  // is full or there are no more pages.
   useEffect(() => {
-    if (isInfiniteScrollMode && hasMounted) {
-      fetchMoreOnBottomReached(scrollContainerRef.current);
-    }
-  }, [fetchMoreOnBottomReached, isInfiniteScrollMode, hasMounted]);
+    if (!isInfiniteScrollMode || !hasMounted || !scrollContainerEl) return;
+    const sentinel = sentinelRef.current;
+    if (!sentinel) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && hasNextPage && !isFetchingNextPage) {
+          props.onFetchNextPage?.();
+        }
+      },
+      { root: scrollContainerEl, threshold: 0 },
+    );
+
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [
+    isInfiniteScrollMode,
+    hasMounted,
+    scrollContainerEl,
+    hasNextPage,
+    isFetchingNextPage,
+    props.onFetchNextPage,
+  ]);
 
   if (!hasMounted) {
     return null;
@@ -190,19 +245,14 @@ export function BaseTable<TData extends BaseRow>(props: BaseTableProps<TData>) {
     );
   }
 
-  return (
+  const tableContent = (
     <div className={clsx('mt-8', className)}>
       <div
-        ref={isInfiniteScrollMode ? scrollContainerRef : undefined}
+        ref={isInfiniteScrollMode ? scrollContainerCallback : undefined}
         className={clsx(
           'flow-root overflow-hidden border border-zinc-200 dark:border-zinc-800 rounded-lg shadow-sm bg-white dark:bg-zinc-950',
           isInfiniteScrollMode && 'overflow-y-auto max-h-[calc(100vh-260px)]',
         )}
-        onScroll={
-          isInfiniteScrollMode
-            ? (e) => fetchMoreOnBottomReached(e.currentTarget)
-            : undefined
-        }
       >
         <Table
           grid
@@ -215,7 +265,6 @@ export function BaseTable<TData extends BaseRow>(props: BaseTableProps<TData>) {
             onAddColumn={openAddColumnDialog}
             columnReordering={columnReordering}
             pinnedColumnIds={pinnedColumnIds}
-            onColumnReorder={setColumnOrder}
           />
           {isInfiniteScrollMode ? (
             <TableBody>
@@ -269,6 +318,12 @@ export function BaseTable<TData extends BaseRow>(props: BaseTableProps<TData>) {
             />
           )}
         </Table>
+
+        {/* Sentinel observed by IntersectionObserver — triggers next page load
+            when visible (content shorter than container) or scrolled into view */}
+        {isInfiniteScrollMode && (
+          <div ref={sentinelRef} style={{ height: 1 }} />
+        )}
 
         {showAddRow && (
           <div className="pl-2 py-1 h-10 border-zinc-200 dark:border-zinc-800 flex items-center bg-zinc-50/50 dark:bg-zinc-900/50">
@@ -407,5 +462,17 @@ export function BaseTable<TData extends BaseRow>(props: BaseTableProps<TData>) {
         )
       )}
     </div>
+  );
+
+  if (!columnReordering) return tableContent;
+
+  return (
+    <DndContext
+      sensors={sensors}
+      collisionDetection={closestCenter}
+      onDragEnd={handleDragEnd}
+    >
+      {tableContent}
+    </DndContext>
   );
 }
