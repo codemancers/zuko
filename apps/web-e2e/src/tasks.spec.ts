@@ -337,12 +337,7 @@ test.describe('Hierarchical Tasks', () => {
     const parentSelect = editSheet.locator('[name="parentId"]');
     await expect(parentSelect).toBeVisible({ timeout: 10000 });
     await parentSelect.selectOption('');
-    // Wait for react-hook-form re-render to settle after the select change
-    // before attempting to click — the button can briefly detach during the
-    // form state update, causing a "not stable" Playwright error.
-    const saveButton = editSheet.getByRole('button', { name: /save changes/i });
-    await saveButton.waitFor({ state: 'visible', timeout: 5000 });
-    await saveButton.click();
+    await editSheet.getByRole('button', { name: /save changes/i }).click();
     await expect(page.getByRole('heading', { name: 'Edit Task' })).toBeHidden({
       timeout: 10000,
     });

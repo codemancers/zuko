@@ -42,8 +42,11 @@ export class DealDetailPage extends BasePage {
 
   override async goto(dealId: number | string) {
     const path = `/deals/${dealId}`;
-    // Always navigate to ensure clean state between tests (e.g. no leftover
-    // open dialogs from a previous test in the same describe block).
+    if (this.page.url().includes(path)) {
+      await this.page.waitForLoadState('domcontentloaded');
+      await this.activitySection.waitFor({ state: 'visible' });
+      return;
+    }
     await this.page.goto(path);
     await this.page.waitForLoadState('networkidle');
     await this.activitySection.waitFor({ state: 'visible', timeout: 30000 });
