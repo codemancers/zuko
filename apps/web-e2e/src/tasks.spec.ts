@@ -342,4 +342,65 @@ test.describe('Hierarchical Tasks', () => {
       timeout: 10000,
     });
   });
+
+  test('can create subtask via create form inside the sheet', async ({
+    tasksPage,
+    page,
+  }) => {
+    const subtaskTitle = `Subtask ${Date.now()}`;
+    const parentTaskTitle = `Parent Task ${Date.now()}`;
+    await tasksPage.createTask({ title: parentTaskTitle });
+
+    await tasksPage.goto();
+    const parentId = await tasksPage.openTask(parentTaskTitle);
+
+    // Sheet opens
+    await page.getByRole('button', { name: /add subtask/i }).click();
+    const sheetHeading = page.getByRole('heading', { name: 'New Subtask' });
+    await expect(sheetHeading).toBeVisible({ timeout: 10000 });
+    expect(page.url()).toContain(`/tasks/${parentId}`);
+
+    // Parent task field is pre-filled
+    const sheet = page
+      .locator('[role="dialog"]')
+      .filter({ hasText: 'New Subtask' });
+    await expect(sheet.locator('[name="parentId"]')).toHaveValue(
+      String(parentId),
+    );
+
+    // Fill in the subtask title and submit
+    await page.getByLabel(/title \*/i).fill(subtaskTitle);
+
+    const createResponse = page.waitForResponse(
+      (resp) =>
+        resp.url().includes('/tasks') &&
+        resp.request().method() === 'POST' &&
+        resp.ok(),
+      { timeout: 15000 },
+    );
+    await page.getByRole('button', { name: /^Create Task$/i }).click();
+    await createResponse;
+
+    // Validate sheet has been closed and toast shows up
+    await expect(sheetHeading).toBeHidden({ timeout: 10000 });
+    await expect(page.getByText('Task created successfully')).toBeVisible({
+      timeout: 10000,
+    });
+
+    // Subtasks section appears and shows the new subtask without a page reload —
+    // verifies React Query cache invalidation for ['task', parentId]
+    const subtasksHeading = page.getByText(/subtasks/i);
+    await expect(subtasksHeading).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText(subtaskTitle, { exact: true })).toBeVisible({
+      timeout: 10000,
+    });
+    expect(page.url()).toContain(`/tasks/${parentId}`);
+
+    // verfy activity added
+    tasksPage.showHistory();
+    const lastActivity = page.getByText(
+      new RegExp(`added subtask "${subtaskTitle}"`),
+    );
+    await expect(lastActivity).toBeVisible({ timeout: 10000 });
+  });
 });
