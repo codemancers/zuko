@@ -20,6 +20,7 @@ import {
 } from '@zuko/ui-kit';
 import { FormActions } from '@/components/shared';
 import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
 
 interface ContactFormProps {
   contact?: Contact;
@@ -52,6 +53,7 @@ export default function ContactForm({
     mutationFn: (data: CreateContactDto) => contactsApi.createContact(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['contacts'] });
+      toast.success('Contact created successfully');
       if (onSuccess) {
         onSuccess();
       } else {
@@ -59,6 +61,7 @@ export default function ContactForm({
       }
     },
     onError: (error: any) => {
+      toast.error(error.message || 'Failed to create contact');
       setErrors({ submit: error.message || 'Failed to create contact' });
     },
   });
@@ -72,6 +75,7 @@ export default function ContactForm({
       queryClient.invalidateQueries({
         queryKey: ['timeline', 'contact', contact!.id],
       });
+      toast.success('Contact updated successfully');
       if (onSuccess) {
         onSuccess();
       } else {
@@ -79,6 +83,7 @@ export default function ContactForm({
       }
     },
     onError: (error: any) => {
+      toast.error(error.message || 'Failed to update contact');
       setErrors({ submit: error.message || 'Failed to update contact' });
     },
   });

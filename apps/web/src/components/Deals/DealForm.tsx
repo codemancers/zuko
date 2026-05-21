@@ -26,6 +26,7 @@ import {
 } from '@zuko/ui-kit';
 import { FormActions } from '@/components/shared';
 import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
 
 interface DealFormProps {
   deal?: Deal;
@@ -86,6 +87,7 @@ export default function DealForm({
     mutationFn: (data: CreateDealDto) => dealsApi.createDeal(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['deals'] });
+      toast.success('Deal created successfully');
       if (onSuccess) {
         onSuccess();
       } else {
@@ -93,6 +95,7 @@ export default function DealForm({
       }
     },
     onError: (error: any) => {
+      toast.error(error.message || 'Failed to create deal');
       setErrors({ submit: error.message || 'Failed to create deal' });
     },
   });
@@ -105,6 +108,7 @@ export default function DealForm({
       queryClient.invalidateQueries({
         queryKey: ['timeline', 'deal', deal!.id],
       });
+      toast.success('Deal updated successfully');
       if (onSuccess) {
         onSuccess();
       } else {
@@ -112,6 +116,7 @@ export default function DealForm({
       }
     },
     onError: (error: any) => {
+      toast.error(error.message || 'Failed to update deal');
       setErrors({ submit: error.message || 'Failed to update deal' });
     },
   });

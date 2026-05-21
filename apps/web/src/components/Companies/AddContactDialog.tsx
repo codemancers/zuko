@@ -21,6 +21,7 @@ import {
   Text,
 } from '@zuko/ui-kit';
 import { PlusIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import { toast } from 'sonner';
 
 interface AddContactDialogProps {
   companyId: number;
@@ -65,10 +66,12 @@ export default function AddContactDialog({
       await queryClient.invalidateQueries({
         queryKey: ['timeline', 'company', companyId],
       });
+      toast.success('Contact added to company');
       setIsOpen(false);
       resetForm();
     },
     onError: (error: any) => {
+      toast.error(error.message || 'Failed to add contact to company');
       setErrors({
         submit: error.message || 'Failed to add contact to company',
       });

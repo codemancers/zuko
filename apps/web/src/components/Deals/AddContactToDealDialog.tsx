@@ -21,6 +21,7 @@ import {
   Text,
 } from '@zuko/ui-kit';
 import { PlusIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import { toast } from 'sonner';
 
 interface AddContactToDealDialogProps {
   dealId: number;
@@ -65,10 +66,12 @@ export default function AddContactToDealDialog({
       await queryClient.invalidateQueries({
         queryKey: ['timeline', 'deal', dealId],
       });
+      toast.success('Contact added to deal');
       setIsOpen(false);
       resetForm();
     },
     onError: (error: any) => {
+      toast.error(error.message || 'Failed to add contact to deal');
       setErrors({ submit: error.message || 'Failed to add contact to deal' });
     },
   });
