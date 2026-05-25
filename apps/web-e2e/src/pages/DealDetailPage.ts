@@ -190,4 +190,74 @@ export class DealDetailPage extends BasePage {
     await this.commentInput.fill(comment);
     await this.postCommentButton.click();
   }
+
+  /**
+   * Remove a contact from the deal.
+   * Clicks the Remove button in the confirmation dialog and waits for it to close.
+   */
+  async removeContact(contactName: string) {
+    const section = this.page
+      .getByRole('heading', { name: 'Associated Contacts' })
+      .locator('..')
+      .locator('..');
+    let contactRow = section
+      .locator('div.flex')
+      .filter({ has: this.page.getByTitle('Remove contact') });
+    if (contactName) {
+      contactRow = contactRow.filter({
+        has: this.page.getByRole('link', {
+          name: new RegExp(
+            contactName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'),
+            'i',
+          ),
+        }),
+      });
+    }
+    contactRow = contactRow.first();
+
+    await contactRow.getByTitle('Remove contact').click();
+
+    const confirmButton = this.page.getByRole('button', { name: /^Remove$/ });
+    await confirmButton.waitFor({ state: 'visible', timeout: 5000 });
+    await confirmButton.click();
+
+    // Dialog closes automatically once the mutation succeeds
+    await confirmButton.waitFor({ state: 'hidden', timeout: 10000 });
+    await contactRow.waitFor({ state: 'detached', timeout: 10000 });
+  }
+
+  /**
+   * Remove a company from the deal.
+   * Clicks the Remove button in the confirmation dialog and waits for it to close.
+   */
+  async removeCompany(companyName: string) {
+    const section = this.page
+      .getByRole('heading', { name: 'Associated Companies' })
+      .locator('..')
+      .locator('..');
+    let companyRow = section
+      .locator('div.flex')
+      .filter({ has: this.page.getByTitle('Remove company') });
+    if (companyName) {
+      companyRow = companyRow.filter({
+        has: this.page.getByRole('link', {
+          name: new RegExp(
+            companyName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'),
+            'i',
+          ),
+        }),
+      });
+    }
+    companyRow = companyRow.first();
+
+    await companyRow.getByTitle('Remove company').click();
+
+    const confirmButton = this.page.getByRole('button', { name: /^Remove$/ });
+    await confirmButton.waitFor({ state: 'visible', timeout: 5000 });
+    await confirmButton.click();
+
+    // Dialog closes automatically once the mutation succeeds
+    await confirmButton.waitFor({ state: 'hidden', timeout: 10000 });
+    await companyRow.waitFor({ state: 'detached', timeout: 10000 });
+  }
 }

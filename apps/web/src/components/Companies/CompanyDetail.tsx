@@ -113,6 +113,7 @@ export default function CompanyDetail({
     mutationFn: (contactId: number) =>
       companiesApi.removeContact(companyId, contactId),
     onSuccess: async () => {
+      setContactToRemove(null);
       await queryClient.refetchQueries({ queryKey: ['company', companyId] });
       await queryClient.invalidateQueries({ queryKey: ['companies'] });
       await queryClient.invalidateQueries({

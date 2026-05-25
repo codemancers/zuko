@@ -193,10 +193,9 @@ export class CompanyDetailPage extends BasePage {
     const confirmButton = this.page.getByRole('button', { name: /^Remove$/ });
     await confirmButton.waitFor({ state: 'visible', timeout: 5000 });
     await confirmButton.click();
-    // Dialog doesn't auto-close after mutation (onSuccess doesn't reset state)
-    // Press Escape to dismiss so page content is no longer aria-hidden
-    await this.page.keyboard.press('Escape');
 
+    // Dialog closes automatically once the mutation succeeds
+    await confirmButton.waitFor({ state: 'hidden', timeout: 10000 });
     await contactRow.waitFor({ state: 'detached', timeout: 10000 });
   }
 

@@ -479,6 +479,100 @@ describe('CompanyDetail', () => {
     expect(mockHideCompany).not.toHaveBeenCalled();
   });
 
+  describe('Associated Contact removal', () => {
+    const companyWithContact = {
+      ...detailCompany,
+      contacts: [
+        {
+          id: 20,
+          contactId: 10,
+          companyId: 7,
+          role: 'Employee',
+          isPrimary: true,
+          contact: { id: 10, name: 'Bob Smith', email: 'bob@example.com' },
+        },
+      ],
+    };
+
+    it('opens remove contact confirmation dialog when remove button is clicked', async () => {
+      mockGetCompany.mockResolvedValue(companyWithContact);
+      const user = userEvent.setup();
+      render(<CompanyDetail companyId={7} currentUserId={1} />, { wrapper });
+      await waitFor(() =>
+        expect(screen.getByText('Bob Smith')).toBeInTheDocument(),
+      );
+
+      await user.click(screen.getByTitle('Remove contact'));
+
+      await waitFor(() =>
+        expect(
+          screen.getByText(
+            /are you sure you want to remove Bob Smith from this company/i,
+          ),
+        ).toBeInTheDocument(),
+      );
+    });
+
+    it('closes dialog and calls removeContact after confirming removal', async () => {
+      mockGetCompany.mockResolvedValue(companyWithContact);
+      mockRemoveContact.mockResolvedValue({});
+      const user = userEvent.setup();
+      render(<CompanyDetail companyId={7} currentUserId={1} />, { wrapper });
+      await waitFor(() =>
+        expect(screen.getByText('Bob Smith')).toBeInTheDocument(),
+      );
+
+      await user.click(screen.getByTitle('Remove contact'));
+      await waitFor(() =>
+        expect(
+          screen.getByText(
+            /are you sure you want to remove Bob Smith from this company/i,
+          ),
+        ).toBeInTheDocument(),
+      );
+
+      await user.click(screen.getByRole('button', { name: /^Remove$/ }));
+
+      expect(mockRemoveContact).toHaveBeenCalledWith(7, 10);
+      await waitFor(() =>
+        expect(
+          screen.queryByText(
+            /are you sure you want to remove Bob Smith from this company/i,
+          ),
+        ).not.toBeInTheDocument(),
+      );
+    });
+
+    it('does not call removeContact when cancel is clicked', async () => {
+      mockGetCompany.mockResolvedValue(companyWithContact);
+      const user = userEvent.setup();
+      render(<CompanyDetail companyId={7} currentUserId={1} />, { wrapper });
+      await waitFor(() =>
+        expect(screen.getByText('Bob Smith')).toBeInTheDocument(),
+      );
+
+      await user.click(screen.getByTitle('Remove contact'));
+      await waitFor(() =>
+        expect(
+          screen.getByText(
+            /are you sure you want to remove Bob Smith from this company/i,
+          ),
+        ).toBeInTheDocument(),
+      );
+
+      await user.click(screen.getByRole('button', { name: /cancel/i }));
+
+      expect(mockRemoveContact).not.toHaveBeenCalled();
+      await waitFor(() =>
+        expect(
+          screen.queryByText(
+            /are you sure you want to remove Bob Smith from this company/i,
+          ),
+        ).not.toBeInTheDocument(),
+      );
+    });
+  });
+
   // add specs for editing the companies fields and validation errors
 
   describe('Edit Company', () => {
