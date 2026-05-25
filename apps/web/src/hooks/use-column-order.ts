@@ -61,7 +61,22 @@ export function useColumnOrder(
         (id) => !storedSet.has(id) && !pinnedSet.has(id),
       );
 
-      setColumnOrderState([...pinnedColumnIds, ...reorderedStored, ...newCols]);
+      // Insert new columns before the 'actions' column so they always appear
+      // before the action column regardless of what was previously stored.
+      const actionsIndex = reorderedStored.indexOf('actions');
+      const nonActionStored =
+        actionsIndex !== -1
+          ? reorderedStored.slice(0, actionsIndex)
+          : reorderedStored;
+      const actionsCol =
+        actionsIndex !== -1 ? reorderedStored.slice(actionsIndex) : [];
+
+      setColumnOrderState([
+        ...pinnedColumnIds,
+        ...nonActionStored,
+        ...newCols,
+        ...actionsCol,
+      ]);
     } catch {
       setColumnOrderState(allColumnIds);
     }
