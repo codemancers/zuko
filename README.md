@@ -41,6 +41,13 @@ Key variables:
 | `BETTER_AUTH_*`                                   | Auth config (see example files)        |
 | `NEXT_PUBLIC_APP_URL` / `NEXT_PUBLIC_BACKEND_URL` | App and API URLs (web)                 |
 
+Feature flags (web) — set to `"true"` to enable, `"false"` to disable:
+
+| Variable                                      | Description                          |
+| --------------------------------------------- | ------------------------------------ |
+| `MEETINGS_ENABLED`                            | Enable the Meetings feature          |
+| `NEXT_PUBLIC_BETTER_AUTH_INCLUDE_EMAILS_AUTH` | Enable email/password login & signup |
+
 ### 4. Database
 
 Generate the Prisma client and run migrations:
