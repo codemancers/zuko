@@ -219,6 +219,15 @@ test.describe.serial('Company Detail - Contact Management', () => {
     // Dialog must close automatically — no Escape required
     await expect(confirmButton).toBeHidden({ timeout: 10000 });
 
+    // Wait for the contact link to be removed from the list (refetch completes)
+    const section = page
+      .getByRole('heading', { name: 'Associated Contacts' })
+      .locator('..')
+      .locator('..');
+    await expect(
+      section.locator('a[href^="/contacts/"]').filter({ hasText: contactName }),
+    ).toBeHidden({ timeout: 10000 });
+
     const isStillVisible =
       await companyDetailPage.isContactAssociated(contactName);
     expect(isStillVisible).toBe(false);

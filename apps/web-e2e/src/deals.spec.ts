@@ -1,6 +1,6 @@
 import dayjs from 'dayjs';
 import { test, expect } from './fixtures';
-import { createFreshDeal } from './fixtures/helpers';
+import { createFreshCompany, createFreshDeal } from './fixtures/helpers';
 
 /**
  * Deals Feature E2E Tests
@@ -627,6 +627,8 @@ test.describe.serial('Deal Associations - Company Removal Dialog', () => {
   let dealId: number;
 
   test.beforeAll(async ({ browser }) => {
+    // Create a company first so the "Add Company" dropdown is never empty
+    await createFreshCompany(browser);
     dealId = await createFreshDeal(browser);
   });
 
