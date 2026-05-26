@@ -25,6 +25,9 @@ env:
   NEXT_PUBLIC_BACKEND_URL: ${{ vars.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001' }}
   NEXT_PUBLIC_USE_AUTH_PROXY: ${{ vars.NEXT_PUBLIC_USE_AUTH_PROXY || 'true' }}
   MEETINGS_ENABLED: 'true'
+  APOLLO_CLIENT_ID: ${{ secrets.APOLLO_CLIENT_ID || 'apollo-client-id' }}
+  APOLLO_CLIENT_SECRET: ${{ secrets.APOLLO_CLIENT_SECRET || 'apollo-client-secret' }}
+  APOLLO_REDIRECT_URI: ${{ vars.APOLLO_REDIRECT_URI || 'http://localhost:3000/api/integrations/apollo/callback' }}
 
 jobs:
   ci:

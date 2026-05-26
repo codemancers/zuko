@@ -24,6 +24,7 @@
     "@zuko/sales": "^0.0.1",
     "ai": "^6.0.70",
     "axios": "^1.6.0",
+    "class-validator": "^0.14.0",
     "better-auth": "^1.5.4",
     "dayjs": "^1.11.19",
     "deepagents": "^1.4.0",

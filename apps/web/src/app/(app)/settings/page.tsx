@@ -15,6 +15,7 @@ import { CreateTeamDialog } from '@/components/organization/create-team-dialog';
 import { PageHeader } from '@/components/shared';
 import { useQueryClient, useQuery } from '@tanstack/react-query';
 import { authClient } from '@/lib/auth-client';
+import { toast } from 'sonner';
 import { OrgTeams } from '@/components/organization/org-teams';
 import { OrgMembers } from '@/components/organization/org-members';
 import { UserInvitations } from '@/components/organization/user-invitations';
@@ -79,6 +80,21 @@ function SettingsPageContent() {
   const queryClient = useQueryClient();
   const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
   const [isCreateTeamDialogOpen, setIsCreateTeamDialogOpen] = useState(false);
+
+  // Handle Apollo OAuth flash cookie set by /api/integrations/apollo/callback
+  useEffect(() => {
+    const match = document.cookie.match(/(?:^|;\s*)_apollo_flash=([^;]*)/);
+    if (!match) return;
+
+    const value = decodeURIComponent(match[1]);
+    document.cookie = '_apollo_flash=; max-age=0; path=/';
+
+    if (value === 'success') {
+      toast.success('Apollo.io connected successfully');
+    } else if (value.startsWith('error:')) {
+      toast.error(`Failed to connect Apollo.io: ${value.slice(6)}`);
+    }
+  }, []);
 
   // Redirect to invitations tab if there are pending invitations
   useEffect(() => {

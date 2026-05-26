@@ -34,11 +34,12 @@ model User {
   teammembers      TeamMember[]
   taskOwners       TaskOwner[]
   meetings         Meeting[]
-  agentHosts          AgentHost[]
-  agents              Agent[]
-  approvalRequests    ApprovalRequest[]
-  agentGrantsDenied   AgentCapabilityGrant[] @relation("AgentGrantsDenied")
-  agentGrantsGranted  AgentCapabilityGrant[] @relation("AgentGrantsGranted")
+  agentHosts                  AgentHost[]
+  agents                      Agent[]
+  approvalRequests            ApprovalRequest[]
+  agentGrantsDenied           AgentCapabilityGrant[]    @relation("AgentGrantsDenied")
+  agentGrantsGranted          AgentCapabilityGrant[]    @relation("AgentGrantsGranted")
+  connections                 Connection[]
 
   @@unique([email])
   @@map("user")
@@ -181,14 +182,34 @@ model Organization {
   invitations Invitation[]
   teams       Team[]
 
-  contacts  Contact[]  @relation("OrganizationContacts")
-  companies Company[]  @relation("OrganizationCompanies")
-  deals     Deal[]     @relation("OrganizationDeals")
-  tableColumns TableColumn[] @relation("OrganizationTableColumns")
-  meetings     Meeting[]
+  contacts            Contact[]            @relation("OrganizationContacts")
+  companies           Company[]            @relation("OrganizationCompanies")
+  deals               Deal[]               @relation("OrganizationDeals")
+  tableColumns        TableColumn[]        @relation("OrganizationTableColumns")
+  meetings            Meeting[]
+  connections              Connection[]
 
   @@unique([slug])
   @@map("organization")
+  @@schema("public")
+}
+
+model Connection {
+  id             Int          @id @default(autoincrement())
+  organizationId Int          @map("organization_id")
+  provider       String
+  accessToken    String       @map("access_token")
+  refreshToken   String?      @map("refresh_token")
+  tokenExpiresAt DateTime?    @map("token_expires_at")
+  connectedById  Int          @map("connected_by_id")
+  connectedAt    DateTime     @default(now()) @map("connected_at")
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  connectedBy  User         @relation(fields: [connectedById], references: [id])
+
+  @@unique([organizationId, provider])
+  @@index([organizationId])
+  @@map("connection")
   @@schema("public")
 }
 
