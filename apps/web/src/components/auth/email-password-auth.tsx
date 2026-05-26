@@ -9,12 +9,13 @@ import Link from 'next/link';
 
 interface EmailPasswordAuthProps {
   mode?: 'signin' | 'signup';
+  emailPasswordEnabled?: boolean;
 }
 
-const includeEmailAuth =
-  process.env.NEXT_PUBLIC_BETTER_AUTH_INCLUDE_EMAILS_AUTH === 'true';
-
-export function EmailPasswordAuth({ mode = 'signin' }: EmailPasswordAuthProps) {
+export function EmailPasswordAuth({
+  mode = 'signin',
+  emailPasswordEnabled = false,
+}: EmailPasswordAuthProps) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -127,7 +128,7 @@ export function EmailPasswordAuth({ mode = 'signin' }: EmailPasswordAuthProps) {
           </Button>
         </div>
 
-        {includeEmailAuth && (
+        {emailPasswordEnabled && (
           <>
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
