@@ -11,8 +11,8 @@ import {
   ErrorMessage,
   Input,
   SheetFooter,
+  MultiSelect,
 } from '@zuko/ui-kit';
-import { MultiSelect } from '@zuko/ui-kit';
 import { icpApi, type IcpProfile, type IcpFilters } from '@/lib/api/icp';
 import Editor, { ensureOutputData } from '@/components/Common/Editor/Editor';
 import { toast } from 'sonner';
