@@ -16,6 +16,12 @@ import {
   getGitHubInstallationUrl,
 } from '@/server/actions/github';
 import type { GitHubInstallationStatus } from '@/lib/api/github';
+import {
+  getApolloConnectionStatus,
+  getApolloAuthorizationUrl,
+  disconnectApollo,
+} from '@/server/actions/apollo';
+import type { ApolloConnectionStatus } from '@/lib/api/apollo';
 import { toast } from 'sonner';
 
 // ---------------------------------------------------------------------------
@@ -47,6 +53,10 @@ const GoogleCalendarIcon = () => (
     width={20}
     height={20}
   />
+);
+
+const ApolloIcon = () => (
+  <Image src="/icons/apollo.svg" alt="Apollo.io" width={20} height={20} />
 );
 
 // ---------------------------------------------------------------------------
@@ -102,6 +112,9 @@ export const OrgConnections = () => {
   const [loadingApp, setLoadingApp] = useState(true);
   const [accounts, setAccounts] = useState<AccountData[]>([]);
   const [loadingAccounts, setLoadingAccounts] = useState(true);
+  const [apolloStatus, setApolloStatus] =
+    useState<ApolloConnectionStatus | null>(null);
+  const [loadingApollo, setLoadingApollo] = useState(true);
   const [pendingAction, setPendingAction] = useState<string | null>(null);
 
   // -------------------------------------------------------------------------
@@ -120,6 +133,17 @@ export const OrgConnections = () => {
     }
   }, []);
 
+  const fetchApolloStatus = useCallback(async () => {
+    try {
+      const status = await getApolloConnectionStatus();
+      setApolloStatus(status);
+    } catch {
+      setApolloStatus({ connected: false });
+    } finally {
+      setLoadingApollo(false);
+    }
+  }, []);
+
   useEffect(() => {
     getGitHubInstallationStatus()
       .then((data) => {
@@ -129,7 +153,8 @@ export const OrgConnections = () => {
       .finally(() => setLoadingApp(false));
 
     fetchAccounts();
-  }, [fetchAccounts]);
+    fetchApolloStatus();
+  }, [fetchAccounts, fetchApolloStatus]);
 
   // -------------------------------------------------------------------------
   // Action handlers
@@ -178,6 +203,31 @@ export const OrgConnections = () => {
     },
     [fetchAccounts],
   );
+
+  const handleConnectApollo = useCallback(async () => {
+    setPendingAction('apollo');
+    try {
+      const { url } = await getApolloAuthorizationUrl();
+      window.location.href = url;
+    } catch (e) {
+      toast.error('Failed to initiate Apollo connection');
+      setPendingAction(null);
+    }
+  }, []);
+
+  const handleDisconnectApollo = useCallback(async () => {
+    setPendingAction('disconnect-apollo');
+    try {
+      await disconnectApollo();
+      toast.success('Apollo disconnected');
+      setLoadingApollo(true);
+      await fetchApolloStatus();
+    } catch (e) {
+      toast.error('Failed to disconnect Apollo');
+    } finally {
+      setPendingAction(null);
+    }
+  }, [fetchApolloStatus]);
 
   const handleInstallApp = useCallback(async () => {
     setPendingAction('github-app');
@@ -249,6 +299,42 @@ export const OrgConnections = () => {
           );
         }
 
+        if (id === 'apollo') {
+          return (
+            <div className="flex items-center gap-1">
+              {connected ? (
+                <>
+                  <Button
+                    plain
+                    disabled={pendingAction === 'disconnect-apollo'}
+                    onClick={handleDisconnectApollo}
+                    className="!text-red-500 dark:!text-red-400"
+                  >
+                    Disconnect
+                  </Button>
+                  <Button
+                    plain
+                    disabled={pendingAction === 'apollo'}
+                    onClick={handleConnectApollo}
+                    className="!text-blue-500 dark:!text-blue-400"
+                  >
+                    Reconnect
+                  </Button>
+                </>
+              ) : (
+                <Button
+                  plain
+                  disabled={pendingAction === 'apollo'}
+                  onClick={handleConnectApollo}
+                  className="!text-blue-500 dark:!text-blue-400"
+                >
+                  {pendingAction === 'apollo' ? 'Connecting...' : 'Connect'}
+                </Button>
+              )}
+            </div>
+          );
+        }
+
         return (
           <div className="flex items-center gap-1">
             {connected ? (
@@ -302,6 +388,7 @@ export const OrgConnections = () => {
 
   const googleAccount = accounts.find((a) => a.providerId === 'google');
   const ghAppInstalled = ghAppStatus?.installed ?? false;
+  const apolloConnected = apolloStatus?.connected ?? false;
 
   const integrationRows: ConnectionRow[] = [
     {
@@ -317,6 +404,17 @@ export const OrgConnections = () => {
       connectedAt:
         ghAppInstalled && ghAppStatus?.installation?.installedAt
           ? new Date(ghAppStatus.installation.installedAt)
+          : undefined,
+    },
+    {
+      id: 'apollo',
+      name: 'Apollo.io',
+      icon: <ApolloIcon />,
+      status: apolloConnected ? 'connected' : 'not-connected',
+      connectedBy: apolloConnected ? apolloStatus?.connectedByEmail : undefined,
+      connectedAt:
+        apolloConnected && apolloStatus?.connectedAt
+          ? new Date(apolloStatus.connectedAt)
           : undefined,
     },
   ];
@@ -356,7 +454,7 @@ export const OrgConnections = () => {
         <BaseTable<BaseRow>
           columns={columns}
           data={integrationRows}
-          loading={loadingApp}
+          loading={loadingApp || loadingApollo}
           entityName="integrations"
           disableRowClick
         />

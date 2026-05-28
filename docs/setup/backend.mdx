@@ -142,6 +142,38 @@ bun nx run @zuko/models:prisma:studio
 
 ---
 
+## Apollo.io OAuth
+
+Required to enable the Apollo.io integration (contact enrichment, people/company search).
+
+1. Go to [Apollo.io Developer Portal](https://developer.apollo.io) and open **OAuth Registration**
+2. Create a new OAuth app and fill in:
+   - **App name**: `Zuko (local)` (or any name)
+   - **Redirect URL**: `http://localhost:3000/api/integrations/apollo/callback`
+   - **Scopes**: select all of the following:
+     - `read_user_profile`
+     - `app_scopes`
+     - `mixed_people_api_search`
+     - `mixed_companies_search`
+     - `organizations_enrich`
+     - `organizations_bulk_enrich`
+     - `credit_usage_stats_read`
+3. Copy the **Client ID** and **Client Secret**
+4. Add to `apps/backend/.env`:
+
+```env
+APOLLO_CLIENT_ID=your-apollo-client-id
+APOLLO_CLIENT_SECRET=your-apollo-client-secret
+APOLLO_REDIRECT_URI=http://localhost:3000/api/integrations/apollo/callback
+APOLLO_AUTHORIZATION_ENDPOINT=https://mcp.apollo.io/mcp/oauth_metadata/redirect_to_authorize
+APOLLO_TOKEN_ENDPOINT=https://mcp.apollo.io/api/v1/oauth/token
+APOLLO_REVOCATION_ENDPOINT=https://mcp.apollo.io/api/v1/oauth/revoke
+```
+
+Once configured, users can connect their Apollo account from **Settings → Connections**.
+
+---
+
 ## Start the development server
 
 ```bash

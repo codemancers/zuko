@@ -18,6 +18,7 @@ import { AdminModule } from './admin/admin.module';
 import { MeetingModule } from './meeting/meeting.module';
 import { MetadataModule } from './metadata/metadata.module';
 import { SandboxLifecycleModule } from '../sandbox-lifecycle/sandbox-lifecycle.module';
+import { IntegrationsModule } from './integrations/integrations.module';
 import { auth } from '../libs/better-auth/auth';
 
 const authModule = AuthModule.forRoot({ auth, disableGlobalAuthGuard: true });
@@ -45,6 +46,7 @@ const authModule = AuthModule.forRoot({ auth, disableGlobalAuthGuard: true });
     MetadataModule,
     SandboxLifecycleModule,
     AgentModule,
+    IntegrationsModule,
   ],
   controllers: [AppController, ChatController],
   providers: [AppService, ChatStreamRegistry],

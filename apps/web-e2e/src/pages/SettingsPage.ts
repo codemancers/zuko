@@ -7,6 +7,9 @@ import { BasePage } from './BasePage';
 export class SettingsPage extends BasePage {
   readonly connectGoogleButton: Locator;
   readonly settingsForm: Locator;
+  readonly apolloConnectButton: Locator;
+  readonly apolloReconnectButton: Locator;
+  readonly apolloDisconnectButton: Locator;
   readonly membersTab: Locator;
   readonly teamsTab: Locator;
   readonly invitationsTab: Locator;
@@ -25,6 +28,15 @@ export class SettingsPage extends BasePage {
     this.connectGoogleButton = page.getByRole('button', {
       name: /connect|google/i,
     });
+    this.apolloConnectButton = page
+      .getByRole('row', { name: /apollo/i })
+      .getByRole('button', { name: /^connect$/i });
+    this.apolloReconnectButton = page
+      .getByRole('row', { name: /apollo/i })
+      .getByRole('button', { name: /reconnect/i });
+    this.apolloDisconnectButton = page
+      .getByRole('row', { name: /apollo/i })
+      .getByRole('button', { name: /disconnect/i });
     this.settingsForm = page.locator('form').or(page.locator('main'));
     this.membersTab = page.getByRole('tab', { name: /members/i });
     this.teamsTab = page.getByRole('tab', { name: /teams/i });
