@@ -32,7 +32,13 @@ export class IcpRepository {
       }),
       this.prisma.icpProfile.count({ where }),
     ]);
-    return { data, total, page, perPage, totalPages: Math.ceil(total / perPage) };
+    return {
+      data,
+      total,
+      page,
+      perPage,
+      totalPages: Math.ceil(total / perPage),
+    };
   }
 
   findById(id: number, organizationId: number) {

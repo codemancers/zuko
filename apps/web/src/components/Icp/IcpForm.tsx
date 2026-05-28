@@ -102,7 +102,9 @@ function formStateToFilters(form: FilterFields): IcpFilters {
 
   return {
     ...(form.industries.length > 0 && { industries: form.industries }),
-    ...(form.employeeRanges.length > 0 && { employeeRanges: form.employeeRanges }),
+    ...(form.employeeRanges.length > 0 && {
+      employeeRanges: form.employeeRanges,
+    }),
     ...((revenueMin != null || revenueMax != null) && {
       revenueRange: {
         ...(revenueMin != null && { min: revenueMin }),
@@ -115,7 +117,12 @@ function formStateToFilters(form: FilterFields): IcpFilters {
 
 // ---------- Component ----------
 
-export default function IcpForm({ mode, profile, onSuccess, onCancel }: IcpFormProps) {
+export default function IcpForm({
+  mode,
+  profile,
+  onSuccess,
+  onCancel,
+}: IcpFormProps) {
   const queryClient = useQueryClient();
 
   const [name, setName] = useState(profile?.name ?? '');
@@ -151,7 +158,9 @@ export default function IcpForm({ mode, profile, onSuccess, onCancel }: IcpFormP
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['icp', 'profiles'] });
-      queryClient.invalidateQueries({ queryKey: ['icp', 'profile', profile!.id] });
+      queryClient.invalidateQueries({
+        queryKey: ['icp', 'profile', profile!.id],
+      });
       toast.success('ICP profile updated');
       onSuccess();
     },
@@ -174,7 +183,12 @@ export default function IcpForm({ mode, profile, onSuccess, onCancel }: IcpFormP
   const isPending = createMutation.isPending || updateMutation.isPending;
 
   const setMulti =
-    (key: keyof Pick<FilterFields, 'industries' | 'employeeRanges' | 'locations'>) =>
+    (
+      key: keyof Pick<
+        FilterFields,
+        'industries' | 'employeeRanges' | 'locations'
+      >,
+    ) =>
     (val: string[]) =>
       setFilterFields((prev) => ({ ...prev, [key]: val }));
 
@@ -238,7 +252,10 @@ export default function IcpForm({ mode, profile, onSuccess, onCancel }: IcpFormP
                 type="number"
                 value={filterFields.revenueMin}
                 onChange={(e) =>
-                  setFilterFields((prev) => ({ ...prev, revenueMin: e.target.value }))
+                  setFilterFields((prev) => ({
+                    ...prev,
+                    revenueMin: e.target.value,
+                  }))
                 }
                 placeholder="1000000"
                 disabled={isPending}
@@ -250,7 +267,10 @@ export default function IcpForm({ mode, profile, onSuccess, onCancel }: IcpFormP
                 type="number"
                 value={filterFields.revenueMax}
                 onChange={(e) =>
-                  setFilterFields((prev) => ({ ...prev, revenueMax: e.target.value }))
+                  setFilterFields((prev) => ({
+                    ...prev,
+                    revenueMax: e.target.value,
+                  }))
                 }
                 placeholder="50000000"
                 disabled={isPending}
@@ -276,8 +296,12 @@ export default function IcpForm({ mode, profile, onSuccess, onCancel }: IcpFormP
         </Button>
         <Button type="submit" color="dark" disabled={isPending}>
           {isPending
-            ? mode === 'create' ? 'Creating…' : 'Saving…'
-            : mode === 'create' ? 'Create Profile' : 'Save Changes'}
+            ? mode === 'create'
+              ? 'Creating…'
+              : 'Saving…'
+            : mode === 'create'
+              ? 'Create Profile'
+              : 'Save Changes'}
         </Button>
       </SheetFooter>
     </form>

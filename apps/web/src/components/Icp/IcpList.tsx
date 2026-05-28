@@ -1,10 +1,21 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import {
+  useInfiniteQuery,
+  useMutation,
+  useQueryClient,
+} from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import type { ColumnDef } from '@tanstack/react-table';
-import { Button, Badge, Sheet, SheetHeader, SheetTitle, SheetBody } from '@zuko/ui-kit';
+import {
+  Button,
+  Badge,
+  Sheet,
+  SheetHeader,
+  SheetTitle,
+  SheetBody,
+} from '@zuko/ui-kit';
 import { PlusIcon } from '@heroicons/react/20/solid';
 import { AdjustmentsHorizontalIcon } from '@heroicons/react/24/outline';
 import { getIcpProfilesInfinite } from '@/server/query-options';
@@ -19,13 +30,8 @@ export default function IcpList() {
   const router = useRouter();
   const queryClient = useQueryClient();
 
-  const {
-    data,
-    isLoading,
-    isFetchingNextPage,
-    hasNextPage,
-    fetchNextPage,
-  } = useInfiniteQuery(getIcpProfilesInfinite());
+  const { data, isLoading, isFetchingNextPage, hasNextPage, fetchNextPage } =
+    useInfiniteQuery(getIcpProfilesInfinite());
 
   const profiles = useMemo(
     () => data?.pages.flatMap((p) => p.data) ?? [],
@@ -34,7 +40,9 @@ export default function IcpList() {
   const totalCount = data?.pages[0]?.total ?? 0;
 
   const [isCreateSheetOpen, setIsCreateSheetOpen] = useState(false);
-  const [profileToDelete, setProfileToDelete] = useState<IcpProfile | null>(null);
+  const [profileToDelete, setProfileToDelete] = useState<IcpProfile | null>(
+    null,
+  );
 
   const deleteMutation = useMutation({
     mutationFn: (id: number) => icpApi.deleteProfile(id),
@@ -139,8 +147,7 @@ export default function IcpList() {
       {
         accessorKey: 'createdAt',
         header: 'Created',
-        cell: ({ getValue }) =>
-          dayjs(getValue<string>()).format('MMM D, YYYY'),
+        cell: ({ getValue }) => dayjs(getValue<string>()).format('MMM D, YYYY'),
       },
       actionsColumn,
     ],
@@ -183,7 +190,10 @@ export default function IcpList() {
         }}
       />
 
-      <Sheet open={isCreateSheetOpen} onClose={() => setIsCreateSheetOpen(false)}>
+      <Sheet
+        open={isCreateSheetOpen}
+        onClose={() => setIsCreateSheetOpen(false)}
+      >
         <SheetHeader>
           <SheetTitle>New ICP Profile</SheetTitle>
         </SheetHeader>

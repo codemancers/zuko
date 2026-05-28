@@ -135,6 +135,8 @@ export const icpApi = {
     page = 1,
     perPage = 25,
   ): Promise<ApolloContactsResponse> {
-    return apiClient.get(`/icps/${id}/contacts?page=${page}&perPage=${perPage}`);
+    return apiClient.get(
+      `/icps/${id}/contacts?page=${page}&perPage=${perPage}`,
+    );
   },
 };

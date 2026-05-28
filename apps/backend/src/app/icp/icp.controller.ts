@@ -57,7 +57,11 @@ export class IcpController {
     @OrgId() organizationId: number,
     @Query() query: ApolloSearchQueryDto,
   ) {
-    return this.icpService.findAll(organizationId, Number(query.page ?? 1), Number(query.perPage ?? 20));
+    return this.icpService.findAll(
+      organizationId,
+      Number(query.page ?? 1),
+      Number(query.perPage ?? 20),
+    );
   }
 
   @Get(':id')
