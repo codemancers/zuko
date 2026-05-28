@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { parseAsStringLiteral, useQueryState } from 'nuqs';
 import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import type { ColumnDef } from '@tanstack/react-table';
 import type { OutputData } from '@editorjs/editorjs';
@@ -186,6 +187,9 @@ const contactColumns: ColumnDef<ApolloPerson & { id: string }>[] = [
 // ---------- Tab panels ----------
 
 type Tab = 'details' | 'companies' | 'contacts';
+
+const TAB_VALUES = ['details', 'companies', 'contacts'] as const;
+const tabParser = parseAsStringLiteral(TAB_VALUES).withDefault('details');
 
 const TABS: { id: Tab; label: string }[] = [
   { id: 'details', label: 'Details' },
@@ -468,7 +472,7 @@ function ProfileSidebar({
 // ---------- Main Component ----------
 
 export default function IcpDetail({ profileId }: IcpDetailProps) {
-  const [activeTab, setActiveTab] = useState<Tab>('details');
+  const [activeTab, setActiveTab] = useQueryState('tab', tabParser);
 
   const {
     data: profile,

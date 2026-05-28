@@ -136,7 +136,7 @@ export class ApolloService {
           latest_funding_amount?: number;
         }>;
         pagination: Record<string, number>;
-      }>(`${APOLLO_BASE}/mixed_companies/search`, payload, { headers: this.headers() });
+      }>(`${APOLLO_BASE}/organizations/search`, payload, { headers: this.headers() });
 
       const pag = data.pagination ?? {};
       return {
@@ -173,27 +173,12 @@ export class ApolloService {
     page = 1,
     perPage = 25,
   ): Promise<ApolloContactsResult> {
-    const payload: Record<string, unknown> = { page, per_page: perPage };
+    // /contacts/search supports q_keywords, per_page, page.
+    // Map ICP industries + locations into a keyword string for broad matching.
+    const keywords = [...(filters.industries ?? []), ...(filters.locations ?? [])].join(' ');
 
-    if (filters.industries?.length) {
-      payload['q_organization_keyword_tags'] = filters.industries;
-    }
-    if (filters.employeeRanges?.length) {
-      const normalized: string[] = [];
-      const raw = filters.employeeRanges;
-      for (let i = 0; i < raw.length; i++) {
-        if (raw[i].includes(',')) {
-          normalized.push(raw[i]);
-        } else if (i + 1 < raw.length && !raw[i + 1].includes(',')) {
-          normalized.push(`${raw[i]},${raw[i + 1]}`);
-          i++;
-        }
-      }
-      if (normalized.length) payload['organization_num_employees_ranges'] = normalized;
-    }
-    if (filters.locations?.length) {
-      payload['organization_locations'] = filters.locations;
-    }
+    const payload: Record<string, unknown> = { page, per_page: perPage };
+    if (keywords) payload['q_keywords'] = keywords;
 
     this.logger.debug(`[APOLLO] searchContacts page=${page}`);
 
@@ -205,15 +190,20 @@ export class ApolloService {
           first_name?: string;
           last_name?: string;
           title?: string;
-          linkedin_url?: string;
-          photo_url?: string;
-          city?: string;
-          state?: string;
-          country?: string;
+          linkedin_url?: string | null;
+          photo_url?: string | null;
+          present_raw_address?: string | null;
           organization_name?: string;
-          organization?: { name?: string; website_url?: string; primary_domain?: string };
+          organization?: {
+            id?: string;
+            name?: string;
+            website_url?: string;
+            linkedin_url?: string;
+            logo_url?: string;
+            primary_domain?: string;
+          };
         }>;
-        pagination: Record<string, number>;
+        pagination: { page: number; per_page: number; total_entries: number; total_pages: number };
       }>(`${APOLLO_BASE}/contacts/search`, payload, { headers: this.headers() });
 
       const pag = data.pagination ?? {};
@@ -224,19 +214,23 @@ export class ApolloService {
           first_name: c.first_name,
           last_name: c.last_name,
           title: c.title,
-          linkedin_url: c.linkedin_url,
-          photo_url: c.photo_url,
-          city: c.city,
-          state: c.state,
-          country: c.country,
-          organization:
-            c.organization ?? (c.organization_name ? { name: c.organization_name } : undefined),
+          linkedin_url: c.linkedin_url ?? undefined,
+          photo_url: c.photo_url ?? undefined,
+          city: c.present_raw_address ?? undefined,
+          organization: c.organization
+            ? {
+                name: c.organization.name,
+                website_url: c.organization.website_url,
+                primary_domain: c.organization.primary_domain,
+              }
+            : c.organization_name
+              ? { name: c.organization_name }
+              : undefined,
         })),
         pagination: {
           page: pag['page'] ?? page,
           per_page: pag['per_page'] ?? perPage,
-          total_entries:
-            pag['total_entries'] ?? pag['total_contacts'] ?? pag['total_count'] ?? 0,
+          total_entries: pag['total_entries'] ?? 0,
           total_pages: pag['total_pages'] ?? 1,
         },
       };
