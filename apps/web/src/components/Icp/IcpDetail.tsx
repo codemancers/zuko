@@ -2,10 +2,16 @@
 
 import { useState } from 'react';
 import { parseAsStringLiteral, useQueryState } from 'nuqs';
-import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import {
+  useQuery,
+  useInfiniteQuery,
+  useMutation,
+  useQueryClient,
+} from '@tanstack/react-query';
 import type { ColumnDef } from '@tanstack/react-table';
 import type { OutputData } from '@editorjs/editorjs';
 import {
+  Avatar,
   Badge,
   Heading,
   Sheet,
@@ -65,14 +71,13 @@ const companyColumns: ColumnDef<ApolloOrganization & { id: string }>[] = [
       const org = row.original;
       return (
         <div className="flex items-center gap-3">
-          {org.logo_url && (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={org.logo_url}
-              alt={`${org.name} logo`}
-              className="size-7 shrink-0 rounded object-contain"
-            />
-          )}
+          <Avatar
+            src={org.logo_url}
+            square
+            initials={org.name?.[0]?.toUpperCase()}
+            alt={`${org.name} logo`}
+            className="size-7 bg-zinc-200 dark:bg-zinc-700 text-xs text-zinc-900 dark:text-zinc-100"
+          />
           <div>
             <div className="font-medium text-zinc-900 dark:text-white">
               {org.website_url ? (
@@ -100,7 +105,7 @@ const companyColumns: ColumnDef<ApolloOrganization & { id: string }>[] = [
   {
     accessorKey: 'industry',
     header: 'Industry',
-    cell: ({ getValue }) => (getValue<string>() ?? '—'),
+    cell: ({ getValue }) => getValue<string>() ?? '—',
   },
   {
     accessorKey: 'estimated_num_employees',
@@ -128,16 +133,21 @@ const contactColumns: ColumnDef<ApolloPerson & { id: string }>[] = [
     header: 'Name',
     cell: ({ row }) => {
       const person = row.original;
+      const initials = person.name
+        ?.split(' ')
+        .filter(Boolean)
+        .map((n) => n[0])
+        .join('')
+        .toUpperCase()
+        .slice(0, 2);
       return (
         <div className="flex items-center gap-3">
-          {person.photo_url && (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={person.photo_url}
-              alt={person.name}
-              className="size-7 shrink-0 rounded-full object-cover"
-            />
-          )}
+          <Avatar
+            src={person.photo_url}
+            initials={initials}
+            alt={person.name}
+            className="size-7 bg-zinc-200 dark:bg-zinc-700 text-xs text-zinc-900 dark:text-zinc-100"
+          />
           <span className="font-medium text-zinc-900 dark:text-white">
             {person.name}
           </span>
@@ -209,7 +219,9 @@ function DetailsPanel({ profileId }: { profileId: number }) {
         notes: notes as unknown as Record<string, unknown>,
       }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['icp', 'profile', profileId] });
+      queryClient.invalidateQueries({
+        queryKey: ['icp', 'profile', profileId],
+      });
     },
   });
 
@@ -370,101 +382,108 @@ function ProfileSidebar({
         </SheetBody>
       </Sheet>
 
-    <div className="space-y-5">
-      <div className="flex items-center justify-between">
-        <Text className="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
-          Profile Details
-        </Text>
-        <button
-          onClick={() => setIsSheetOpen(true)}
-          className="flex items-center gap-1 text-xs text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100"
-        >
-          <PencilIcon className="size-3" />
-          Edit
-        </button>
-      </div>
+      <div className="space-y-5">
+        <div className="flex items-center justify-between">
+          <Text className="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+            Profile Details
+          </Text>
+          <button
+            onClick={() => setIsSheetOpen(true)}
+            className="flex items-center gap-1 text-xs text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100"
+          >
+            <PencilIcon className="size-3" />
+            Edit
+          </button>
+        </div>
 
-      {profile.description && (
+        {profile.description && (
+          <div>
+            <Text className="text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+              Description
+            </Text>
+            <div className="mt-1 text-sm text-zinc-700 dark:text-zinc-300">
+              <Editor
+                key={`icp-desc-sidebar-${profileId}`}
+                holder={`icp-desc-sidebar-editor-${profileId}`}
+                data={ensureOutputData(profile.description)}
+                readOnly
+              />
+            </div>
+          </div>
+        )}
+
         <div>
           <Text className="text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
-            Description
+            Industries
           </Text>
-          <div className="mt-1 text-sm text-zinc-700 dark:text-zinc-300">
-            <Editor
-              key={`icp-desc-sidebar-${profileId}`}
-              holder={`icp-desc-sidebar-editor-${profileId}`}
-              data={ensureOutputData(profile.description)}
-              readOnly
-            />
+          <div className="mt-1.5 flex flex-wrap gap-1">
+            {filters.industries?.length ? (
+              filters.industries.map((ind) => (
+                <Badge key={ind} color="blue">
+                  {ind}
+                </Badge>
+              ))
+            ) : (
+              <Text className="text-sm text-zinc-400">Not set</Text>
+            )}
           </div>
         </div>
-      )}
 
-      <div>
-        <Text className="text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
-          Industries
-        </Text>
-        <div className="mt-1.5 flex flex-wrap gap-1">
-          {filters.industries?.length ? (
-            filters.industries.map((ind) => (
-              <Badge key={ind} color="blue">{ind}</Badge>
-            ))
-          ) : (
-            <Text className="text-sm text-zinc-400">Not set</Text>
-          )}
-        </div>
-      </div>
-
-      <div>
-        <Text className="text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
-          Employee Ranges
-        </Text>
-        <div className="mt-1.5 flex flex-wrap gap-1">
-          {filters.employeeRanges?.length ? (
-            filters.employeeRanges.map((r) => (
-              <Badge key={r} color="green">{r}</Badge>
-            ))
-          ) : (
-            <Text className="text-sm text-zinc-400">Not set</Text>
-          )}
-        </div>
-      </div>
-
-      {filters.revenueRange && (
         <div>
           <Text className="text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
-            Revenue Range
+            Employee Ranges
+          </Text>
+          <div className="mt-1.5 flex flex-wrap gap-1">
+            {filters.employeeRanges?.length ? (
+              filters.employeeRanges.map((r) => (
+                <Badge key={r} color="green">
+                  {r}
+                </Badge>
+              ))
+            ) : (
+              <Text className="text-sm text-zinc-400">Not set</Text>
+            )}
+          </div>
+        </div>
+
+        {filters.revenueRange && (
+          <div>
+            <Text className="text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+              Revenue Range
+            </Text>
+            <Text className="mt-1 text-sm text-zinc-700 dark:text-zinc-300">
+              {formatRevenue(filters.revenueRange.min)} –{' '}
+              {formatRevenue(filters.revenueRange.max)}
+            </Text>
+          </div>
+        )}
+
+        <div>
+          <Text className="text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+            Locations
+          </Text>
+          <div className="mt-1.5 flex flex-wrap gap-1">
+            {filters.locations?.length ? (
+              filters.locations.map((loc) => (
+                <Badge key={loc} color="orange">
+                  {loc}
+                </Badge>
+              ))
+            ) : (
+              <Text className="text-sm text-zinc-400">Not set</Text>
+            )}
+          </div>
+        </div>
+
+        <div>
+          <Text className="text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+            Created
           </Text>
           <Text className="mt-1 text-sm text-zinc-700 dark:text-zinc-300">
-            {formatRevenue(filters.revenueRange.min)} – {formatRevenue(filters.revenueRange.max)}
+            {dayjs(profile.createdAt).format('MMM D, YYYY')}
           </Text>
         </div>
-      )}
-
-      <div>
-        <Text className="text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
-          Locations
-        </Text>
-        <div className="mt-1.5 flex flex-wrap gap-1">
-          {filters.locations?.length ? (
-            filters.locations.map((loc) => (
-              <Badge key={loc} color="orange">{loc}</Badge>
-            ))
-          ) : (
-            <Text className="text-sm text-zinc-400">Not set</Text>
-          )}
-        </div>
       </div>
-
-      <div>
-        <Text className="text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
-          Created
-        </Text>
-        <Text className="mt-1 text-sm text-zinc-700 dark:text-zinc-300">
-          {dayjs(profile.createdAt).format('MMM D, YYYY')}
-        </Text>
-      </div>
-    </div>
     </>
   );
 }
@@ -483,7 +502,9 @@ export default function IcpDetail({ profileId }: IcpDetailProps) {
   if (isLoading) return <LoadingState message="Loading ICP profile…" />;
   if (!profile)
     return (
-      <p className="py-8 text-center text-sm text-zinc-500">Profile not found.</p>
+      <p className="py-8 text-center text-sm text-zinc-500">
+        Profile not found.
+      </p>
     );
 
   return (
@@ -523,7 +544,10 @@ export default function IcpDetail({ profileId }: IcpDetailProps) {
 
         {/* Sidebar */}
         <div className="w-64 shrink-0 border-l border-zinc-200 pl-8 dark:border-zinc-700/50">
-          <ProfileSidebar profileId={profileId} onEditSuccess={() => refetch()} />
+          <ProfileSidebar
+            profileId={profileId}
+            onEditSuccess={() => refetch()}
+          />
         </div>
       </div>
     </>

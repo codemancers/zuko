@@ -1,4 +1,9 @@
-import { BadGatewayException, ForbiddenException, Injectable, Logger } from '@nestjs/common';
+import {
+  BadGatewayException,
+  ForbiddenException,
+  Injectable,
+  Logger,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import axios, { type AxiosError } from 'axios';
 import type { IcpFiltersDto } from './dto/icp.dto';
@@ -77,11 +82,16 @@ export class ApolloService {
   private handleError(context: string, error: unknown): never {
     const axiosError = error as AxiosError;
     const status = axiosError.response?.status;
-    const responseData = axiosError.response?.data as Record<string, string> | undefined;
+    const responseData = axiosError.response?.data as
+      | Record<string, string>
+      | undefined;
     this.logger.error(
       `[APOLLO] ${context} failed: ${status} — ${JSON.stringify(responseData)}`,
     );
-    const message = responseData?.['error'] ?? responseData?.['message'] ?? axiosError.message;
+    const message =
+      responseData?.['error'] ??
+      responseData?.['message'] ??
+      axiosError.message;
     if (status === 403) {
       throw new ForbiddenException(message || 'Apollo API access denied.');
     }
@@ -109,7 +119,8 @@ export class ApolloService {
           i++;
         }
       }
-      if (normalized.length) payload['organization_num_employees_ranges'] = normalized;
+      if (normalized.length)
+        payload['organization_num_employees_ranges'] = normalized;
     }
     if (filters.locations?.length) {
       payload['organization_locations'] = filters.locations;
@@ -136,7 +147,9 @@ export class ApolloService {
           latest_funding_amount?: number;
         }>;
         pagination: Record<string, number>;
-      }>(`${APOLLO_BASE}/organizations/search`, payload, { headers: this.headers() });
+      }>(`${APOLLO_BASE}/organizations/search`, payload, {
+        headers: this.headers(),
+      });
 
       const pag = data.pagination ?? {};
       return {
@@ -159,7 +172,11 @@ export class ApolloService {
         pagination: {
           page: pag['page'] ?? page,
           per_page: pag['per_page'] ?? perPage,
-          total_entries: pag['total_entries'] ?? pag['total_organizations'] ?? pag['total_count'] ?? 0,
+          total_entries:
+            pag['total_entries'] ??
+            pag['total_organizations'] ??
+            pag['total_count'] ??
+            0,
           total_pages: pag['total_pages'] ?? 1,
         },
       };
@@ -169,16 +186,15 @@ export class ApolloService {
   }
 
   async searchContacts(
-    filters: IcpFiltersDto,
+    _filters: IcpFiltersDto,
     page = 1,
     perPage = 25,
   ): Promise<ApolloContactsResult> {
-    // /contacts/search supports q_keywords, per_page, page.
-    // Map ICP industries + locations into a keyword string for broad matching.
-    const keywords = [...(filters.industries ?? []), ...(filters.locations ?? [])].join(' ');
-
-    const payload: Record<string, unknown> = { page, per_page: perPage };
-    if (keywords) payload['q_keywords'] = keywords;
+    const payload: Record<string, unknown> = {
+      page,
+      per_page: perPage,
+      sort_ascending: false,
+    };
 
     this.logger.debug(`[APOLLO] searchContacts page=${page}`);
 
@@ -203,8 +219,15 @@ export class ApolloService {
             primary_domain?: string;
           };
         }>;
-        pagination: { page: number; per_page: number; total_entries: number; total_pages: number };
-      }>(`${APOLLO_BASE}/contacts/search`, payload, { headers: this.headers() });
+        pagination: {
+          page: number;
+          per_page: number;
+          total_entries: number;
+          total_pages: number;
+        };
+      }>(`${APOLLO_BASE}/contacts/search`, payload, {
+        headers: this.headers(),
+      });
 
       const pag = data.pagination ?? {};
       return {
