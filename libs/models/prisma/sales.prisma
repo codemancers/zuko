@@ -216,6 +216,23 @@ model DealOwner {
   @@schema("sales")
 }
 
+model IcpProfile {
+  id             Int      @id @default(autoincrement())
+  organizationId Int      @map("organization_id")
+  name           String
+  description    Json?    @map("description")
+  filters        Json     @default("{}") @map("filters")
+  notes          Json?    @map("notes")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  organization Organization @relation("OrganizationIcpProfiles", fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@map("icp_profile")
+  @@schema("sales")
+}
+
 model TableColumn {
   id             Int      @id @default(autoincrement())
   organizationId Int      @map("organization_id")

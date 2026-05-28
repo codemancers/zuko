@@ -187,7 +187,8 @@ model Organization {
   deals               Deal[]               @relation("OrganizationDeals")
   tableColumns        TableColumn[]        @relation("OrganizationTableColumns")
   meetings            Meeting[]
-  connections              Connection[]
+  connections         Connection[]
+  icpProfiles         IcpProfile[]         @relation("OrganizationIcpProfiles")
 
   @@unique([slug])
   @@map("organization")
@@ -361,4 +362,3 @@ model Sandbox {
   @@map("sandbox")
   @@schema("public")
 }
-

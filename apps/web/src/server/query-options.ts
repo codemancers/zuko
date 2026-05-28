@@ -1,4 +1,5 @@
 import { queryOptions, infiniteQueryOptions } from '@tanstack/react-query';
+import { icpApi } from '@/lib/api/icp';
 import type { ContactFilters } from '@/lib/api/contacts';
 import { contactsApi } from '@/lib/api/contacts';
 import type { CompanyFilters } from '@/lib/api/companies';
@@ -272,4 +273,40 @@ export const getMeeting = (id: number) =>
   queryOptions({
     queryKey: ['meeting', id],
     queryFn: () => meetingsApi.getMeeting(id),
+  });
+
+export const getIcpProfiles = () =>
+  queryOptions({
+    queryKey: ['icp', 'profiles'],
+    queryFn: () => icpApi.listProfiles(),
+  });
+
+export const getIcpProfile = (id: number) =>
+  queryOptions({
+    queryKey: ['icp', 'profile', id],
+    queryFn: () => icpApi.getProfile(id),
+  });
+
+export const getIcpCompaniesInfinite = (id: number, perPage = 25) =>
+  infiniteQueryOptions({
+    queryKey: ['icp', 'companies', id, 'infinite', perPage],
+    queryFn: ({ pageParam }) => icpApi.getCompanies(id, pageParam, perPage),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) => {
+      const { page, total_pages } = lastPage.pagination;
+      return page < total_pages ? page + 1 : undefined;
+    },
+    enabled: id > 0,
+  });
+
+export const getIcpContactsInfinite = (id: number, perPage = 25) =>
+  infiniteQueryOptions({
+    queryKey: ['icp', 'contacts', id, 'infinite', perPage],
+    queryFn: ({ pageParam }) => icpApi.getContacts(id, pageParam, perPage),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) => {
+      const { page, total_pages } = lastPage.pagination;
+      return page < total_pages ? page + 1 : undefined;
+    },
+    enabled: id > 0,
   });

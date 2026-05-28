@@ -251,7 +251,7 @@ export function BaseTable<TData extends BaseRow>(props: BaseTableProps<TData>) {
         ref={isInfiniteScrollMode ? scrollContainerCallback : undefined}
         className={clsx(
           'flow-root overflow-hidden border border-zinc-200 dark:border-zinc-800 rounded-lg shadow-sm bg-white dark:bg-zinc-950',
-          isInfiniteScrollMode && 'overflow-y-auto max-h-[calc(100vh-260px)]',
+          isInfiniteScrollMode && 'overflow-y-auto overflow-x-auto max-h-[calc(100vh-260px)]',
         )}
       >
         <Table
