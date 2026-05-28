@@ -51,7 +51,12 @@ export class IcpService {
     const profile = await this.findById(id, organizationId);
     const filters = (profile.filters ?? {}) as IcpFiltersDto;
     this.logger.debug(`[ICP] Fetching Apollo companies for profile ${id}`);
-    return this.apolloService.searchCompanies(filters, page, perPage);
+    return this.apolloService.searchCompanies(
+      organizationId,
+      filters,
+      page,
+      perPage,
+    );
   }
 
   async getApolloContacts(
@@ -63,6 +68,11 @@ export class IcpService {
     const profile = await this.findById(id, organizationId);
     const filters = (profile.filters ?? {}) as IcpFiltersDto;
     this.logger.debug(`[ICP] Fetching Apollo contacts for profile ${id}`);
-    return this.apolloService.searchContacts(filters, page, perPage);
+    return this.apolloService.searchContacts(
+      organizationId,
+      filters,
+      page,
+      perPage,
+    );
   }
 }

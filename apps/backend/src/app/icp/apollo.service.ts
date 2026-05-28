@@ -4,8 +4,8 @@ import {
   Injectable,
   Logger,
 } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import axios, { type AxiosError } from 'axios';
+import { ApolloIntegrationService } from '../integrations/apollo/apollo-integration.service';
 import type { IcpFiltersDto } from './dto/icp.dto';
 
 const APOLLO_BASE = 'https://api.apollo.io/api/v1';
@@ -66,15 +66,15 @@ export interface ApolloContactsResult {
 export class ApolloService {
   private readonly logger = new Logger(ApolloService.name);
 
-  constructor(private readonly configService: ConfigService) {}
+  constructor(
+    private readonly apolloIntegrationService: ApolloIntegrationService,
+  ) {}
 
-  private get apiKey(): string {
-    return this.configService.getOrThrow<string>('APOLLO_API_KEY');
-  }
-
-  private headers() {
+  private async headers(organizationId: number) {
+    const accessToken =
+      await this.apolloIntegrationService.getAccessToken(organizationId);
     return {
-      'X-Api-Key': this.apiKey,
+      Authorization: `Bearer ${accessToken}`,
       'Content-Type': 'application/json',
     };
   }
@@ -99,6 +99,7 @@ export class ApolloService {
   }
 
   async searchCompanies(
+    organizationId: number,
     filters: IcpFiltersDto,
     page = 1,
     perPage = 25,
@@ -148,7 +149,7 @@ export class ApolloService {
         }>;
         pagination: Record<string, number>;
       }>(`${APOLLO_BASE}/organizations/search`, payload, {
-        headers: this.headers(),
+        headers: await this.headers(organizationId),
       });
 
       const pag = data.pagination ?? {};
@@ -186,6 +187,7 @@ export class ApolloService {
   }
 
   async searchContacts(
+    organizationId: number,
     _filters: IcpFiltersDto,
     page = 1,
     perPage = 25,
@@ -226,7 +228,7 @@ export class ApolloService {
           total_pages: number;
         };
       }>(`${APOLLO_BASE}/contacts/search`, payload, {
-        headers: this.headers(),
+        headers: await this.headers(organizationId),
       });
 
       const pag = data.pagination ?? {};
