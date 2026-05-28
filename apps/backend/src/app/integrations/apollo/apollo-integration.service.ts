@@ -12,10 +12,9 @@ import { ApolloIntegrationRepository } from './apollo-integration.repository';
 const OAUTH_STATE_TTL_MS = 10 * 60 * 1000; // 10 minutes
 
 const APOLLO_SCOPES = [
-  'app_scopes',
   'read_user_profile',
-  'mixed_people_api_search',
-  'mixed_companies_search',
+  'contacts_search',
+  'organizations_search',
   'organizations_enrich',
   'organizations_bulk_enrich',
   'credit_usage_stats_read',
@@ -118,7 +117,7 @@ export class ApolloIntegrationService {
     // Apollo requires %20-encoded spaces in scope, not + from URLSearchParams
     const url = `${this.authorizationEndpoint()}?${params.toString()}&scope=${encodeURIComponent(APOLLO_SCOPES)}`;
     this.logger.log(
-      `Built Apollo authorization URL for organizationId=${organizationId} userId=${userId}`,
+      `Built Apollo authorization URL for organizationId=${organizationId} userId=${userId} scopes="${APOLLO_SCOPES}"`,
     );
 
     return { url };
