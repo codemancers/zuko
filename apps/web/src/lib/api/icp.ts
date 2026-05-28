@@ -88,9 +88,17 @@ export interface ApolloContactsResponse {
   pagination: ApolloPagination;
 }
 
+export interface IcpProfilesPage {
+  data: IcpProfile[];
+  total: number;
+  page: number;
+  perPage: number;
+  totalPages: number;
+}
+
 export const icpApi = {
-  async listProfiles(): Promise<IcpProfile[]> {
-    return apiClient.get('/icps');
+  async listProfiles(page = 1, perPage = 20): Promise<IcpProfilesPage> {
+    return apiClient.get(`/icps?page=${page}&perPage=${perPage}`);
   },
 
   async getProfile(id: number): Promise<IcpProfile> {

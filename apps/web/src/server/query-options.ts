@@ -275,10 +275,13 @@ export const getMeeting = (id: number) =>
     queryFn: () => meetingsApi.getMeeting(id),
   });
 
-export const getIcpProfiles = () =>
-  queryOptions({
-    queryKey: ['icp', 'profiles'],
-    queryFn: () => icpApi.listProfiles(),
+export const getIcpProfilesInfinite = (perPage = 20) =>
+  infiniteQueryOptions({
+    queryKey: ['icp', 'profiles', 'infinite', perPage],
+    queryFn: ({ pageParam }) => icpApi.listProfiles(pageParam, perPage),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) =>
+      lastPage.page < lastPage.totalPages ? lastPage.page + 1 : undefined,
   });
 
 export const getIcpProfile = (id: number) =>

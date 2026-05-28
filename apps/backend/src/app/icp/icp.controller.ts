@@ -50,9 +50,14 @@ export class IcpController {
 
   @Get()
   @ApiOperation({ summary: 'List ICP profiles for the organization' })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'perPage', required: false, type: Number })
   @ApiResponse({ status: 200, description: 'ICP profile list' })
-  async list(@OrgId() organizationId: number) {
-    return this.icpService.findAll(organizationId);
+  async list(
+    @OrgId() organizationId: number,
+    @Query() query: ApolloSearchQueryDto,
+  ) {
+    return this.icpService.findAll(organizationId, Number(query.page ?? 1), Number(query.perPage ?? 20));
   }
 
   @Get(':id')

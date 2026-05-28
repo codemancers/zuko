@@ -20,8 +20,8 @@ export class IcpService {
     return this.icpRepository.create(organizationId, dto);
   }
 
-  findAll(organizationId: number) {
-    return this.icpRepository.findAll(organizationId);
+  findAll(organizationId: number, page = 1, perPage = 20) {
+    return this.icpRepository.findAll(organizationId, page, perPage);
   }
 
   async findById(id: number, organizationId: number) {

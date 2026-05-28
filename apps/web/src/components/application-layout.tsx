@@ -91,7 +91,7 @@ const baseNavigation = [
   { name: 'Contacts', href: '/contacts', icon: UserGroupIcon },
   { name: 'Companies', href: '/companies', icon: BuildingOfficeIcon },
   { name: 'Deals', href: '/deals', icon: BriefcaseIcon },
-  { name: 'ICP', href: '/icps', icon: AdjustmentsHorizontalIcon },
+  { name: 'ICPs', href: '/icps', icon: AdjustmentsHorizontalIcon },
   { divider: true },
   { name: 'Tasks', href: '/tasks', icon: ClipboardDocumentListIcon },
   { divider: true },

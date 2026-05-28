@@ -1,13 +1,13 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import type { ColumnDef } from '@tanstack/react-table';
 import { Button, Badge, Sheet, SheetHeader, SheetTitle, SheetBody } from '@zuko/ui-kit';
 import { PlusIcon } from '@heroicons/react/20/solid';
 import { AdjustmentsHorizontalIcon } from '@heroicons/react/24/outline';
-import { getIcpProfiles } from '@/server/query-options';
+import { getIcpProfilesInfinite } from '@/server/query-options';
 import { icpApi, type IcpProfile } from '@/lib/api/icp';
 import { PageHeader, ConfirmDialog } from '@/components/shared';
 import { BaseTable, TableActions, DeleteAction } from '@/components/Table';
@@ -18,7 +18,20 @@ import dayjs from 'dayjs';
 export default function IcpList() {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const { data: profiles = [], isLoading } = useQuery(getIcpProfiles());
+
+  const {
+    data,
+    isLoading,
+    isFetchingNextPage,
+    hasNextPage,
+    fetchNextPage,
+  } = useInfiniteQuery(getIcpProfilesInfinite());
+
+  const profiles = useMemo(
+    () => data?.pages.flatMap((p) => p.data) ?? [],
+    [data],
+  );
+  const totalCount = data?.pages[0]?.total ?? 0;
 
   const [isCreateSheetOpen, setIsCreateSheetOpen] = useState(false);
   const [profileToDelete, setProfileToDelete] = useState<IcpProfile | null>(null);
@@ -153,7 +166,10 @@ export default function IcpList() {
         loading={isLoading}
         entityName="ICP profiles"
         onRowClick={(profile) => router.push(`/icps/${profile.id}`)}
-        totalCount={profiles.length}
+        totalCount={totalCount}
+        hasNextPage={hasNextPage}
+        isFetchingNextPage={isFetchingNextPage}
+        onFetchNextPage={fetchNextPage}
         showEmptyState
         emptyStateConfig={{
           icon: AdjustmentsHorizontalIcon,
@@ -167,7 +183,6 @@ export default function IcpList() {
         }}
       />
 
-      {/* Create Sheet */}
       <Sheet open={isCreateSheetOpen} onClose={() => setIsCreateSheetOpen(false)}>
         <SheetHeader>
           <SheetTitle>New ICP Profile</SheetTitle>
@@ -181,7 +196,6 @@ export default function IcpList() {
         </SheetBody>
       </Sheet>
 
-      {/* Delete Confirm */}
       <ConfirmDialog
         open={!!profileToDelete}
         onClose={() => setProfileToDelete(null)}

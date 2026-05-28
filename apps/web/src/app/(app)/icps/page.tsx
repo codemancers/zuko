@@ -1,6 +1,6 @@
 import IcpList from '@/components/Icp/IcpList';
 import { getQueryClient } from '@/lib/react-query/get-query-client';
-import { getIcpProfiles } from '@/server/query-options';
+import { getIcpProfilesInfinite } from '@/server/query-options';
 import { dehydrate, HydrationBoundary } from '@tanstack/react-query';
 
 export const metadata = {
@@ -11,7 +11,7 @@ export const dynamic = 'force-dynamic';
 
 const IcpPage = async () => {
   const queryClient = getQueryClient();
-  await queryClient.prefetchQuery(getIcpProfiles());
+  await queryClient.prefetchInfiniteQuery(getIcpProfilesInfinite());
 
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
