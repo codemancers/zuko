@@ -69,7 +69,10 @@ test.describe('Companies - Authenticated', () => {
       const companyLink = companies[0].locator('a[href^="/companies/"]');
       await companyLink.click();
 
-      await page.waitForURL(/\/companies\/\d+$/, { timeout: 10000 });
+      await page.waitForURL(/\/companies\/\d+$/, {
+        timeout: 20000,
+        waitUntil: 'commit',
+      });
       expect(page.url()).toMatch(/\/companies\/\d+$/);
     } else {
       test.skip();

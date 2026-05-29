@@ -180,52 +180,83 @@
 /* Block toolbar + / settings buttons */
 .ce-toolbar__plus,
 .ce-toolbar__settings-btn {
-  @apply bg-zinc-100! border-zinc-200! dark:bg-zinc-800! dark:border-zinc-700! dark:text-zinc-200!;
+  background-color: var(--color-zinc-100) !important;
+  border-color: var(--color-zinc-200) !important;
+}
+
+.dark .ce-toolbar__plus,
+.dark .ce-toolbar__settings-btn {
+  background-color: var(--color-zinc-800) !important;
+  border-color: var(--color-zinc-700) !important;
+  color: var(--color-zinc-200) !important;
 }
 
 .ce-toolbar__plus:hover,
 .ce-toolbar__plus--active,
 .ce-toolbar__settings-btn:hover,
 .ce-toolbar__settings-btn--active {
-  @apply bg-zinc-200! dark:bg-zinc-700!;
+  background-color: var(--color-zinc-200) !important;
+}
+
+.dark .ce-toolbar__plus:hover,
+.dark .ce-toolbar__plus--active,
+.dark .ce-toolbar__settings-btn:hover,
+.dark .ce-toolbar__settings-btn--active {
+  background-color: var(--color-zinc-700) !important;
+}
+
+.dark .ce-toolbar__plus svg path,
+.dark .ce-toolbar__settings-btn svg path {
+  stroke: var(--color-zinc-200) !important;
+  fill: var(--color-zinc-200) !important;
 }
 
 /* Inline toolbar buttons */
-.ce-inline-tool {
-  @apply dark:text-zinc-200!;
+.dark .ce-inline-tool {
+  color: var(--color-zinc-200) !important;
 }
 
-.ce-inline-tool:hover {
-  @apply dark:bg-zinc-700!;
+.dark .ce-inline-tool:hover {
+  background-color: var(--color-zinc-700) !important;
 }
 
 /* Link input */
-.ce-inline-tool-input {
-  @apply dark:bg-zinc-900! dark:border-zinc-700! dark:text-zinc-200!;
+.dark .ce-inline-tool-input {
+  background-color: var(--color-zinc-900) !important;
+  border-color: var(--color-zinc-700) !important;
+  color: var(--color-zinc-200) !important;
 }
 
-.ce-inline-tool-input::placeholder {
-  @apply dark:text-zinc-500!;
+.dark .ce-inline-tool-input::placeholder {
+  color: var(--color-zinc-500) !important;
 }
 
 /* List "starts with" field */
-.cdx-list-start-with-field {
-  @apply dark:bg-zinc-800! dark:border-zinc-700!;
+.dark .cdx-list-start-with-field {
+  background-color: var(--color-zinc-800) !important;
+  border-color: var(--color-zinc-700) !important;
 }
 
-.cdx-list-start-with-field__input {
-  @apply dark:text-zinc-200!;
+.dark .cdx-list-start-with-field__input {
+  color: var(--color-zinc-200) !important;
 }
 
 /* Code block */
 .ce-code__textarea {
-  @apply dark:bg-zinc-800! dark:text-zinc-300! dark:border-zinc-700! rounded-lg!;
+  border-radius: var(--radius-lg) !important;
+}
+
+.dark .ce-code__textarea {
+  background-color: var(--color-zinc-800) !important;
+  color: var(--color-zinc-300) !important;
+  border-color: var(--color-zinc-700) !important;
 }
 
 /* Block popover (/ menu) — direct background + EditorJS CSS variables */
-.ce-popover,
-.ce-popover__container {
-  @apply dark:bg-zinc-800! dark:border-zinc-700!;
+.dark .ce-popover,
+.dark .ce-popover__container {
+  background-color: var(--color-zinc-800) !important;
+  border-color: var(--color-zinc-700) !important;
 }
 
 .dark .ce-popover {
@@ -245,16 +276,18 @@
 }
 
 /* Search field */
-.cdx-search-field {
-  @apply dark:bg-zinc-900! dark:border-zinc-700! dark:text-zinc-200!;
+.dark .cdx-search-field {
+  background-color: var(--color-zinc-900) !important;
+  border-color: var(--color-zinc-700) !important;
+  color: var(--color-zinc-200) !important;
 }
 
-.cdx-search-field__icon svg {
-  @apply dark:text-zinc-400!;
+.dark .cdx-search-field__icon svg {
+  color: var(--color-zinc-400) !important;
 }
 
-.cdx-search-field__input::placeholder {
-  @apply dark:text-zinc-500!;
+.dark .cdx-search-field__input::placeholder {
+  color: var(--color-zinc-500) !important;
 }
 
 /* Table plugin */
@@ -276,10 +309,10 @@
   box-shadow: 0 3px 15px -3px rgba(0, 0, 0, 0.5);
 }
 
-.tc-popover__item-label {
-  @apply dark:text-zinc-200;
+.dark .tc-popover__item-label {
+  color: var(--color-zinc-200);
 }
 
-.tc-popover__item-icon svg {
-  @apply dark:text-zinc-400;
+.dark .tc-popover__item-icon svg {
+  color: var(--color-zinc-400);
 }

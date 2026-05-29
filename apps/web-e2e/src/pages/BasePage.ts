@@ -49,7 +49,7 @@ export class BasePage {
         .locator('[data-testid="activity-item"]')
         .or(this.page.getByText('No activity yet'))
         .first()
-        .waitFor({ state: 'visible', timeout: 500 });
+        .waitFor({ state: 'visible', timeout: 5000 });
     }
   }
 
@@ -114,7 +114,14 @@ export class BasePage {
     } else {
       await input.waitFor({ state: 'visible' });
       await input.fill(value);
-      await input.press('Enter');
+      // Date and number inputs save on blur; text inputs save on Enter
+      const inputType =
+        (await input.getAttribute('type').catch(() => 'text')) ?? 'text';
+      if (inputType === 'date' || inputType === 'number') {
+        await input.blur();
+      } else {
+        await input.press('Enter');
+      }
     }
   }
 

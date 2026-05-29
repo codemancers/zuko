@@ -45,8 +45,11 @@ export class DealDetailPage extends BasePage {
     // Always navigate to ensure clean state between tests (e.g. no leftover
     // open dialogs from a previous test in the same describe block).
     await this.page.goto(path);
-    await this.page.waitForLoadState('networkidle');
-    await this.activitySection.waitFor({ state: 'visible', timeout: 30000 });
+    await this.page.waitForLoadState('domcontentloaded');
+    // Wait for the deal title as a stable signal that the page has rendered.
+    // Waiting for the Activity section (deep in the page) is too fragile under
+    // slow CI networking — the title appears much earlier and is always present.
+    await this.dealTitle.waitFor({ state: 'visible', timeout: 30000 });
   }
 
   /**

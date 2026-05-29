@@ -1063,11 +1063,13 @@ describe('NewChatPage', () => {
   });
 
   it('disables ChatInput while submitting', async () => {
-    let resolveFetch: (value: any) => void;
-    const fetchPromise = new Promise<any>((resolve) => {
+    let resolveFetch: (value: unknown) => void;
+    const fetchPromise = new Promise<unknown>((resolve) => {
       resolveFetch = resolve;
     });
-    globalThis.fetch = vi.fn().mockReturnValue(fetchPromise) as any;
+    globalThis.fetch = vi
+      .fn()
+      .mockReturnValue(fetchPromise) as unknown as typeof fetch;
 
     const user = userEvent.setup();
     render(<NewChatPage />, { wrapper });

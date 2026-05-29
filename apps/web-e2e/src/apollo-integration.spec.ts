@@ -95,11 +95,13 @@ test.describe('Apollo.io Integration - Connections tab', () => {
 
       await settingsPage.apolloConnectButton.click();
 
-      await page.waitForURL(/app\.apollo\.io.*oauth\/authorize/, {
+      await page.waitForURL(/app\.apollo\.io/, {
         timeout: 15000,
       });
 
-      const url = page.url();
+      // Apollo may redirect through a login page; decode the full URL so that
+      // embedded redirect parameters (e.g. %2Foauth%2Fauthorize) are readable.
+      const url = decodeURIComponent(page.url());
       expect(url).toContain('app.apollo.io');
       expect(url).toContain('oauth/authorize');
       expect(url).toContain('client_id=');

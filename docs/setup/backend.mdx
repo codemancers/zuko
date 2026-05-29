@@ -149,11 +149,10 @@ Required to enable the Apollo.io integration (contact enrichment, people/company
 2. Create a new OAuth app and fill in:
    - **App name**: `Zuko (local)` (or any name)
    - **Redirect URL**: `http://localhost:3000/api/integrations/apollo/callback`
-   - **Scopes**: select all of the following:
+   - **Scopes**: select all of the following (must match `APOLLO_SCOPES` in `apollo-integration.service.ts`):
      - `read_user_profile`
-     - `app_scopes`
-     - `mixed_people_api_search`
-     - `mixed_companies_search`
+     - `contacts_search`
+     - `organizations_search`
      - `organizations_enrich`
      - `organizations_bulk_enrich`
      - `credit_usage_stats_read`

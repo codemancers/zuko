@@ -44,6 +44,7 @@ import {
   Cog6ToothIcon,
   Cog8ToothIcon,
   UserGroupIcon,
+  AdjustmentsHorizontalIcon,
 } from '@heroicons/react/20/solid';
 import { usePathname, useRouter } from 'next/navigation';
 import { authClient } from '@/lib/auth-client';
@@ -90,6 +91,7 @@ const baseNavigation = [
   { name: 'Contacts', href: '/contacts', icon: UserGroupIcon },
   { name: 'Companies', href: '/companies', icon: BuildingOfficeIcon },
   { name: 'Deals', href: '/deals', icon: BriefcaseIcon },
+  { name: 'ICPs', href: '/icps', icon: AdjustmentsHorizontalIcon },
   { divider: true },
   { name: 'Tasks', href: '/tasks', icon: ClipboardDocumentListIcon },
   { divider: true },
