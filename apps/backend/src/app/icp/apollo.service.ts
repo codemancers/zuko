@@ -152,7 +152,7 @@ export class ApolloService {
         headers: await this.headers(organizationId),
       });
 
-      const pag = data.pagination ?? {};
+      const pagination = data.pagination ?? {};
       return {
         organizations: (data.organizations ?? []).map((o) => ({
           id: o.id,
@@ -171,14 +171,14 @@ export class ApolloService {
           latest_funding_amount: o.latest_funding_amount,
         })),
         pagination: {
-          page: pag['page'] ?? page,
-          per_page: pag['per_page'] ?? perPage,
+          page: pagination.page ?? page,
+          per_page: pagination.per_page ?? perPage,
           total_entries:
-            pag['total_entries'] ??
-            pag['total_organizations'] ??
-            pag['total_count'] ??
+            pagination.total_entries ??
+            pagination.total_organizations ??
+            pagination.total_count ??
             0,
-          total_pages: pag['total_pages'] ?? 1,
+          total_pages: pagination.total_pages ?? 1,
         },
       };
     } catch (error) {
@@ -231,7 +231,7 @@ export class ApolloService {
         headers: await this.headers(organizationId),
       });
 
-      const pag = data.pagination ?? {};
+      const pagination = data.pagination ?? {};
       return {
         people: (data.contacts ?? []).map((c) => ({
           id: c.id,
@@ -253,10 +253,10 @@ export class ApolloService {
               : undefined,
         })),
         pagination: {
-          page: pag['page'] ?? page,
-          per_page: pag['per_page'] ?? perPage,
-          total_entries: pag['total_entries'] ?? 0,
-          total_pages: pag['total_pages'] ?? 1,
+          page: pagination.page ?? page,
+          per_page: pagination.per_page ?? perPage,
+          total_entries: pagination.total_entries ?? 0,
+          total_pages: pagination.total_pages ?? 1,
         },
       };
     } catch (error) {
