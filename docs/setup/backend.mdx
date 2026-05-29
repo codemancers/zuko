@@ -3,7 +3,7 @@ title: Backend Setup
 description: Configure and run the NestJS API server locally.
 ---
 
-The backend is a **NestJS** server that lives in `apps/backend`. It handles the REST API, authentication (Better Auth + GitHub OAuth), database access via Prisma, and agent routing.
+The backend is a **NestJS** server that lives in `apps/backend`. It handles the REST API, authentication (Better Auth + Google OAuth), database access via Prisma, and agent routing.
 
 ---
 
@@ -35,13 +35,12 @@ DATABASE_URL=postgres://postgres:password@localhost:5432/zuko_dev
 # Random secret for Better Auth session signing (min 32 chars)
 BETTER_AUTH_SECRET=your-secret-here
 
-# GitHub OAuth — create app at https://github.com/settings/developers
-# Homepage URL: http://localhost:3000
-# Authorization callback URL: http://localhost:3001/auth/callback/github
-GITHUB_CLIENT_ID=your-github-client-id
-GITHUB_CLIENT_SECRET=your-github-client-secret
+# Google OAuth — create credentials at https://console.cloud.google.com/apis/credentials
+# Authorized redirect URI: http://localhost:3001/auth/callback/google
+GOOGLE_CLIENT_ID=your-google-client-id.apps.googleusercontent.com
+GOOGLE_CLIENT_SECRET=your-google-client-secret
 
-# Enable email/password login in addition to GitHub OAuth
+# Enable email/password login in addition to Google OAuth
 BETTER_AUTH_INCLUDE_EMAILS_AUTH=true
 ```
 
@@ -129,16 +128,16 @@ bun nx run @zuko/models:prisma:studio
 
 ---
 
-## GitHub OAuth
+## Google OAuth
 
-1. Go to [github.com/settings/developers](https://github.com/settings/developers)
-2. Click **New OAuth App**
-3. Fill in:
-   - **Application name**: `Zuko (local)`
-   - **Homepage URL**: `http://localhost:3000`
-   - **Authorization callback URL**: `http://localhost:3001/auth/callback/github`
-4. Copy the **Client ID** and generate a **Client Secret**
-5. Paste them into `apps/backend/.env` as `GITHUB_CLIENT_ID` and `GITHUB_CLIENT_SECRET`
+1. Go to [Google Cloud Console → Credentials](https://console.cloud.google.com/apis/credentials)
+2. Click **Create Credentials → OAuth client ID**
+3. Choose **Web application** and fill in:
+   - **Name**: `Zuko (local)`
+   - **Authorized JavaScript origins**: `http://localhost:3000`
+   - **Authorized redirect URIs**: `http://localhost:3001/auth/callback/google`
+4. Copy the **Client ID** and **Client Secret**
+5. Paste them into `apps/backend/.env` as `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`
 
 ---
 
@@ -243,8 +242,8 @@ bun nx run @zuko/models:seed                              # Seed test data
 
 <Accordion title="Auth / CORS errors">
   - Ensure `TRUSTED_ORIGINS` includes both `http://localhost:3000` and
-  `http://localhost:3001` - Clear browser cookies and retry - Confirm the GitHub
-  OAuth callback URL is exactly `http://localhost:3001/auth/callback/github`
+  `http://localhost:3001` - Clear browser cookies and retry - Confirm the Google
+  OAuth redirect URI is exactly `http://localhost:3001/auth/callback/google`
 </Accordion>
 
   <Accordion title="Port already in use">
