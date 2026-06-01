@@ -98,5 +98,5 @@ export {
 } from './lib/combobox';
 
 export { Switch, SwitchGroup, SwitchField } from './lib/switch';
-export { MultiSelect } from './lib/multi-select';
+export { MultiSelect, MultiCombobox } from './lib/multi-select';
 export type { MultiSelectOption } from './lib/multi-select';

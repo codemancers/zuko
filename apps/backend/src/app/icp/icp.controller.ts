@@ -64,6 +64,16 @@ export class IcpController {
     );
   }
 
+  @Get('countries')
+  @ApiOperation({ summary: 'List all countries for ICP location filter' })
+  @ApiResponse({
+    status: 200,
+    description: 'Array of country label/value pairs',
+  })
+  getCountries() {
+    return this.icpService.getCountries();
+  }
+
   @Get(':id')
   @ApiOperation({ summary: 'Get a single ICP profile' })
   @ApiParam({ name: 'id', type: Number })
