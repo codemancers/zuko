@@ -118,7 +118,10 @@ export class BasePage {
       const inputType =
         (await input.getAttribute('type').catch(() => 'text')) ?? 'text';
       if (inputType === 'date' || inputType === 'number') {
-        await input.blur();
+        // The cell re-renders immediately after fill, detaching the input from
+        // the DOM before blur() can act on it. Pressing Tab at the page level
+        // commits the value without requiring the input to remain attached.
+        await this.page.keyboard.press('Tab');
       } else {
         await input.press('Enter');
       }

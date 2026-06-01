@@ -49,7 +49,7 @@ export class DealDetailPage extends BasePage {
     // Wait for the deal title as a stable signal that the page has rendered.
     // Waiting for the Activity section (deep in the page) is too fragile under
     // slow CI networking — the title appears much earlier and is always present.
-    await this.dealTitle.waitFor({ state: 'visible', timeout: 30000 });
+    await this.dealTitle.waitFor({ state: 'visible', timeout: 60000 });
   }
 
   /**

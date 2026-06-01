@@ -340,9 +340,13 @@ test.describe('Hierarchical Tasks', () => {
     // Wait for react-hook-form re-render to settle after the select change
     // before attempting to click — the button can briefly detach during the
     // form state update, causing a "not stable" Playwright error.
-    const saveButton = editSheet.getByRole('button', { name: /save changes/i });
-    await saveButton.waitFor({ state: 'visible', timeout: 5000 });
-    await saveButton.click();
+    // The button can briefly detach while react-hook-form reconciles after the
+    // select change. Re-query inside toPass so each retry gets a fresh handle.
+    await expect(async () => {
+      await editSheet
+        .getByRole('button', { name: /save changes/i })
+        .click({ timeout: 5000 });
+    }).toPass({ timeout: 15000 });
     await expect(page.getByRole('heading', { name: 'Edit Task' })).toBeHidden({
       timeout: 10000,
     });
