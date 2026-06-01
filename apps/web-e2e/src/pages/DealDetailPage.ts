@@ -44,12 +44,11 @@ export class DealDetailPage extends BasePage {
     const path = `/deals/${dealId}`;
     // Always navigate to ensure clean state between tests (e.g. no leftover
     // open dialogs from a previous test in the same describe block).
-    await this.page.goto(path);
-    // 'load' fires after all resources (scripts, styles) are fetched, which is
-    // a reliable signal that React has rendered the page. Waiting for the
-    // EditorJS-backed h1[contenteditable] is too slow on CI — it requires the
-    // editor to boot after React has already painted the rest of the UI.
-    await this.page.waitForLoadState('load', { timeout: 45000 });
+    // networkidle waits for both the page load and all API fetches (deal data,
+    // associations, etc.) to complete, ensuring React has rendered everything
+    // before assertions run. The EditorJS h1[contenteditable] was too slow on
+    // CI and its timeout competed with the overall test budget.
+    await this.page.goto(path, { waitUntil: 'networkidle', timeout: 45000 });
   }
 
   /**
