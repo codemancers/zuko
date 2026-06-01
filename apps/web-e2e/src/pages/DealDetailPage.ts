@@ -45,11 +45,11 @@ export class DealDetailPage extends BasePage {
     // Always navigate to ensure clean state between tests (e.g. no leftover
     // open dialogs from a previous test in the same describe block).
     await this.page.goto(path);
-    await this.page.waitForLoadState('domcontentloaded');
-    // Wait for the deal title as a stable signal that the page has rendered.
-    // Waiting for the Activity section (deep in the page) is too fragile under
-    // slow CI networking — the title appears much earlier and is always present.
-    await this.dealTitle.waitFor({ state: 'visible', timeout: 60000 });
+    // 'load' fires after all resources (scripts, styles) are fetched, which is
+    // a reliable signal that React has rendered the page. Waiting for the
+    // EditorJS-backed h1[contenteditable] is too slow on CI — it requires the
+    // editor to boot after React has already painted the rest of the UI.
+    await this.page.waitForLoadState('load', { timeout: 45000 });
   }
 
   /**

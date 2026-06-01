@@ -99,8 +99,11 @@ export class BasePage {
     if (colIndex === -1) throw new Error(`Column "${columnHeader}" not found`);
 
     const cell = row.locator('td').nth(colIndex);
-    // Use evaluate click to avoid issues with elements being "obscured" by the cell itself
-    await cell.evaluate((node) => (node as any).click());
+    // force: true bypasses the "obscured" actionability check while still
+    // dispatching real pointer/mouse events that React's onClick can handle.
+    // evaluate(.click()) used native DOM click which bypasses React's synthetic
+    // event system, so setIsEditing() never fired and no input appeared.
+    await cell.click({ force: true });
 
     // Check if it's a combobox or a simple input
     const combobox = cell.getByRole('combobox');
