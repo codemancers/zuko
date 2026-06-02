@@ -11,6 +11,7 @@ import { tasksApi } from '@/lib/api/tasks';
 import { activitiesApi } from '@/lib/api/activities';
 import { meetingsApi, type MeetingFilters } from '@/lib/api/meetings';
 import { authClient } from '@/lib/auth-client';
+import { apolloSequencesApi } from '@/lib/api/apollo';
 
 const TABLE_PAGE_SIZE = 10;
 
@@ -282,6 +283,37 @@ export const getIcpProfilesInfinite = (perPage = 20) =>
     initialPageParam: 1,
     getNextPageParam: (lastPage) =>
       lastPage.page < lastPage.totalPages ? lastPage.page + 1 : undefined,
+  });
+
+/** @public */
+export const getCampaignById = (id: string) =>
+  queryOptions({
+    queryKey: ['campaign', id],
+    queryFn: async () => {
+      const result = await apolloSequencesApi.list({ page: 1, perPage: 100 });
+      const campaign = result.emailer_campaigns.find((c) => c.id === id);
+      if (!campaign) throw new Error('Campaign not found');
+      return campaign;
+    },
+    retry: false,
+  });
+
+/** @public */
+export const getCampaignsInfinite = (search?: string) =>
+  infiniteQueryOptions({
+    queryKey: ['campaigns', 'infinite', search],
+    queryFn: ({ pageParam }) =>
+      apolloSequencesApi.list({
+        name: search,
+        page: pageParam,
+        perPage: TABLE_PAGE_SIZE,
+      }),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) => {
+      const { page, total_pages } = lastPage.pagination;
+      return page < total_pages ? page + 1 : undefined;
+    },
+    retry: false,
   });
 
 export const getIcpProfile = (id: number) =>

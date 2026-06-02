@@ -233,6 +233,28 @@ model IcpProfile {
   @@schema("sales")
 }
 
+model Campaign {
+  id                 Int      @id @default(autoincrement())
+  organizationId     Int      @map("organization_id")
+  createdById        Int      @map("created_by_id")
+  name               String
+  provider           String   @default("apollo")
+  providerSequenceId String   @map("provider_sequence_id")
+  active             Boolean  @default(false)
+  permissions        String   @default("team_can_use")
+  sequence           Json     @default("[]")
+  createdAt          DateTime @default(now()) @map("created_at")
+  updatedAt          DateTime @updatedAt @map("updated_at")
+
+  organization Organization @relation("OrganizationCampaigns", fields: [organizationId], references: [id], onDelete: Cascade)
+  createdBy    User         @relation("CreatedCampaigns", fields: [createdById], references: [id])
+
+  @@unique([organizationId, providerSequenceId])
+  @@index([organizationId])
+  @@map("campaign")
+  @@schema("sales")
+}
+
 model TableColumn {
   id             Int      @id @default(autoincrement())
   organizationId Int      @map("organization_id")

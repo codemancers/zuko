@@ -30,6 +30,7 @@ model User {
   members            Member[]
   invitations        Invitation[]
   createdTableColumns TableColumn[]    @relation("CreatedTableColumns")
+  createdCampaigns    Campaign[]       @relation("CreatedCampaigns")
 
   teammembers      TeamMember[]
   taskOwners       TaskOwner[]
@@ -189,6 +190,7 @@ model Organization {
   meetings            Meeting[]
   connections         Connection[]
   icpProfiles         IcpProfile[]         @relation("OrganizationIcpProfiles")
+  campaigns           Campaign[]           @relation("OrganizationCampaigns")
 
   @@unique([slug])
   @@map("organization")

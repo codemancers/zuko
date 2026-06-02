@@ -1,5 +1,7 @@
 import { apiClient } from '../api-client';
 
+// ─── Connection ───────────────────────────────────────────────────────────────
+
 export interface ApolloConnectionStatus {
   connected: boolean;
   connectedAt?: string;
@@ -9,6 +11,178 @@ export interface ApolloConnectionStatus {
 export interface ApolloAuthorizationUrl {
   url: string;
 }
+
+// ─── Sequences (list) ─────────────────────────────────────────────────────────
+
+export interface ApolloSequence {
+  id: string;
+  name: string;
+  active: boolean;
+  num_steps: number;
+  open_rate: number | string;
+  reply_rate: number | string;
+  unique_delivered: number | string;
+  created_at: string;
+}
+
+export interface ApolloSequencesResponse {
+  emailer_campaigns: ApolloSequence[];
+  pagination: {
+    page: number;
+    per_page: number;
+    total_entries: number;
+    total_pages: number;
+  };
+}
+
+// ─── Zuko Campaign (stored in DB) ────────────────────────────────────────────
+
+export interface ZukoCampaignStep {
+  id: string;
+  type: string;
+  position: number;
+  wait_time: number;
+  wait_mode: string;
+  note?: string;
+  priority?: string;
+  auto_skip_in_x_days?: number;
+  max_emails_per_day?: number;
+  emailer_touches: Array<{
+    id: string;
+    emailer_template_id: string;
+    type: string;
+    status: string;
+    include_signature: boolean;
+    has_personalized_opener: boolean;
+    personalized_opener_fallback_option?: string;
+    generic_personalized_opener?: string;
+    emailer_template?: {
+      id: string;
+      subject?: string;
+      body_html: string;
+    };
+  }>;
+}
+
+export interface ZukoCampaign {
+  id: number;
+  organizationId: number;
+  name: string;
+  provider: string;
+  providerSequenceId: string;
+  active: boolean;
+  permissions: string;
+  sequence: ZukoCampaignStep[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+// ─── Schedules ────────────────────────────────────────────────────────────────
+
+export interface ApolloSchedule {
+  id: string;
+  name: string;
+  default: boolean;
+  time_zone: string;
+}
+
+export interface ApolloSchedulesResponse {
+  emailer_schedules: ApolloSchedule[];
+}
+
+// ─── Sequence create ──────────────────────────────────────────────────────────
+
+export interface CreateSequenceEmailerTemplate {
+  subject?: string;
+  bodyHtml: string;
+}
+
+export interface CreateSequenceTouch {
+  apolloTouchId?: string;
+  apolloTemplateId?: string;
+  type: 'new_thread' | 'reply_to_thread';
+  emailerTemplate: CreateSequenceEmailerTemplate;
+  includeSignature?: boolean;
+  status?: 'approved' | 'to_be_reviewed';
+  hasPersonalizedOpener?: boolean;
+  genericPersonalizedOpener?: string;
+  personalizedOpenerFallbackOption?: 'skip' | 'use_generic';
+}
+
+export interface CreateSequenceStep {
+  apolloStepId?: string;
+  type: 'auto_email' | 'manual_email';
+  waitTime: number;
+  waitMode?: 'day' | 'hour' | 'minute';
+  note?: string;
+  priority?: 'low' | 'medium' | 'high';
+  autoSkipInXDays?: number;
+  maxEmailsPerDay?: number;
+  touches: CreateSequenceTouch[];
+}
+
+export interface CreateSequencePayload {
+  name: string;
+  permissions?: 'private' | 'team_can_view' | 'team_can_use';
+  emailerScheduleId?: string;
+  labelNames?: string[];
+  sequence: CreateSequenceStep[];
+}
+
+// ─── API clients ──────────────────────────────────────────────────────────────
+
+export const apolloSequencesApi = {
+  async list(params?: {
+    name?: string;
+    page?: number;
+    perPage?: number;
+  }): Promise<ApolloSequencesResponse> {
+    const query = new URLSearchParams();
+    if (params?.name) query.set('name', params.name);
+    if (params?.page) query.set('page', String(params.page));
+    if (params?.perPage) query.set('perPage', String(params.perPage));
+    const qs = query.toString();
+    return apiClient.get(`/integrations/apollo/sequences${qs ? `?${qs}` : ''}`);
+  },
+
+  async getSchedules(): Promise<ApolloSchedulesResponse> {
+    return apiClient.get('/integrations/apollo/sequences/schedules');
+  },
+
+  async create(
+    payload: CreateSequencePayload,
+  ): Promise<{ emailer_campaign: ApolloSequence }> {
+    return apiClient.post('/integrations/apollo/sequences', payload);
+  },
+
+  async approve(sequenceId: string): Promise<void> {
+    return apiClient.post(
+      `/integrations/apollo/sequences/${sequenceId}/approve`,
+    );
+  },
+
+  async update(
+    sequenceId: string,
+    payload: CreateSequencePayload,
+  ): Promise<void> {
+    return apiClient.put(
+      `/integrations/apollo/sequences/${sequenceId}`,
+      payload,
+    );
+  },
+
+  async deactivate(sequenceId: string): Promise<void> {
+    return apiClient.post(
+      `/integrations/apollo/sequences/${sequenceId}/deactivate`,
+    );
+  },
+
+  async getCampaign(sequenceId: string): Promise<ZukoCampaign> {
+    return apiClient.get(
+      `/integrations/apollo/sequences/${sequenceId}/campaign`,
+    );
+  },
+};
 
 export const apolloIntegrationApi = {
   async getConnectionStatus(): Promise<ApolloConnectionStatus> {
