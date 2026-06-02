@@ -139,4 +139,10 @@ export const icpApi = {
       `/icps/${id}/contacts?page=${page}&perPage=${perPage}`,
     );
   },
+
+  async getCountries(): Promise<{ label: string; value: string }[]> {
+    const res = await fetch('/api/countries');
+    if (!res.ok) throw new Error('Failed to fetch countries');
+    return res.json();
+  },
 };

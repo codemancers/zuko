@@ -47,7 +47,6 @@ test.describe('Deals - Authenticated', () => {
 
     // 2. Update other fields inline in the table
     await dealsPage.updateTableCell(newRow, 'Value', '100000');
-    // 'Close Date' column might be named 'Expected Close Date' or just 'Close Date'
     await dealsPage.updateTableCell(newRow, 'Expected Close', '2026-01-01');
 
     // 3. Navigate to details page by clicking the deal name

@@ -82,6 +82,14 @@ export class BasePage {
   }
 
   async getColumnIndex(columnName: string) {
+    // Wait for the target header to be visible before reading positions.
+    // After a cell update, invalidateQueries causes a re-fetch during which
+    // metadata resets to [] and column headers temporarily disappear.
+    await this.page
+      .getByRole('columnheader', { name: new RegExp(columnName, 'i') })
+      .first()
+      .waitFor({ state: 'visible', timeout: 10000 });
+
     const headers = this.page.getByRole('columnheader');
     const headerTexts = await headers.allInnerTexts();
     const columnIndex = headerTexts.findIndex((h) =>
@@ -99,8 +107,11 @@ export class BasePage {
     if (colIndex === -1) throw new Error(`Column "${columnHeader}" not found`);
 
     const cell = row.locator('td').nth(colIndex);
-    // Use evaluate click to avoid issues with elements being "obscured" by the cell itself
-    await cell.evaluate((node) => (node as any).click());
+    // force: true bypasses the "obscured" actionability check while still
+    // dispatching real pointer/mouse events that React's onClick can handle.
+    // evaluate(.click()) used native DOM click which bypasses React's synthetic
+    // event system, so setIsEditing() never fired and no input appeared.
+    await cell.click({ force: true });
 
     // Check if it's a combobox or a simple input
     const combobox = cell.getByRole('combobox');
@@ -118,7 +129,10 @@ export class BasePage {
       const inputType =
         (await input.getAttribute('type').catch(() => 'text')) ?? 'text';
       if (inputType === 'date' || inputType === 'number') {
-        await input.blur();
+        // The cell re-renders immediately after fill, detaching the input from
+        // the DOM before blur() can act on it. Pressing Tab at the page level
+        // commits the value without requiring the input to remain attached.
+        await this.page.keyboard.press('Tab');
       } else {
         await input.press('Enter');
       }

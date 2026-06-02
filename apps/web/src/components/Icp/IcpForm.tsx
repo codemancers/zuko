@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { OutputData } from '@editorjs/editorjs';
 import {
   Button,
@@ -12,6 +12,7 @@ import {
   Input,
   SheetFooter,
   MultiSelect,
+  MultiCombobox,
 } from '@zuko/ui-kit';
 import { icpApi, type IcpProfile, type IcpFilters } from '@/lib/api/icp';
 import Editor, { ensureOutputData } from '@/components/Common/Editor/Editor';
@@ -56,24 +57,6 @@ const EMPLOYEE_RANGE_OPTIONS = [
   { label: '1,001 – 5,000', value: '1001,5000' },
   { label: '5,001 – 10,000', value: '5001,10000' },
   { label: '10,001+', value: '10001,' },
-];
-
-const LOCATION_OPTIONS = [
-  { label: 'United States', value: 'United States' },
-  { label: 'Canada', value: 'Canada' },
-  { label: 'United Kingdom', value: 'United Kingdom' },
-  { label: 'Australia', value: 'Australia' },
-  { label: 'Germany', value: 'Germany' },
-  { label: 'France', value: 'France' },
-  { label: 'Netherlands', value: 'Netherlands' },
-  { label: 'India', value: 'India' },
-  { label: 'Singapore', value: 'Singapore' },
-  { label: 'Israel', value: 'Israel' },
-  { label: 'Sweden', value: 'Sweden' },
-  { label: 'Denmark', value: 'Denmark' },
-  { label: 'Brazil', value: 'Brazil' },
-  { label: 'Japan', value: 'Japan' },
-  { label: 'South Korea', value: 'South Korea' },
 ];
 
 // ---------- State helpers ----------
@@ -133,6 +116,13 @@ export default function IcpForm({
     filtersToFormState(profile?.filters),
   );
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const { data: locationOptions = [], isLoading: isLoadingCountries } =
+    useQuery({
+      queryKey: ['countries'],
+      queryFn: () => icpApi.getCountries(),
+      staleTime: Infinity,
+    });
 
   const createMutation = useMutation({
     mutationFn: () =>
@@ -227,7 +217,7 @@ export default function IcpForm({
         <FieldGroup>
           <Field>
             <Label>Industries</Label>
-            <MultiSelect
+            <MultiCombobox
               value={filterFields.industries}
               onChange={setMulti('industries')}
               options={INDUSTRY_OPTIONS}
@@ -280,11 +270,13 @@ export default function IcpForm({
 
           <Field>
             <Label>Locations</Label>
-            <MultiSelect
+            <MultiCombobox
               value={filterFields.locations}
               onChange={setMulti('locations')}
-              options={LOCATION_OPTIONS}
-              placeholder="Select countries…"
+              options={locationOptions}
+              placeholder={
+                isLoadingCountries ? 'Loading countries…' : 'Search countries…'
+              }
             />
           </Field>
         </FieldGroup>

@@ -44,12 +44,11 @@ export class DealDetailPage extends BasePage {
     const path = `/deals/${dealId}`;
     // Always navigate to ensure clean state between tests (e.g. no leftover
     // open dialogs from a previous test in the same describe block).
-    await this.page.goto(path);
-    await this.page.waitForLoadState('domcontentloaded');
-    // Wait for the deal title as a stable signal that the page has rendered.
-    // Waiting for the Activity section (deep in the page) is too fragile under
-    // slow CI networking — the title appears much earlier and is always present.
-    await this.dealTitle.waitFor({ state: 'visible', timeout: 30000 });
+    // networkidle waits for both the page load and all API fetches (deal data,
+    // associations, etc.) to complete, ensuring React has rendered everything
+    // before assertions run. The EditorJS h1[contenteditable] was too slow on
+    // CI and its timeout competed with the overall test budget.
+    await this.page.goto(path, { waitUntil: 'networkidle', timeout: 45000 });
   }
 
   /**
