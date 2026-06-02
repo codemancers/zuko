@@ -1,10 +1,4 @@
-import {
-  BadGatewayException,
-  Injectable,
-  Logger,
-  NotFoundException,
-} from '@nestjs/common';
-import axios from 'axios';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { ApolloService } from './apollo.service';
 import { IcpRepository } from './icp.repository';
 import type {
@@ -21,26 +15,6 @@ export class IcpService {
     private readonly icpRepository: IcpRepository,
     private readonly apolloService: ApolloService,
   ) {}
-
-  private cachedCountries: { label: string; value: string }[] | null = null;
-
-  async getCountries(): Promise<{ label: string; value: string }[]> {
-    if (this.cachedCountries) return this.cachedCountries;
-
-    try {
-      const { data } = await axios.get<{ name: { common: string } }[]>(
-        'https://restcountries.com/v3.1/all',
-        { params: { fields: 'name' } },
-      );
-      this.cachedCountries = data
-        .map((c) => ({ label: c.name.common, value: c.name.common }))
-        .sort((a, b) => a.label.localeCompare(b.label));
-      return this.cachedCountries;
-    } catch (error) {
-      this.logger.error('[ICP] Failed to fetch countries', error);
-      throw new BadGatewayException('Failed to fetch countries');
-    }
-  }
 
   create(organizationId: number, dto: CreateIcpProfileDto) {
     return this.icpRepository.create(organizationId, dto);

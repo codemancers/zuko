@@ -266,36 +266,36 @@ export function MultiCombobox({
   }));
 
   return (
-    <Headless.Combobox
-      value={value}
-      onChange={(newValue) => {
-        onChange(newValue);
-        setQuery('');
-      }}
-      multiple
-      onClose={() => setQuery('')}
-    >
-      <span
-        data-slot="control"
-        className={clsx([
-          className,
-          'relative block w-full',
-          'before:absolute before:inset-px before:rounded-[calc(var(--radius-lg)-1px)] before:bg-white before:shadow-sm',
-          'dark:before:hidden',
-          'after:pointer-events-none after:absolute after:inset-0 after:rounded-lg after:ring-transparent after:ring-inset sm:focus-within:after:ring-2 sm:focus-within:after:ring-blue-500',
-        ])}
+    // Wrapper provides the positioning context for the inline dropdown panel.
+    // We intentionally avoid Headless UI's portal-based `anchor` prop because it
+    // anchors to the ComboboxInput element (not the full field), causing the panel
+    // to appear offset to the right. By rendering the panel inline we can use
+    // `absolute left-0 right-0` to align it perfectly with the field.
+    <div className={clsx('relative w-full', className)}>
+      <Headless.Combobox
+        value={value}
+        onChange={(newValue) => {
+          onChange(newValue);
+          setQuery('');
+        }}
+        multiple
+        onClose={() => setQuery('')}
       >
-        <div
-          className={clsx(
+        <span
+          data-slot="control"
+          className={clsx([
             'relative flex min-h-[calc(--spacing(9)+2px)] w-full flex-wrap items-center gap-1 rounded-lg py-1 pl-[calc(--spacing(3.5)-1px)] pr-[calc(--spacing(10)-1px)] sm:min-h-[calc(--spacing(7)+2px)] sm:pl-[calc(--spacing(3)-1px)] sm:pr-[calc(--spacing(9)-1px)]',
             'border border-zinc-950/10 hover:border-zinc-950/20 dark:border-white/10 dark:hover:border-white/20',
-            'bg-transparent dark:bg-white/5',
-          )}
+            'bg-white dark:bg-white/5',
+            'before:absolute before:inset-px before:rounded-[calc(var(--radius-lg)-1px)] before:bg-white before:shadow-sm before:pointer-events-none',
+            'dark:before:hidden',
+            'after:pointer-events-none after:absolute after:inset-0 after:rounded-lg after:ring-transparent after:ring-inset sm:focus-within:after:ring-2 sm:focus-within:after:ring-blue-500',
+          ])}
         >
           {selectedLabels.map((item) => (
             <span
               key={item.value}
-              className="inline-flex items-center gap-0.5 rounded bg-zinc-100 px-1.5 py-0.5 text-xs font-medium text-zinc-700 dark:bg-zinc-700 dark:text-zinc-200"
+              className="relative z-10 inline-flex items-center gap-0.5 rounded bg-zinc-100 px-1.5 py-0.5 text-xs font-medium text-zinc-700 dark:bg-zinc-700 dark:text-zinc-200"
             >
               {item.label}
               <button
@@ -325,82 +325,80 @@ export function MultiCombobox({
             onChange={(e) => setQuery(e.target.value)}
             placeholder={selectedLabels.length === 0 ? placeholder : ''}
             autoComplete="off"
-            className="min-w-[80px] flex-1 bg-transparent text-base/6 text-zinc-950 placeholder:text-zinc-500 focus:outline-none sm:text-sm/6 dark:text-white dark:placeholder:text-zinc-400"
+            className="relative z-10 min-w-[80px] flex-1 bg-transparent text-base/6 text-zinc-950 placeholder:text-zinc-500 focus:outline-none sm:text-sm/6 dark:text-white dark:placeholder:text-zinc-400"
           />
-        </div>
-        <Headless.ComboboxButton className="absolute inset-y-0 right-0 flex items-center pr-2">
-          <svg
-            className="size-5 stroke-zinc-500 sm:size-4 dark:stroke-zinc-400"
-            viewBox="0 0 16 16"
-            aria-hidden="true"
-            fill="none"
-          >
-            <path
-              d="M5.75 10.75L8 13L10.25 10.75"
-              strokeWidth={1.5}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-            <path
-              d="M10.25 5.25L8 3L5.75 5.25"
-              strokeWidth={1.5}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-        </Headless.ComboboxButton>
-      </span>
-
-      <Headless.ComboboxOptions
-        transition
-        anchor="bottom"
-        className={clsx(
-          '[--anchor-gap:--spacing(2)] [--anchor-padding:--spacing(4)]',
-          'isolate min-w-[calc(var(--input-width))] scroll-py-1 rounded-xl p-1 select-none empty:invisible',
-          'overflow-y-auto overscroll-contain max-h-60',
-          'outline outline-transparent',
-          'bg-white/75 backdrop-blur-xl dark:bg-zinc-800/75',
-          'shadow-lg ring-1 ring-zinc-950/10 dark:ring-white/10 dark:ring-inset',
-          'transition-opacity duration-100 ease-in data-closed:data-leave:opacity-0 data-transition:pointer-events-none',
-          'z-50',
-        )}
-      >
-        {filteredOptions.length === 0 ? (
-          <div className="px-3 py-2 text-sm text-zinc-500 dark:text-zinc-400">
-            No results found
-          </div>
-        ) : (
-          filteredOptions.map((option) => (
-            <Headless.ComboboxOption
-              key={option.value}
-              value={option.value}
-              className={clsx(
-                'group/option grid w-full cursor-default grid-cols-[1fr_--spacing(5)] items-center gap-x-2 rounded-lg py-2.5 pr-2 pl-3.5 sm:grid-cols-[1fr_--spacing(4)] sm:py-1.5 sm:pr-2 sm:pl-3',
-                'text-base/6 text-zinc-950 sm:text-sm/6 dark:text-white',
-                'outline-hidden data-focus:bg-blue-500 data-focus:text-white',
-                'forced-color-adjust-none forced-colors:data-focus:bg-[Highlight] forced-colors:data-focus:text-[HighlightText]',
-              )}
+          <Headless.ComboboxButton className="absolute inset-y-0 right-0 flex items-center pr-2">
+            <svg
+              className="size-5 stroke-zinc-500 sm:size-4 dark:stroke-zinc-400"
+              viewBox="0 0 16 16"
+              aria-hidden="true"
+              fill="none"
             >
-              <span className="flex min-w-0 items-center truncate">
-                {option.label}
-              </span>
-              <svg
-                className="relative col-start-2 hidden size-5 self-center stroke-current group-data-selected/option:inline sm:size-4"
-                viewBox="0 0 16 16"
-                fill="none"
-                aria-hidden="true"
+              <path
+                d="M5.75 10.75L8 13L10.25 10.75"
+                strokeWidth={1.5}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+              <path
+                d="M10.25 5.25L8 3L5.75 5.25"
+                strokeWidth={1.5}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </Headless.ComboboxButton>
+        </span>
+
+        <Headless.ComboboxOptions
+          transition
+          className={clsx(
+            'absolute left-0 right-0 top-full z-50 mt-2',
+            'scroll-py-1 rounded-xl p-1 select-none empty:invisible',
+            'overflow-y-auto overscroll-contain max-h-60',
+            'outline outline-transparent',
+            'bg-white/75 backdrop-blur-xl dark:bg-zinc-800/75',
+            'shadow-lg ring-1 ring-zinc-950/10 dark:ring-white/10 dark:ring-inset',
+            'transition-opacity duration-100 ease-in data-closed:data-leave:opacity-0 data-transition:pointer-events-none',
+          )}
+        >
+          {filteredOptions.length === 0 ? (
+            <div className="px-3 py-2 text-sm text-zinc-500 dark:text-zinc-400">
+              No results found
+            </div>
+          ) : (
+            filteredOptions.map((option) => (
+              <Headless.ComboboxOption
+                key={option.value}
+                value={option.value}
+                className={clsx(
+                  'group/option grid w-full cursor-default grid-cols-[1fr_--spacing(5)] items-center gap-x-2 rounded-lg py-2.5 pr-2 pl-3.5 sm:grid-cols-[1fr_--spacing(4)] sm:py-1.5 sm:pr-2 sm:pl-3',
+                  'text-base/6 text-zinc-950 sm:text-sm/6 dark:text-white',
+                  'outline-hidden data-focus:bg-blue-500 data-focus:text-white',
+                  'forced-color-adjust-none forced-colors:data-focus:bg-[Highlight] forced-colors:data-focus:text-[HighlightText]',
+                )}
               >
-                <path
-                  d="M4 8.5l3 3L12 4"
-                  strokeWidth={1.5}
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </Headless.ComboboxOption>
-          ))
-        )}
-      </Headless.ComboboxOptions>
-    </Headless.Combobox>
+                <span className="flex min-w-0 items-center truncate">
+                  {option.label}
+                </span>
+                <svg
+                  className="relative col-start-2 hidden size-5 self-center stroke-current group-data-selected/option:inline sm:size-4"
+                  viewBox="0 0 16 16"
+                  fill="none"
+                  aria-hidden="true"
+                >
+                  <path
+                    d="M4 8.5l3 3L12 4"
+                    strokeWidth={1.5}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </Headless.ComboboxOption>
+            ))
+          )}
+        </Headless.ComboboxOptions>
+      </Headless.Combobox>
+    </div>
   );
 }

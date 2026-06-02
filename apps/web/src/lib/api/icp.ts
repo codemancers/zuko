@@ -141,6 +141,8 @@ export const icpApi = {
   },
 
   async getCountries(): Promise<{ label: string; value: string }[]> {
-    return apiClient.get('/icps/countries');
+    const res = await fetch('/api/countries');
+    if (!res.ok) throw new Error('Failed to fetch countries');
+    return res.json();
   },
 };
