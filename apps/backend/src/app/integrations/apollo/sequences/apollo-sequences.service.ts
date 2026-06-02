@@ -83,6 +83,7 @@ export class ApolloSequencesService {
         _conversation_ref: `zuko_${organizationId}`,
         _rationale: 'User searching sequences from Zuko',
         q_name: dto.name,
+        q_active: false, // include inactive sequences
         page: dto.page?.toString(),
         per_page: dto.perPage?.toString(),
       },
@@ -158,16 +159,19 @@ export class ApolloSequencesService {
     );
 
     // Persist the full Apollo response so we have step + touch + template IDs for future updates
-    const sequence = this.buildSequenceSteps(result);
-    await this.campaignsRepository.upsert({
-      organizationId,
-      createdById: userId,
-      name: result.emailer_campaign.name,
-      providerSequenceId: result.emailer_campaign.id,
-      active: result.emailer_campaign.active,
-      permissions: result.emailer_campaign.permissions,
-      sequence,
-    });
+    // Guard against MCP responses that omit emailer_campaign (e.g. when Apollo returns partial data)
+    if (result?.emailer_campaign?.id) {
+      const sequence = this.buildSequenceSteps(result);
+      await this.campaignsRepository.upsert({
+        organizationId,
+        createdById: userId,
+        name: result.emailer_campaign.name ?? dto.name,
+        providerSequenceId: result.emailer_campaign.id,
+        active: result.emailer_campaign.active ?? false,
+        permissions: result.emailer_campaign.permissions ?? dto.permissions ?? 'team_can_use',
+        sequence,
+      });
+    }
 
     return result;
   }
@@ -377,11 +381,11 @@ export class ApolloSequencesService {
 
   // Builds the step payload to store in DB — includes Apollo step/touch/template IDs
   private buildSequenceSteps(result: ApolloCreateResponse) {
-    return result.emailer_steps.map((step) => {
-      const touches = result.emailer_touches
+    return (result.emailer_steps ?? []).map((step) => {
+      const touches = (result.emailer_touches ?? [])
         .filter((t) => t.emailer_step_id === step.id)
         .map((touch) => {
-          const template = result.emailer_templates.find(
+          const template = (result.emailer_templates ?? []).find(
             (t) => t.id === touch.emailer_template_id,
           );
           return {
