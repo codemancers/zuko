@@ -45,8 +45,9 @@ test.describe('Deals - Authenticated', () => {
     await dealsPage.createDealRow(dealName);
     const newRow = page.getByRole('row').filter({ hasText: dealName }).first();
 
-    // 2. Update Value inline (Expected Close column is hidden by default in user prefs)
+    // 2. Update other fields inline in the table
     await dealsPage.updateTableCell(newRow, 'Value', '100000');
+    await dealsPage.updateTableCell(newRow, 'Expected Close', '2026-01-01');
 
     // 3. Navigate to details page by clicking the deal name
     await dealsPage.clickDeal(newRow);

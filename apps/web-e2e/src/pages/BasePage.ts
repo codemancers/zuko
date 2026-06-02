@@ -82,6 +82,14 @@ export class BasePage {
   }
 
   async getColumnIndex(columnName: string) {
+    // Wait for the target header to be visible before reading positions.
+    // After a cell update, invalidateQueries causes a re-fetch during which
+    // metadata resets to [] and column headers temporarily disappear.
+    await this.page
+      .getByRole('columnheader', { name: new RegExp(columnName, 'i') })
+      .first()
+      .waitFor({ state: 'visible', timeout: 10000 });
+
     const headers = this.page.getByRole('columnheader');
     const headerTexts = await headers.allInnerTexts();
     const columnIndex = headerTexts.findIndex((h) =>
