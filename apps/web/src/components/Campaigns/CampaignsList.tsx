@@ -32,8 +32,14 @@ export default function CampaignsList() {
   const queryClient = useQueryClient();
   const { inputValue, setInputValue, debouncedValue } = useSearchParam();
 
-  const { data, isLoading, isFetchingNextPage, hasNextPage, fetchNextPage, refetch } =
-    useInfiniteQuery(getCampaignsInfinite(debouncedValue || undefined));
+  const {
+    data,
+    isLoading,
+    isFetchingNextPage,
+    hasNextPage,
+    fetchNextPage,
+    refetch,
+  } = useInfiniteQuery(getCampaignsInfinite(debouncedValue || undefined));
 
   const campaigns = useMemo(
     () => data?.pages.flatMap((p) => p.emailer_campaigns) ?? [],
@@ -165,8 +171,7 @@ export default function CampaignsList() {
       {
         accessorKey: 'created_at',
         header: 'Created',
-        cell: ({ getValue }) =>
-          dayjs(getValue<string>()).format('MMM D, YYYY'),
+        cell: ({ getValue }) => dayjs(getValue<string>()).format('MMM D, YYYY'),
       },
       actionsColumn,
     ],

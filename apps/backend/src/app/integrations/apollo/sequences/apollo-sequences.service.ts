@@ -168,7 +168,10 @@ export class ApolloSequencesService {
         name: result.emailer_campaign.name ?? dto.name,
         providerSequenceId: result.emailer_campaign.id,
         active: result.emailer_campaign.active ?? false,
-        permissions: result.emailer_campaign.permissions ?? dto.permissions ?? 'team_can_use',
+        permissions:
+          result.emailer_campaign.permissions ??
+          dto.permissions ??
+          'team_can_use',
         sequence,
       });
     }

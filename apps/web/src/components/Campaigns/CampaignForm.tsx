@@ -230,7 +230,10 @@ export default function CampaignForm({
   const [name, setName] = useState(campaign?.name ?? '');
   const [permissions, setPermissions] = useState<
     'private' | 'team_can_view' | 'team_can_use'
-  >((campaign?.permissions as 'private' | 'team_can_view' | 'team_can_use') ?? 'team_can_use');
+  >(
+    (campaign?.permissions as 'private' | 'team_can_view' | 'team_can_use') ??
+      'team_can_use',
+  );
   const [emailerScheduleId, setEmailerScheduleId] = useState('');
   const [steps, setSteps] = useState<StepFormState[]>(
     campaign ? campaignToSteps(campaign) : [defaultStep()],
@@ -288,7 +291,8 @@ export default function CampaignForm({
   const validate = () => {
     const newErrors: Record<string, string> = {};
     if (!name.trim()) newErrors['name'] = 'Name is required';
-    if (steps.length === 0) newErrors['steps'] = 'At least one step is required';
+    if (steps.length === 0)
+      newErrors['steps'] = 'At least one step is required';
     steps.forEach((step, i) => {
       if (!step.bodyHtml.trim())
         newErrors[`step_${i}_bodyHtml`] = 'Email body is required';
@@ -340,7 +344,10 @@ export default function CampaignForm({
         </>
       )}
 
-      <form onSubmit={handleSubmit} className={inSheet ? 'flex flex-col gap-6' : 'mt-8 space-y-8'}>
+      <form
+        onSubmit={handleSubmit}
+        className={inSheet ? 'flex flex-col gap-6' : 'mt-8 space-y-8'}
+      >
         {/* Campaign Details */}
         <FieldGroup>
           <Field>
@@ -361,7 +368,10 @@ export default function CampaignForm({
                 value={permissions}
                 onChange={(e) =>
                   setPermissions(
-                    e.target.value as 'private' | 'team_can_view' | 'team_can_use',
+                    e.target.value as
+                      | 'private'
+                      | 'team_can_view'
+                      | 'team_can_use',
                   )
                 }
                 disabled={isPending}
@@ -443,12 +453,7 @@ export default function CampaignForm({
         {/* Actions */}
         {inSheet ? (
           <SheetFooter>
-            <Button
-              type="button"
-              plain
-              onClick={onCancel}
-              disabled={isPending}
-            >
+            <Button type="button" plain onClick={onCancel} disabled={isPending}>
               Cancel
             </Button>
             <Button type="submit" color="dark" disabled={isPending}>

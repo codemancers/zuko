@@ -2,7 +2,16 @@
 
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Badge, Button, Heading, Sheet, SheetBody, SheetHeader, SheetTitle, Text } from '@zuko/ui-kit';
+import {
+  Badge,
+  Button,
+  Heading,
+  Sheet,
+  SheetBody,
+  SheetHeader,
+  SheetTitle,
+  Text,
+} from '@zuko/ui-kit';
 import { PencilIcon } from '@heroicons/react/20/solid';
 import { getCampaignById, getZukoCampaign } from '@/server/query-options';
 import { apolloSequencesApi } from '@/lib/api/apollo';
@@ -212,8 +221,7 @@ export default function CampaignDetail({ sequenceId }: CampaignDetailProps) {
             </>
           )}
           <span>
-            Permissions:{' '}
-            {zukoCampaign?.permissions?.replace(/_/g, ' ') ?? '—'}
+            Permissions: {zukoCampaign?.permissions?.replace(/_/g, ' ') ?? '—'}
           </span>
         </div>
       </div>
