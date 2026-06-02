@@ -22,6 +22,10 @@ export interface ApolloSequence {
   open_rate: number | string;
   reply_rate: number | string;
   unique_delivered: number | string;
+  unique_opened?: number | string;
+  bounce_rate?: number | string;
+  click_rate?: number | string;
+  opt_out_rate?: number | string;
   created_at: string;
 }
 
