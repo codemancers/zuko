@@ -130,11 +130,7 @@ function defaultStep(): StepFormState {
 
 // ─── Variable chips ────────────────────────────────────────────────────────
 
-function VariableChips({
-  onInsert,
-}: {
-  onInsert: (variable: string) => void;
-}) {
+function VariableChips({ onInsert }: { onInsert: (variable: string) => void }) {
   return (
     <div className="flex flex-wrap gap-1.5">
       {VARIABLES.map((v) => (
@@ -182,29 +178,21 @@ function StepCard({
       const el = subjectRef.current;
       const start = el.selectionStart ?? el.value.length;
       const end = el.selectionEnd ?? el.value.length;
-      const newVal =
-        el.value.slice(0, start) + variable + el.value.slice(end);
+      const newVal = el.value.slice(0, start) + variable + el.value.slice(end);
       update({ subject: newVal });
       setTimeout(() => {
         el.focus();
-        el.setSelectionRange(
-          start + variable.length,
-          start + variable.length,
-        );
+        el.setSelectionRange(start + variable.length, start + variable.length);
       }, 0);
     } else if (bodyRef.current) {
       const el = bodyRef.current;
       const start = el.selectionStart ?? el.value.length;
       const end = el.selectionEnd ?? el.value.length;
-      const newVal =
-        el.value.slice(0, start) + variable + el.value.slice(end);
+      const newVal = el.value.slice(0, start) + variable + el.value.slice(end);
       update({ bodyHtml: newVal });
       setTimeout(() => {
         el.focus();
-        el.setSelectionRange(
-          start + variable.length,
-          start + variable.length,
-        );
+        el.setSelectionRange(start + variable.length, start + variable.length);
       }, 0);
     }
   };
@@ -633,11 +621,14 @@ export default function CampaignDetail({ sequenceId }: CampaignDetailProps) {
                   label="Reply Rate"
                   value={formatRate(campaign.reply_rate)}
                 />
-                <StatRow label="Sequence ID" value={
-                  <span className="font-mono text-xs text-zinc-400 break-all">
-                    {sequenceId}
-                  </span>
-                } />
+                <StatRow
+                  label="Sequence ID"
+                  value={
+                    <span className="font-mono text-xs text-zinc-400 break-all">
+                      {sequenceId}
+                    </span>
+                  }
+                />
                 <StatRow
                   label="Created"
                   value={
@@ -656,13 +647,34 @@ export default function CampaignDetail({ sequenceId }: CampaignDetailProps) {
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
             {[
               { label: 'Steps', value: String(campaign.num_steps ?? 0) },
-              { label: 'Delivered', value: typeof campaign.unique_delivered === 'number' ? campaign.unique_delivered.toLocaleString() : '0' },
+              {
+                label: 'Delivered',
+                value:
+                  typeof campaign.unique_delivered === 'number'
+                    ? campaign.unique_delivered.toLocaleString()
+                    : '0',
+              },
               { label: 'Open Rate', value: formatRate(campaign.open_rate) },
               { label: 'Reply Rate', value: formatRate(campaign.reply_rate) },
-              { label: 'Bounce Rate', value: formatRate(campaign.bounce_rate ?? 0) },
-              { label: 'Click Rate', value: formatRate(campaign.click_rate ?? 0) },
-              { label: 'Opt-out Rate', value: formatRate(campaign.opt_out_rate ?? 0) },
-              { label: 'Unique Opened', value: typeof campaign.unique_opened === 'number' ? campaign.unique_opened.toLocaleString() : '0' },
+              {
+                label: 'Bounce Rate',
+                value: formatRate(campaign.bounce_rate ?? 0),
+              },
+              {
+                label: 'Click Rate',
+                value: formatRate(campaign.click_rate ?? 0),
+              },
+              {
+                label: 'Opt-out Rate',
+                value: formatRate(campaign.opt_out_rate ?? 0),
+              },
+              {
+                label: 'Unique Opened',
+                value:
+                  typeof campaign.unique_opened === 'number'
+                    ? campaign.unique_opened.toLocaleString()
+                    : '0',
+              },
             ].map(({ label, value }) => (
               <div
                 key={label}
