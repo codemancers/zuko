@@ -18,6 +18,11 @@ const APOLLO_SCOPES = [
   'organizations_enrich',
   'organizations_bulk_enrich',
   'credit_usage_stats_read',
+  'emailer_campaigns_search',
+  'emailer_campaigns_create',
+  'emailer_campaigns_update',
+  'emailer_campaigns_add_contact_ids',
+  'emailer_campaigns_approve',
 ].join(' ');
 
 export interface ApolloConnectionStatus {

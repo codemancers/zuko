@@ -1,4 +1,5 @@
 export * from './types';
+export * from './campaigns.repository';
 export * from './contacts.repository';
 export * from './activity.repository';
 export * from './companies.repository';
