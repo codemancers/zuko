@@ -1,5 +1,17 @@
 import { apiClient } from '../api-client';
 
+// ─── API Usage Stats ─────────────────────────────────────────────────────────
+
+export interface ApolloApiUsageStat {
+  duration: 'minute' | 'hour' | 'day';
+  calls_made: number;
+  calls_limit: number;
+}
+
+export interface ApolloApiUsageStats {
+  api_rate_limit_params: ApolloApiUsageStat[];
+}
+
 // ─── Connection ───────────────────────────────────────────────────────────────
 
 export interface ApolloConnectionStatus {
@@ -22,6 +34,10 @@ export interface ApolloSequence {
   open_rate: number | string;
   reply_rate: number | string;
   unique_delivered: number | string;
+  unique_opened?: number | string;
+  bounce_rate?: number | string;
+  click_rate?: number | string;
+  opt_out_rate?: number | string;
   created_at: string;
 }
 
@@ -191,6 +207,10 @@ export const apolloIntegrationApi = {
 
   async getAuthorizationUrl(): Promise<ApolloAuthorizationUrl> {
     return apiClient.get('/integrations/apollo/authorize');
+  },
+
+  async getUsageStats(): Promise<ApolloApiUsageStats> {
+    return apiClient.get('/integrations/apollo/usage-stats');
   },
 
   async disconnect(): Promise<void> {
