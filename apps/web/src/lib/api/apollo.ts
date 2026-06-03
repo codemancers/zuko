@@ -1,5 +1,17 @@
 import { apiClient } from '../api-client';
 
+// ─── API Usage Stats ─────────────────────────────────────────────────────────
+
+export interface ApolloApiUsageStat {
+  duration: 'minute' | 'hour' | 'day';
+  calls_made: number;
+  calls_limit: number;
+}
+
+export interface ApolloApiUsageStats {
+  api_rate_limit_params: ApolloApiUsageStat[];
+}
+
 // ─── Connection ───────────────────────────────────────────────────────────────
 
 export interface ApolloConnectionStatus {
@@ -195,6 +207,10 @@ export const apolloIntegrationApi = {
 
   async getAuthorizationUrl(): Promise<ApolloAuthorizationUrl> {
     return apiClient.get('/integrations/apollo/authorize');
+  },
+
+  async getUsageStats(): Promise<ApolloApiUsageStats> {
+    return apiClient.get('/integrations/apollo/usage-stats');
   },
 
   async disconnect(): Promise<void> {

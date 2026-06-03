@@ -11,7 +11,7 @@ import { tasksApi } from '@/lib/api/tasks';
 import { activitiesApi } from '@/lib/api/activities';
 import { meetingsApi, type MeetingFilters } from '@/lib/api/meetings';
 import { authClient } from '@/lib/auth-client';
-import { apolloSequencesApi } from '@/lib/api/apollo';
+import { apolloSequencesApi, apolloIntegrationApi } from '@/lib/api/apollo';
 
 const TABLE_PAGE_SIZE = 10;
 
@@ -320,6 +320,14 @@ export const getZukoCampaign = (id: string) =>
   queryOptions({
     queryKey: ['campaign', 'zuko', id],
     queryFn: () => apolloSequencesApi.getCampaign(id),
+    retry: false,
+  });
+
+export const getApolloUsageStats = () =>
+  queryOptions({
+    queryKey: ['apollo', 'usage-stats'],
+    queryFn: () => apolloIntegrationApi.getUsageStats(),
+    staleTime: 60_000, // refresh at most once per minute
     retry: false,
   });
 

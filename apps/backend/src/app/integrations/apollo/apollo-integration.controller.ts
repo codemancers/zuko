@@ -76,6 +76,15 @@ export class ApolloIntegrationController {
     );
   }
 
+  @Get('usage-stats')
+  @UseGuards(AuthGuard, OrganizationGuard)
+  @ApiOperation({ summary: 'Get Apollo API usage stats for the organisation' })
+  @ApiResponse({ status: 200, description: 'API usage stats' })
+  @ApiResponse({ status: 401, description: 'Not authenticated' })
+  async getUsageStats(@OrgId() organizationId: number) {
+    return this.apolloIntegrationService.getUsageStats(organizationId);
+  }
+
   @Delete('disconnect')
   @HttpCode(HttpStatus.NO_CONTENT)
   @UseGuards(AuthGuard, OrganizationGuard)

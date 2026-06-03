@@ -4,6 +4,7 @@ import {
   UnauthorizedException,
   BadRequestException,
   NotFoundException,
+  BadGatewayException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { randomBytes, createHash } from 'crypto';
@@ -24,6 +25,16 @@ const APOLLO_SCOPES = [
   'emailer_campaigns_add_contact_ids',
   'emailer_campaigns_approve',
 ].join(' ');
+
+export interface ApolloApiUsageStat {
+  duration: 'minute' | 'hour' | 'day';
+  calls_made: number;
+  calls_limit: number;
+}
+
+export interface ApolloApiUsageStats {
+  api_rate_limit_params: ApolloApiUsageStat[];
+}
 
 export interface ApolloConnectionStatus {
   connected: boolean;
@@ -225,6 +236,32 @@ export class ApolloIntegrationService {
       connectedAt: integration.connectedAt,
       connectedByEmail: integration.connectedBy.email,
     };
+  }
+
+  async getUsageStats(organizationId: number): Promise<ApolloApiUsageStats> {
+    const accessToken = await this.getAccessToken(organizationId);
+
+    const response = await fetch(
+      'https://api.apollo.io/api/v1/usage_stats/api_usage_stats',
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+          accept: 'application/json',
+        },
+      },
+    );
+
+    if (!response.ok) {
+      const errorBody = await response.text();
+      this.logger.error(
+        `Apollo usage stats failed: ${response.status} ${errorBody}`,
+      );
+      throw new BadGatewayException('Failed to fetch Apollo API usage stats');
+    }
+
+    return response.json() as Promise<ApolloApiUsageStats>;
   }
 
   async disconnect(organizationId: number): Promise<void> {

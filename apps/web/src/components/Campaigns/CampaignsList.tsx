@@ -18,6 +18,7 @@ import { BaseTable, TableActions } from '@/components/Table';
 import { useSearchParam } from '@/hooks/use-search-param';
 import { toast } from 'sonner';
 import dayjs from 'dayjs';
+import { formatRate } from './campaign-shared';
 
 export default function CampaignsList() {
   const router = useRouter();
@@ -44,7 +45,9 @@ export default function CampaignsList() {
   const approveMutation = useMutation({
     mutationFn: (id: string) => apolloSequencesApi.approve(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['campaigns', 'infinite'] });
+      queryClient.invalidateQueries({
+        queryKey: ['campaigns', 'infinite', debouncedValue || undefined],
+      });
       toast.success('Campaign approved');
       setPendingId(null);
     },
@@ -57,7 +60,9 @@ export default function CampaignsList() {
   const deactivateMutation = useMutation({
     mutationFn: (id: string) => apolloSequencesApi.deactivate(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['campaigns', 'infinite'] });
+      queryClient.invalidateQueries({
+        queryKey: ['campaigns', 'infinite', debouncedValue || undefined],
+      });
       toast.success('Campaign deactivated');
       setPendingId(null);
     },
@@ -66,11 +71,6 @@ export default function CampaignsList() {
       setPendingId(null);
     },
   });
-
-  const formatRate = (value: number | string) => {
-    const num = typeof value === 'string' ? parseFloat(value) : value;
-    return isNaN(num) ? '—' : `${(num * 100).toFixed(1)}%`;
-  };
 
   const actionsColumn: ColumnDef<ApolloSequence> = useMemo(
     () => ({

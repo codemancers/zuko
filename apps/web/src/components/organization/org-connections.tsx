@@ -22,6 +22,8 @@ import {
   disconnectApollo,
 } from '@/server/actions/apollo';
 import type { ApolloConnectionStatus } from '@/lib/api/apollo';
+import { useQuery } from '@tanstack/react-query';
+import { getApolloUsageStats } from '@/server/query-options';
 import { toast } from 'sonner';
 
 // ---------------------------------------------------------------------------
@@ -440,6 +442,11 @@ export const OrgConnections = () => {
     (r) => r.status === 'connected',
   ).length;
 
+  const { data: usageStats } = useQuery({
+    ...getApolloUsageStats(),
+    enabled: apolloConnected,
+  });
+
   return (
     <>
       {/* Integrations Section */}
@@ -463,6 +470,45 @@ export const OrgConnections = () => {
           {integrationActiveCount} of {integrationRows.length} integration
           {integrationRows.length !== 1 ? 's' : ''} active
         </Text>
+
+        {apolloConnected && usageStats && (
+          <div className="mt-6 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-900 p-4">
+            <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-zinc-500">
+              Apollo API Usage
+            </p>
+            <div className="grid grid-cols-3 gap-4">
+              {usageStats.api_rate_limit_params.map((stat) => {
+                const pct = Math.min(
+                  100,
+                  Math.round((stat.calls_made / stat.calls_limit) * 100),
+                );
+                const isHigh = pct >= 80;
+                return (
+                  <div key={stat.duration}>
+                    <div className="mb-1 flex items-center justify-between text-xs">
+                      <span className="capitalize text-zinc-600 dark:text-zinc-400">
+                        Per {stat.duration}
+                      </span>
+                      <span className="font-medium text-zinc-900 dark:text-zinc-100">
+                        {stat.calls_made.toLocaleString()} /{' '}
+                        {stat.calls_limit.toLocaleString()}
+                      </span>
+                    </div>
+                    <div className="h-1.5 w-full overflow-hidden rounded-full bg-zinc-200 dark:bg-zinc-700">
+                      <div
+                        className={`h-full rounded-full transition-all ${isHigh ? 'bg-red-500' : 'bg-blue-500'}`}
+                        style={{ width: `${pct}%` }}
+                      />
+                    </div>
+                    <p className="mt-0.5 text-right text-xs text-zinc-400">
+                      {pct}%
+                    </p>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
       </section>
 
       <Divider className="my-10" soft />
