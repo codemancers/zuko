@@ -6,8 +6,8 @@ export const metadata = {
 
 export const dynamic = 'force-dynamic';
 
-const NewCampaignPage = () => {
+const AddCampaignPage = () => {
   return <CampaignForm mode="create" />;
 };
 
-export default NewCampaignPage;
+export default AddCampaignPage;

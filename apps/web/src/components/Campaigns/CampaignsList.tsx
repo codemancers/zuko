@@ -8,22 +8,14 @@ import {
 } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import type { ColumnDef } from '@tanstack/react-table';
-import {
-  Button,
-  Badge,
-  Sheet,
-  SheetHeader,
-  SheetTitle,
-  SheetBody,
-} from '@zuko/ui-kit';
+import { Button, Badge } from '@zuko/ui-kit';
 import { PlusIcon, ArrowPathIcon } from '@heroicons/react/20/solid';
-import { EnvelopeIcon } from '@heroicons/react/24/outline';
+import { MegaphoneIcon } from '@heroicons/react/24/outline';
 import { getCampaignsInfinite } from '@/server/query-options';
 import { apolloSequencesApi, type ApolloSequence } from '@/lib/api/apollo';
 import { PageHeader, SearchBar } from '@/components/shared';
 import { BaseTable, TableActions } from '@/components/Table';
 import { useSearchParam } from '@/hooks/use-search-param';
-import CampaignForm from './CampaignForm';
 import { toast } from 'sonner';
 import dayjs from 'dayjs';
 
@@ -47,7 +39,6 @@ export default function CampaignsList() {
   );
   const totalCount = data?.pages[0]?.pagination?.total_entries ?? 0;
 
-  const [isCreateSheetOpen, setIsCreateSheetOpen] = useState(false);
   const [pendingId, setPendingId] = useState<string | null>(null);
 
   const approveMutation = useMutation({
@@ -171,7 +162,8 @@ export default function CampaignsList() {
       {
         accessorKey: 'created_at',
         header: 'Created',
-        cell: ({ getValue }) => dayjs(getValue<string>()).format('MMM D, YYYY'),
+        cell: ({ getValue }) =>
+          dayjs(getValue<string>()).format('MMM D, YYYY'),
       },
       actionsColumn,
     ],
@@ -188,7 +180,7 @@ export default function CampaignsList() {
             <Button outline onClick={() => refetch()} aria-label="Refresh">
               <ArrowPathIcon className="size-4" />
             </Button>
-            <Button onClick={() => setIsCreateSheetOpen(true)}>
+            <Button onClick={() => router.push('/campaigns/add')}>
               <PlusIcon className="size-4" />
               New Campaign
             </Button>
@@ -214,32 +206,16 @@ export default function CampaignsList() {
         onFetchNextPage={fetchNextPage}
         showEmptyState
         emptyStateConfig={{
-          icon: EnvelopeIcon,
+          icon: MegaphoneIcon,
           title: 'No campaigns yet',
           description:
             'Create your first campaign to start sending email sequences via Apollo.',
           action: {
             label: 'New Campaign',
-            onClick: () => setIsCreateSheetOpen(true),
+            onClick: () => router.push('/campaigns/add'),
           },
         }}
       />
-
-      <Sheet
-        open={isCreateSheetOpen}
-        onClose={() => setIsCreateSheetOpen(false)}
-      >
-        <SheetHeader>
-          <SheetTitle>New Campaign</SheetTitle>
-        </SheetHeader>
-        <SheetBody>
-          <CampaignForm
-            mode="create"
-            onSuccess={() => setIsCreateSheetOpen(false)}
-            onCancel={() => setIsCreateSheetOpen(false)}
-          />
-        </SheetBody>
-      </Sheet>
     </>
   );
 }
