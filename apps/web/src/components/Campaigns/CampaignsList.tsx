@@ -162,8 +162,7 @@ export default function CampaignsList() {
       {
         accessorKey: 'created_at',
         header: 'Created',
-        cell: ({ getValue }) =>
-          dayjs(getValue<string>()).format('MMM D, YYYY'),
+        cell: ({ getValue }) => dayjs(getValue<string>()).format('MMM D, YYYY'),
       },
       actionsColumn,
     ],
