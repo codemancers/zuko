@@ -1,17 +1,18 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import {
   Button,
-  Field,
-  FieldGroup,
-  Label,
   ErrorMessage,
+  Field,
   Input,
+  Label,
   Select,
-  SheetFooter,
+  Switch,
+  Textarea,
+  cn,
 } from '@zuko/ui-kit';
 import { PlusIcon, TrashIcon } from '@heroicons/react/20/solid';
 import {
@@ -20,12 +21,13 @@ import {
   type CreateSequenceStep,
   type CreateSequencePayload,
 } from '@/lib/api/apollo';
-import { PageHeader, BackLink } from '@/components/shared';
+import { BackLink } from '@/components/shared';
 import { toast } from 'sonner';
 
-// ─── Types ───────────────────────────────────────────────────────────────────
+// ─── Types ────────────────────────────────────────────────────────────────────
 
 interface StepFormState {
+  stableKey: string;
   apolloStepId?: string;
   type: 'auto_email' | 'manual_email';
   waitTime: number;
@@ -34,39 +36,54 @@ interface StepFormState {
   apolloTemplateId?: string;
   subject: string;
   bodyHtml: string;
+  includeSignature: boolean;
+  status: 'approved' | 'to_be_reviewed';
+  hasPersonalizedOpener: boolean;
 }
 
 interface CampaignFormProps {
   mode: 'create' | 'edit';
   campaign?: ZukoCampaign;
-  /** When rendered inside a Sheet, pass these to use SheetFooter and skip page chrome */
-  onSuccess?: () => void;
-  onCancel?: () => void;
 }
 
 // ─── Defaults ────────────────────────────────────────────────────────────────
 
+function genKey() {
+  return Math.random().toString(36).slice(2);
+}
+
 function defaultStep(): StepFormState {
   return {
+    stableKey: genKey(),
     type: 'auto_email',
-    waitTime: 1,
+    waitTime: 0,
     waitMode: 'day',
     subject: '',
     bodyHtml: '',
+    includeSignature: true,
+    status: 'approved',
+    hasPersonalizedOpener: false,
   };
 }
 
 function campaignToSteps(campaign: ZukoCampaign): StepFormState[] {
-  return campaign.sequence.map((step) => ({
-    apolloStepId: step.id,
-    type: step.type as 'auto_email' | 'manual_email',
-    waitTime: step.wait_time,
-    waitMode: step.wait_mode as 'day' | 'hour' | 'minute',
-    apolloTouchId: step.emailer_touches[0]?.id,
-    apolloTemplateId: step.emailer_touches[0]?.emailer_template_id,
-    subject: step.emailer_touches[0]?.emailer_template?.subject ?? '',
-    bodyHtml: step.emailer_touches[0]?.emailer_template?.body_html ?? '',
-  }));
+  return campaign.sequence.map((step) => {
+    const touch = step.emailer_touches[0];
+    return {
+      stableKey: step.id,
+      apolloStepId: step.id,
+      type: step.type as 'auto_email' | 'manual_email',
+      waitTime: step.wait_time,
+      waitMode: step.wait_mode as 'day' | 'hour' | 'minute',
+      apolloTouchId: touch?.id,
+      apolloTemplateId: touch?.emailer_template_id,
+      subject: touch?.emailer_template?.subject ?? '',
+      bodyHtml: touch?.emailer_template?.body_html ?? '',
+      includeSignature: touch?.include_signature ?? true,
+      status: (touch?.status as 'approved' | 'to_be_reviewed') ?? 'approved',
+      hasPersonalizedOpener: touch?.has_personalized_opener ?? false,
+    };
+  });
 }
 
 function stepsToPayload(steps: StepFormState[]): CreateSequenceStep[] {
@@ -86,12 +103,44 @@ function stepsToPayload(steps: StepFormState[]): CreateSequenceStep[] {
           ...(step.subject && { subject: step.subject }),
           bodyHtml: step.bodyHtml,
         },
+        includeSignature: step.includeSignature,
+        status: step.status,
+        hasPersonalizedOpener: step.hasPersonalizedOpener,
       },
     ],
   }));
 }
 
-// ─── Step Card ───────────────────────────────────────────────────────────────
+// ─── Variable chips ───────────────────────────────────────────────────────────
+
+const VARIABLES = [
+  '{{first_name}}',
+  '{{last_name}}',
+  '{{company}}',
+  '{{title}}',
+  '{{email}}',
+  '{{city}}',
+  '{{country}}',
+];
+
+function VariableChips({ onInsert }: { onInsert: (variable: string) => void }) {
+  return (
+    <div className="mt-2 flex flex-wrap gap-1.5">
+      {VARIABLES.map((v) => (
+        <button
+          key={v}
+          type="button"
+          onClick={() => onInsert(v)}
+          className="rounded bg-zinc-800 px-2 py-0.5 font-mono text-xs text-zinc-300 hover:bg-zinc-700 hover:text-white transition-colors"
+        >
+          {v}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+// ─── Step card ────────────────────────────────────────────────────────────────
 
 interface StepCardProps {
   index: number;
@@ -115,101 +164,196 @@ function StepCard({
   const update = (patch: Partial<StepFormState>) =>
     onChange({ ...step, ...patch });
 
+  const subjectRef = useRef<HTMLInputElement>(null);
+  const bodyRef = useRef<HTMLTextAreaElement>(null);
+  const [lastFocused, setLastFocused] = useState<'subject' | 'body'>('body');
+
+  const insertVariable = (variable: string) => {
+    if (lastFocused === 'subject' && subjectRef.current) {
+      const el = subjectRef.current;
+      const start = el.selectionStart ?? el.value.length;
+      const end = el.selectionEnd ?? el.value.length;
+      const newVal = el.value.slice(0, start) + variable + el.value.slice(end);
+      update({ subject: newVal });
+      setTimeout(() => {
+        el.focus();
+        el.setSelectionRange(start + variable.length, start + variable.length);
+      }, 0);
+    } else if (bodyRef.current) {
+      const el = bodyRef.current;
+      const start = el.selectionStart ?? el.value.length;
+      const end = el.selectionEnd ?? el.value.length;
+      const newVal = el.value.slice(0, start) + variable + el.value.slice(end);
+      update({ bodyHtml: newVal });
+      setTimeout(() => {
+        el.focus();
+        el.setSelectionRange(start + variable.length, start + variable.length);
+      }, 0);
+    }
+  };
+
   return (
-    <div className="rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-5 shadow-sm space-y-4">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <span className="flex size-6 items-center justify-center rounded-full bg-zinc-900 text-xs font-semibold text-white dark:bg-zinc-100 dark:text-zinc-900">
-            {index + 1}
-          </span>
-          <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
-            Step {index + 1}
-          </span>
-        </div>
-        {canRemove && (
+    <div className="rounded-xl border border-zinc-700/60 bg-zinc-900 overflow-hidden">
+      {/* Step header */}
+      <div className="flex items-center gap-3 border-b border-zinc-700/60 px-4 py-3">
+        <span className="text-xs font-semibold uppercase tracking-widest text-zinc-500">
+          Step {index + 1}
+        </span>
+
+        {/* Type toggle */}
+        <div className="flex items-center overflow-hidden rounded-md border border-zinc-700 text-xs">
           <button
             type="button"
-            onClick={onRemove}
             disabled={disabled}
-            className="text-zinc-400 hover:text-red-500 disabled:opacity-50 transition-colors"
-            aria-label="Remove step"
+            onClick={() => update({ type: 'auto_email' })}
+            className={cn(
+              'px-3 py-1.5 font-medium transition-colors',
+              step.type === 'auto_email'
+                ? 'bg-zinc-700 text-white'
+                : 'text-zinc-400 hover:text-zinc-200',
+            )}
           >
-            <TrashIcon className="size-4" />
+            Auto Email
           </button>
-        )}
-      </div>
-
-      <div className="space-y-3">
-        <Field>
-          <Label>Type</Label>
-          <Select
-            value={step.type}
-            onChange={(e) =>
-              update({ type: e.target.value as 'auto_email' | 'manual_email' })
-            }
+          <button
+            type="button"
             disabled={disabled}
+            onClick={() => update({ type: 'manual_email' })}
+            className={cn(
+              'px-3 py-1.5 font-medium transition-colors',
+              step.type === 'manual_email'
+                ? 'bg-zinc-700 text-white'
+                : 'text-zinc-400 hover:text-zinc-200',
+            )}
           >
-            <option value="auto_email">Auto Email</option>
-            <option value="manual_email">Manual Email</option>
-          </Select>
-        </Field>
-        <div className="grid grid-cols-2 gap-3">
-          <Field>
-            <Label>Wait time</Label>
-            <Input
-              type="number"
-              min={0}
-              value={step.waitTime}
-              onChange={(e) => update({ waitTime: Number(e.target.value) })}
+            Manual Email
+          </button>
+        </div>
+
+        {/* Wait time */}
+        <div className="flex items-center gap-1 text-xs text-zinc-400">
+          <span>Wait</span>
+          <input
+            type="number"
+            min={0}
+            value={step.waitTime}
+            disabled={disabled}
+            onChange={(e) => update({ waitTime: Number(e.target.value) })}
+            className="w-10 rounded border-0 bg-transparent text-center text-zinc-200 focus:outline-none focus:ring-1 focus:ring-zinc-600 [appearance:textfield]"
+          />
+          <select
+            value={step.waitMode}
+            disabled={disabled}
+            onChange={(e) =>
+              update({ waitMode: e.target.value as 'day' | 'hour' | 'minute' })
+            }
+            className="bg-transparent text-zinc-400 focus:outline-none text-xs cursor-pointer"
+          >
+            <option value="day">day(s)</option>
+            <option value="hour">hour(s)</option>
+            <option value="minute">minute(s)</option>
+          </select>
+          {step.waitTime === 0 && (
+            <span className="italic text-zinc-500">immediately</span>
+          )}
+        </div>
+
+        <div className="ml-auto">
+          {canRemove && (
+            <button
+              type="button"
               disabled={disabled}
-            />
-          </Field>
-          <Field>
-            <Label>Unit</Label>
-            <Select
-              value={step.waitMode}
-              onChange={(e) =>
-                update({
-                  waitMode: e.target.value as 'day' | 'hour' | 'minute',
-                })
-              }
-              disabled={disabled}
+              onClick={onRemove}
+              className="text-zinc-600 hover:text-red-400 transition-colors disabled:opacity-40"
             >
-              <option value="day">Day(s)</option>
-              <option value="hour">Hour(s)</option>
-              <option value="minute">Minute(s)</option>
-            </Select>
-          </Field>
+              <TrashIcon className="size-4" />
+            </button>
+          )}
         </div>
       </div>
 
-      <div className="border-t border-zinc-100 dark:border-zinc-800 pt-4 space-y-3">
-        <p className="text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
-          Email
-        </p>
-        <Field>
+      {/* Email content */}
+      <div className="p-4 space-y-4">
+        {/* Variant label */}
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-medium text-blue-400 border-b-2 border-blue-400 pb-0.5">
+            Variant A
+          </span>
+        </div>
+
+        {/* Subject */}
+        <Field invalid={errors[`step_${index}_subject`] ? true : undefined}>
           <Label>Subject</Label>
           <Input
+            ref={subjectRef}
+            type="text"
             value={step.subject}
+            disabled={disabled}
+            onFocus={() => setLastFocused('subject')}
             onChange={(e) => update({ subject: e.target.value })}
-            placeholder="e.g. Quick question about {{company}}"
-            disabled={disabled}
+            placeholder="e.g. Hello {{first_name}},"
           />
+          {errors[`step_${index}_subject`] && (
+            <ErrorMessage>{errors[`step_${index}_subject`]}</ErrorMessage>
+          )}
+          <VariableChips onInsert={insertVariable} />
         </Field>
-        <Field>
-          <Label>Body (HTML) *</Label>
-          <textarea
+
+        {/* Body */}
+        <Field invalid={errors[`step_${index}_bodyHtml`] ? true : undefined}>
+          <Label>Body</Label>
+          <Textarea
+            ref={bodyRef}
             value={step.bodyHtml}
-            onChange={(e) => update({ bodyHtml: e.target.value })}
-            placeholder="<p>Hi {{first_name}},</p><p>…</p>"
             disabled={disabled}
-            rows={6}
-            className="w-full rounded-md border border-zinc-300 bg-white px-3 py-2 font-mono text-sm text-zinc-900 placeholder-zinc-400 shadow-sm focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500 disabled:opacity-60 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:placeholder-zinc-600"
+            onFocus={() => setLastFocused('body')}
+            onChange={(e) => update({ bodyHtml: e.target.value })}
+            placeholder="Write your email body here…"
+            rows={8}
+            className="[&_textarea]:resize-none"
           />
           {errors[`step_${index}_bodyHtml`] && (
             <ErrorMessage>{errors[`step_${index}_bodyHtml`]}</ErrorMessage>
           )}
+          <VariableChips onInsert={insertVariable} />
         </Field>
+
+        {/* Toggles */}
+        <div className="flex items-center gap-6 pt-1">
+          <div className="flex items-center gap-2 cursor-pointer select-none">
+            <Switch
+              checked={step.includeSignature}
+              onChange={(val) => update({ includeSignature: val })}
+              disabled={disabled}
+              color="dark/zinc"
+            />
+            <span className="text-sm text-zinc-300">Include signature</span>
+          </div>
+
+          <div className="flex items-center gap-2 cursor-pointer select-none">
+            <Switch
+              checked={step.status === 'approved'}
+              onChange={(val) =>
+                update({ status: val ? 'approved' : 'to_be_reviewed' })
+              }
+              disabled={disabled}
+              color="dark/zinc"
+            />
+            <span className="text-sm text-zinc-300">Approved</span>
+          </div>
+
+          <div className="flex items-center gap-2 cursor-pointer select-none">
+            <Switch
+              checked={step.hasPersonalizedOpener}
+              onChange={(val) => update({ hasPersonalizedOpener: val })}
+              disabled={disabled}
+              color="dark/zinc"
+            />
+            <span className="text-sm text-zinc-300">
+              AI personalised opener
+            </span>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -217,22 +361,13 @@ function StepCard({
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
-export default function CampaignForm({
-  mode,
-  campaign,
-  onSuccess,
-  onCancel,
-}: CampaignFormProps) {
-  const inSheet = !!(onSuccess || onCancel);
+export default function CampaignForm({ mode, campaign }: CampaignFormProps) {
   const router = useRouter();
   const queryClient = useQueryClient();
 
   const [name, setName] = useState(campaign?.name ?? '');
-  const [permissions, setPermissions] = useState<
-    'private' | 'team_can_view' | 'team_can_use'
-  >(
-    (campaign?.permissions as 'private' | 'team_can_view' | 'team_can_use') ??
-      'team_can_use',
+  const [permissions, setPermissions] = useState<string>(
+    campaign?.permissions ?? 'team_can_use',
   );
   const [emailerScheduleId, setEmailerScheduleId] = useState('');
   const [steps, setSteps] = useState<StepFormState[]>(
@@ -250,17 +385,26 @@ export default function CampaignForm({
   const createMutation = useMutation({
     mutationFn: (payload: CreateSequencePayload) =>
       apolloSequencesApi.create(payload),
-    onSuccess: () => {
-      toast.success('Campaign created — list will refresh in a moment');
-      if (inSheet) {
-        onSuccess?.();
+    onSuccess: (data) => {
+      const campaignId = data?.emailer_campaign?.id;
+      if (data?.emailer_campaign && campaignId) {
+        // Seed the detail cache so the detail page renders immediately
+        // without waiting for Apollo's search index to catch up
+        queryClient.setQueryData(
+          ['campaign', campaignId],
+          data.emailer_campaign,
+        );
+      }
+      toast.success('Campaign created successfully');
+      if (campaignId) {
+        router.push(`/campaigns/${campaignId}`);
       } else {
         router.push('/campaigns');
       }
-      // Apollo's search index has a short delay before new sequences appear
+      // Invalidate the list after a delay (Apollo search index lag)
       setTimeout(() => {
         queryClient.invalidateQueries({ queryKey: ['campaigns', 'infinite'] });
-      }, 3000);
+      }, 5000);
     },
     onError: () => toast.error('Failed to create campaign'),
   });
@@ -277,11 +421,7 @@ export default function CampaignForm({
         queryKey: ['campaign', 'zuko', campaign!.providerSequenceId],
       });
       toast.success('Campaign updated');
-      if (inSheet) {
-        onSuccess?.();
-      } else {
-        router.push(`/campaigns/${campaign!.providerSequenceId}`);
-      }
+      router.push(`/campaigns/${campaign!.providerSequenceId}`);
     },
     onError: () => toast.error('Failed to update campaign'),
   });
@@ -294,14 +434,15 @@ export default function CampaignForm({
     if (steps.length === 0)
       newErrors['steps'] = 'At least one step is required';
     steps.forEach((step, i) => {
+      if (!step.subject.trim())
+        newErrors[`step_${i}_subject`] = 'Subject is required';
       if (!step.bodyHtml.trim())
         newErrors[`step_${i}_bodyHtml`] = 'Email body is required';
     });
     return newErrors;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = () => {
     const newErrors = validate();
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
@@ -311,7 +452,7 @@ export default function CampaignForm({
 
     const payload: CreateSequencePayload = {
       name: name.trim(),
-      permissions,
+      permissions: permissions as 'private' | 'team_can_view' | 'team_can_use',
       ...(emailerScheduleId && { emailerScheduleId }),
       sequence: stepsToPayload(steps),
     };
@@ -327,106 +468,65 @@ export default function CampaignForm({
     setSteps((prev) => prev.map((s, i) => (i === index ? updated : s)));
 
   return (
-    <div className={inSheet ? undefined : 'mx-auto max-w-3xl'}>
-      {!inSheet && (
-        <>
-          <BackLink href="/campaigns">Campaigns</BackLink>
-          <div className="mt-4">
-            <PageHeader
-              title={mode === 'create' ? 'New Campaign' : 'Edit Campaign'}
-              description={
-                mode === 'create'
-                  ? 'Create an Apollo email sequence with one or more steps.'
-                  : 'Update this sequence. Changes will be synced to Apollo.'
-              }
-            />
-          </div>
-        </>
-      )}
+    <div className="flex min-h-0 flex-col">
+      {/* Back link */}
+      <BackLink href="/campaigns">Campaigns</BackLink>
 
-      <form
-        onSubmit={handleSubmit}
-        className={inSheet ? 'flex flex-col gap-6' : 'mt-8 space-y-8'}
-      >
-        {/* Campaign Details */}
-        <FieldGroup>
-          <Field>
-            <Label>Name *</Label>
+      {/* Page header */}
+      <div className="mt-4 flex items-start justify-between gap-4">
+        <div className="flex-1 min-w-0">
+          <Field invalid={errors['name'] ? true : undefined}>
             <Input
+              variant="plain"
+              className="w-full [&_input]:text-2xl [&_input]:font-bold [&_input]:text-zinc-900 [&_input]:dark:text-white [&_input]:placeholder-zinc-400"
+              type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="e.g. Q3 Outbound – SaaS Mid-Market"
+              placeholder="Campaign name…"
               disabled={isPending}
             />
             {errors['name'] && <ErrorMessage>{errors['name']}</ErrorMessage>}
           </Field>
+        </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <Field>
-              <Label>Permissions</Label>
-              <Select
-                value={permissions}
-                onChange={(e) =>
-                  setPermissions(
-                    e.target.value as
-                      | 'private'
-                      | 'team_can_view'
-                      | 'team_can_use',
-                  )
-                }
-                disabled={isPending}
-              >
-                <option value="team_can_use">Team Can Use</option>
-                <option value="team_can_view">Team Can View</option>
-                <option value="private">Private</option>
-              </Select>
-            </Field>
+        <div className="flex items-center gap-2 shrink-0">
+          <Button
+            type="button"
+            plain
+            onClick={() => router.back()}
+            disabled={isPending}
+          >
+            Cancel
+          </Button>
+          <Button
+            type="button"
+            color="dark"
+            disabled={isPending || steps.length === 0}
+            onClick={handleSubmit}
+          >
+            {isPending
+              ? mode === 'create'
+                ? 'Creating…'
+                : 'Saving…'
+              : mode === 'create'
+                ? 'Create Campaign'
+                : 'Save Changes'}
+          </Button>
+        </div>
+      </div>
 
-            <Field>
-              <Label>Email Schedule</Label>
-              <Select
-                value={emailerScheduleId}
-                onChange={(e) => setEmailerScheduleId(e.target.value)}
-                disabled={isPending || isLoadingSchedules}
-              >
-                <option value="">
-                  {isLoadingSchedules ? 'Loading…' : 'Default schedule'}
-                </option>
-                {schedules.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.name}
-                    {s.default ? ' (default)' : ''}
-                  </option>
-                ))}
-              </Select>
-            </Field>
-          </div>
-        </FieldGroup>
-
-        {/* Sequence Builder */}
-        <div>
-          <div className="mb-4 flex items-center justify-between">
-            <div>
-              <p className="text-sm font-semibold text-zinc-900 dark:text-white">
-                Sequence Steps
-              </p>
-              <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                Each step sends one email. Steps run in order with the specified
-                wait time.
-              </p>
-            </div>
-          </div>
-
+      {/* Body */}
+      <div className="mt-6 flex gap-8 items-start">
+        {/* Steps editor */}
+        <div className="min-w-0 flex-1">
           {errors['steps'] && (
-            <p className="mb-3 text-sm text-red-600 dark:text-red-400">
-              {errors['steps']}
-            </p>
+            <p className="mb-3 text-sm text-red-500">{errors['steps']}</p>
           )}
 
           <div className="space-y-4">
             {steps.map((step, index) => (
               <StepCard
-                key={index}
+                key={step.stableKey}
                 index={index}
                 step={step}
                 errors={errors}
@@ -438,56 +538,64 @@ export default function CampaignForm({
             ))}
           </div>
 
-          <Button
+          {/* Add step */}
+          <button
             type="button"
-            outline
             onClick={addStep}
             disabled={isPending}
-            className="mt-4"
+            className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-zinc-700 py-4 text-sm text-zinc-500 hover:border-zinc-500 hover:text-zinc-300 transition-colors disabled:opacity-40"
           >
             <PlusIcon className="size-4" />
-            Add Step
-          </Button>
+            Add step
+          </button>
         </div>
 
-        {/* Actions */}
-        {inSheet ? (
-          <SheetFooter>
-            <Button type="button" plain onClick={onCancel} disabled={isPending}>
-              Cancel
-            </Button>
-            <Button type="submit" color="dark" disabled={isPending}>
-              {isPending
-                ? mode === 'create'
-                  ? 'Creating…'
-                  : 'Saving…'
-                : mode === 'create'
-                  ? 'Create Campaign'
-                  : 'Save Changes'}
-            </Button>
-          </SheetFooter>
-        ) : (
-          <div className="flex items-center justify-end gap-3 border-t border-zinc-200 pt-6 dark:border-zinc-700">
-            <Button
-              type="button"
-              plain
-              onClick={() => router.back()}
-              disabled={isPending}
-            >
-              Cancel
-            </Button>
-            <Button type="submit" color="dark" disabled={isPending}>
-              {isPending
-                ? mode === 'create'
-                  ? 'Creating…'
-                  : 'Saving…'
-                : mode === 'create'
-                  ? 'Create Campaign'
-                  : 'Save Changes'}
-            </Button>
+        {/* Right sidebar */}
+        <div className="w-56 shrink-0 space-y-8">
+          {/* Settings */}
+          <div className="space-y-3">
+            <p className="text-xs font-semibold uppercase tracking-widest text-zinc-500">
+              Settings
+            </p>
+
+            <div className="space-y-2">
+              <p className="text-xs uppercase tracking-widest text-zinc-500">
+                Access
+              </p>
+              <Select
+                value={permissions}
+                onChange={(e) => setPermissions(e.target.value)}
+                disabled={isPending}
+              >
+                <option value="team_can_use">Team can use</option>
+                <option value="team_can_view">Team can view</option>
+                <option value="private">Private</option>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <p className="text-xs uppercase tracking-widest text-zinc-500">
+                Schedule
+              </p>
+              <Select
+                value={emailerScheduleId}
+                onChange={(e) => setEmailerScheduleId(e.target.value)}
+                disabled={isPending || isLoadingSchedules}
+              >
+                <option value="">
+                  {isLoadingSchedules ? 'Loading…' : 'Default'}
+                </option>
+                {schedules.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name}
+                    {s.default ? ' (default)' : ''}
+                  </option>
+                ))}
+              </Select>
+            </div>
           </div>
-        )}
-      </form>
+        </div>
+      </div>
     </div>
   );
 }

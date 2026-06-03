@@ -5,12 +5,16 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   Badge,
   Button,
+  Field,
   Heading,
+  Input,
+  Label,
   Select,
   Switch,
   Tabs,
   TabsList,
   TabsTrigger,
+  Textarea,
   Text,
 } from '@zuko/ui-kit';
 import { PlusIcon, TrashIcon } from '@heroicons/react/20/solid';
@@ -27,6 +31,7 @@ import dayjs from 'dayjs';
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface StepFormState {
+  stableKey: string;
   apolloStepId?: string;
   type: 'auto_email' | 'manual_email';
   waitTime: number;
@@ -56,6 +61,7 @@ function campaignToSteps(campaign: ZukoCampaign): StepFormState[] {
   return campaign.sequence.map((step) => {
     const touch = step.emailer_touches[0];
     return {
+      stableKey: step.id,
       apolloStepId: step.id,
       type: step.type as 'auto_email' | 'manual_email',
       waitTime: step.wait_time,
@@ -110,13 +116,9 @@ function formatRate(value: number | string): string {
   return isNaN(num) ? '—' : `${(num * 100).toFixed(1)}%`;
 }
 
-function formatWait(waitTime: number, waitMode: string): string {
-  if (waitTime === 0) return 'immediately';
-  return `${waitTime} ${waitMode}${waitTime !== 1 ? 's' : ''}`;
-}
-
 function defaultStep(): StepFormState {
   return {
+    stableKey: Math.random().toString(36).slice(2),
     type: 'auto_email',
     waitTime: 1,
     waitMode: 'day',
@@ -132,7 +134,7 @@ function defaultStep(): StepFormState {
 
 function VariableChips({ onInsert }: { onInsert: (variable: string) => void }) {
   return (
-    <div className="flex flex-wrap gap-1.5">
+    <div className="mt-2 flex flex-wrap gap-1.5">
       {VARIABLES.map((v) => (
         <button
           key={v}
@@ -285,9 +287,9 @@ function StepCard({
         </div>
 
         {/* Subject */}
-        <div className="space-y-2">
-          <label className="text-sm font-medium text-zinc-200">Subject</label>
-          <input
+        <Field>
+          <Label>Subject</Label>
+          <Input
             ref={subjectRef}
             type="text"
             value={step.subject}
@@ -295,15 +297,14 @@ function StepCard({
             onFocus={() => setLastFocused('subject')}
             onChange={(e) => update({ subject: e.target.value })}
             placeholder="e.g. Hello {{first_name}},"
-            className="w-full rounded-lg border border-zinc-700 bg-zinc-800/60 px-3 py-2 text-sm text-zinc-100 placeholder-zinc-600 focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500 disabled:opacity-60"
           />
           <VariableChips onInsert={insertVariable} />
-        </div>
+        </Field>
 
         {/* Body */}
-        <div className="space-y-2">
-          <label className="text-sm font-medium text-zinc-200">Body</label>
-          <textarea
+        <Field>
+          <Label>Body</Label>
+          <Textarea
             ref={bodyRef}
             value={step.bodyHtml}
             disabled={disabled}
@@ -311,14 +312,14 @@ function StepCard({
             onChange={(e) => update({ bodyHtml: e.target.value })}
             placeholder="Write your email body here…"
             rows={8}
-            className="w-full rounded-lg border border-zinc-700 bg-zinc-800/60 px-3 py-2 text-sm text-zinc-100 placeholder-zinc-600 focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500 disabled:opacity-60 resize-none"
+            className="[&_textarea]:resize-none"
           />
           <VariableChips onInsert={insertVariable} />
-        </div>
+        </Field>
 
         {/* Toggles */}
         <div className="flex items-center gap-6 pt-1">
-          <label className="flex items-center gap-2 cursor-pointer select-none">
+          <div className="flex items-center gap-2 cursor-pointer select-none">
             <Switch
               checked={step.includeSignature}
               onChange={(val) => update({ includeSignature: val })}
@@ -326,9 +327,9 @@ function StepCard({
               color="dark/zinc"
             />
             <span className="text-sm text-zinc-300">Include signature</span>
-          </label>
+          </div>
 
-          <label className="flex items-center gap-2 cursor-pointer select-none">
+          <div className="flex items-center gap-2 cursor-pointer select-none">
             <Switch
               checked={step.status === 'approved'}
               onChange={(val) =>
@@ -338,9 +339,9 @@ function StepCard({
               color="dark/zinc"
             />
             <span className="text-sm text-zinc-300">Approved</span>
-          </label>
+          </div>
 
-          <label className="flex items-center gap-2 cursor-pointer select-none">
+          <div className="flex items-center gap-2 cursor-pointer select-none">
             <Switch
               checked={step.hasPersonalizedOpener}
               onChange={(val) => update({ hasPersonalizedOpener: val })}
@@ -350,7 +351,7 @@ function StepCard({
             <span className="text-sm text-zinc-300">
               AI personalised opener
             </span>
-          </label>
+          </div>
         </div>
       </div>
     </div>
@@ -538,7 +539,7 @@ export default function CampaignDetail({ sequenceId }: CampaignDetailProps) {
                 <div className="space-y-4">
                   {steps.map((step, i) => (
                     <StepCard
-                      key={i}
+                      key={step.stableKey}
                       index={i}
                       step={step}
                       canRemove={steps.length > 1}
