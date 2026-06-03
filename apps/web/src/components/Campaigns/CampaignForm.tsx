@@ -282,7 +282,7 @@ function StepCard({
         </div>
 
         {/* Subject */}
-        <Field invalid={errors[`step_${index}_subject`] ? true : undefined}>
+        <Field>
           <Label>Subject</Label>
           <Input
             ref={subjectRef}
@@ -292,6 +292,7 @@ function StepCard({
             onFocus={() => setLastFocused('subject')}
             onChange={(e) => update({ subject: e.target.value })}
             placeholder="e.g. Hello {{first_name}},"
+            data-invalid={errors[`step_${index}_subject`] ? true : undefined}
           />
           {errors[`step_${index}_subject`] && (
             <ErrorMessage>{errors[`step_${index}_subject`]}</ErrorMessage>
@@ -300,7 +301,7 @@ function StepCard({
         </Field>
 
         {/* Body */}
-        <Field invalid={errors[`step_${index}_bodyHtml`] ? true : undefined}>
+        <Field>
           <Label>Body</Label>
           <Textarea
             ref={bodyRef}
@@ -311,6 +312,7 @@ function StepCard({
             placeholder="Write your email body here…"
             rows={8}
             className="[&_textarea]:resize-none"
+            data-invalid={errors[`step_${index}_bodyHtml`] ? true : undefined}
           />
           {errors[`step_${index}_bodyHtml`] && (
             <ErrorMessage>{errors[`step_${index}_bodyHtml`]}</ErrorMessage>
@@ -475,7 +477,7 @@ export default function CampaignForm({ mode, campaign }: CampaignFormProps) {
       {/* Page header */}
       <div className="mt-4 flex items-start justify-between gap-4">
         <div className="flex-1 min-w-0">
-          <Field invalid={errors['name'] ? true : undefined}>
+          <Field>
             <Input
               variant="plain"
               className="w-full [&_input]:text-2xl [&_input]:font-bold [&_input]:text-zinc-900 [&_input]:dark:text-white [&_input]:placeholder-zinc-400"
