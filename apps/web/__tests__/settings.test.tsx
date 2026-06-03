@@ -64,6 +64,10 @@ vi.mock('@/server/query-options', () => ({
     queryKey: ['teams', id],
     queryFn: async () => [],
   })),
+  getApolloUsageStats: vi.fn(() => ({
+    queryKey: ['apollo', 'usage-stats'],
+    queryFn: async () => null,
+  })),
 }));
 
 describe('SettingsPage', () => {
