@@ -153,6 +153,7 @@ export function StepCard({
   onRemove,
   disabled,
 }: StepCardProps) {
+  const parser = new DOMParser();
   const update = (patch: Partial<StepFormState>) =>
     onChange({ ...step, ...patch });
 
@@ -298,13 +299,16 @@ export function StepCard({
           <Label>Body</Label>
           <Textarea
             ref={bodyRef}
-            value={step.bodyHtml}
+            value={
+              parser.parseFromString(step.bodyHtml, 'text/html').body
+                .textContent || ''
+            }
             disabled={disabled}
             onFocus={() => setLastFocused('body')}
             onChange={(e) => update({ bodyHtml: e.target.value })}
             placeholder="Write your email body here…"
             rows={8}
-            className="[&_textarea]:resize-none"
+            className="[&_textarea]:resize-none mt-3"
             data-invalid={bodyError ? true : undefined}
           />
           {bodyError && <ErrorMessage>{bodyError}</ErrorMessage>}
