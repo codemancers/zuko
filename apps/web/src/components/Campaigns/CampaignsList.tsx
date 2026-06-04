@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import {
   useInfiniteQuery,
   useMutation,
@@ -8,13 +8,13 @@ import {
 } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import type { ColumnDef } from '@tanstack/react-table';
-import { Button, Badge } from '@zuko/ui-kit';
+import { Button, BadgeButton } from '@zuko/ui-kit';
 import { PlusIcon, ArrowPathIcon } from '@heroicons/react/20/solid';
 import { MegaphoneIcon } from '@heroicons/react/24/outline';
 import { getCampaignsInfinite } from '@/server/query-options';
 import { apolloSequencesApi, type ApolloSequence } from '@/lib/api/apollo';
 import { PageHeader, SearchBar } from '@/components/shared';
-import { BaseTable, TableActions } from '@/components/Table';
+import { BaseTable } from '@/components/Table';
 import { useSearchParam } from '@/hooks/use-search-param';
 import { toast } from 'sonner';
 import dayjs from 'dayjs';
@@ -40,80 +40,31 @@ export default function CampaignsList() {
   );
   const totalCount = data?.pages[0]?.pagination?.total_entries ?? 0;
 
-  const [pendingId, setPendingId] = useState<string | null>(null);
-
   const approveMutation = useMutation({
     mutationFn: (id: string) => apolloSequencesApi.approve(id),
     onSuccess: () => {
+      toast.success('Campaign activated');
       queryClient.invalidateQueries({
         queryKey: ['campaigns', 'infinite', debouncedValue || undefined],
       });
-      toast.success('Campaign approved');
-      setPendingId(null);
     },
     onError: () => {
-      toast.error('Failed to approve campaign');
-      setPendingId(null);
+      toast.error('Failed to activate campaign');
     },
   });
 
   const deactivateMutation = useMutation({
     mutationFn: (id: string) => apolloSequencesApi.deactivate(id),
     onSuccess: () => {
+      toast.success('Campaign deactivated');
       queryClient.invalidateQueries({
         queryKey: ['campaigns', 'infinite', debouncedValue || undefined],
       });
-      toast.success('Campaign deactivated');
-      setPendingId(null);
     },
     onError: () => {
       toast.error('Failed to deactivate campaign');
-      setPendingId(null);
     },
   });
-
-  const actionsColumn: ColumnDef<ApolloSequence> = useMemo(
-    () => ({
-      id: 'actions',
-      header: 'Actions',
-      cell: ({ row }) => {
-        const campaign = row.original;
-        const isProcessing = pendingId === campaign.id;
-        return (
-          <TableActions>
-            {campaign.active ? (
-              <Button
-                outline
-                className="text-xs"
-                disabled={isProcessing}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setPendingId(campaign.id);
-                  deactivateMutation.mutate(campaign.id);
-                }}
-              >
-                Deactivate
-              </Button>
-            ) : (
-              <Button
-                color="dark"
-                className="text-xs"
-                disabled={isProcessing}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setPendingId(campaign.id);
-                  approveMutation.mutate(campaign.id);
-                }}
-              >
-                Approve
-              </Button>
-            )}
-          </TableActions>
-        );
-      },
-    }),
-    [approveMutation, deactivateMutation, pendingId],
-  );
 
   const columns: ColumnDef<ApolloSequence>[] = useMemo(
     () => [
@@ -129,12 +80,34 @@ export default function CampaignsList() {
       {
         id: 'status',
         header: 'Status',
-        cell: ({ row }) =>
-          row.original.active ? (
-            <Badge color="green">Active</Badge>
+        cell: ({ row }) => {
+          const campaign = row.original;
+          return campaign.active ? (
+            <BadgeButton
+              color="green"
+              title="Click to deactivate"
+              className="cursor-pointer"
+              onClick={(e) => {
+                e.stopPropagation();
+                deactivateMutation.mutate(campaign.id);
+              }}
+            >
+              Active
+            </BadgeButton>
           ) : (
-            <Badge color="zinc">Inactive</Badge>
-          ),
+            <BadgeButton
+              color="zinc"
+              title="Click to activate"
+              className="cursor-pointer"
+              onClick={(e) => {
+                e.stopPropagation();
+                approveMutation.mutate(campaign.id);
+              }}
+            >
+              Inactive
+            </BadgeButton>
+          );
+        },
       },
       {
         accessorKey: 'num_steps',
@@ -164,9 +137,8 @@ export default function CampaignsList() {
         header: 'Created',
         cell: ({ getValue }) => dayjs(getValue<string>()).format('MMM D, YYYY'),
       },
-      actionsColumn,
     ],
-    [actionsColumn],
+    [approveMutation, deactivateMutation],
   );
 
   return (
