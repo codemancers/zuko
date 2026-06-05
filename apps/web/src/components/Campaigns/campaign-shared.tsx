@@ -207,12 +207,13 @@ function PreviewBody({ data }: { data: OutputData | null }) {
   return (
     <div className="space-y-1">
       {data.blocks.map((block, i) => {
+        const bKey = block.id ?? String(i);
         const d = (block.data ?? {}) as Record<string, unknown>;
         switch (block.type) {
           case 'paragraph':
             return (
               <p
-                key={i}
+                key={bKey}
                 dangerouslySetInnerHTML={{
                   __html: substitutePreview(blockText(d)),
                 }}
@@ -220,7 +221,7 @@ function PreviewBody({ data }: { data: OutputData | null }) {
             );
           case 'header':
             return (
-              <p key={i} className="font-semibold">
+              <p key={bKey} className="font-semibold">
                 {substitutePreview(blockText(d))}
               </p>
             );
@@ -230,27 +231,32 @@ function PreviewBody({ data }: { data: OutputData | null }) {
             const liClass =
               d.style === 'ordered' ? 'list-decimal' : 'list-disc';
             return (
-              <Tag key={i} className={`list-inside pl-4 ${liClass}`}>
-                {items.map((item, j) => (
-                  <li key={j}>{substitutePreview(listItemText(item))}</li>
-                ))}
+              <Tag key={bKey} className={`list-inside pl-4 ${liClass}`}>
+                {items.map((item) => {
+                  const text = listItemText(item);
+                  return (
+                    <li key={`${bKey}-${text}`}>{substitutePreview(text)}</li>
+                  );
+                })}
               </Tag>
             );
           }
           case 'checklist': {
             const items = Array.isArray(d.items) ? d.items : [];
             return (
-              <ul key={i} className="space-y-0.5 pl-1">
-                {items.map((item, j) => {
+              <ul key={bKey} className="space-y-0.5 pl-1">
+                {items.map((item) => {
                   const it = (item ?? {}) as Record<string, unknown>;
+                  const itText = typeof it.text === 'string' ? it.text : '';
                   return (
-                    <li key={j} className="flex items-center gap-2">
+                    <li
+                      key={`${bKey}-${itText}`}
+                      className="flex items-center gap-2"
+                    >
                       <span className="text-zinc-500">
                         {it.checked ? '☑' : '☐'}
                       </span>
-                      {substitutePreview(
-                        typeof it.text === 'string' ? it.text : '',
-                      )}
+                      {substitutePreview(itText)}
                     </li>
                   );
                 })}
@@ -260,7 +266,7 @@ function PreviewBody({ data }: { data: OutputData | null }) {
           case 'quote':
             return (
               <blockquote
-                key={i}
+                key={bKey}
                 className="border-l-2 border-zinc-500 pl-3 italic text-zinc-400"
               >
                 {substitutePreview(blockText(d))}
@@ -269,14 +275,14 @@ function PreviewBody({ data }: { data: OutputData | null }) {
           case 'code':
             return (
               <pre
-                key={i}
+                key={bKey}
                 className="rounded bg-zinc-700 p-2 font-mono text-[11px]"
               >
                 {typeof d.code === 'string' ? d.code : ''}
               </pre>
             );
           case 'delimiter':
-            return <hr key={i} className="border-zinc-600" />;
+            return <hr key={bKey} className="border-zinc-600" />;
           default:
             return null;
         }
@@ -306,7 +312,6 @@ export function StepCard({
   onRemove,
   disabled,
 }: StepCardProps) {
-  const parser = new DOMParser();
   const update = (patch: Partial<StepFormState>) =>
     onChange({ ...step, ...patch });
 
@@ -423,8 +428,14 @@ export function StepCard({
               {/* Subject + Type row */}
               <div className="flex items-stretch divide-x divide-zinc-700/60 border-b border-zinc-700/60">
                 <div className="flex flex-1 flex-col gap-0 px-4 py-3">
-                  <label className="mb-1 text-xs text-zinc-500">Subject</label>
+                  <label
+                    htmlFor={`subject-${step.stableKey}`}
+                    className="mb-1 text-xs text-zinc-500"
+                  >
+                    Subject
+                  </label>
                   <input
+                    id={`subject-${step.stableKey}`}
                     ref={subjectRef}
                     type="text"
                     value={step.subject}
@@ -443,8 +454,14 @@ export function StepCard({
                   )}
                 </div>
                 <div className="flex flex-col gap-0 px-4 py-3 w-40 shrink-0">
-                  <label className="mb-1 text-xs text-zinc-500">Type</label>
+                  <label
+                    htmlFor={`type-${step.stableKey}`}
+                    className="mb-1 text-xs text-zinc-500"
+                  >
+                    Type
+                  </label>
                   <select
+                    id={`type-${step.stableKey}`}
                     value={step.touchType}
                     disabled={disabled}
                     onChange={(e) =>
