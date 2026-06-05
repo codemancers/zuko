@@ -338,10 +338,7 @@ export function StepCard({
 
   const stepTypeLabel =
     step.type === 'auto_email' ? 'Automatic email' : 'Manual email';
-  const waitLabel =
-    step.waitTime === 0
-      ? 'Send email in immediately'
-      : `Send email in ${step.waitTime} ${step.waitMode}(s)`;
+  const isReply = step.touchType === 'reply_to_thread';
 
   return (
     <div className="rounded-xl border border-zinc-700/60 bg-zinc-900 overflow-hidden">
@@ -369,9 +366,40 @@ export function StepCard({
 
         {/* Right actions */}
         <div className="ml-auto flex items-center gap-3">
-          <span className="text-xs text-zinc-500 hidden sm:block">
-            {waitLabel}
-          </span>
+          {/* Wait time */}
+          <div className="hidden sm:flex items-center gap-1.5 text-xs text-zinc-400">
+            <span className="shrink-0">Send in</span>
+            <input
+              type="number"
+              min={0}
+              value={step.waitTime}
+              disabled={disabled}
+              onChange={(e) =>
+                update({ waitTime: Math.max(0, Number(e.target.value)) })
+              }
+              className="w-12 rounded border border-zinc-700 bg-zinc-800 px-1.5 py-0.5 text-center text-xs text-zinc-200 focus:border-zinc-500 focus:outline-none disabled:opacity-50"
+            />
+            <select
+              value={step.waitMode}
+              disabled={disabled}
+              onChange={(e) =>
+                update({
+                  waitMode: e.target.value as 'day' | 'hour' | 'minute',
+                })
+              }
+              className="rounded border border-zinc-700 bg-zinc-800 px-1.5 py-0.5 text-xs text-zinc-200 focus:border-zinc-500 focus:outline-none cursor-pointer disabled:opacity-50"
+            >
+              <option value="minute" className="bg-zinc-900">
+                min(s)
+              </option>
+              <option value="hour" className="bg-zinc-900">
+                hour(s)
+              </option>
+              <option value="day" className="bg-zinc-900">
+                day(s)
+              </option>
+            </select>
+          </div>
 
           {canRemove && (
             <button
@@ -427,32 +455,34 @@ export function StepCard({
             <div className="flex min-w-0 flex-1 flex-col">
               {/* Subject + Type row */}
               <div className="flex items-stretch divide-x divide-zinc-700/60 border-b border-zinc-700/60">
-                <div className="flex flex-1 flex-col gap-0 px-4 py-3">
-                  <label
-                    htmlFor={`subject-${step.stableKey}`}
-                    className="mb-1 text-xs text-zinc-500"
-                  >
-                    Subject
-                  </label>
-                  <input
-                    id={`subject-${step.stableKey}`}
-                    ref={subjectRef}
-                    type="text"
-                    value={step.subject}
-                    disabled={disabled}
-                    onChange={(e) => update({ subject: e.target.value })}
-                    placeholder="e.g. Hello {{first_name}},"
-                    className={cn(
-                      'w-full bg-transparent text-sm text-zinc-200 placeholder-zinc-600 focus:outline-none',
-                      subjectError && 'text-red-400',
+                {!isReply && (
+                  <div className="flex flex-1 flex-col gap-0 px-4 py-3">
+                    <label
+                      htmlFor={`subject-${step.stableKey}`}
+                      className="mb-1 text-xs text-zinc-500"
+                    >
+                      Subject
+                    </label>
+                    <input
+                      id={`subject-${step.stableKey}`}
+                      ref={subjectRef}
+                      type="text"
+                      value={step.subject}
+                      disabled={disabled}
+                      onChange={(e) => update({ subject: e.target.value })}
+                      placeholder="e.g. Hello {{first_name}},"
+                      className={cn(
+                        'w-full bg-transparent text-sm text-zinc-200 placeholder-zinc-600 focus:outline-none',
+                        subjectError && 'text-red-400',
+                      )}
+                    />
+                    {subjectError && (
+                      <p className="mt-0.5 text-xs text-red-500">
+                        {subjectError}
+                      </p>
                     )}
-                  />
-                  {subjectError && (
-                    <p className="mt-0.5 text-xs text-red-500">
-                      {subjectError}
-                    </p>
-                  )}
-                </div>
+                  </div>
+                )}
                 <div className="flex flex-col gap-0 px-4 py-3 w-40 shrink-0">
                   <label
                     htmlFor={`type-${step.stableKey}`}
