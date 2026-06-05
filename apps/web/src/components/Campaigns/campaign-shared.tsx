@@ -72,7 +72,8 @@ export function campaignToSteps(campaign: ZukoCampaign): StepFormState[] {
       waitMode: step.wait_mode as 'day' | 'hour' | 'minute',
       apolloTouchId: touch?.id,
       apolloTemplateId: touch?.emailer_template_id,
-      touchType: 'new_thread',
+      touchType:
+        (touch?.type as 'new_thread' | 'reply_to_thread') ?? 'new_thread',
       subject: touch?.emailer_template?.subject ?? '',
       bodyHtml: touch?.emailer_template?.body_html ?? '',
       includeSignature: touch?.include_signature ?? true,
@@ -107,51 +108,45 @@ export function stepsToPayload(steps: StepFormState[]): CreateSequenceStep[] {
   }));
 }
 
-// ─── EditorJS ↔ string serialisation ─────────────────────────────────────────
+// ─── EditorJS → HTML serialisation ───────────────────────────────────────────
 
-// EditorJS list v2 stores items as { content: string; items: [] },
-// while v1 stored plain strings. Handle both.
-function extractListItemText(
-  item: string | { content?: string; text?: string },
-): string {
-  if (typeof item === 'string') return item;
-  return item?.content ?? item?.text ?? '';
-}
-
-function stripHtml(html: string): string {
-  return html.replace(/<[^>]*>/g, '');
-}
-
-function outputDataToText(data: OutputData): string {
+// Converts EditorJS OutputData to HTML for storage / Apollo body_html.
+// EditorJS paragraph/header text already contains inline HTML (bold, links…)
+// so we wrap each block in the appropriate tag rather than escaping.
+function outputDataToHtml(data: OutputData): string {
   return data.blocks
     .map((block) => {
+      const d = (block.data ?? {}) as Record<string, unknown>;
       switch (block.type) {
         case 'paragraph':
-          return stripHtml((block.data.text as string) ?? '');
-        case 'header':
-          return stripHtml((block.data.text as string) ?? '');
+          return `<p>${(d.text as string) ?? ''}</p>`;
+        case 'header': {
+          const level = (d.level as number) ?? 2;
+          return `<h${level}>${(d.text as string) ?? ''}</h${level}>`;
+        }
         case 'list': {
-          const items =
-            (block.data.items as Array<
-              string | { content?: string; text?: string }
-            >) ?? [];
-          return items.map(extractListItemText).filter(Boolean).join('\n');
+          const items = Array.isArray(d.items) ? d.items : [];
+          const tag = d.style === 'ordered' ? 'ol' : 'ul';
+          const liHtml = items
+            .map((item) => `<li>${listItemText(item)}</li>`)
+            .join('');
+          return `<${tag}>${liHtml}</${tag}>`;
         }
         case 'checklist': {
-          const items =
-            (block.data.items as Array<{ text?: string; checked?: boolean }>) ??
-            [];
-          return items
-            .map((i) => i?.text ?? '')
-            .filter(Boolean)
-            .join('\n');
+          const items = Array.isArray(d.items) ? d.items : [];
+          return `<ul>${items
+            .map((item) => {
+              const it = (item ?? {}) as Record<string, unknown>;
+              return `<li>${typeof it.text === 'string' ? it.text : ''}</li>`;
+            })
+            .join('')}</ul>`;
         }
         case 'quote':
-          return stripHtml((block.data.text as string) ?? '');
+          return `<blockquote>${(d.text as string) ?? ''}</blockquote>`;
         case 'code':
-          return (block.data.code as string) ?? '';
+          return `<pre><code>${(d.code as string) ?? ''}</code></pre>`;
         case 'delimiter':
-          return '---';
+          return '<hr>';
         default:
           return '';
       }
@@ -320,7 +315,7 @@ export function StepCard({
   const onEditorChangeRef = useRef<(data: OutputData) => void>(() => {});
   onEditorChangeRef.current = (data: OutputData) => {
     setPreviewData(data);
-    update({ bodyHtml: outputDataToText(data) });
+    update({ bodyHtml: outputDataToHtml(data) });
   };
 
   const subjectError = errors?.[`step_${index}_subject`];
