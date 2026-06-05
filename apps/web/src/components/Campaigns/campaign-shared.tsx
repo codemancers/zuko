@@ -38,16 +38,6 @@ export interface StepFormState {
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-export const VARIABLES = [
-  '{{first_name}}',
-  '{{last_name}}',
-  '{{company}}',
-  '{{title}}',
-  '{{email}}',
-  '{{city}}',
-  '{{country}}',
-];
-
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 export function formatRate(value: number | string | null | undefined): string {
