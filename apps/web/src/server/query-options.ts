@@ -343,8 +343,9 @@ export const getIcpCompaniesInfinite = (id: number, perPage = 25) =>
     queryFn: ({ pageParam }) => icpApi.getCompanies(id, pageParam, perPage),
     initialPageParam: 1,
     getNextPageParam: (lastPage) => {
-      const { page, total_pages } = lastPage.pagination;
-      return page < total_pages ? page + 1 : undefined;
+      const page = Number(lastPage.pagination.page);
+      const totalPages = Number(lastPage.pagination.total_pages);
+      return page < totalPages ? page + 1 : undefined;
     },
     enabled: id > 0,
   });
@@ -355,8 +356,10 @@ export const getIcpContactsInfinite = (id: number, perPage = 25) =>
     queryFn: ({ pageParam }) => icpApi.getContacts(id, pageParam, perPage),
     initialPageParam: 1,
     getNextPageParam: (lastPage) => {
-      const { page, total_pages } = lastPage.pagination;
-      return page < total_pages ? page + 1 : undefined;
+      if (!lastPage.people.length) return undefined;
+      const page = Number(lastPage.pagination.page);
+      const totalPages = Number(lastPage.pagination.total_pages);
+      return page < totalPages ? page + 1 : undefined;
     },
     enabled: id > 0,
   });

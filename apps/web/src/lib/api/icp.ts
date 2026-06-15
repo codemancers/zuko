@@ -55,19 +55,24 @@ export interface ApolloOrganization {
 
 export interface ApolloPerson {
   id: string;
-  name: string;
-  first_name?: string;
-  last_name?: string;
-  title?: string;
-  linkedin_url?: string;
-  city?: string;
-  state?: string;
-  country?: string;
-  photo_url?: string;
+  first_name: string;
+  last_name_obfuscated: string;
+  title: string | null;
+  has_email: boolean;
+  has_city: boolean;
+  has_state: boolean;
+  has_country: boolean;
+  has_direct_phone: string;
   organization?: {
-    name?: string;
-    website_url?: string;
-    primary_domain?: string;
+    name: string;
+    has_industry: boolean;
+    has_phone: boolean;
+    has_city: boolean;
+    has_state: boolean;
+    has_country: boolean;
+    has_zip_code: boolean;
+    has_revenue: boolean;
+    has_employee_count: boolean;
   };
 }
 

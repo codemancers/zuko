@@ -133,23 +133,22 @@ const contactColumns: ColumnDef<ApolloPerson & { id: string }>[] = [
     header: 'Name',
     cell: ({ row }) => {
       const person = row.original;
-      const initials = person.name
-        ?.split(' ')
-        .filter(Boolean)
-        .map((n) => n[0])
-        .join('')
-        .toUpperCase()
-        .slice(0, 2);
+      const firstName = person.first_name || '';
+      const lastName = person.last_name_obfuscated || '';
+      const fullName = [firstName, lastName].filter(Boolean).join(' ') || '';
+      const initials =
+        (
+          (firstName.charAt(0) || '') + (lastName.charAt(0) || '')
+        ).toUpperCase() || '??';
       return (
         <div className="flex items-center gap-3">
           <Avatar
-            src={person.photo_url}
             initials={initials}
-            alt={person.name}
+            alt={fullName}
             className="size-7 bg-zinc-200 dark:bg-zinc-700 text-xs text-zinc-900 dark:text-zinc-100"
           />
           <span className="font-medium text-zinc-900 dark:text-white">
-            {person.name}
+            {fullName}
           </span>
         </div>
       );
@@ -170,7 +169,7 @@ const contactColumns: ColumnDef<ApolloPerson & { id: string }>[] = [
     header: 'Location',
     cell: ({ row }) => {
       const p = row.original;
-      return [p.city, p.country].filter(Boolean).join(', ') || '—';
+      return p.has_city || p.has_state || p.has_country ? '***' : '—';
     },
   },
   {
