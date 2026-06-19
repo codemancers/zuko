@@ -89,3 +89,8 @@ AGENTS.md
 CLAUDE.md
 GEMINI.md
 .antigravity/
+
+# Beads / Dolt files (added by bd init)
+.dolt/
+*.db
+.beads-credential-key

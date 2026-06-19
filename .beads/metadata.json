@@ -1,6 +1,7 @@
 {
   "database": "dolt",
-  "jsonl_export": "issues.jsonl",
   "backend": "dolt",
-  "dolt_database": "beads_zuko"
+  "dolt_mode": "embedded",
+  "dolt_database": "zuko",
+  "project_id": "487615f2-3d11-420a-8746-cbeeb65cfe07"
 }
