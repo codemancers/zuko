@@ -9,6 +9,7 @@ import { AuthGuard } from '@thallesp/nestjs-better-auth';
 import { OrganizationGuard } from '../../../../common/auth/organization.guard';
 import { OrgId } from '../../../../common/auth/org-id.decorator';
 import { ApolloProspectsService } from './apollo-prospects.service';
+import { ApolloMcpService } from '../apollo-mcp.service';
 import {
   SearchProspectsDto,
   AddPeopleToSequenceDto,
@@ -21,7 +22,14 @@ import {
 export class ApolloProspectsController {
   constructor(
     private readonly apolloProspectsService: ApolloProspectsService,
+    private readonly apolloMcpService: ApolloMcpService,
   ) {}
+
+  @Get('prospects/mcp-tools')
+  @ApiOperation({ summary: 'Debug: list all available Apollo MCP tools' })
+  listMcpTools(@OrgId() orgId: number) {
+    return this.apolloMcpService.listTools(orgId);
+  }
 
   @Post('prospects/search')
   @ApiOperation({

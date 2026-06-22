@@ -4,7 +4,7 @@ import {
   BadGatewayException,
   ForbiddenException,
 } from '@nestjs/common';
-import { ApolloIntegrationService } from '../apollo-integration.service';
+import { ConfigService } from '@nestjs/config';
 import { ApolloMcpService } from '../apollo-mcp.service';
 import { ContactsRepository } from '@zuko/sales';
 import type {
@@ -16,11 +16,15 @@ const APOLLO_BASE = 'https://api.apollo.io/api/v1';
 
 // ─── Apollo REST response shapes ─────────────────────────────────────────────
 
+// Response shape from /mixed_people/api_search (API key endpoint)
+// Last name is obfuscated until enriched (no credits consumed for basic search)
 interface ApolloPersonRaw {
   id: string;
-  name: string;
+  /** Full name — present on contacts/search but not mixed_people/api_search */
+  name?: string;
   first_name?: string;
   last_name?: string;
+  last_name_obfuscated?: string;
   title?: string;
   city?: string;
   state?: string;
@@ -40,7 +44,7 @@ interface ApolloPersonRaw {
 interface ApolloMixedPeopleResponse {
   people?: ApolloPersonRaw[];
   contacts?: ApolloPersonRaw[];
-  pagination: {
+  pagination?: {
     page: number;
     per_page: number;
     total_entries: number;
@@ -48,14 +52,7 @@ interface ApolloMixedPeopleResponse {
   };
 }
 
-interface ApolloOrgSearchRaw {
-  id: string;
-  name: string;
-}
-
-interface ApolloOrgSearchResponse {
-  organizations?: ApolloOrgSearchRaw[];
-}
+// (ApolloOrgSearchRaw kept for potential future use)
 
 // ─── Apollo MCP response shapes ───────────────────────────────────────────────
 
@@ -105,6 +102,8 @@ export interface ProspectsSearchResponse {
 export interface OrgSearchResult {
   id: string;
   name: string;
+  /** Primary domain e.g. "codemancers.com" — used for q_organization_domains_list filter */
+  domain?: string;
 }
 
 export interface AddToSequenceResult {
@@ -117,18 +116,18 @@ export class ApolloProspectsService {
   private readonly logger = new Logger(ApolloProspectsService.name);
 
   constructor(
-    private readonly apolloIntegrationService: ApolloIntegrationService,
     private readonly apolloMcpService: ApolloMcpService,
     private readonly contactsRepository: ContactsRepository,
+    private readonly configService: ConfigService,
   ) {}
 
-  // ─── Auth helpers ───────────────────────────────────────────────────────────
+  // ─── Auth ────────────────────────────────────────────────────────────────────
 
-  private async authHeaders(organizationId: number) {
-    const accessToken =
-      await this.apolloIntegrationService.getAccessToken(organizationId);
+  /** API key auth — used for prospect/org search endpoints. */
+  private apiKeyHeaders(): Record<string, string> {
+    const key = this.configService.getOrThrow<string>('APOLLO_API_KEY');
     return {
-      Authorization: `Bearer ${accessToken}`,
+      'x-api-key': key,
       'Content-Type': 'application/json',
       Accept: 'application/json',
     };
@@ -159,51 +158,53 @@ export class ApolloProspectsService {
     const page = dto.page ?? 1;
     const perPage = dto.perPage ?? 25;
 
-    const payload: Record<string, unknown> = {
-      page,
-      per_page: perPage,
-      contact_type_tags: ['contact', 'prospect'],
-    };
-
-    if (dto.personName?.trim()) {
-      payload['q_keywords'] = dto.personName.trim();
-    }
-    if (dto.personTitles?.length) {
-      payload['person_titles'] = dto.personTitles;
-    }
-    if (dto.personLocations?.length) {
-      payload['person_locations'] = dto.personLocations;
-    }
-    if (dto.organizationIds?.length) {
-      payload['organization_ids'] = dto.organizationIds;
-    }
-
     this.logger.debug(
-      `[APOLLO] searchPeople org=${organizationId} page=${page} filters=${JSON.stringify(
-        {
-          personName: dto.personName,
-          titles: dto.personTitles,
-          locations: dto.personLocations,
-          orgIds: dto.organizationIds,
-        },
-      )}`,
+      `[APOLLO] searchPeople page=${page} filters=${JSON.stringify({
+        personName: dto.personName,
+        titles: dto.personTitles,
+        locations: dto.personLocations,
+        orgIds: dto.organizationIds,
+        orgDomains: dto.organizationDomains,
+      })}`,
     );
 
-    const response = await fetch(`${APOLLO_BASE}/mixed_people/search`, {
+    // Use API key + /mixed_people/api_search — free for basic profile data
+    // contacts/search — searches only contacts saved in your Apollo CRM.
+    // Completely free, no enrichment credits consumed ever.
+    // mixed_people/api_search — searches Apollo's full 230M+ prospect database.
+    // Per Apollo's API pricing docs (docs.apollo.io/docs/api-pricing), this
+    // endpoint is NOT listed as credit-consuming. Credits are only charged for
+    // enrichment endpoints (people/match, organizations/enrich) and
+    // mixed_companies/search. Basic profile search is free.
+    const body: Record<string, unknown> = { page, per_page: perPage };
+
+    if (dto.personName?.trim()) body['q_keywords'] = dto.personName.trim();
+    if (dto.personTitles?.length) body['person_titles'] = dto.personTitles;
+    if (dto.personLocations?.length)
+      body['person_locations'] = dto.personLocations;
+    // Prefer domain filter over org ID — domains work more reliably.
+    // Don't send both simultaneously as they conflict.
+    if (dto.organizationDomains?.length) {
+      body['q_organization_domains_list'] = dto.organizationDomains;
+    } else if (dto.organizationIds?.length) {
+      body['organization_ids'] = dto.organizationIds;
+    }
+
+    // Use OAuth Bearer token. Requires mixed_people_api_search scope on
+    // the Apollo OAuth app (confirmed registered).
+    const response = await fetch(`${APOLLO_BASE}/mixed_people/api_search`, {
       method: 'POST',
-      headers: await this.authHeaders(organizationId),
-      body: JSON.stringify(payload),
+      headers: this.apiKeyHeaders(),
+      body: JSON.stringify(body),
     });
 
     if (!response.ok) {
-      const body = await response.text();
-      this.handleFetchError('searchPeople', response.status, body);
+      const errBody = await response.text();
+      this.handleFetchError('searchPeople', response.status, errBody);
     }
 
     const data = (await response.json()) as ApolloMixedPeopleResponse;
 
-    // Apollo may return results under `people` or `contacts` depending on the
-    // contact_type_tags filter — merge both arrays, deduplicating by id.
     const rawPeople = [...(data.people ?? []), ...(data.contacts ?? [])];
     const seen = new Set<string>();
     const deduped = rawPeople.filter((p) => {
@@ -216,7 +217,14 @@ export class ApolloProspectsService {
       id: p.id,
       contactId: p.contact_id ?? undefined,
       isContact: Boolean(p.contact_id),
-      name: p.name,
+      // Compose display name from available fields
+      name:
+        p.name ??
+        (p.first_name || p.last_name || p.last_name_obfuscated
+          ? [p.first_name, p.last_name ?? p.last_name_obfuscated]
+              .filter(Boolean)
+              .join(' ')
+          : 'Unknown'),
       firstName: p.first_name,
       lastName: p.last_name,
       title: p.title,
@@ -236,10 +244,19 @@ export class ApolloProspectsService {
         : undefined,
     }));
 
-    return { people, pagination: data.pagination };
+    return {
+      people,
+      pagination: data.pagination ?? {
+        page,
+        per_page: perPage,
+        total_entries: people.length,
+        total_pages: 1,
+      },
+    };
   }
-
   // ─── Organization name autocomplete ────────────────────────────────────────
+  // NOTE: mixed_companies/search costs credits (per Apollo API pricing docs).
+  // We use accounts/search instead — searches your Apollo CRM accounts, free.
 
   async searchOrganizations(
     organizationId: number,
@@ -247,20 +264,18 @@ export class ApolloProspectsService {
   ): Promise<OrgSearchResult[]> {
     if (!name?.trim()) return [];
 
+    this.logger.debug(`[APOLLO] searchOrganizations name="${name}"`);
+
     const params = new URLSearchParams({
       q_organization_name: name.trim(),
       per_page: '10',
     });
 
-    this.logger.debug(
-      `[APOLLO] searchOrganizations org=${organizationId} name="${name}"`,
-    );
-
     const response = await fetch(
-      `${APOLLO_BASE}/mixed_companies/search?${params.toString()}`,
+      `${APOLLO_BASE}/accounts/search?${params.toString()}`,
       {
         method: 'GET',
-        headers: await this.authHeaders(organizationId),
+        headers: this.apiKeyHeaders(),
       },
     );
 
@@ -269,8 +284,27 @@ export class ApolloProspectsService {
       this.handleFetchError('searchOrganizations', response.status, body);
     }
 
-    const data = (await response.json()) as ApolloOrgSearchResponse;
-    return (data.organizations ?? []).map((o) => ({ id: o.id, name: o.name }));
+    const data = (await response.json()) as {
+      organizations?: Array<{
+        id: string;
+        name: string;
+        primary_domain?: string;
+        domain?: string;
+      }>;
+      accounts?: Array<{
+        id: string;
+        name: string;
+        primary_domain?: string;
+        domain?: string;
+      }>;
+    };
+
+    const results = data.organizations ?? data.accounts ?? [];
+    return results.map((o) => ({
+      id: o.id,
+      name: o.name,
+      domain: o.primary_domain ?? o.domain,
+    }));
   }
 
   // ─── Add people to sequence ─────────────────────────────────────────────────

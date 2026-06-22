@@ -15,6 +15,8 @@ const OAUTH_STATE_TTL_MS = 10 * 60 * 1000; // 10 minutes
 const APOLLO_SCOPES = [
   'read_user_profile',
   'contacts_search',
+  'person_read',
+  'mixed_people_api_search',
   'organizations_search',
   'organizations_enrich',
   'organizations_bulk_enrich',
@@ -160,6 +162,10 @@ export class ApolloIntegrationService {
       code,
       codeVerifier,
     });
+
+    this.logger.log(
+      `Apollo token issued with scopes: "${(tokenResponse as unknown as Record<string, string>)['scope'] ?? 'unknown'}" for organizationId=${organizationId}`,
+    );
 
     await this.persistTokens(organizationId, userId, tokenResponse);
     this.logger.log(

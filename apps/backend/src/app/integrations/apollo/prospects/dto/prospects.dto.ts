@@ -43,6 +43,15 @@ export class SearchProspectsDto {
   @IsString({ each: true })
   organizationIds?: string[];
 
+  @ApiPropertyOptional({
+    type: [String],
+    description: 'Organization domains to filter by e.g. ["codemancers.com"]',
+  })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  organizationDomains?: string[];
+
   @ApiPropertyOptional({ default: 1, minimum: 1 })
   @IsOptional()
   @IsInt()

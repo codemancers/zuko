@@ -237,6 +237,7 @@ export interface ProspectsSearchResponse {
 export interface OrgSearchResult {
   id: string;
   name: string;
+  domain?: string;
 }
 
 export interface SearchProspectsParams {
@@ -244,6 +245,7 @@ export interface SearchProspectsParams {
   personTitles?: string[];
   personLocations?: string[];
   organizationIds?: string[];
+  organizationDomains?: string[];
   page?: number;
   perPage?: number;
 }
