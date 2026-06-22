@@ -20,6 +20,7 @@ export * from './text';
 export * from './textarea';
 export * from './tabs';
 export * from './switch';
+export * from './checkbox';
 export * from './multi-select';
 
 // Layouts

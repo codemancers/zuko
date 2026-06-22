@@ -200,6 +200,96 @@ export const apolloSequencesApi = {
   },
 };
 
+// ─── Prospects ────────────────────────────────────────────────────────────────
+
+export interface ProspectPerson {
+  id: string;
+  /** Set when the person already exists as a CRM contact. */
+  contactId?: string;
+  isContact: boolean;
+  name: string;
+  firstName?: string;
+  lastName?: string;
+  title?: string;
+  city?: string;
+  state?: string;
+  country?: string;
+  photoUrl?: string;
+  linkedinUrl?: string;
+  organizationName?: string;
+  organization?: {
+    id?: string;
+    name?: string;
+    primaryDomain?: string;
+  };
+}
+
+export interface ProspectsSearchResponse {
+  people: ProspectPerson[];
+  pagination: {
+    page: number;
+    per_page: number;
+    total_entries: number;
+    total_pages: number;
+  };
+}
+
+export interface OrgSearchResult {
+  id: string;
+  name: string;
+}
+
+export interface SearchProspectsParams {
+  personName?: string;
+  personTitles?: string[];
+  personLocations?: string[];
+  organizationIds?: string[];
+  page?: number;
+  perPage?: number;
+}
+
+export interface AddPeopleToSequencePayload {
+  sequenceId: string;
+  /** IDs of people that are already CRM contacts. */
+  contactIds: string[];
+  /** Apollo person IDs for prospects not yet in the CRM. */
+  personIds: string[];
+  /** Minimal data used to materialize prospects into contacts. */
+  personData: Array<{
+    firstName?: string;
+    lastName?: string;
+    organizationName?: string;
+  }>;
+}
+
+export interface AddPeopleToSequenceResponse {
+  result: unknown;
+  failedPersonIds: string[];
+}
+
+export const apolloProspectsApi = {
+  async search(
+    params: SearchProspectsParams,
+  ): Promise<ProspectsSearchResponse> {
+    return apiClient.post('/integrations/apollo/prospects/search', params);
+  },
+
+  async searchOrgs(name: string): Promise<OrgSearchResult[]> {
+    return apiClient.get(
+      `/integrations/apollo/organizations/search?name=${encodeURIComponent(name)}`,
+    );
+  },
+
+  async addToSequence(
+    payload: AddPeopleToSequencePayload,
+  ): Promise<AddPeopleToSequenceResponse> {
+    return apiClient.post(
+      '/integrations/apollo/prospects/add-to-sequence',
+      payload,
+    );
+  },
+};
+
 export const apolloIntegrationApi = {
   async getConnectionStatus(): Promise<ApolloConnectionStatus> {
     return apiClient.get('/integrations/apollo/status');
