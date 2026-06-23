@@ -340,6 +340,7 @@ export const getProspectSearch = (params: {
   personTitles?: string[];
   personLocations?: string[];
   organizationIds?: string[];
+  organizationDomains?: string[];
   page?: number;
 }) =>
   queryOptions({
@@ -349,7 +350,8 @@ export const getProspectSearch = (params: {
       params.personName ||
       params.personTitles?.length ||
       params.personLocations?.length ||
-      params.organizationIds?.length,
+      params.organizationIds?.length ||
+      params.organizationDomains?.length,
     ),
     staleTime: 30_000,
     retry: false,

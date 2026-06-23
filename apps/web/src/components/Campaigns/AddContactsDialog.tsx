@@ -32,6 +32,7 @@ import { apolloProspectsApi, type ProspectPerson } from '@/lib/api/apollo';
 interface OrgOption {
   id: string;
   name: string;
+  domain?: string;
 }
 
 interface ProspectFilters {
@@ -50,7 +51,7 @@ const EMPTY_FILTERS: ProspectFilters = {
 
 function hasActiveFilters(filters: ProspectFilters): boolean {
   return (
-    filters.name.trim() !== '' ||
+    filters.name.trim().length >= 3 ||
     filters.jobTitles.length > 0 ||
     filters.locations.length > 0 ||
     filters.companies.length > 0
@@ -315,7 +316,7 @@ export default function AddContactsDialog({
   const [filters, setFilters] = useState<ProspectFilters>(EMPTY_FILTERS);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
-  const debouncedFilters = useDebounce(filters, 500);
+  const debouncedFilters = useDebounce(filters, 800);
   const filtersActive = hasActiveFilters(debouncedFilters);
 
   const searchParams = useMemo(
@@ -329,6 +330,11 @@ export default function AddContactsDialog({
         : undefined,
       organizationIds: debouncedFilters.companies.length
         ? debouncedFilters.companies.map((org) => org.id)
+        : undefined,
+      organizationDomains: debouncedFilters.companies.length
+        ? (debouncedFilters.companies
+            .map((org) => org.domain)
+            .filter(Boolean) as string[])
         : undefined,
     }),
     [debouncedFilters],
@@ -499,7 +505,7 @@ export default function AddContactsDialog({
             <EmptyState
               icon={MagnifyingGlassIcon}
               title="Start by selecting a filter"
-              description="Filter by name, job title, location, or company to find prospects."
+              description="Search your saved Apollo contacts by name, title, location, or company."
             />
           ) : isFetching ? (
             <div className="flex flex-1 items-center justify-center gap-2 text-sm text-zinc-500">

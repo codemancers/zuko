@@ -66,4 +66,33 @@ export class ApolloMcpService {
 
     return JSON.parse(result.content[0].text) as T;
   }
+
+  /** List all tools available on the Apollo MCP server (useful for debugging). */
+  async listTools(organizationId: number): Promise<unknown> {
+    const accessToken =
+      await this.apolloIntegrationService.getAccessToken(organizationId);
+
+    const response = await fetch(APOLLO_MCP_ENDPOINT, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        jsonrpc: '2.0',
+        id: Date.now(),
+        method: 'tools/list',
+        params: {},
+      }),
+    });
+
+    const raw = await response.text();
+    const jsonLine = raw
+      .split('\n')
+      .find((line) => line.startsWith('data:'))
+      ?.replace('data:', '')
+      .trim();
+
+    return jsonLine ? JSON.parse(jsonLine) : raw;
+  }
 }
