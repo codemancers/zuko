@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { OutputData } from '@editorjs/editorjs';
 import {
   Button,
@@ -15,6 +15,7 @@ import {
   MultiCombobox,
 } from '@zuko/ui-kit';
 import { icpApi, type IcpProfile, type IcpFilters } from '@/lib/api/icp';
+import { COUNTRIES } from '@/lib/constants/countries';
 import Editor, { ensureOutputData } from '@/components/Common/Editor/Editor';
 import { toast } from 'sonner';
 
@@ -117,12 +118,7 @@ export default function IcpForm({
   );
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const { data: locationOptions = [], isLoading: isLoadingCountries } =
-    useQuery({
-      queryKey: ['countries'],
-      queryFn: () => icpApi.getCountries(),
-      staleTime: Infinity,
-    });
+  const locationOptions = COUNTRIES;
 
   const createMutation = useMutation({
     mutationFn: () =>
@@ -274,9 +270,7 @@ export default function IcpForm({
               value={filterFields.locations}
               onChange={setMulti('locations')}
               options={locationOptions}
-              placeholder={
-                isLoadingCountries ? 'Loading countries…' : 'Search countries…'
-              }
+              placeholder="Search countries…"
             />
           </Field>
         </FieldGroup>
