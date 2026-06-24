@@ -13,6 +13,7 @@ import type { OutputData } from '@editorjs/editorjs';
 import {
   Avatar,
   Badge,
+  Button,
   Heading,
   Sheet,
   SheetBody,
@@ -23,11 +24,13 @@ import {
   TabsTrigger,
   Text,
 } from '@zuko/ui-kit';
-import { PencilIcon } from '@heroicons/react/20/solid';
+import { LinkIcon, PencilIcon } from '@heroicons/react/20/solid';
+import { ExclamationTriangleIcon } from '@heroicons/react/24/outline';
 import {
   getIcpProfile,
   getIcpCompaniesInfinite,
   getIcpContactsInfinite,
+  getApolloConnectionStatus,
 } from '@/server/query-options';
 import { LoadingState, BackLink } from '@/components/shared';
 import Editor, { ensureOutputData } from '@/components/Common/Editor/Editor';
@@ -54,10 +57,37 @@ function formatRevenue(value?: number): string {
 
 function ApolloUpgradeError({ error }: { error: unknown }) {
   const message = (error as Error)?.message ?? '';
+  const isNotConnected =
+    message.toLowerCase().includes('not connected') ||
+    message.toLowerCase().includes('apollo is not connected');
+
+  if (isNotConnected) {
+    return (
+      <div className="flex flex-col items-center justify-center gap-4 rounded-xl border border-zinc-200 bg-zinc-50 px-6 py-12 text-center dark:border-zinc-800 dark:bg-zinc-900/50">
+        <div className="flex size-12 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-900/30">
+          <LinkIcon className="size-5 text-amber-600 dark:text-amber-400" />
+        </div>
+        <div className="space-y-1">
+          <Heading level={3}>Apollo is not connected</Heading>
+          <Text>
+            Connect your Apollo account to search companies and contacts.
+          </Text>
+        </div>
+        <Button href="/settings?tab=integrations" color="dark">
+          <LinkIcon className="size-4" />
+          Connect Apollo
+        </Button>
+      </div>
+    );
+  }
+
   return (
-    <p className="py-4 text-center text-sm text-red-500">
-      Failed to fetch data from Apollo. {message}
-    </p>
+    <div className="flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 dark:border-red-900/40 dark:bg-red-950/20">
+      <ExclamationTriangleIcon className="mt-0.5 size-4 shrink-0 text-red-500" />
+      <Text className="text-red-700 dark:text-red-400">
+        Failed to fetch data from Apollo.{message ? ` ${message}` : ''}
+      </Text>
+    </div>
   );
 }
 
@@ -252,6 +282,8 @@ function DetailsPanel({ profileId }: { profileId: number }) {
 }
 
 function CompaniesPanel({ profileId }: { profileId: number }) {
+  const { data: apolloStatus } = useQuery(getApolloConnectionStatus());
+
   const {
     data,
     isLoading,
@@ -260,36 +292,40 @@ function CompaniesPanel({ profileId }: { profileId: number }) {
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
-  } = useInfiniteQuery(getIcpCompaniesInfinite(profileId));
+  } = useInfiniteQuery({
+    ...getIcpCompaniesInfinite(profileId),
+    enabled: apolloStatus?.connected === true,
+  });
 
   const organizations = data?.pages.flatMap((p) => p.organizations) ?? [];
   const totalCount = data?.pages[0]?.pagination?.total_entries;
+
+  if (apolloStatus?.connected === false) {
+    return <ApolloUpgradeError error={new Error('Apollo is not connected')} />;
+  }
+
+  if (isError) return <ApolloUpgradeError error={error} />;
 
   return (
     <div className="space-y-4 [&>div]:mt-0">
       <BaseTable
         columns={companyColumns}
         data={organizations}
-        loading={isLoading}
+        loading={isLoading || apolloStatus === undefined}
         entityName="companies"
         disableRowClick
         totalCount={totalCount}
-        showEmptyState={!isLoading && !isError}
-        emptyStateConfig={
-          isError
-            ? undefined
-            : {
-                icon: () => null,
-                title: 'No companies found',
-                description: 'Try adjusting your ICP filters.',
-                action: { label: '', onClick: () => {} },
-              }
-        }
+        showEmptyState={!isLoading}
+        emptyStateConfig={{
+          icon: () => null,
+          title: 'No companies found',
+          description: 'Try adjusting your ICP filters.',
+          action: { label: '', onClick: () => {} },
+        }}
         onFetchNextPage={fetchNextPage}
         hasNextPage={hasNextPage}
         isFetchingNextPage={isFetchingNextPage}
       />
-      {isError && <ApolloUpgradeError error={error} />}
       {totalCount != null && (
         <p className="text-sm text-zinc-500 dark:text-zinc-400">
           {totalCount.toLocaleString()} companies found
@@ -300,6 +336,8 @@ function CompaniesPanel({ profileId }: { profileId: number }) {
 }
 
 function ContactsPanel({ profileId }: { profileId: number }) {
+  const { data: apolloStatus } = useQuery(getApolloConnectionStatus());
+
   const {
     data,
     isLoading,
@@ -308,36 +346,40 @@ function ContactsPanel({ profileId }: { profileId: number }) {
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
-  } = useInfiniteQuery(getIcpContactsInfinite(profileId));
+  } = useInfiniteQuery({
+    ...getIcpContactsInfinite(profileId),
+    enabled: apolloStatus?.connected === true,
+  });
 
   const people = data?.pages.flatMap((p) => p.people) ?? [];
   const totalCount = data?.pages[0]?.pagination?.total_entries;
+
+  if (apolloStatus?.connected === false) {
+    return <ApolloUpgradeError error={new Error('Apollo is not connected')} />;
+  }
+
+  if (isError) return <ApolloUpgradeError error={error} />;
 
   return (
     <div className="space-y-4 [&>div]:mt-0">
       <BaseTable
         columns={contactColumns}
         data={people}
-        loading={isLoading}
+        loading={isLoading || apolloStatus === undefined}
         entityName="contacts"
         disableRowClick
         totalCount={totalCount}
-        showEmptyState={!isLoading && !isError}
-        emptyStateConfig={
-          isError
-            ? undefined
-            : {
-                icon: () => null,
-                title: 'No contacts found',
-                description: 'Try adjusting your ICP filters.',
-                action: { label: '', onClick: () => {} },
-              }
-        }
+        showEmptyState={!isLoading}
+        emptyStateConfig={{
+          icon: () => null,
+          title: 'No contacts found',
+          description: 'Try adjusting your ICP filters.',
+          action: { label: '', onClick: () => {} },
+        }}
         onFetchNextPage={fetchNextPage}
         hasNextPage={hasNextPage}
         isFetchingNextPage={isFetchingNextPage}
       />
-      {isError && <ApolloUpgradeError error={error} />}
       {totalCount != null && (
         <p className="text-sm text-zinc-500 dark:text-zinc-400">
           {totalCount.toLocaleString()} contacts found
