@@ -335,6 +335,14 @@ export const getApolloUsageStats = () =>
     retry: false,
   });
 
+export const getApolloConnectionStatus = () =>
+  queryOptions({
+    queryKey: ['apollo', 'connection-status'],
+    queryFn: () => apolloIntegrationApi.getConnectionStatus(),
+    staleTime: 30_000,
+    retry: false,
+  });
+
 export const getProspectSearch = (params: {
   personName?: string;
   personTitles?: string[];
@@ -381,6 +389,7 @@ export const getIcpCompaniesInfinite = (id: number, perPage = 25) =>
       const { page, total_pages } = lastPage.pagination;
       return page < total_pages ? page + 1 : undefined;
     },
+    retry: false,
     enabled: id > 0,
   });
 
@@ -393,5 +402,6 @@ export const getIcpContactsInfinite = (id: number, perPage = 25) =>
       const { page, total_pages } = lastPage.pagination;
       return page < total_pages ? page + 1 : undefined;
     },
+    retry: false,
     enabled: id > 0,
   });
