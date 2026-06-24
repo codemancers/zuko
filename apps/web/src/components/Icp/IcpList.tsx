@@ -8,6 +8,7 @@ import {
 } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import type { ColumnDef } from '@tanstack/react-table';
+import { EMPLOYEE_RANGE_LABEL } from '@/lib/constants/icp';
 import {
   Button,
   Badge,
@@ -112,7 +113,7 @@ export default function IcpList() {
             <div className="flex flex-wrap gap-1">
               {ranges.slice(0, 2).map((r) => (
                 <Badge key={r} color="green">
-                  {r}
+                  {EMPLOYEE_RANGE_LABEL[r] ?? r}
                 </Badge>
               ))}
               {ranges.length === 0 && (

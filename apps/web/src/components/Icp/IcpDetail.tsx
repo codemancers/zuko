@@ -35,6 +35,7 @@ import { useAutosaveField } from '@/hooks/useAutosaveField';
 import { icpApi } from '@/lib/api/icp';
 import { BaseTable } from '@/components/Table';
 import type { ApolloOrganization, ApolloPerson } from '@/lib/api/icp';
+import { EMPLOYEE_RANGE_LABEL } from '@/lib/constants/icp';
 import IcpForm from './IcpForm';
 import dayjs from 'dayjs';
 
@@ -437,7 +438,7 @@ function ProfileSidebar({
             {filters.employeeRanges?.length ? (
               filters.employeeRanges.map((r) => (
                 <Badge key={r} color="green">
-                  {r}
+                  {EMPLOYEE_RANGE_LABEL[r] ?? r}
                 </Badge>
               ))
             ) : (
