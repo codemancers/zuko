@@ -271,7 +271,8 @@ export function BaseTable<TData extends BaseRow>(props: BaseTableProps<TData>) {
               {virtualItems.length > 0 ? (
                 <>
                   {paddingTop > 0 && (
-                    <tr>
+                    <tr aria-hidden="true">
+                      {/* oxlint-disable-next-line jsx-a11y/control-has-associated-label */}
                       <td colSpan={colCount} style={{ height: paddingTop }} />
                     </tr>
                   )}
@@ -286,7 +287,8 @@ export function BaseTable<TData extends BaseRow>(props: BaseTableProps<TData>) {
                     />
                   ))}
                   {paddingBottom > 0 && (
-                    <tr>
+                    <tr aria-hidden="true">
+                      {/* oxlint-disable-next-line jsx-a11y/control-has-associated-label */}
                       <td
                         colSpan={colCount}
                         style={{ height: paddingBottom }}

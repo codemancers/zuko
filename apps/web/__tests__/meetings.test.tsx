@@ -163,7 +163,7 @@ vi.mock('@/components/shared/ConfirmDialog', () => ({
   }: any) => {
     if (!open) return null;
     return (
-      <div role="dialog">
+      <dialog open>
         <p>{description}</p>
         <button type="button" onClick={onClose}>
           {cancelText ?? 'Cancel'}
@@ -171,7 +171,7 @@ vi.mock('@/components/shared/ConfirmDialog', () => ({
         <button type="button" onClick={onConfirm}>
           {confirmText ?? 'Confirm'}
         </button>
-      </div>
+      </dialog>
     );
   },
 }));
