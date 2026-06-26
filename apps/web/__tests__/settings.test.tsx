@@ -102,6 +102,10 @@ vi.mock('@/server/query-options', () => ({
     queryKey: ['apollo', 'usage-stats'],
     queryFn: async () => null,
   })),
+  getApolloConnectionStatus: vi.fn(() => ({
+    queryKey: ['apollo', 'connection-status'],
+    queryFn: async () => ({ connected: false }),
+  })),
 }));
 
 describe('SettingsPage', () => {
