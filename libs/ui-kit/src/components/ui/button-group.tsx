@@ -27,7 +27,6 @@ function ButtonGroup({
   ...props
 }: React.ComponentProps<'div'> & VariantProps<typeof buttonGroupVariants>) {
   return (
-    // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role
     <div
       role="group"
       data-slot="button-group"
