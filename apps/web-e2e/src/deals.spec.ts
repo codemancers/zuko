@@ -198,6 +198,7 @@ test.describe('Deal Detail - Inline Editing', () => {
       (resp) =>
         resp.url().includes(`/deals/${dealId}`) &&
         resp.request().method() === 'PATCH',
+      { timeout: 10000 },
     );
     await dealDetailPage.updateTitle(newTitle);
     await updatePromise;

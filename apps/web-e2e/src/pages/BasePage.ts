@@ -54,12 +54,17 @@ export class BasePage {
   }
 
   /**
-   * Update the page title (h1) via inline editing
+   * Update the page title (h1) via inline editing.
+   * Uses keyboard simulation (select-all + type) so React's synthetic events
+   * fire correctly on the contentEditable element, triggering the autosave hook.
    */
   async updateTitle(newTitle: string) {
     const heading = this.page.locator('h1[contenteditable="true"]');
-    await heading.fill(newTitle);
+    await heading.click();
+    await this.page.keyboard.press('Control+a');
+    await heading.pressSequentially(newTitle);
     await heading.blur();
+    // Let the 2 s autosave debounce start before the caller awaits the PATCH
     await this.page.waitForTimeout(500);
   }
 
@@ -187,6 +192,7 @@ export class BasePage {
 
   /**
    * Update an EntityProperties text field inline and wait for the PATCH response.
+   * Handles both plain inputs and combobox fields (which need an option click).
    * @param entityPath  The API path fragment to match (e.g. "/companies/123")
    */
   async updateEntityProperty(label: string, value: string, entityPath: string) {
@@ -195,11 +201,24 @@ export class BasePage {
     const patchPromise = this.page.waitForResponse(
       (resp) =>
         resp.url().includes(entityPath) && resp.request().method() === 'PATCH',
-      { timeout: 10000 },
+      { timeout: 15000 },
     );
 
     await input.fill(value);
-    await input.press('Enter');
+
+    // For combobox fields (Headless UI), fill filters the list and we must click
+    // the matching option. For plain inputs, pressing Enter submits.
+    const option = this.page
+      .getByRole('option', { name: new RegExp(`^${value}$`, 'i') })
+      .first();
+    const isCombobox = await option
+      .isVisible({ timeout: 2000 })
+      .catch(() => false);
+    if (isCombobox) {
+      await option.click();
+    } else {
+      await input.press('Enter');
+    }
 
     await patchPromise;
   }
