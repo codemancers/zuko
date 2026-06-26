@@ -33,8 +33,16 @@ export function EmailPasswordAuth({
     if (data && data.length > 0) {
       router.push('/chat');
     } else {
-      const { data: invitations } =
-        await authClient.organization.listUserInvitations();
+      // Retry a few times to handle session propagation timing for new accounts
+      let invitations = null;
+      for (let attempt = 0; attempt < 3; attempt++) {
+        if (attempt > 0) await new Promise((r) => setTimeout(r, 500));
+        const { data } = await authClient.organization.listUserInvitations();
+        if (data && data.length > 0) {
+          invitations = data;
+          break;
+        }
+      }
       if (invitations && invitations.length > 0) {
         router.push('/settings?tab=invitations');
       } else {

@@ -477,7 +477,9 @@ test.describe('Deal Associations - Contacts', () => {
 
   test('can close Add Contact dialog', async ({ dealDetailPage, page }) => {
     await dealDetailPage.goto(dealId);
-    await expect(dealDetailPage.dealTitle).toBeVisible({ timeout: 15000 });
+    await expect(
+      page.getByRole('button', { name: /Add Contact/i }),
+    ).toBeVisible({ timeout: 15000 });
 
     await page.getByRole('button', { name: /Add Contact/i }).click();
 

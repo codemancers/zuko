@@ -270,9 +270,6 @@ test.describe('Chat', () => {
       await contactDialog
         .getByRole('button', { name: /^Add\s*(\(\d+\))?$/ })
         .click();
-      await contactDialog
-        .getByRole('button', { name: /^Add\s*(\(\d+\))?$/ })
-        .click();
       await expect(contactDialog).toBeHidden();
 
       // Add company: open menu again, "Add company", select seeded company, confirm
@@ -290,9 +287,6 @@ test.describe('Chat', () => {
       await companyDialog
         .getByRole('button', { name: /^Add\s*(\(\d+\))?$/ })
         .click();
-      await companyDialog
-        .getByRole('button', { name: /^Add\s*(\(\d+\))?$/ })
-        .click();
       await expect(companyDialog).toBeHidden();
 
       // Add deal: open menu again, "Add deal", select seeded deal, confirm
@@ -305,9 +299,6 @@ test.describe('Chat', () => {
         has: page.getByText('Add Deals'),
       });
       await dealDialog.getByRole('button', { name: /TEST DEAL/i }).click();
-      await dealDialog
-        .getByRole('button', { name: /^Add\s*(\(\d+\))?$/ })
-        .click();
       await dealDialog
         .getByRole('button', { name: /^Add\s*(\(\d+\))?$/ })
         .click();
