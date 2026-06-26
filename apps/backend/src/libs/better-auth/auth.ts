@@ -1,7 +1,6 @@
-import type { BetterAuthPlugin } from 'better-auth';
-import { betterAuth } from 'better-auth';
+import { betterAuth, type BetterAuthPlugin } from 'better-auth';
 import { prismaAdapter } from 'better-auth/adapters/prisma';
-import { testUtils, organization } from 'better-auth/plugins';
+import { testUtils, organization, mcp } from 'better-auth/plugins';
 import { PrismaService } from '../../prisma/prisma.service';
 import { agentAuth, type Capability } from '@better-auth/agent-auth';
 
@@ -169,7 +168,7 @@ export const auth = betterAuth({
   // In dev: use backend URL directly
   baseURL:
     process.env.NODE_ENV === 'production'
-      ? process.env.FRONTEND_URL || 'https://zuko-webv-5725.fly.dev'
+      ? process.env.FRONTEND_URL || process.env.BACKEND_URL
       : process.env.BACKEND_URL || 'http://localhost:3001',
   // Explicitly set secret to ensure consistency between tests and runtime
   secret: process.env.BETTER_AUTH_SECRET || process.env.AUTH_SECRET,
@@ -203,6 +202,19 @@ export const auth = betterAuth({
       }),
       jwtMaxAge: 60,
       agentSessionTTL: 3600,
+    }) as unknown as BetterAuthPlugin,
+    mcp({
+      loginPage: (() => {
+        if (process.env.NODE_ENV === 'production') {
+          if (!process.env.FRONTEND_URL) {
+            throw new Error(
+              'FRONTEND_URL environment variable is required in production',
+            );
+          }
+          return `${process.env.FRONTEND_URL}/sign-in`;
+        }
+        return 'http://localhost:3000/sign-in';
+      })(),
     }) as unknown as BetterAuthPlugin,
   ],
   emailAndPassword: {
@@ -247,6 +259,19 @@ export const auth = betterAuth({
           },
   },
   databaseHooks: {
+    user: {
+      create: {
+        before: async (user) => {
+          // Auto-verify emails in non-production so that better-auth's
+          // organization.listUserInvitations() (which requires emailVerified)
+          // works for newly signed-up users in e2e tests.
+          if (process.env.NODE_ENV !== 'production') {
+            return { data: { ...user, emailVerified: true } };
+          }
+          return undefined;
+        },
+      },
+    },
     session: {
       create: {
         before: async (session) => {

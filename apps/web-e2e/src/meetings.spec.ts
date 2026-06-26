@@ -201,7 +201,7 @@ test.describe('Meetings - Authenticated', () => {
     await page.getByRole('button', { name: /^cancel$/i }).click();
     await expect(
       page.getByText('Are you sure you want to delete this meeting?'),
-    ).not.toBeVisible();
+    ).toBeHidden();
   });
 
   test('Meetings sidebar nav link is visible when flag is enabled', async ({

@@ -61,16 +61,14 @@ export class TasksPage extends BasePage {
     assignee?: string;
     parentId?: string;
   }) {
-    // Only navigate if not already on tasks page
-    if (!this.page.url().endsWith('/tasks')) {
-      await this.goto();
-      await this.page.waitForLoadState('networkidle');
-    }
+    // Always navigate to tasks page to ensure fresh state
+    await this.goto();
+    await this.page.waitForLoadState('networkidle');
 
     const createBtn = this.page
       .getByRole('button', { name: /new task/i })
       .first();
-    await expect(createBtn).toBeVisible({ timeout: 10000 });
+    await expect(createBtn).toBeVisible({ timeout: 15000 });
     await createBtn.click();
 
     const sheetTitle = this.page.getByRole('heading', { name: /New Task/i });

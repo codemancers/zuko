@@ -55,13 +55,18 @@ export class DealsPage extends BasePage {
   }
 
   /**
-   * Create a new deal row with given name
+   * Create a new deal row with given name.
+   * Navigates back to a clean deals page after creation so all column headers
+   * are visible (no active search filter that could clear metadata).
    */
   async createDealRow(dealName: string) {
     await this.createNewRecord(dealName);
+    // createNewRecord ends with search active. Navigate fresh to ensure all
+    // column headers are loaded without a search filter.
+    await this.goto();
     await expect(
       this.page.getByRole('row').filter({ hasText: dealName }).first(),
-    ).toBeVisible();
+    ).toBeVisible({ timeout: 15000 });
   }
 
   override async createNewRecord(dealName = `New Deal ${Date.now()}`) {

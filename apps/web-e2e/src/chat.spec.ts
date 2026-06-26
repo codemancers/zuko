@@ -126,7 +126,7 @@ test.describe('Chat', () => {
     await page.waitForSelector('[data-slot="content"]', { timeout: 10000 });
 
     // Verify the empty state is no longer visible
-    await expect(page.getByText('Start a conversation')).not.toBeVisible();
+    await expect(page.getByText('Start a conversation')).toBeHidden();
   });
 
   test('multiple messages can be sent in sequence', async ({ page }) => {
@@ -270,7 +270,7 @@ test.describe('Chat', () => {
       await contactDialog
         .getByRole('button', { name: /^Add\s*(\(\d+\))?$/ })
         .click();
-      await expect(contactDialog).not.toBeVisible();
+      await expect(contactDialog).toBeHidden();
 
       // Add company: open menu again, "Add company", select seeded company, confirm
       await page.getByRole('button', { name: 'Add attachments' }).click();
@@ -287,7 +287,7 @@ test.describe('Chat', () => {
       await companyDialog
         .getByRole('button', { name: /^Add\s*(\(\d+\))?$/ })
         .click();
-      await expect(companyDialog).not.toBeVisible();
+      await expect(companyDialog).toBeHidden();
 
       // Add deal: open menu again, "Add deal", select seeded deal, confirm
       await page.getByRole('button', { name: 'Add attachments' }).click();
@@ -302,7 +302,7 @@ test.describe('Chat', () => {
       await dealDialog
         .getByRole('button', { name: /^Add\s*(\(\d+\))?$/ })
         .click();
-      await expect(dealDialog).not.toBeVisible();
+      await expect(dealDialog).toBeHidden();
 
       // Type a message and submit
       const textarea = page.getByPlaceholder('Ask anything...');

@@ -8,6 +8,13 @@ vi.mock('next/image', () => ({
     <img src={src} alt={alt} />
   ),
 }));
+
+// McpOAuthHandler (inside OrgConnections) calls useRouter / useSearchParams
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ push: vi.fn(), replace: vi.fn() }),
+  useSearchParams: () => new URLSearchParams(),
+  usePathname: () => '/settings',
+}));
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -35,15 +42,42 @@ vi.mock('@/lib/auth-client', () => ({
     listAccounts: (...args: unknown[]) => mockListAccounts(...args),
     linkSocial: (...args: unknown[]) => mockLinkSocial(...args),
     useActiveOrganization: vi.fn(() => ({ data: null, isLoading: false })),
-    useSession: vi.fn(() => ({ data: null, isLoading: false })),
+    useSession: vi.fn(() => ({
+      data: { user: { email: 'test@test.com' } },
+      isLoading: false,
+    })),
   },
 }));
 
 const mockGetGitHubInstallationStatus = vi.fn();
 const mockGetGitHubInstallationUrl = vi.fn();
+const mockFetchLinkedAccounts = vi.fn();
 vi.mock('@/server/actions/github', () => ({
   getGitHubInstallationStatus: () => mockGetGitHubInstallationStatus(),
   getGitHubInstallationUrl: () => mockGetGitHubInstallationUrl(),
+}));
+
+// Mock the OrgConnections server-side data fetching
+vi.mock('@/components/organization/server/fetch', () => ({
+  getGitHubInstallationStatus: () => mockGetGitHubInstallationStatus(),
+  getGitHubInstallationUrl: () => mockGetGitHubInstallationUrl(),
+  fetchLinkedAccounts: () => mockFetchLinkedAccounts(),
+}));
+
+// Mock the MCP OAuth hook (uses next/navigation internally)
+vi.mock('@/components/organization/hooks/use-mcp-oauth', () => ({
+  useMcpOAuth: () => ({
+    mcpToken: null,
+    mcpPending: false,
+    mcpConnected: false,
+    handleMcpSuccess: vi.fn(),
+    handleMcpPending: vi.fn(),
+    handleMcpConnect: vi.fn(),
+    handleMcpDisconnect: vi.fn(),
+  }),
+  McpOAuthHandler: () => null,
+  getMcpEndpoint: () => 'http://localhost:3001/api/mcp',
+  getAuthBaseUrl: () => 'http://localhost:3001/auth',
 }));
 
 // Stub query-options so SettingsPage's useQuery calls resolve immediately
@@ -68,6 +102,10 @@ vi.mock('@/server/query-options', () => ({
     queryKey: ['apollo', 'usage-stats'],
     queryFn: async () => null,
   })),
+  getApolloConnectionStatus: vi.fn(() => ({
+    queryKey: ['apollo', 'connection-status'],
+    queryFn: async () => ({ connected: false }),
+  })),
 }));
 
 describe('SettingsPage', () => {
@@ -81,6 +119,7 @@ describe('SettingsPage', () => {
       'https://github.com/apps/test/installations/new',
     );
     mockListAccounts.mockResolvedValue({ data: [] });
+    mockFetchLinkedAccounts.mockResolvedValue([]);
   });
 
   afterEach(() => {
@@ -142,6 +181,9 @@ describe('SettingsPage', () => {
     mockListAccounts.mockResolvedValue({
       data: [{ providerId: 'google', createdAt: new Date().toISOString() }],
     });
+    mockFetchLinkedAccounts.mockResolvedValue([
+      { providerId: 'google', createdAt: new Date().toISOString() },
+    ]);
 
     renderWithProviders(<SettingsPage />);
     await waitFor(() => {

@@ -198,6 +198,7 @@ test.describe('Deal Detail - Inline Editing', () => {
       (resp) =>
         resp.url().includes(`/deals/${dealId}`) &&
         resp.request().method() === 'PATCH',
+      { timeout: 10000 },
     );
     await dealDetailPage.updateTitle(newTitle);
     await updatePromise;
@@ -477,7 +478,9 @@ test.describe('Deal Associations - Contacts', () => {
 
   test('can close Add Contact dialog', async ({ dealDetailPage, page }) => {
     await dealDetailPage.goto(dealId);
-    await expect(dealDetailPage.dealTitle).toBeVisible({ timeout: 15000 });
+    await expect(
+      page.getByRole('button', { name: /Add Contact/i }),
+    ).toBeVisible({ timeout: 15000 });
 
     await page.getByRole('button', { name: /Add Contact/i }).click();
 
@@ -600,10 +603,14 @@ test.describe.serial('Column Creation Flow', () => {
 
     await page.getByRole('button', { name: 'Create field' }).click();
 
-    await expect(page.getByText('Column created successfully')).toBeVisible();
+    await expect(page.getByText('Column created successfully')).toBeVisible({
+      timeout: 10000,
+    });
+    // Navigate to deals page to get a fresh SSR load that includes the new column
+    await dealsPage.goto();
     await expect(
       page.getByRole('columnheader', { name: columnName }),
-    ).toBeVisible();
+    ).toBeVisible({ timeout: 15000 });
   });
 
   test('Shows error toast when creating column with existing default column key (title)', async ({

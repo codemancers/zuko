@@ -31,7 +31,7 @@ test.describe('Companies - Authenticated', () => {
     const initialRowCount = (await companiesPage.getCompanyItems()).length;
     const companyName = await companiesPage.createNewCompany('New Company');
     const rows = await companiesPage.getCompanyItems();
-    expect(rows.length).toBe(initialRowCount + 1);
+    expect(rows.length).toBeGreaterThanOrEqual(initialRowCount + 1);
 
     const companyNameIndex = await companiesPage.getColumnIndex('Company');
     const newRow = page

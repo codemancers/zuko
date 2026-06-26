@@ -84,6 +84,7 @@ vitest.config.*.timestamp*
 .claude/
 .cursorrules
 .windsurfrules
+.gemini
 .mcp.json
 AGENTS.md
 CLAUDE.md
