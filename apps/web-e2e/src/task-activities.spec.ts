@@ -1,4 +1,5 @@
 import { test, expect } from './fixtures';
+import { createFreshTask } from './fixtures/helpers';
 
 /**
  * Task Activity Timeline Tests.
@@ -7,23 +8,8 @@ import { test, expect } from './fixtures';
 test.describe('Task Activity Timeline - Comments', () => {
   let taskId!: number;
 
-  test.beforeEach(async ({ tasksPage, page }) => {
-    if (taskId !== undefined) return;
-
-    const taskTitle = `Activity Timeline Task ${Date.now()}`;
-    // Intercept the create API response to get the task ID directly,
-    // avoiding pagination issues when searching the task list.
-    const responsePromise = page.waitForResponse(
-      (resp) =>
-        resp.url().includes('/tasks') &&
-        resp.request().method() === 'POST' &&
-        resp.ok(),
-      { timeout: 15000 },
-    );
-    await tasksPage.createTask({ title: taskTitle });
-    const response = await responsePromise;
-    const createdTask = await response.json();
-    taskId = createdTask.id;
+  test.beforeAll(async ({ browser }) => {
+    taskId = await createFreshTask(browser);
   });
 
   // ── 1. Empty states ───────────────────────────────────────────────────────

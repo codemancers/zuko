@@ -52,9 +52,10 @@ const DealsList = () => {
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
-  } = useInfiniteQuery(
-    getTableViewDealsInfinite({ search: debouncedValue || undefined }),
-  );
+  } = useInfiniteQuery({
+    ...getTableViewDealsInfinite({ search: debouncedValue || undefined }),
+    placeholderData: (previousData) => previousData,
+  });
 
   const { mutate: addColumn } = useAddColumn('deals');
 

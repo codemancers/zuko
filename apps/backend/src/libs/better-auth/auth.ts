@@ -259,6 +259,18 @@ export const auth = betterAuth({
           },
   },
   databaseHooks: {
+    user: {
+      create: {
+        before: async (user) => {
+          // Auto-verify emails in non-production so that better-auth's
+          // organization.listUserInvitations() (which requires emailVerified)
+          // works for newly signed-up users in e2e tests.
+          if (process.env.NODE_ENV !== 'production') {
+            return { data: { ...user, emailVerified: true } };
+          }
+        },
+      },
+    },
     session: {
       create: {
         before: async (session) => {

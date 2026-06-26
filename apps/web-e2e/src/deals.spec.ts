@@ -605,6 +605,8 @@ test.describe.serial('Column Creation Flow', () => {
     await expect(page.getByText('Column created successfully')).toBeVisible({
       timeout: 10000,
     });
+    // Navigate to deals page to get a fresh SSR load that includes the new column
+    await dealsPage.goto();
     await expect(
       page.getByRole('columnheader', { name: columnName }),
     ).toBeVisible({ timeout: 15000 });
