@@ -46,7 +46,6 @@ async function bootstrap() {
 
   registerMcpRoutes(app, port);
 
-
   await app.listen(port);
 
   Logger.log(`🚀 Application is running on: http://localhost:${port}/api`);

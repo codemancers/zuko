@@ -176,7 +176,9 @@ export const OrgConnections = () => {
     mutationFn: disconnectApollo,
     onSuccess: () => {
       toast.success('Apollo disconnected');
-      queryClient.invalidateQueries({ queryKey: ['apollo', 'connection-status'] });
+      queryClient.invalidateQueries({
+        queryKey: ['apollo', 'connection-status'],
+      });
     },
     onError: () => toast.error('Failed to disconnect Apollo'),
   });
