@@ -268,6 +268,7 @@ export const auth = betterAuth({
           if (process.env.NODE_ENV !== 'production') {
             return { data: { ...user, emailVerified: true } };
           }
+          return undefined;
         },
       },
     },
