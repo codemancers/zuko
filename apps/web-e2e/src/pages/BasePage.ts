@@ -209,7 +209,7 @@ export class BasePage {
     // For combobox fields (Headless UI), fill filters the list and we must click
     // the matching option. For plain inputs, pressing Enter submits.
     const option = this.page
-      .getByRole('option', { name: new RegExp(`^${value}$`, 'i') })
+      .getByRole('option', { name: value, exact: true })
       .first();
     const isCombobox = await option
       .isVisible({ timeout: 2000 })
