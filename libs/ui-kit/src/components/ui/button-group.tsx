@@ -28,7 +28,8 @@ function ButtonGroup({
 }: React.ComponentProps<'div'> & VariantProps<typeof buttonGroupVariants>) {
   return (
     // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role
-    <div role="group"
+    <div
+      role="group"
       data-slot="button-group"
       data-orientation={orientation}
       className={cn(buttonGroupVariants({ orientation }), className)}
