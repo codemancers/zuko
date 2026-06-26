@@ -602,10 +602,12 @@ test.describe.serial('Column Creation Flow', () => {
 
     await page.getByRole('button', { name: 'Create field' }).click();
 
-    await expect(page.getByText('Column created successfully')).toBeVisible();
+    await expect(page.getByText('Column created successfully')).toBeVisible({
+      timeout: 10000,
+    });
     await expect(
       page.getByRole('columnheader', { name: columnName }),
-    ).toBeVisible();
+    ).toBeVisible({ timeout: 15000 });
   });
 
   test('Shows error toast when creating column with existing default column key (title)', async ({

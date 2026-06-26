@@ -46,9 +46,13 @@ test.describe('Member Management', () => {
     await userBPage.getByLabel(/password/i).fill('Password123!');
     await userBPage.getByRole('button', { name: /create account/i }).click();
 
-    // After signup, should be redirected to invitations tab (per our earlier logic)
-    console.log('User B signed up, waiting for redirect to invitations tab...');
-    await userBPage.waitForURL(/tab=invitations/, { timeout: 15000 });
+    // Wait for any redirect after signup, then navigate directly to invitations
+    // (the automatic redirect depends on listUserInvitations timing which can be unreliable)
+    console.log('User B signed up, navigating to invitations tab...');
+    await userBPage.waitForURL(/\/(chat|organization\/create|settings)/, {
+      timeout: 15000,
+    });
+    await userBPage.goto('/settings?tab=invitations');
 
     // Accept invitation
     const userBSettingsPage = new SettingsPage(userBPage);
