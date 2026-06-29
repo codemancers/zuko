@@ -1,6 +1,5 @@
 -- AlterTable
 ALTER TABLE "sales"."campaign" ADD COLUMN "icp_profile_id" INTEGER;
-ALTER TABLE "sales"."campaign" ALTER COLUMN "provider_sequence_id" DROP NOT NULL;
 
 -- CreateIndex
 CREATE INDEX "campaign_icp_profile_id_idx" ON "sales"."campaign"("icp_profile_id");
