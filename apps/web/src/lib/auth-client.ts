@@ -1,5 +1,6 @@
 import { createAuthClient } from 'better-auth/react';
 import { organizationClient } from 'better-auth/client/plugins';
+import { oauthProviderClient } from '@better-auth/oauth-provider/client';
 
 // Use the frontend's auth proxy to avoid third-party cookie issues
 // The proxy at /auth forwards requests to the backend
@@ -42,5 +43,6 @@ export const authClient = createAuthClient({
         enabled: true,
       },
     }),
+    oauthProviderClient(),
   ],
 });

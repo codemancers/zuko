@@ -1,10 +1,15 @@
 import { betterAuth, type BetterAuthPlugin } from 'better-auth';
 import { prismaAdapter } from 'better-auth/adapters/prisma';
-import { testUtils, organization, mcp } from 'better-auth/plugins';
+import { testUtils, organization, jwt } from 'better-auth/plugins';
+import { oauthProvider } from '@better-auth/oauth-provider';
 import { PrismaService } from '../../prisma/prisma.service';
 import { agentAuth, type Capability } from '@better-auth/agent-auth';
 
 const prisma = new PrismaService();
+
+// OAuth scopes granted to external MCP clients (Claude, Cursor, …).
+// Resource servers (McpController) enforce these per tool.
+export const MCP_SCOPES = ['tasks:read', 'tasks:write'];
 
 const AGENT_CAPABILITIES: Capability[] = [
   // CRM — deals
@@ -149,6 +154,10 @@ const AGENT_CAPABILITIES: Capability[] = [
 const includeEmailAuth =
   process.env.NEXT_PUBLIC_BETTER_AUTH_INCLUDE_EMAILS_AUTH === 'true';
 
+const betterAuthUrl = process.env.BACKEND_URL || 'http://localhost:3001';
+
+const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+
 async function getInitialOrganization(userId: number) {
   const membership = await prisma.member.findFirst({
     where: { userId },
@@ -159,17 +168,16 @@ async function getInitialOrganization(userId: number) {
   return membership?.organization;
 }
 
-export const auth = betterAuth({
+// betterAuth's return type references internal packages that aren't portable.
+// Using any to avoid build errors while maintaining type safety through inference.
+const authInstance: any = betterAuth({
   // basePath: where auth endpoints are mounted (proxy forwards /api/auth/* to backend /auth/*)
   // In prod: proxy at /api/auth forwards to backend, so backend still serves at /auth
   basePath: '/auth',
-  // baseURL: full URL where auth endpoints are publicly accessible
-  // In prod: use frontend URL (OAuth callbacks go through proxy)
-  // In dev: use backend URL directly
-  baseURL:
-    process.env.NODE_ENV === 'production'
-      ? process.env.FRONTEND_URL || process.env.BACKEND_URL
-      : process.env.BACKEND_URL || 'http://localhost:3001',
+  // Disable the jwt plugin's /auth/token shortcut — it mints session-derived
+  // JWTs that bypass OAuth consent/scoping. oauth2/token is the only token issuer.
+  disabledPaths: ['/token'],
+  baseURL: betterAuthUrl,
   // Explicitly set secret to ensure consistency between tests and runtime
   secret: process.env.BETTER_AUTH_SECRET || process.env.AUTH_SECRET,
   trustedOrigins: process.env.TRUSTED_ORIGINS?.split(',') ?? [
@@ -203,20 +211,35 @@ export const auth = betterAuth({
       jwtMaxAge: 60,
       agentSessionTTL: 3600,
     }) as unknown as BetterAuthPlugin,
-    mcp({
-      loginPage: (() => {
-        if (process.env.NODE_ENV === 'production') {
-          if (!process.env.FRONTEND_URL) {
-            throw new Error(
-              'FRONTEND_URL environment variable is required in production',
-            );
-          }
-          return `${process.env.FRONTEND_URL}/sign-in`;
-        }
-        return 'http://localhost:3000/sign-in';
-      })(),
-    }) as unknown as BetterAuthPlugin,
+    // Signing keys + /auth/jwks endpoint. Required by oauthProvider for
+    // JWT-formatted access tokens (resource servers verify locally via JWKS).
+    jwt(),
+    // OAuth 2.1 authorization server — lets external MCP clients (Claude,
+    // Cursor, VS Code) obtain user-scoped access tokens via the standard
+    // authorize/consent flow. Replaces the deprecated mcp() plugin.
+    // Tables in libs/models/prisma/core.prisma (OauthClient, OauthAccessToken, etc.)
+    oauthProvider({
+      loginPage: `${frontendUrl}/sign-in`,
+      consentPage: `${frontendUrl}/oauth/consent`,
+      // MCP clients self-register (RFC 7591). Unauthenticated registration is
+      // required for public clients like Claude Code; it only creates a client
+      // row — every token still goes through user login + consent.
+      allowDynamicClientRegistration: true,
+      allowUnauthenticatedClientRegistration: true,
+      scopes: ['openid', 'profile', 'email', 'offline_access', ...MCP_SCOPES],
+
+      // Audiences tokens may be minted for (RFC 8707 resource parameter).
+      // JWT access tokens carry this as `aud`; mcp.bootstrap.ts verifies it.
+      validAudiences: [`${betterAuthUrl}/api/mcp`],
+      silenceWarnings: {
+        // Root-level RFC 8414 discovery routes are served by
+        // WellKnownController (apps/backend/src/app/mcp/well-known.controller.ts).
+        oauthAuthServerConfig: true,
+        openidConfig: true,
+      },
+    }),
   ],
+
   emailAndPassword: {
     enabled: includeEmailAuth,
   },
@@ -289,3 +312,5 @@ export const auth = betterAuth({
     },
   },
 });
+
+export const auth = authInstance;

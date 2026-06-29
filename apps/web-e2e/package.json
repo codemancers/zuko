@@ -13,7 +13,7 @@
   "devDependencies": {
     "@prisma/adapter-pg": "^7.7.0",
     "@types/pg": "^8.20.0",
-    "better-auth": "^1.5.4",
+    "better-auth": "^1.6.22",
     "pg": "^8.16.3"
   }
 }

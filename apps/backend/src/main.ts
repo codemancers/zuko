@@ -2,7 +2,6 @@ import { Logger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app/app.module';
-import { registerMcpRoutes } from './app/mcp/mcp.bootstrap';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, { bodyParser: false });
@@ -17,11 +16,25 @@ async function bootstrap() {
     origin: allowedOrigins,
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     credentials: true,
+    // MCP clients read the OAuth resource-metadata pointer from 401
+    // responses; without this, browsers strip the header and clients
+    // fall back to guessing /.well-known paths.
+    exposedHeaders: ['WWW-Authenticate'],
   });
 
   const globalPrefix = 'api';
   // Exclude auth routes from global prefix
-  app.setGlobalPrefix(globalPrefix, { exclude: ['auth', '.well-known/(.*)'] });
+  app.setGlobalPrefix(globalPrefix, {
+    exclude: [
+      'auth',
+      '.well-known/workflow/(.*)',
+      '.well-known/oauth-authorization-server',
+      '.well-known/oauth-authorization-server/(.*)',
+      '.well-known/openid-configuration',
+      '.well-known/openid-configuration/(.*)',
+      '.well-known/oauth-protected-resource/(.*)',
+    ],
+  });
 
   const basePort = process.env.PORT || 3000;
   const port = parseInt(basePort as string) + 1;
@@ -43,8 +56,6 @@ async function bootstrap() {
   SwaggerModule.setup('api/docs', app, document, {
     swaggerOptions: { persistAuthorization: true },
   });
-
-  registerMcpRoutes(app, port);
 
   await app.listen(port);
 
