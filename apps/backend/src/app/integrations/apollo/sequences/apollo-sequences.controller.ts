@@ -6,6 +6,7 @@ import {
   Body,
   Query,
   Param,
+  ParseIntPipe,
   UseGuards,
   Request,
 } from '@nestjs/common';
@@ -18,6 +19,8 @@ import {
   CreateSequenceDto,
   AddContactsToSequenceDto,
   SearchSequencesDto,
+  CreateCampaignDto,
+  SaveSequenceDto,
 } from './dto/sequences.dto';
 
 @ApiTags('Apollo Sequences')
@@ -39,6 +42,18 @@ export class ApolloSequencesController {
   @ApiOperation({ summary: 'List Apollo sending schedules' })
   schedules(@OrgId() organizationId: number) {
     return this.apolloSequencesService.getSchedules(organizationId);
+  }
+
+  @Get('by-icp/:icpProfileId')
+  @ApiOperation({ summary: 'List Zuko campaigns linked to an ICP profile' })
+  getCampaignsByIcp(
+    @OrgId() organizationId: number,
+    @Param('icpProfileId', ParseIntPipe) icpProfileId: number,
+  ) {
+    return this.apolloSequencesService.getCampaignsByIcpProfile(
+      organizationId,
+      icpProfileId,
+    );
   }
 
   @Get(':id/campaign')
@@ -99,6 +114,51 @@ export class ApolloSequencesController {
   ) {
     return this.apolloSequencesService.addContactsToSequence(
       organizationId,
+      dto,
+    );
+  }
+
+  @Post('campaigns')
+  @ApiOperation({
+    summary: 'Create a campaign record (name only, no Apollo sequence yet)',
+  })
+  createCampaignMeta(
+    @OrgId() organizationId: number,
+    @Request() req: any,
+    @Body() dto: CreateCampaignDto,
+  ) {
+    const userId = parseInt(req.user?.id ?? req.session?.user?.id ?? '0', 10);
+    return this.apolloSequencesService.createCampaignMeta(
+      organizationId,
+      userId,
+      dto,
+    );
+  }
+
+  @Get('campaigns/:id')
+  @ApiOperation({ summary: 'Get a Zuko campaign by its DB id' })
+  getCampaignByDbId(
+    @OrgId() organizationId: number,
+    @Param('id', ParseIntPipe) id: number,
+  ) {
+    return this.apolloSequencesService.getZukoCampaignById(organizationId, id);
+  }
+
+  @Post('campaigns/:id/sequence')
+  @ApiOperation({
+    summary: 'Create or update the Apollo sequence for a campaign',
+  })
+  saveSequence(
+    @OrgId() organizationId: number,
+    @Request() req: any,
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: SaveSequenceDto,
+  ) {
+    const userId = parseInt(req.user?.id ?? req.session?.user?.id ?? '0', 10);
+    return this.apolloSequencesService.saveSequenceForCampaign(
+      organizationId,
+      id,
+      userId,
       dto,
     );
   }

@@ -36,7 +36,7 @@ export function Sheet({
     <Headless.Dialog {...props}>
       <Headless.DialogBackdrop
         transition
-        className="fixed inset-0 bg-zinc-950/25 transition duration-100 focus:outline-0 data-closed:opacity-0 data-enter:ease-out data-leave:ease-in dark:bg-zinc-950/50"
+        className="fixed inset-0 bg-zinc-950/25 transition duration-500 ease-out focus:outline-0 data-closed:opacity-0 data-leave:ease-in dark:bg-zinc-950/50"
       />
 
       <div className="fixed inset-0 overflow-hidden">
@@ -45,7 +45,7 @@ export function Sheet({
           className={clsx(
             className,
             'absolute flex flex-col bg-white shadow-lg ring-1 ring-zinc-950/10 dark:bg-zinc-900 dark:ring-white/10 forced-colors:outline',
-            'transition duration-300 will-change-transform',
+            'transition duration-500 ease-out will-change-transform',
             panelClasses[side],
           )}
         >

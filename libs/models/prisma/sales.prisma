@@ -227,6 +227,7 @@ model IcpProfile {
   updatedAt      DateTime @updatedAt @map("updated_at")
 
   organization Organization @relation("OrganizationIcpProfiles", fields: [organizationId], references: [id], onDelete: Cascade)
+  campaigns    Campaign[]   @relation("IcpCampaigns")
 
   @@index([organizationId])
   @@map("icp_profile")
@@ -237,9 +238,10 @@ model Campaign {
   id                 Int      @id @default(autoincrement())
   organizationId     Int      @map("organization_id")
   createdById        Int      @map("created_by_id")
+  icpProfileId       Int?     @map("icp_profile_id")
   name               String
   provider           String   @default("apollo")
-  providerSequenceId String   @map("provider_sequence_id")
+  providerSequenceId String?  @map("provider_sequence_id")
   active             Boolean  @default(false)
   permissions        String   @default("team_can_use")
   sequence           Json     @default("[]")
@@ -248,9 +250,11 @@ model Campaign {
 
   organization Organization @relation("OrganizationCampaigns", fields: [organizationId], references: [id], onDelete: Cascade)
   createdBy    User         @relation("CreatedCampaigns", fields: [createdById], references: [id])
+  icpProfile   IcpProfile?  @relation("IcpCampaigns", fields: [icpProfileId], references: [id], onDelete: SetNull)
 
   @@unique([organizationId, providerSequenceId])
   @@index([organizationId])
+  @@index([icpProfileId])
   @@map("campaign")
   @@schema("sales")
 }

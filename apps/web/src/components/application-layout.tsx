@@ -45,7 +45,6 @@ import {
   Cog8ToothIcon,
   UserGroupIcon,
   AdjustmentsHorizontalIcon,
-  MegaphoneIcon,
 } from '@heroicons/react/20/solid';
 import { usePathname, useRouter } from 'next/navigation';
 import { authClient } from '@/lib/auth-client';
@@ -93,7 +92,6 @@ const baseNavigation = [
   { name: 'Companies', href: '/companies', icon: BuildingOfficeIcon },
   { name: 'Deals', href: '/deals', icon: BriefcaseIcon },
   { name: 'ICPs', href: '/icps', icon: AdjustmentsHorizontalIcon },
-  { name: 'Campaigns', href: '/campaigns', icon: MegaphoneIcon },
   { divider: true },
   { name: 'Tasks', href: '/tasks', icon: ClipboardDocumentListIcon },
   { divider: true },
@@ -115,9 +113,9 @@ export function ApplicationLayout({
 }) {
   const navigation = showMeetings
     ? [
-        ...baseNavigation.slice(0, 7),
+        ...baseNavigation.slice(0, 6),
         meetingsNavItem,
-        ...baseNavigation.slice(7),
+        ...baseNavigation.slice(6),
       ]
     : baseNavigation;
 

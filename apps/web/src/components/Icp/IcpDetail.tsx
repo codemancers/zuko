@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { parseAsStringLiteral, useQueryState } from 'nuqs';
+import { useRouter } from 'next/navigation';
 import {
   useQuery,
   useInfiniteQuery,
@@ -14,9 +15,14 @@ import {
   Avatar,
   Badge,
   Button,
+  ErrorMessage,
+  Field,
   Heading,
+  Input,
+  Label,
   Sheet,
   SheetBody,
+  SheetFooter,
   SheetHeader,
   SheetTitle,
   Tabs,
@@ -24,7 +30,7 @@ import {
   TabsTrigger,
   Text,
 } from '@zuko/ui-kit';
-import { LinkIcon, PencilIcon } from '@heroicons/react/20/solid';
+import { LinkIcon, PencilIcon, PlusIcon } from '@heroicons/react/20/solid';
 import { ExclamationTriangleIcon } from '@heroicons/react/24/outline';
 import {
   getIcpProfile,
@@ -40,6 +46,9 @@ import { BaseTable } from '@/components/Table';
 import type { ApolloOrganization, ApolloPerson } from '@/lib/api/icp';
 import { EMPLOYEE_RANGE_LABEL } from '@/lib/constants/icp';
 import IcpForm from './IcpForm';
+import IcpCampaignsPanel from './IcpCampaignsPanel';
+import { apolloSequencesApi } from '@/lib/api/apollo';
+import { toast } from 'sonner';
 import dayjs from 'dayjs';
 
 interface IcpDetailProps {
@@ -226,15 +235,16 @@ const contactColumns: ColumnDef<ApolloPerson & { id: string }>[] = [
 
 // ---------- Tab panels ----------
 
-type Tab = 'details' | 'companies' | 'contacts';
+type Tab = 'details' | 'companies' | 'contacts' | 'campaigns';
 
-const TAB_VALUES = ['details', 'companies', 'contacts'] as const;
+const TAB_VALUES = ['details', 'companies', 'contacts', 'campaigns'] as const;
 const tabParser = parseAsStringLiteral(TAB_VALUES).withDefault('details');
 
 const TABS: { id: Tab; label: string }[] = [
   { id: 'details', label: 'Details' },
   { id: 'companies', label: 'Companies' },
   { id: 'contacts', label: 'Contacts' },
+  { id: 'campaigns', label: 'Campaigns' },
 ];
 
 // ---------- Details Panel ----------
@@ -268,15 +278,13 @@ function DetailsPanel({ profileId }: { profileId: number }) {
       {notesField.isSaving && (
         <p className="absolute right-0 -top-6 text-xs text-zinc-400">Saving…</p>
       )}
-      <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-4 min-h-64 shadow-sm">
-        <Editor
-          key={`icp-notes-${profileId}`}
-          holder={`icp-notes-editor-${profileId}`}
-          data={notesField.value}
-          onChange={(val) => notesField.setValue(val)}
-          placeholder="Write notes about this ICP profile…"
-        />
-      </div>
+      <Editor
+        key={`icp-notes-${profileId}`}
+        holder={`icp-notes-editor-${profileId}`}
+        data={notesField.value}
+        onChange={(val) => notesField.setValue(val)}
+        placeholder="Write notes about this ICP profile…"
+      />
     </div>
   );
 }
@@ -429,13 +437,13 @@ function ProfileSidebar({
           <Text className="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
             Profile Details
           </Text>
-          <button
+          <Button
             onClick={() => setIsSheetOpen(true)}
-            className="flex items-center gap-1 text-xs text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100"
+            className="text-xs text-zinc-500"
           >
             <PencilIcon className="size-3" />
             Edit
-          </button>
+          </Button>
         </div>
 
         {profile.description && (
@@ -443,7 +451,7 @@ function ProfileSidebar({
             <Text className="text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
               Description
             </Text>
-            <div className="mt-1 text-sm text-zinc-700 dark:text-zinc-300">
+            <div className="mt-1 text-sm text-zinc-700 dark:text-zinc-300 [&_.codex-editor]:px-0">
               <Editor
                 key={`icp-desc-sidebar-${profileId}`}
                 holder={`icp-desc-sidebar-editor-${profileId}`}
@@ -530,10 +538,96 @@ function ProfileSidebar({
   );
 }
 
+// ---------- New Campaign Sheet ----------
+
+function NewCampaignSheet({
+  open,
+  onClose,
+  profileId,
+}: {
+  open: boolean;
+  onClose: () => void;
+  profileId: number;
+}) {
+  const router = useRouter();
+  const queryClient = useQueryClient();
+  const [name, setName] = useState('');
+  const [nameError, setNameError] = useState('');
+
+  const createMutation = useMutation({
+    mutationFn: () =>
+      apolloSequencesApi.createMeta({
+        name: name.trim(),
+        icpProfileId: profileId,
+      }),
+    onSuccess: (campaign) => {
+      toast.success('Campaign created');
+      queryClient.invalidateQueries({
+        queryKey: ['campaigns', 'by-icp', profileId],
+      });
+      onClose();
+      setName('');
+      router.push(`/campaigns/${campaign.id}`);
+    },
+    onError: () => toast.error('Failed to create campaign'),
+  });
+
+  const handleSubmit = () => {
+    if (!name.trim()) {
+      setNameError('Name is required');
+      return;
+    }
+    setNameError('');
+    createMutation.mutate();
+  };
+
+  const handleClose = () => {
+    setName('');
+    setNameError('');
+    onClose();
+  };
+
+  return (
+    <Sheet open={open} onClose={handleClose}>
+      <SheetHeader>
+        <SheetTitle>New Campaign</SheetTitle>
+      </SheetHeader>
+      <SheetBody>
+        <Field>
+          <Label>Campaign name</Label>
+          <Input
+            type="text"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="e.g. Q3 Outreach — SaaS Companies"
+            disabled={createMutation.isPending}
+            autoFocus
+            onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
+          />
+          {nameError && <ErrorMessage>{nameError}</ErrorMessage>}
+        </Field>
+      </SheetBody>
+      <SheetFooter>
+        <Button plain onClick={handleClose} disabled={createMutation.isPending}>
+          Cancel
+        </Button>
+        <Button
+          color="dark"
+          onClick={handleSubmit}
+          disabled={createMutation.isPending}
+        >
+          {createMutation.isPending ? 'Creating…' : 'Create Campaign'}
+        </Button>
+      </SheetFooter>
+    </Sheet>
+  );
+}
+
 // ---------- Main Component ----------
 
 export default function IcpDetail({ profileId }: IcpDetailProps) {
   const [activeTab, setActiveTab] = useQueryState('tab', tabParser);
+  const [newCampaignOpen, setNewCampaignOpen] = useState(false);
 
   const {
     data: profile,
@@ -553,8 +647,14 @@ export default function IcpDetail({ profileId }: IcpDetailProps) {
     <>
       <BackLink href="/icps">ICP Profiles</BackLink>
 
-      <div className="mt-4">
+      <div className="mt-4 flex items-center justify-between">
         <Heading>{profile.name}</Heading>
+        {activeTab === 'campaigns' && (
+          <Button onClick={() => setNewCampaignOpen(true)}>
+            <PlusIcon className="size-4" />
+            New Campaign
+          </Button>
+        )}
       </div>
 
       <Tabs
@@ -582,6 +682,12 @@ export default function IcpDetail({ profileId }: IcpDetailProps) {
               <ContactsPanel profileId={profileId} />
             </div>
           )}
+          {activeTab === 'campaigns' && (
+            <IcpCampaignsPanel
+              profileId={profileId}
+              onNew={() => setNewCampaignOpen(true)}
+            />
+          )}
         </div>
 
         {/* Sidebar */}
@@ -592,6 +698,12 @@ export default function IcpDetail({ profileId }: IcpDetailProps) {
           />
         </div>
       </div>
+
+      <NewCampaignSheet
+        open={newCampaignOpen}
+        onClose={() => setNewCampaignOpen(false)}
+        profileId={profileId}
+      />
     </>
   );
 }

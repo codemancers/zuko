@@ -38,6 +38,7 @@ export function useBaseTable<TData extends BaseRow>({
   manualSorting,
   manualFiltering,
   enableRowSelection,
+  serialColumnHeader,
 }: BaseTableProps<TData>) {
   const { data: session, isPending: isSessionPending } =
     authClient.useSession();
@@ -46,7 +47,7 @@ export function useBaseTable<TData extends BaseRow>({
   const tableColumns = React.useMemo(() => {
     const snoColumn = {
       id: 'sno',
-      header: 'S.No',
+      header: serialColumnHeader ?? 'S.No',
       cell: (info: any) => {
         const pageIndex = pagination?.pageIndex ?? 0;
         const pageSize = pagination?.pageSize ?? 10;

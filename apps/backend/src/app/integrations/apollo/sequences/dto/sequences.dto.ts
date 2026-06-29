@@ -1,5 +1,32 @@
-import { IsString, IsOptional, IsArray, IsIn } from 'class-validator';
+import { IsString, IsOptional, IsArray, IsIn, IsInt } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+
+export class CreateCampaignDto {
+  @ApiProperty()
+  @IsString()
+  name!: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsInt()
+  icpProfileId?: number;
+}
+
+export class SaveSequenceDto {
+  @ApiProperty()
+  @IsArray()
+  sequence!: SequenceStepDto[];
+
+  @ApiPropertyOptional({ enum: ['private', 'team_can_view', 'team_can_use'] })
+  @IsOptional()
+  @IsIn(['private', 'team_can_view', 'team_can_use'])
+  permissions?: 'private' | 'team_can_view' | 'team_can_use';
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  emailerScheduleId?: string;
+}
 
 export class SearchSequencesDto {
   @ApiPropertyOptional()
@@ -64,6 +91,11 @@ export class CreateSequenceDto {
   @IsOptional()
   @IsArray()
   labelNames?: string[];
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsInt()
+  icpProfileId?: number;
 
   @ApiProperty()
   @IsArray()

@@ -328,7 +328,7 @@ export function BaseTable<TData extends BaseRow>(props: BaseTableProps<TData>) {
         )}
 
         {showAddRow && (
-          <div className="pl-2 py-1 h-10 border-zinc-200 dark:border-zinc-800 flex items-center bg-zinc-50/50 dark:bg-zinc-900/50">
+          <div className="pl-2 py-1 h-10 border-zinc-200 dark:border-zinc-800 flex items-center">
             <Button
               plain
               onClick={onAddRow}

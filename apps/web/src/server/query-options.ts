@@ -327,6 +327,19 @@ export const getZukoCampaign = (id: string) =>
     retry: false,
   });
 
+export const getCampaignsByIcpProfile = (icpProfileId: number) =>
+  queryOptions({
+    queryKey: ['campaigns', 'by-icp', icpProfileId],
+    queryFn: () => apolloSequencesApi.listByIcpProfile(icpProfileId),
+  });
+
+export const getZukoCampaignByDbId = (id: number) =>
+  queryOptions({
+    queryKey: ['campaign', 'zuko-db', id],
+    queryFn: () => apolloSequencesApi.getByZukoId(id),
+    retry: false,
+  });
+
 export const getApolloUsageStats = () =>
   queryOptions({
     queryKey: ['apollo', 'usage-stats'],

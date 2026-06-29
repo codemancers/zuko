@@ -83,9 +83,10 @@ export interface ZukoCampaignStep {
 export interface ZukoCampaign {
   id: number;
   organizationId: number;
+  icpProfileId?: number | null;
   name: string;
   provider: string;
-  providerSequenceId: string;
+  providerSequenceId?: string | null;
   active: boolean;
   permissions: string;
   sequence: ZukoCampaignStep[];
@@ -142,6 +143,7 @@ export interface CreateSequencePayload {
   permissions?: 'private' | 'team_can_view' | 'team_can_use';
   emailerScheduleId?: string;
   labelNames?: string[];
+  icpProfileId?: number;
   sequence: CreateSequenceStep[];
 }
 
@@ -196,6 +198,37 @@ export const apolloSequencesApi = {
   async getCampaign(sequenceId: string): Promise<ZukoCampaign> {
     return apiClient.get(
       `/integrations/apollo/sequences/${sequenceId}/campaign`,
+    );
+  },
+
+  async listByIcpProfile(icpProfileId: number): Promise<ZukoCampaign[]> {
+    return apiClient.get(
+      `/integrations/apollo/sequences/by-icp/${icpProfileId}`,
+    );
+  },
+
+  async createMeta(payload: {
+    name: string;
+    icpProfileId?: number;
+  }): Promise<ZukoCampaign> {
+    return apiClient.post('/integrations/apollo/sequences/campaigns', payload);
+  },
+
+  async getByZukoId(zukoId: number): Promise<ZukoCampaign> {
+    return apiClient.get(`/integrations/apollo/sequences/campaigns/${zukoId}`);
+  },
+
+  async saveSequenceForCampaign(
+    zukoId: number,
+    payload: {
+      sequence: CreateSequenceStep[];
+      permissions?: 'private' | 'team_can_view' | 'team_can_use';
+      emailerScheduleId?: string;
+    },
+  ): Promise<unknown> {
+    return apiClient.post(
+      `/integrations/apollo/sequences/campaigns/${zukoId}/sequence`,
+      payload,
     );
   },
 };
