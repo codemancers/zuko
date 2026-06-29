@@ -44,18 +44,6 @@ export class ApolloSequencesController {
     return this.apolloSequencesService.getSchedules(organizationId);
   }
 
-  @Get('by-icp/:icpProfileId')
-  @ApiOperation({ summary: 'List Zuko campaigns linked to an ICP profile' })
-  getCampaignsByIcp(
-    @OrgId() organizationId: number,
-    @Param('icpProfileId', ParseIntPipe) icpProfileId: number,
-  ) {
-    return this.apolloSequencesService.getCampaignsByIcpProfile(
-      organizationId,
-      icpProfileId,
-    );
-  }
-
   @Get(':id/campaign')
   @ApiOperation({ summary: 'Get Zuko campaign record for a sequence' })
   getCampaign(@OrgId() organizationId: number, @Param('id') id: string) {

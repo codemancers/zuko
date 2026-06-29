@@ -203,7 +203,7 @@ export const apolloSequencesApi = {
 
   async listByIcpProfile(icpProfileId: number): Promise<ZukoCampaign[]> {
     return apiClient.get(
-      `/integrations/apollo/sequences/by-icp/${icpProfileId}`,
+      `/integrations/apollo/campaigns/${icpProfileId}/campaigns`,
     );
   },
 

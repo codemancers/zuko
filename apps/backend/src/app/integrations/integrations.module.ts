@@ -7,6 +7,7 @@ import { ApolloIntegrationRepository } from './apollo/apollo-integration.reposit
 import { ApolloMcpService } from './apollo/apollo-mcp.service';
 import { ApolloSequencesService } from './apollo/sequences/apollo-sequences.service';
 import { ApolloSequencesController } from './apollo/sequences/apollo-sequences.controller';
+import { ApolloCampaignsController } from './apollo/sequences/apollo-campaigns.controller';
 import { ApolloProspectsService } from './apollo/prospects/apollo-prospects.service';
 import { ApolloProspectsController } from './apollo/prospects/apollo-prospects.controller';
 import { CampaignsRepository, ContactsRepository } from '@zuko/sales';
@@ -18,6 +19,7 @@ import { PrismaService } from '../../prisma/prisma.service';
   controllers: [
     ApolloIntegrationController,
     ApolloSequencesController,
+    ApolloCampaignsController,
     ApolloProspectsController,
   ],
   providers: [
