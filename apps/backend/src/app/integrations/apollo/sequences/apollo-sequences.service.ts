@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { ApolloMcpService } from '../apollo-mcp.service';
 import { CampaignsRepository } from '@zuko/sales';
 import type {
@@ -72,6 +72,8 @@ export interface ApolloCreateResponse {
 
 @Injectable()
 export class ApolloSequencesService {
+  private readonly logger = new Logger(ApolloSequencesService.name);
+
   constructor(
     private readonly apolloMcpService: ApolloMcpService,
     private readonly campaignsRepository: CampaignsRepository,
@@ -288,7 +290,9 @@ export class ApolloSequencesService {
     );
     await this.campaignsRepository
       .updateActive(organizationId, sequenceId, true)
-      .catch(() => {});
+      .catch((err: unknown) =>
+        this.logger.warn('updateActive(true) failed', err),
+      );
     return result;
   }
 
@@ -304,8 +308,10 @@ export class ApolloSequencesService {
       );
     }
 
-    const sequence = campaign.sequence as unknown[];
-    if (!sequence || sequence.length === 0) {
+    const sequence = Array.isArray(campaign.sequence)
+      ? (campaign.sequence as unknown as SequenceStep[])
+      : [];
+    if (sequence.length === 0) {
       throw new NotFoundException(
         'No steps stored for this campaign. Recreate it via Zuko to enable deactivation.',
       );
@@ -319,13 +325,15 @@ export class ApolloSequencesService {
         _rationale: 'User deactivating sequence from Zuko',
         id: sequenceId,
         active: false,
-        emailer_steps: this.formatSequenceForMcp(sequence as SequenceStep[]),
+        emailer_steps: this.formatSequenceForMcp(sequence),
       },
     );
 
     await this.campaignsRepository
       .updateActive(organizationId, sequenceId, false)
-      .catch(() => {});
+      .catch((err: unknown) =>
+        this.logger.warn('updateActive(false) failed', err),
+      );
     return result;
   }
 

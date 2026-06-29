@@ -29,6 +29,8 @@
     "@zuko/sales": "^0.0.1",
     "ai": "^6.0.70",
     "axios": "^1.6.0",
+    "better-auth": "^1.5.4",
+    "class-transformer": "^0.5.1",
     "class-validator": "^0.14.0",
     "better-auth": "^1.6.22",
     "dayjs": "^1.11.19",

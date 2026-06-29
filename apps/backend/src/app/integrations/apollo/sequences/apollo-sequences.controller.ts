@@ -8,12 +8,18 @@ import {
   Param,
   ParseIntPipe,
   UseGuards,
-  Request,
 } from '@nestjs/common';
-import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiBearerAuth,
+  ApiOperation,
+  ApiOkResponse,
+  ApiCreatedResponse,
+} from '@nestjs/swagger';
 import { AuthGuard } from '@thallesp/nestjs-better-auth';
 import { OrganizationGuard } from '../../../../common/auth/organization.guard';
 import { OrgId } from '../../../../common/auth/org-id.decorator';
+import { UserId } from '../../../../common/auth/user-id.decorator';
 import { ApolloSequencesService } from './apollo-sequences.service';
 import {
   CreateSequenceDto,
@@ -34,30 +40,33 @@ export class ApolloSequencesController {
 
   @Get()
   @ApiOperation({ summary: 'List Apollo sequences for the organisation' })
+  @ApiOkResponse({ description: 'Paginated list of Apollo sequences' })
   search(@OrgId() organizationId: number, @Query() dto: SearchSequencesDto) {
     return this.apolloSequencesService.searchSequences(organizationId, dto);
   }
 
   @Get('schedules')
   @ApiOperation({ summary: 'List Apollo sending schedules' })
+  @ApiOkResponse({ description: 'List of sending schedules' })
   schedules(@OrgId() organizationId: number) {
     return this.apolloSequencesService.getSchedules(organizationId);
   }
 
   @Get(':id/campaign')
   @ApiOperation({ summary: 'Get Zuko campaign record for a sequence' })
+  @ApiOkResponse({ description: 'Zuko campaign record' })
   getCampaign(@OrgId() organizationId: number, @Param('id') id: string) {
     return this.apolloSequencesService.getCampaign(organizationId, id);
   }
 
   @Post()
   @ApiOperation({ summary: 'Create a new Apollo sequence' })
+  @ApiCreatedResponse({ description: 'Apollo sequence created' })
   create(
     @OrgId() organizationId: number,
-    @Request() req: any,
+    @UserId() userId: number,
     @Body() dto: CreateSequenceDto,
   ) {
-    const userId = parseInt(req.user?.id ?? req.session?.user?.id ?? '0', 10);
     return this.apolloSequencesService.createSequence(
       organizationId,
       userId,
@@ -67,13 +76,13 @@ export class ApolloSequencesController {
 
   @Put(':id')
   @ApiOperation({ summary: 'Update an existing Apollo sequence' })
+  @ApiOkResponse({ description: 'Apollo sequence updated' })
   update(
     @OrgId() organizationId: number,
-    @Request() req: any,
+    @UserId() userId: number,
     @Param('id') id: string,
     @Body() dto: CreateSequenceDto,
   ) {
-    const userId = parseInt(req.user?.id ?? req.session?.user?.id ?? '0', 10);
     return this.apolloSequencesService.updateSequence(
       organizationId,
       id,
@@ -84,18 +93,21 @@ export class ApolloSequencesController {
 
   @Post(':id/approve')
   @ApiOperation({ summary: 'Activate an Apollo sequence' })
+  @ApiOkResponse({ description: 'Sequence activated' })
   approve(@OrgId() organizationId: number, @Param('id') id: string) {
     return this.apolloSequencesService.approveSequence(organizationId, id);
   }
 
   @Post(':id/deactivate')
   @ApiOperation({ summary: 'Deactivate an Apollo sequence' })
+  @ApiOkResponse({ description: 'Sequence deactivated' })
   deactivate(@OrgId() organizationId: number, @Param('id') id: string) {
     return this.apolloSequencesService.deactivateSequence(organizationId, id);
   }
 
   @Post('contacts')
   @ApiOperation({ summary: 'Add contacts to an Apollo sequence' })
+  @ApiOkResponse({ description: 'Contacts enrolled in sequence' })
   addContacts(
     @OrgId() organizationId: number,
     @Body() dto: AddContactsToSequenceDto,
@@ -110,12 +122,12 @@ export class ApolloSequencesController {
   @ApiOperation({
     summary: 'Create a campaign record (name only, no Apollo sequence yet)',
   })
+  @ApiCreatedResponse({ description: 'Campaign record created' })
   createCampaignMeta(
     @OrgId() organizationId: number,
-    @Request() req: any,
+    @UserId() userId: number,
     @Body() dto: CreateCampaignDto,
   ) {
-    const userId = parseInt(req.user?.id ?? req.session?.user?.id ?? '0', 10);
     return this.apolloSequencesService.createCampaignMeta(
       organizationId,
       userId,
@@ -125,6 +137,7 @@ export class ApolloSequencesController {
 
   @Get('campaigns/:id')
   @ApiOperation({ summary: 'Get a Zuko campaign by its DB id' })
+  @ApiOkResponse({ description: 'Zuko campaign record' })
   getCampaignByDbId(
     @OrgId() organizationId: number,
     @Param('id', ParseIntPipe) id: number,
@@ -136,13 +149,13 @@ export class ApolloSequencesController {
   @ApiOperation({
     summary: 'Create or update the Apollo sequence for a campaign',
   })
+  @ApiOkResponse({ description: 'Sequence saved and linked to campaign' })
   saveSequence(
     @OrgId() organizationId: number,
-    @Request() req: any,
+    @UserId() userId: number,
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: SaveSequenceDto,
   ) {
-    const userId = parseInt(req.user?.id ?? req.session?.user?.id ?? '0', 10);
     return this.apolloSequencesService.saveSequenceForCampaign(
       organizationId,
       id,

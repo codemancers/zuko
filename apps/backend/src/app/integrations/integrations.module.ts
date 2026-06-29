@@ -24,7 +24,6 @@ import { PrismaService } from '../../prisma/prisma.service';
   ],
   providers: [
     OrganizationGuard,
-    PrismaService,
     ApolloIntegrationRepository,
     ApolloIntegrationService,
     ApolloMcpService,
