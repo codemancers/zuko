@@ -26,11 +26,11 @@ Tokens are JWTs verified locally against `{BACKEND_URL}/auth/jwks` — no round-
 
 ## Scopes
 
-| Scope | Grants |
-|---|---|
+| Scope                | Grants                                 |
+| -------------------- | -------------------------------------- |
 | `organizations:read` | List organizations the user belongs to |
-| `tasks:read` | List and retrieve tasks |
-| `tasks:write` | Create and update tasks |
+| `tasks:read`         | List and retrieve tasks                |
+| `tasks:write`        | Create and update tasks                |
 
 ## Tools
 
@@ -43,6 +43,7 @@ Returns the organizations the authorized user belongs to. Call this first when t
 **Input:** _(none)_
 
 **Output:**
+
 ```json
 [{ "id": 1, "name": "Acme", "slug": "acme", "role": "owner" }]
 ```
@@ -55,10 +56,10 @@ Returns the organizations the authorized user belongs to. Call this first when t
 
 Returns up to 50 tasks (most recently updated) across all organizations the user belongs to.
 
-| Input | Type | Description |
-|---|---|---|
-| `status` | `"TODO" \| "IN_PROGRESS" \| "DONE" \| "CANCELLED"` | Filter by status (optional) |
-| `organizationId` | `integer` | Restrict to one organization (optional) |
+| Input            | Type                                               | Description                             |
+| ---------------- | -------------------------------------------------- | --------------------------------------- |
+| `status`         | `"TODO" \| "IN_PROGRESS" \| "DONE" \| "CANCELLED"` | Filter by status (optional)             |
+| `organizationId` | `integer`                                          | Restrict to one organization (optional) |
 
 ---
 
@@ -68,8 +69,8 @@ Returns up to 50 tasks (most recently updated) across all organizations the user
 
 Returns full task detail including owners, subtasks, and parent task.
 
-| Input | Type | Description |
-|---|---|---|
+| Input    | Type      | Description                |
+| -------- | --------- | -------------------------- |
 | `taskId` | `integer` | ID of the task to retrieve |
 
 ---
@@ -80,13 +81,13 @@ Returns full task detail including owners, subtasks, and parent task.
 
 Creates a task. If the user belongs to exactly one organization, `organizationId` can be omitted — call `list_organizations` first if they belong to multiple.
 
-| Input | Type | Description |
-|---|---|---|
-| `title` | `string` | Task title (required) |
+| Input            | Type      | Description                                            |
+| ---------------- | --------- | ------------------------------------------------------ |
+| `title`          | `string`  | Task title (required)                                  |
 | `organizationId` | `integer` | Target organization (optional if user has exactly one) |
-| `description` | `any` | Description in JSON format (optional) |
-| `status` | enum | Initial status — defaults to `"TODO"` (optional) |
-| `assignee` | `string` | Assignee identifier (optional) |
+| `description`    | `any`     | Description in JSON format (optional)                  |
+| `status`         | enum      | Initial status — defaults to `"TODO"` (optional)       |
+| `assignee`       | `string`  | Assignee identifier (optional)                         |
 
 ---
 
@@ -96,14 +97,14 @@ Creates a task. If the user belongs to exactly one organization, `organizationId
 
 Updates one or more fields on an existing task. Only supplied fields are changed.
 
-| Input | Type | Description |
-|---|---|---|
-| `taskId` | `integer` | ID of the task to update (required) |
-| `title` | `string` | New title (optional) |
-| `description` | `any` | New description in JSON format (optional) |
-| `status` | enum | New status (optional) |
-| `assignee` | `string` | New assignee (optional) |
-| `completedAt` | `string` | Completion timestamp in ISO 8601 format (optional) |
+| Input         | Type      | Description                                        |
+| ------------- | --------- | -------------------------------------------------- |
+| `taskId`      | `integer` | ID of the task to update (required)                |
+| `title`       | `string`  | New title (optional)                               |
+| `description` | `any`     | New description in JSON format (optional)          |
+| `status`      | enum      | New status (optional)                              |
+| `assignee`    | `string`  | New assignee (optional)                            |
+| `completedAt` | `string`  | Completion timestamp in ISO 8601 format (optional) |
 
 ## Connecting a client
 
@@ -134,7 +135,7 @@ Add a remote MCP server pointing to `{BACKEND_URL}/api/mcp`. The client handles 
 
 ## Environment variables
 
-| Variable | Default | Description |
-|---|---|---|
-| `BACKEND_URL` | `http://localhost:3001` | Public backend URL — used in OAuth metadata responses |
+| Variable          | Default                 | Description                                                    |
+| ----------------- | ----------------------- | -------------------------------------------------------------- |
+| `BACKEND_URL`     | `http://localhost:3001` | Public backend URL — used in OAuth metadata responses          |
 | `BETTER_AUTH_URL` | `http://localhost:8000` | Auth server base URL — used by the bearer guard to verify JWTs |
