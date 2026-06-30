@@ -75,8 +75,8 @@ describe('McpBearerGuard', () => {
     const res = { setHeader: vi.fn() };
     const req = { method: 'POST', headers: { authorization: 'Bearer weird' } };
 
-    await expect(
-      guard.canActivate(context(req, res)),
-    ).rejects.toBeInstanceOf(HttpException);
+    await expect(guard.canActivate(context(req, res))).rejects.toBeInstanceOf(
+      HttpException,
+    );
   });
 });

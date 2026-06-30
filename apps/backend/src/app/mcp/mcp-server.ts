@@ -329,8 +329,7 @@ export function buildMcpServer(
           description === null
             ? Prisma.JsonNull
             : (description as Prisma.InputJsonValue);
-      if (status !== undefined)
-        updateData.status = status as TaskStatus;
+      if (status !== undefined) updateData.status = status as TaskStatus;
       if (assignee !== undefined) updateData.assignee = assignee;
       if (completedAt !== undefined) {
         updateData.completedAt = new Date(completedAt);
