@@ -2,7 +2,7 @@ import { All, Controller, Req, Res, UseGuards } from '@nestjs/common';
 import type { Response } from 'express';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { AllowAnonymous } from '@thallesp/nestjs-better-auth';
-import type { PrismaService } from '../../prisma/prisma.service';
+import { PrismaService } from '../../prisma/prisma.service';
 import { buildMcpServer } from './mcp-server';
 import { McpBearerGuard, type McpAuthedRequest } from './mcp-bearer.guard';
 
