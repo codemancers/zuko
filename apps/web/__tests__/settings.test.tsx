@@ -9,7 +9,7 @@ vi.mock('next/image', () => ({
   ),
 }));
 
-// McpOAuthHandler (inside OrgConnections) calls useRouter / useSearchParams
+// McpOAuthHandler is no longer used
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: vi.fn(), replace: vi.fn() }),
   useSearchParams: () => new URLSearchParams(),
@@ -62,22 +62,6 @@ vi.mock('@/components/organization/server/fetch', () => ({
   getGitHubInstallationStatus: () => mockGetGitHubInstallationStatus(),
   getGitHubInstallationUrl: () => mockGetGitHubInstallationUrl(),
   fetchLinkedAccounts: () => mockFetchLinkedAccounts(),
-}));
-
-// Mock the MCP OAuth hook (uses next/navigation internally)
-vi.mock('@/components/organization/hooks/use-mcp-oauth', () => ({
-  useMcpOAuth: () => ({
-    mcpToken: null,
-    mcpPending: false,
-    mcpConnected: false,
-    handleMcpSuccess: vi.fn(),
-    handleMcpPending: vi.fn(),
-    handleMcpConnect: vi.fn(),
-    handleMcpDisconnect: vi.fn(),
-  }),
-  McpOAuthHandler: () => null,
-  getMcpEndpoint: () => 'http://localhost:3001/api/mcp',
-  getAuthBaseUrl: () => 'http://localhost:3001/auth',
 }));
 
 // Stub query-options so SettingsPage's useQuery calls resolve immediately
