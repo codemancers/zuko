@@ -128,3 +128,7 @@ A separate LangGraph service (`apps/ai-agents`) that runs the agent logic and ca
 ### Meeting bot
 
 Joins Google Meet calls, records audio, transcribes via Deepgram, and stores recordings in S3.
+
+### MCP server
+
+Zuko exposes an OAuth 2.1 MCP endpoint at `/api/mcp` so AI clients (Claude Desktop, Cursor, VS Code) can read and write CRM data on behalf of a logged-in user. See the [MCP server concept page](/concepts/mcp-server) for the full OAuth flow, available tools, and client setup.
