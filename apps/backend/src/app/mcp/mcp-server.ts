@@ -1,4 +1,5 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { Prisma, type TaskStatus } from '@prisma/client';
 import type { PrismaClient } from '@zuko/models';
 import { z } from 'zod';
 
@@ -48,7 +49,7 @@ export function buildMcpServer(
       where: { userId: authCtx.userId },
       select: { organizationId: true },
     });
-    return members.map((m) => m.organizationId);
+    return members.map((m: { organizationId: number }) => m.organizationId);
   };
 
   server.registerTool(
@@ -59,8 +60,8 @@ export function buildMcpServer(
       inputSchema: {},
     },
     async () => {
-      if (!authCtx.scopes.includes('tasks:read')) {
-        return missingScope('tasks:read');
+      if (!authCtx.scopes.includes('organizations:read')) {
+        return missingScope('organizations:read');
       }
       const memberships = await prisma.member.findMany({
         where: { userId: authCtx.userId },
@@ -71,7 +72,12 @@ export function buildMcpServer(
         orderBy: { organization: { name: 'asc' } },
       });
       return json(
-        memberships.map((m) => ({ ...m.organization, role: m.role })),
+        memberships.map(
+          (m: {
+            role: string;
+            organization: { id: number; name: string; slug: string };
+          }) => ({ ...m.organization, role: m.role }),
+        ),
       );
     },
   );
@@ -291,7 +297,6 @@ export function buildMcpServer(
 
       const orgIds = await memberOrgIds();
 
-      // Verify task exists and user has access
       const existingTask = await prisma.task.findFirst({
         where: {
           id: taskId,
@@ -311,10 +316,21 @@ export function buildMcpServer(
         };
       }
 
-      const updateData: any = {};
+      const updateData: {
+        title?: string;
+        description?: Prisma.InputJsonValue | Prisma.NullableJsonNullValueInput;
+        status?: TaskStatus;
+        assignee?: string;
+        completedAt?: Date;
+      } = {};
       if (title !== undefined) updateData.title = title;
-      if (description !== undefined) updateData.description = description;
-      if (status !== undefined) updateData.status = status;
+      if (description !== undefined)
+        updateData.description =
+          description === null
+            ? Prisma.JsonNull
+            : (description as Prisma.InputJsonValue);
+      if (status !== undefined)
+        updateData.status = status as TaskStatus;
       if (assignee !== undefined) updateData.assignee = assignee;
       if (completedAt !== undefined) {
         updateData.completedAt = new Date(completedAt);

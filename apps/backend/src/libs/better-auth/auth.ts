@@ -9,7 +9,7 @@ const prisma = new PrismaService();
 
 // OAuth scopes granted to external MCP clients (Claude, Cursor, …).
 // Resource servers (McpController) enforce these per tool.
-export const MCP_SCOPES = ['tasks:read', 'tasks:write'];
+export const MCP_SCOPES = ['tasks:read', 'tasks:write', 'organizations:read'];
 
 const AGENT_CAPABILITIES: Capability[] = [
   // CRM — deals
@@ -213,7 +213,14 @@ const authInstance: any = betterAuth({
     }) as unknown as BetterAuthPlugin,
     // Signing keys + /auth/jwks endpoint. Required by oauthProvider for
     // JWT-formatted access tokens (resource servers verify locally via JWKS).
-    jwt(),
+    // disableSettingJwtHeader: the plugin otherwise runs an after-hook on EVERY
+    // /get-session that reads the jwks table from the DB and signs a JWT into a
+    // `set-auth-jwt` response header. Since our global AppAuthGuard resolves a
+    // session on every authed request, that was a DB round-trip per request
+    // (0.2–1.4s in prod traces). Nothing consumes `set-auth-jwt` (the frontend
+    // client has no jwtClient plugin; MCP gets tokens via oauth2/token and
+    // verifies via /auth/jwks — both unaffected), so we turn it off.
+    jwt({ disableSettingJwtHeader: true }),
     // OAuth 2.1 authorization server — lets external MCP clients (Claude,
     // Cursor, VS Code) obtain user-scoped access tokens via the standard
     // authorize/consent flow. Replaces the deprecated mcp() plugin.

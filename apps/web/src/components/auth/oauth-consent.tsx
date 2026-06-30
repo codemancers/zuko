@@ -22,7 +22,7 @@ const SCOPE_DESCRIPTIONS: Record<string, string> = {
   email: 'Read your email address',
   offline_access: 'Keep access without asking again',
   // MCP/Organization scopes
-  'organization:read': 'Read your organizations',
+  'organizations:read': 'Read your organizations',
   // CRM - Deals
   'deals:read': 'Read your deals',
   'deals:write': 'Create and update deals',
