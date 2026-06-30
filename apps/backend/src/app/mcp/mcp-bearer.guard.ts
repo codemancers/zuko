@@ -3,7 +3,9 @@ import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import { verifyAccessToken } from 'better-auth/oauth2';
 
-const baseURL = process.env.BETTER_AUTH_URL || 'http://localhost:8000';
+// Must match better-auth's baseURL (auth.ts) and the well-known controller so
+// the token's issuer/audience and the JWKS URL all resolve to the same origin.
+const baseURL = process.env.BACKEND_URL || 'http://localhost:3001';
 const issuer = `${baseURL}/auth`;
 const resource = `${baseURL}/api/mcp`;
 const resourceMetadataUrl = `${baseURL}/.well-known/oauth-protected-resource/api/mcp`;
