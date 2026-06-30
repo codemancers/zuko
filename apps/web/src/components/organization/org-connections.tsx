@@ -9,9 +9,8 @@ import {
 } from '@/components/Table';
 import type { ColumnDef } from '@tanstack/react-table';
 import type { ColumnMetadata } from '@/types/table-metadata';
-import { Suspense, useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { McpSetupModal } from './mcp-setup-modal';
 import {
   githubStatusQueryOptions,
   linkedAccountsQueryOptions,
@@ -21,11 +20,6 @@ import {
   useDisconnectAccount,
   useInstallGitHubApp,
 } from './hooks/mutations';
-import {
-  useMcpOAuth,
-  McpOAuthHandler,
-  getMcpEndpoint,
-} from './hooks/use-mcp-oauth';
 import { authClient } from '@/lib/auth-client';
 import {
   getApolloAuthorizationUrl,
@@ -64,9 +58,6 @@ const GoogleCalendarIcon = () => (
     width={20}
     height={20}
   />
-);
-const McpIcon = () => (
-  <Image src="/icons/mcp.svg" alt="MCP" width={20} height={20} />
 );
 
 const ApolloIcon = () => (
@@ -121,19 +112,6 @@ export const OrgConnections = () => {
   const session = authClient.useSession();
   const userEmail = session?.data?.user?.email ?? undefined;
   const queryClient = useQueryClient();
-
-  // MCP state (extracted hook)
-  const {
-    mcpToken,
-    mcpPending,
-    mcpConnected,
-    handleMcpSuccess,
-    handleMcpPending,
-    handleMcpConnect,
-    handleMcpDisconnect,
-  } = useMcpOAuth();
-
-  const [mcpSetupOpen, setMcpSetupOpen] = useState(false);
 
   // -------------------------------------------------------------------------
   // Queries
@@ -265,52 +243,10 @@ export const OrgConnections = () => {
             </div>
           );
         }
-
-        if (id === 'zuko-mcp') {
-          if (mcpPending)
-            return <span className="text-sm text-zinc-400">Connecting...</span>;
-          if (connected) {
-            return (
-              <div className="flex items-center gap-1">
-                <Button
-                  plain
-                  onClick={handleMcpDisconnect}
-                  className="!text-red-500 dark:!text-red-400"
-                >
-                  Disconnect
-                </Button>
-                <Button
-                  plain
-                  onClick={() => setMcpSetupOpen(true)}
-                  className="!text-blue-500 dark:!text-blue-400"
-                >
-                  Setup guide
-                </Button>
-              </div>
-            );
-          }
-          return (
-            <Button
-              plain
-              onClick={handleMcpConnect}
-              className="!text-blue-500 dark:!text-blue-400"
-            >
-              Connect
-            </Button>
-          );
-        }
-
         return null;
       },
     }),
-    [
-      installGitHubApp,
-      connectApollo,
-      disconnectApolloMutation,
-      mcpPending,
-      handleMcpConnect,
-      handleMcpDisconnect,
-    ],
+    [installGitHubApp, connectApollo, disconnectApolloMutation],
   );
 
   const connectionActionsColumn: ColumnDef<BaseRow> = useMemo(
@@ -323,9 +259,7 @@ export const OrgConnections = () => {
         const provider = id as 'github' | 'google';
         const isConnecting =
           connectAccount.isPending && connectAccount.variables === provider;
-        const isDisconnecting =
-          disconnectAccount.isPending && disconnectAccount.variables === id;
-        const isPending = isConnecting || isDisconnecting;
+        const isPending = isConnecting;
 
         return (
           <div className="flex items-center gap-1">
@@ -362,7 +296,7 @@ export const OrgConnections = () => {
         );
       },
     }),
-    [connectAccount, disconnectAccount],
+    [connectAccount],
   );
 
   const integrationColumns = useMemo(
@@ -415,15 +349,6 @@ export const OrgConnections = () => {
           ? new Date(apolloStatus.connectedAt)
           : undefined,
     },
-    {
-      id: 'zuko-mcp',
-      name: 'Zuko MCP',
-      icon: <McpIcon />,
-      status: mcpConnected ? 'connected' : 'not-connected',
-      connectedBy: mcpConnected ? userEmail : undefined,
-      connectedAt:
-        mcpConnected && mcpToken ? new Date(mcpToken.connectedAt) : undefined,
-    },
   ];
 
   const connectionRows: ConnectionRow[] = [
@@ -452,20 +377,6 @@ export const OrgConnections = () => {
 
   return (
     <>
-      <Suspense fallback={null}>
-        <McpOAuthHandler
-          onSuccess={handleMcpSuccess}
-          onPending={handleMcpPending}
-        />
-      </Suspense>
-
-      <McpSetupModal
-        open={mcpSetupOpen}
-        onClose={() => setMcpSetupOpen(false)}
-        endpoint={getMcpEndpoint()}
-        token={mcpToken?.accessToken ?? ''}
-      />
-
       <section>
         <div className="mb-2">
           <Subheading>Integrations</Subheading>
