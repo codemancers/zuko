@@ -1,5 +1,6 @@
 import { Controller, Get } from '@nestjs/common';
 import { auth, MCP_SCOPES } from '../../libs/better-auth/auth';
+import { AllowAnonymous } from '@thallesp/nestjs-better-auth';
 
 const baseURL = process.env.BACKEND_URL || 'http://localhost:3001';
 
@@ -11,6 +12,7 @@ const baseURL = process.env.BACKEND_URL || 'http://localhost:3001';
  * several MCP clients fall back to the bare root path when they can't read
  * the WWW-Authenticate header.
  */
+@AllowAnonymous()
 @Controller('.well-known')
 export class WellKnownController {
   @Get(['oauth-authorization-server/auth', 'oauth-authorization-server'])
