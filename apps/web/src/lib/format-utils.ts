@@ -1,4 +1,13 @@
+import dayjs from 'dayjs';
+
 const EMPTY_VALUE = '—';
+export const TABLE_DATE_FORMAT = 'DD MMM YYYY';
+
+export function formatDate(value: Date | string | null | undefined): string {
+  if (!value) return EMPTY_VALUE;
+  const d = dayjs(value);
+  return d.isValid() ? d.format(TABLE_DATE_FORMAT) : EMPTY_VALUE;
+}
 
 export function formatCurrency(value?: number, currency?: string): string {
   if (value === undefined || value === null) return EMPTY_VALUE;

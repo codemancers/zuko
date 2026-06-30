@@ -14,10 +14,10 @@ import { MegaphoneIcon } from '@heroicons/react/24/outline';
 import { getCampaignsInfinite } from '@/server/query-options';
 import { apolloSequencesApi, type ApolloSequence } from '@/lib/api/apollo';
 import { PageHeader, SearchBar } from '@/components/shared';
-import { BaseTable } from '@/components/Table';
+import { BaseTable, DataField } from '@/components/Table';
+import type { ColumnMetadata } from '@/components/Table';
 import { useSearchParam } from '@/hooks/use-search-param';
 import { toast } from 'sonner';
-import dayjs from 'dayjs';
 import { formatRate } from './campaign-shared';
 
 export default function CampaignsList() {
@@ -65,6 +65,16 @@ export default function CampaignsList() {
       toast.error('Failed to deactivate campaign');
     },
   });
+
+  const createdAtMetadata: ColumnMetadata = {
+    id: 'created_at',
+    header: 'Created',
+    fieldType: 'date',
+    dataType: 'date',
+    editable: false,
+    isVisible: true,
+    config: { format: 'date' },
+  };
 
   const columns: ColumnDef<ApolloSequence>[] = useMemo(
     () => [
@@ -135,7 +145,13 @@ export default function CampaignsList() {
       {
         accessorKey: 'created_at',
         header: 'Created',
-        cell: ({ getValue }) => dayjs(getValue<string>()).format('MMM D, YYYY'),
+        cell: ({ getValue, row }) => (
+          <DataField
+            value={getValue<string>()}
+            metadata={createdAtMetadata}
+            row={row.original}
+          />
+        ),
       },
     ],
     [approveMutation, deactivateMutation],

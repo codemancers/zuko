@@ -22,10 +22,15 @@ import { AdjustmentsHorizontalIcon } from '@heroicons/react/24/outline';
 import { getIcpProfilesInfinite } from '@/server/query-options';
 import { icpApi, type IcpProfile } from '@/lib/api/icp';
 import { PageHeader, ConfirmDialog } from '@/components/shared';
-import { BaseTable, TableActions, DeleteAction } from '@/components/Table';
+import {
+  BaseTable,
+  TableActions,
+  DeleteAction,
+  DataField,
+} from '@/components/Table';
+import type { ColumnMetadata } from '@/components/Table';
 import IcpForm from './IcpForm';
 import { toast } from 'sonner';
-import dayjs from 'dayjs';
 
 export default function IcpList() {
   const router = useRouter();
@@ -54,6 +59,16 @@ export default function IcpList() {
     },
     onError: () => toast.error('Failed to delete ICP profile'),
   });
+
+  const createdAtMetadata: ColumnMetadata = {
+    id: 'createdAt',
+    header: 'Created',
+    fieldType: 'date',
+    dataType: 'date',
+    editable: false,
+    isVisible: true,
+    config: { format: 'date' },
+  };
 
   const actionsColumn: ColumnDef<IcpProfile> = useMemo(
     () => ({
@@ -148,7 +163,13 @@ export default function IcpList() {
       {
         accessorKey: 'createdAt',
         header: 'Created',
-        cell: ({ getValue }) => dayjs(getValue<string>()).format('MMM D, YYYY'),
+        cell: ({ getValue, row }) => (
+          <DataField
+            value={getValue<string>()}
+            metadata={createdAtMetadata}
+            row={row.original}
+          />
+        ),
       },
       actionsColumn,
     ],

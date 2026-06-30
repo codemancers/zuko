@@ -4,6 +4,7 @@ export const EMPTY_VALUE = '—';
 
 import type { ReactNode } from 'react';
 import Image from 'next/image';
+import { formatDate } from '@/lib/format-utils';
 import { ArrowTopRightOnSquareIcon } from '@heroicons/react/24/outline';
 import {
   Badge,
@@ -182,20 +183,8 @@ export function EntityField<T extends BaseRow>({
 }
 
 export function DateField({ value, display }: FieldProps<BaseRow>) {
-  let content: ReactNode = '';
-  if (display) {
-    content = display;
-  } else if (value instanceof Date) {
-    content = value.toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-      hour: 'numeric',
-      minute: '2-digit',
-    });
-  } else if (value !== null && value !== undefined) {
-    content = value as ReactNode;
-  }
+  const content =
+    display ?? formatDate(value as Date | string | null | undefined);
   return (
     <span className="text-sm text-zinc-600 dark:text-zinc-400">{content}</span>
   );

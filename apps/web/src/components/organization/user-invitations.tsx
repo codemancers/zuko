@@ -25,7 +25,7 @@ type InvitationRow = BaseRow & {
   organizationId: string;
   role: string;
   status: string;
-  invitedAt: string | null;
+  invitedAt: string | undefined;
 };
 
 const INVITATION_TABLE_METADATA: ColumnMetadata[] = [
@@ -127,7 +127,7 @@ export const UserInvitations = () => {
         organizationId: inv.organizationId,
         role: inv.role,
         status: inv.status,
-        invitedAt: inv.createdAt ?? null,
+        invitedAt: inv.createdAt ?? undefined,
       })),
     [invitations],
   );
