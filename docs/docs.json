@@ -35,7 +35,11 @@
           },
           {
             "group": "Concepts",
-            "pages": ["concepts/architecture", "concepts/sandbox"]
+            "pages": [
+              "concepts/architecture",
+              "concepts/sandbox",
+              "concepts/mcp-server"
+            ]
           },
           {
             "group": "Guides",

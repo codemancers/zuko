@@ -127,6 +127,7 @@ bun nx run @zuko/ai-agents:build
 
 ## Documentation
 
+- **[MCP server](docs/MCP.md)** — OAuth 2.1 MCP endpoint: tools, scopes, and connecting Claude Desktop / Cursor / VS Code.
 - **[E2E tests](apps/web-e2e/README.md)** — How to run and write Playwright E2E tests for the web app.
 - **[Beads](.beads/README.md)** — Issue tracking (CLI, sync with git).
 - **Guides (e.g. Mintlify):** Planned; see the issue tracker for progress.
