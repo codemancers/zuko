@@ -5,7 +5,6 @@ import { authClient } from '@/lib/auth-client';
 import { getGitHubInstallationUrl } from '../server/fetch';
 import { connectionQueryKeys } from '../server/query-options';
 import { toast } from 'sonner';
-import { getAuthBaseUrl } from './use-mcp-oauth';
 
 export function useConnectAccount() {
   const queryClient = useQueryClient();
@@ -33,21 +32,27 @@ export function useDisconnectAccount() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (providerId: string) => {
-      const res = await fetch(`${getAuthBaseUrl()}/unlink-account`, {
+    mutationFn: async (accountId: string) => {
+      const response = await fetch('/api/auth/unlink-account', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+        },
         credentials: 'include',
-        body: JSON.stringify({ providerId }),
+        body: JSON.stringify({ accountId }),
       });
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({}));
-        throw new Error(body.message || `Failed to disconnect ${providerId}`);
+
+      if (!response.ok) {
+        const error = await response
+          .json()
+          .catch(() => ({ message: 'Failed to disconnect' }));
+        throw new Error(error.message || 'Failed to disconnect account');
       }
-      return res.json();
+
+      return response.json();
     },
-    onSuccess: (_result: unknown, providerId: string) => {
-      toast.success(`Disconnected ${providerId}`);
+    onSuccess: () => {
+      toast.success('Account disconnected');
       queryClient.invalidateQueries({
         queryKey: connectionQueryKeys.accounts(),
       });
