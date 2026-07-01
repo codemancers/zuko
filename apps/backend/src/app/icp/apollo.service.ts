@@ -29,19 +29,24 @@ export interface ApolloOrganization {
 
 export interface ApolloPerson {
   id: string;
-  name: string;
-  first_name?: string;
-  last_name?: string;
-  title?: string;
-  linkedin_url?: string;
-  city?: string;
-  state?: string;
-  country?: string;
-  photo_url?: string;
+  first_name: string;
+  last_name_obfuscated: string;
+  title: string | null;
+  has_email: boolean;
+  has_city: boolean;
+  has_state: boolean;
+  has_country: boolean;
+  has_direct_phone: string;
   organization?: {
-    name?: string;
-    website_url?: string;
-    primary_domain?: string;
+    name: string;
+    has_industry: boolean;
+    has_phone: boolean;
+    has_city: boolean;
+    has_state: boolean;
+    has_country: boolean;
+    has_zip_code: boolean;
+    has_revenue: boolean;
+    has_employee_count: boolean;
   };
 }
 
@@ -126,7 +131,12 @@ export class ApolloService {
     if (filters.locations?.length) {
       payload['organization_locations'] = filters.locations;
     }
-
+    if (filters.revenueRange?.min) {
+      payload['revenue_range[min]'] = filters.revenueRange.min;
+    }
+    if (filters.revenueRange?.max) {
+      payload['revenue_range[max]'] = filters.revenueRange.max;
+    }
     this.logger.debug(`[APOLLO] searchCompanies page=${page}`);
 
     try {
@@ -188,7 +198,7 @@ export class ApolloService {
 
   async searchContacts(
     organizationId: number,
-    _filters: IcpFiltersDto,
+    filters: IcpFiltersDto,
     page = 1,
     perPage = 25,
   ): Promise<ApolloContactsResult> {
@@ -198,65 +208,53 @@ export class ApolloService {
       sort_ascending: false,
     };
 
+    if (filters.industries?.length) {
+      payload['q_organization_keyword_tags'] = filters.industries;
+    }
+    if (filters.employeeRanges?.length) {
+      const normalized: string[] = [];
+      const raw = filters.employeeRanges;
+      for (let i = 0; i < raw.length; i++) {
+        if (raw[i].includes(',')) {
+          normalized.push(raw[i]);
+        } else if (i + 1 < raw.length && !raw[i + 1].includes(',')) {
+          normalized.push(`${raw[i]},${raw[i + 1]}`);
+          i++;
+        }
+      }
+      if (normalized.length)
+        payload['organization_num_employees_ranges'] = normalized;
+    }
+    if (filters.locations?.length) {
+      payload['person_locations'] = filters.locations;
+    }
+    if (filters.revenueRange?.min) {
+      payload['revenue_range[min]'] = filters.revenueRange.min;
+    }
+    if (filters.revenueRange?.max) {
+      payload['revenue_range[max]'] = filters.revenueRange.max;
+    }
+
     this.logger.debug(`[APOLLO] searchContacts page=${page}`);
 
     try {
       const { data } = await axios.post<{
-        contacts: Array<{
-          id: string;
-          name: string;
-          first_name?: string;
-          last_name?: string;
-          title?: string;
-          linkedin_url?: string | null;
-          photo_url?: string | null;
-          present_raw_address?: string | null;
-          organization_name?: string;
-          organization?: {
-            id?: string;
-            name?: string;
-            website_url?: string;
-            linkedin_url?: string;
-            logo_url?: string;
-            primary_domain?: string;
-          };
-        }>;
-        pagination: {
-          page: number;
-          per_page: number;
-          total_entries: number;
-          total_pages: number;
-        };
-      }>(`${APOLLO_BASE}/contacts/search`, payload, {
+        total_entries?: number;
+        people: Array<ApolloPerson>;
+      }>(`${APOLLO_BASE}/mixed_people/api_search`, payload, {
         headers: await this.headers(organizationId),
       });
 
-      const pagination = data.pagination ?? {};
+      const totalEntries = data.total_entries ?? 0;
+      const totalPages = totalEntries ? Math.ceil(totalEntries / perPage) : 1;
+
       return {
-        people: (data.contacts ?? []).map((c) => ({
-          id: c.id,
-          name: c.name,
-          first_name: c.first_name,
-          last_name: c.last_name,
-          title: c.title,
-          linkedin_url: c.linkedin_url ?? undefined,
-          photo_url: c.photo_url ?? undefined,
-          city: c.present_raw_address ?? undefined,
-          organization: c.organization
-            ? {
-                name: c.organization.name,
-                website_url: c.organization.website_url,
-                primary_domain: c.organization.primary_domain,
-              }
-            : c.organization_name
-              ? { name: c.organization_name }
-              : undefined,
-        })),
+        people: data.people ?? [],
         pagination: {
-          page: pagination.page ?? page,
-          per_page: pagination.per_page ?? perPage,
-          total_entries: pagination.total_entries ?? 0,
-          total_pages: pagination.total_pages ?? 1,
+          page: Number(page),
+          per_page: Number(perPage),
+          total_entries: Number(totalEntries),
+          total_pages: Number(totalPages),
         },
       };
     } catch (error) {

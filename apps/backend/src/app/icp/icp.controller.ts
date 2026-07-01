@@ -116,8 +116,8 @@ export class IcpController {
     return this.icpService.getApolloCompanies(
       id,
       organizationId,
-      query.page ?? 1,
-      query.perPage ?? 25,
+      Number(query.page ?? 1),
+      Number(query.perPage ?? 25),
     );
   }
 
@@ -135,8 +135,8 @@ export class IcpController {
     return this.icpService.getApolloContacts(
       id,
       organizationId,
-      query.page ?? 1,
-      query.perPage ?? 25,
+      Number(query.page ?? 1),
+      Number(query.perPage ?? 25),
     );
   }
 }
