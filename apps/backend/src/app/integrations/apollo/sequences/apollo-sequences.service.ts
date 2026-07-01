@@ -1,10 +1,12 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { ApolloMcpService } from '../apollo-mcp.service';
 import { CampaignsRepository } from '@zuko/sales';
 import type {
   CreateSequenceDto,
   AddContactsToSequenceDto,
   SearchSequencesDto,
+  CreateCampaignDto,
+  SaveSequenceDto,
 } from './dto/sequences.dto';
 
 interface StoredTouch {
@@ -70,6 +72,8 @@ export interface ApolloCreateResponse {
 
 @Injectable()
 export class ApolloSequencesService {
+  private readonly logger = new Logger(ApolloSequencesService.name);
+
   constructor(
     private readonly apolloMcpService: ApolloMcpService,
     private readonly campaignsRepository: CampaignsRepository,
@@ -109,6 +113,7 @@ export class ApolloSequencesService {
     organizationId: number,
     userId: number,
     dto: CreateSequenceDto,
+    zukoId?: number,
   ) {
     const result = await this.apolloMcpService.callTool<ApolloCreateResponse>(
       organizationId,
@@ -162,18 +167,28 @@ export class ApolloSequencesService {
     // Guard against MCP responses that omit emailer_campaign (e.g. when Apollo returns partial data)
     if (result?.emailer_campaign?.id) {
       const sequence = this.buildSequenceSteps(result);
-      await this.campaignsRepository.upsert({
-        organizationId,
-        createdById: userId,
-        name: result.emailer_campaign.name ?? dto.name,
-        providerSequenceId: result.emailer_campaign.id,
-        active: result.emailer_campaign.active ?? false,
-        permissions:
-          result.emailer_campaign.permissions ??
-          dto.permissions ??
-          'team_can_use',
-        sequence,
-      });
+      if (zukoId != null) {
+        // Update the existing Zuko campaign record (avoids unique constraint collision)
+        await this.campaignsRepository.linkProviderSequence(
+          zukoId,
+          result.emailer_campaign.id,
+          sequence,
+        );
+      } else {
+        await this.campaignsRepository.upsert({
+          organizationId,
+          createdById: userId,
+          icpProfileId: dto.icpProfileId,
+          name: result.emailer_campaign.name ?? dto.name,
+          providerSequenceId: result.emailer_campaign.id,
+          active: result.emailer_campaign.active ?? false,
+          permissions:
+            result.emailer_campaign.permissions ??
+            dto.permissions ??
+            'team_can_use',
+          sequence,
+        });
+      }
     }
 
     return result;
@@ -275,7 +290,9 @@ export class ApolloSequencesService {
     );
     await this.campaignsRepository
       .updateActive(organizationId, sequenceId, true)
-      .catch(() => {});
+      .catch((err: unknown) =>
+        this.logger.warn('updateActive(true) failed', err),
+      );
     return result;
   }
 
@@ -291,8 +308,10 @@ export class ApolloSequencesService {
       );
     }
 
-    const sequence = campaign.sequence as unknown[];
-    if (!sequence || sequence.length === 0) {
+    const sequence = Array.isArray(campaign.sequence)
+      ? (campaign.sequence as unknown as SequenceStep[])
+      : [];
+    if (sequence.length === 0) {
       throw new NotFoundException(
         'No steps stored for this campaign. Recreate it via Zuko to enable deactivation.',
       );
@@ -306,13 +325,15 @@ export class ApolloSequencesService {
         _rationale: 'User deactivating sequence from Zuko',
         id: sequenceId,
         active: false,
-        emailer_steps: this.formatSequenceForMcp(sequence as SequenceStep[]),
+        emailer_steps: this.formatSequenceForMcp(sequence),
       },
     );
 
     await this.campaignsRepository
       .updateActive(organizationId, sequenceId, false)
-      .catch(() => {});
+      .catch((err: unknown) =>
+        this.logger.warn('updateActive(false) failed', err),
+      );
     return result;
   }
 
@@ -323,6 +344,69 @@ export class ApolloSequencesService {
     );
     if (!campaign) throw new NotFoundException('Campaign not found');
     return campaign;
+  }
+
+  async getCampaignsByIcpProfile(organizationId: number, icpProfileId: number) {
+    return this.campaignsRepository.findByIcpProfileId(
+      organizationId,
+      icpProfileId,
+    );
+  }
+
+  async createCampaignMeta(
+    organizationId: number,
+    userId: number,
+    dto: CreateCampaignDto,
+  ) {
+    return this.campaignsRepository.createMeta({
+      organizationId,
+      createdById: userId,
+      icpProfileId: dto.icpProfileId,
+      name: dto.name,
+    });
+  }
+
+  async getZukoCampaignById(organizationId: number, id: number) {
+    const campaign = await this.campaignsRepository.findById(
+      id,
+      organizationId,
+    );
+    if (!campaign) throw new NotFoundException('Campaign not found');
+    return campaign;
+  }
+
+  async saveSequenceForCampaign(
+    organizationId: number,
+    zukoId: number,
+    userId: number,
+    dto: SaveSequenceDto,
+  ) {
+    const campaign = await this.campaignsRepository.findById(
+      zukoId,
+      organizationId,
+    );
+    if (!campaign) throw new NotFoundException('Campaign not found');
+
+    const createDto: CreateSequenceDto = {
+      name: campaign.name,
+      permissions: dto.permissions ?? 'team_can_use',
+      emailerScheduleId: dto.emailerScheduleId,
+      icpProfileId: campaign.icpProfileId ?? undefined,
+      sequence: dto.sequence,
+    };
+
+    if (campaign.providerSequenceId) {
+      // Sequence already exists in Apollo — update it
+      return this.updateSequence(
+        organizationId,
+        campaign.providerSequenceId,
+        userId,
+        createDto,
+      );
+    } else {
+      // First time — create Apollo sequence and link it to the existing Zuko record
+      return this.createSequence(organizationId, userId, createDto, zukoId);
+    }
   }
 
   async addContactsToSequence(

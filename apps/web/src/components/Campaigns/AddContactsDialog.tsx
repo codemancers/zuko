@@ -102,14 +102,14 @@ function TagInput({ values, onChange, placeholder, ariaLabel }: TagInputProps) {
           {values.map((value) => (
             <Badge key={value} color="zinc" className="gap-1">
               {value}
-              <button
-                type="button"
+              <Button
+                plain
                 aria-label={`Remove ${value}`}
                 onClick={() => removeTag(value)}
-                className="-mr-0.5 rounded-sm text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200"
+                className="-mr-0.5 text-zinc-500"
               >
                 <XMarkIcon className="size-3.5" />
-              </button>
+              </Button>
             </Badge>
           ))}
         </div>
@@ -160,16 +160,16 @@ function CompanyCombobox({ selected, onAdd, onRemove }: CompanyComboboxProps) {
           <ul className="absolute z-10 mt-1 max-h-56 w-full overflow-auto rounded-lg border border-zinc-950/10 bg-white py-1 shadow-lg dark:border-white/10 dark:bg-zinc-800">
             {suggestions.map((org) => (
               <li key={org.id}>
-                <button
-                  type="button"
-                  className="w-full px-3 py-1.5 text-left text-sm text-zinc-700 hover:bg-zinc-100 dark:text-zinc-200 dark:hover:bg-white/5"
+                <Button
+                  plain
+                  className="w-full justify-start px-3 py-1.5 text-left text-sm"
                   onClick={() => {
                     onAdd(org);
                     setQuery('');
                   }}
                 >
                   {org.name}
-                </button>
+                </Button>
               </li>
             ))}
           </ul>
@@ -181,14 +181,14 @@ function CompanyCombobox({ selected, onAdd, onRemove }: CompanyComboboxProps) {
           {selected.map((org) => (
             <Badge key={org.id} color="blue" className="gap-1">
               {org.name}
-              <button
-                type="button"
+              <Button
+                plain
                 aria-label={`Remove ${org.name}`}
                 onClick={() => onRemove(org.id)}
-                className="-mr-0.5 rounded-sm text-blue-500 hover:text-blue-700 dark:hover:text-blue-300"
+                className="-mr-0.5 text-blue-500"
               >
                 <XMarkIcon className="size-3.5" />
-              </button>
+              </Button>
             </Badge>
           ))}
         </div>
@@ -218,11 +218,11 @@ function FilterSection({
 
   return (
     <div className="border-b border-zinc-950/10 dark:border-white/10">
-      <button
-        type="button"
+      <Button
+        plain
         onClick={() => setOpen((value) => !value)}
         aria-expanded={open}
-        className="flex w-full items-center justify-between px-4 py-3 text-sm text-zinc-700 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-white/5"
+        className="w-full !justify-between px-4 py-3 text-sm"
       >
         <span className="flex items-center gap-2.5">
           <Icon className="size-4 text-zinc-400" />
@@ -241,7 +241,7 @@ function FilterSection({
             open && 'rotate-180',
           )}
         />
-      </button>
+      </Button>
       {open && <div className="px-4 pt-1 pb-3">{children}</div>}
     </div>
   );
@@ -261,7 +261,11 @@ function ProspectRow({ person, selected, onToggle }: ProspectRowProps) {
     .join(', ');
 
   return (
-    <label className="flex cursor-pointer items-start gap-3 border-b border-zinc-950/5 px-4 py-3 last:border-0 hover:bg-zinc-100 dark:border-white/5 dark:hover:bg-white/5">
+    <button
+      type="button"
+      onClick={onToggle}
+      className="flex w-full cursor-pointer items-start gap-3 border-b border-zinc-950/5 px-4 py-3 text-left last:border-0 hover:bg-zinc-100 dark:border-white/5 dark:hover:bg-white/5"
+    >
       <Checkbox
         color="blue"
         checked={selected}
@@ -296,7 +300,7 @@ function ProspectRow({ person, selected, onToggle }: ProspectRowProps) {
           {location && <span>{location}</span>}
         </div>
       </div>
-    </label>
+    </button>
   );
 }
 

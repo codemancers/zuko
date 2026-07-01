@@ -5,6 +5,7 @@ import type { PrismaService } from '../modules/prisma.types';
 export interface UpsertCampaignInput {
   organizationId: number;
   createdById: number;
+  icpProfileId?: number;
   name: string;
   providerSequenceId: string;
   active: boolean;
@@ -12,9 +13,57 @@ export interface UpsertCampaignInput {
   sequence: unknown[];
 }
 
+export interface CreateCampaignMetaInput {
+  organizationId: number;
+  createdById: number;
+  icpProfileId?: number;
+  name: string;
+}
+
 @Injectable()
 export class CampaignsRepository {
   constructor(private readonly prisma: PrismaService) {}
+
+  async createMeta(input: CreateCampaignMetaInput) {
+    return this.prisma.campaign.create({
+      data: {
+        organizationId: input.organizationId,
+        createdById: input.createdById,
+        icpProfileId: input.icpProfileId ?? null,
+        name: input.name,
+        active: false,
+        permissions: 'team_can_use',
+        sequence: [],
+      },
+    });
+  }
+
+  async findById(id: number, organizationId: number) {
+    return this.prisma.campaign.findFirst({
+      where: { id, organizationId },
+    });
+  }
+
+  async setProviderSequenceId(id: number, providerSequenceId: string) {
+    return this.prisma.campaign.update({
+      where: { id },
+      data: { providerSequenceId },
+    });
+  }
+
+  async linkProviderSequence(
+    id: number,
+    providerSequenceId: string,
+    sequence: unknown[],
+  ) {
+    return this.prisma.campaign.update({
+      where: { id },
+      data: {
+        providerSequenceId,
+        sequence: sequence as Prisma.InputJsonValue,
+      },
+    });
+  }
 
   async upsert(input: UpsertCampaignInput) {
     return this.prisma.campaign.upsert({
@@ -27,6 +76,7 @@ export class CampaignsRepository {
       create: {
         organizationId: input.organizationId,
         createdById: input.createdById,
+        icpProfileId: input.icpProfileId ?? null,
         name: input.name,
         providerSequenceId: input.providerSequenceId,
         active: input.active,
@@ -38,7 +88,17 @@ export class CampaignsRepository {
         active: input.active,
         permissions: input.permissions,
         sequence: input.sequence as Prisma.InputJsonValue,
+        ...(input.icpProfileId !== undefined && {
+          icpProfileId: input.icpProfileId,
+        }),
       },
+    });
+  }
+
+  async findByIcpProfileId(organizationId: number, icpProfileId: number) {
+    return this.prisma.campaign.findMany({
+      where: { organizationId, icpProfileId },
+      orderBy: { createdAt: 'desc' },
     });
   }
 

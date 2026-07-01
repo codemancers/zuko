@@ -22,7 +22,7 @@ export function BaseTableRow<TData extends BaseRow>({
   return (
     <TableRow
       className={clsx(
-        'transition-all duration-200 ease-in hover:bg-zinc-50 dark:hover:bg-zinc-800/50',
+        'group transition-all duration-200 ease-in hover:bg-zinc-50 dark:hover:bg-zinc-800/50',
         !disableRowClick && onRowClick && 'hover:cursor-pointer',
       )}
       onClick={() => !disableRowClick && onRowClick?.(row.original)}

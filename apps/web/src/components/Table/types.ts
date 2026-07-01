@@ -82,6 +82,7 @@ export interface BaseTableProps<TData extends BaseRow> {
   isFetchingNextPage?: boolean;
   hasNextPage?: boolean;
 
+  serialColumnHeader?: string;
   columnReordering?: { storageKey: string };
   showEmptyState?: boolean;
   emptyStateConfig?: {

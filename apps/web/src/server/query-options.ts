@@ -320,10 +320,16 @@ export const getCampaignsInfinite = (search?: string) =>
     retry: false,
   });
 
-export const getZukoCampaign = (id: string) =>
+export const getCampaignsByIcpProfile = (icpProfileId: number) =>
   queryOptions({
-    queryKey: ['campaign', 'zuko', id],
-    queryFn: () => apolloSequencesApi.getCampaign(id),
+    queryKey: ['campaigns', 'by-icp', icpProfileId],
+    queryFn: () => apolloSequencesApi.listByIcpProfile(icpProfileId),
+  });
+
+export const getZukoCampaignByDbId = (id: number) =>
+  queryOptions({
+    queryKey: ['campaign', 'zuko-db', id],
+    queryFn: () => apolloSequencesApi.getByZukoId(id),
     retry: false,
   });
 
