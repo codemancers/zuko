@@ -261,12 +261,10 @@ function ProspectRow({ person, selected, onToggle }: ProspectRowProps) {
     .join(', ');
 
   return (
-    <div
-      role="button"
-      tabIndex={0}
+    <button
+      type="button"
       onClick={onToggle}
-      onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && onToggle()}
-      className="flex cursor-pointer items-start gap-3 border-b border-zinc-950/5 px-4 py-3 last:border-0 hover:bg-zinc-100 dark:border-white/5 dark:hover:bg-white/5"
+      className="flex w-full cursor-pointer items-start gap-3 border-b border-zinc-950/5 px-4 py-3 text-left last:border-0 hover:bg-zinc-100 dark:border-white/5 dark:hover:bg-white/5"
     >
       <Checkbox
         color="blue"
@@ -302,7 +300,7 @@ function ProspectRow({ person, selected, onToggle }: ProspectRowProps) {
           {location && <span>{location}</span>}
         </div>
       </div>
-    </div>
+    </button>
   );
 }
 
