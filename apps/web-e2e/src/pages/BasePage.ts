@@ -61,7 +61,7 @@ export class BasePage {
   async updateTitle(newTitle: string) {
     const heading = this.page.locator('h1[contenteditable="true"]');
     await heading.click();
-    await this.page.keyboard.press('Control+a');
+    await this.page.keyboard.press('ControlOrMeta+a');
     await heading.pressSequentially(newTitle);
     await heading.blur();
     // Let the 2 s autosave debounce start before the caller awaits the PATCH

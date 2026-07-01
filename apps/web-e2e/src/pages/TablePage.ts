@@ -126,7 +126,7 @@ export class TablePage extends BasePage {
 
     const sx = sourceBox.x + sourceBox.width / 2;
     const sy = sourceBox.y + sourceBox.height / 2;
-    const tx = targetBox.x + targetBox.width / 2;
+    const tx = targetBox.x + targetBox.width * 0.25;
     const ty = targetBox.y + targetBox.height / 2;
 
     // dnd-kit PointerSensor requires pointer events with gradual movement.

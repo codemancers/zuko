@@ -932,7 +932,7 @@ test.describe('Cell Editing Flow', () => {
     const input = expectedCloseDateCell.locator('input');
     await expect(input).toBeVisible();
     await input.fill(newValue);
-    await input.blur();
+    await page.keyboard.press('Tab');
 
     await expect(page.getByText('Cell updated successfully')).toBeVisible();
     await expect(expectedCloseDateCell).toHaveText(formattedValue);
@@ -946,7 +946,7 @@ test.describe('Cell Editing Flow', () => {
     const input2 = expectedCloseDateCell.locator('input');
     await expect(input2).toBeVisible();
     await input2.fill('');
-    await input2.blur();
+    await page.keyboard.press('Tab');
 
     await expect(page.getByText('Cell updated successfully')).toBeVisible();
     await expect(expectedCloseDateCell).toHaveText('');
