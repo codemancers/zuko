@@ -1,6 +1,6 @@
 import dayjs from 'dayjs';
 import { test, expect } from './fixtures';
-import { createFreshDeal } from './fixtures/helpers';
+import { createFreshCompany, createFreshDeal } from './fixtures/helpers';
 
 /**
  * Deals Feature E2E Tests
@@ -581,6 +581,92 @@ test.describe('Deal Associations - Contacts', () => {
   });
 });
 
+test.describe.serial('Deal Associations - Contact Removal Dialog', () => {
+  let dealId: number;
+
+  test.beforeAll(async ({ browser }) => {
+    dealId = await createFreshDeal(browser);
+  });
+
+  test('confirm dialog closes automatically after removing a contact from a deal', async ({
+    dealDetailPage,
+    page,
+  }) => {
+    await dealDetailPage.goto(dealId);
+
+    // Add a contact first so we have something to remove
+    await page.getByRole('button', { name: /Add Contact/i }).click();
+    await page.waitForSelector('text=Add Contact to Deal');
+    const contactSelect = page.locator('select').first();
+    await contactSelect
+      .locator('option[value]:not([value=""])')
+      .first()
+      .waitFor({ state: 'attached', timeout: 10000 });
+    await contactSelect.selectOption({ index: 1 });
+    const addBtn = page.getByRole('dialog').getByRole('button', {
+      name: /Add Contact/i,
+    });
+    await addBtn.click();
+    await page.getByRole('dialog').waitFor({ state: 'hidden', timeout: 10000 });
+
+    // Now remove the contact and verify the dialog closes automatically
+    const removeButton = page.getByTitle('Remove contact').first();
+    await removeButton.waitFor({ state: 'visible', timeout: 10000 });
+    await removeButton.click();
+
+    const confirmDialog = page.getByRole('button', { name: /^Remove$/ });
+    await confirmDialog.waitFor({ state: 'visible', timeout: 5000 });
+    await confirmDialog.click();
+
+    // Dialog must close on its own — no manual Escape needed
+    await expect(confirmDialog).toBeHidden({ timeout: 10000 });
+  });
+});
+
+test.describe.serial('Deal Associations - Company Removal Dialog', () => {
+  let dealId: number;
+
+  test.beforeAll(async ({ browser }) => {
+    // Create a company first so the "Add Company" dropdown is never empty
+    await createFreshCompany(browser);
+    dealId = await createFreshDeal(browser);
+  });
+
+  test('confirm dialog closes automatically after removing a company from a deal', async ({
+    dealDetailPage,
+    page,
+  }) => {
+    await dealDetailPage.goto(dealId);
+
+    // Add a company first so we have something to remove
+    await page.getByRole('button', { name: /Add Company/i }).click();
+    await page.waitForSelector('text=Add Company to Deal');
+    const companySelect = page.locator('select').first();
+    await companySelect
+      .locator('option[value]:not([value=""])')
+      .first()
+      .waitFor({ state: 'attached', timeout: 10000 });
+    await companySelect.selectOption({ index: 1 });
+    const addBtn = page.getByRole('dialog').getByRole('button', {
+      name: /Add Company/i,
+    });
+    await addBtn.click();
+    await page.getByRole('dialog').waitFor({ state: 'hidden', timeout: 10000 });
+
+    // Now remove the company and verify the dialog closes automatically
+    const removeButton = page.getByTitle('Remove company').first();
+    await removeButton.waitFor({ state: 'visible', timeout: 10000 });
+    await removeButton.click();
+
+    const confirmDialog = page.getByRole('button', { name: /^Remove$/ });
+    await confirmDialog.waitFor({ state: 'visible', timeout: 5000 });
+    await confirmDialog.click();
+
+    // Dialog must close on its own — no manual Escape needed
+    await expect(confirmDialog).toBeHidden({ timeout: 10000 });
+  });
+});
+
 test.describe.serial('Column Creation Flow', () => {
   const identifier = Date.now();
   const columnName = `Source ${identifier}`;
@@ -846,7 +932,7 @@ test.describe('Cell Editing Flow', () => {
     const input = expectedCloseDateCell.locator('input');
     await expect(input).toBeVisible();
     await input.fill(newValue);
-    await input.blur();
+    await page.keyboard.press('Tab');
 
     await expect(page.getByText('Cell updated successfully')).toBeVisible();
     await expect(expectedCloseDateCell).toHaveText(formattedValue);
@@ -860,7 +946,7 @@ test.describe('Cell Editing Flow', () => {
     const input2 = expectedCloseDateCell.locator('input');
     await expect(input2).toBeVisible();
     await input2.fill('');
-    await input2.blur();
+    await page.keyboard.press('Tab');
 
     await expect(page.getByText('Cell updated successfully')).toBeVisible();
     await expect(expectedCloseDateCell).toHaveText('');

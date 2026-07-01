@@ -131,6 +131,7 @@ export default function DealDetail({ dealId, currentUserId }: DealDetailProps) {
     mutationFn: (companyId: number) =>
       dealsApi.removeCompany(dealId, companyId),
     onSuccess: async () => {
+      setCompanyToRemove(null);
       await queryClient.refetchQueries({ queryKey: ['deal', dealId] });
       await queryClient.invalidateQueries({ queryKey: ['deals'] });
       await queryClient.invalidateQueries({
@@ -158,6 +159,7 @@ export default function DealDetail({ dealId, currentUserId }: DealDetailProps) {
     mutationFn: (contactId: number) =>
       dealsApi.removeContact(dealId, contactId),
     onSuccess: async () => {
+      setContactToRemove(null);
       await queryClient.refetchQueries({ queryKey: ['deal', dealId] });
       await queryClient.invalidateQueries({ queryKey: ['deals'] });
       await queryClient.invalidateQueries({

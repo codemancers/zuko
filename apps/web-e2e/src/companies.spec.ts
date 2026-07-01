@@ -186,7 +186,10 @@ test.describe.serial('Company Detail - Contact Management', () => {
     }
   });
 
-  test('can remove a contact from a company', async ({ companyDetailPage }) => {
+  test('can remove a contact from a company and confirm dialog closes automatically', async ({
+    companyDetailPage,
+    page,
+  }) => {
     await companyDetailPage.goto(companyId);
     const contacts = await companyDetailPage.getAssociatedContacts();
     if (contacts.length === 0) {
@@ -205,7 +208,26 @@ test.describe.serial('Company Detail - Contact Management', () => {
     const firstContact = contacts[0];
     const contactLink = firstContact.locator('a').first();
     const contactName = (await contactLink.textContent())?.trim() || 'Unknown';
-    await companyDetailPage.removeContact(contactName);
+
+    // Trigger the remove dialog manually so we can assert it closes on its own
+    const removeButton = page.getByTitle('Remove contact').first();
+    await removeButton.click();
+    const confirmButton = page.getByRole('button', { name: /^Remove$/ });
+    await confirmButton.waitFor({ state: 'visible', timeout: 5000 });
+    await confirmButton.click();
+
+    // Dialog must close automatically — no Escape required
+    await expect(confirmButton).toBeHidden({ timeout: 10000 });
+
+    // Wait for the contact link to be removed from the list (refetch completes)
+    const section = page
+      .getByRole('heading', { name: 'Associated Contacts' })
+      .locator('..')
+      .locator('..');
+    await expect(
+      section.locator('a[href^="/contacts/"]').filter({ hasText: contactName }),
+    ).toBeHidden({ timeout: 10000 });
+
     const isStillVisible =
       await companyDetailPage.isContactAssociated(contactName);
     expect(isStillVisible).toBe(false);

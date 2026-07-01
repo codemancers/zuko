@@ -579,6 +579,193 @@ describe('DealDetail', () => {
     ).toBeInTheDocument();
   });
 
+  describe('Associated Contact removal', () => {
+    const dealWithContact = {
+      ...detailDeal,
+      contacts: [
+        {
+          id: 20,
+          contactId: 10,
+          dealId: 7,
+          role: 'Decision Maker',
+          isPrimary: true,
+          contact: { id: 10, name: 'Bob Smith', email: 'bob@example.com' },
+        },
+      ],
+    };
+
+    it('opens remove contact confirmation dialog when remove button is clicked', async () => {
+      mockGetDeal.mockResolvedValue(dealWithContact);
+      const user = userEvent.setup();
+      render(<DealDetail dealId={7} currentUserId={1} />, { wrapper });
+      await waitFor(() =>
+        expect(screen.getByText('Bob Smith')).toBeInTheDocument(),
+      );
+
+      await user.click(screen.getByTitle('Remove contact'));
+
+      await waitFor(() =>
+        expect(
+          screen.getByText(
+            /are you sure you want to remove Bob Smith from this deal/i,
+          ),
+        ).toBeInTheDocument(),
+      );
+    });
+
+    it('closes dialog and calls removeContact after confirming removal', async () => {
+      mockGetDeal.mockResolvedValue(dealWithContact);
+      mockRemoveContact.mockResolvedValue({});
+      const user = userEvent.setup();
+      render(<DealDetail dealId={7} currentUserId={1} />, { wrapper });
+      await waitFor(() =>
+        expect(screen.getByText('Bob Smith')).toBeInTheDocument(),
+      );
+
+      await user.click(screen.getByTitle('Remove contact'));
+      await waitFor(() =>
+        expect(
+          screen.getByText(
+            /are you sure you want to remove Bob Smith from this deal/i,
+          ),
+        ).toBeInTheDocument(),
+      );
+
+      await user.click(screen.getByRole('button', { name: /^Remove$/ }));
+
+      expect(mockRemoveContact).toHaveBeenCalledWith(7, 10);
+      await waitFor(() =>
+        expect(
+          screen.queryByText(
+            /are you sure you want to remove Bob Smith from this deal/i,
+          ),
+        ).not.toBeInTheDocument(),
+      );
+    });
+
+    it('does not call removeContact when cancel is clicked', async () => {
+      mockGetDeal.mockResolvedValue(dealWithContact);
+      const user = userEvent.setup();
+      render(<DealDetail dealId={7} currentUserId={1} />, { wrapper });
+      await waitFor(() =>
+        expect(screen.getByText('Bob Smith')).toBeInTheDocument(),
+      );
+
+      await user.click(screen.getByTitle('Remove contact'));
+      await waitFor(() =>
+        expect(
+          screen.getByText(
+            /are you sure you want to remove Bob Smith from this deal/i,
+          ),
+        ).toBeInTheDocument(),
+      );
+
+      await user.click(screen.getByRole('button', { name: /cancel/i }));
+
+      expect(mockRemoveContact).not.toHaveBeenCalled();
+      await waitFor(() =>
+        expect(
+          screen.queryByText(
+            /are you sure you want to remove Bob Smith from this deal/i,
+          ),
+        ).not.toBeInTheDocument(),
+      );
+    });
+  });
+
+  describe('Associated Company removal', () => {
+    const dealWithCompany = {
+      ...detailDeal,
+      companies: [
+        {
+          id: 30,
+          companyId: 5,
+          dealId: 7,
+          isPrimary: false,
+          company: { id: 5, companyName: 'Acme Corp' },
+        },
+      ],
+    };
+
+    it('opens remove company confirmation dialog when remove button is clicked', async () => {
+      mockGetDeal.mockResolvedValue(dealWithCompany);
+      const user = userEvent.setup();
+      render(<DealDetail dealId={7} currentUserId={1} />, { wrapper });
+      await waitFor(() =>
+        expect(screen.getByText('Acme Corp')).toBeInTheDocument(),
+      );
+
+      await user.click(screen.getByTitle('Remove company'));
+
+      await waitFor(() =>
+        expect(
+          screen.getByText(
+            /are you sure you want to remove Acme Corp from this deal/i,
+          ),
+        ).toBeInTheDocument(),
+      );
+    });
+
+    it('closes dialog and calls removeCompany after confirming removal', async () => {
+      mockGetDeal.mockResolvedValue(dealWithCompany);
+      mockRemoveCompany.mockResolvedValue({});
+      const user = userEvent.setup();
+      render(<DealDetail dealId={7} currentUserId={1} />, { wrapper });
+      await waitFor(() =>
+        expect(screen.getByText('Acme Corp')).toBeInTheDocument(),
+      );
+
+      await user.click(screen.getByTitle('Remove company'));
+      await waitFor(() =>
+        expect(
+          screen.getByText(
+            /are you sure you want to remove Acme Corp from this deal/i,
+          ),
+        ).toBeInTheDocument(),
+      );
+
+      await user.click(screen.getByRole('button', { name: /^Remove$/ }));
+
+      expect(mockRemoveCompany).toHaveBeenCalledWith(7, 5);
+      await waitFor(() =>
+        expect(
+          screen.queryByText(
+            /are you sure you want to remove Acme Corp from this deal/i,
+          ),
+        ).not.toBeInTheDocument(),
+      );
+    });
+
+    it('does not call removeCompany when cancel is clicked', async () => {
+      mockGetDeal.mockResolvedValue(dealWithCompany);
+      const user = userEvent.setup();
+      render(<DealDetail dealId={7} currentUserId={1} />, { wrapper });
+      await waitFor(() =>
+        expect(screen.getByText('Acme Corp')).toBeInTheDocument(),
+      );
+
+      await user.click(screen.getByTitle('Remove company'));
+      await waitFor(() =>
+        expect(
+          screen.getByText(
+            /are you sure you want to remove Acme Corp from this deal/i,
+          ),
+        ).toBeInTheDocument(),
+      );
+
+      await user.click(screen.getByRole('button', { name: /cancel/i }));
+
+      expect(mockRemoveCompany).not.toHaveBeenCalled();
+      await waitFor(() =>
+        expect(
+          screen.queryByText(
+            /are you sure you want to remove Acme Corp from this deal/i,
+          ),
+        ).not.toBeInTheDocument(),
+      );
+    });
+  });
+
   describe('Edit Deal', () => {
     it('edits deal title via contentEditable heading', async () => {
       const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
