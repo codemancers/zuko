@@ -312,9 +312,11 @@ function NullIcon() {
 export default function SequenceEditorPanel({
   campaign,
   actionRef,
+  onPendingChange,
 }: {
   campaign: ZukoCampaign;
   actionRef?: React.MutableRefObject<{ save: () => void } | null>;
+  onPendingChange?: (isPending: boolean) => void;
 }) {
   const queryClient = useQueryClient();
 
@@ -365,6 +367,10 @@ export default function SequenceEditorPanel({
   useEffect(() => {
     if (actionRef) actionRef.current = { save: () => saveMutation.mutate() };
   });
+
+  useEffect(() => {
+    onPendingChange?.(isPending);
+  }, [isPending, onPendingChange]);
 
   const stepRows: StepRow[] = useMemo(
     () => steps.map((s) => ({ ...s, id: s.stableKey })),

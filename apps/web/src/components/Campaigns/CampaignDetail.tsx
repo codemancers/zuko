@@ -58,6 +58,7 @@ export default function CampaignDetail({ zukoId }: CampaignDetailProps) {
   const [activeTab, setActiveTab] = useQueryState('tab', tabParser);
   const [addContactsOpen, setAddContactsOpen] = useState(false);
   const saveSequenceRef = useRef<{ save: () => void } | null>(null);
+  const [isSavingSequence, setIsSavingSequence] = useState(false);
 
   const { data: campaign, isLoading } = useQuery(getZukoCampaignByDbId(zukoId));
 
@@ -116,9 +117,10 @@ export default function CampaignDetail({ zukoId }: CampaignDetailProps) {
             {activeTab === 'sequence' && (
               <Button
                 color="dark"
+                disabled={isSavingSequence}
                 onClick={() => saveSequenceRef.current?.save()}
               >
-                Save Sequence
+                {isSavingSequence ? 'Saving…' : 'Save Sequence'}
               </Button>
             )}
             {activeTab === 'contacts' && hasSequence && (
@@ -166,6 +168,7 @@ export default function CampaignDetail({ zukoId }: CampaignDetailProps) {
               <SequenceEditorPanel
                 campaign={campaign}
                 actionRef={saveSequenceRef}
+                onPendingChange={setIsSavingSequence}
               />
             )}
 
