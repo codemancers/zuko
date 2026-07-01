@@ -95,7 +95,7 @@ const CONNECTION_TABLE_METADATA: ColumnMetadata[] = [
   },
   {
     id: 'connectedAt',
-    header: 'Date/Time',
+    header: 'Date',
     fieldType: 'date',
     dataType: 'date',
     editable: false,

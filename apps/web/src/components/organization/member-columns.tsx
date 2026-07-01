@@ -73,7 +73,7 @@ export const MEMBER_TABLE_METADATA: ColumnMetadata[] = [
   },
   {
     id: 'joinedAt',
-    header: 'Joined At',
+    header: 'Join Date',
     fieldType: 'date',
     dataType: 'date',
     editable: false,
