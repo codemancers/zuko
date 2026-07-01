@@ -765,7 +765,8 @@ test.describe('Row Creation Flow', () => {
     const initialCount = (await dealsPage.getDealItems()).length;
 
     await dealsPage.createNewRecord(dealName);
-
+    // createNewRecord leaves search active — navigate fresh to count all rows
+    await dealsPage.goto();
     const rows = await dealsPage.getDealItems();
     expect(rows.length).toBe(initialCount + 1);
 

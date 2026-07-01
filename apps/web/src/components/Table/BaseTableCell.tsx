@@ -38,7 +38,7 @@ function InlineEditor({
   const handleCommit = () => onCommit(valueRef.current);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
+    if (e.key === 'Enter' || e.key === 'Tab') {
       e.preventDefault();
       handleCommit();
     } else if (e.key === 'Escape') {
