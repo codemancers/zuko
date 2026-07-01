@@ -46,6 +46,11 @@ export function TextField({
     }
 
     if (href.includes('{value}')) {
+      if (!value) {
+        return (
+          <span className="text-sm text-zinc-600 dark:text-zinc-400">—</span>
+        );
+      }
       href = href.replace('{value}', String(value));
     }
 
