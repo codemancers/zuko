@@ -37,9 +37,8 @@ agent/
 2. Configure the agent:
 
    ```sh
-   cp .env.example .env   # fill in OPENAI_API_KEY, ZUKO_ORG_ID,
-                          # ZUKO_DEFAULT_OWNER_ID, and the ZUKO_HOST_* values
-                          # printed by provision:agent-host
+   cp .env.example .env   # fill in OPENAI_API_KEY, ZUKO_ORG_ID (dev only),
+                          # and the ZUKO_HOST_* values printed by provision:agent-host
    ```
 
 `ZUKO_BACKEND_URL` must exactly match the backend's `BACKEND_URL` — it is the
@@ -121,8 +120,6 @@ docker run -p 3002:3002 \
   -v zuko-agent-data:/data \
   -e OPENAI_API_KEY=... \
   -e ZUKO_BACKEND_URL=http://host.docker.internal:3001 \
-  -e ZUKO_ORG_ID=1 \
-  -e ZUKO_DEFAULT_OWNER_ID=1 \
   zuko-ai-agent
 ```
 
