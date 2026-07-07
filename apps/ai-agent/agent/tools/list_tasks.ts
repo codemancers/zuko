@@ -25,7 +25,11 @@ export default defineTool({
       .nullable()
       .optional()
       .describe('Filter by parent task id; null for root-level tasks only'),
-    search: z.string().optional().describe('Search by task title'),
+    search: z
+      .string()
+      .min(1)
+      .optional()
+      .describe('Search by task title; omit to return all'),
   }),
   async execute(input, ctx) {
     const params = new URLSearchParams();
