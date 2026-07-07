@@ -4,8 +4,10 @@ import { env } from './env';
 function sessionCookieFromCtx(ctx: ToolContext): string {
   const cookie = ctx.session.auth.current?.attributes?.sessionCookie;
   if (cookie) return String(cookie);
+  const fromEnv = env().ZUKO_SESSION_TOKEN;
+  if (fromEnv) return `better-auth.session_token=${fromEnv}`;
   throw new Error(
-    'Not authenticated. Start a session via the HTTP API with a valid Better Auth session cookie.',
+    'Not authenticated. Set ZUKO_SESSION_TOKEN in .env (copy better-auth.session_token from browser DevTools → Application → Cookies).',
   );
 }
 

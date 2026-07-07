@@ -3,6 +3,8 @@ import { z } from 'zod';
 const envSchema = z.object({
   OPENAI_API_KEY: z.string().min(1),
   ZUKO_BACKEND_URL: z.string().url().default('http://localhost:3001'),
+  // TUI dev: copy better-auth.session_token from browser DevTools → Application → Cookies
+  ZUKO_SESSION_TOKEN: z.string().optional(),
 });
 
 let cached: z.infer<typeof envSchema> | undefined;
