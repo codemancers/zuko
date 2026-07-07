@@ -12,12 +12,6 @@ export default defineTool({
       .optional()
       .default('todo')
       .describe('Initial status'),
-    parentId: z
-      .number()
-      .int()
-      .positive()
-      .optional()
-      .describe('Parent task ID for subtasks'),
     assignee: z.string().optional().describe('Assignee user ID (string)'),
   }),
   async execute(input, ctx) {
