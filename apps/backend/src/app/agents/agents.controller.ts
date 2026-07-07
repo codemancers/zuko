@@ -3,10 +3,8 @@ import {
   Get,
   Post,
   Patch,
-  Delete,
   Body,
   Param,
-  Query,
   ParseIntPipe,
   UseGuards,
   HttpCode,
@@ -25,8 +23,6 @@ import {
   CompaniesService,
   ContactsService,
   DealsService,
-  TaskService,
-  TaskStatus,
   ACTIVITY_SOURCES,
 } from '@zuko/sales';
 import type { EditorData } from '@zuko/sales';
@@ -145,16 +141,6 @@ class DealUpdateDto {
   priority?: number;
 }
 
-const STATUS_MAP: Record<'todo' | 'in_progress' | 'done', TaskStatus> = {
-  todo: TaskStatus.TODO,
-  in_progress: TaskStatus.IN_PROGRESS,
-  done: TaskStatus.DONE,
-};
-
-function toTaskStatus(s: 'todo' | 'in_progress' | 'done'): TaskStatus {
-  return STATUS_MAP[s];
-}
-
 @ApiTags('Agents (Internal)')
 @ApiBearerAuth('agent-jwt')
 @Controller('agents')
@@ -164,7 +150,6 @@ export class AgentsController {
     private readonly companiesService: CompaniesService,
     private readonly contactsService: ContactsService,
     private readonly dealsService: DealsService,
-    private readonly taskService: TaskService,
   ) {}
 
   // --- Companies ---
@@ -565,118 +550,4 @@ export class AgentsController {
     );
   }
 
-  // --- Tasks ---
-
-  @Get('tasks')
-  @ApiOperation({ summary: 'List tasks (agent)' })
-  @ApiResponse({ status: 200, description: 'Paginated task list' })
-  async listTasks(
-    @OrgId() organizationId: number,
-    @Query('page') page?: string,
-    @Query('limit') limit?: string,
-    @Query('parentId') parentId?: string,
-    @Query('search') search?: string,
-  ) {
-    return this.taskService.getTasks(organizationId, {
-      page: page ? Number(page) : 1,
-      limit: limit ? Number(limit) : 50,
-      parentId:
-        parentId !== undefined
-          ? parentId === 'null'
-            ? null
-            : Number(parentId)
-          : undefined,
-      search,
-    });
-  }
-
-  @Get('tasks/:id')
-  @ApiOperation({ summary: 'Get task by ID (agent)' })
-  @ApiParam({ name: 'id', type: Number })
-  @ApiResponse({ status: 200, description: 'Task details' })
-  @ApiResponse({ status: 404, description: 'Task not found' })
-  async getTask(
-    @OrgId() organizationId: number,
-    @Param('id', ParseIntPipe) id: number,
-  ) {
-    return this.taskService.getTaskById(organizationId, id);
-  }
-
-  @Post('tasks')
-  @HttpCode(HttpStatus.CREATED)
-  @ApiOperation({ summary: 'Create a task (agent)' })
-  @ApiResponse({ status: 201, description: 'Task created' })
-  async createTask(
-    @OrgId() organizationId: number,
-    @Body()
-    dto: {
-      title: string;
-      description?: string;
-      status?: 'todo' | 'in_progress' | 'done';
-      parentId?: number;
-      assignee?: string;
-    },
-  ) {
-    return this.taskService.createTask(organizationId, {
-      ...dto,
-      status: dto.status ? toTaskStatus(dto.status) : undefined,
-      description: dto.description
-        ? {
-            time: Date.now(),
-            blocks: [{ type: 'paragraph', data: { text: dto.description } }],
-            version: '2.28.0',
-          }
-        : undefined,
-    });
-  }
-
-  @Patch('tasks/:id')
-  @ApiOperation({ summary: 'Update a task (agent)' })
-  @ApiParam({ name: 'id', type: Number })
-  @ApiResponse({ status: 200, description: 'Updated task' })
-  @ApiResponse({ status: 404, description: 'Task not found' })
-  async updateTask(
-    @OrgId() organizationId: number,
-    @Param('id', ParseIntPipe) id: number,
-    @Body()
-    dto: {
-      title?: string;
-      description?: string;
-      status?: 'todo' | 'in_progress' | 'done';
-      parentId?: number | null;
-      assignee?: string | null;
-      completedAt?: string | null;
-    },
-  ) {
-    return this.taskService.updateTask(organizationId, id, {
-      ...dto,
-      status: dto.status ? toTaskStatus(dto.status) : undefined,
-      description: dto.description
-        ? {
-            time: Date.now(),
-            blocks: [{ type: 'paragraph', data: { text: dto.description } }],
-            version: '2.28.0',
-          }
-        : undefined,
-      completedAt:
-        dto.completedAt !== undefined
-          ? dto.completedAt
-            ? new Date(dto.completedAt)
-            : null
-          : undefined,
-    });
-  }
-
-  @Delete('tasks/:id')
-  @HttpCode(HttpStatus.NO_CONTENT)
-  @ApiOperation({ summary: 'Delete a task (agent)' })
-  @ApiParam({ name: 'id', type: Number })
-  @ApiResponse({ status: 204, description: 'Task deleted' })
-  @ApiResponse({ status: 404, description: 'Task not found' })
-  async deleteTask(
-    @OrgId() organizationId: number,
-    @Param('id', ParseIntPipe) id: number,
-  ) {
-    await this.taskService.deleteTask(organizationId, id);
-  }
 }

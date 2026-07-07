@@ -6,8 +6,7 @@
   "scripts": {
     "dev": "eve dev",
     "build": "eve build",
-    "start": "eve start --port 3002",
-    "register": "node --experimental-strip-types scripts/register.ts"
+    "start": "eve start --port 3002"
   },
   "nx": {
     "projectType": "application",
@@ -55,7 +54,6 @@
   },
   "dependencies": {
     "@ai-sdk/openai": "^4.0.8",
-    "@auth/agent": "^0.4.5",
     "ai": "^7.0.0",
     "eve": "0.20.0",
     "zod": "^4.3.6"

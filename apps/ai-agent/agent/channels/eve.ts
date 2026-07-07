@@ -36,6 +36,7 @@ function betterAuth(): AuthFn<Request> {
       attributes: {
         orgId,
         userId: data.user.id,
+        sessionCookie: request.headers.get('cookie') ?? '',
       },
     };
   };

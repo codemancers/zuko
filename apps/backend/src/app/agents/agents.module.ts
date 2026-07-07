@@ -9,13 +9,11 @@ import {
   ContactsService,
   CompaniesService,
   DealsService,
-  TaskService,
   ActivityService,
   ContactsRepository,
   CompaniesRepository,
   DealsRepository,
   ActivityRepository,
-  TaskRepository,
 } from '@zuko/sales';
 
 @Module({
@@ -109,20 +107,6 @@ import {
         );
       },
       inject: [DealsRepository, EventEmitter2, TableColumnRepository],
-    },
-    {
-      provide: TaskRepository,
-      useFactory: (prismaService: PrismaService) =>
-        new TaskRepository(prismaService),
-      inject: [PrismaService],
-    },
-    {
-      provide: TaskService,
-      useFactory: (
-        taskRepository: TaskRepository,
-        eventEmitter: EventEmitter2,
-      ) => new TaskService(taskRepository, eventEmitter),
-      inject: [TaskRepository, EventEmitter2],
     },
   ],
 })

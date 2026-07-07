@@ -1,19 +1,10 @@
 import { z } from 'zod';
 
 const envSchema = z.object({
-  /** Must exactly match the backend's BACKEND_URL — it is the JWT audience. */
+  OPENAI_API_KEY: z.string().min(1),
   ZUKO_BACKEND_URL: z.string().url().default('http://localhost:3001'),
-  // Optional when using Better Auth session auth (org resolved from session).
+  // Required for local TUI dev (localDev() bypasses session auth, no cookie available).
   ZUKO_ORG_ID: z.coerce.number().int().positive().optional(),
-  ZUKO_AGENT_NAME: z.string().min(1).default('zuko-eve-agent'),
-  /** Where self-registered credentials are persisted (mount a volume here in Docker). */
-  ZUKO_AGENT_STATE_DIR: z.string().min(1).default('./.zuko'),
-  /** Pre-provisioned agent credentials — set both to skip self-registration. */
-  ZUKO_AGENT_ID: z.string().optional(),
-  ZUKO_AGENT_PRIVATE_JWK: z.string().optional(),
-  /** Host identity for first-time self-registration (`bun run provision:agent-host`). */
-  ZUKO_HOST_ID: z.coerce.number().int().positive().optional(),
-  ZUKO_HOST_PRIVATE_JWK: z.string().optional(),
 });
 
 let cached: z.infer<typeof envSchema> | undefined;

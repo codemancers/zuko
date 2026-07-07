@@ -1,20 +1,16 @@
 import { defineTool } from 'eve/tools';
 import { z } from 'zod';
-import { orgIdFromCtx, zukoFetch } from '../lib/zuko-client';
+import { zukoFetch } from '../lib/zuko-client';
 
 export default defineTool({
   description: 'Create a new task.',
   inputSchema: z.object({
     title: z.string().min(1).describe('Task title'),
     description: z.string().optional().describe('Plain-text description'),
-    status: z
-      .enum(['todo', 'in_progress', 'done'])
-      .optional()
-      .default('todo')
-      .describe('Initial status'),
+    status: z.enum(['TODO', 'IN_PROGRESS', 'DONE']).optional().default('TODO').describe('Initial status'),
     assignee: z.string().optional().describe('Assignee user ID (string)'),
   }),
   async execute(input, ctx) {
-    return zukoFetch('POST', '/tasks', input, orgIdFromCtx(ctx));
+    return zukoFetch('POST', '/tasks', input, ctx);
   },
 });

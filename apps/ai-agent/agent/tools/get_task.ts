@@ -1,6 +1,6 @@
 import { defineTool } from 'eve/tools';
 import { z } from 'zod';
-import { orgIdFromCtx, zukoFetch } from '../lib/zuko-client';
+import { zukoFetch } from '../lib/zuko-client';
 
 export default defineTool({
   description: 'Get full details for a single task by ID, including subtasks.',
@@ -8,6 +8,6 @@ export default defineTool({
     id: z.number().int().positive().describe('Task ID'),
   }),
   async execute({ id }, ctx) {
-    return zukoFetch('GET', `/tasks/${id}`, undefined, orgIdFromCtx(ctx));
+    return zukoFetch('GET', `/tasks/${id}`, undefined, ctx);
   },
 });
