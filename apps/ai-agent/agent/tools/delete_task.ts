@@ -3,7 +3,8 @@ import { z } from 'zod';
 import { zukoFetch } from '../lib/zuko-client';
 
 export default defineTool({
-  description: 'Permanently delete a task by ID. Always confirm with the user before calling this.',
+  description:
+    'Permanently delete a task by ID. Always confirm with the user before calling this.',
   inputSchema: z.object({
     id: z.number().int().positive().describe('Task ID to delete'),
   }),

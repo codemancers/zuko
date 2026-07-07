@@ -4,7 +4,9 @@ import { env } from './env';
 function sessionCookieFromCtx(ctx: ToolContext): string {
   const cookie = ctx.session.auth.current?.attributes?.sessionCookie;
   if (cookie) return String(cookie);
-  throw new Error('Not authenticated. Start a session via the HTTP API with a valid Better Auth session cookie.');
+  throw new Error(
+    'Not authenticated. Start a session via the HTTP API with a valid Better Auth session cookie.',
+  );
 }
 
 export async function zukoFetch<T>(

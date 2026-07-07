@@ -7,7 +7,11 @@ export default defineTool({
   inputSchema: z.object({
     title: z.string().min(1).describe('Task title'),
     description: z.string().optional().describe('Plain-text description'),
-    status: z.enum(['TODO', 'IN_PROGRESS', 'DONE']).optional().default('TODO').describe('Initial status'),
+    status: z
+      .enum(['TODO', 'IN_PROGRESS', 'DONE'])
+      .optional()
+      .default('TODO')
+      .describe('Initial status'),
     assignee: z.string().optional().describe('Assignee user ID (string)'),
   }),
   async execute(input, ctx) {

@@ -549,5 +549,4 @@ export class AgentsController {
       ACTIVITY_SOURCES.AI,
     );
   }
-
 }
