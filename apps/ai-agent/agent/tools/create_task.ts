@@ -1,6 +1,6 @@
 import { defineTool } from 'eve/tools';
 import { z } from 'zod';
-import { zukoFetch } from '../lib/zuko-client';
+import { orgIdFromCtx, zukoFetch } from '../lib/zuko-client';
 
 export default defineTool({
   description: 'Create a new task.',
@@ -20,7 +20,7 @@ export default defineTool({
       .describe('Parent task ID for subtasks'),
     assignee: z.string().optional().describe('Assignee user ID (string)'),
   }),
-  async execute(input) {
-    return zukoFetch('POST', '/tasks', input);
+  async execute(input, ctx) {
+    return zukoFetch('POST', '/tasks', input, orgIdFromCtx(ctx));
   },
 });

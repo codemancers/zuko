@@ -4,6 +4,7 @@ import {
   signAgentJWT,
   signHostJWT,
 } from '@auth/agent';
+import type { ToolContext } from 'eve/tools';
 import {
   type AgentCredentials,
   loadCredentials,
@@ -11,6 +12,17 @@ import {
   saveCredentials,
 } from './credentials';
 import { env } from './env';
+
+/** Extract org id from eve session auth context, falling back to ZUKO_ORG_ID env. */
+export function orgIdFromCtx(ctx: ToolContext): number {
+  const raw = ctx.session.auth.current?.attributes?.orgId;
+  if (raw) return Number(raw);
+  const fromEnv = env().ZUKO_ORG_ID;
+  if (fromEnv) return fromEnv;
+  throw new Error(
+    'No org id: authenticate via Better Auth session or set ZUKO_ORG_ID.',
+  );
+}
 
 /**
  * Capability names granted to this agent — the CRM subset of the backend's
@@ -133,19 +145,27 @@ async function agentJwt(): Promise<string> {
 }
 
 /**
- * Call a Zuko /api/agents endpoint. `path` is relative, e.g. "/contacts/query".
+ * Call a Zuko /api/agents endpoint. `path` is relative, e.g. "/tasks".
+ * `orgId` is resolved from the session auth context; falls back to ZUKO_ORG_ID env.
  */
 export async function zukoFetch<T>(
   method: 'GET' | 'POST' | 'PATCH' | 'DELETE',
   path: string,
   body?: unknown,
+  orgId?: number,
 ): Promise<T> {
   const e = env();
+  const resolvedOrgId = orgId ?? e.ZUKO_ORG_ID;
+  if (!resolvedOrgId) {
+    throw new Error(
+      'No org id: set ZUKO_ORG_ID env or authenticate via Better Auth session.',
+    );
+  }
   const init: RequestInit = {
     method,
     headers: {
       authorization: `Bearer ${await agentJwt()}`,
-      'x-org-id': String(e.ZUKO_ORG_ID),
+      'x-org-id': String(resolvedOrgId),
     },
   };
   if (body !== undefined) {

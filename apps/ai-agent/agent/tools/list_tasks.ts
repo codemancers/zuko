@@ -1,6 +1,6 @@
 import { defineTool } from 'eve/tools';
 import { z } from 'zod';
-import { zukoFetch } from '../lib/zuko-client';
+import { orgIdFromCtx, zukoFetch } from '../lib/zuko-client';
 
 export default defineTool({
   description:
@@ -27,7 +27,7 @@ export default defineTool({
       .describe('Filter by parent task id; null for root-level tasks only'),
     search: z.string().optional().describe('Search by task title'),
   }),
-  async execute(input) {
+  async execute(input, ctx) {
     const params = new URLSearchParams();
     if (input.page !== undefined) params.set('page', String(input.page));
     if (input.limit !== undefined) params.set('limit', String(input.limit));
@@ -38,6 +38,11 @@ export default defineTool({
       );
     if (input.search !== undefined) params.set('search', input.search);
     const qs = params.toString();
-    return zukoFetch('GET', `/tasks${qs ? `?${qs}` : ''}`);
+    return zukoFetch(
+      'GET',
+      `/tasks${qs ? `?${qs}` : ''}`,
+      undefined,
+      orgIdFromCtx(ctx),
+    );
   },
 });

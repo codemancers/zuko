@@ -3,7 +3,8 @@ import { z } from 'zod';
 const envSchema = z.object({
   /** Must exactly match the backend's BACKEND_URL — it is the JWT audience. */
   ZUKO_BACKEND_URL: z.string().url().default('http://localhost:3001'),
-  ZUKO_ORG_ID: z.coerce.number().int().positive(),
+  // Optional when using Better Auth session auth (org resolved from session).
+  ZUKO_ORG_ID: z.coerce.number().int().positive().optional(),
   /** Default owner for created contacts/companies/deals (ownerIds is required by the API). */
   ZUKO_DEFAULT_OWNER_ID: z.coerce.number().int().positive(),
   ZUKO_AGENT_NAME: z.string().min(1).default('zuko-eve-agent'),

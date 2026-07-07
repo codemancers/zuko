@@ -1,6 +1,6 @@
 import { defineTool } from 'eve/tools';
 import { z } from 'zod';
-import { zukoFetch } from '../lib/zuko-client';
+import { orgIdFromCtx, zukoFetch } from '../lib/zuko-client';
 
 export default defineTool({
   description: 'Update an existing task by ID.',
@@ -30,7 +30,7 @@ export default defineTool({
       .optional()
       .describe('ISO 8601 completion timestamp; null to clear'),
   }),
-  async execute({ id, ...dto }) {
-    return zukoFetch('PATCH', `/tasks/${id}`, dto);
+  async execute({ id, ...dto }, ctx) {
+    return zukoFetch('PATCH', `/tasks/${id}`, dto, orgIdFromCtx(ctx));
   },
 });

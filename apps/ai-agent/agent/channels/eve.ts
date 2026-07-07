@@ -1,16 +1,51 @@
 import { eveChannel } from 'eve/channels/eve';
-import { jwtHmac, localDev } from 'eve/channels/auth';
+import { type AuthFn, UnauthenticatedError, localDev } from 'eve/channels/auth';
+import { env } from '../lib/env';
+
+interface BetterAuthSession {
+  user: { id: string; email: string; name: string };
+  session: { id: string; activeOrganizationId?: string };
+}
+
+function betterAuth(): AuthFn<Request> {
+  return async (request) => {
+    const backendUrl = env().ZUKO_BACKEND_URL;
+    const res = await fetch(`${backendUrl}/auth/get-session`, {
+      headers: request.headers,
+    });
+    if (!res.ok) return null;
+
+    const data = (await res.json()) as BetterAuthSession | null;
+    if (!data?.user?.id) return null;
+
+    const orgId = data.session?.activeOrganizationId;
+    if (!orgId) {
+      throw new UnauthenticatedError({
+        body: JSON.stringify({
+          error: 'No active organization on session. Select one first.',
+        }),
+      });
+    }
+
+    return {
+      authenticator: 'betterAuth',
+      issuer: backendUrl,
+      principalId: data.user.id,
+      principalType: 'user',
+      subject: data.user.email,
+      attributes: {
+        orgId,
+        userId: data.user.id,
+      },
+    };
+  };
+}
 
 export default eveChannel({
   auth: [
-    // Loopback requests accepted in dev without a token.
+    // Loopback in dev — no token needed.
     localDev(),
-    // Production: caller must present a Bearer JWT signed with EVE_AUTH_SECRET.
-    jwtHmac({
-      algorithm: 'HS256',
-      secret: process.env.EVE_AUTH_SECRET!,
-      issuer: 'zuko',
-      audiences: ['zuko-ai-agent'],
-    }),
+    // Production: verify Better Auth session cookie/bearer forwarded from the caller.
+    betterAuth(),
   ],
 });
