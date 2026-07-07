@@ -32,5 +32,8 @@ export async function zukoFetch<T>(
     const text = await res.text();
     throw new Error(`Zuko API ${method} ${path} → ${res.status}: ${text}`);
   }
+  if (res.status === 204 || res.headers.get('content-length') === '0') {
+    return undefined as T;
+  }
   return (await res.json()) as T;
 }

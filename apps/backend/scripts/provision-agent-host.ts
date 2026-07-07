@@ -74,8 +74,5 @@ const host = await prisma.$transaction(async (tx) => {
 });
 
 console.log(`Provisioned agent host "${HOST_NAME}" (id=${host.id}).`);
-console.log('\nConfigure the external agent harness with:\n');
-console.log(`ZUKO_HOST_ID=${host.id}`);
-console.log(`ZUKO_HOST_PRIVATE_JWK=${JSON.stringify(keypair.privateKey)}`);
 
 await prisma.$disconnect();
