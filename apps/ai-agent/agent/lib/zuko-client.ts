@@ -66,9 +66,7 @@ export async function register(): Promise<AgentCredentials> {
     );
   }
   const hostPrivateJwk = JSON.parse(e.ZUKO_HOST_PRIVATE_JWK) as AgentJWK;
-  const hostPublicJwk = e.ZUKO_HOST_PUBLIC_JWK
-    ? (JSON.parse(e.ZUKO_HOST_PUBLIC_JWK) as AgentJWK)
-    : publicFromPrivate(hostPrivateJwk);
+  const hostPublicJwk = publicFromPrivate(hostPrivateJwk);
   const agentKeypair = await generateKeypair();
 
   const hostJwt = await signHostJWT({

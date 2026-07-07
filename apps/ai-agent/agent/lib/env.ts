@@ -11,16 +11,9 @@ const envSchema = z.object({
   /** Pre-provisioned agent credentials — set both to skip self-registration. */
   ZUKO_AGENT_ID: z.string().optional(),
   ZUKO_AGENT_PRIVATE_JWK: z.string().optional(),
-  ZUKO_AGENT_PUBLIC_JWK: z.string().optional(),
-  /**
-   * Host identity provisioned by the backend's `bun run provision:agent-host`.
-   * Required for self-registration: the backend's agent-auth tables use
-   * numeric ids, so the plugin's dynamic (thumbprint-issuer) host
-   * registration is not supported there.
-   */
+  /** Host identity for first-time self-registration (`bun run provision:agent-host`). */
   ZUKO_HOST_ID: z.coerce.number().int().positive().optional(),
   ZUKO_HOST_PRIVATE_JWK: z.string().optional(),
-  ZUKO_HOST_PUBLIC_JWK: z.string().optional(),
 });
 
 let cached: z.infer<typeof envSchema> | undefined;

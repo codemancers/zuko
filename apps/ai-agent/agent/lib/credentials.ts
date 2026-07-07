@@ -17,7 +17,7 @@ function stateFile(): string {
 
 /**
  * Load credentials, in order of preference:
- * 1. ZUKO_AGENT_ID + ZUKO_AGENT_PRIVATE_JWK (+ ZUKO_AGENT_PUBLIC_JWK) env vars
+ * 1. ZUKO_AGENT_ID + ZUKO_AGENT_PRIVATE_JWK env vars
  *    — the production path; register once, store in the secret manager.
  * 2. The state file written by a previous self-registration.
  * Returns null when neither exists (caller should self-register).
@@ -27,13 +27,10 @@ export async function loadCredentials(): Promise<AgentCredentials | null> {
 
   if (e.ZUKO_AGENT_ID && e.ZUKO_AGENT_PRIVATE_JWK) {
     const agentPrivateJwk = JSON.parse(e.ZUKO_AGENT_PRIVATE_JWK) as AgentJWK;
-    const agentPublicJwk = e.ZUKO_AGENT_PUBLIC_JWK
-      ? (JSON.parse(e.ZUKO_AGENT_PUBLIC_JWK) as AgentJWK)
-      : publicFromPrivate(agentPrivateJwk);
     return {
       agentId: e.ZUKO_AGENT_ID,
       agentPrivateJwk,
-      agentPublicJwk,
+      agentPublicJwk: publicFromPrivate(agentPrivateJwk),
       backendUrl: e.ZUKO_BACKEND_URL,
     };
   }
