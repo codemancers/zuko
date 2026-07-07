@@ -26,6 +26,7 @@ import {
   ContactsService,
   DealsService,
   TaskService,
+  TaskStatus,
   ACTIVITY_SOURCES,
 } from '@zuko/sales';
 import type { EditorData } from '@zuko/sales';
@@ -142,6 +143,16 @@ class DealUpdateDto {
   lostReason?: string;
   source?: string;
   priority?: number;
+}
+
+const STATUS_MAP: Record<'todo' | 'in_progress' | 'done', TaskStatus> = {
+  todo: TaskStatus.TODO,
+  in_progress: TaskStatus.IN_PROGRESS,
+  done: TaskStatus.DONE,
+};
+
+function toTaskStatus(s: 'todo' | 'in_progress' | 'done'): TaskStatus {
+  return STATUS_MAP[s];
 }
 
 @ApiTags('Agents (Internal)')
@@ -608,6 +619,7 @@ export class AgentsController {
   ) {
     return this.taskService.createTask(organizationId, {
       ...dto,
+      status: dto.status ? toTaskStatus(dto.status) : undefined,
       description: dto.description
         ? {
             time: Date.now(),
@@ -638,6 +650,7 @@ export class AgentsController {
   ) {
     return this.taskService.updateTask(organizationId, id, {
       ...dto,
+      status: dto.status ? toTaskStatus(dto.status) : undefined,
       description: dto.description
         ? {
             time: Date.now(),
@@ -645,9 +658,12 @@ export class AgentsController {
             version: '2.28.0',
           }
         : undefined,
-      completedAt: dto.completedAt
-        ? new Date(dto.completedAt)
-        : dto.completedAt,
+      completedAt:
+        dto.completedAt !== undefined
+          ? dto.completedAt
+            ? new Date(dto.completedAt)
+            : null
+          : undefined,
     });
   }
 
