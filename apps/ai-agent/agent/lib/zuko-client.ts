@@ -12,7 +12,11 @@ export function orgIdFromCtx(ctx: ToolContext): number {
 function sessionCookieFromCtx(ctx: ToolContext): string {
   const cookie = ctx.session.auth.current?.attributes?.sessionCookie;
   if (cookie) return String(cookie);
-  throw new Error('No session cookie: authenticate via Better Auth session.');
+  const fromEnv = env().ZUKO_SESSION_TOKEN;
+  if (fromEnv) return `better-auth.session_token=${fromEnv}`;
+  throw new Error(
+    'Not authenticated. Set ZUKO_SESSION_TOKEN in .env (copy better-auth.session_token from browser DevTools → Application → Cookies).',
+  );
 }
 
 export async function zukoFetch<T>(
