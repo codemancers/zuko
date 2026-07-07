@@ -2,6 +2,9 @@
   "name": "@zuko/backend",
   "version": "0.0.1",
   "private": true,
+  "scripts": {
+    "provision:agent-host": "bun scripts/provision-agent-host.ts"
+  },
   "type": "module",
   "dependencies": {
     "@ai-sdk/langchain": "^2.0.75",
