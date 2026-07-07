@@ -23,7 +23,7 @@ export async function zukoFetch<T>(
   if (body !== undefined) {
     headers['content-type'] = 'application/json';
   }
-  const res = await fetch(`${env().ZUKO_BACKEND_URL}${path}`, {
+  const res = await fetch(`${env().ZUKO_BACKEND_URL}/api${path}`, {
     method,
     headers,
     body: body !== undefined ? JSON.stringify(body) : undefined,
