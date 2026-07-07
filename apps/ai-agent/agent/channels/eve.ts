@@ -1,5 +1,5 @@
 import { eveChannel } from 'eve/channels/eve';
-import { type AuthFn, UnauthenticatedError, localDev } from 'eve/channels/auth';
+import { type AuthFn, UnauthenticatedError } from 'eve/channels/auth';
 import { env } from '../lib/env';
 
 interface BetterAuthSession {
@@ -10,8 +10,17 @@ interface BetterAuthSession {
 function betterAuth(): AuthFn<Request> {
   return async (request) => {
     const backendUrl = env().ZUKO_BACKEND_URL;
+
+    // Prefer cookie from request (HTTP API / browser); fall back to env (TUI dev)
+    const cookieFromRequest = request.headers.get('cookie');
+    const cookieFromEnv = env().ZUKO_SESSION_TOKEN
+      ? `better-auth.session_token=${env().ZUKO_SESSION_TOKEN}`
+      : null;
+    const sessionCookie = cookieFromRequest || cookieFromEnv;
+    if (!sessionCookie) return null;
+
     const res = await fetch(`${backendUrl}/auth/get-session`, {
-      headers: request.headers,
+      headers: { cookie: sessionCookie },
     });
     if (!res.ok) return null;
 
@@ -36,10 +45,10 @@ function betterAuth(): AuthFn<Request> {
       attributes: {
         orgId,
         userId: data.user.id,
-        sessionCookie: request.headers.get('cookie') ?? '',
+        sessionCookie,
       },
     };
   };
 }
 
-export default eveChannel({ auth: [localDev(), betterAuth()] });
+export default eveChannel({ auth: [betterAuth()] });
