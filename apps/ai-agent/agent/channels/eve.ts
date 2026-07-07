@@ -43,9 +43,8 @@ function betterAuth(): AuthFn<Request> {
 
 export default eveChannel({
   auth: [
-    // Loopback in dev — no token needed.
-    localDev(),
-    // Production: verify Better Auth session cookie/bearer forwarded from the caller.
+    // localDev() bypasses auth for TUI testing — uncomment to skip session checks locally.
+    // localDev(),
     betterAuth(),
   ],
 });
