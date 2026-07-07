@@ -1,29 +1,10 @@
 import type { ToolContext } from 'eve/tools';
 import { env } from './env';
 
-let runtimeSessionToken: string | null = null;
-
-export function setRuntimeSessionToken(token: string): void {
-  runtimeSessionToken = token;
-}
-
-export function orgIdFromCtx(ctx: ToolContext): number {
-  const raw = ctx.session.auth.current?.attributes?.orgId;
-  if (raw) return Number(raw);
-  const fromEnv = env().ZUKO_ORG_ID;
-  if (fromEnv) return fromEnv;
-  throw new Error('No org id: authenticate via Better Auth session or set ZUKO_ORG_ID.');
-}
-
 function sessionCookieFromCtx(ctx: ToolContext): string {
   const cookie = ctx.session.auth.current?.attributes?.sessionCookie;
   if (cookie) return String(cookie);
-  if (runtimeSessionToken) return `better-auth.session_token=${runtimeSessionToken}`;
-  const fromEnv = env().ZUKO_SESSION_TOKEN;
-  if (fromEnv) return `better-auth.session_token=${fromEnv}`;
-  throw new Error(
-    'Not authenticated. Use /authenticate or set ZUKO_SESSION_TOKEN in .env.',
-  );
+  throw new Error('Not authenticated. Start a session via the HTTP API with a valid Better Auth session cookie.');
 }
 
 export async function zukoFetch<T>(

@@ -1,5 +1,5 @@
 import { eveChannel } from 'eve/channels/eve';
-import { type AuthFn, UnauthenticatedError, localDev } from 'eve/channels/auth';
+import { type AuthFn, UnauthenticatedError } from 'eve/channels/auth';
 import { env } from '../lib/env';
 
 interface BetterAuthSession {
@@ -42,9 +42,4 @@ function betterAuth(): AuthFn<Request> {
   };
 }
 
-export default eveChannel({
-  auth: [
-    localDev(),
-    betterAuth(),
-  ],
-});
+export default eveChannel({ auth: [betterAuth()] });
