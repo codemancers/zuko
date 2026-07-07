@@ -1,6 +1,12 @@
 import type { ToolContext } from 'eve/tools';
 import { env } from './env';
 
+let runtimeSessionToken: string | null = null;
+
+export function setRuntimeSessionToken(token: string): void {
+  runtimeSessionToken = token;
+}
+
 export function orgIdFromCtx(ctx: ToolContext): number {
   const raw = ctx.session.auth.current?.attributes?.orgId;
   if (raw) return Number(raw);
@@ -12,10 +18,11 @@ export function orgIdFromCtx(ctx: ToolContext): number {
 function sessionCookieFromCtx(ctx: ToolContext): string {
   const cookie = ctx.session.auth.current?.attributes?.sessionCookie;
   if (cookie) return String(cookie);
+  if (runtimeSessionToken) return `better-auth.session_token=${runtimeSessionToken}`;
   const fromEnv = env().ZUKO_SESSION_TOKEN;
   if (fromEnv) return `better-auth.session_token=${fromEnv}`;
   throw new Error(
-    'Not authenticated. Set ZUKO_SESSION_TOKEN in .env (copy better-auth.session_token from browser DevTools → Application → Cookies).',
+    'Not authenticated. Use /authenticate or set ZUKO_SESSION_TOKEN in .env.',
   );
 }
 
