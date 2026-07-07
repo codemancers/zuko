@@ -43,8 +43,7 @@ function betterAuth(): AuthFn<Request> {
 
 export default eveChannel({
   auth: [
-    // localDev() bypasses auth for TUI testing — uncomment to skip session checks locally.
-    // localDev(),
+    localDev(),
     betterAuth(),
   ],
 });
