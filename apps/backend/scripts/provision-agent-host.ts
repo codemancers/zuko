@@ -18,18 +18,11 @@ import { symmetricEncrypt } from 'better-auth/crypto';
 const HOST_NAME = process.argv[2] ?? 'zuko-eve-host';
 
 const AGENT_CAPABILITIES = [
-  'get_contact_details',
-  'query_contacts',
-  'create_contact',
-  'update_contact',
-  'get_company_details',
-  'query_companies',
-  'create_company',
-  'update_company',
-  'get_deal_details',
-  'query_deals',
-  'create_deal',
-  'update_deal',
+  'list_tasks',
+  'get_task',
+  'create_task',
+  'update_task',
+  'delete_task',
 ];
 
 const connectionString = process.env.DATABASE_URL;
@@ -84,6 +77,5 @@ console.log(`Provisioned agent host "${HOST_NAME}" (id=${host.id}).`);
 console.log('\nConfigure the external agent harness with:\n');
 console.log(`ZUKO_HOST_ID=${host.id}`);
 console.log(`ZUKO_HOST_PRIVATE_JWK=${JSON.stringify(keypair.privateKey)}`);
-console.log(`ZUKO_HOST_PUBLIC_JWK=${JSON.stringify(keypair.publicKey)}`);
 
 await prisma.$disconnect();
