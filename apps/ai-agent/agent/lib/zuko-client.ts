@@ -18,18 +18,11 @@ import { env } from './env';
  * approvalStrength "none", so registration activates immediately.
  */
 export const CAPABILITIES = [
-  'get_contact_details',
-  'query_contacts',
-  'create_contact',
-  'update_contact',
-  'get_company_details',
-  'query_companies',
-  'create_company',
-  'update_company',
-  'get_deal_details',
-  'query_deals',
-  'create_deal',
-  'update_deal',
+  'list_tasks',
+  'get_task',
+  'create_task',
+  'update_task',
+  'delete_task',
 ];
 
 interface RegisterResponse {
@@ -143,7 +136,7 @@ async function agentJwt(): Promise<string> {
  * Call a Zuko /api/agents endpoint. `path` is relative, e.g. "/contacts/query".
  */
 export async function zukoFetch<T>(
-  method: 'GET' | 'POST' | 'PATCH',
+  method: 'GET' | 'POST' | 'PATCH' | 'DELETE',
   path: string,
   body?: unknown,
 ): Promise<T> {

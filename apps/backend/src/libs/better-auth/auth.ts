@@ -149,6 +149,32 @@ const AGENT_CAPABILITIES: Capability[] = [
     description: 'Write agent scratchpad todos',
     approvalStrength: 'none',
   },
+  // Tasks
+  {
+    name: 'list_tasks',
+    description: 'List tasks with optional pagination and filtering',
+    approvalStrength: 'none',
+  },
+  {
+    name: 'get_task',
+    description: 'Get full details for a single task',
+    approvalStrength: 'none',
+  },
+  {
+    name: 'create_task',
+    description: 'Create a new task',
+    approvalStrength: 'none',
+  },
+  {
+    name: 'update_task',
+    description: 'Update an existing task',
+    approvalStrength: 'none',
+  },
+  {
+    name: 'delete_task',
+    description: 'Delete a task',
+    approvalStrength: 'none',
+  },
 ];
 
 const includeEmailAuth =
