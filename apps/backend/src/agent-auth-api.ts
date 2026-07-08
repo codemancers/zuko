@@ -1,4 +1,3 @@
-import { auth } from './libs/better-auth/auth';
 
 export interface AgentSessionUser {
   id: string | number;
