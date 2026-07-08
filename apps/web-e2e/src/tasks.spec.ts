@@ -320,6 +320,10 @@ test.describe('Hierarchical Tasks', () => {
 
     // Subtasks are not in the main list — find the subtask via parent detail page
     await page.goto(`/tasks/${parentId}`);
+    await page.waitForLoadState('networkidle');
+    await expect(page.getByText('Subtask to Promote')).toBeVisible({
+      timeout: 10000,
+    });
     await tasksPage.openTask('Subtask to Promote');
 
     await expect(async () => {
