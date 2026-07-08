@@ -318,13 +318,23 @@ test.describe('Hierarchical Tasks', () => {
 
     await tasksPage.createTask({ title: 'Subtask to Promote', parentId });
 
-    // Subtasks are not in the main list — find the subtask via parent detail page
+    // Subtasks are not in the main list — find the subtask via parent detail page.
+    // Don't use tasksPage.openTask here: its waitForURL('**/tasks/**') resolves
+    // immediately because we're already on /tasks/${parentId}, causing a race where
+    // the subsequent Edit click lands on the parent instead of the subtask.
     await page.goto(`/tasks/${parentId}`);
     await page.waitForLoadState('networkidle');
     await expect(page.getByText('Subtask to Promote')).toBeVisible({
       timeout: 10000,
     });
-    await tasksPage.openTask('Subtask to Promote');
+    await page.getByText('Subtask to Promote').first().click();
+    // Wait until URL changes away from the parent task page
+    await page.waitForURL(
+      (url) =>
+        url.pathname !== `/tasks/${parentId}` &&
+        /\/tasks\/\d+$/.test(url.pathname),
+      { timeout: 10000 },
+    );
 
     await expect(async () => {
       await page
