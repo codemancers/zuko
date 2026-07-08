@@ -341,15 +341,16 @@ test.describe('Hierarchical Tasks', () => {
     const parentSelect = editSheet.locator('[name="parentId"]');
     await expect(parentSelect).toBeVisible({ timeout: 10000 });
     await parentSelect.selectOption('');
-    // Wait for react-hook-form re-render to settle after the select change
-    // before attempting to click — the button can briefly detach during the
-    // form state update, causing a "not stable" Playwright error.
-    // The button can briefly detach while react-hook-form reconciles after the
-    // select change. Re-query inside toPass so each retry gets a fresh handle.
+    // Re-query the dialog and button inside toPass — the dialog can briefly
+    // detach or the filter can stop matching while react-hook-form reconciles
+    // after the select change. Each retry gets a fresh handle.
     await expect(async () => {
-      await editSheet
-        .getByRole('button', { name: /save changes/i })
-        .click({ timeout: 5000 });
+      const dialog = page
+        .locator('[role="dialog"]')
+        .filter({ hasText: 'Edit Task' });
+      const saveBtn = dialog.getByRole('button', { name: /save changes/i });
+      await saveBtn.scrollIntoViewIfNeeded();
+      await saveBtn.click({ timeout: 5000 });
     }).toPass({ timeout: 15000 });
     await expect(page.getByRole('heading', { name: 'Edit Task' })).toBeHidden({
       timeout: 10000,
