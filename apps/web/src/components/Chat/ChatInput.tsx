@@ -186,7 +186,7 @@ const ChatInputInner = ({
         onChange={(e) => setInputValue(e.target.value)}
         onMentionsExtract={setMentions}
         onKeyDown={(e) => {
-          if (e.key === 'Enter' && e.shiftKey && !disabled) {
+          if (e.key === 'Enter' && !e.shiftKey && !disabled) {
             e.preventDefault();
             onShiftEnterSubmit();
           }
@@ -358,7 +358,10 @@ export const ChatInput = ({
         seen.has(`${e.type}-${e.id}`) ? false : seen.add(`${e.type}-${e.id}`),
       );
 
-      // Call parent's onSubmit with cleaned text and context
+      // Clear immediately so input doesn't wait for streaming to finish
+      setInputValue('');
+      setMentions([]);
+
       await onSubmit({
         text: stripMentionMarkup(msg.text),
         files: msg.files,
@@ -367,10 +370,6 @@ export const ChatInput = ({
             metadata: { contextEntities },
           } as any)),
       });
-
-      // Clear input and mentions on successful submit
-      setInputValue('');
-      setMentions([]);
     } catch (error) {
       console.error('[ChatInput] Error submitting message:', error);
       throw error; // Re-throw so PromptInput doesn't clear the input on error
