@@ -1,0 +1,65 @@
+{
+  "name": "@zuko/ai-agent",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "eve dev",
+    "build": "eve build",
+    "start": "eve start --port 3002"
+  },
+  "nx": {
+    "projectType": "application",
+    "tags": [
+      "type:app",
+      "scope:backend"
+    ],
+    "targets": {
+      "dev": {
+        "executor": "nx:run-commands",
+        "continuous": true,
+        "options": {
+          "command": "eve dev",
+          "cwd": "apps/ai-agent"
+        }
+      },
+      "build": {
+        "executor": "nx:run-commands",
+        "cache": true,
+        "inputs": [
+          "production",
+          "^production"
+        ],
+        "outputs": [
+          "{projectRoot}/.output",
+          "{projectRoot}/.eve"
+        ],
+        "options": {
+          "command": "eve build",
+          "cwd": "apps/ai-agent"
+        }
+      },
+      "start": {
+        "executor": "nx:run-commands",
+        "continuous": true,
+        "dependsOn": [
+          "build"
+        ],
+        "options": {
+          "command": "eve start --port 3002",
+          "cwd": "apps/ai-agent"
+        }
+      }
+    }
+  },
+  "dependencies": {
+    "@ai-sdk/openai": "^4.0.8",
+    "ai": "^7.0.0",
+    "eve": "0.20.0",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.9",
+    "typescript": "~5.9.2"
+  }
+}

@@ -71,6 +71,16 @@
       "project": ["src/**/*.ts"],
       "webpack": false,
       "ignoreDependencies": ["@zuko/models", "swagger-ui-express"]
+    },
+    "apps/ai-agent": {
+      "entry": [
+        "agent/agent.ts",
+        "agent/channels/*.ts",
+        "agent/tools/*.ts",
+        "agent/lib/*.ts"
+      ],
+      "project": ["agent/**/*.ts"],
+      "ignoreDependencies": ["@ai-sdk/openai", "zod"]
     }
   }
 }

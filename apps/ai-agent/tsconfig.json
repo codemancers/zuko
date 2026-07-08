@@ -1,0 +1,21 @@
+{
+  // Standalone (does not extend ../../tsconfig.base.json) so the app can be
+  // built in isolation — e.g. inside its Dockerfile, where only this
+  // directory is copied. Keep the strictness options in sync with the base.
+  "compilerOptions": {
+    "strict": true,
+    "isolatedModules": true,
+    "noFallthroughCasesInSwitch": true,
+    "noImplicitOverride": true,
+    "noImplicitReturns": true,
+    "noUnusedLocals": true,
+    "skipLibCheck": true,
+    "noEmit": true,
+    "target": "es2022",
+    "lib": ["es2023"],
+    "module": "preserve",
+    "moduleResolution": "bundler",
+    "types": ["node"]
+  },
+  "include": ["agent/**/*.ts", "evals/**/*.ts", "scripts/**/*.ts"]
+}

@@ -149,3 +149,8 @@ prisma
 **/vite.config.*.timestamp*
 **/vitest.config.*.timestamp*
 fly.toml
+
+# eve ai-agent artifacts and local agent credentials
+**/.eve
+**/.output
+**/.zuko
