@@ -12,7 +12,12 @@ import {
 } from '@zuko/ui-kit';
 import { type ChatEntity } from '@/components/Chat/ChatContextManager';
 import { ChatInput } from '@/components/Chat/ChatInput';
-import { Tool, ToolContent, ToolHeader, ToolOutput } from '@/components/Chat/Tool';
+import {
+  Tool,
+  ToolContent,
+  ToolHeader,
+  ToolOutput,
+} from '@/components/Chat/Tool';
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import { useInvalidateChats } from '@/hooks/use-chats';
@@ -41,7 +46,9 @@ export default function ChatPage() {
         if (msgs.length <= persistedCountRef.current) return;
 
         const lastUser = [...msgs].reverse().find((m) => m.role === 'user');
-        const lastAssistant = [...msgs].reverse().find((m) => m.role === 'assistant');
+        const lastAssistant = [...msgs]
+          .reverse()
+          .find((m) => m.role === 'assistant');
         if (!lastUser || !lastAssistant) return;
 
         const userText = lastUser.parts
@@ -60,7 +67,10 @@ export default function ChatPage() {
             method: 'POST',
             headers: { 'content-type': 'application/json' },
             credentials: 'include',
-            body: JSON.stringify({ userMessage: userText, assistantMessage: assistantText }),
+            body: JSON.stringify({
+              userMessage: userText,
+              assistantMessage: assistantText,
+            }),
           }).catch(() => {});
         }
       },
@@ -81,7 +91,10 @@ export default function ChatPage() {
         let contextEntities: Array<{ type: string; id: number }> = [];
 
         try {
-          const parsed = JSON.parse(data) as { text: string; contextEntities?: Array<{ type: string; id: number }> };
+          const parsed = JSON.parse(data) as {
+            text: string;
+            contextEntities?: Array<{ type: string; id: number }>;
+          };
           messageText = parsed.text;
           contextEntities = parsed.contextEntities ?? [];
         } catch {
@@ -95,16 +108,36 @@ export default function ChatPage() {
               try {
                 if (type === 'contact') {
                   const c = await contactsApi.getContact(ref.id);
-                  return { type: 'contact', id: ref.id, name: c.name, metadata: { type: 'contact', entityId: ref.id } };
+                  return {
+                    type: 'contact',
+                    id: ref.id,
+                    name: c.name,
+                    metadata: { type: 'contact', entityId: ref.id },
+                  };
                 }
                 if (type === 'company') {
                   const c = await companiesApi.getCompany(ref.id);
-                  return { type: 'company', id: ref.id, name: c.companyName, metadata: { type: 'company', entityId: ref.id } };
+                  return {
+                    type: 'company',
+                    id: ref.id,
+                    name: c.companyName,
+                    metadata: { type: 'company', entityId: ref.id },
+                  };
                 }
                 const d = await dealsApi.getDeal(ref.id);
-                return { type: 'deal', id: ref.id, name: d.title, metadata: { type: 'deal', entityId: ref.id } };
+                return {
+                  type: 'deal',
+                  id: ref.id,
+                  name: d.title,
+                  metadata: { type: 'deal', entityId: ref.id },
+                };
               } catch {
-                return { type, id: ref.id, name: CHAT_ENTITY_TYPE_LABEL[type], metadata: { type, entityId: ref.id } };
+                return {
+                  type,
+                  id: ref.id,
+                  name: CHAT_ENTITY_TYPE_LABEL[type],
+                  metadata: { type, entityId: ref.id },
+                };
               }
             }),
           );
@@ -129,9 +162,19 @@ export default function ChatPage() {
 
   const loadMessageHistory = useCallback(async () => {
     try {
-      const res = await fetch(`/api/proxy/api/chats/${chatId}/messages`, { credentials: 'include' });
+      const res = await fetch(`/api/proxy/api/chats/${chatId}/messages`, {
+        credentials: 'include',
+      });
       if (res.ok) {
-        const data = await res.json() as { messages?: Array<{ id?: string; role: string; content?: string; parts?: EveMessagePart[] }>; contextEntities?: Array<{ type: string; id: number; name: string }> };
+        const data = (await res.json()) as {
+          messages?: Array<{
+            id?: string;
+            role: string;
+            content?: string;
+            parts?: EveMessagePart[];
+          }>;
+          contextEntities?: Array<{ type: string; id: number; name: string }>;
+        };
         const rows = data.messages ?? [];
         const contextRefs = data.contextEntities ?? [];
 
@@ -163,16 +206,28 @@ export default function ChatPage() {
 
   useEffect(() => {
     if (!messagesLoaded && !firstMessageSent && chatId) {
-      const firstMessageData = localStorage.getItem(`chat-${chatId}-firstMessage`);
+      const firstMessageData = localStorage.getItem(
+        `chat-${chatId}-firstMessage`,
+      );
       if (firstMessageData) {
         handleFirstMessage(firstMessageData);
       } else {
         loadMessageHistory();
       }
     }
-  }, [chatId, messagesLoaded, firstMessageSent, handleFirstMessage, loadMessageHistory]);
+  }, [
+    chatId,
+    messagesLoaded,
+    firstMessageSent,
+    handleFirstMessage,
+    loadMessageHistory,
+  ]);
 
-  const handleSubmitMessage = async (msg: { text: string; files?: unknown[]; metadata?: { contextEntities?: Array<{ type: string; id: number }> } }) => {
+  const handleSubmitMessage = async (msg: {
+    text: string;
+    files?: unknown[];
+    metadata?: { contextEntities?: Array<{ type: string; id: number }> };
+  }) => {
     if (!msg.text.trim() || isBusy) return;
 
     const contextEntities = msg.metadata?.contextEntities ?? [];
@@ -198,7 +253,8 @@ export default function ChatPage() {
                       key={message.id ?? String(index)}
                       message={message}
                       isStreaming={
-                        agent.status === 'streaming' && index === allMessages.length - 1
+                        agent.status === 'streaming' &&
+                        index === allMessages.length - 1
                       }
                     />
                   ))}
@@ -264,7 +320,9 @@ function EveMessageView({
           <EvePartView
             key={`${part.type}-${i}`}
             part={part}
-            showCaret={isStreaming && message.role === 'assistant' && i === lastTextIndex}
+            showCaret={
+              isStreaming && message.role === 'assistant' && i === lastTextIndex
+            }
           />
         ))}
       </MessageContent>
@@ -272,14 +330,21 @@ function EveMessageView({
   );
 }
 
-function EvePartView({ part, showCaret }: { part: EveMessagePart; showCaret: boolean }) {
+function EvePartView({
+  part,
+  showCaret,
+}: {
+  part: EveMessagePart;
+  showCaret: boolean;
+}) {
   switch (part.type) {
     case 'step-start':
       return null;
     case 'text':
       return (
         <MessageResponse>
-          {(part as { type: 'text'; text: string }).text + (showCaret ? '▋' : '')}
+          {(part as { type: 'text'; text: string }).text +
+            (showCaret ? '▋' : '')}
         </MessageResponse>
       );
     case 'dynamic-tool': {
@@ -298,9 +363,16 @@ function EvePartView({ part, showCaret }: { part: EveMessagePart; showCaret: boo
           : 'input-streaming';
       return (
         <Tool defaultOpen={false}>
-          <ToolHeader type="dynamic-tool" state={sdkState} toolName={toolPart.toolName} />
+          <ToolHeader
+            type="dynamic-tool"
+            state={sdkState}
+            toolName={toolPart.toolName}
+          />
           <ToolContent>
-            <ToolOutput output={toolPart.output} errorText={toolPart.errorText} />
+            <ToolOutput
+              output={toolPart.output}
+              errorText={toolPart.errorText}
+            />
           </ToolContent>
         </Tool>
       );

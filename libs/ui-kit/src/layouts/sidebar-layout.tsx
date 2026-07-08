@@ -94,7 +94,9 @@ export function SidebarLayout({
         className={`flex flex-1 flex-col overflow-hidden transition-[padding] duration-200 ease-out lg:min-w-0 ${mainPl}`}
       >
         <div className="flex grow flex-col overflow-hidden lg:bg-white lg:p-10 lg:shadow-xs lg:ring-1 lg:ring-zinc-950/5 dark:lg:bg-zinc-900 dark:lg:ring-white/10">
-          <div className="mx-auto h-full w-full max-w-6xl overflow-y-auto">{children}</div>
+          <div className="mx-auto h-full w-full max-w-6xl overflow-y-auto">
+            {children}
+          </div>
         </div>
       </main>
     </div>
