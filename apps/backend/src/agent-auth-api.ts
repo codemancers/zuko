@@ -52,7 +52,3 @@ export interface AgentAuthApi {
     headers: Headers;
   }) => Promise<unknown>;
 }
-
-export function agentAuthApi(): AgentAuthApi {
-  return (auth as unknown as { api: AgentAuthApi }).api;
-}
