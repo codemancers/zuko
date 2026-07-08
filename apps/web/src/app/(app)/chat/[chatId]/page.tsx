@@ -1,6 +1,7 @@
 'use client';
 
 import { useChat } from '@ai-sdk/react';
+import { DefaultChatTransport } from 'ai';
 import {
   Conversation,
   ConversationContent,
@@ -24,21 +25,18 @@ import { contactsApi } from '@/lib/api/contacts';
 import { companiesApi } from '@/lib/api/companies';
 import { dealsApi } from '@/lib/api/deals';
 import { CHAT_ENTITY_TYPE_LABEL } from '@/lib/constants';
-import { SandboxStatusBadge } from '@/components/Chat/SandboxStatusBadge';
 
 export default function ChatPage() {
   const params = useParams();
   const chatId = params.chatId as string;
 
   const { messages, sendMessage, status, stop, setMessages } = useChat({
-    // Using default '/api/chat' endpoint
-    // chatId is extracted from Referer header in /api/chat route
+    transport: new DefaultChatTransport({ body: { chatId } }),
   });
 
   const invalidateChats = useInvalidateChats();
   const [firstMessageSent, setFirstMessageSent] = useState(false);
   const [messagesLoaded, setMessagesLoaded] = useState(false);
-  const [sandboxId, setSandboxId] = useState<number | null>(null);
 
   const hasMessages = messages.length > 0;
 
@@ -49,10 +47,6 @@ export default function ChatPage() {
   // Helper: Handle first message from localStorage (new chat)
   const handleFirstMessage = useCallback(
     async (data: string) => {
-      console.log(
-        '[ChatPage] New chat detected, sending first message immediately',
-      );
-
       localStorage.removeItem(`chat-${chatId}-firstMessage`);
 
       try {
@@ -68,7 +62,6 @@ export default function ChatPage() {
         }
 
         if (contextEntities.length > 0) {
-          // Hydrate names so chips show "Vikram Joshi" not "Contact" when we inject
           const hydrated: ChatEntity[] = await Promise.all(
             contextEntities.map(
               async (ref: {
@@ -118,8 +111,7 @@ export default function ChatPage() {
 
         sendMessage({
           text: messageText,
-          metadata:
-            contextEntities.length > 0 ? { contextEntities } : undefined,
+          metadata: { contextEntities },
         });
 
         setFirstMessageSent(true);
@@ -135,8 +127,6 @@ export default function ChatPage() {
 
   // Helper: Load message history from backend (existing chat)
   const loadMessageHistory = useCallback(async () => {
-    console.log('[ChatPage] Loading message history for existing chat');
-
     try {
       const response = await fetch(`/api/proxy/api/chats/${chatId}/messages`, {
         credentials: 'include',
@@ -146,9 +136,7 @@ export default function ChatPage() {
         const data = await response.json();
         const historyMessages = data.messages || [];
         const contextRefs = data.contextEntities || [];
-        if (data.sandboxId) setSandboxId(data.sandboxId);
 
-        // Messages from DB already have parts array (UIMessage shape)
         const formattedMessages = historyMessages.map(
           (msg: any, index: number) => ({
             id: msg.id ?? `msg-${index}`,
@@ -163,12 +151,11 @@ export default function ChatPage() {
           setMessages(formattedMessages);
         }
 
-        // Hydrate context entities from backend response (includes names)
         const hydratedEntities: ChatEntity[] = contextRefs.map(
           (ref: { type: string; id: number; name: string }) => ({
             type: ref.type as 'contact' | 'company' | 'deal',
             id: ref.id,
-            name: ref.name, // Use actual name from backend
+            name: ref.name,
             metadata: { type: ref.type, entityId: ref.id },
           }),
         );
@@ -184,20 +171,14 @@ export default function ChatPage() {
     }
   }, [chatId, setMessages]);
 
-  // Smart initialization: Check localStorage first, then load history if needed
-  // This eliminates the gap where first message disappears during navigation
   useEffect(() => {
     if (!messagesLoaded && !firstMessageSent && chatId) {
-      // Step 1: Check if this is a new chat (has first message in localStorage)
       const firstMessageData = localStorage.getItem(
         `chat-${chatId}-firstMessage`,
       );
-
       if (firstMessageData) {
-        // NEW CHAT PATH: Send first message immediately, skip history fetch
         handleFirstMessage(firstMessageData);
       } else {
-        // EXISTING CHAT PATH: Load message history from backend
         loadMessageHistory();
       }
     }
@@ -214,50 +195,30 @@ export default function ChatPage() {
     files?: any[];
     metadata?: any;
   }) => {
-    if (!msg.text.trim()) {
-      return;
-    }
+    if (!msg.text.trim()) return;
 
     try {
-      console.log('[ChatPage] handleSubmitMessage called with:', msg);
-
       const isFirstMessage = messages.length === 0;
       await sendMessage({
         text: msg.text,
         files: msg.files,
-        metadata: msg.metadata,
-        // AI SDK may not attach metadata to the message; send contextEntities in body so backend can read them
-        ...(msg.metadata?.contextEntities?.length && {
-          body: { contextEntities: msg.metadata.contextEntities },
-        }),
+        metadata: { contextEntities: msg.metadata?.contextEntities ?? [] },
       });
 
-      // If this was the first message, invalidate chats query after a short delay
-      // to allow the backend to generate the title
       if (isFirstMessage) {
-        setTimeout(() => {
-          invalidateChats();
-        }, 2000); // 2 second delay for title generation
+        setTimeout(() => invalidateChats(), 2000);
       }
     } catch (error) {
       console.error('[ChatPage] Error in handleSubmitMessage:', error);
-      throw error; // Re-throw so PromptInput doesn't clear the input on error
+      throw error;
     }
   };
 
   return (
     <TooltipProvider>
       <div className="flex h-full flex-col overflow-hidden bg-zinc-50 dark:bg-zinc-900">
-        {sandboxId && (
-          <div className="relative z-10 h-0 shrink-0">
-            <div className="absolute right-3 top-3">
-              <SandboxStatusBadge sandboxId={sandboxId} />
-            </div>
-          </div>
-        )}
         {hasMessages ? (
           <>
-            {/* Messages Area - with scrolling, constrained width */}
             <div className="flex-1 overflow-hidden">
               <Conversation className="h-full">
                 <ConversationContent className="mx-auto max-w-3xl">
@@ -268,7 +229,6 @@ export default function ChatPage() {
                       .map((part: any) => part.text)
                       .join('');
 
-                    // Message with role 'tool' is a tool result (e.g. from history) – render with Tool component
                     if ((message as { role: string }).role === 'tool') {
                       return (
                         <Message key={message.id} from="assistant">
@@ -303,7 +263,6 @@ export default function ChatPage() {
               </Conversation>
             </div>
 
-            {/* Input Area - pinned to bottom */}
             <div className="shrink-0 bg-zinc-50 py-4 dark:bg-zinc-900">
               <div className="mx-auto w-full max-w-3xl px-4">
                 <ChatInput
@@ -318,7 +277,6 @@ export default function ChatPage() {
             </div>
           </>
         ) : (
-          /* Empty state - input centered */
           <div className="flex h-full flex-col items-center justify-center px-4">
             <div className="mb-12 text-center">
               <h2 className="mb-2 text-xl font-medium text-zinc-950 dark:text-white">

@@ -23,6 +23,7 @@ env:
   BETTER_AUTH_INCLUDE_EMAILS_AUTH: ${{ secrets.BETTER_AUTH_INCLUDE_EMAILS_AUTH || 'true' }}
   NEXT_PUBLIC_APP_URL: ${{ vars.NEXT_PUBLIC_APP_URL || 'http://localhost:3000' }}
   NEXT_PUBLIC_BACKEND_URL: ${{ vars.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001' }}
+  AI_AGENT_URL: ${{ vars.AI_AGENT_URL || 'http://localhost:3002' }}
   NEXT_PUBLIC_USE_AUTH_PROXY: ${{ vars.NEXT_PUBLIC_USE_AUTH_PROXY || 'true' }}
   MEETINGS_ENABLED: 'true'
   APOLLO_CLIENT_ID: ${{ secrets.APOLLO_CLIENT_ID || 'apollo-client-id' }}
