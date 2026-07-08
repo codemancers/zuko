@@ -1,4 +1,3 @@
-
 export interface AgentSessionUser {
   id: string | number;
   email?: string | null;
