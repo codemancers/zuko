@@ -95,3 +95,6 @@ GEMINI.md
 .dolt/
 *.db
 .beads-credential-key
+
+# Nango runtime data
+nango-data/

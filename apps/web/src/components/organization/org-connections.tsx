@@ -11,6 +11,7 @@ import type { ColumnDef } from '@tanstack/react-table';
 import type { ColumnMetadata } from '@/types/table-metadata';
 import { useMemo } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import Nango from '@nangohq/frontend';
 import {
   githubStatusQueryOptions,
   linkedAccountsQueryOptions,
@@ -22,7 +23,7 @@ import {
 } from './hooks/mutations';
 import { authClient } from '@/lib/auth-client';
 import {
-  getApolloAuthorizationUrl,
+  activateApolloConnection,
   disconnectApollo,
 } from '@/server/actions/apollo';
 import {
@@ -143,11 +144,31 @@ export const OrgConnections = () => {
   const installGitHubApp = useInstallGitHubApp();
 
   const connectApollo = useMutation({
-    mutationFn: getApolloAuthorizationUrl,
-    onSuccess: ({ url }) => {
-      window.location.href = url;
+    mutationFn: async () => {
+      const res = await fetch('/api/proxy/api/nango/session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ allowedIntegrations: ['apollo-oauth'] }),
+      });
+      const { sessionToken } = (await res.json()) as {
+        sessionToken: string;
+        connectionId: string;
+      };
+
+      const nango = new Nango({
+        connectSessionToken: sessionToken,
+        host: process.env.NEXT_PUBLIC_NANGO_HOST ?? 'http://localhost:3003',
+      });
+      const result = await nango.auth('apollo-oauth');
+      await activateApolloConnection(result.connectionId);
     },
-    onError: () => toast.error('Failed to initiate Apollo connection'),
+    onSuccess: () => {
+      toast.success('Apollo connected');
+      queryClient.invalidateQueries({
+        queryKey: ['apollo', 'connection-status'],
+      });
+    },
+    onError: () => toast.error('Failed to connect Apollo'),
   });
 
   const disconnectApolloMutation = useMutation({

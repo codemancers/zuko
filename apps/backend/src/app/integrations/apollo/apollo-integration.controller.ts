@@ -3,8 +3,8 @@ import {
   Get,
   Post,
   Delete,
-  Body,
   Req,
+  Body,
   HttpCode,
   HttpStatus,
   UseGuards,
@@ -21,7 +21,6 @@ import { OrganizationGuard } from '../../../common/auth/organization.guard';
 import { OrgId } from '../../../common/auth/org-id.decorator';
 import type { RequestWithUser } from '@zuko/core';
 import { ApolloIntegrationService } from './apollo-integration.service';
-import { ExchangeApolloCodeDto } from './dto/apollo.dto';
 
 @ApiTags('Integrations')
 @ApiBearerAuth('session')
@@ -44,35 +43,28 @@ export class ApolloIntegrationController {
     return this.apolloIntegrationService.getConnectionStatus(organizationId);
   }
 
-  @Get('authorize')
-  @UseGuards(AuthGuard, OrganizationGuard)
-  @ApiOperation({ summary: 'Get Apollo OAuth authorization URL' })
-  @ApiResponse({ status: 200, description: 'Authorization URL' })
-  @ApiResponse({ status: 401, description: 'Not authenticated' })
-  async getAuthorizationUrl(
-    @OrgId() organizationId: number,
-    @Req() req: RequestWithUser,
-  ) {
-    const userId = parseInt(req.user.id, 10);
-    return this.apolloIntegrationService.buildAuthorizationUrl(
-      organizationId,
-      userId,
-    );
-  }
-
-  @Post('exchange')
+  @Post('activate')
   @HttpCode(HttpStatus.NO_CONTENT)
+  @UseGuards(AuthGuard, OrganizationGuard)
   @ApiOperation({
     summary:
-      'Exchange Apollo OAuth code for tokens (called by Next.js callback route)',
+      'Record Apollo connection after Nango OAuth completes on the frontend',
   })
-  @ApiResponse({ status: 204, description: 'Tokens exchanged and stored' })
-  @ApiResponse({ status: 400, description: 'Invalid or expired state' })
-  async exchange(@Body() body: ExchangeApolloCodeDto) {
-    this.logger.log('[POST_APOLLO_EXCHANGE] Exchanging authorization code');
-    await this.apolloIntegrationService.exchangeCodeForTokens(
-      body.code,
-      body.state,
+  @ApiResponse({ status: 204, description: 'Connection recorded' })
+  @ApiResponse({ status: 401, description: 'Not authenticated' })
+  async activate(
+    @OrgId() organizationId: number,
+    @Req() req: RequestWithUser,
+    @Body() body: { nangoConnectionId: string },
+  ) {
+    const userId = parseInt(req.user.id, 10);
+    this.logger.log(
+      `[POST_APOLLO_ACTIVATE] Recording connection for organizationId=${organizationId}`,
+    );
+    await this.apolloIntegrationService.recordConnection(
+      organizationId,
+      userId,
+      body.nangoConnectionId,
     );
   }
 

@@ -11,6 +11,7 @@
     "@better-auth/agent-auth": "^0.4.5",
     "@better-auth/oauth-provider": "^1.6.22",
     "@modelcontextprotocol/sdk": "^1.29.0",
+    "@nangohq/node": "^0.70.9",
     "@nestjs/common": "^11.0.0",
     "@nestjs/config": "^4.0.0",
     "@nestjs/core": "^11.0.0",

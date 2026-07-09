@@ -20,10 +20,6 @@ export interface ApolloConnectionStatus {
   connectedByEmail?: string;
 }
 
-export interface ApolloAuthorizationUrl {
-  url: string;
-}
-
 // ─── Sequences (list) ─────────────────────────────────────────────────────────
 
 export interface ApolloSequence {
@@ -330,12 +326,14 @@ export const apolloIntegrationApi = {
     return apiClient.get('/integrations/apollo/status');
   },
 
-  async getAuthorizationUrl(): Promise<ApolloAuthorizationUrl> {
-    return apiClient.get('/integrations/apollo/authorize');
-  },
-
   async getUsageStats(): Promise<ApolloApiUsageStats> {
     return apiClient.get('/integrations/apollo/usage-stats');
+  },
+
+  async activate(nangoConnectionId: string): Promise<void> {
+    return apiClient.post('/integrations/apollo/activate', {
+      nangoConnectionId,
+    });
   },
 
   async disconnect(): Promise<void> {

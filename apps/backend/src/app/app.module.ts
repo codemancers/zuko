@@ -16,6 +16,7 @@ import { MeetingModule } from './meeting/meeting.module';
 import { MetadataModule } from './metadata/metadata.module';
 import { SandboxLifecycleModule } from '../sandbox-lifecycle/sandbox-lifecycle.module';
 import { IntegrationsModule } from './integrations/integrations.module';
+import { NangoModule } from './nango/nango.module';
 import { McpModule } from './mcp/mcp.module';
 import { auth } from '../libs/better-auth/auth';
 import { IcpModule } from './icp/icp.module';
@@ -44,6 +45,7 @@ const authModule = AuthModule.forRoot({ auth, disableGlobalAuthGuard: true });
     MeetingModule,
     MetadataModule,
     SandboxLifecycleModule,
+    NangoModule,
     IntegrationsModule,
     IcpModule,
     McpModule,
