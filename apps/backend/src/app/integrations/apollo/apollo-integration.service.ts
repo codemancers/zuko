@@ -175,9 +175,8 @@ export class ApolloIntegrationService {
     }
     const nangoConnectionId = record.nangoConnectionId;
 
-    let connection: Awaited<
-      ReturnType<NangoService['getConnection']>
-    > | null = null;
+    let connection: Awaited<ReturnType<NangoService['getConnection']>> | null =
+      null;
     try {
       connection = await this.nangoService.getConnection(
         APOLLO_PROVIDER,
