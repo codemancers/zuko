@@ -80,7 +80,7 @@ interface ChatInputInnerProps {
   handleVoiceInput: () => void;
   handleFileAttachment: () => void;
   handleWebSearch: () => void;
-  onShiftEnterSubmit: () => void;
+  onEnterSubmit: () => void;
 }
 
 const ChatInputInner = ({
@@ -99,7 +99,7 @@ const ChatInputInner = ({
   handleVoiceInput,
   handleFileAttachment,
   handleWebSearch,
-  onShiftEnterSubmit,
+  onEnterSubmit,
 }: ChatInputInnerProps) => {
   // Chat context state (updated by ChatContextProvider)
   const [_chatContext, setChatContext] = useState<ChatEntity[]>([]);
@@ -188,7 +188,7 @@ const ChatInputInner = ({
         onKeyDown={(e) => {
           if (e.key === 'Enter' && !e.shiftKey && !disabled) {
             e.preventDefault();
-            onShiftEnterSubmit();
+            onEnterSubmit();
           }
         }}
       />
@@ -376,8 +376,7 @@ export const ChatInput = ({
     }
   };
 
-  // Handle Shift+Enter submission
-  const handleShiftEnterSubmit = useCallback(() => {
+  const handleEnterSubmit = useCallback(() => {
     if (inputValue.trim() && !disabled) {
       handleSubmitMessage({ text: inputValue });
     }
@@ -401,7 +400,7 @@ export const ChatInput = ({
         handleVoiceInput={handleVoiceInput}
         handleFileAttachment={handleFileAttachment}
         handleWebSearch={handleWebSearch}
-        onShiftEnterSubmit={handleShiftEnterSubmit}
+        onEnterSubmit={handleEnterSubmit}
       />
     </PromptInput>
   );
