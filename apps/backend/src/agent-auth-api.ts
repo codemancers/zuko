@@ -1,5 +1,3 @@
-import { auth } from './libs/better-auth/auth';
-
 export interface AgentSessionUser {
   id: string | number;
   email?: string | null;
@@ -51,8 +49,4 @@ export interface AgentAuthApi {
     body: { id: string };
     headers: Headers;
   }) => Promise<unknown>;
-}
-
-export function agentAuthApi(): AgentAuthApi {
-  return (auth as unknown as { api: AgentAuthApi }).api;
 }

@@ -178,11 +178,6 @@ export const ChatInputWithMentions = React.forwardRef<
           search: string,
           callback: (data: MentionSuggestion[]) => void,
         ) => {
-          // Show list only after user types at least 3 characters after @
-          if (search.length < 3) {
-            callback([]);
-            return;
-          }
           const searchLower = search.toLowerCase();
           const match = (s: { display: string; description?: string }) =>
             s.display.toLowerCase().includes(searchLower) ||

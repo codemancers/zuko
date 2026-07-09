@@ -152,7 +152,13 @@ export const PromptInputMentions = React.forwardRef<
       if (!container || !onKeyDown) return;
 
       const handleKeyDownCapture = (event: KeyboardEvent) => {
-        // Call external handler (convert to React synthetic event)
+        // Don't intercept when mention suggestions dropdown is open — let react-mentions handle it
+        if (
+          event.key === 'Enter' &&
+          document.querySelector('.react-mentions__suggestions__list')
+        ) {
+          return;
+        }
         if (event.target instanceof HTMLElement) {
           const syntheticEvent = event as any;
           onKeyDown(syntheticEvent);

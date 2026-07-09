@@ -212,7 +212,7 @@ export class BasePage {
       .getByRole('option', { name: value, exact: true })
       .first();
     const isCombobox = await option
-      .isVisible({ timeout: 2000 })
+      .isVisible({ timeout: 8000 })
       .catch(() => false);
     if (isCombobox) {
       await option.click();

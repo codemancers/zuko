@@ -68,16 +68,19 @@ test.describe('Chat', () => {
     await expect(textarea).toBeVisible();
   });
 
-  test('chatId is correctly passed in request body when sending message', async ({
+  test('message text is sent to eve session when submitting', async ({
     page,
   }) => {
     await page.goto(`/chat/${chatId}`);
 
-    // Set up request interception to capture the API call
+    // Set up request interception to capture the eve session API call
     let capturedRequestBody: any = null;
 
     page.on('request', (request) => {
-      if (request.url().includes('/api/chat') && request.method() === 'POST') {
+      if (
+        request.url().includes('/eve/v1/session') &&
+        request.method() === 'POST'
+      ) {
         capturedRequestBody = request.postDataJSON();
       }
     });
@@ -86,26 +89,18 @@ test.describe('Chat', () => {
     const textarea = page.getByPlaceholder('Ask anything...');
     await textarea.fill('Hello, this is a test message');
 
-    // Find and click the submit button - wait for API request
-    const submitButton = page.locator('button[type="submit"]').last();
+    // Wait for the eve session request
     const requestPromise = page.waitForRequest(
-      (req) => req.url().includes('/api/chat') && req.method() === 'POST',
+      (req) => req.url().includes('/eve/v1/session') && req.method() === 'POST',
       { timeout: 5000 },
     );
+    const submitButton = page.locator('button[type="submit"]').last();
     await submitButton.click();
     await requestPromise;
 
-    // Verify the request was made with messages
-    // Note: chatId is NOT in the client request body - it's extracted server-side from the Referer header
+    // useEveAgent sends { message: string } to /eve/v1/session
     expect(capturedRequestBody).toBeTruthy();
-    expect(capturedRequestBody.messages).toBeDefined();
-    expect(capturedRequestBody.messages).toHaveLength(1);
-
-    // AI SDK v6 uses parts array instead of content
-    expect(capturedRequestBody.messages[0].parts).toBeDefined();
-    expect(capturedRequestBody.messages[0].parts[0].text).toBe(
-      'Hello, this is a test message',
-    );
+    expect(capturedRequestBody.message).toBe('Hello, this is a test message');
   });
 
   test('message is sent and response is displayed', async ({ page }) => {

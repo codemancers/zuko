@@ -80,7 +80,7 @@ interface ChatInputInnerProps {
   handleVoiceInput: () => void;
   handleFileAttachment: () => void;
   handleWebSearch: () => void;
-  onShiftEnterSubmit: () => void;
+  onEnterSubmit: () => void;
 }
 
 const ChatInputInner = ({
@@ -99,7 +99,7 @@ const ChatInputInner = ({
   handleVoiceInput,
   handleFileAttachment,
   handleWebSearch,
-  onShiftEnterSubmit,
+  onEnterSubmit,
 }: ChatInputInnerProps) => {
   // Chat context state (updated by ChatContextProvider)
   const [_chatContext, setChatContext] = useState<ChatEntity[]>([]);
@@ -186,9 +186,9 @@ const ChatInputInner = ({
         onChange={(e) => setInputValue(e.target.value)}
         onMentionsExtract={setMentions}
         onKeyDown={(e) => {
-          if (e.key === 'Enter' && e.shiftKey && !disabled) {
+          if (e.key === 'Enter' && !e.shiftKey && !disabled) {
             e.preventDefault();
-            onShiftEnterSubmit();
+            onEnterSubmit();
           }
         }}
       />
@@ -358,7 +358,10 @@ export const ChatInput = ({
         seen.has(`${e.type}-${e.id}`) ? false : seen.add(`${e.type}-${e.id}`),
       );
 
-      // Call parent's onSubmit with cleaned text and context
+      // Clear immediately so input doesn't wait for streaming to finish
+      setInputValue('');
+      setMentions([]);
+
       await onSubmit({
         text: stripMentionMarkup(msg.text),
         files: msg.files,
@@ -367,18 +370,13 @@ export const ChatInput = ({
             metadata: { contextEntities },
           } as any)),
       });
-
-      // Clear input and mentions on successful submit
-      setInputValue('');
-      setMentions([]);
     } catch (error) {
       console.error('[ChatInput] Error submitting message:', error);
       throw error; // Re-throw so PromptInput doesn't clear the input on error
     }
   };
 
-  // Handle Shift+Enter submission
-  const handleShiftEnterSubmit = useCallback(() => {
+  const handleEnterSubmit = useCallback(() => {
     if (inputValue.trim() && !disabled) {
       handleSubmitMessage({ text: inputValue });
     }
@@ -402,7 +400,7 @@ export const ChatInput = ({
         handleVoiceInput={handleVoiceInput}
         handleFileAttachment={handleFileAttachment}
         handleWebSearch={handleWebSearch}
-        onShiftEnterSubmit={handleShiftEnterSubmit}
+        onEnterSubmit={handleEnterSubmit}
       />
     </PromptInput>
   );

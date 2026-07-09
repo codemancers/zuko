@@ -318,9 +318,23 @@ test.describe('Hierarchical Tasks', () => {
 
     await tasksPage.createTask({ title: 'Subtask to Promote', parentId });
 
-    // Subtasks are not in the main list — find the subtask via parent detail page
+    // Subtasks are not in the main list — find the subtask via parent detail page.
+    // Don't use tasksPage.openTask here: its waitForURL('**/tasks/**') resolves
+    // immediately because we're already on /tasks/${parentId}, causing a race where
+    // the subsequent Edit click lands on the parent instead of the subtask.
     await page.goto(`/tasks/${parentId}`);
-    await tasksPage.openTask('Subtask to Promote');
+    await page.waitForLoadState('networkidle');
+    await expect(page.getByText('Subtask to Promote')).toBeVisible({
+      timeout: 10000,
+    });
+    await page.getByText('Subtask to Promote').first().click();
+    // Wait until URL changes away from the parent task page
+    await page.waitForURL(
+      (url) =>
+        url.pathname !== `/tasks/${parentId}` &&
+        /\/tasks\/\d+$/.test(url.pathname),
+      { timeout: 10000 },
+    );
 
     await expect(async () => {
       await page
@@ -337,15 +351,16 @@ test.describe('Hierarchical Tasks', () => {
     const parentSelect = editSheet.locator('[name="parentId"]');
     await expect(parentSelect).toBeVisible({ timeout: 10000 });
     await parentSelect.selectOption('');
-    // Wait for react-hook-form re-render to settle after the select change
-    // before attempting to click — the button can briefly detach during the
-    // form state update, causing a "not stable" Playwright error.
-    // The button can briefly detach while react-hook-form reconciles after the
-    // select change. Re-query inside toPass so each retry gets a fresh handle.
+    // Re-query the dialog and button inside toPass — the dialog can briefly
+    // detach or the filter can stop matching while react-hook-form reconciles
+    // after the select change. Each retry gets a fresh handle.
     await expect(async () => {
-      await editSheet
-        .getByRole('button', { name: /save changes/i })
-        .click({ timeout: 5000 });
+      const dialog = page
+        .locator('[role="dialog"]')
+        .filter({ hasText: 'Edit Task' });
+      const saveBtn = dialog.getByRole('button', { name: /save changes/i });
+      await saveBtn.scrollIntoViewIfNeeded();
+      await saveBtn.click({ timeout: 5000 });
     }).toPass({ timeout: 15000 });
     await expect(page.getByRole('heading', { name: 'Edit Task' })).toBeHidden({
       timeout: 10000,

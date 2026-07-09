@@ -205,18 +205,18 @@ describe('ChatInput', () => {
     expect(input).toBeDisabled();
   });
 
-  it('submits on Shift+Enter when text is present', async () => {
+  it('submits on Enter when text is present', async () => {
     const user = userEvent.setup();
     const onSubmit = vi.fn().mockResolvedValue(undefined);
     render(<ChatInput onSubmit={onSubmit} />, { wrapper });
 
     const input = screen.getByPlaceholderText(/ask anything.*try typing @/i);
-    await user.type(input, 'Shift enter message');
-    await user.keyboard('{Shift>}{Enter}{/Shift}');
+    await user.type(input, 'Enter message');
+    await user.keyboard('{Enter}');
 
     await waitFor(() => {
       expect(onSubmit).toHaveBeenCalledWith(
-        expect.objectContaining({ text: 'Shift enter message' }),
+        expect.objectContaining({ text: 'Enter message' }),
       );
     });
   });
@@ -252,7 +252,7 @@ describe('ChatInput', () => {
     });
   });
 
-  it('does not clear input when onSubmit rejects', async () => {
+  it('clears input immediately even when onSubmit rejects', async () => {
     const user = userEvent.setup();
     const onSubmit = vi.fn().mockRejectedValue(new Error('Send failed'));
     render(<ChatInput onSubmit={onSubmit} />, { wrapper });
@@ -267,7 +267,7 @@ describe('ChatInput', () => {
       expect(onSubmit).toHaveBeenCalled();
     });
     await waitFor(() => {
-      expect(input.value).toBe('Failed message');
+      expect(input.value).toBe('');
     });
   });
 

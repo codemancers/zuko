@@ -1,6 +1,7 @@
 'use client';
 
-import { useChat } from '@ai-sdk/react';
+import { useEveAgent } from 'eve/react';
+import type { EveMessage, EveMessagePart } from 'eve/react';
 import {
   Conversation,
   ConversationContent,
@@ -17,187 +18,200 @@ import {
   ToolHeader,
   ToolOutput,
 } from '@/components/Chat/Tool';
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import { useInvalidateChats } from '@/hooks/use-chats';
 import { contactsApi } from '@/lib/api/contacts';
 import { companiesApi } from '@/lib/api/companies';
 import { dealsApi } from '@/lib/api/deals';
 import { CHAT_ENTITY_TYPE_LABEL } from '@/lib/constants';
-import { SandboxStatusBadge } from '@/components/Chat/SandboxStatusBadge';
 
 export default function ChatPage() {
   const params = useParams();
   const chatId = params.chatId as string;
+  const invalidateChats = useInvalidateChats();
 
-  const { messages, sendMessage, status, stop, setMessages } = useChat({
-    // Using default '/api/chat' endpoint
-    // chatId is extracted from Referer header in /api/chat route
+  const [historyMessages, setHistoryMessages] = useState<EveMessage[]>([]);
+  const [messagesLoaded, setMessagesLoaded] = useState(false);
+  const [firstMessageSent, setFirstMessageSent] = useState(false);
+  const [initialContext, setInitialContext] = useState<ChatEntity[]>([]);
+  const [_chatContext, setChatContext] = useState<ChatEntity[]>([]);
+
+  const persistedCountRef = useRef(0);
+
+  const agent = useEveAgent({
+    onFinish: useCallback(
+      (snapshot: { data: { messages: readonly EveMessage[] } }) => {
+        const msgs = snapshot.data.messages;
+        if (msgs.length <= persistedCountRef.current) return;
+
+        const lastUser = [...msgs].reverse().find((m) => m.role === 'user');
+        const lastAssistant = [...msgs]
+          .reverse()
+          .find((m) => m.role === 'assistant');
+        if (!lastUser || !lastAssistant) return;
+
+        const userText = lastUser.parts
+          .filter((p) => p.type === 'text')
+          .map((p) => (p as { type: 'text'; text: string }).text)
+          .join('');
+        const assistantText = lastAssistant.parts
+          .filter((p) => p.type === 'text')
+          .map((p) => (p as { type: 'text'; text: string }).text)
+          .join('');
+
+        persistedCountRef.current = msgs.length;
+
+        if (userText.trim() && assistantText.trim()) {
+          fetch(`/api/proxy/api/chats/${chatId}/messages`, {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({
+              userMessage: userText,
+              assistantMessage: assistantText,
+            }),
+          }).catch(() => {});
+        }
+      },
+      [chatId],
+    ),
   });
 
-  const invalidateChats = useInvalidateChats();
-  const [firstMessageSent, setFirstMessageSent] = useState(false);
-  const [messagesLoaded, setMessagesLoaded] = useState(false);
-  const [sandboxId, setSandboxId] = useState<number | null>(null);
+  const isBusy = agent.status === 'submitted' || agent.status === 'streaming';
+  const liveMessages = agent.data.messages;
+  const allMessages = [...historyMessages, ...liveMessages];
+  const hasMessages = allMessages.length > 0;
 
-  const hasMessages = messages.length > 0;
-
-  // Chat context state
-  const [_chatContext, setChatContext] = useState<ChatEntity[]>([]);
-  const [initialContext, setInitialContext] = useState<ChatEntity[]>([]);
-
-  // Helper: Handle first message from localStorage (new chat)
   const handleFirstMessage = useCallback(
     async (data: string) => {
-      console.log(
-        '[ChatPage] New chat detected, sending first message immediately',
-      );
-
       localStorage.removeItem(`chat-${chatId}-firstMessage`);
-
       try {
         let messageText: string;
         let contextEntities: Array<{ type: string; id: number }> = [];
 
         try {
-          const parsed = JSON.parse(data);
+          const parsed = JSON.parse(data) as {
+            text: string;
+            contextEntities?: Array<{ type: string; id: number }>;
+          };
           messageText = parsed.text;
-          contextEntities = parsed.contextEntities || [];
+          contextEntities = parsed.contextEntities ?? [];
         } catch {
           messageText = data;
         }
 
         if (contextEntities.length > 0) {
-          // Hydrate names so chips show "Vikram Joshi" not "Contact" when we inject
           const hydrated: ChatEntity[] = await Promise.all(
-            contextEntities.map(
-              async (ref: {
-                type: string;
-                id: number;
-              }): Promise<ChatEntity> => {
-                const type = ref.type as 'contact' | 'company' | 'deal';
-                try {
-                  if (type === 'contact') {
-                    const c = await contactsApi.getContact(ref.id);
-                    return {
-                      type: 'contact',
-                      id: ref.id,
-                      name: c.name,
-                      metadata: { type: 'contact', entityId: ref.id },
-                    };
-                  }
-                  if (type === 'company') {
-                    const c = await companiesApi.getCompany(ref.id);
-                    return {
-                      type: 'company',
-                      id: ref.id,
-                      name: c.companyName,
-                      metadata: { type: 'company', entityId: ref.id },
-                    };
-                  }
-                  const d = await dealsApi.getDeal(ref.id);
+            contextEntities.map(async (ref): Promise<ChatEntity> => {
+              const type = ref.type as 'contact' | 'company' | 'deal';
+              try {
+                if (type === 'contact') {
+                  const c = await contactsApi.getContact(ref.id);
                   return {
-                    type: 'deal',
+                    type: 'contact',
                     id: ref.id,
-                    name: d.title,
-                    metadata: { type: 'deal', entityId: ref.id },
-                  };
-                } catch {
-                  return {
-                    type,
-                    id: ref.id,
-                    name: CHAT_ENTITY_TYPE_LABEL[type],
-                    metadata: { type, entityId: ref.id },
+                    name: c.name,
+                    metadata: { type: 'contact', entityId: ref.id },
                   };
                 }
-              },
-            ),
+                if (type === 'company') {
+                  const c = await companiesApi.getCompany(ref.id);
+                  return {
+                    type: 'company',
+                    id: ref.id,
+                    name: c.companyName,
+                    metadata: { type: 'company', entityId: ref.id },
+                  };
+                }
+                const d = await dealsApi.getDeal(ref.id);
+                return {
+                  type: 'deal',
+                  id: ref.id,
+                  name: d.title,
+                  metadata: { type: 'deal', entityId: ref.id },
+                };
+              } catch {
+                return {
+                  type,
+                  id: ref.id,
+                  name: CHAT_ENTITY_TYPE_LABEL[type],
+                  metadata: { type, entityId: ref.id },
+                };
+              }
+            }),
           );
           setInitialContext(hydrated);
         }
 
-        sendMessage({
-          text: messageText,
-          metadata:
-            contextEntities.length > 0 ? { contextEntities } : undefined,
-        });
+        const contextPrefix = contextEntities.length
+          ? `Context:\n${contextEntities.map((e) => `- ${e.type} id=${e.id}`).join('\n')}\n\n`
+          : '';
 
+        await agent.send({ message: contextPrefix + messageText });
         setFirstMessageSent(true);
         setMessagesLoaded(true);
         setTimeout(() => invalidateChats(), 2000);
       } catch (error) {
-        console.error('[ChatPage] Error parsing first message data:', error);
+        console.error('[ChatPage] Error parsing first message:', error);
         setMessagesLoaded(true);
       }
     },
-    [chatId, sendMessage, invalidateChats],
+    [chatId, agent, invalidateChats],
   );
 
-  // Helper: Load message history from backend (existing chat)
   const loadMessageHistory = useCallback(async () => {
-    console.log('[ChatPage] Loading message history for existing chat');
-
     try {
-      const response = await fetch(`/api/proxy/api/chats/${chatId}/messages`, {
+      const res = await fetch(`/api/proxy/api/chats/${chatId}/messages`, {
         credentials: 'include',
       });
+      if (res.ok) {
+        const data = (await res.json()) as {
+          messages?: Array<{
+            id?: string;
+            role: string;
+            content?: string;
+            parts?: EveMessagePart[];
+          }>;
+          contextEntities?: Array<{ type: string; id: number; name: string }>;
+        };
+        const rows = data.messages ?? [];
+        const contextRefs = data.contextEntities ?? [];
 
-      if (response.ok) {
-        const data = await response.json();
-        const historyMessages = data.messages || [];
-        const contextRefs = data.contextEntities || [];
-        if (data.sandboxId) setSandboxId(data.sandboxId);
+        const formatted: EveMessage[] = rows.map((msg, index) => ({
+          id: msg.id ?? `msg-${index}`,
+          role: msg.role as 'user' | 'assistant',
+          parts: Array.isArray(msg.parts)
+            ? (msg.parts as EveMessagePart[])
+            : [{ type: 'text' as const, text: msg.content ?? '' }],
+          metadata: undefined,
+        }));
 
-        // Messages from DB already have parts array (UIMessage shape)
-        const formattedMessages = historyMessages.map(
-          (msg: any, index: number) => ({
-            id: msg.id ?? `msg-${index}`,
-            role: msg.role,
-            parts: Array.isArray(msg.parts)
-              ? msg.parts
-              : [{ type: 'text', text: msg.content ?? '' }],
-          }),
-        );
+        if (formatted.length > 0) setHistoryMessages(formatted);
 
-        if (formattedMessages.length > 0) {
-          setMessages(formattedMessages);
-        }
-
-        // Hydrate context entities from backend response (includes names)
-        const hydratedEntities: ChatEntity[] = contextRefs.map(
-          (ref: { type: string; id: number; name: string }) => ({
-            type: ref.type as 'contact' | 'company' | 'deal',
-            id: ref.id,
-            name: ref.name, // Use actual name from backend
-            metadata: { type: ref.type, entityId: ref.id },
-          }),
-        );
-
-        if (hydratedEntities.length > 0) {
-          setInitialContext(hydratedEntities);
-        }
+        const hydratedEntities: ChatEntity[] = contextRefs.map((ref) => ({
+          type: ref.type as 'contact' | 'company' | 'deal',
+          id: ref.id,
+          name: ref.name,
+          metadata: { type: ref.type, entityId: ref.id },
+        }));
+        if (hydratedEntities.length > 0) setInitialContext(hydratedEntities);
       }
     } catch (error) {
       console.error('[ChatPage] Error loading messages:', error);
     } finally {
       setMessagesLoaded(true);
     }
-  }, [chatId, setMessages]);
+  }, [chatId]);
 
-  // Smart initialization: Check localStorage first, then load history if needed
-  // This eliminates the gap where first message disappears during navigation
   useEffect(() => {
     if (!messagesLoaded && !firstMessageSent && chatId) {
-      // Step 1: Check if this is a new chat (has first message in localStorage)
       const firstMessageData = localStorage.getItem(
         `chat-${chatId}-firstMessage`,
       );
-
       if (firstMessageData) {
-        // NEW CHAT PATH: Send first message immediately, skip history fetch
         handleFirstMessage(firstMessageData);
       } else {
-        // EXISTING CHAT PATH: Load message history from backend
         loadMessageHistory();
       }
     }
@@ -211,99 +225,42 @@ export default function ChatPage() {
 
   const handleSubmitMessage = async (msg: {
     text: string;
-    files?: any[];
-    metadata?: any;
+    files?: unknown[];
+    metadata?: { contextEntities?: Array<{ type: string; id: number }> };
   }) => {
-    if (!msg.text.trim()) {
-      return;
-    }
+    if (!msg.text.trim() || isBusy) return;
 
-    try {
-      console.log('[ChatPage] handleSubmitMessage called with:', msg);
+    const contextEntities = msg.metadata?.contextEntities ?? [];
+    const contextPrefix = contextEntities.length
+      ? `Context:\n${contextEntities.map((e) => `- ${e.type} id=${e.id}`).join('\n')}\n\n`
+      : '';
 
-      const isFirstMessage = messages.length === 0;
-      await sendMessage({
-        text: msg.text,
-        files: msg.files,
-        metadata: msg.metadata,
-        // AI SDK may not attach metadata to the message; send contextEntities in body so backend can read them
-        ...(msg.metadata?.contextEntities?.length && {
-          body: { contextEntities: msg.metadata.contextEntities },
-        }),
-      });
-
-      // If this was the first message, invalidate chats query after a short delay
-      // to allow the backend to generate the title
-      if (isFirstMessage) {
-        setTimeout(() => {
-          invalidateChats();
-        }, 2000); // 2 second delay for title generation
-      }
-    } catch (error) {
-      console.error('[ChatPage] Error in handleSubmitMessage:', error);
-      throw error; // Re-throw so PromptInput doesn't clear the input on error
-    }
+    const isFirst = historyMessages.length === 0 && liveMessages.length === 0;
+    await agent.send({ message: contextPrefix + msg.text });
+    if (isFirst) setTimeout(() => invalidateChats(), 2000);
   };
 
   return (
     <TooltipProvider>
       <div className="flex h-full flex-col overflow-hidden bg-zinc-50 dark:bg-zinc-900">
-        {sandboxId && (
-          <div className="relative z-10 h-0 shrink-0">
-            <div className="absolute right-3 top-3">
-              <SandboxStatusBadge sandboxId={sandboxId} />
-            </div>
-          </div>
-        )}
         {hasMessages ? (
           <>
-            {/* Messages Area - with scrolling, constrained width */}
             <div className="flex-1 overflow-hidden">
               <Conversation className="h-full">
                 <ConversationContent className="mx-auto max-w-3xl">
-                  {messages.map((message) => {
-                    const parts = message.parts ?? [];
-                    const textContent = parts
-                      .filter((part: any) => part.type === 'text')
-                      .map((part: any) => part.text)
-                      .join('');
-
-                    // Message with role 'tool' is a tool result (e.g. from history) – render with Tool component
-                    if ((message as { role: string }).role === 'tool') {
-                      return (
-                        <Message key={message.id} from="assistant">
-                          <MessageContent>
-                            <Tool key={`${message.id}-tool`} defaultOpen>
-                              <ToolHeader
-                                type="dynamic-tool"
-                                state="output-available"
-                                toolName="Tool result"
-                              />
-                              <ToolContent>
-                                <ToolOutput
-                                  output={textContent}
-                                  errorText={undefined}
-                                />
-                              </ToolContent>
-                            </Tool>
-                          </MessageContent>
-                        </Message>
-                      );
-                    }
-
-                    return (
-                      <Message key={message.id} from={message.role}>
-                        <MessageContent>
-                          <MessageResponse>{textContent}</MessageResponse>
-                        </MessageContent>
-                      </Message>
-                    );
-                  })}
+                  {allMessages.map((message, index) => (
+                    <EveMessageView
+                      key={message.id ?? String(index)}
+                      message={message}
+                      isStreaming={
+                        agent.status === 'streaming' &&
+                        index === allMessages.length - 1
+                      }
+                    />
+                  ))}
                 </ConversationContent>
               </Conversation>
             </div>
-
-            {/* Input Area - pinned to bottom */}
             <div className="shrink-0 bg-zinc-50 py-4 dark:bg-zinc-900">
               <div className="mx-auto w-full max-w-3xl px-4">
                 <ChatInput
@@ -311,14 +268,13 @@ export default function ChatPage() {
                   placeholder="Ask anything..."
                   initialContext={initialContext}
                   onContextChange={setChatContext}
-                  status={status}
-                  onStop={stop}
+                  status={agent.status}
+                  onStop={agent.stop}
                 />
               </div>
             </div>
           </>
         ) : (
-          /* Empty state - input centered */
           <div className="flex h-full flex-col items-center justify-center px-4">
             <div className="mb-12 text-center">
               <h2 className="mb-2 text-xl font-medium text-zinc-950 dark:text-white">
@@ -334,8 +290,8 @@ export default function ChatPage() {
                 placeholder="Ask anything..."
                 initialContext={initialContext}
                 onContextChange={setChatContext}
-                status={status}
-                onStop={stop}
+                status={agent.status}
+                onStop={agent.stop}
               />
             </div>
           </div>
@@ -343,4 +299,85 @@ export default function ChatPage() {
       </div>
     </TooltipProvider>
   );
+}
+
+function EveMessageView({
+  message,
+  isStreaming,
+}: {
+  message: EveMessage;
+  isStreaming: boolean;
+}) {
+  const lastTextIndex = message.parts.reduce(
+    (last, part, i) => (part.type === 'text' ? i : last),
+    -1,
+  );
+
+  return (
+    <Message from={message.role}>
+      <MessageContent>
+        {message.parts.map((part, i) => (
+          <EvePartView
+            key={`${part.type}-${i}`}
+            part={part}
+            showCaret={
+              isStreaming && message.role === 'assistant' && i === lastTextIndex
+            }
+          />
+        ))}
+      </MessageContent>
+    </Message>
+  );
+}
+
+function EvePartView({
+  part,
+  showCaret,
+}: {
+  part: EveMessagePart;
+  showCaret: boolean;
+}) {
+  switch (part.type) {
+    case 'step-start':
+      return null;
+    case 'text':
+      return (
+        <MessageResponse>
+          {(part as { type: 'text'; text: string }).text +
+            (showCaret ? '▋' : '')}
+        </MessageResponse>
+      );
+    case 'dynamic-tool': {
+      const toolPart = part as {
+        type: 'dynamic-tool';
+        toolName: string;
+        state: string;
+        input?: unknown;
+        output?: string;
+        errorText?: string;
+      };
+      const sdkState = toolPart.errorText
+        ? 'output-error'
+        : toolPart.output
+          ? 'output-available'
+          : 'input-streaming';
+      return (
+        <Tool defaultOpen={false}>
+          <ToolHeader
+            type="dynamic-tool"
+            state={sdkState}
+            toolName={toolPart.toolName}
+          />
+          <ToolContent>
+            <ToolOutput
+              output={toolPart.output}
+              errorText={toolPart.errorText}
+            />
+          </ToolContent>
+        </Tool>
+      );
+    }
+    default:
+      return null;
+  }
 }

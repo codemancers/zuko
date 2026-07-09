@@ -6,12 +6,9 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { PrismaModule } from '../prisma/prisma.module';
 import { AuthModule } from '@thallesp/nestjs-better-auth';
-import { ChatController } from '../chat/chat.controller';
-import { ChatStreamRegistry } from '../chat/chat-stream.registry';
 import { ChatsModule } from '../chats/chats.module';
 import { agentsEnvSchema } from './env.validation';
 import { SalesModule } from './sales/sales.module';
-import { AgentModule } from '../agent/agent.module';
 import { TasksModule } from './tasks/tasks.module';
 import { AgentsWrapperModule } from './agents/agents.module';
 import { AdminModule } from './admin/admin.module';
@@ -47,12 +44,11 @@ const authModule = AuthModule.forRoot({ auth, disableGlobalAuthGuard: true });
     MeetingModule,
     MetadataModule,
     SandboxLifecycleModule,
-    AgentModule,
     IntegrationsModule,
     IcpModule,
     McpModule,
   ],
-  controllers: [AppController, ChatController],
-  providers: [AppService, ChatStreamRegistry],
+  controllers: [AppController],
+  providers: [AppService],
 })
 export class AppModule {}

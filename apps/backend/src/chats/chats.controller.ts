@@ -232,6 +232,24 @@ export class ChatsController {
   }
 
   /**
+   * Save a user+assistant message exchange (called by eve proxy after stream completes)
+   * POST /api/chats/:id/messages
+   */
+  @Post(':id/messages')
+  @ApiOperation({ summary: 'Persist a user+assistant message exchange' })
+  @ApiParam({ name: 'id', type: String })
+  @ApiResponse({ status: 201, description: 'Messages saved' })
+  async saveMessages(
+    @Req() req: RequestWithUser,
+    @Param('id') id: string,
+    @Body() body: { userMessage: string; assistantMessage: string },
+  ) {
+    const userId = parseInt(req.user.id, 10);
+    const chatId = parseInt(id, 10);
+    return this.chatsService.saveExchangeMessages(chatId, body, userId);
+  }
+
+  /**
    * Remove a participant from a chat
    * DELETE /api/chats/:id/participants/:userId
    */

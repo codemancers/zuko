@@ -4,11 +4,7 @@ import { env } from './env';
 function sessionCookieFromCtx(ctx: ToolContext): string {
   const cookie = ctx.session.auth.current?.attributes?.sessionCookie;
   if (cookie) return String(cookie);
-  const fromEnv = env().ZUKO_SESSION_TOKEN;
-  if (fromEnv) return `better-auth.session_token=${fromEnv}`;
-  throw new Error(
-    'Not authenticated. Set ZUKO_SESSION_TOKEN in .env (copy better-auth.session_token from browser DevTools → Application → Cookies).',
-  );
+  throw new Error('Not authenticated.');
 }
 
 export async function zukoFetch<T>(
