@@ -1,10 +1,24 @@
-import { Logger } from '@nestjs/common';
+import { Logger, ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app/app.module';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, { bodyParser: false });
+
+  // Enforce class-validator constraints on decorated DTOs globally.
+  // `whitelist` is deliberately OFF for now: several legacy DTO classes
+  // (tasks, icp, meeting) carry no decorators yet, and whitelist:true
+  // would silently strip their entire bodies. `forbidUnknownValues` is
+  // disabled for the same reason (class-validator 0.14 treats
+  // decorator-less instances as unknown values). Flip both on once the
+  // remaining DTOs are decorated.
+  app.useGlobalPipes(
+    new ValidationPipe({
+      transform: true,
+      forbidUnknownValues: false,
+    }),
+  );
 
   const allowedOrigins = [
     'http://localhost:3000',

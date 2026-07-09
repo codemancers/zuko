@@ -145,14 +145,16 @@ export const OrgConnections = () => {
 
   const connectApollo = useMutation({
     mutationFn: async () => {
+      // Allowed integrations are decided server-side; the endpoint
+      // takes no body.
       const res = await fetch('/api/proxy/api/nango/session', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ allowedIntegrations: ['apollo-oauth'] }),
       });
+      if (!res.ok) {
+        throw new Error(`Failed to create Nango session (${res.status})`);
+      }
       const { sessionToken } = (await res.json()) as {
         sessionToken: string;
-        connectionId: string;
       };
 
       const nango = new Nango({

@@ -16,7 +16,9 @@ export class NangoService {
   async createConnectSession(
     userId: string,
     organizationId: string,
-    allowedIntegrations?: string[],
+    // Required on purpose: callers must pass a server-side constant,
+    // never client input.
+    allowedIntegrations: string[],
   ): Promise<string> {
     const { data } = await this.client.createConnectSession({
       end_user: { id: userId },
