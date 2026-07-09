@@ -157,7 +157,10 @@ export const OrgConnections = () => {
 
       const nango = new Nango({
         connectSessionToken: sessionToken,
-        host: process.env.NEXT_PUBLIC_NANGO_HOST ?? 'http://localhost:3003',
+        // Unset → SDK defaults to Nango Cloud (https://api.nango.dev)
+        ...(process.env.NEXT_PUBLIC_NANGO_HOST
+          ? { host: process.env.NEXT_PUBLIC_NANGO_HOST }
+          : {}),
       });
       const result = await nango.auth('apollo-oauth');
       await activateApolloConnection(result.connectionId);
