@@ -11,6 +11,7 @@ import type { ColumnDef } from '@tanstack/react-table';
 import type { ColumnMetadata } from '@/types/table-metadata';
 import { useMemo } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import Nango from '@nangohq/frontend';
 import {
   githubStatusQueryOptions,
   linkedAccountsQueryOptions,
@@ -22,7 +23,7 @@ import {
 } from './hooks/mutations';
 import { authClient } from '@/lib/auth-client';
 import {
-  getApolloAuthorizationUrl,
+  activateApolloConnection,
   disconnectApollo,
 } from '@/server/actions/apollo';
 import {
@@ -143,11 +144,36 @@ export const OrgConnections = () => {
   const installGitHubApp = useInstallGitHubApp();
 
   const connectApollo = useMutation({
-    mutationFn: getApolloAuthorizationUrl,
-    onSuccess: ({ url }) => {
-      window.location.href = url;
+    mutationFn: async () => {
+      // Allowed integrations are decided server-side; the endpoint
+      // takes no body.
+      const res = await fetch('/api/proxy/api/nango/session', {
+        method: 'POST',
+      });
+      if (!res.ok) {
+        throw new Error(`Failed to create Nango session (${res.status})`);
+      }
+      const { sessionToken } = (await res.json()) as {
+        sessionToken: string;
+      };
+
+      const nango = new Nango({
+        connectSessionToken: sessionToken,
+        // Unset → SDK defaults to Nango Cloud (https://api.nango.dev)
+        ...(process.env.NEXT_PUBLIC_NANGO_HOST
+          ? { host: process.env.NEXT_PUBLIC_NANGO_HOST }
+          : {}),
+      });
+      const result = await nango.auth('apollo-oauth');
+      await activateApolloConnection(result.connectionId);
     },
-    onError: () => toast.error('Failed to initiate Apollo connection'),
+    onSuccess: () => {
+      toast.success('Apollo connected');
+      queryClient.invalidateQueries({
+        queryKey: ['apollo', 'connection-status'],
+      });
+    },
+    onError: () => toast.error('Failed to connect Apollo'),
   });
 
   const disconnectApolloMutation = useMutation({

@@ -209,9 +209,11 @@ model Connection {
   id             Int          @id @default(autoincrement())
   organizationId Int          @map("organization_id")
   provider       String
-  accessToken    String       @map("access_token")
+  // Tokens are managed by Nango; these columns are kept nullable for migration safety
+  accessToken    String?      @map("access_token")
   refreshToken   String?      @map("refresh_token")
   tokenExpiresAt DateTime?    @map("token_expires_at")
+  nangoConnectionId String?   @map("nango_connection_id")
   connectedById  Int          @map("connected_by_id")
   connectedAt    DateTime     @default(now()) @map("connected_at")
 

@@ -3,22 +3,6 @@ import { PrismaService } from '../../../prisma/prisma.service';
 
 const APOLLO_PROVIDER = 'apollo';
 
-export interface CreateConnectionInput {
-  organizationId: number;
-  connectedById: number;
-  accessToken: string;
-  refreshToken?: string;
-  tokenExpiresAt?: Date;
-}
-
-export interface UpdateConnectionInput {
-  accessToken: string;
-  refreshToken?: string;
-  tokenExpiresAt?: Date;
-  connectedById: number;
-  connectedAt: Date;
-}
-
 @Injectable()
 export class ApolloIntegrationRepository {
   constructor(private readonly prisma: PrismaService) {}
@@ -34,15 +18,24 @@ export class ApolloIntegrationRepository {
 
   async upsert(
     organizationId: number,
-    createInput: CreateConnectionInput,
-    updateInput: UpdateConnectionInput,
+    connectedById: number,
+    nangoConnectionId: string,
   ) {
     return this.prisma.connection.upsert({
       where: {
         organizationId_provider: { organizationId, provider: APOLLO_PROVIDER },
       },
-      create: { ...createInput, provider: APOLLO_PROVIDER },
-      update: updateInput,
+      create: {
+        organizationId,
+        provider: APOLLO_PROVIDER,
+        connectedById,
+        nangoConnectionId,
+      },
+      update: {
+        connectedById,
+        connectedAt: new Date(),
+        nangoConnectionId,
+      },
     });
   }
 
@@ -52,24 +45,5 @@ export class ApolloIntegrationRepository {
         organizationId_provider: { organizationId, provider: APOLLO_PROVIDER },
       },
     });
-  }
-
-  async createOAuthState(state: string, value: string, expiresAt: Date) {
-    return this.prisma.verification.create({
-      data: { identifier: `apollo_oauth:${state}`, value, expiresAt },
-    });
-  }
-
-  async findOAuthState(state: string) {
-    return this.prisma.verification.findFirst({
-      where: {
-        identifier: `apollo_oauth:${state}`,
-        expiresAt: { gt: new Date() },
-      },
-    });
-  }
-
-  async deleteOAuthState(id: number) {
-    return this.prisma.verification.delete({ where: { id } });
   }
 }

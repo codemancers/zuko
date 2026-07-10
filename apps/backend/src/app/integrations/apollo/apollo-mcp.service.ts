@@ -14,6 +14,7 @@ export class ApolloMcpService {
     toolName: string,
     args: Record<string, unknown>,
   ): Promise<T> {
+    // Nango auto-refreshes the token on getConnection
     const accessToken =
       await this.apolloIntegrationService.getAccessToken(organizationId);
 
@@ -67,7 +68,6 @@ export class ApolloMcpService {
     return JSON.parse(result.content[0].text) as T;
   }
 
-  /** List all tools available on the Apollo MCP server (useful for debugging). */
   async listTools(organizationId: number): Promise<unknown> {
     const accessToken =
       await this.apolloIntegrationService.getAccessToken(organizationId);

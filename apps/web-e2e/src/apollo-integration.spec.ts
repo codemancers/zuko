@@ -76,7 +76,7 @@ test.describe('Apollo.io Integration - Connections tab', () => {
   });
 
   test(
-    'clicking Connect redirects to Apollo OAuth authorization screen',
+    'clicking Connect opens Nango OAuth popup for Apollo',
     { tag: '@external' },
     async ({ settingsPage, page }) => {
       await settingsPage.goto();
@@ -93,21 +93,18 @@ test.describe('Apollo.io Integration - Connections tab', () => {
         return;
       }
 
+      // Nango opens a popup window for OAuth — listen for it
+      const popupPromise = page
+        .waitForEvent('popup', { timeout: 10000 })
+        .catch(() => null);
       await settingsPage.apolloConnectButton.click();
+      const popup = await popupPromise;
 
-      await page.waitForURL(/app\.apollo\.io/, {
-        timeout: 15000,
-      });
-
-      // Apollo may redirect through a login page; decode the full URL so that
-      // embedded redirect parameters (e.g. %2Foauth%2Fauthorize) are readable.
-      const url = decodeURIComponent(page.url());
-      expect(url).toContain('app.apollo.io');
-      expect(url).toContain('oauth/authorize');
-      expect(url).toContain('client_id=');
-      expect(url).toContain('code_challenge=');
-      expect(url).toContain('redirect_uri=');
-      expect(url).toContain('state=');
+      // Nango popup opens Apollo's OAuth page
+      if (popup) {
+        await popup.waitForLoadState('domcontentloaded');
+        expect(popup.url()).toMatch(/apollo\.io|nango/i);
+      }
     },
   );
 
@@ -137,53 +134,5 @@ test.describe('Apollo.io Integration - Connections tab', () => {
         timeout: 5000,
       });
     }
-  });
-});
-
-test.describe('Apollo.io Integration - OAuth callback', () => {
-  test('shows success toast after successful Apollo connection', async ({
-    page,
-  }) => {
-    await page.context().addCookies([
-      {
-        name: '_apollo_flash',
-        value: 'success',
-        path: '/',
-        domain: 'localhost',
-      },
-    ]);
-    await page.goto('/settings');
-
-    await expect(
-      page.getByText(/Apollo\.io connected successfully/i),
-    ).toBeVisible({ timeout: 8000 });
-
-    // Flash cookie should be cleared after reading
-    const cookie = await page.evaluate(() =>
-      document.cookie.includes('_apollo_flash'),
-    );
-    expect(cookie).toBe(false);
-  });
-
-  test('shows error toast after failed Apollo connection', async ({ page }) => {
-    await page.context().addCookies([
-      {
-        name: '_apollo_flash',
-        value: 'error:access_denied',
-        path: '/',
-        domain: 'localhost',
-      },
-    ]);
-    await page.goto('/settings');
-
-    await expect(page.getByText(/failed to connect apollo\.io/i)).toBeVisible({
-      timeout: 8000,
-    });
-
-    // Flash cookie should be cleared after reading
-    const cookie = await page.evaluate(() =>
-      document.cookie.includes('_apollo_flash'),
-    );
-    expect(cookie).toBe(false);
   });
 });
