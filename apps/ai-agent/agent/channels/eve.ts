@@ -30,9 +30,7 @@ function betterAuth(): AuthFn<Request> {
     const orgId = data.session?.activeOrganizationId;
     if (!orgId) {
       throw new UnauthenticatedError({
-        body: JSON.stringify({
-          error: 'No active organization on session. Select one first.',
-        }),
+        message: 'No active organization on session. Select one first.',
       });
     }
 
