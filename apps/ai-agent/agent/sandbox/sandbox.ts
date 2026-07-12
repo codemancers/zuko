@@ -1,5 +1,5 @@
-import { defineSandbox } from "eve/sandbox";
-import { createFlySpriteBackend } from "./fly-sprite.js";
+import { defineSandbox } from 'eve/sandbox';
+import { createFlySpriteBackend } from './fly-sprite.js';
 
 /**
  * eve's per-session sandbox, backed by a Fly Sprite. eve owns the lifecycle
