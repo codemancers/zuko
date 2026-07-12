@@ -1,9 +1,5 @@
 import { defineAgent } from 'eve';
 import { openai } from '@ai-sdk/openai';
-import { env } from './lib/env.js';
-
-// Force env validation at startup (OPENAI_API_KEY required).
-env();
 
 export default defineAgent({
   // OpenAI as the model. eve's built-in sandbox tools (bash, read_file,
