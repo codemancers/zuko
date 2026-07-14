@@ -16,7 +16,6 @@ import {
   SidebarBody,
   SidebarFooter,
   SidebarHeader,
-  SidebarHeading,
   SidebarDivider,
   SidebarItem,
   SidebarLabel,
@@ -40,6 +39,7 @@ import {
   BriefcaseIcon,
   BuildingOfficeIcon,
   ChatBubbleLeftRightIcon,
+  ChatBubbleLeftIcon,
   ClipboardDocumentListIcon,
   Cog6ToothIcon,
   Cog8ToothIcon,
@@ -50,7 +50,6 @@ import { usePathname, useRouter } from 'next/navigation';
 import { authClient } from '@/lib/auth-client';
 import { apiClient } from '@/lib/api-client';
 import { useEffect, useState } from 'react';
-import { useChats } from '@/hooks/use-chats';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { getOrganizations } from '@/server/query-options';
 import { CalendarIcon } from '@heroicons/react/24/outline';
@@ -85,6 +84,12 @@ const baseNavigation = [
     name: 'New chat',
     href: '/chat',
     icon: ChatBubbleLeftRightIcon,
+    exact: true,
+  },
+  {
+    name: 'All chats',
+    href: '/chats',
+    icon: ChatBubbleLeftIcon,
     exact: true,
   },
   { divider: true },
@@ -129,9 +134,6 @@ export function ApplicationLayout({
   } | null>(null);
   const [loading, setLoading] = useState(true);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-  const { data: chats = [] } = useChats();
-  const recentChats = chats.slice(0, 5);
-
   const { data: organizations = [] } = useQuery(getOrganizations());
   const activeOrg = authClient.useActiveOrganization();
 
@@ -292,24 +294,6 @@ export function ApplicationLayout({
                 ),
               )}
             </SidebarSection>
-
-            {recentChats.length > 0 && (
-              <SidebarSection collapsed={isSidebarCollapsed}>
-                <SidebarHeading collapsed={isSidebarCollapsed}>
-                  Your chats
-                </SidebarHeading>
-                {recentChats.map((chat) => (
-                  <SidebarNavItem
-                    key={chat.id}
-                    href={`/chat/${chat.id}`}
-                    current={pathname === `/chat/${chat.id}`}
-                    collapsed={isSidebarCollapsed}
-                    label={chat.title || 'Untitled chat'}
-                    icon={ChatBubbleLeftRightIcon}
-                  />
-                ))}
-              </SidebarSection>
-            )}
 
             <SidebarSpacer />
           </SidebarBody>
