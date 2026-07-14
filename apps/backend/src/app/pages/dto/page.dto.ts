@@ -7,8 +7,6 @@ const EditorJsBlockSchema = z.object({
   data: z.record(z.string(), z.any()),
 });
 
-type EditorJsBlock = z.infer<typeof EditorJsBlockSchema>;
-
 // Create a standalone page. Everything is optional — a blank, untitled,
 // org-wide top-level page is valid. `parentId` nests it under another page
 // (subpages). The organization comes from the request context, never the body.
