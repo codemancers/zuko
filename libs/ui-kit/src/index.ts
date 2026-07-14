@@ -100,3 +100,15 @@ export {
 export { Switch, SwitchGroup, SwitchField } from './lib/switch';
 export { MultiSelect, MultiCombobox } from './lib/multi-select';
 export type { MultiSelectOption } from './lib/multi-select';
+
+export { WikiEditor, WikiPage } from './components/wiki';
+export type {
+  WikiEditorProps,
+  WikiPageProps,
+  OutputData,
+} from './components/wiki';
+
+export { Sheet, SheetHeader } from './lib/sheet';
+
+// Drawer (Headless UI slide-over) — used by the Wiki page side drawer.
+export { Drawer } from './lib/drawer';

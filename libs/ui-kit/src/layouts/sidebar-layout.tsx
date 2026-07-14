@@ -53,17 +53,19 @@ export function SidebarLayout({
   sidebar,
   children,
   collapsed = false,
+  fullBleed = false,
 }: React.PropsWithChildren<{
   navbar: React.ReactNode;
   sidebar: React.ReactNode;
   collapsed?: boolean;
+  fullBleed?: boolean;
 }>) {
   const [showSidebar, setShowSidebar] = useState(false);
   const sidebarWidth = collapsed ? 'w-16' : 'w-56';
   const mainPl = collapsed ? 'lg:pl-16' : 'lg:pl-56';
 
   return (
-    <div className="relative isolate flex h-svh w-full overflow-hidden max-lg:flex-col lg:bg-zinc-100 dark:bg-zinc-900 dark:lg:bg-zinc-950">
+    <div className="relative isolate flex min-h-svh w-full max-lg:flex-col lg:bg-zinc-100 dark:bg-zinc-900 dark:lg:bg-zinc-950">
       {/* Sidebar on desktop */}
       <div
         className={`fixed inset-y-0 left-0 transition-[width] duration-200 ease-out max-lg:hidden ${sidebarWidth}`}
@@ -91,12 +93,14 @@ export function SidebarLayout({
 
       {/* Content */}
       <main
-        className={`flex flex-1 flex-col overflow-hidden transition-[padding] duration-200 ease-out lg:min-w-0 ${mainPl}`}
+        className={`flex flex-1 flex-col transition-[padding] duration-200 ease-out lg:min-w-0 ${mainPl}`}
       >
-        <div className="flex grow flex-col overflow-hidden lg:bg-white lg:p-10 lg:shadow-xs lg:ring-1 lg:ring-zinc-950/5 dark:lg:bg-zinc-900 dark:lg:ring-white/10">
-          <div className="mx-auto h-full w-full max-w-6xl overflow-y-auto">
-            {children}
-          </div>
+        <div className="grow lg:bg-white lg:shadow-xs lg:ring-1 lg:ring-zinc-950/5 dark:lg:bg-zinc-900 dark:lg:ring-white/10">
+          {fullBleed ? (
+            children
+          ) : (
+            <div className="mx-auto max-w-6xl p-6">{children}</div>
+          )}
         </div>
       </main>
     </div>

@@ -4,6 +4,13 @@
     "jsx": "preserve",
     "noEmit": true,
     "emitDeclarationOnly": false,
+    // App (not a library): skip declaration-emit checking. With the base
+    // config's composite:true, tsc serializes exported types and trips
+    // TS2742/TS7056 on better-auth's authClient inference whenever the
+    // import graph shifts.
+    "composite": false,
+    "declaration": false,
+    "declarationMap": false,
     "esModuleInterop": true,
     "module": "esnext",
     "moduleResolution": "bundler",

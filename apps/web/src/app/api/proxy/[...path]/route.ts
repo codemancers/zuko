@@ -64,9 +64,15 @@ async function proxyRequest(
   // Forward the raw cookie header from the browser request to preserve session
   const cookieHeader = request.headers.get('cookie') || '';
 
+  // Multipart bodies (file uploads, e.g. wiki page attachments) must be
+  // streamed through untouched — JSON-parsing them destroys the payload,
+  // and the boundary lives in the original Content-Type header.
+  const incomingContentType = request.headers.get('content-type') || '';
+  const isMultipart = incomingContentType.includes('multipart/form-data');
+
   // Prepare headers
   const headers: HeadersInit = {
-    'Content-Type': 'application/json',
+    'Content-Type': isMultipart ? incomingContentType : 'application/json',
     Cookie: cookieHeader,
   };
 
@@ -86,14 +92,19 @@ async function proxyRequest(
 
   try {
     // Get request body for POST/PATCH/PUT/DELETE
-    let body: string | undefined;
+    let body: string | ArrayBuffer | undefined;
     if (['POST', 'PATCH', 'PUT', 'DELETE'].includes(method)) {
-      try {
-        const json = await request.json();
-        body = JSON.stringify(json);
-      } catch {
-        // No body or invalid JSON
-        body = undefined;
+      if (isMultipart) {
+        // Pass the multipart payload through byte-for-byte.
+        body = await request.arrayBuffer();
+      } else {
+        try {
+          const json = await request.json();
+          body = JSON.stringify(json);
+        } catch {
+          // No body or invalid JSON
+          body = undefined;
+        }
       }
     }
 
@@ -108,6 +119,26 @@ async function proxyRequest(
     // Handle 204 No Content responses
     if (response.status === 204) {
       return new NextResponse(null, { status: 204 });
+    }
+
+    // Non-JSON responses (attachment reads via /files/:id — images, SVGs,
+    // downloads; fetch has already followed any 302 to storage) are streamed
+    // back as-is instead of being coerced to JSON.
+    const responseContentType = response.headers.get('content-type') || '';
+    if (!responseContentType.includes('application/json')) {
+      return new NextResponse(response.body, {
+        status: response.status,
+        headers: {
+          'Content-Type': responseContentType || 'application/octet-stream',
+          ...(response.headers.get('content-disposition')
+            ? {
+                'Content-Disposition': response.headers.get(
+                  'content-disposition',
+                )!,
+              }
+            : {}),
+        },
+      });
     }
 
     // Get response data

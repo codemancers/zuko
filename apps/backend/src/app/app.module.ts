@@ -20,6 +20,7 @@ import { NangoModule } from './nango/nango.module';
 import { McpModule } from './mcp/mcp.module';
 import { auth } from '../libs/better-auth/auth';
 import { IcpModule } from './icp/icp.module';
+import { PagesModule } from './pages/pages.module';
 
 const authModule = AuthModule.forRoot({ auth, disableGlobalAuthGuard: true });
 
@@ -48,6 +49,7 @@ const authModule = AuthModule.forRoot({ auth, disableGlobalAuthGuard: true });
     NangoModule,
     IntegrationsModule,
     IcpModule,
+    PagesModule,
     McpModule,
   ],
   controllers: [AppController],
