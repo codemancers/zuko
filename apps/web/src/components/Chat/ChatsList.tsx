@@ -22,7 +22,11 @@ function formatUpdatedAt(date: string): string {
   if (diffDays === 0) return 'Today';
   if (diffDays === 1) return 'Yesterday';
   if (diffDays < 7) return `${diffDays} days ago`;
-  return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+  return d.toLocaleDateString(undefined, {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  });
 }
 
 export function ChatsList() {
@@ -66,11 +70,7 @@ export function ChatsList() {
       <PageHeader
         title="Chats"
         description="All your AI conversations"
-        action={
-          <Button href="/chat">
-            New chat
-          </Button>
-        }
+        action={<Button href="/chat">New chat</Button>}
       />
 
       <BaseTable<Chat>
