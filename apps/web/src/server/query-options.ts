@@ -9,6 +9,7 @@ import { dealsApi } from '@/lib/api/deals';
 import type { TaskFilters } from '@/lib/api/tasks';
 import { tasksApi } from '@/lib/api/tasks';
 import { activitiesApi } from '@/lib/api/activities';
+import { pagesApi } from '@/lib/api/pages';
 import { meetingsApi, type MeetingFilters } from '@/lib/api/meetings';
 import { authClient } from '@/lib/auth-client';
 import {
@@ -142,6 +143,18 @@ export const getTask = (id: number) =>
   queryOptions({
     queryKey: ['task', id],
     queryFn: () => tasksApi.getTask(id),
+  });
+
+export const getPages = queryOptions({
+  queryKey: ['pages'],
+  queryFn: () => pagesApi.getPages(),
+});
+
+export const getPage = (id: number) =>
+  queryOptions({
+    queryKey: ['pages', id],
+    queryFn: () => pagesApi.getPage(id),
+    staleTime: Infinity,
   });
 export const getTableViewDealsInfinite = (
   filters?: Omit<DealFilters, 'page' | 'limit'>,

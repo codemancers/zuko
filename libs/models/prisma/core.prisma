@@ -40,6 +40,7 @@ model User {
   agentGrantsDenied      AgentCapabilityGrant[]     @relation("AgentGrantsDenied")
   agentGrantsGranted     AgentCapabilityGrant[]     @relation("AgentGrantsGranted")
   connections            Connection[]
+  createdPages           Page[]                     @relation("UserCreatedPages")
   // OAuth 2.1 provider relations
   oauthClients           OauthClient[]
   oauthRefreshTokens     OauthRefreshToken[]
@@ -199,6 +200,7 @@ model Organization {
   connections         Connection[]
   icpProfiles         IcpProfile[]         @relation("OrganizationIcpProfiles")
   campaigns           Campaign[]           @relation("OrganizationCampaigns")
+  pages               Page[]               @relation("OrganizationPages")
 
   @@unique([slug])
   @@map("organization")

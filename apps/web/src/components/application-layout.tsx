@@ -41,6 +41,7 @@ import {
   BuildingOfficeIcon,
   ChatBubbleLeftRightIcon,
   ClipboardDocumentListIcon,
+  DocumentTextIcon,
   Cog6ToothIcon,
   Cog8ToothIcon,
   UserGroupIcon,
@@ -94,6 +95,7 @@ const baseNavigation = [
   { name: 'ICPs', href: '/icps', icon: AdjustmentsHorizontalIcon },
   { divider: true },
   { name: 'Tasks', href: '/tasks', icon: ClipboardDocumentListIcon },
+  { name: 'Wiki', href: '/pages', icon: DocumentTextIcon },
   { divider: true },
   { name: 'Settings', href: '/settings', icon: Cog6ToothIcon },
 ];
@@ -192,6 +194,7 @@ export function ApplicationLayout({
   return (
     <SidebarLayout
       collapsed={isSidebarCollapsed}
+      fullBleed={pathname.startsWith('/pages/')}
       navbar={
         <Navbar>
           <NavbarSpacer />

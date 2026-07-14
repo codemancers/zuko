@@ -1,0 +1,29 @@
+// Wiki pages — org-level knowledge base (Gather-inspired).
+//
+// A Page is a standalone Editor.js document scoped to an organization.
+// Access is organization membership; `parentId` nests a page under another
+// (subpages). `blocks` stores the canonical Editor.js output
+// ({ time, blocks, version }), `version` mirrors the Editor.js version the
+// content was saved with.
+
+model Page {
+  id             Int      @id @default(autoincrement())
+  title          String?
+  blocks         Json     @default("{}")
+  version        String   @default("2.29.0")
+  createdBy      Int      @map("created_by")
+  organizationId Int      @map("organization_id")
+  parentId       Int?     @map("parent_id")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  organization Organization     @relation("OrganizationPages", fields: [organizationId], references: [id], onDelete: Cascade)
+  creator      User             @relation("UserCreatedPages", fields: [createdBy], references: [id])
+  parent       Page?            @relation("PageSubpages", fields: [parentId], references: [id], onDelete: Cascade)
+  subpages     Page[]           @relation("PageSubpages")
+  @@index([organizationId])
+  @@index([parentId])
+  @@map("page")
+  @@schema("public")
+}
+
