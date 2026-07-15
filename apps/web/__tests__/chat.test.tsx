@@ -925,11 +925,13 @@ describe('Tool component', () => {
 
 describe('NewChatPage', () => {
   const originalFetch = globalThis.fetch;
-  let capturedOnSessionChange: ((s: {
-    sessionId?: string;
-    continuationToken?: string;
-    streamIndex: number;
-  }) => void) | undefined;
+  let capturedOnSessionChange:
+    | ((s: {
+        sessionId?: string;
+        continuationToken?: string;
+        streamIndex: number;
+      }) => void)
+    | undefined;
   const mockSend = vi.fn();
 
   beforeEach(() => {
@@ -963,9 +965,7 @@ describe('NewChatPage', () => {
   it('renders ChatInput', () => {
     render(<NewChatPage />, { wrapper });
 
-    expect(
-      screen.getByPlaceholderText(/ask anything/i),
-    ).toBeInTheDocument();
+    expect(screen.getByPlaceholderText(/ask anything/i)).toBeInTheDocument();
   });
 
   it('creates chat and navigates to /chat/:sessionId on session change', async () => {
@@ -982,7 +982,9 @@ describe('NewChatPage', () => {
     await user.type(input, 'First message');
     await user.click(screen.getByRole('button', { name: /submit/i }));
 
-    await waitFor(() => expect(mockSend).toHaveBeenCalledWith({ message: 'First message' }));
+    await waitFor(() =>
+      expect(mockSend).toHaveBeenCalledWith({ message: 'First message' }),
+    );
 
     act(() => {
       capturedOnSessionChange?.({
