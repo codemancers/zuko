@@ -87,7 +87,6 @@ export async function getValidClaudeOauthWithStore(
   }
 }
 
-
 function isFresh(expiresAt: Date | null): boolean {
   return (expiresAt?.getTime() ?? 0) - Date.now() > REFRESH_LEEWAY_MS;
 }
