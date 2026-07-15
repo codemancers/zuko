@@ -98,3 +98,7 @@ GEMINI.md
 
 # Nango runtime data
 nango-data/
+
+# Claude Code agent skills
+.agents/
+skills-lock.json
