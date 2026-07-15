@@ -10,6 +10,7 @@ import { BaseTable } from '@/components/Table';
 import type { ColumnDef } from '@tanstack/react-table';
 
 interface EveSession {
+  id: string;
   sessionId: string;
   title: string | null;
   createdAt: string;

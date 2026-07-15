@@ -1,12 +1,12 @@
 'use client';
 
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useRef } from 'react';
 import { useEveAgent } from 'eve/react';
 import type {
   EveMessage,
   EveMessagePart,
   HandleMessageStreamEvent,
-} from 'eve/react';
+} from 'eve/client';
 import {
   Conversation,
   ConversationContent,
@@ -92,7 +92,6 @@ export function ChatSurface({
     },
   });
 
-  const [input, setInput] = useState('');
   const working = status === 'submitted' || status === 'streaming';
   const hasMessages = data.messages.length > 0;
 
