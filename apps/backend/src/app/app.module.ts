@@ -21,6 +21,7 @@ import { McpModule } from './mcp/mcp.module';
 import { auth } from '../libs/better-auth/auth';
 import { IcpModule } from './icp/icp.module';
 import { PagesModule } from './pages/pages.module';
+import { EveModule } from '../eve/eve.module';
 
 const authModule = AuthModule.forRoot({ auth, disableGlobalAuthGuard: true });
 
@@ -51,6 +52,7 @@ const authModule = AuthModule.forRoot({ auth, disableGlobalAuthGuard: true });
     IcpModule,
     PagesModule,
     McpModule,
+    EveModule,
   ],
   controllers: [AppController],
   providers: [AppService],

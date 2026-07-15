@@ -2,6 +2,7 @@ import { posix } from 'node:path';
 import { Readable } from 'node:stream';
 import { buffer } from 'node:stream/consumers';
 import { SpritesClient, type Sprite } from '@fly/sprites';
+import { defineState } from 'eve/context';
 import type {
   SandboxBackend,
   SandboxBackendCreateInput,
@@ -9,29 +10,36 @@ import type {
   SandboxNetworkPolicy,
   SandboxSession,
 } from 'eve/sandbox';
-import { env } from '../lib/env.js';
+import { type EvePrincipal } from '../lib/eve-principal.js';
+import { fetchClaudeOauth } from '../lib/zuko-api';
 
 /**
  * Everything Fly-Sprite for the agent's sandbox, in one place:
- * - provisioning + connection helpers
+ * - provisioning + connection helpers (also used by the claude-code spawn path)
  * - eve `defineSandbox` backend (`createFlySpriteBackend`, wired in sandbox.ts)
+ * - the per-session ALS bridge (`ensureSessionSprite` / `requireSessionSprite`)
  *
- * eve owns the lifecycle end to end: its built-in sandbox tools (bash,
- * read_file, write_file, glob, grep) and any authored tool's `getSandbox()`
- * all land on this backend's per-session sprite.
+ * eve exposes no way for a non-tool model (claude-code drives its OWN tools) to
+ * reach eve's `defineSandbox` session — `getSandbox()` lives only on
+ * tool/callback contexts. So the claude-code path provisions the sprite itself
+ * via these helpers; the backend uses the SAME helpers + deterministic name, so
+ * both converge on one per-session VM.
  */
 
 const FLY_SPRITE_BACKEND_NAME = 'fly-sprite';
 
-/** Where the agent works inside the sprite. */
+/** Where the agent (and the `claude` CLI) works inside the sprite. */
 const WORKDIR = '/sandbox';
+
+/** Absolute path the `claude` CLI reads OAuth from inside the sprite. */
+const CLAUDE_CREDENTIALS_PATH = '/home/sprite/.claude/.credentials.json';
 
 // ---------------------------------------------------------------------------
 // State
 // ---------------------------------------------------------------------------
 
 /** Serializable handle to a provisioned Fly Sprite — JSON-safe so it survives
- * eve's captured-state serialization across turns. */
+ * durable-state serialization (nested in {@link ZukoSessionState}). */
 interface SandboxState {
   readonly type: 'fly-sprite';
   readonly externalId: string;
@@ -39,12 +47,32 @@ interface SandboxState {
   readonly createdAt: number;
 }
 
+/**
+ * This session's durable record. Deliberately mirrors eve's own `eve.sandbox`
+ * envelope (`{ backendName, sessionKey, metadata }`) so the two stay swappable —
+ * `metadata.sandboxState` is byte-for-byte what eve's backend `captureState()`
+ * carries. We also fold the claude conversation id in here, so one record holds
+ * the whole session's sandbox identity instead of two loose state keys.
+ */
+interface ZukoSessionState {
+  readonly backendName: typeof FLY_SPRITE_BACKEND_NAME;
+  readonly sessionKey: string;
+  readonly metadata: {
+    readonly sandboxState: SandboxState;
+    readonly claudeSessionId?: string;
+  };
+}
+
 // ---------------------------------------------------------------------------
 // Provisioning + connection helpers
 // ---------------------------------------------------------------------------
 
 function flyToken(): string {
-  return env().SPRITES_TOKEN;
+  const t = process.env['SPRITES_TOKEN'];
+  if (!t) {
+    throw new Error('SPRITES_TOKEN required to provision a Fly Sprite');
+  }
+  return t;
 }
 
 /**
@@ -106,10 +134,40 @@ function spriteNameForSession(sessionId: string): string {
     .slice(0, 63);
 }
 
-/** Prepare a connected sprite: create the workdir. Idempotent. */
-async function prepareSprite(sprite: Sprite): Promise<void> {
+/** Resolve the Claude creds document to write into the sprite. The backend is
+ * the SOLE source: with a principal we fetch that user's creds (a failed fetch
+ * THROWS — no silent fallback to a shared token). Without a principal (only
+ * eve's own sandbox lifecycle, which is unauthenticated) there are no creds to
+ * write — returns `null`. */
+export async function resolveClaudeCredsJson(
+  principal?: EvePrincipal,
+): Promise<string | null> {
+  if (!principal) return null;
+  try {
+    const blob = await fetchClaudeOauth(principal);
+    return JSON.stringify({ claudeAiOauth: blob });
+  } catch {
+    // Claude not linked — CLI falls back to CLAUDE_CODE_OAUTH_TOKEN env var
+    return null;
+  }
+}
+
+/**
+ * Prepare a connected sprite: create the workdir + write the Claude OAuth creds.
+ * Idempotent. Creds come from the backend (per-user, keyed by `principal`); with
+ * no principal none are written. When absent, the CLI falls back to
+ * `ANTHROPIC_API_KEY` / `CLAUDE_CODE_OAUTH_TOKEN` forwarded via the spawn env.
+ */
+async function prepareSprite(
+  sprite: Sprite,
+  principal?: EvePrincipal,
+): Promise<void> {
   const fs = sprite.filesystem('/');
   await fs.mkdir(WORKDIR, { recursive: true });
+  const creds = await resolveClaudeCredsJson(principal);
+  if (creds) {
+    await fs.writeFile(CLAUDE_CREDENTIALS_PATH, creds, { mode: 0o600 });
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -417,16 +475,19 @@ function buildHandle(
       };
     },
     async shutdown() {
-      // No-op: sprites persist across turns (reconnected from captured state)
-      // and auto-hibernate — the server going away doesn't require teardown.
+      // No-op on eve-server shutdown. A Fly Sprite is remote compute that
+      // auto-hibernates when idle and persists across turns, so it stays
+      // reattachable from the captured `sandboxState` on the next server
+      // start (eve's durable-session contract) — nothing to stop here.
     },
   };
 }
 
 /**
  * A `SandboxBackend` that provisions a per-session Fly Sprite. eve owns the
- * lifecycle: `create` on first turn, resume from captured `sandboxState` later
- * (deterministic per-session name, so a retried turn reconnects the same VM).
+ * lifecycle: `create` on first turn, resume from captured `sandboxState` later.
+ * Shares the sprite toolkit with the claude-code spawn path, so both converge on
+ * the same per-session VM.
  */
 export function createFlySpriteBackend(): SandboxBackend {
   return {
@@ -449,4 +510,83 @@ export function createFlySpriteBackend(): SandboxBackend {
       return { reused: false };
     },
   };
+}
+
+// ---------------------------------------------------------------------------
+// Per-session ALS bridge for the claude-code spawn hook
+// ---------------------------------------------------------------------------
+
+/**
+ * This session's durable record ({@link ZukoSessionState}). `defineState` is
+ * DURABLE — serialized at the end of each step and restored across turns — so we
+ * store only JSON-safe identifiers (the {@link SandboxState} reconnect record +
+ * the claude conversation id), NEVER a live `Sprite` (a WebSocket handle that
+ * can't serialize). ALS-scoped: resolves to THIS session even under concurrency.
+ *
+ * Named `zuko.session` to mirror eve's own `eve.sandbox` envelope; the `eve.`
+ * prefix is reserved (`defineState` rejects it), so we namespace under `zuko.`.
+ */
+const sessionState = defineState<ZukoSessionState | null>(
+  'zuko.session',
+  () => null,
+);
+
+/**
+ * Provision this session's sprite once and stash its serializable record. Called
+ * from the `step.started` resolver, which eve awaits BEFORE each model call in
+ * the session ALS. Idempotent: turn 1 provisions, later turns short-circuit on
+ * the durable record — so a session reuses ONE VM (deterministic name; even a
+ * cross-process resume reconnects the same sprite). Creds are fetched at most
+ * once per session ONLY on success — a failed fetch throws before
+ * `sessionState.update()` runs, so the durable record is never written and the
+ * next turn retries the fetch. `principal`, when present (an authenticated
+ * zuko user), routes creds through the backend instead of the env fallback —
+ * see {@link resolveClaudeCredsJson}.
+ */
+export async function ensureSessionSprite(
+  sessionId: string,
+  principal?: EvePrincipal,
+): Promise<void> {
+  if (sessionState.get()) return;
+  const sandboxState = await provisionSprite(spriteNameForSession(sessionId));
+  await prepareSprite(connectSprite(sandboxState.externalId), principal);
+  sessionState.update(() => ({
+    backendName: FLY_SPRITE_BACKEND_NAME,
+    sessionKey: sessionId,
+    metadata: { sandboxState },
+  }));
+}
+
+/** Synchronous accessor for the spawn hook — reconnects from the stored record
+ * (`connectSprite` is sync + lazy). Throws if the resolver hasn't run. */
+export function requireSessionSprite(): Sprite {
+  const state = sessionState.get();
+  if (!state) {
+    throw new Error(
+      'no session sprite — the step.started resolver (tools/ensure-session-sprite.ts) must run before the model call',
+    );
+  }
+  return connectSprite(state.metadata.sandboxState.externalId);
+}
+
+/**
+ * This session's `claude` conversation id, folded into the same durable record.
+ * `undefined` until the first spawn mints one (see {@link setClaudeSessionId}).
+ */
+export function getClaudeSessionId(): string | undefined {
+  return sessionState.get()?.metadata.claudeSessionId;
+}
+
+/** Persist this session's `claude` conversation id into the durable record so
+ * later turns can `--resume` it. Requires {@link ensureSessionSprite} to have
+ * run first (the record must already exist). */
+export function setClaudeSessionId(claudeSessionId: string): void {
+  sessionState.update((prev) => {
+    if (!prev) {
+      throw new Error(
+        'no session record — ensureSessionSprite must run before setClaudeSessionId',
+      );
+    }
+    return { ...prev, metadata: { ...prev.metadata, claudeSessionId } };
+  });
 }

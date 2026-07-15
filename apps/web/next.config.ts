@@ -1,5 +1,4 @@
 import type { NextConfig } from 'next';
-import { withEve } from 'eve/next';
 
 const nextConfig: NextConfig = {
   // shiki gets auto-externalized by Turbopack with a broken hashed specifier
@@ -20,4 +19,4 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default withEve(nextConfig, { eveRoot: '../ai-agent' });
+export default nextConfig;

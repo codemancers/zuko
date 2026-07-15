@@ -2,9 +2,12 @@ import { defineSandbox } from 'eve/sandbox';
 import { createFlySpriteBackend } from './fly-sprite.js';
 
 /**
- * eve's per-session sandbox, backed by a Fly Sprite. eve owns the lifecycle
- * (provision on first use, resume from captured state, dispose) and exposes its
- * built-in sandbox tools (bash, read_file, write_file, glob, grep) to the model.
+ * eve's per-session sandbox, backed by a Fly Sprite. Declares the sandbox so eve
+ * owns the lifecycle when its own tools run (provision on first use, resume,
+ * shutdown). The claude-code model doesn't drive eve's tools and eve exposes no
+ * way for it to reach this session, so it self-provisions the sprite via the
+ * shared helpers in fly-sprite.ts — the same deterministic name + backend, so
+ * both converge on one per-session VM.
  */
 export default defineSandbox({
   backend: createFlySpriteBackend(),
