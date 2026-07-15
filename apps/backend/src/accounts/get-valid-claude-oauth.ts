@@ -1,4 +1,3 @@
-import type { Pool } from 'pg';
 import type { ClaudeAiOauth } from './dto/upsert-account-oauth.dto';
 
 // Claude Code's PKCE OAuth client. Confirmed by reading the `claude` binary
@@ -88,61 +87,6 @@ export async function getValidClaudeOauthWithStore(
   }
 }
 
-/**
- * Raw-`pg` entry point for workflow step bodies. Keeps the step bundle free of
- * `@zuko/models` / Prisma (see step-db.ts) — it only touches the passed pool.
- */
-function getValidClaudeOauthFromPool(
-  pool: Pool,
-  userId: number,
-): Promise<ClaudeAiOauth> {
-  const store: ClaudeOauthStore = {
-    async read(uid) {
-      const { rows } = await pool.query<{
-        id: number;
-        access_token: string | null;
-        refresh_token: string | null;
-        access_token_expires_at: Date | null;
-        scope: string | null;
-      }>(
-        `SELECT id, access_token, refresh_token, access_token_expires_at, scope
-           FROM "accounts"
-          WHERE user_id = $1 AND provider_id = 'claude'
-          ORDER BY id DESC
-          LIMIT 1`,
-        [uid],
-      );
-      const r = rows[0];
-      return r
-        ? {
-            id: r.id,
-            accessToken: r.access_token,
-            refreshToken: r.refresh_token,
-            accessTokenExpiresAt: r.access_token_expires_at,
-            scope: r.scope,
-          }
-        : null;
-    },
-    async persist(id, oauth) {
-      await pool.query(
-        `UPDATE "accounts"
-            SET access_token = $1,
-                refresh_token = $2,
-                access_token_expires_at = $3,
-                scope = $4
-          WHERE id = $5`,
-        [
-          oauth.accessToken,
-          oauth.refreshToken,
-          new Date(oauth.expiresAt),
-          oauth.scopes.join(' '),
-          id,
-        ],
-      );
-    },
-  };
-  return getValidClaudeOauthWithStore(store, userId);
-}
 
 function isFresh(expiresAt: Date | null): boolean {
   return (expiresAt?.getTime() ?? 0) - Date.now() > REFRESH_LEEWAY_MS;
