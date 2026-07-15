@@ -1,4 +1,4 @@
-import { cookies, headers } from 'next/headers';
+import { headers } from 'next/headers';
 
 const BACKEND_URL =
   process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001';
@@ -23,7 +23,6 @@ interface BetterAuthSession {
  */
 async function proxy(req: Request, path: string[]): Promise<Response> {
   const cookieHeader = (await headers()).get('cookie') ?? '';
-  const cookieStore = await cookies();
 
   // Resolve active org from session — backend needs x-org-id header.
   let orgId = '';
