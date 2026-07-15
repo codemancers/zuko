@@ -17,7 +17,9 @@ export interface ChatHistory {
   streamIndex: number;
 }
 
-export async function fetchChatHistory(sessionId: string): Promise<ChatHistory> {
+export async function fetchChatHistory(
+  sessionId: string,
+): Promise<ChatHistory> {
   const res = await fetch(
     `/api/eve/v1/session/${encodeURIComponent(sessionId)}/stream?startIndex=0`,
   );

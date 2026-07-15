@@ -22,7 +22,10 @@ export async function GET() {
     return NextResponse.json(data, { status: res.status });
   } catch (error) {
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to list sessions' },
+      {
+        error:
+          error instanceof Error ? error.message : 'Failed to list sessions',
+      },
       { status: 500 },
     );
   }
@@ -42,7 +45,10 @@ export async function POST(request: Request) {
     return NextResponse.json(data, { status: res.status });
   } catch (error) {
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to save session' },
+      {
+        error:
+          error instanceof Error ? error.message : 'Failed to save session',
+      },
       { status: 500 },
     );
   }

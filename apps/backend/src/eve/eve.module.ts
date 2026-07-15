@@ -10,7 +10,16 @@ import { EveChatsRepository } from './eve-chats.repository';
 
 @Module({
   imports: [PrismaModule],
-  controllers: [EveCredentialsController, EveProxyController, EveChatsController],
-  providers: [EvePrincipalGuard, EveTargetService, EveChatsRepository, AccountsService],
+  controllers: [
+    EveCredentialsController,
+    EveProxyController,
+    EveChatsController,
+  ],
+  providers: [
+    EvePrincipalGuard,
+    EveTargetService,
+    EveChatsRepository,
+    AccountsService,
+  ],
 })
 export class EveModule {}

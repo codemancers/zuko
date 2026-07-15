@@ -78,7 +78,11 @@ export class EveChatsController {
     @Param('sessionId') sessionId: string,
   ) {
     const { userId, organizationId } = resolveIds(req);
-    const row = await this.repo.getBySessionId(sessionId, userId, organizationId);
+    const row = await this.repo.getBySessionId(
+      sessionId,
+      userId,
+      organizationId,
+    );
     if (!row) throw new NotFoundException('Session not found');
     return row;
   }

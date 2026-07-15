@@ -2,7 +2,11 @@
 
 import { useCallback, useRef, useState } from 'react';
 import { useEveAgent } from 'eve/react';
-import type { EveMessage, EveMessagePart, HandleMessageStreamEvent } from 'eve/react';
+import type {
+  EveMessage,
+  EveMessagePart,
+  HandleMessageStreamEvent,
+} from 'eve/react';
 import {
   Conversation,
   ConversationContent,
@@ -12,12 +16,7 @@ import {
   TooltipProvider,
 } from '@zuko/ui-kit';
 import { ChatInput } from './ChatInput';
-import {
-  Tool,
-  ToolContent,
-  ToolHeader,
-  ToolOutput,
-} from './Tool';
+import { Tool, ToolContent, ToolHeader, ToolOutput } from './Tool';
 
 interface ChatSurfaceProps {
   /** True on /chat/:id resume — suppresses row creation. */
@@ -36,14 +35,24 @@ interface ChatSurfaceProps {
  * (POST /api/chats) and swaps the URL to /chat/:sessionId via
  * history.replaceState — no Next remount, live turn uninterrupted.
  */
-export function ChatSurface({ resume, initialSession, initialEvents }: ChatSurfaceProps) {
+export function ChatSurface({
+  resume,
+  initialSession,
+  initialEvents,
+}: ChatSurfaceProps) {
   const navigatedRef = useRef<boolean>(!!resume);
   const firstMessageRef = useRef<string>('');
-  const lastTokenRef = useRef<string | undefined>(initialSession?.continuationToken);
+  const lastTokenRef = useRef<string | undefined>(
+    initialSession?.continuationToken,
+  );
 
   const persist = useCallback(
     async (
-      s: { sessionId?: string; continuationToken?: string; streamIndex: number },
+      s: {
+        sessionId?: string;
+        continuationToken?: string;
+        streamIndex: number;
+      },
       navigate: boolean,
     ) => {
       try {
@@ -107,7 +116,8 @@ export function ChatSurface({ resume, initialSession, initialEvents }: ChatSurfa
                       key={message.id ?? String(index)}
                       message={message}
                       isStreaming={
-                        status === 'streaming' && index === data.messages.length - 1
+                        status === 'streaming' &&
+                        index === data.messages.length - 1
                       }
                     />
                   ))}
@@ -147,7 +157,10 @@ export function ChatSurface({ resume, initialSession, initialEvents }: ChatSurfa
         )}
 
         {status === 'error' && (
-          <p className="text-destructive shrink-0 px-4 pb-2 text-sm" role="alert">
+          <p
+            className="text-destructive shrink-0 px-4 pb-2 text-sm"
+            role="alert"
+          >
             {error?.message ?? 'The agent failed to complete this turn.'}
           </p>
         )}
@@ -174,7 +187,9 @@ function ChatMessageView({
           <ChatPartView
             key={`${part.type}-${i}`}
             part={part}
-            showCaret={isStreaming && message.role === 'assistant' && i === lastTextIndex}
+            showCaret={
+              isStreaming && message.role === 'assistant' && i === lastTextIndex
+            }
           />
         ))}
       </MessageContent>
@@ -182,14 +197,21 @@ function ChatMessageView({
   );
 }
 
-function ChatPartView({ part, showCaret }: { part: EveMessagePart; showCaret: boolean }) {
+function ChatPartView({
+  part,
+  showCaret,
+}: {
+  part: EveMessagePart;
+  showCaret: boolean;
+}) {
   switch (part.type) {
     case 'step-start':
       return null;
     case 'text':
       return (
         <MessageResponse>
-          {(part as { type: 'text'; text: string }).text + (showCaret ? '▋' : '')}
+          {(part as { type: 'text'; text: string }).text +
+            (showCaret ? '▋' : '')}
         </MessageResponse>
       );
     case 'dynamic-tool': {
@@ -208,9 +230,16 @@ function ChatPartView({ part, showCaret }: { part: EveMessagePart; showCaret: bo
           : 'input-streaming';
       return (
         <Tool defaultOpen={false}>
-          <ToolHeader type="dynamic-tool" state={sdkState} toolName={toolPart.toolName} />
+          <ToolHeader
+            type="dynamic-tool"
+            state={sdkState}
+            toolName={toolPart.toolName}
+          />
           <ToolContent>
-            <ToolOutput output={toolPart.output} errorText={toolPart.errorText} />
+            <ToolOutput
+              output={toolPart.output}
+              errorText={toolPart.errorText}
+            />
           </ToolContent>
         </Tool>
       );

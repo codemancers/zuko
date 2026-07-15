@@ -25,7 +25,10 @@ export async function GET(
   } catch (error) {
     const s = error instanceof Error ? 500 : 500;
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to load session' },
+      {
+        error:
+          error instanceof Error ? error.message : 'Failed to load session',
+      },
       { status: s },
     );
   }
