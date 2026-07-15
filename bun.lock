@@ -117,6 +117,7 @@
       "version": "0.1.0",
       "dependencies": {
         "@ai-sdk/openai": "^4.0.8",
+        "@fly/sprites": "0.0.1-rc37",
         "ai": "^7.0.0",
         "eve": "0.20.0",
         "zod": "^4.3.6",
@@ -794,6 +795,8 @@
     "@floating-ui/react-dom": ["@floating-ui/react-dom@2.1.8", "", { "dependencies": { "@floating-ui/dom": "^1.7.6" }, "peerDependencies": { "react": ">=16.8.0", "react-dom": ">=16.8.0" } }, "sha512-cC52bHwM/n/CxS87FH0yWdngEZrjdtLW/qVruo68qg+prK7ZQ4YGdut2GyDVpoGeAYe/h899rVeOVm6Oi40k2A=="],
 
     "@floating-ui/utils": ["@floating-ui/utils@0.2.11", "", {}, "sha512-RiB/yIh78pcIxl6lLMG0CgBXAZ2Y0eVHqMPYugu+9U0AeT6YBeiJpf7lbdJNIugFP5SIjwNRgo4DhR1Qxi26Gg=="],
+
+    "@fly/sprites": ["@fly/sprites@0.0.1-rc37", "", {}, "sha512-yzjJ8bsBl1XoECSols0iFvvmlqiog22ODO8F3Z+8mao44ZaMYiOVjRTuSd2g+rE0OFuj0u/ctlpPTHfVdpgWKA=="],
 
     "@hapi/address": ["@hapi/address@5.1.1", "", { "dependencies": { "@hapi/hoek": "^11.0.2" } }, "sha512-A+po2d/dVoY7cYajycYI43ZbYMXukuopIsqCjh5QzsBCipDtdofHntljDlpccMjIfTy6UOkg+5KPriwYch2bXA=="],
 

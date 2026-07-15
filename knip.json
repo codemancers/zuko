@@ -77,7 +77,8 @@
         "agent/agent.ts",
         "agent/channels/*.ts",
         "agent/tools/*.ts",
-        "agent/lib/*.ts"
+        "agent/lib/*.ts",
+        "agent/sandbox/sandbox.ts"
       ],
       "project": ["agent/**/*.ts"],
       "ignoreDependencies": ["@ai-sdk/openai", "zod"]
