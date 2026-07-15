@@ -92,7 +92,7 @@ export async function getValidClaudeOauthWithStore(
  * Raw-`pg` entry point for workflow step bodies. Keeps the step bundle free of
  * `@zuko/models` / Prisma (see step-db.ts) — it only touches the passed pool.
  */
-export function getValidClaudeOauthFromPool(
+function getValidClaudeOauthFromPool(
   pool: Pool,
   userId: number,
 ): Promise<ClaudeAiOauth> {
