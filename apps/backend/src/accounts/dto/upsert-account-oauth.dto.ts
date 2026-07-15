@@ -18,5 +18,3 @@ export const claudeAiOauthSchema = z.object({
 });
 
 export type ClaudeAiOauth = z.infer<typeof claudeAiOauthSchema>;
-
-
