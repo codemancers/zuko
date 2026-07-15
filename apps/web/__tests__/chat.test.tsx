@@ -1,12 +1,13 @@
 /**
  * @vitest-environment jsdom
  */
-import React from 'react';
+import React, { act } from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { TooltipProvider } from '@zuko/ui-kit';
+import { useEveAgent } from 'eve/react';
 import { ChatInput } from '@/components/Chat/ChatInput';
 import {
   Tool,
@@ -59,6 +60,10 @@ vi.mock('@/lib/api/deals', () => ({
       }),
     ),
   },
+}));
+
+vi.mock('eve/react', () => ({
+  useEveAgent: vi.fn(),
 }));
 
 // jsdom does not provide ResizeObserver (needed by Radix dropdown when menu opens)
@@ -920,26 +925,25 @@ describe('Tool component', () => {
 
 describe('NewChatPage', () => {
   const originalFetch = globalThis.fetch;
-  const store: Record<string, string> = {};
+  let capturedOnSessionChange: ((s: {
+    sessionId?: string;
+    continuationToken?: string;
+    streamIndex: number;
+  }) => void) | undefined;
+  const mockSend = vi.fn();
 
   beforeEach(() => {
     vi.clearAllMocks();
-    Object.keys(store).forEach((k) => delete store[k]);
-    vi.stubGlobal('localStorage', {
-      getItem: (k: string) => store[k] ?? null,
-      setItem: (k: string, v: string) => {
-        store[k] = v;
-      },
-      removeItem: (k: string) => {
-        delete store[k];
-      },
-      clear: () => {
-        Object.keys(store).forEach((k) => delete store[k]);
-      },
-      get length() {
-        return Object.keys(store).length;
-      },
-      key: () => null,
+    capturedOnSessionChange = undefined;
+    mockSend.mockResolvedValue(undefined);
+    vi.mocked(useEveAgent).mockImplementation((opts: any) => {
+      capturedOnSessionChange = opts.onSessionChange;
+      return {
+        data: { messages: [] },
+        status: 'idle',
+        error: null,
+        send: mockSend,
+      } as any;
     });
   });
 
@@ -960,45 +964,46 @@ describe('NewChatPage', () => {
     render(<NewChatPage />, { wrapper });
 
     expect(
-      screen.getByPlaceholderText(/ask anything.*try typing @/i),
+      screen.getByPlaceholderText(/ask anything/i),
     ).toBeInTheDocument();
   });
 
-  it('creates chat and redirects with message stored in localStorage on submit', async () => {
+  it('creates chat and navigates to /chat/:sessionId on session change', async () => {
     const user = userEvent.setup();
-    const mockChatId = 'chat-123';
+    const replaceStateSpy = vi.spyOn(window.history, 'replaceState');
     globalThis.fetch = vi.fn().mockResolvedValue({
       ok: true,
-      json: () => Promise.resolve({ id: mockChatId }),
+      json: () => Promise.resolve({}),
     }) as any;
 
     render(<NewChatPage />, { wrapper });
 
-    const input = screen.getByPlaceholderText(/ask anything.*try typing @/i);
+    const input = screen.getByPlaceholderText(/ask anything/i);
     await user.type(input, 'First message');
     await user.click(screen.getByRole('button', { name: /submit/i }));
 
+    await waitFor(() => expect(mockSend).toHaveBeenCalledWith({ message: 'First message' }));
+
+    act(() => {
+      capturedOnSessionChange?.({
+        sessionId: 'chat-123',
+        streamIndex: 1,
+        continuationToken: 'tok',
+      });
+    });
+
     await waitFor(() => {
       expect(globalThis.fetch).toHaveBeenCalledWith(
-        '/api/proxy/api/chats',
-        expect.objectContaining({
-          method: 'POST',
-          credentials: 'include',
-          headers: { 'Content-Type': 'application/json' },
-        }),
+        '/api/chats',
+        expect.objectContaining({ method: 'POST' }),
       );
+      expect(replaceStateSpy).toHaveBeenCalledWith(null, '', '/chat/chat-123');
     });
-    await waitFor(() => {
-      expect(mockReplace).toHaveBeenCalledWith(`/chat/${mockChatId}`);
-    });
-    const stored = localStorage.getItem(`chat-${mockChatId}-firstMessage`);
-    expect(stored).toBeTruthy();
-    const parsed = JSON.parse(stored!);
-    expect(parsed.text).toBe('First message');
-    expect(parsed.contextEntities).toEqual([]);
+
+    replaceStateSpy.mockRestore();
   });
 
-  it('stores contextEntities in localStorage when submitting with mentions', async () => {
+  it('stores contextEntities in message when submitting with mentions', async () => {
     vi.mocked(contactsApi.getContacts).mockResolvedValue({
       contacts: [
         {
@@ -1018,16 +1023,11 @@ describe('NewChatPage', () => {
       companies: [],
       pagination: { page: 1, limit: 100, total: 0, totalPages: 0 },
     });
-    const user = userEvent.setup();
-    const mockChatId = 'chat-456';
-    globalThis.fetch = vi.fn().mockResolvedValue({
-      ok: true,
-      json: () => Promise.resolve({ id: mockChatId }),
-    }) as any;
 
+    const user = userEvent.setup();
     render(<NewChatPage />, { wrapper });
 
-    const input = screen.getByPlaceholderText(/ask anything.*try typing @/i);
+    const input = screen.getByPlaceholderText(/ask anything/i);
     await user.click(input);
     await user.keyboard('@ali');
     await waitFor(() => expect(screen.getByText('Alice')).toBeInTheDocument());
@@ -1035,59 +1035,45 @@ describe('NewChatPage', () => {
     await user.click(screen.getByRole('button', { name: /submit/i }));
 
     await waitFor(() => {
-      expect(mockReplace).toHaveBeenCalledWith(`/chat/${mockChatId}`);
+      expect(mockSend).toHaveBeenCalledWith(
+        expect.objectContaining({ message: expect.stringMatching(/alice/i) }),
+      );
     });
-    const stored = localStorage.getItem(`chat-${mockChatId}-firstMessage`);
-    expect(stored).toBeTruthy();
-    const parsed = JSON.parse(stored!);
-    expect(parsed.contextEntities).toEqual([{ type: 'contact', id: 1 }]);
   });
 
-  it('does not redirect when create chat fetch fails', async () => {
-    const user = userEvent.setup();
-    globalThis.fetch = vi.fn().mockResolvedValue({
-      ok: false,
-      status: 500,
-    }) as any;
+  it('does not navigate when /api/chats POST fails', async () => {
+    const replaceStateSpy = vi.spyOn(window.history, 'replaceState');
+    globalThis.fetch = vi.fn().mockRejectedValue(new Error('network')) as any;
 
+    const user = userEvent.setup();
     render(<NewChatPage />, { wrapper });
 
-    const input = screen.getByPlaceholderText(/ask anything.*try typing @/i);
+    const input = screen.getByPlaceholderText(/ask anything/i);
     await user.type(input, 'Will fail');
     await user.click(screen.getByRole('button', { name: /submit/i }));
 
-    await waitFor(() => {
-      expect(globalThis.fetch).toHaveBeenCalled();
+    await waitFor(() => expect(mockSend).toHaveBeenCalled());
+
+    act(() => {
+      capturedOnSessionChange?.({ sessionId: 'chat-fail', streamIndex: 1 });
     });
-    expect(mockReplace).not.toHaveBeenCalled();
+
+    await waitFor(() => expect(globalThis.fetch).toHaveBeenCalled());
+    expect(replaceStateSpy).not.toHaveBeenCalled();
+
+    replaceStateSpy.mockRestore();
   });
 
-  it('disables ChatInput while submitting', async () => {
-    let resolveFetch: (value: unknown) => void;
-    const fetchPromise = new Promise<unknown>((resolve) => {
-      resolveFetch = resolve;
-    });
-    globalThis.fetch = vi
-      .fn()
-      .mockReturnValue(fetchPromise) as unknown as typeof fetch;
+  it('shows Stop button while agent is working', () => {
+    vi.mocked(useEveAgent).mockReturnValue({
+      data: { messages: [] },
+      status: 'submitted',
+      error: null,
+      send: mockSend,
+    } as any);
 
-    const user = userEvent.setup();
     render(<NewChatPage />, { wrapper });
 
-    const input = screen.getByPlaceholderText(/ask anything.*try typing @/i);
-    await user.type(input, 'Slow');
-    await user.click(screen.getByRole('button', { name: /submit/i }));
-
-    await waitFor(() => {
-      expect(input).toBeDisabled();
-    });
-
-    resolveFetch!({
-      ok: true,
-      json: () => Promise.resolve({ id: 'slow-chat' }),
-    });
-    await waitFor(() => {
-      expect(mockReplace).toHaveBeenCalledWith('/chat/slow-chat');
-    });
+    expect(screen.getByRole('button', { name: /stop/i })).toBeInTheDocument();
   });
 });
