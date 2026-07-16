@@ -106,8 +106,11 @@ test.describe('Chat', () => {
       timeout: 5000,
     });
 
-    // Wait for first AI response before sending next message
+    // Wait for first AI response AND agent to finish (Submit button re-appears, not Stop)
     await page.waitForSelector('[data-slot="content"]', { timeout: 15000 });
+    await expect(page.getByRole('button', { name: /submit/i })).toBeVisible({
+      timeout: 30000,
+    });
 
     // Send second message
     const textareaInChatPage = page.getByPlaceholder('Ask anything...');
