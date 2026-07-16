@@ -24,38 +24,8 @@ test.describe('Chat - Unauthenticated', () => {
 });
 
 test.describe('Chat', () => {
-  let chatId: string;
-
-  test.beforeEach(async ({ page }) => {
-    const response = await page.request.post(
-      'http://localhost:3001/api/chats',
-      {
-        data: {
-          title: 'E2E Test Chat',
-        },
-      },
-    );
-
-    expect(response.ok()).toBeTruthy();
-    const chat = await response.json();
-    chatId = chat.id;
-  });
-
-  test.afterEach(async ({ page }) => {
-    if (chatId) {
-      await page.request
-        .delete(`http://localhost:3001/api/chats/${chatId}`)
-        .catch(() => {
-          // ignore
-        });
-    }
-  });
-
   test('chat page displays correctly with empty state', async ({ page }) => {
-    await page.goto(`/chat/${chatId}`);
-
-    // Verify we're on the correct chat page
-    await expect(page).toHaveURL(`/chat/${chatId}`);
+    await page.goto('/chat');
 
     // Verify empty state is shown
     await expect(page.getByText('Start a conversation')).toBeVisible();
@@ -71,7 +41,7 @@ test.describe('Chat', () => {
   test('message text is sent to eve session when submitting', async ({
     page,
   }) => {
-    await page.goto(`/chat/${chatId}`);
+    await page.goto('/chat');
 
     // Set up request interception to capture the eve session API call
     let capturedRequestBody: any = null;
@@ -104,7 +74,7 @@ test.describe('Chat', () => {
   });
 
   test('message is sent and response is displayed', async ({ page }) => {
-    await page.goto(`/chat/${chatId}`);
+    await page.goto('/chat');
 
     // Type and send a message
     const textarea = page.getByPlaceholder('Ask anything...');
@@ -117,7 +87,6 @@ test.describe('Chat', () => {
     await expect(page.getByText('What is 2+2?')).toBeVisible({ timeout: 5000 });
 
     // Wait for AI response to start appearing (streaming)
-    // The response should appear within a reasonable time
     await page.waitForSelector('[data-slot="content"]', { timeout: 10000 });
 
     // Verify the empty state is no longer visible
@@ -125,7 +94,7 @@ test.describe('Chat', () => {
   });
 
   test('multiple messages can be sent in sequence', async ({ page }) => {
-    await page.goto(`/chat/${chatId}`);
+    await page.goto('/chat');
 
     const textarea = page.getByPlaceholder('Ask anything...');
     const submitButton = page.locator('button[type="submit"]').last();
@@ -138,7 +107,6 @@ test.describe('Chat', () => {
     });
 
     // Wait for first AI response before sending next message
-    // [data-slot="content"] is the AI response container (same selector used in the passing test)
     await page.waitForSelector('[data-slot="content"]', { timeout: 15000 });
 
     // Send second message
@@ -157,53 +125,37 @@ test.describe('Chat', () => {
     await expect(chatLog.getByText('Second message')).toBeVisible();
   });
 
-  test('backend receives correct chatId and validates participant', async ({
+  test('no auth or participant errors when sending a message', async ({
     page,
   }) => {
-    // Set up response interception to check for errors
     let hasAuthError = false;
-    let hasParticipantError = false;
 
     page.on('response', async (response) => {
-      if (response.url().includes('/api/chat')) {
+      if (response.url().includes('/api/eve/v1/')) {
         const status = response.status();
         if (status === 401 || status === 403) {
-          const text = await response.text().catch(() => '');
-          if (text.includes('Not a participant')) {
-            hasParticipantError = true;
-            console.error('❌ Participant validation error detected');
-          } else {
-            hasAuthError = true;
-            console.error('❌ Authentication error detected');
-          }
+          hasAuthError = true;
         }
       }
     });
 
-    await page.goto(`/chat/${chatId}`);
+    await page.goto('/chat');
 
-    // Send a message
     const textarea = page.getByPlaceholder('Ask anything...');
-    await textarea.fill('Testing participant validation');
+    await textarea.fill('Testing auth validation');
 
-    // Wait for API response after submitting
     const submitButton = page.locator('button[type="submit"]').last();
-    const responsePromise = page.waitForResponse(
-      (resp) => resp.url().includes('/api/chat'),
-      {
-        timeout: 10000,
-      },
-    );
     await submitButton.click();
-    await responsePromise;
 
-    // Verify no authorization or participant errors occurred
+    await expect(page.getByText('Testing auth validation')).toBeVisible({
+      timeout: 10000,
+    });
+
     expect(hasAuthError).toBe(false);
-    expect(hasParticipantError).toBe(false);
   });
 
   test('input is cleared after sending message', async ({ page }) => {
-    await page.goto(`/chat/${chatId}`);
+    await page.goto('/chat');
 
     const textarea = page.getByPlaceholder('Ask anything...');
     await textarea.fill('Test message');
@@ -217,7 +169,7 @@ test.describe('Chat', () => {
 
   test.describe('with mentions', () => {
     test('can add a contact mention to a message', async ({ page }) => {
-      await page.goto(`/chat/${chatId}`);
+      await page.goto('/chat');
 
       const textarea = page.getByPlaceholder('Ask anything...');
       await textarea.click();
@@ -246,7 +198,7 @@ test.describe('Chat', () => {
     test('can add contact, company, and deal via Add attachments and submit', async ({
       page,
     }) => {
-      await page.goto(`/chat/${chatId}`);
+      await page.goto('/chat');
 
       // Open "Add attachments" menu
       await page.getByRole('button', { name: 'Add attachments' }).click();
