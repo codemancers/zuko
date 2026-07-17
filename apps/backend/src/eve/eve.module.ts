@@ -8,6 +8,7 @@ import { EvePrincipalGuard } from './eve-principal.guard';
 import { EveTargetService } from './eve-target.service';
 import { EveChatsController } from './eve-chats.controller';
 import { EveChatsRepository } from './eve-chats.repository';
+import { EveProxyService } from './eve-proxy.service';
 
 @Module({
   imports: [PrismaModule],
@@ -19,6 +20,7 @@ import { EveChatsRepository } from './eve-chats.repository';
   providers: [
     EvePrincipalGuard,
     EveTargetService,
+    EveProxyService,
     EveChatsRepository,
     AccountsRepository,
     AccountsService,
