@@ -53,9 +53,10 @@
     }
   },
   "dependencies": {
-    "@ai-sdk/openai": "^4.0.8",
+    "@anthropic-ai/claude-agent-sdk": "^0.2.114",
     "@fly/sprites": "0.0.1-rc37",
     "ai": "^7.0.0",
+    "ai-sdk-provider-claude-code": "^3.5.0",
     "eve": "0.20.0",
     "zod": "^4.3.6"
   },

@@ -26,6 +26,7 @@ model User {
   dealOwners             DealOwner[]
   activities             Activity[]
   createdChats           Chat[]                     @relation("ChatCreator")
+  eveChats               EveChat[]                  @relation("UserEveChats")
   chatParticipations     ChatParticipant[]
   members                Member[]
   invitations            Invitation[]
@@ -201,9 +202,28 @@ model Organization {
   icpProfiles         IcpProfile[]         @relation("OrganizationIcpProfiles")
   campaigns           Campaign[]           @relation("OrganizationCampaigns")
   pages               Page[]               @relation("OrganizationPages")
+  eveChats            EveChat[]
 
   @@unique([slug])
   @@map("organization")
+  @@schema("public")
+}
+
+model EveChat {
+  sessionId         String   @id @map("session_id")
+  title             String?
+  createdById       Int      @map("created_by_id")
+  organizationId    Int      @map("organization_id")
+  continuationToken String?  @map("continuation_token")
+  streamIndex       Int      @default(0) @map("stream_index")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  createdBy    User         @relation("UserEveChats", fields: [createdById], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([createdById, organizationId])
+  @@map("eve_chat")
   @@schema("public")
 }
 

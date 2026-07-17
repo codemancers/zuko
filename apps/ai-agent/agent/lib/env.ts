@@ -1,12 +1,13 @@
 import { z } from 'zod';
 
 const envSchema = z.object({
-  OPENAI_API_KEY: z.string().min(1),
   // Fly Sprites auth — sandbox provisioning (agent/sandbox/fly-sprite.ts)
   SPRITES_TOKEN: z.string().min(1),
+  // HMAC signing for x-eve-principal — must match backend BETTER_AUTH_SECRET
+  BETTER_AUTH_SECRET: z.string().min(1),
+  // Claude Code OAuth token — used when user hasn't linked Claude in Settings
+  CLAUDE_CODE_OAUTH_TOKEN: z.string().min(1),
   ZUKO_BACKEND_URL: z.string().url().default('http://localhost:3001'),
-  // TUI dev: copy better-auth.session_token from browser DevTools → Application → Cookies
-  ZUKO_SESSION_TOKEN: z.string().optional(),
 });
 
 let cached: z.infer<typeof envSchema> | undefined;
