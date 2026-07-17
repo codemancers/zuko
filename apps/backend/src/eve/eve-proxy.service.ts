@@ -52,7 +52,8 @@ export class EveProxyService {
     } catch (err) {
       if (controller.signal.aborted) return;
       this.logger.error(`eve proxy fetch error: ${String(err)}`);
-      if (!res.headersSent) res.status(502).json({ error: 'eve upstream unavailable' });
+      if (!res.headersSent)
+        res.status(502).json({ error: 'eve upstream unavailable' });
       return;
     }
 
