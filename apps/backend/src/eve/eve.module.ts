@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { PrismaModule } from '../prisma/prisma.module';
+import { AccountsRepository } from '../accounts/accounts.repository';
 import { AccountsService } from '../accounts/accounts.service';
 import { EveCredentialsController } from './eve-credentials.controller';
 import { EveProxyController } from './eve-proxy.controller';
@@ -19,6 +20,7 @@ import { EveChatsRepository } from './eve-chats.repository';
     EvePrincipalGuard,
     EveTargetService,
     EveChatsRepository,
+    AccountsRepository,
     AccountsService,
   ],
 })
