@@ -76,6 +76,19 @@ async function proxyToBackend(
       }
     });
 
+    // Forward the real browser IP. This server-side proxy is the only client the
+    // backend sees, so without an explicit client IP better-auth (>=1.6) buckets
+    // every user into one shared rate-limit key and the /sign-in* limit
+    // (3 req / 10s) trips on a single login → 429. Fly sets `fly-client-ip` to
+    // the browser IP on the request into the frontend; we pass it as
+    // `x-real-ip` (Fly rewrites fly-client-ip on the internal proxy→backend hop).
+    const clientIp =
+      request.headers.get('fly-client-ip') ||
+      request.headers.get('x-forwarded-for')?.split(',')[0]?.trim();
+    if (clientIp) {
+      forwardHeaders['x-real-ip'] = clientIp;
+    }
+
     console.log('[AUTH PROXY] Headers:', Object.keys(forwardHeaders));
 
     // Forward the request to the backend

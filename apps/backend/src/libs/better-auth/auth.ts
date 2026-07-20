@@ -254,13 +254,22 @@ const authInstance: any = betterAuth({
     google: {
       clientId: process.env.GOOGLE_CLIENT_ID ?? '',
       clientSecret: process.env.GOOGLE_CLIENT_SECRET ?? '',
+      // Send Google's callback to the FRONTEND, not the backend. Default is
+      // ${baseURL}/auth/callback/google (backend) — the browser would then be
+      // redirected straight to the backend, which sets the session cookie on the
+      // backend host, and the frontend origin never receives it (get-session →
+      // 401). Routing the callback through the frontend's /auth proxy lets it
+      // rewrite Set-Cookie onto the frontend domain. GOOGLE_REDIRECT_URI
+      // overrides. NOTE: this exact URL must be an authorized redirect URI in
+      // the Google Cloud console.
+      redirectURI:
+        process.env.GOOGLE_REDIRECT_URI ||
+        `${frontendUrl}/auth/callback/google`,
     },
   },
   account: {
     // Use database instead of cookies for OAuth state to avoid cross-origin issues
     storeStateStrategy: 'database',
-    // Temporarily skip state cookie check to debug cross-origin issues
-    skipStateCookieCheck: true,
   },
   session: {
     expiresIn: 60 * 60 * 24 * 7, // 7 days
@@ -273,6 +282,14 @@ const authInstance: any = betterAuth({
   advanced: {
     database: {
       generateId: 'serial',
+    },
+    // Auth traffic arrives via the frontend's /auth proxy, so the backend can't
+    // see the browser IP by default — better-auth (>=1.6) then rate-limits every
+    // user under one shared bucket (/sign-in* = 3 req / 10s) → spurious 429s.
+    // The proxy forwards the real browser IP as `x-real-ip` (read first);
+    // `fly-client-ip` covers direct, non-proxied access (e.g. MCP clients).
+    ipAddress: {
+      ipAddressHeaders: ['x-real-ip', 'fly-client-ip'],
     },
     // Use secure cookies only in production (HTTPS)
     // In development (HTTP/localhost), cookies must use secure: false
