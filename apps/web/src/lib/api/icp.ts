@@ -190,4 +190,8 @@ export const icpApi = {
       `/icps/${id}/contacts?page=${page}&perPage=${perPage}`,
     );
   },
+
+  async compileDescription(description: string): Promise<IcpFilters> {
+    return apiClient.post('/icps/compile-description', { description });
+  },
 };

@@ -25,9 +25,12 @@ import { OrganizationGuard } from '../../common/auth/organization.guard';
 import { OrgId } from '../../common/auth/org-id.decorator';
 import {
   ApolloSearchQueryDto,
+  CompileDescriptionDto,
   CreateIcpProfileDto,
+  IcpFiltersDto,
   UpdateIcpProfileDto,
 } from './dto/icp.dto';
+import { IcpLlmService } from './icp-llm.service';
 import { IcpService } from './icp.service';
 
 @ApiTags('ICP')
@@ -35,7 +38,22 @@ import { IcpService } from './icp.service';
 @Controller('icps')
 @UseGuards(AuthGuard, OrganizationGuard)
 export class IcpController {
-  constructor(private readonly icpService: IcpService) {}
+  constructor(
+    private readonly icpService: IcpService,
+    private readonly icpLlmService: IcpLlmService,
+  ) {}
+
+  @Post('compile-description')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Compile ICP description into Apollo filters via LLM',
+  })
+  @ApiResponse({ status: 200, type: IcpFiltersDto })
+  compileDescription(
+    @Body() dto: CompileDescriptionDto,
+  ): Promise<IcpFiltersDto> {
+    return this.icpLlmService.compileDescription(dto.description);
+  }
 
   @Post()
   @HttpCode(HttpStatus.CREATED)

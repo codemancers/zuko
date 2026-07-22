@@ -7,6 +7,7 @@
   },
   "type": "module",
   "dependencies": {
+    "@ai-sdk/openai": "^4.0.17",
     "@auth/agent": "^0.4.5",
     "@better-auth/agent-auth": "^0.4.5",
     "@better-auth/oauth-provider": "^1.6.22",
