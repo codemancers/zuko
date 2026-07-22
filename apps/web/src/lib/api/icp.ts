@@ -5,11 +5,57 @@
 
 import { apiClient } from '../api-client';
 
+export type PersonSeniority =
+  | 'owner'
+  | 'founder'
+  | 'c_suite'
+  | 'partner'
+  | 'vp'
+  | 'head'
+  | 'director'
+  | 'manager'
+  | 'senior'
+  | 'entry'
+  | 'intern';
+
+export type ContactEmailStatus =
+  | 'verified'
+  | 'unverified'
+  | 'likely to engage'
+  | 'unavailable';
+
 export interface IcpFilters {
+  // Existing
   industries?: string[];
   employeeRanges?: string[];
   revenueRange?: { min?: number; max?: number };
   locations?: string[];
+
+  // Company identification
+  organizationName?: string;
+  organizationIds?: string[];
+  organizationDomains?: string[];
+
+  // Location exclusion
+  excludeLocations?: string[];
+
+  // Technographics
+  technologiesAnyOf?: string[];
+  technologiesAllOf?: string[];
+  technologiesNoneOf?: string[];
+
+  // Funding
+  latestFundingAmountRange?: { min?: number; max?: number };
+  totalFundingRange?: { min?: number; max?: number };
+  latestFundingDateRange?: { min?: string; max?: string };
+
+  // People-specific
+  personTitles?: string[];
+  personSeniorities?: PersonSeniority[];
+  includeSimilarTitles?: boolean;
+  personLocations?: string[];
+  contactEmailStatus?: ContactEmailStatus[];
+  keywords?: string;
 }
 
 export interface IcpProfile {
