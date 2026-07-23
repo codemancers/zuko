@@ -28,6 +28,8 @@ import {
   CompileDescriptionDto,
   CreateIcpProfileDto,
   IcpFiltersDto,
+  PreviewFiltersDto,
+  PreviewFiltersResponseDto,
   UpdateIcpProfileDto,
 } from './dto/icp.dto';
 import { IcpLlmService } from './icp-llm.service';
@@ -53,6 +55,19 @@ export class IcpController {
     @Body() dto: CompileDescriptionDto,
   ): Promise<IcpFiltersDto> {
     return this.icpLlmService.compileDescription(dto.description);
+  }
+
+  @Post(':id/preview-filters')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Preview Apollo match counts for given filters' })
+  @ApiParam({ name: 'id', type: Number })
+  @ApiResponse({ status: 200, type: PreviewFiltersResponseDto })
+  previewFilters(
+    @OrgId() organizationId: number,
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: PreviewFiltersDto,
+  ) {
+    return this.icpService.previewFilters(id, organizationId, dto.filters);
   }
 
   @Post()

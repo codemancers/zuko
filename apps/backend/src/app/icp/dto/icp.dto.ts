@@ -255,3 +255,15 @@ export class CompileDescriptionDto {
   @MinLength(10)
   description!: string;
 }
+
+export class PreviewFiltersDto {
+  @ApiProperty({ type: IcpFiltersDto })
+  @ValidateNested()
+  @Type(() => IcpFiltersDto)
+  filters!: IcpFiltersDto;
+}
+
+export class PreviewFiltersResponseDto {
+  @ApiProperty() companiesCount!: number;
+  @ApiProperty() contactsCount!: number;
+}

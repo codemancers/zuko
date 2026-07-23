@@ -59,6 +59,23 @@ export class IcpService {
     );
   }
 
+  async previewFilters(
+    id: number,
+    organizationId: number,
+    filters: IcpFiltersDto,
+  ) {
+    await this.findById(id, organizationId);
+    this.logger.debug(`[ICP] Previewing filters for profile ${id}`);
+    const [companies, contacts] = await Promise.all([
+      this.apolloService.searchCompanies(organizationId, filters, 1, 1),
+      this.apolloService.searchContacts(organizationId, filters, 1, 1),
+    ]);
+    return {
+      companiesCount: companies.pagination.total_entries,
+      contactsCount: contacts.pagination.total_entries,
+    };
+  }
+
   async getApolloContacts(
     id: number,
     organizationId: number,

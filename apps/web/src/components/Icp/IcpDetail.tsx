@@ -43,8 +43,14 @@ import Editor, { ensureOutputData } from '@/components/Common/Editor/Editor';
 import { useAutosaveField } from '@/hooks/useAutosaveField';
 import { icpApi } from '@/lib/api/icp';
 import { BaseTable } from '@/components/Table';
-import type { ApolloOrganization, ApolloPerson } from '@/lib/api/icp';
+import type {
+  ApolloOrganization,
+  ApolloPerson,
+  IcpFilters,
+  PreviewFiltersResponse,
+} from '@/lib/api/icp';
 import { EMPLOYEE_RANGE_LABEL } from '@/lib/constants/icp';
+import { editorJsonToMarkdown } from '@/lib/editor-utils';
 import IcpForm from './IcpForm';
 import IcpCampaignsPanel from './IcpCampaignsPanel';
 import { apolloSequencesApi } from '@/lib/api/apollo';
@@ -399,6 +405,191 @@ function ContactsPanel({ profileId }: { profileId: number }) {
 
 // ---------- Sidebar ----------
 
+// ---------- Compiled Filters Preview Sheet ----------
+
+function FilterBadges({
+  label,
+  items,
+  color,
+  map,
+}: {
+  label: string;
+  items?: string[];
+  color: 'blue' | 'green' | 'orange' | 'red' | 'purple' | 'zinc';
+  map?: Record<string, string>;
+}) {
+  if (!items?.length) return null;
+  return (
+    <div>
+      <Text className="text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+        {label}
+      </Text>
+      <div className="mt-1.5 flex flex-wrap gap-1">
+        {items.map((v) => (
+          <Badge key={v} color={color}>
+            {map?.[v] ?? v}
+          </Badge>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function CompiledFiltersPreviewSheet({
+  open,
+  filters,
+  counts,
+  isApplying,
+  onApply,
+  onClose,
+}: {
+  open: boolean;
+  filters: IcpFilters | null;
+  counts: PreviewFiltersResponse | null;
+  isApplying: boolean;
+  onApply: () => void;
+  onClose: () => void;
+}) {
+  return (
+    <Sheet open={open} onClose={onClose}>
+      <SheetHeader>
+        <SheetTitle>Compiled Filters Preview</SheetTitle>
+      </SheetHeader>
+      <SheetBody>
+        <div className="space-y-5">
+          {counts && (
+            <div className="rounded-lg bg-zinc-50 px-4 py-3 dark:bg-zinc-900">
+              <Text className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                {counts.companiesCount.toLocaleString()} companies ·{' '}
+                {counts.contactsCount.toLocaleString()} contacts match
+              </Text>
+            </div>
+          )}
+
+          {filters && (
+            <div className="space-y-4">
+              <Text className="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+                Company Filters
+              </Text>
+              <FilterBadges
+                label="Industries"
+                items={filters.industries}
+                color="blue"
+              />
+              <FilterBadges
+                label="Employee Ranges"
+                items={filters.employeeRanges}
+                color="green"
+                map={EMPLOYEE_RANGE_LABEL}
+              />
+              {filters.revenueRange && (
+                <div>
+                  <Text className="text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+                    Revenue Range
+                  </Text>
+                  <Text className="mt-1 text-sm text-zinc-700 dark:text-zinc-300">
+                    {formatRevenue(filters.revenueRange.min)} –{' '}
+                    {formatRevenue(filters.revenueRange.max)}
+                  </Text>
+                </div>
+              )}
+              <FilterBadges
+                label="Locations"
+                items={filters.locations}
+                color="orange"
+              />
+              <FilterBadges
+                label="Exclude Locations"
+                items={filters.excludeLocations}
+                color="red"
+              />
+              <FilterBadges
+                label="Technologies (any of)"
+                items={filters.technologiesAnyOf}
+                color="purple"
+              />
+              <FilterBadges
+                label="Technologies (all of)"
+                items={filters.technologiesAllOf}
+                color="purple"
+              />
+              <FilterBadges
+                label="Technologies (none of)"
+                items={filters.technologiesNoneOf}
+                color="zinc"
+              />
+              {filters.organizationName && (
+                <div>
+                  <Text className="text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+                    Organization Name
+                  </Text>
+                  <Text className="mt-1 text-sm text-zinc-700 dark:text-zinc-300">
+                    {filters.organizationName}
+                  </Text>
+                </div>
+              )}
+              <FilterBadges
+                label="Domains"
+                items={filters.organizationDomains}
+                color="zinc"
+              />
+
+              <Text className="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+                People Filters
+              </Text>
+              <FilterBadges
+                label="Job Titles"
+                items={filters.personTitles}
+                color="blue"
+              />
+              <FilterBadges
+                label="Seniorities"
+                items={filters.personSeniorities}
+                color="green"
+              />
+              <FilterBadges
+                label="Person Locations"
+                items={filters.personLocations}
+                color="orange"
+              />
+              <FilterBadges
+                label="Email Status"
+                items={filters.contactEmailStatus}
+                color="zinc"
+              />
+              {filters.keywords && (
+                <div>
+                  <Text className="text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+                    Keywords
+                  </Text>
+                  <Text className="mt-1 text-sm text-zinc-700 dark:text-zinc-300">
+                    {filters.keywords}
+                  </Text>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </SheetBody>
+      <SheetFooter>
+        <Button type="button" plain onClick={onClose} disabled={isApplying}>
+          Cancel
+        </Button>
+        <Button
+          type="button"
+          color="dark"
+          onClick={onApply}
+          disabled={isApplying}
+        >
+          {isApplying ? 'Applying…' : 'Apply Filters'}
+        </Button>
+      </SheetFooter>
+    </Sheet>
+  );
+}
+
+// ---------- Sidebar ----------
+
 function ProfileSidebar({
   profileId,
   onEditSuccess,
@@ -406,8 +597,53 @@ function ProfileSidebar({
   profileId: number;
   onEditSuccess: () => void;
 }) {
+  const queryClient = useQueryClient();
   const { data: profile } = useQuery(getIcpProfile(profileId));
   const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [compiledFilters, setCompiledFilters] = useState<IcpFilters | null>(
+    null,
+  );
+  const [previewCounts, setPreviewCounts] =
+    useState<PreviewFiltersResponse | null>(null);
+  const [isCompiling, setIsCompiling] = useState(false);
+
+  const applyMutation = useMutation({
+    mutationFn: (filters: IcpFilters) =>
+      icpApi.updateProfile(profileId, { filters }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ['icp', 'profile', profileId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ['icp', 'companies', profileId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ['icp', 'contacts', profileId],
+      });
+      setIsPreviewOpen(false);
+      toast.success('Filters applied');
+    },
+    onError: () => toast.error('Failed to apply filters'),
+  });
+
+  async function handleCompile() {
+    if (!profile?.description) return;
+    const text = editorJsonToMarkdown(JSON.stringify(profile.description));
+    if (!text) return;
+    setIsCompiling(true);
+    try {
+      const filters = await icpApi.compileDescription(text);
+      const counts = await icpApi.previewFilters(profileId, filters);
+      setCompiledFilters(filters);
+      setPreviewCounts(counts);
+      setIsPreviewOpen(true);
+    } catch {
+      toast.error('Failed to compile description');
+    } finally {
+      setIsCompiling(false);
+    }
+  }
 
   if (!profile) return null;
 
@@ -431,6 +667,15 @@ function ProfileSidebar({
           />
         </SheetBody>
       </Sheet>
+
+      <CompiledFiltersPreviewSheet
+        open={isPreviewOpen}
+        filters={compiledFilters}
+        counts={previewCounts}
+        isApplying={applyMutation.isPending}
+        onApply={() => compiledFilters && applyMutation.mutate(compiledFilters)}
+        onClose={() => setIsPreviewOpen(false)}
+      />
 
       <div className="space-y-5">
         <div className="flex items-center justify-between">
@@ -459,6 +704,13 @@ function ProfileSidebar({
                 readOnly
               />
             </div>
+            <Button
+              onClick={handleCompile}
+              disabled={isCompiling}
+              className="mt-2 w-full text-xs"
+            >
+              {isCompiling ? 'Compiling…' : 'Compile from Description'}
+            </Button>
           </div>
         )}
 
