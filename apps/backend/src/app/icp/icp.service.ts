@@ -66,13 +66,12 @@ export class IcpService {
   ) {
     await this.findById(id, organizationId);
     this.logger.debug(`[ICP] Previewing filters for profile ${id}`);
-    const [companies, contacts] = await Promise.all([
-      this.apolloService.searchCompanies(organizationId, filters, 1, 1),
-      this.apolloService.searchContacts(organizationId, filters, 1, 1),
-    ]);
+    const contacts = await this.apolloService
+      .searchContacts(organizationId, filters, 1, 1)
+      .catch(() => null);
     return {
-      companiesCount: companies.pagination.total_entries,
-      contactsCount: contacts.pagination.total_entries,
+      companiesCount: null,
+      contactsCount: contacts?.pagination.total_entries ?? null,
     };
   }
 

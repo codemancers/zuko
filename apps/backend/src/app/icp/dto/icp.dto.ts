@@ -264,6 +264,6 @@ export class PreviewFiltersDto {
 }
 
 export class PreviewFiltersResponseDto {
-  @ApiProperty() companiesCount!: number;
-  @ApiProperty() contactsCount!: number;
+  @ApiProperty({ nullable: true, type: Number }) companiesCount!: number | null;
+  @ApiProperty({ nullable: true, type: Number }) contactsCount!: number | null;
 }

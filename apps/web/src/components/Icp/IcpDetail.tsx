@@ -171,6 +171,24 @@ const companyColumns: ColumnDef<ApolloOrganization & { id: string }>[] = [
       return [org.city, org.country].filter(Boolean).join(', ') || '—';
     },
   },
+  {
+    accessorKey: 'linkedin_url',
+    header: 'LinkedIn',
+    cell: ({ getValue }) => {
+      const url = getValue<string>();
+      if (!url) return '—';
+      return (
+        <a
+          href={url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-blue-400 hover:text-blue-300 underline text-xs"
+        >
+          Profile
+        </a>
+      );
+    },
+  },
 ];
 
 const contactColumns: ColumnDef<ApolloPerson & { id: string }>[] = [
@@ -460,8 +478,17 @@ function CompiledFiltersPreviewSheet({
           {counts && (
             <div className="rounded-lg bg-zinc-50 px-4 py-3 dark:bg-zinc-900">
               <Text className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                {counts.companiesCount.toLocaleString()} companies ·{' '}
-                {counts.contactsCount.toLocaleString()} contacts match
+                {[
+                  counts.companiesCount != null
+                    ? `${counts.companiesCount.toLocaleString()} companies`
+                    : null,
+                  counts.contactsCount != null
+                    ? `${counts.contactsCount.toLocaleString()} contacts`
+                    : null,
+                ]
+                  .filter(Boolean)
+                  .join(' · ')}{' '}
+                match
               </Text>
             </div>
           )}

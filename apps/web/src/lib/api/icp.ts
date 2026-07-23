@@ -141,8 +141,8 @@ export interface ApolloContactsResponse {
 }
 
 export interface PreviewFiltersResponse {
-  companiesCount: number;
-  contactsCount: number;
+  companiesCount: number | null;
+  contactsCount: number | null;
 }
 
 export interface IcpProfilesPage {
