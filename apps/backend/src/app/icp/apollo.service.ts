@@ -137,6 +137,52 @@ export class ApolloService {
     if (filters.revenueRange?.max) {
       payload['revenue_range[max]'] = filters.revenueRange.max;
     }
+    if (filters.organizationName) {
+      payload['q_organization_name'] = filters.organizationName;
+    }
+    if (filters.organizationIds?.length) {
+      payload['organization_ids'] = filters.organizationIds;
+    }
+    if (filters.organizationDomains?.length) {
+      payload['q_organization_domains_list'] = filters.organizationDomains;
+    }
+    if (filters.excludeLocations?.length) {
+      payload['organization_not_locations'] = filters.excludeLocations;
+    }
+    if (filters.technologiesAnyOf?.length) {
+      payload['currently_using_any_of_technology_uids'] =
+        filters.technologiesAnyOf;
+    }
+    if (filters.technologiesAllOf?.length) {
+      payload['currently_using_all_of_technology_uids'] =
+        filters.technologiesAllOf;
+    }
+    if (filters.technologiesNoneOf?.length) {
+      payload['currently_not_using_any_of_technology_uids'] =
+        filters.technologiesNoneOf;
+    }
+    if (filters.latestFundingAmountRange?.min) {
+      payload['latest_funding_amount_range[min]'] =
+        filters.latestFundingAmountRange.min;
+    }
+    if (filters.latestFundingAmountRange?.max) {
+      payload['latest_funding_amount_range[max]'] =
+        filters.latestFundingAmountRange.max;
+    }
+    if (filters.totalFundingRange?.min) {
+      payload['total_funding_range[min]'] = filters.totalFundingRange.min;
+    }
+    if (filters.totalFundingRange?.max) {
+      payload['total_funding_range[max]'] = filters.totalFundingRange.max;
+    }
+    if (filters.latestFundingDateRange?.min) {
+      payload['latest_funding_date_range[min]'] =
+        filters.latestFundingDateRange.min;
+    }
+    if (filters.latestFundingDateRange?.max) {
+      payload['latest_funding_date_range[max]'] =
+        filters.latestFundingDateRange.max;
+    }
     this.logger.debug(`[APOLLO] searchCompanies page=${page}`);
 
     try {
@@ -233,6 +279,64 @@ export class ApolloService {
     }
     if (filters.revenueRange?.max) {
       payload['revenue_range[max]'] = filters.revenueRange.max;
+    }
+    if (filters.organizationIds?.length) {
+      payload['organization_ids'] = filters.organizationIds;
+    }
+    if (filters.organizationDomains?.length) {
+      payload['q_organization_domains_list'] = filters.organizationDomains;
+    }
+    if (filters.technologiesAnyOf?.length) {
+      payload['currently_using_any_of_technology_uids'] =
+        filters.technologiesAnyOf;
+    }
+    if (filters.technologiesAllOf?.length) {
+      payload['currently_using_all_of_technology_uids'] =
+        filters.technologiesAllOf;
+    }
+    if (filters.technologiesNoneOf?.length) {
+      payload['currently_not_using_any_of_technology_uids'] =
+        filters.technologiesNoneOf;
+    }
+    if (filters.latestFundingAmountRange?.min) {
+      payload['latest_funding_amount_range[min]'] =
+        filters.latestFundingAmountRange.min;
+    }
+    if (filters.latestFundingAmountRange?.max) {
+      payload['latest_funding_amount_range[max]'] =
+        filters.latestFundingAmountRange.max;
+    }
+    if (filters.totalFundingRange?.min) {
+      payload['total_funding_range[min]'] = filters.totalFundingRange.min;
+    }
+    if (filters.totalFundingRange?.max) {
+      payload['total_funding_range[max]'] = filters.totalFundingRange.max;
+    }
+    if (filters.latestFundingDateRange?.min) {
+      payload['latest_funding_date_range[min]'] =
+        filters.latestFundingDateRange.min;
+    }
+    if (filters.latestFundingDateRange?.max) {
+      payload['latest_funding_date_range[max]'] =
+        filters.latestFundingDateRange.max;
+    }
+    if (filters.personTitles?.length) {
+      payload['person_titles'] = filters.personTitles;
+    }
+    if (filters.personSeniorities?.length) {
+      payload['person_seniorities'] = filters.personSeniorities;
+    }
+    if (filters.includeSimilarTitles !== undefined) {
+      payload['include_similar_titles'] = filters.includeSimilarTitles;
+    }
+    if (filters.personLocations?.length) {
+      payload['person_locations'] = filters.personLocations;
+    }
+    if (filters.contactEmailStatus?.length) {
+      payload['contact_email_status'] = filters.contactEmailStatus;
+    }
+    if (filters.keywords) {
+      payload['q_keywords'] = filters.keywords;
     }
 
     this.logger.debug(`[APOLLO] searchContacts page=${page}`);
