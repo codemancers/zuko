@@ -37,6 +37,7 @@ export interface ApolloPerson {
   has_state: boolean;
   has_country: boolean;
   has_direct_phone: string;
+  linkedin_url?: string;
   organization?: {
     name: string;
     has_industry: boolean;

@@ -109,6 +109,7 @@ export interface ApolloPerson {
   has_state: boolean;
   has_country: boolean;
   has_direct_phone: string;
+  linkedin_url?: string;
   organization?: {
     name: string;
     has_industry: boolean;
@@ -189,5 +190,9 @@ export const icpApi = {
     return apiClient.get(
       `/icps/${id}/contacts?page=${page}&perPage=${perPage}`,
     );
+  },
+
+  async compileDescription(description: string): Promise<IcpFilters> {
+    return apiClient.post('/icps/compile-description', { description });
   },
 };

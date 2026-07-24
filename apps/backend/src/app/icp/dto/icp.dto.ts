@@ -7,6 +7,7 @@ import {
   IsOptional,
   IsString,
   Matches,
+  MinLength,
   ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
@@ -243,4 +244,14 @@ export class ApolloSearchQueryDto {
 
   @ApiPropertyOptional({ type: Number, default: 25 })
   perPage?: number;
+}
+
+export class CompileDescriptionDto {
+  @ApiProperty({
+    example:
+      'SaaS companies using Infor, 200-500 employees, targeting CFOs in the USA',
+  })
+  @IsString()
+  @MinLength(10)
+  description!: string;
 }

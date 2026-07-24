@@ -4,6 +4,7 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { OrganizationGuard } from '../../common/auth/organization.guard';
 import { IntegrationsModule } from '../integrations/integrations.module';
 import { ApolloService } from './apollo.service';
+import { IcpLlmService } from './icp-llm.service';
 import { IcpController } from './icp.controller';
 import { IcpRepository } from './icp.repository';
 import { IcpService } from './icp.service';
@@ -14,6 +15,7 @@ import { IcpService } from './icp.service';
   providers: [
     OrganizationGuard,
     ApolloService,
+    IcpLlmService,
     {
       provide: IcpRepository,
       useFactory: (prisma: PrismaService) => new IcpRepository(prisma),
