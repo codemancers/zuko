@@ -51,7 +51,6 @@ import type {
 } from '@/lib/api/icp';
 import { EMPLOYEE_RANGE_LABEL } from '@/lib/constants/icp';
 import { editorJsonToMarkdown } from '@/lib/editor-utils';
-import IcpForm from './IcpForm';
 import IcpCampaignsPanel from './IcpCampaignsPanel';
 import { apolloSequencesApi } from '@/lib/api/apollo';
 import { toast } from 'sonner';
@@ -617,16 +616,10 @@ function CompiledFiltersPreviewSheet({
 
 // ---------- Sidebar ----------
 
-function ProfileSidebar({
-  profileId,
-  onEditSuccess,
-}: {
-  profileId: number;
-  onEditSuccess: () => void;
-}) {
+function ProfileSidebar({ profileId }: { profileId: number }) {
+  const router = useRouter();
   const queryClient = useQueryClient();
   const { data: profile } = useQuery(getIcpProfile(profileId));
-  const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [compiledFilters, setCompiledFilters] = useState<IcpFilters | null>(
     null,
@@ -678,23 +671,6 @@ function ProfileSidebar({
 
   return (
     <>
-      <Sheet open={isSheetOpen} onClose={() => setIsSheetOpen(false)}>
-        <SheetHeader>
-          <SheetTitle>Edit ICP Profile</SheetTitle>
-        </SheetHeader>
-        <SheetBody>
-          <IcpForm
-            mode="edit"
-            profile={profile}
-            onSuccess={() => {
-              setIsSheetOpen(false);
-              onEditSuccess();
-            }}
-            onCancel={() => setIsSheetOpen(false)}
-          />
-        </SheetBody>
-      </Sheet>
-
       <CompiledFiltersPreviewSheet
         open={isPreviewOpen}
         filters={compiledFilters}
@@ -710,7 +686,7 @@ function ProfileSidebar({
             Profile Details
           </Text>
           <Button
-            onClick={() => setIsSheetOpen(true)}
+            onClick={() => router.push(`/icps/${profileId}/edit`)}
             className="text-xs text-zinc-500"
           >
             <PencilIcon className="size-3" />
@@ -738,6 +714,17 @@ function ProfileSidebar({
             >
               {isCompiling ? 'Compiling…' : 'Compile from Description'}
             </Button>
+          </div>
+        )}
+
+        {filters.organizationName && (
+          <div>
+            <Text className="text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+              Company
+            </Text>
+            <div className="mt-1.5 flex flex-wrap gap-1">
+              <Badge color="cyan">{filters.organizationName}</Badge>
+            </div>
           </div>
         )}
 
@@ -803,6 +790,66 @@ function ProfileSidebar({
             )}
           </div>
         </div>
+
+        {filters.excludeLocations?.length ? (
+          <div>
+            <Text className="text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+              Exclude Locations
+            </Text>
+            <div className="mt-1.5 flex flex-wrap gap-1">
+              {filters.excludeLocations.map((loc) => (
+                <Badge key={loc} color="red">
+                  {loc}
+                </Badge>
+              ))}
+            </div>
+          </div>
+        ) : null}
+
+        {filters.personTitles?.length ? (
+          <div>
+            <Text className="text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+              Job Titles
+            </Text>
+            <div className="mt-1.5 flex flex-wrap gap-1">
+              {filters.personTitles.map((t) => (
+                <Badge key={t} color="amber">
+                  {t}
+                </Badge>
+              ))}
+            </div>
+          </div>
+        ) : null}
+
+        {filters.personSeniorities?.length ? (
+          <div>
+            <Text className="text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+              Seniorities
+            </Text>
+            <div className="mt-1.5 flex flex-wrap gap-1">
+              {filters.personSeniorities.map((s) => (
+                <Badge key={s} color="orange">
+                  {s}
+                </Badge>
+              ))}
+            </div>
+          </div>
+        ) : null}
+
+        {filters.technologiesAnyOf?.length ? (
+          <div>
+            <Text className="text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+              Technologies
+            </Text>
+            <div className="mt-1.5 flex flex-wrap gap-1">
+              {filters.technologiesAnyOf.map((t) => (
+                <Badge key={t} color="pink">
+                  {t}
+                </Badge>
+              ))}
+            </div>
+          </div>
+        ) : null}
 
         <div>
           <Text className="text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
@@ -908,11 +955,7 @@ export default function IcpDetail({ profileId }: IcpDetailProps) {
   const [activeTab, setActiveTab] = useQueryState('tab', tabParser);
   const [newCampaignOpen, setNewCampaignOpen] = useState(false);
 
-  const {
-    data: profile,
-    isLoading,
-    refetch,
-  } = useQuery(getIcpProfile(profileId));
+  const { data: profile, isLoading } = useQuery(getIcpProfile(profileId));
 
   if (isLoading) return <LoadingState message="Loading ICP profile…" />;
   if (!profile)
@@ -928,12 +971,14 @@ export default function IcpDetail({ profileId }: IcpDetailProps) {
 
       <div className="mt-4 flex items-center justify-between">
         <Heading>{profile.name}</Heading>
-        {activeTab === 'campaigns' && (
-          <Button onClick={() => setNewCampaignOpen(true)}>
-            <PlusIcon className="size-4" />
-            New Campaign
-          </Button>
-        )}
+        <div className="flex items-center gap-2">
+          {activeTab === 'campaigns' && (
+            <Button onClick={() => setNewCampaignOpen(true)}>
+              <PlusIcon className="size-4" />
+              New Campaign
+            </Button>
+          )}
+        </div>
       </div>
 
       <Tabs
@@ -971,10 +1016,7 @@ export default function IcpDetail({ profileId }: IcpDetailProps) {
 
         {/* Sidebar */}
         <div className="w-64 shrink-0 border-l border-zinc-200 pl-8 dark:border-zinc-700/50">
-          <ProfileSidebar
-            profileId={profileId}
-            onEditSuccess={() => refetch()}
-          />
+          <ProfileSidebar profileId={profileId} />
         </div>
       </div>
 

@@ -122,6 +122,38 @@ export class IcpLlmService {
     });
   }
 
+  async classifyIntent(
+    message: string,
+  ): Promise<{ intent: 'confirm' | 'refine' }> {
+    const { object } = await generateObject({
+      model: this.openai.chat('gpt-4o-mini'),
+      schema: z.object({ intent: z.enum(['confirm', 'refine']) }),
+      system:
+        'The user was shown a set of ICP filters and asked if they look right. ' +
+        'Classify their reply: "confirm" = they approve and want to save, ' +
+        '"refine" = they want to change something. Reply with only the JSON.',
+      prompt: message,
+    });
+    return { intent: object.intent };
+  }
+
+  async refineFilters(
+    currentFilters: IcpFiltersDto,
+    message: string,
+  ): Promise<IcpFiltersDto> {
+    if (!message.trim()) throw new BadRequestException('Message is empty');
+    this.logger.debug('[ICP-LLM] Refining filters');
+    const { object } = await generateObject({
+      model: this.openai.chat('gpt-4o-mini'),
+      schema: filtersSchema,
+      system:
+        SYSTEM_PROMPT +
+        '\n\nYou are UPDATING existing filters. Keep all existing values unless the user explicitly asks to change or remove them. Merge the user request into the current filters.',
+      prompt: `Current filters:\n${JSON.stringify(currentFilters, null, 2)}\n\nUser request: ${message}`,
+    });
+    return object as IcpFiltersDto;
+  }
+
   async compileDescription(description: string): Promise<IcpFiltersDto> {
     if (!description.trim()) {
       throw new BadRequestException('Description is empty');

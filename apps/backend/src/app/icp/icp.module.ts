@@ -23,9 +23,12 @@ import { IcpService } from './icp.service';
     },
     {
       provide: IcpService,
-      useFactory: (repo: IcpRepository, apollo: ApolloService) =>
-        new IcpService(repo, apollo),
-      inject: [IcpRepository, ApolloService],
+      useFactory: (
+        repo: IcpRepository,
+        apollo: ApolloService,
+        llm: IcpLlmService,
+      ) => new IcpService(repo, apollo, llm),
+      inject: [IcpRepository, ApolloService, IcpLlmService],
     },
   ],
 })

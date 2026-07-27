@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { lazy, Suspense, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
@@ -244,12 +245,12 @@ export default function CampaignDetail({ zukoId }: CampaignDetailProps) {
                 <Text className="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
                   ICP Profile
                 </Text>
-                <a
+                <Link
                   href={`/icps/${campaign.icpProfileId}?tab=campaigns`}
                   className="mt-1 block text-sm text-blue-400 hover:underline"
                 >
                   View ICP →
-                </a>
+                </Link>
               </div>
             )}
 

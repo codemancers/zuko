@@ -409,6 +409,8 @@ export const getIcpCompaniesInfinite = (id: number, perPage = 25) =>
       const totalPages = Number(lastPage.pagination.total_pages);
       return page < totalPages ? page + 1 : undefined;
     },
+    staleTime: 1000 * 60 * 30, // 30 min — avoids re-fetching (and spending credits) on tab switch
+    gcTime: 1000 * 60 * 60, // keep in memory for 1 hour
     retry: false,
     enabled: id > 0,
   });

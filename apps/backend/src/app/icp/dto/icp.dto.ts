@@ -207,6 +207,16 @@ export class IcpFiltersDto {
   keywords?: string;
 }
 
+export class RefineFiltersDto {
+  @ApiProperty() description!: string;
+
+  @ApiPropertyOptional({ type: IcpFiltersDto })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => IcpFiltersDto)
+  currentFilters?: IcpFiltersDto;
+}
+
 export class CreateIcpProfileDto {
   @ApiProperty({ example: 'SaaS Mid-Market' })
   name!: string;
@@ -256,6 +266,13 @@ export class CompileDescriptionDto {
   description!: string;
 }
 
+export class ClassifyIntentDto {
+  @ApiProperty({ example: 'yes' })
+  @IsString()
+  @MinLength(1)
+  description!: string;
+}
+
 export class PreviewFiltersDto {
   @ApiProperty({ type: IcpFiltersDto })
   @ValidateNested()
@@ -266,4 +283,6 @@ export class PreviewFiltersDto {
 export class PreviewFiltersResponseDto {
   @ApiProperty({ nullable: true, type: Number }) companiesCount!: number | null;
   @ApiProperty({ nullable: true, type: Number }) contactsCount!: number | null;
+  @ApiProperty({ enum: ['ok', 'warn', 'broad'], nullable: true })
+  filterBreadth!: 'ok' | 'warn' | 'broad' | null;
 }

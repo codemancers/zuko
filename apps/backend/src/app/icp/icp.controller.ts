@@ -25,11 +25,13 @@ import { OrganizationGuard } from '../../common/auth/organization.guard';
 import { OrgId } from '../../common/auth/org-id.decorator';
 import {
   ApolloSearchQueryDto,
+  ClassifyIntentDto,
   CompileDescriptionDto,
   CreateIcpProfileDto,
   IcpFiltersDto,
   PreviewFiltersDto,
   PreviewFiltersResponseDto,
+  RefineFiltersDto,
   UpdateIcpProfileDto,
 } from './dto/icp.dto';
 import { IcpLlmService } from './icp-llm.service';
@@ -45,6 +47,25 @@ export class IcpController {
     private readonly icpLlmService: IcpLlmService,
   ) {}
 
+  @Post('classify-intent')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Classify user message as confirm or refine intent',
+  })
+  classifyIntent(@Body() dto: ClassifyIntentDto) {
+    return this.icpService.classifyIntent(dto.description);
+  }
+
+  @Post('refine-filters')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Refine existing ICP filters with user message' })
+  refineFilters(@Body() dto: RefineFiltersDto) {
+    return this.icpService.refineFilters(
+      dto.currentFilters ?? {},
+      dto.description,
+    );
+  }
+
   @Post('compile-description')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
@@ -55,6 +76,20 @@ export class IcpController {
     @Body() dto: CompileDescriptionDto,
   ): Promise<IcpFiltersDto> {
     return this.icpLlmService.compileDescription(dto.description);
+  }
+
+  @Post('preview-filters')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary:
+      'Preview Apollo match counts for given filters (no profile required)',
+  })
+  @ApiResponse({ status: 200, type: PreviewFiltersResponseDto })
+  previewFiltersAnon(
+    @OrgId() organizationId: number,
+    @Body() dto: PreviewFiltersDto,
+  ) {
+    return this.icpService.previewFiltersAnon(organizationId, dto.filters);
   }
 
   @Post(':id/preview-filters')
