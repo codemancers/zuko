@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect, useCallback } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { icpApi, type IcpFilters } from '@/lib/api/icp';
@@ -389,12 +390,12 @@ export default function IcpChat({
     <div className="flex h-[calc(100vh-4rem)] flex-col">
       {/* Header */}
       <div className="flex items-center gap-3 border-b border-zinc-200 px-6 py-4 dark:border-zinc-800">
-        <a
+        <Link
           href={backHref}
           className="text-sm text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 transition-colors"
         >
           {backLabel}
-        </a>
+        </Link>
         <span className="text-zinc-300 dark:text-zinc-700">/</span>
         <span className="text-sm font-medium text-zinc-900 dark:text-white">
           {pageLabel}
