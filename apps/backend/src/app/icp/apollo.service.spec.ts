@@ -276,12 +276,13 @@ describe('ApolloService', () => {
       expect(payload['person_locations']).toEqual(['San Francisco']);
     });
 
-    it('uses locations as person_locations when personLocations not set', async () => {
+    it('maps locations to organization_locations in contacts search', async () => {
       axiosPost.mockResolvedValue(makePeopleResponse());
       await service.searchContacts(1, { locations: ['United States'] });
 
       const payload = axiosPost.mock.calls[0][1] as Record<string, unknown>;
-      expect(payload['person_locations']).toEqual(['United States']);
+      expect(payload['organization_locations']).toEqual(['United States']);
+      expect(payload['person_locations']).toBeUndefined();
     });
 
     it('maps technographic filters in contacts search', async () => {

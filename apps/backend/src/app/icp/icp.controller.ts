@@ -30,6 +30,7 @@ import {
   IcpFiltersDto,
   PreviewFiltersDto,
   PreviewFiltersResponseDto,
+  RefineFiltersDto,
   UpdateIcpProfileDto,
 } from './dto/icp.dto';
 import { IcpLlmService } from './icp-llm.service';
@@ -44,6 +45,25 @@ export class IcpController {
     private readonly icpService: IcpService,
     private readonly icpLlmService: IcpLlmService,
   ) {}
+
+  @Post('classify-intent')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Classify user message as confirm or refine intent',
+  })
+  classifyIntent(@Body() dto: CompileDescriptionDto) {
+    return this.icpService.classifyIntent(dto.description);
+  }
+
+  @Post('refine-filters')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Refine existing ICP filters with user message' })
+  refineFilters(@Body() dto: RefineFiltersDto) {
+    return this.icpService.refineFilters(
+      dto.currentFilters ?? {},
+      dto.description,
+    );
+  }
 
   @Post('compile-description')
   @HttpCode(HttpStatus.OK)

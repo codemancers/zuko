@@ -1,26 +1,5 @@
 import type { MultiSelectOption } from '@zuko/ui-kit';
 
-export const INDUSTRY_OPTIONS: MultiSelectOption[] = [
-  { label: 'SaaS', value: 'saas' },
-  { label: 'Fintech', value: 'fintech' },
-  { label: 'Healthcare', value: 'healthcare' },
-  { label: 'E-commerce', value: 'ecommerce' },
-  { label: 'Marketing', value: 'marketing' },
-  { label: 'Finance', value: 'finance' },
-  { label: 'Education', value: 'education' },
-  { label: 'Media', value: 'media' },
-  { label: 'Retail', value: 'retail' },
-  { label: 'Manufacturing', value: 'manufacturing' },
-  { label: 'Real Estate', value: 'real estate' },
-  { label: 'Logistics', value: 'logistics' },
-  { label: 'Cybersecurity', value: 'cybersecurity' },
-  { label: 'AI / ML', value: 'artificial intelligence' },
-  { label: 'Legal', value: 'legal' },
-  { label: 'Insurance', value: 'insurance' },
-  { label: 'Consulting', value: 'consulting' },
-  { label: 'Telecommunications', value: 'telecommunications' },
-];
-
 export const EMPLOYEE_RANGE_OPTIONS: MultiSelectOption[] = [
   { label: '1 – 10', value: '1,10' },
   { label: '11 – 50', value: '11,50' },

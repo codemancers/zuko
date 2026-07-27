@@ -1,5 +1,6 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { ApolloService } from './apollo.service';
+import { IcpLlmService } from './icp-llm.service';
 import { IcpRepository } from './icp.repository';
 import type {
   CreateIcpProfileDto,
@@ -14,7 +15,16 @@ export class IcpService {
   constructor(
     private readonly icpRepository: IcpRepository,
     private readonly apolloService: ApolloService,
+    private readonly llmService: IcpLlmService,
   ) {}
+
+  classifyIntent(message: string): Promise<{ intent: 'confirm' | 'refine' }> {
+    return this.llmService.classifyIntent(message);
+  }
+
+  refineFilters(currentFilters: IcpFiltersDto, message: string) {
+    return this.llmService.refineFilters(currentFilters, message);
+  }
 
   create(organizationId: number, dto: CreateIcpProfileDto) {
     return this.icpRepository.create(organizationId, dto);
@@ -50,7 +60,7 @@ export class IcpService {
   ) {
     const profile = await this.findById(id, organizationId);
     const filters = (profile.filters ?? {}) as IcpFiltersDto;
-    this.logger.debug(`[ICP] Fetching Apollo companies for profile ${id}`);
+    this.logger.debug(`[ICP] Fetching live Apollo companies for profile ${id}`);
     return this.apolloService.searchCompanies(
       organizationId,
       filters,
@@ -69,10 +79,16 @@ export class IcpService {
     const contacts = await this.apolloService
       .searchContacts(organizationId, filters, 1, 1)
       .catch(() => null);
-    return {
-      companiesCount: null,
-      contactsCount: contacts?.pagination.total_entries ?? null,
-    };
+    const contactsCount = contacts?.pagination.total_entries ?? null;
+    const filterBreadth =
+      contactsCount === null
+        ? null
+        : contactsCount > 5000
+          ? 'broad'
+          : contactsCount > 1000
+            ? 'warn'
+            : 'ok';
+    return { companiesCount: null, contactsCount, filterBreadth };
   }
 
   async getApolloContacts(
@@ -83,7 +99,7 @@ export class IcpService {
   ) {
     const profile = await this.findById(id, organizationId);
     const filters = (profile.filters ?? {}) as IcpFiltersDto;
-    this.logger.debug(`[ICP] Fetching Apollo contacts for profile ${id}`);
+    this.logger.debug(`[ICP] Fetching live Apollo contacts for profile ${id}`);
     return this.apolloService.searchContacts(
       organizationId,
       filters,

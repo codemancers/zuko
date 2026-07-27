@@ -9,14 +9,7 @@ import {
 import { useRouter } from 'next/navigation';
 import type { ColumnDef } from '@tanstack/react-table';
 import { EMPLOYEE_RANGE_LABEL } from '@/lib/constants/icp';
-import {
-  Button,
-  Badge,
-  Sheet,
-  SheetHeader,
-  SheetTitle,
-  SheetBody,
-} from '@zuko/ui-kit';
+import { Button, Badge } from '@zuko/ui-kit';
 import { PlusIcon } from '@heroicons/react/20/solid';
 import { AdjustmentsHorizontalIcon } from '@heroicons/react/24/outline';
 import { getIcpProfilesInfinite } from '@/server/query-options';
@@ -29,7 +22,6 @@ import {
   DataField,
 } from '@/components/Table';
 import type { ColumnMetadata } from '@/components/Table';
-import IcpForm from './IcpForm';
 import { toast } from 'sonner';
 
 export default function IcpList() {
@@ -45,7 +37,6 @@ export default function IcpList() {
   );
   const totalCount = data?.pages[0]?.total ?? 0;
 
-  const [isCreateSheetOpen, setIsCreateSheetOpen] = useState(false);
   const [profileToDelete, setProfileToDelete] = useState<IcpProfile | null>(
     null,
   );
@@ -182,7 +173,7 @@ export default function IcpList() {
         title="ICP Profiles"
         description="Define Ideal Customer Profile criteria and find matching companies via Apollo."
         action={
-          <Button onClick={() => setIsCreateSheetOpen(true)}>
+          <Button onClick={() => router.push('/icps/new')}>
             <PlusIcon className="size-4" />
             New ICP Profile
           </Button>
@@ -207,26 +198,10 @@ export default function IcpList() {
             'Create a profile to define your ideal customer criteria and find matching companies.',
           action: {
             label: 'New ICP Profile',
-            onClick: () => setIsCreateSheetOpen(true),
+            onClick: () => router.push('/icps/new'),
           },
         }}
       />
-
-      <Sheet
-        open={isCreateSheetOpen}
-        onClose={() => setIsCreateSheetOpen(false)}
-      >
-        <SheetHeader>
-          <SheetTitle>New ICP Profile</SheetTitle>
-        </SheetHeader>
-        <SheetBody>
-          <IcpForm
-            mode="create"
-            onSuccess={() => setIsCreateSheetOpen(false)}
-            onCancel={() => setIsCreateSheetOpen(false)}
-          />
-        </SheetBody>
-      </Sheet>
 
       <ConfirmDialog
         open={!!profileToDelete}

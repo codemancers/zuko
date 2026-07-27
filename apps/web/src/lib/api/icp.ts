@@ -143,6 +143,7 @@ export interface ApolloContactsResponse {
 export interface PreviewFiltersResponse {
   companiesCount: number | null;
   contactsCount: number | null;
+  filterBreadth: 'ok' | 'warn' | 'broad' | null;
 }
 
 export interface IcpProfilesPage {
@@ -197,8 +198,26 @@ export const icpApi = {
     );
   },
 
+  async classifyIntent(message: string): Promise<'confirm' | 'refine'> {
+    const res = await apiClient.post<{ intent: 'confirm' | 'refine' }>(
+      '/icps/classify-intent',
+      { description: message },
+    );
+    return res.intent;
+  },
+
   async compileDescription(description: string): Promise<IcpFilters> {
     return apiClient.post('/icps/compile-description', { description });
+  },
+
+  async refineFilters(
+    currentFilters: IcpFilters,
+    message: string,
+  ): Promise<IcpFilters> {
+    return apiClient.post('/icps/refine-filters', {
+      description: message,
+      currentFilters,
+    });
   },
 
   async previewFilters(
