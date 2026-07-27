@@ -221,9 +221,10 @@ export const icpApi = {
   },
 
   async previewFilters(
-    id: number,
+    id: number | undefined,
     filters: IcpFilters,
   ): Promise<PreviewFiltersResponse> {
-    return apiClient.post(`/icps/${id}/preview-filters`, { filters });
+    const url = id ? `/icps/${id}/preview-filters` : '/icps/preview-filters';
+    return apiClient.post(url, { filters });
   },
 };

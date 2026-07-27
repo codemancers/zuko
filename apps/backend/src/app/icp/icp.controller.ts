@@ -25,6 +25,7 @@ import { OrganizationGuard } from '../../common/auth/organization.guard';
 import { OrgId } from '../../common/auth/org-id.decorator';
 import {
   ApolloSearchQueryDto,
+  ClassifyIntentDto,
   CompileDescriptionDto,
   CreateIcpProfileDto,
   IcpFiltersDto,
@@ -51,7 +52,7 @@ export class IcpController {
   @ApiOperation({
     summary: 'Classify user message as confirm or refine intent',
   })
-  classifyIntent(@Body() dto: CompileDescriptionDto) {
+  classifyIntent(@Body() dto: ClassifyIntentDto) {
     return this.icpService.classifyIntent(dto.description);
   }
 
@@ -75,6 +76,20 @@ export class IcpController {
     @Body() dto: CompileDescriptionDto,
   ): Promise<IcpFiltersDto> {
     return this.icpLlmService.compileDescription(dto.description);
+  }
+
+  @Post('preview-filters')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary:
+      'Preview Apollo match counts for given filters (no profile required)',
+  })
+  @ApiResponse({ status: 200, type: PreviewFiltersResponseDto })
+  previewFiltersAnon(
+    @OrgId() organizationId: number,
+    @Body() dto: PreviewFiltersDto,
+  ) {
+    return this.icpService.previewFiltersAnon(organizationId, dto.filters);
   }
 
   @Post(':id/preview-filters')

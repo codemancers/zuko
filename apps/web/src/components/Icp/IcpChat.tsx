@@ -235,7 +235,7 @@ export default function IcpChat({
     mutationFn: async (description: string) => {
       const filters = await icpApi.compileDescription(description);
       const preview = await icpApi
-        .previewFilters(profile?.id ?? 1, filters)
+        .previewFilters(profile?.id, filters)
         .catch(() => null);
       return { filters, preview };
     },
@@ -265,7 +265,7 @@ export default function IcpChat({
         refinement,
       );
       const preview = await icpApi
-        .previewFilters(profile?.id ?? 1, filters)
+        .previewFilters(profile?.id, filters)
         .catch(() => null);
       return { filters, preview };
     },

@@ -266,6 +266,13 @@ export class CompileDescriptionDto {
   description!: string;
 }
 
+export class ClassifyIntentDto {
+  @ApiProperty({ example: 'yes' })
+  @IsString()
+  @MinLength(1)
+  description!: string;
+}
+
 export class PreviewFiltersDto {
   @ApiProperty({ type: IcpFiltersDto })
   @ValidateNested()

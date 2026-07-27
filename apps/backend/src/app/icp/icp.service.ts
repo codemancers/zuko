@@ -69,6 +69,11 @@ export class IcpService {
     );
   }
 
+  async previewFiltersAnon(organizationId: number, filters: IcpFiltersDto) {
+    this.logger.debug('[ICP] Previewing filters (no profile)');
+    return this.runPreview(organizationId, filters);
+  }
+
   async previewFilters(
     id: number,
     organizationId: number,
@@ -76,6 +81,10 @@ export class IcpService {
   ) {
     await this.findById(id, organizationId);
     this.logger.debug(`[ICP] Previewing filters for profile ${id}`);
+    return this.runPreview(organizationId, filters);
+  }
+
+  private async runPreview(organizationId: number, filters: IcpFiltersDto) {
     const contacts = await this.apolloService
       .searchContacts(organizationId, filters, 1, 1)
       .catch(() => null);
