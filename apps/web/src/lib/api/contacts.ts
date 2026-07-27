@@ -19,6 +19,8 @@ export interface Contact {
   createdAt: string;
   updatedAt: string;
   owners: ContactOwner[];
+  apolloPersonId?: string;
+  apolloContactId?: string;
 }
 
 export interface ContactOwner {
@@ -50,6 +52,8 @@ export interface CreateContactDto {
   notes?: OutputData;
   ownerIds?: number[];
   primaryOwnerId?: number;
+  apolloPersonId?: string;
+  apolloContactId?: string;
 }
 
 export interface UpdateContactDto {
@@ -58,6 +62,8 @@ export interface UpdateContactDto {
   phone?: string;
   linkedinId?: string;
   notes?: OutputData;
+  apolloPersonId?: string;
+  apolloContactId?: string;
 }
 
 export interface ContactFilters {

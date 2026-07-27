@@ -65,6 +65,18 @@ export class CreateCompanyDto implements Omit<
 
   @ApiPropertyOptional({ type: Object, description: 'Custom field values' })
   fields?: Record<string, unknown>;
+
+  @ApiPropertyOptional({
+    example: '5e66b6381e05b4008c8331b8',
+    description: 'Apollo global organization ID (stable across workspaces)',
+  })
+  apolloOrganizationId?: string;
+
+  @ApiPropertyOptional({
+    example: '63f53afe4ceeca00016bdd2f',
+    description: 'Apollo workspace account ID (exists once saved to Apollo)',
+  })
+  apolloAccountId?: string;
 }
 
 export class UpdateCompanyDto implements Partial<UpdateCompanyInput> {
@@ -85,6 +97,16 @@ export class UpdateCompanyDto implements Partial<UpdateCompanyInput> {
 
   @ApiPropertyOptional({ type: Object })
   fields?: Record<string, unknown>;
+
+  @ApiPropertyOptional({
+    description: 'Apollo global organization ID (stable across workspaces)',
+  })
+  apolloOrganizationId?: string;
+
+  @ApiPropertyOptional({
+    description: 'Apollo workspace account ID (exists once saved to Apollo)',
+  })
+  apolloAccountId?: string;
 }
 
 export class CompanyListQueryDto {

@@ -13,6 +13,8 @@ export interface CreateCompanyInput {
   ownerIds?: number[];
   primaryOwnerId?: number;
   fields?: Record<string, unknown>;
+  apolloOrganizationId?: string;
+  apolloAccountId?: string;
 }
 
 export interface UpdateCompanyInput {
@@ -22,6 +24,8 @@ export interface UpdateCompanyInput {
   summary?: EditorData;
   isHidden?: boolean;
   fields?: Record<string, unknown>;
+  apolloOrganizationId?: string;
+  apolloAccountId?: string;
 }
 
 export interface CompanyFilters {
@@ -92,6 +96,15 @@ export class CompaniesRepository {
           },
         },
       },
+    });
+  }
+
+  async findByApolloOrganizationId(
+    apolloOrganizationId: string,
+    organizationId: number,
+  ) {
+    return this.prisma.company.findFirst({
+      where: { apolloOrganizationId, organizationId },
     });
   }
 

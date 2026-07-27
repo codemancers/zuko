@@ -14,6 +14,8 @@ export interface CreateContactInput {
   ownerIds?: number[];
   primaryOwnerId?: number;
   fields?: Record<string, unknown>;
+  apolloPersonId?: string;
+  apolloContactId?: string;
 }
 
 export interface UpdateContactInput {
@@ -24,6 +26,8 @@ export interface UpdateContactInput {
   notes?: EditorData;
   isHidden?: boolean;
   fields?: Record<string, unknown>;
+  apolloPersonId?: string;
+  apolloContactId?: string;
 }
 
 export interface ContactFilters {
@@ -82,6 +86,12 @@ export class ContactsRepository {
           },
         },
       },
+    });
+  }
+
+  async findByApolloPersonId(apolloPersonId: string, organizationId: number) {
+    return this.prisma.contact.findFirst({
+      where: { apolloPersonId, organizationId },
     });
   }
 

@@ -20,6 +20,8 @@ export interface Company {
   updatedAt: string;
   owners: CompanyOwner[];
   contacts?: CompanyContactAssociation[];
+  apolloOrganizationId?: string;
+  apolloAccountId?: string;
   _count?: {
     contacts: number;
   };
@@ -66,6 +68,8 @@ export interface CreateCompanyDto {
   summary?: OutputData;
   ownerIds?: number[];
   primaryOwnerId?: number;
+  apolloOrganizationId?: string;
+  apolloAccountId?: string;
 }
 
 export interface UpdateCompanyDto {
@@ -73,6 +77,8 @@ export interface UpdateCompanyDto {
   website?: string;
   linkedinUrl?: string;
   summary?: OutputData;
+  apolloOrganizationId?: string;
+  apolloAccountId?: string;
 }
 
 export interface CompanyFilters {

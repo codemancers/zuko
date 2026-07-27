@@ -66,6 +66,17 @@ export class CreateContactDto implements Omit<
 
   @ApiPropertyOptional({ type: Object, description: 'Custom field values' })
   fields?: Record<string, unknown>;
+
+  @ApiPropertyOptional({
+    example: '587cf802f65125cad923a266',
+    description: 'Apollo global person ID (stable across workspaces)',
+  })
+  apolloPersonId?: string;
+
+  @ApiPropertyOptional({
+    description: 'Apollo workspace contact ID (exists once saved to Apollo)',
+  })
+  apolloContactId?: string;
 }
 
 export class UpdateContactDto implements Partial<UpdateContactInput> {
@@ -86,6 +97,16 @@ export class UpdateContactDto implements Partial<UpdateContactInput> {
 
   @ApiPropertyOptional({ type: Object })
   fields?: Record<string, unknown>;
+
+  @ApiPropertyOptional({
+    description: 'Apollo global person ID (stable across workspaces)',
+  })
+  apolloPersonId?: string;
+
+  @ApiPropertyOptional({
+    description: 'Apollo workspace contact ID (exists once saved to Apollo)',
+  })
+  apolloContactId?: string;
 }
 
 export class ContactListQueryDto {

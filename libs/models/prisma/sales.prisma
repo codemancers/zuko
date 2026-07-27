@@ -12,6 +12,8 @@ model Contact {
   notes          Json?        @map("notes")
   fields         Json         @default("{}") @map("fields")
   isHidden       Boolean      @default(false) @map("is_hidden")
+  apolloPersonId  String?     @map("apollo_person_id") // Apollo global person ID (stable across workspaces)
+  apolloContactId String?     @map("apollo_contact_id") // Apollo workspace contact ID (exists once saved/enrolled in Apollo)
   createdAt      DateTime     @default(now()) @map("created_at")
   updatedAt      DateTime     @updatedAt @map("updated_at")
 
@@ -25,6 +27,8 @@ model Contact {
   @@index([email])
   @@index([phone])
   @@index([linkedinId])
+  @@index([apolloPersonId])
+  @@index([apolloContactId])
   @@map("contact")
   @@schema("sales")
 }
@@ -74,6 +78,8 @@ model Company {
   summary        Json?    @map("summary")
   isHidden       Boolean  @default(false) @map("is_hidden")
   fields         Json     @default("{}") @map("fields")
+  apolloOrganizationId String? @map("apollo_organization_id") // Apollo global organization ID (stable across workspaces)
+  apolloAccountId      String? @map("apollo_account_id") // Apollo workspace account ID (exists once saved to Apollo)
   createdAt      DateTime @default(now()) @map("created_at")
   updatedAt     DateTime @updatedAt @map("updated_at")
 
@@ -85,6 +91,8 @@ model Company {
   @@index([organizationId])
   @@index([isHidden])
   @@index([companyName])
+  @@index([apolloOrganizationId])
+  @@index([apolloAccountId])
   @@map("company")
   @@schema("sales")
 }
