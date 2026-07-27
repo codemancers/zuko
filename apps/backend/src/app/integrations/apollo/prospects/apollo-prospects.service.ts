@@ -354,7 +354,12 @@ export class ApolloProspectsService {
               'Unknown';
 
             await this.contactsRepository
-              .create({ organizationId, name })
+              .create({
+                organizationId,
+                name,
+                apolloPersonId: personId,
+                apolloContactId: contactId,
+              })
               .catch((err: unknown) => {
                 // Non-fatal — CRM record creation is best-effort.
                 this.logger.warn(
