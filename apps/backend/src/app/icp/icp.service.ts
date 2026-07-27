@@ -59,6 +59,22 @@ export class IcpService {
     );
   }
 
+  async previewFilters(
+    id: number,
+    organizationId: number,
+    filters: IcpFiltersDto,
+  ) {
+    await this.findById(id, organizationId);
+    this.logger.debug(`[ICP] Previewing filters for profile ${id}`);
+    const contacts = await this.apolloService
+      .searchContacts(organizationId, filters, 1, 1)
+      .catch(() => null);
+    return {
+      companiesCount: null,
+      contactsCount: contacts?.pagination.total_entries ?? null,
+    };
+  }
+
   async getApolloContacts(
     id: number,
     organizationId: number,

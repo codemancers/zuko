@@ -4,7 +4,11 @@ import { ConfigService } from '@nestjs/config';
 import { IcpLlmService } from './icp-llm.service';
 
 vi.mock('@ai-sdk/openai', () => ({
-  createOpenAI: vi.fn(() => vi.fn(() => 'mock-model')),
+  createOpenAI: vi.fn(() => {
+    const fn = vi.fn(() => 'mock-model');
+    fn.chat = vi.fn(() => 'mock-model');
+    return fn;
+  }),
 }));
 
 const mockGenerateObject = vi.fn();

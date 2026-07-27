@@ -140,6 +140,11 @@ export interface ApolloContactsResponse {
   pagination: ApolloPagination;
 }
 
+export interface PreviewFiltersResponse {
+  companiesCount: number | null;
+  contactsCount: number | null;
+}
+
 export interface IcpProfilesPage {
   data: IcpProfile[];
   total: number;
@@ -194,5 +199,12 @@ export const icpApi = {
 
   async compileDescription(description: string): Promise<IcpFilters> {
     return apiClient.post('/icps/compile-description', { description });
+  },
+
+  async previewFilters(
+    id: number,
+    filters: IcpFilters,
+  ): Promise<PreviewFiltersResponse> {
+    return apiClient.post(`/icps/${id}/preview-filters`, { filters });
   },
 };
