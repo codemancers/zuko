@@ -49,6 +49,21 @@
           "command": "eve start --port 3002",
           "cwd": "apps/ai-agent"
         }
+      },
+      "test": {
+        "executor": "@nx/vitest:test",
+        "outputs": [
+          "{workspaceRoot}/apps/ai-agent/test-output/vitest/coverage"
+        ],
+        "options": {
+          "configFile": "apps/ai-agent/vitest.config.mts"
+        },
+        "configurations": {
+          "watch": {
+            "watch": true
+          }
+        },
+        "parallelism": false
       }
     }
   },
