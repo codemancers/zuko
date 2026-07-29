@@ -1,4 +1,8 @@
 import { apiClient } from '../api-client';
+import type { TableViewResponse } from '@/types/table-metadata';
+import type { BaseRow } from '@/components/Table';
+
+export type TableViewLeadsResponse = TableViewResponse<BaseRow>;
 
 export interface Lead {
   id: number;
@@ -100,5 +104,20 @@ export const leadsApi = {
 
   async convert(id: number) {
     return apiClient.post(`/leads/${id}/convert`, {});
+  },
+
+  async getTableViewLeads(filters?: {
+    search?: string;
+    status?: string;
+    page?: number;
+    limit?: number;
+  }): Promise<TableViewLeadsResponse> {
+    const params = new URLSearchParams();
+    if (filters?.search) params.set('search', filters.search);
+    if (filters?.status) params.set('status', filters.status);
+    if (filters?.page) params.set('page', String(filters.page));
+    if (filters?.limit) params.set('limit', String(filters.limit));
+    const qs = params.toString();
+    return apiClient.get(`/tables/leads${qs ? `?${qs}` : ''}`);
   },
 };

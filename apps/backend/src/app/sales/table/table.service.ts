@@ -9,6 +9,7 @@ import {
   DEAL_TABLE_METADATA,
   MEETING_TABLE_METADATA,
   TASK_TABLE_METADATA,
+  LEAD_TABLE_METADATA,
   mapTableColumnsToMetadata,
   COLUMN_TYPES,
   mergeCustomFieldValue,
@@ -241,6 +242,61 @@ export class TableService {
         limit,
         totalPages: Math.ceil(total / limit),
       },
+    };
+  }
+
+  async getLeadsTable(
+    organizationId: number,
+    search?: string,
+    status?: string,
+    page = 1,
+    limit = 50,
+  ) {
+    const where = {
+      organizationId,
+      ...(search
+        ? {
+            OR: [
+              { name: { contains: search, mode: 'insensitive' as const } },
+              { email: { contains: search, mode: 'insensitive' as const } },
+              {
+                companyName: {
+                  contains: search,
+                  mode: 'insensitive' as const,
+                },
+              },
+            ],
+          }
+        : {}),
+      ...(status ? { status } : {}),
+    };
+
+    const [total, leads] = await Promise.all([
+      this.prisma.lead.count({ where }),
+      this.prisma.lead.findMany({
+        where,
+        include: { icpProfile: { select: { id: true, name: true } } },
+        orderBy: { createdAt: 'desc' },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+    ]);
+
+    const flatLeads = leads.map((l) => ({
+      ...l,
+      icpProfile: l.icpProfile?.name ?? null,
+    }));
+
+    const { metadata, data } = this.buildMergedTable(
+      flatLeads as unknown as Record<string, unknown>[],
+      LEAD_TABLE_METADATA,
+      [],
+    );
+
+    return {
+      metadata,
+      data,
+      pagination: { total, page, limit, totalPages: Math.ceil(total / limit) },
     };
   }
 

@@ -8,6 +8,7 @@ import type { DealFilters } from '@/lib/api/deals';
 import { dealsApi } from '@/lib/api/deals';
 import type { TaskFilters } from '@/lib/api/tasks';
 import { tasksApi } from '@/lib/api/tasks';
+import { leadsApi } from '@/lib/api/leads';
 import { activitiesApi } from '@/lib/api/activities';
 import { pagesApi } from '@/lib/api/pages';
 import { meetingsApi, type MeetingFilters } from '@/lib/api/meetings';
@@ -110,6 +111,25 @@ export const getTableViewTasksInfinite = (filters?: { search?: string }) =>
     queryKey: ['tasks', 'table', 'infinite', filters],
     queryFn: ({ pageParam }) =>
       tasksApi.getTableViewTasks({
+        ...filters,
+        page: pageParam,
+        limit: TABLE_PAGE_SIZE,
+      }),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) => {
+      const { page, totalPages } = lastPage.pagination;
+      return page < totalPages ? page + 1 : undefined;
+    },
+  });
+
+export const getTableViewLeadsInfinite = (filters?: {
+  search?: string;
+  status?: string;
+}) =>
+  infiniteQueryOptions({
+    queryKey: ['leads', 'table', 'infinite', filters],
+    queryFn: ({ pageParam }) =>
+      leadsApi.getTableViewLeads({
         ...filters,
         page: pageParam,
         limit: TABLE_PAGE_SIZE,
