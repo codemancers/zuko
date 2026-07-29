@@ -39,6 +39,30 @@ export interface IcpFilters {
   // Location exclusion
   excludeLocations?: string[];
 
+  // Company profile
+  region?: string[];
+  subIndustry?: string[];
+  companyType?: string[];
+  revenueStatus?: string[];
+  fundingStatus?: string[];
+  fundingStage?: string[];
+
+  // Buyer profile
+  primaryBuyerTitle?: string[];
+  secondaryBuyerTitles?: string[];
+
+  // Fit signals
+  workflowComplexity?: string[];
+  operationalBottlenecks?: string[];
+  automationOpportunity?: string[];
+  aiTransformationSignal?: string[];
+  budgetLikelihood?: string[];
+  productMaturity?: string[];
+  consultingFit?: string[];
+
+  // Exclusions
+  exclusionTags?: string[];
+
   // Technographics
   technologiesAnyOf?: string[];
   technologiesAllOf?: string[];
