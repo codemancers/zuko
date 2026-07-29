@@ -26,21 +26,12 @@ import type { Lead } from '@/lib/api/leads';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { useSearchParam } from '@/hooks/use-search-param';
 
-const STATUS_FILTERS = [
-  { value: '', label: 'All' },
-  { value: 'replied', label: 'Replied' },
-  { value: 'interested', label: 'Interested' },
-  { value: 'not_interested', label: 'Not Interested' },
-  { value: 'converted', label: 'Converted' },
-];
-
 const LeadsList = () => {
   const queryClient = useQueryClient();
   const openAddColumnRef = useRef<(() => void) | undefined>(undefined);
   const [isSheetOpen, setIsSheetOpen] = useSheetState();
   const [editLead, setEditLead] = useState<Lead | null>(null);
   const [leadToDelete, setLeadToDelete] = useState<number | null>(null);
-  const [statusFilter, setStatusFilter] = useState('');
   const {
     inputValue: searchTerm,
     setInputValue: setSearchTerm,
@@ -56,7 +47,6 @@ const LeadsList = () => {
   } = useInfiniteQuery(
     getTableViewLeadsInfinite({
       search: debouncedValue || undefined,
-      status: statusFilter || undefined,
     }),
   );
 
@@ -139,22 +129,6 @@ const LeadsList = () => {
         onChange={setSearchTerm}
         placeholder="Search leads by name, email, or company..."
       />
-
-      <div className="mt-3 flex gap-1">
-        {STATUS_FILTERS.map((f) => (
-          <button
-            key={f.value}
-            onClick={() => setStatusFilter(f.value)}
-            className={`px-3 py-1.5 rounded text-sm transition-colors ${
-              statusFilter === f.value
-                ? 'bg-zinc-900 text-white dark:bg-white dark:text-zinc-900'
-                : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-white'
-            }`}
-          >
-            {f.label}
-          </button>
-        ))}
-      </div>
 
       <BaseTable<BaseRow>
         columns={columns}
