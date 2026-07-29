@@ -49,28 +49,7 @@ import type {
   IcpFilters,
   PreviewFiltersResponse,
 } from '@/lib/api/icp';
-import {
-  EMPLOYEE_RANGE_LABEL,
-  REGION_OPTIONS,
-  SUB_INDUSTRY_OPTIONS,
-  COMPANY_TYPE_OPTIONS,
-  REVENUE_STATUS_OPTIONS,
-  FUNDING_STATUS_OPTIONS,
-  FUNDING_STAGE_OPTIONS,
-  WORKFLOW_COMPLEXITY_OPTIONS,
-  OPERATIONAL_BOTTLENECK_OPTIONS,
-  AUTOMATION_OPPORTUNITY_OPTIONS,
-  AI_TRANSFORMATION_SIGNAL_OPTIONS,
-  BUDGET_LIKELIHOOD_OPTIONS,
-  PRODUCT_MATURITY_OPTIONS,
-  CONSULTING_FIT_OPTIONS,
-} from '@/lib/constants/icp';
-
-function optionsToMap(
-  opts: { label: string; value: string }[],
-): Record<string, string> {
-  return Object.fromEntries(opts.map((o) => [o.value, o.label]));
-}
+import { EMPLOYEE_RANGE_LABEL } from '@/lib/constants/icp';
 import { editorJsonToMarkdown } from '@/lib/editor-utils';
 import IcpForm from './IcpForm';
 import IcpCampaignsPanel from './IcpCampaignsPanel';
@@ -824,100 +803,6 @@ function ProfileSidebar({
             )}
           </div>
         </div>
-
-        <FilterBadges
-          label="Region"
-          items={filters.region}
-          color="blue"
-          map={optionsToMap(REGION_OPTIONS)}
-        />
-        <FilterBadges
-          label="Sub-industry"
-          items={filters.subIndustry}
-          color="purple"
-          map={optionsToMap(SUB_INDUSTRY_OPTIONS)}
-        />
-        <FilterBadges
-          label="Company Type"
-          items={filters.companyType}
-          color="zinc"
-          map={optionsToMap(COMPANY_TYPE_OPTIONS)}
-        />
-        <FilterBadges
-          label="Revenue Status"
-          items={filters.revenueStatus}
-          color="green"
-          map={optionsToMap(REVENUE_STATUS_OPTIONS)}
-        />
-        <FilterBadges
-          label="Funding Status"
-          items={filters.fundingStatus}
-          color="blue"
-          map={optionsToMap(FUNDING_STATUS_OPTIONS)}
-        />
-        <FilterBadges
-          label="Funding Stage"
-          items={filters.fundingStage}
-          color="purple"
-          map={optionsToMap(FUNDING_STAGE_OPTIONS)}
-        />
-        <FilterBadges
-          label="Primary Buyer Title"
-          items={filters.primaryBuyerTitle}
-          color="orange"
-        />
-        <FilterBadges
-          label="Secondary Buyer Titles"
-          items={filters.secondaryBuyerTitles}
-          color="zinc"
-        />
-        <FilterBadges
-          label="Workflow Complexity"
-          items={filters.workflowComplexity}
-          color="zinc"
-          map={optionsToMap(WORKFLOW_COMPLEXITY_OPTIONS)}
-        />
-        <FilterBadges
-          label="Operational Bottlenecks"
-          items={filters.operationalBottlenecks}
-          color="red"
-          map={optionsToMap(OPERATIONAL_BOTTLENECK_OPTIONS)}
-        />
-        <FilterBadges
-          label="Automation Opportunity"
-          items={filters.automationOpportunity}
-          color="green"
-          map={optionsToMap(AUTOMATION_OPPORTUNITY_OPTIONS)}
-        />
-        <FilterBadges
-          label="AI Transformation Signal"
-          items={filters.aiTransformationSignal}
-          color="blue"
-          map={optionsToMap(AI_TRANSFORMATION_SIGNAL_OPTIONS)}
-        />
-        <FilterBadges
-          label="Budget Likelihood"
-          items={filters.budgetLikelihood}
-          color="green"
-          map={optionsToMap(BUDGET_LIKELIHOOD_OPTIONS)}
-        />
-        <FilterBadges
-          label="Product Maturity"
-          items={filters.productMaturity}
-          color="purple"
-          map={optionsToMap(PRODUCT_MATURITY_OPTIONS)}
-        />
-        <FilterBadges
-          label="Consulting Fit"
-          items={filters.consultingFit}
-          color="blue"
-          map={optionsToMap(CONSULTING_FIT_OPTIONS)}
-        />
-        <FilterBadges
-          label="Exclusion Tags"
-          items={filters.exclusionTags}
-          color="red"
-        />
 
         <div>
           <Text className="text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
