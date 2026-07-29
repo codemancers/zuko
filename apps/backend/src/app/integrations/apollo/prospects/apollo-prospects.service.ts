@@ -574,9 +574,15 @@ export class ApolloProspectsService {
     organizationId: number,
     sequenceId: string,
   ): Promise<SequenceContact[]> {
+    // Contacts belong to the OAuth account (created via MCP) — must use Bearer token
+    const accessToken =
+      await this.apolloMcpService.getAccessToken(organizationId);
     const resp = await fetch(`${APOLLO_BASE}/contacts/search`, {
       method: 'POST',
-      headers: this.apiKeyHeaders(),
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
       body: JSON.stringify({
         emailer_campaign_ids: [sequenceId],
         per_page: 100,

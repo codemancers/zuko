@@ -103,14 +103,17 @@ export default function CampaignDetail({ zukoId }: CampaignDetailProps) {
 
   const hasSequence = !!campaign.providerSequenceId;
 
-  const { data: sequenceContacts = [], isLoading: isLoadingContacts } =
-    useQuery({
-      queryKey: ['sequence-contacts', campaign.providerSequenceId],
-      queryFn: () =>
-        apolloProspectsApi.getSequenceContacts(campaign.providerSequenceId!),
-      enabled: hasSequence && activeTab === 'contacts',
-      staleTime: 30_000,
-    });
+  const {
+    data: sequenceContacts = [],
+    isLoading: isLoadingContacts,
+    refetch: refetchContacts,
+  } = useQuery({
+    queryKey: ['sequence-contacts', campaign.providerSequenceId],
+    queryFn: () =>
+      apolloProspectsApi.getSequenceContacts(campaign.providerSequenceId!),
+    enabled: hasSequence && activeTab === 'contacts',
+    staleTime: 0,
+  });
 
   const contactColumns = useMemo<ColumnDef<SequenceContact>[]>(
     () => [
@@ -241,6 +244,13 @@ export default function CampaignDetail({ zukoId }: CampaignDetailProps) {
             {/* Contacts tab */}
             {activeTab === 'contacts' && (
               <div>
+                {hasSequence && (
+                  <div className="mb-3 flex justify-end">
+                    <Button outline onClick={() => void refetchContacts()}>
+                      Refresh
+                    </Button>
+                  </div>
+                )}
                 {!hasSequence ? (
                   <div className="rounded-xl border border-zinc-700/60 bg-zinc-900 p-8 text-center">
                     <Text className="text-sm text-zinc-400">
@@ -354,7 +364,10 @@ export default function CampaignDetail({ zukoId }: CampaignDetailProps) {
           <AddContactsDialog
             sequenceId={campaign.providerSequenceId}
             open={addContactsOpen}
-            onClose={() => setAddContactsOpen(false)}
+            onClose={() => {
+              setAddContactsOpen(false);
+              void refetchContacts();
+            }}
           />
         )}
       </Suspense>
