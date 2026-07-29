@@ -21,6 +21,7 @@ model Contact {
   owners         ContactOwner[]
   companyHistory CompanyContact[]
   deals          DealContact[]
+  leads          Lead[]       @relation("ContactLeads")
 
   @@index([organizationId])
   @@index([isHidden])
@@ -158,6 +159,7 @@ model Deal {
   companies    DealCompany[]
   contacts     DealContact[]
   owners       DealOwner[]
+  leads        Lead[]       @relation("DealLeads")
 
   @@index([organizationId])
   @@index([isHidden])
@@ -236,6 +238,7 @@ model IcpProfile {
 
   organization Organization @relation("OrganizationIcpProfiles", fields: [organizationId], references: [id], onDelete: Cascade)
   campaigns    Campaign[]   @relation("IcpCampaigns")
+  leads        Lead[]       @relation("IcpLeads")
 
   @@index([organizationId])
   @@map("icp_profile")
@@ -249,6 +252,7 @@ model Campaign {
   icpProfileId       Int?     @map("icp_profile_id")
   name               String
   provider           String   @default("apollo")
+  platform           String   @default("apollo")
   providerSequenceId String?  @map("provider_sequence_id")
   active             Boolean  @default(false)
   permissions        String   @default("team_can_use")
@@ -259,11 +263,47 @@ model Campaign {
   organization Organization @relation("OrganizationCampaigns", fields: [organizationId], references: [id], onDelete: Cascade)
   createdBy    User         @relation("CreatedCampaigns", fields: [createdById], references: [id])
   icpProfile   IcpProfile?  @relation("IcpCampaigns", fields: [icpProfileId], references: [id], onDelete: SetNull)
+  leads        Lead[]       @relation("CampaignLeads")
 
   @@unique([organizationId, providerSequenceId])
   @@index([organizationId])
   @@index([icpProfileId])
   @@map("campaign")
+  @@schema("sales")
+}
+
+model Lead {
+  id             Int      @id @default(autoincrement())
+  organizationId Int      @map("organization_id")
+  icpProfileId   Int      @map("icp_profile_id")
+  campaignId     Int?     @map("campaign_id")
+  contactId      Int?     @map("contact_id")
+  dealId         Int?     @map("deal_id")
+  name           String
+  email          String?
+  phone          String?
+  companyName    String?  @map("company_name")
+  title          String?
+  linkedinUrl    String?  @map("linkedin_url")
+  status         String   @default("replied")
+  source         String   @default("manual")
+  apolloPersonId String?  @map("apollo_person_id")
+  notes          String?
+  metadata       Json?
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  organization Organization @relation("OrganizationLeads", fields: [organizationId], references: [id], onDelete: Cascade)
+  icpProfile   IcpProfile   @relation("IcpLeads", fields: [icpProfileId], references: [id])
+  campaign     Campaign?    @relation("CampaignLeads", fields: [campaignId], references: [id], onDelete: SetNull)
+  contact      Contact?     @relation("ContactLeads", fields: [contactId], references: [id], onDelete: SetNull)
+  deal         Deal?        @relation("DealLeads", fields: [dealId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId])
+  @@index([icpProfileId])
+  @@index([campaignId])
+  @@index([status])
+  @@map("lead")
   @@schema("sales")
 }
 
