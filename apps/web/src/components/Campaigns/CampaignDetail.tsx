@@ -162,6 +162,23 @@ export default function CampaignDetail({ zukoId }: CampaignDetailProps) {
           );
         },
       },
+      {
+        accessorKey: 'emailLabel',
+        header: 'Email Status',
+        cell: ({ row }) => {
+          const label = row.original.emailLabel;
+          if (!label) return '—';
+          const color =
+            label === 'replied'
+              ? 'green'
+              : label === 'bounced' || label === 'hard_bounced'
+                ? 'red'
+                : label === 'opened'
+                  ? 'blue'
+                  : 'zinc';
+          return <Badge color={color}>{label.replace(/_/g, ' ')}</Badge>;
+        },
+      },
     ],
     [],
   );

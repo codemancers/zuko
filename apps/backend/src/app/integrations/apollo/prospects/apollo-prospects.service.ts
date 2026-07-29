@@ -115,9 +115,11 @@ export interface SequenceContact {
   id: string;
   name: string;
   email?: string;
+  emailStatus?: string;
   title?: string;
   organizationName?: string;
   sequenceStatus?: string;
+  emailLabel?: string;
 }
 
 @Injectable()
@@ -601,28 +603,32 @@ export class ApolloProspectsService {
         first_name?: string;
         last_name?: string;
         email?: string;
+        email_true_status?: string;
         title?: string;
         organization_name?: string;
         contact_campaign_statuses?: Array<{
           emailer_campaign_id: string;
           status: string;
+          inactive_reason?: string | null;
         }>;
       }>;
     };
 
     return (data.contacts ?? []).map((c) => {
-      const seqStatus = c.contact_campaign_statuses?.find(
+      const campaignStatus = c.contact_campaign_statuses?.find(
         (s) => s.emailer_campaign_id === sequenceId,
-      )?.status;
+      );
       return {
         id: c.id,
         name:
           c.name ??
           ([c.first_name, c.last_name].filter(Boolean).join(' ') || 'Unknown'),
         email: c.email,
+        emailStatus: c.email_true_status,
         title: c.title,
         organizationName: c.organization_name,
-        sequenceStatus: seqStatus,
+        sequenceStatus: campaignStatus?.status,
+        emailLabel: campaignStatus?.inactive_reason ?? undefined,
       };
     });
   }

@@ -302,9 +302,11 @@ export interface SequenceContact {
   id: string;
   name: string;
   email?: string;
+  emailStatus?: string;
   title?: string;
   organizationName?: string;
   sequenceStatus?: string;
+  emailLabel?: string;
 }
 
 export const apolloProspectsApi = {
