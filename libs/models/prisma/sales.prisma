@@ -288,7 +288,7 @@ model Lead {
   status         String   @default("replied")
   source         String   @default("manual")
   apolloPersonId String?  @map("apollo_person_id")
-  notes          String?
+  notes          Json?
   metadata       Json?
   createdAt      DateTime @default(now()) @map("created_at")
   updatedAt      DateTime @updatedAt @map("updated_at")

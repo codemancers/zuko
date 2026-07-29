@@ -1,6 +1,7 @@
 import { apiClient } from '../api-client';
 import type { TableViewResponse } from '@/types/table-metadata';
 import type { BaseRow } from '@/components/Table';
+import type { OutputData } from '@editorjs/editorjs';
 
 export type TableViewLeadsResponse = TableViewResponse<BaseRow>;
 
@@ -20,7 +21,7 @@ export interface Lead {
   status: 'replied' | 'interested' | 'not_interested' | 'converted';
   source: 'apollo' | 'origami' | 'linkedin' | 'manual';
   apolloPersonId?: string;
-  notes?: string;
+  notes?: OutputData;
   createdAt: string;
   updatedAt: string;
   icpProfile?: { id: number; name: string };
@@ -48,7 +49,7 @@ export interface CreateLeadDto {
   linkedinUrl?: string;
   status?: string;
   source?: string;
-  notes?: string;
+  notes?: OutputData;
 }
 
 export interface UpdateLeadDto {
@@ -58,7 +59,7 @@ export interface UpdateLeadDto {
   companyName?: string;
   title?: string;
   status?: string;
-  notes?: string;
+  notes?: OutputData;
 }
 
 export interface LeadFilters {

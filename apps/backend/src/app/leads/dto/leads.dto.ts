@@ -1,5 +1,11 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsInt, IsOptional, IsString, IsPositive } from 'class-validator';
+import {
+  IsInt,
+  IsOptional,
+  IsString,
+  IsPositive,
+  IsObject,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class CreateLeadDto {
@@ -67,10 +73,10 @@ export class CreateLeadDto {
   @IsString()
   apolloPersonId?: string;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ type: Object })
   @IsOptional()
-  @IsString()
-  notes?: string;
+  @IsObject()
+  notes?: Record<string, unknown>;
 }
 
 export class UpdateLeadDto {
@@ -111,10 +117,10 @@ export class UpdateLeadDto {
   @IsString()
   status?: string;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ type: Object })
   @IsOptional()
-  @IsString()
-  notes?: string;
+  @IsObject()
+  notes?: Record<string, unknown>;
 }
 
 export class ListLeadsQueryDto {

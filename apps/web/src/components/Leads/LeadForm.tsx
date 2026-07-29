@@ -2,15 +2,9 @@
 
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import {
-  Button,
-  Field,
-  Input,
-  Label,
-  Select,
-  Textarea,
-  SheetFooter,
-} from '@zuko/ui-kit';
+import { Button, Field, Input, Label, Select, SheetFooter } from '@zuko/ui-kit';
+import type { OutputData } from '@editorjs/editorjs';
+import Editor, { ensureOutputData } from '@/components/Common/Editor/Editor';
 import { leadsApi } from '@/lib/api/leads';
 import type { CreateLeadDto, UpdateLeadDto, Lead } from '@/lib/api/leads';
 import { icpApi } from '@/lib/api/icp';
@@ -33,8 +27,8 @@ const LeadForm = ({ lead, onSuccess }: Props) => {
     status: lead?.status ?? 'replied',
     source: lead?.source ?? 'manual',
     icpProfileId: lead?.icpProfileId ? String(lead.icpProfileId) : '',
-    notes: lead?.notes ?? '',
   });
+  const [notes, setNotes] = useState<OutputData>(ensureOutputData(lead?.notes));
 
   const { data: icpProfiles } = useQuery({
     queryKey: ['icp', 'profiles', 'list'],
@@ -51,7 +45,7 @@ const LeadForm = ({ lead, onSuccess }: Props) => {
           companyName: form.companyName || undefined,
           title: form.title || undefined,
           status: form.status,
-          notes: form.notes || undefined,
+          notes: notes.blocks.length ? notes : undefined,
         };
         return leadsApi.update(lead.id, dto);
       }
@@ -65,7 +59,7 @@ const LeadForm = ({ lead, onSuccess }: Props) => {
         linkedinUrl: form.linkedinUrl || undefined,
         status: form.status,
         source: form.source,
-        notes: form.notes || undefined,
+        notes: notes.blocks.length ? notes : undefined,
       };
       return leadsApi.create(dto);
     },
@@ -80,12 +74,10 @@ const LeadForm = ({ lead, onSuccess }: Props) => {
 
   const set =
     (key: string) =>
-    (
-      e: React.ChangeEvent<
-        HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
-      >,
-    ) =>
+    (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
       setForm((f) => ({ ...f, [key]: e.target.value }));
+
+  const editorKey = lead ? `lead-notes-${lead.id}` : 'lead-notes-new';
 
   return (
     <div className="flex flex-1 min-h-0 flex-col">
@@ -185,12 +177,15 @@ const LeadForm = ({ lead, onSuccess }: Props) => {
 
         <Field>
           <Label>Notes</Label>
-          <Textarea
-            value={form.notes}
-            onChange={set('notes')}
-            rows={3}
-            placeholder="Any notes..."
-          />
+          <div className="rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-4 min-h-24 shadow-sm">
+            <Editor
+              key={editorKey}
+              holder={`${editorKey}-holder`}
+              data={notes}
+              onChange={setNotes}
+              placeholder="Add notes…"
+            />
+          </div>
         </Field>
       </div>
 

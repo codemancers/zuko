@@ -16,7 +16,7 @@ export interface CreateLeadInput {
   status?: string;
   source?: string;
   apolloPersonId?: string;
-  notes?: string;
+  notes?: unknown;
   metadata?: unknown;
 }
 
@@ -30,7 +30,7 @@ export interface UpdateLeadInput {
   title?: string;
   linkedinUrl?: string;
   status?: string;
-  notes?: string;
+  notes?: unknown;
   metadata?: unknown;
 }
 
@@ -113,10 +113,13 @@ export class LeadsRepository {
   }
 
   create(input: CreateLeadInput) {
-    const { metadata, ...rest } = input;
+    const { metadata, notes, ...rest } = input;
     return this.prisma.lead.create({
       data: {
         ...rest,
+        ...(notes !== undefined
+          ? { notes: notes as Prisma.InputJsonValue }
+          : {}),
         ...(metadata !== undefined
           ? { metadata: metadata as Prisma.InputJsonValue }
           : {}),
@@ -126,11 +129,14 @@ export class LeadsRepository {
   }
 
   update(id: number, input: UpdateLeadInput) {
-    const { metadata, ...rest } = input;
+    const { metadata, notes, ...rest } = input;
     return this.prisma.lead.update({
       where: { id },
       data: {
         ...rest,
+        ...(notes !== undefined
+          ? { notes: notes as Prisma.InputJsonValue }
+          : {}),
         ...(metadata !== undefined
           ? { metadata: metadata as Prisma.InputJsonValue }
           : {}),
