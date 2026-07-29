@@ -298,6 +298,15 @@ export interface AddPeopleToSequenceResponse {
   failedPersonIds: string[];
 }
 
+export interface SequenceContact {
+  id: string;
+  name: string;
+  email?: string;
+  title?: string;
+  organizationName?: string;
+  sequenceStatus?: string;
+}
+
 export const apolloProspectsApi = {
   async search(
     params: SearchProspectsParams,
@@ -317,6 +326,12 @@ export const apolloProspectsApi = {
     return apiClient.post(
       '/integrations/apollo/prospects/add-to-sequence',
       payload,
+    );
+  },
+
+  async getSequenceContacts(sequenceId: string): Promise<SequenceContact[]> {
+    return apiClient.get(
+      `/integrations/apollo/sequences/${sequenceId}/contacts`,
     );
   },
 };

@@ -111,6 +111,15 @@ export interface AddToSequenceResult {
   failedPersonIds: string[];
 }
 
+export interface SequenceContact {
+  id: string;
+  name: string;
+  email?: string;
+  title?: string;
+  organizationName?: string;
+  sequenceStatus?: string;
+}
+
 @Injectable()
 export class ApolloProspectsService {
   private readonly logger = new Logger(ApolloProspectsService.name);
@@ -557,5 +566,58 @@ export class ApolloProspectsService {
     }
 
     return { result, failedPersonIds };
+  }
+
+  // ─── Sequence contacts ───────────────────────────────────────────────────────
+
+  async getSequenceContacts(
+    organizationId: number,
+    sequenceId: string,
+  ): Promise<SequenceContact[]> {
+    const resp = await fetch(`${APOLLO_BASE}/contacts/search`, {
+      method: 'POST',
+      headers: this.apiKeyHeaders(),
+      body: JSON.stringify({
+        emailer_campaign_ids: [sequenceId],
+        per_page: 100,
+      }),
+    });
+
+    if (!resp.ok) {
+      const body = await resp.text();
+      this.handleFetchError('getSequenceContacts', resp.status, body);
+    }
+
+    const data = (await resp.json()) as {
+      contacts?: Array<{
+        id: string;
+        name?: string;
+        first_name?: string;
+        last_name?: string;
+        email?: string;
+        title?: string;
+        organization_name?: string;
+        contact_campaign_statuses?: Array<{
+          emailer_campaign_id: string;
+          status: string;
+        }>;
+      }>;
+    };
+
+    return (data.contacts ?? []).map((c) => {
+      const seqStatus = c.contact_campaign_statuses?.find(
+        (s) => s.emailer_campaign_id === sequenceId,
+      )?.status;
+      return {
+        id: c.id,
+        name:
+          c.name ??
+          ([c.first_name, c.last_name].filter(Boolean).join(' ') || 'Unknown'),
+        email: c.email,
+        title: c.title,
+        organizationName: c.organization_name,
+        sequenceStatus: seqStatus,
+      };
+    });
   }
 }

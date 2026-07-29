@@ -1,4 +1,12 @@
-import { Controller, Get, Post, Body, Query, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Query,
+  Param,
+  UseGuards,
+} from '@nestjs/common';
 import {
   ApiTags,
   ApiBearerAuth,
@@ -44,6 +52,15 @@ export class ApolloProspectsController {
   @ApiQuery({ name: 'name', required: true, type: String })
   searchOrgs(@OrgId() orgId: number, @Query('name') name: string) {
     return this.apolloProspectsService.searchOrganizations(orgId, name ?? '');
+  }
+
+  @Get('sequences/:sequenceId/contacts')
+  @ApiOperation({ summary: 'List contacts enrolled in an Apollo sequence' })
+  getSequenceContacts(
+    @OrgId() orgId: number,
+    @Param('sequenceId') sequenceId: string,
+  ) {
+    return this.apolloProspectsService.getSequenceContacts(orgId, sequenceId);
   }
 
   @Post('prospects/add-to-sequence')

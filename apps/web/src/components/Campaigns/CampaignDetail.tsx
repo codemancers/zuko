@@ -1,6 +1,6 @@
 'use client';
 
-import { lazy, Suspense, useRef, useState } from 'react';
+import { lazy, Suspense, useRef, useState, useMemo } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   Badge,
@@ -13,7 +13,13 @@ import {
 } from '@zuko/ui-kit';
 import { parseAsStringLiteral, useQueryState } from 'nuqs';
 import { getZukoCampaignByDbId } from '@/server/query-options';
-import { apolloSequencesApi } from '@/lib/api/apollo';
+import {
+  apolloSequencesApi,
+  apolloProspectsApi,
+  type SequenceContact,
+} from '@/lib/api/apollo';
+import type { ColumnDef } from '@tanstack/react-table';
+import { BaseTable } from '@/components/Table';
 import { BackLink, LoadingState } from '@/components/shared';
 import { toast } from 'sonner';
 import dayjs from 'dayjs';
@@ -96,6 +102,66 @@ export default function CampaignDetail({ zukoId }: CampaignDetailProps) {
     );
 
   const hasSequence = !!campaign.providerSequenceId;
+
+  const { data: sequenceContacts = [], isLoading: isLoadingContacts } =
+    useQuery({
+      queryKey: ['sequence-contacts', campaign.providerSequenceId],
+      queryFn: () =>
+        apolloProspectsApi.getSequenceContacts(campaign.providerSequenceId!),
+      enabled: hasSequence && activeTab === 'contacts',
+      staleTime: 30_000,
+    });
+
+  const contactColumns = useMemo<ColumnDef<SequenceContact>[]>(
+    () => [
+      {
+        accessorKey: 'name',
+        header: 'Name',
+        cell: ({ getValue }) => (
+          <span className="font-medium">{getValue<string>()}</span>
+        ),
+      },
+      {
+        accessorKey: 'email',
+        header: 'Email',
+        cell: ({ getValue }) => getValue<string>() ?? '—',
+      },
+      {
+        accessorKey: 'title',
+        header: 'Title',
+        cell: ({ getValue }) => getValue<string>() ?? '—',
+      },
+      {
+        accessorKey: 'organizationName',
+        header: 'Company',
+        cell: ({ getValue }) => getValue<string>() ?? '—',
+      },
+      {
+        accessorKey: 'sequenceStatus',
+        header: 'Status',
+        cell: ({ getValue }) => {
+          const s = getValue<string>();
+          if (!s) return '—';
+          return (
+            <Badge
+              color={
+                s === 'active'
+                  ? 'green'
+                  : s === 'finished'
+                    ? 'blue'
+                    : s === 'paused'
+                      ? 'yellow'
+                      : 'zinc'
+              }
+            >
+              {s}
+            </Badge>
+          );
+        },
+      },
+    ],
+    [],
+  );
 
   return (
     <>
@@ -189,11 +255,27 @@ export default function CampaignDetail({ zukoId }: CampaignDetailProps) {
                     </Button>
                   </div>
                 ) : (
-                  <div className="rounded-xl border border-zinc-700/60 bg-zinc-900 p-8 text-center">
-                    <Text className="text-sm text-zinc-400">
-                      Contacts enrolled in this campaign are managed via Apollo.
-                    </Text>
-                  </div>
+                  <BaseTable<SequenceContact>
+                    columns={contactColumns}
+                    data={sequenceContacts}
+                    loading={isLoadingContacts}
+                    totalCount={sequenceContacts.length}
+                    entityName="contacts"
+                    showAddColumn={false}
+                    onAddColumn={() => {}}
+                    disableRowClick
+                    showEmptyState
+                    emptyStateConfig={{
+                      icon: () => null,
+                      title: 'No contacts enrolled',
+                      description:
+                        'Use "Add Contacts" to enroll people into this sequence.',
+                      action: {
+                        label: 'Add Contacts',
+                        onClick: () => setAddContactsOpen(true),
+                      },
+                    }}
+                  />
                 )}
               </div>
             )}
