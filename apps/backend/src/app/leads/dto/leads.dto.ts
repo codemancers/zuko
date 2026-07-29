@@ -5,7 +5,7 @@ import { Type } from 'class-transformer';
 export class CreateLeadDto {
   @ApiProperty()
   @IsInt()
-  icpProfileId: number;
+  icpProfileId!: number;
 
   @ApiPropertyOptional()
   @IsOptional()
@@ -19,7 +19,7 @@ export class CreateLeadDto {
 
   @ApiProperty()
   @IsString()
-  name: string;
+  name!: string;
 
   @ApiPropertyOptional()
   @IsOptional()
