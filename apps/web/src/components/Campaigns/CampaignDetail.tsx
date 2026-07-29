@@ -1,6 +1,6 @@
 'use client';
 
-import { lazy, Suspense, useRef, useState, useMemo } from 'react';
+import { lazy, Suspense, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   Badge,
@@ -53,6 +53,67 @@ function StatCard({ label, value }: { label: string; value: string }) {
   );
 }
 
+// ─── Contact table columns ────────────────────────────────────────────────────
+
+const contactColumns: ColumnDef<SequenceContact>[] = [
+  {
+    accessorKey: 'name',
+    header: 'Name',
+    cell: ({ getValue }) => (
+      <span className="font-medium">{getValue<string>()}</span>
+    ),
+  },
+  {
+    accessorKey: 'email',
+    header: 'Email',
+    cell: ({ getValue }) => getValue<string>() ?? '—',
+  },
+  {
+    accessorKey: 'title',
+    header: 'Title',
+    cell: ({ getValue }) => getValue<string>() ?? '—',
+  },
+  {
+    accessorKey: 'organizationName',
+    header: 'Company',
+    cell: ({ getValue }) => getValue<string>() ?? '—',
+  },
+  {
+    accessorKey: 'sequenceStatus',
+    header: 'Status',
+    cell: ({ getValue }) => {
+      const s = getValue<string>();
+      if (!s) return '—';
+      const color =
+        s === 'active'
+          ? 'green'
+          : s === 'finished'
+            ? 'blue'
+            : s === 'paused'
+              ? 'yellow'
+              : ('zinc' as const);
+      return <Badge color={color}>{s}</Badge>;
+    },
+  },
+  {
+    accessorKey: 'emailLabel',
+    header: 'Email Status',
+    cell: ({ row }) => {
+      const label = row.original.emailLabel;
+      if (!label) return '—';
+      const color =
+        label === 'replied'
+          ? 'green'
+          : label === 'bounced' || label === 'hard_bounced'
+            ? 'red'
+            : label === 'opened'
+              ? 'blue'
+              : ('zinc' as const);
+      return <Badge color={color}>{label.replace(/_/g, ' ')}</Badge>;
+    },
+  },
+];
+
 // ─── Main component ────────────────────────────────────────────────────────────
 
 interface CampaignDetailProps {
@@ -93,22 +154,12 @@ export default function CampaignDetail({ zukoId }: CampaignDetailProps) {
 
   const isMutating = approveMutation.isPending || deactivateMutation.isPending;
 
-  if (isLoading) return <LoadingState message="Loading campaign…" />;
-  if (!campaign)
-    return (
-      <p className="py-8 text-center text-sm text-zinc-500">
-        Campaign not found.
-      </p>
-    );
-
-  const hasSequence = !!campaign.providerSequenceId;
-
   const syncRepliesMutation = useMutation({
     mutationFn: () =>
       apolloProspectsApi.syncRepliesToLeads(
-        campaign.providerSequenceId!,
-        campaign.icpProfileId!,
-        campaign.id,
+        campaign!.providerSequenceId!,
+        campaign!.icpProfileId!,
+        campaign!.id,
       ),
     onSuccess: (res) => {
       toast.success(
@@ -123,80 +174,22 @@ export default function CampaignDetail({ zukoId }: CampaignDetailProps) {
     isLoading: isLoadingContacts,
     refetch: refetchContacts,
   } = useQuery({
-    queryKey: ['sequence-contacts', campaign.providerSequenceId],
+    queryKey: ['sequence-contacts', campaign?.providerSequenceId],
     queryFn: () =>
-      apolloProspectsApi.getSequenceContacts(campaign.providerSequenceId!),
-    enabled: hasSequence && activeTab === 'contacts',
+      apolloProspectsApi.getSequenceContacts(campaign!.providerSequenceId!),
+    enabled: !!campaign?.providerSequenceId && activeTab === 'contacts',
     staleTime: 0,
   });
 
-  const contactColumns = useMemo<ColumnDef<SequenceContact>[]>(
-    () => [
-      {
-        accessorKey: 'name',
-        header: 'Name',
-        cell: ({ getValue }) => (
-          <span className="font-medium">{getValue<string>()}</span>
-        ),
-      },
-      {
-        accessorKey: 'email',
-        header: 'Email',
-        cell: ({ getValue }) => getValue<string>() ?? '—',
-      },
-      {
-        accessorKey: 'title',
-        header: 'Title',
-        cell: ({ getValue }) => getValue<string>() ?? '—',
-      },
-      {
-        accessorKey: 'organizationName',
-        header: 'Company',
-        cell: ({ getValue }) => getValue<string>() ?? '—',
-      },
-      {
-        accessorKey: 'sequenceStatus',
-        header: 'Status',
-        cell: ({ getValue }) => {
-          const s = getValue<string>();
-          if (!s) return '—';
-          return (
-            <Badge
-              color={
-                s === 'active'
-                  ? 'green'
-                  : s === 'finished'
-                    ? 'blue'
-                    : s === 'paused'
-                      ? 'yellow'
-                      : 'zinc'
-              }
-            >
-              {s}
-            </Badge>
-          );
-        },
-      },
-      {
-        accessorKey: 'emailLabel',
-        header: 'Email Status',
-        cell: ({ row }) => {
-          const label = row.original.emailLabel;
-          if (!label) return '—';
-          const color =
-            label === 'replied'
-              ? 'green'
-              : label === 'bounced' || label === 'hard_bounced'
-                ? 'red'
-                : label === 'opened'
-                  ? 'blue'
-                  : 'zinc';
-          return <Badge color={color}>{label.replace(/_/g, ' ')}</Badge>;
-        },
-      },
-    ],
-    [],
-  );
+  if (isLoading) return <LoadingState message="Loading campaign…" />;
+  if (!campaign)
+    return (
+      <p className="py-8 text-center text-sm text-zinc-500">
+        Campaign not found.
+      </p>
+    );
+
+  const hasSequence = !!campaign.providerSequenceId;
 
   return (
     <>
