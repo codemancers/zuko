@@ -285,6 +285,7 @@ export class TableService {
     const flatLeads = leads.map((l) => ({
       ...l,
       icpProfile: l.icpProfile?.name ?? null,
+      icpProfileId: l.icpProfile?.id ?? null,
     }));
 
     const { metadata, data } = this.buildMergedTable(

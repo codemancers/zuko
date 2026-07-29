@@ -81,6 +81,11 @@ export class ProspectPersonDataDto {
   @IsOptional()
   @IsString()
   organizationName?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  email?: string;
 }
 
 export class AddPeopleToSequenceDto {

@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useRef, useState } from 'react';
+import Link from 'next/link';
 import { useSheetState } from '@/hooks/use-sheet-state';
 import { PlusIcon, XMarkIcon, FunnelIcon } from '@heroicons/react/24/outline';
 import { Button, Sheet, SheetHeader, SheetTitle } from '@zuko/ui-kit';
@@ -101,9 +102,35 @@ const LeadsList = () => {
     [convertLead, isDeleting],
   );
 
+  const icpProfileColumn: ColumnDef<BaseRow> = useMemo(
+    () => ({
+      id: 'icpProfile',
+      header: 'ICP Profile',
+      cell: ({ row }) => {
+        const r = row.original as unknown as Record<string, unknown>;
+        const name = r['icpProfile'] as string | null;
+        const id = r['icpProfileId'] as number | null;
+        if (!name) return null;
+        if (!id) return <span>{name}</span>;
+        return (
+          <Link
+            href={`/icps/${id}`}
+            className="hover:underline hover:font-bold"
+          >
+            {name}
+          </Link>
+        );
+      },
+    }),
+    [],
+  );
+
   const columns = useMemo(
-    () => createColumnsFromMetadata<BaseRow>(metadata).concat(actionsColumn),
-    [metadata, actionsColumn],
+    () =>
+      createColumnsFromMetadata<BaseRow>(metadata)
+        .filter((c) => (c as { id?: string }).id !== 'icpProfile')
+        .concat(icpProfileColumn, actionsColumn),
+    [metadata, icpProfileColumn, actionsColumn],
   );
 
   const handleNewLead = () => {
