@@ -261,13 +261,6 @@ export default function CampaignDetail({ zukoId }: CampaignDetailProps) {
             {/* Contacts tab */}
             {activeTab === 'contacts' && (
               <div>
-                {hasSequence && (
-                  <div className="mb-3 flex justify-end">
-                    <Button outline onClick={() => void refetchContacts()}>
-                      Refresh
-                    </Button>
-                  </div>
-                )}
                 {!hasSequence ? (
                   <div className="rounded-xl border border-zinc-700/60 bg-zinc-900 p-8 text-center">
                     <Text className="text-sm text-zinc-400">
