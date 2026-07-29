@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ApolloMcpService } from '../apollo-mcp.service';
-import { ContactsRepository } from '@zuko/sales';
+import { ContactsRepository, LeadsRepository } from '@zuko/sales';
 import type {
   SearchProspectsDto,
   AddPeopleToSequenceDto,
@@ -130,6 +130,7 @@ export class ApolloProspectsService {
     private readonly apolloMcpService: ApolloMcpService,
     private readonly contactsRepository: ContactsRepository,
     private readonly configService: ConfigService,
+    private readonly leadsRepository: LeadsRepository,
   ) {}
 
   // ─── Auth ────────────────────────────────────────────────────────────────────
@@ -571,6 +572,49 @@ export class ApolloProspectsService {
   }
 
   // ─── Sequence contacts ───────────────────────────────────────────────────────
+
+  async syncRepliesToLeads(
+    organizationId: number,
+    sequenceId: string,
+    icpProfileId: number,
+    campaignId?: number,
+  ): Promise<{ created: number; skipped: number }> {
+    const contacts = await this.getSequenceContacts(organizationId, sequenceId);
+    const replied = contacts.filter((c) => c.emailLabel === 'replied');
+
+    let created = 0;
+    let skipped = 0;
+
+    for (const contact of replied) {
+      const existing = contact.id
+        ? await this.leadsRepository.findByApolloPersonId(
+            organizationId,
+            contact.id,
+          )
+        : null;
+
+      if (existing) {
+        skipped++;
+        continue;
+      }
+
+      await this.leadsRepository.create({
+        organizationId,
+        icpProfileId,
+        campaignId,
+        name: contact.name,
+        email: contact.email,
+        title: contact.title,
+        companyName: contact.organizationName,
+        apolloPersonId: contact.id,
+        source: 'apollo',
+        status: 'replied',
+      });
+      created++;
+    }
+
+    return { created, skipped };
+  }
 
   async getSequenceContacts(
     organizationId: number,

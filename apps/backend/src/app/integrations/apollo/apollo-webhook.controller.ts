@@ -13,17 +13,28 @@ import { PrismaService } from '../../../prisma/prisma.service';
 import { LeadsRepository } from '@zuko/sales';
 
 interface ApolloWebhookEvent {
-  event_type: string;
+  // Apollo sends `event` or `event_type` depending on version
+  event?: string;
+  event_type?: string;
   emailer_campaign_id?: string;
-  person?: {
-    id?: string;
-    name?: string;
-    email?: string;
-    title?: string;
-    organization_name?: string;
-    linkedin_url?: string;
-    phone_numbers?: Array<{ sanitized_number?: string }>;
+  // Apollo sends contact data in `data.contact` or top-level `person`
+  data?: {
+    contact?: ApolloContactPayload;
+    sequence_id?: string;
+    contact_id?: string;
   };
+  person?: ApolloContactPayload;
+}
+
+interface ApolloContactPayload {
+  id?: string;
+  name?: string;
+  email?: string;
+  title?: string;
+  organization_name?: string;
+  organization?: { name?: string };
+  linkedin_url?: string;
+  phone_numbers?: Array<{ sanitized_number?: string }>;
 }
 
 @ApiExcludeController()
@@ -47,11 +58,15 @@ export class ApolloWebhookController {
       throw new UnauthorizedException('Invalid webhook secret');
     }
 
-    if (event.event_type !== 'email_replied') {
+    const eventType = event.event ?? event.event_type ?? '';
+    if (eventType !== 'email_replied' && eventType !== 'email.replied') {
       return { received: true };
     }
 
-    const { person, emailer_campaign_id } = event;
+    // Support both payload shapes: Apollo v1 (person) and v2 (data.contact)
+    const person = event.person ?? event.data?.contact;
+    const emailer_campaign_id =
+      event.emailer_campaign_id ?? event.data?.sequence_id;
     if (!person || !emailer_campaign_id) {
       return { received: true };
     }
@@ -87,7 +102,7 @@ export class ApolloWebhookController {
       name: person.name ?? person.email ?? 'Unknown',
       email: person.email,
       title: person.title,
-      companyName: person.organization_name,
+      companyName: person.organization_name ?? person.organization?.name,
       linkedinUrl: person.linkedin_url,
       phone: person.phone_numbers?.[0]?.sanitized_number,
       apolloPersonId: person.id,

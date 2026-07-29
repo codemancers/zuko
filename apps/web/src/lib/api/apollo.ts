@@ -336,6 +336,19 @@ export const apolloProspectsApi = {
       `/integrations/apollo/sequences/${sequenceId}/contacts`,
     );
   },
+
+  async syncRepliesToLeads(
+    sequenceId: string,
+    icpProfileId: number,
+    campaignId?: number,
+  ): Promise<{ created: number; skipped: number }> {
+    const qs = new URLSearchParams({ icpProfileId: String(icpProfileId) });
+    if (campaignId) qs.set('campaignId', String(campaignId));
+    return apiClient.post(
+      `/integrations/apollo/sequences/${sequenceId}/sync-replies?${qs}`,
+      {},
+    );
+  },
 };
 
 export const apolloIntegrationApi = {

@@ -103,6 +103,21 @@ export default function CampaignDetail({ zukoId }: CampaignDetailProps) {
 
   const hasSequence = !!campaign.providerSequenceId;
 
+  const syncRepliesMutation = useMutation({
+    mutationFn: () =>
+      apolloProspectsApi.syncRepliesToLeads(
+        campaign.providerSequenceId!,
+        campaign.icpProfileId!,
+        campaign.id,
+      ),
+    onSuccess: (res) => {
+      toast.success(
+        `Synced ${res.created} new lead${res.created !== 1 ? 's' : ''}${res.skipped ? ` (${res.skipped} already existed)` : ''}`,
+      );
+    },
+    onError: () => toast.error('Failed to sync replies'),
+  });
+
   const {
     data: sequenceContacts = [],
     isLoading: isLoadingContacts,
@@ -210,9 +225,22 @@ export default function CampaignDetail({ zukoId }: CampaignDetailProps) {
               </Button>
             )}
             {activeTab === 'contacts' && hasSequence && (
-              <Button color="dark" onClick={() => setAddContactsOpen(true)}>
-                Add Contacts
-              </Button>
+              <>
+                {campaign.icpProfileId && (
+                  <Button
+                    outline
+                    disabled={syncRepliesMutation.isPending}
+                    onClick={() => syncRepliesMutation.mutate()}
+                  >
+                    {syncRepliesMutation.isPending
+                      ? 'Syncing…'
+                      : 'Sync Replies → Leads'}
+                  </Button>
+                )}
+                <Button color="dark" onClick={() => setAddContactsOpen(true)}>
+                  Add Contacts
+                </Button>
+              </>
             )}
             {hasSequence &&
               (campaign.active ? (

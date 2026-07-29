@@ -6,6 +6,7 @@ import {
   Query,
   Param,
   UseGuards,
+  ParseIntPipe,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -61,6 +62,24 @@ export class ApolloProspectsController {
     @Param('sequenceId') sequenceId: string,
   ) {
     return this.apolloProspectsService.getSequenceContacts(orgId, sequenceId);
+  }
+
+  @Post('sequences/:sequenceId/sync-replies')
+  @ApiOperation({ summary: 'Sync replied contacts from sequence into Leads' })
+  @ApiQuery({ name: 'icpProfileId', required: true, type: Number })
+  @ApiQuery({ name: 'campaignId', required: false, type: Number })
+  syncRepliesToLeads(
+    @OrgId() orgId: number,
+    @Param('sequenceId') sequenceId: string,
+    @Query('icpProfileId', ParseIntPipe) icpProfileId: number,
+    @Query('campaignId') campaignId?: string,
+  ) {
+    return this.apolloProspectsService.syncRepliesToLeads(
+      orgId,
+      sequenceId,
+      icpProfileId,
+      campaignId ? parseInt(campaignId, 10) : undefined,
+    );
   }
 
   @Post('prospects/add-to-sequence')
