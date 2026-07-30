@@ -68,6 +68,10 @@ export class ApolloMcpService {
     return JSON.parse(result.content[0].text) as T;
   }
 
+  getAccessToken(organizationId: number) {
+    return this.apolloIntegrationService.getAccessToken(organizationId);
+  }
+
   async listTools(organizationId: number): Promise<unknown> {
     const accessToken =
       await this.apolloIntegrationService.getAccessToken(organizationId);

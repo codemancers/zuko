@@ -131,6 +131,29 @@ export class TableController {
     );
   }
 
+  @Get('leads')
+  @ApiOperation({ summary: 'Get leads table view' })
+  @ApiQuery({ name: 'search', required: false, type: String })
+  @ApiQuery({ name: 'status', required: false, type: String })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiResponse({ status: 200, description: 'Leads table data' })
+  async getLeadsTable(
+    @OrgId() organizationId: number,
+    @Query('search') search?: string,
+    @Query('status') status?: string,
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number = 1,
+    @Query('limit', new DefaultValuePipe(50), ParseIntPipe) limit: number = 50,
+  ) {
+    return this.tableService.getLeadsTable(
+      organizationId,
+      search,
+      status,
+      page,
+      limit,
+    );
+  }
+
   @Post(':entity/columns')
   @ApiOperation({ summary: 'Create a custom column for an entity table' })
   @ApiParam({

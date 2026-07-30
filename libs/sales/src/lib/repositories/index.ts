@@ -6,3 +6,4 @@ export * from './companies.repository';
 export * from './deals.repository';
 export * from './task.repository';
 export * from './table-column.repository';
+export * from './leads.repository';

@@ -201,6 +201,7 @@ model Organization {
   connections         Connection[]
   icpProfiles         IcpProfile[]         @relation("OrganizationIcpProfiles")
   campaigns           Campaign[]           @relation("OrganizationCampaigns")
+  leads               Lead[]               @relation("OrganizationLeads")
   pages               Page[]               @relation("OrganizationPages")
   eveChats            EveChat[]
 

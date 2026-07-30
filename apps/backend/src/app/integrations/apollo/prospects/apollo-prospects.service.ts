@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ApolloMcpService } from '../apollo-mcp.service';
-import { ContactsRepository } from '@zuko/sales';
+import { ContactsRepository, LeadsRepository } from '@zuko/sales';
 import type {
   SearchProspectsDto,
   AddPeopleToSequenceDto,
@@ -111,6 +111,17 @@ export interface AddToSequenceResult {
   failedPersonIds: string[];
 }
 
+export interface SequenceContact {
+  id: string;
+  name: string;
+  email?: string;
+  emailStatus?: string;
+  title?: string;
+  organizationName?: string;
+  sequenceStatus?: string;
+  emailLabel?: string;
+}
+
 @Injectable()
 export class ApolloProspectsService {
   private readonly logger = new Logger(ApolloProspectsService.name);
@@ -119,6 +130,7 @@ export class ApolloProspectsService {
     private readonly apolloMcpService: ApolloMcpService,
     private readonly contactsRepository: ContactsRepository,
     private readonly configService: ConfigService,
+    private readonly leadsRepository: LeadsRepository,
   ) {}
 
   // ─── Auth ────────────────────────────────────────────────────────────────────
@@ -309,6 +321,114 @@ export class ApolloProspectsService {
 
   // ─── Add people to sequence ─────────────────────────────────────────────────
 
+  /**
+   * Enrich a person to get their verified work email via Apollo people/match.
+   * Passing the Apollo person ID gives the most accurate result (1 credit consumed).
+   */
+  private async enrichEmail(
+    organizationId: number,
+    personData: {
+      apolloPersonId?: string;
+      firstName?: string;
+      lastName?: string;
+      organizationName?: string;
+    },
+  ): Promise<string | undefined> {
+    const body: Record<string, string> = { reveal_personal_emails: 'false' };
+    // Person ID gives Apollo an exact match — much more reliable than name lookup
+    if (personData.apolloPersonId) body['id'] = personData.apolloPersonId;
+    if (personData.firstName) body['first_name'] = personData.firstName;
+    if (personData.lastName) body['last_name'] = personData.lastName;
+    if (personData.organizationName)
+      body['organization_name'] = personData.organizationName;
+
+    const tryMatch = async (headers: Record<string, string>) => {
+      const resp = await fetch(`${APOLLO_BASE}/people/match`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(body),
+      });
+      if (!resp.ok) return undefined;
+      const data = (await resp.json()) as { person?: { email?: string } };
+      return data.person?.email ?? undefined;
+    };
+
+    // OAuth account first — uses connected account's credit pool (same as Apollo UI)
+    try {
+      const accessToken =
+        await this.apolloMcpService.getAccessToken(organizationId);
+      const email = await tryMatch({
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      });
+      if (email) return email;
+    } catch {
+      // fall through
+    }
+
+    // API key fallback
+    return tryMatch(this.apiKeyHeaders());
+  }
+
+  /**
+   * Ensure an existing Apollo contact has an email.
+   * Fetches the contact, and if no email is stored, enriches via people/match
+   * and patches the contact record in Apollo so enrollment can proceed.
+   */
+  private async ensureContactHasEmail(
+    organizationId: number,
+    contactId: string,
+  ): Promise<void> {
+    try {
+      const accessToken =
+        await this.apolloMcpService.getAccessToken(organizationId);
+      const authHeader = {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      };
+
+      const resp = await fetch(`${APOLLO_BASE}/contacts/${contactId}`, {
+        headers: authHeader,
+      });
+      if (!resp.ok) return;
+
+      const data = (await resp.json()) as {
+        contact?: {
+          email?: string;
+          first_name?: string;
+          last_name?: string;
+          organization_name?: string;
+        };
+      };
+      if (data.contact?.email) return; // already has email — nothing to do
+
+      const contact = data.contact;
+      if (!contact) return;
+
+      const email = await this.enrichEmail(organizationId, {
+        firstName: contact.first_name,
+        lastName: contact.last_name,
+        organizationName: contact.organization_name,
+      });
+
+      if (!email) {
+        this.logger.warn(
+          `Could not find email for Apollo contact ${contactId} — may be skipped by sequence enrollment`,
+        );
+        return;
+      }
+
+      // Patch the contact in Apollo so enrollment can find the email
+      await fetch(`${APOLLO_BASE}/contacts/${contactId}`, {
+        method: 'PUT',
+        headers: authHeader,
+        body: JSON.stringify({ email }),
+      });
+    } catch {
+      // non-fatal
+    }
+  }
+
   async addPeopleToSequence(
     organizationId: number,
     dto: AddPeopleToSequenceDto,
@@ -323,19 +443,23 @@ export class ApolloProspectsService {
       dto.personIds.map(async (personId, index) => {
         const personData = dto.personData[index] ?? {};
         try {
+          let email = personData.email;
+          if (!email) {
+            email = await this.enrichEmail(organizationId, {
+              apolloPersonId: personId,
+              ...personData,
+            });
+          }
+
           const result =
             await this.apolloMcpService.callTool<McpContactCreateResult>(
               organizationId,
               'apollo_contacts_create',
               {
-                _conversation_ref: `zuko_${organizationId}`,
-                _rationale: 'Adding prospect to sequence from Zuko',
                 first_name: personData.firstName ?? '',
                 last_name: personData.lastName ?? '',
                 organization_name: personData.organizationName ?? '',
-                // Pass the Apollo person ID so Apollo links the contact to its
-                // existing person record rather than creating a duplicate.
-                person_id: personId,
+                ...(email ? { email } : {}),
               },
             );
 
@@ -382,23 +506,174 @@ export class ApolloProspectsService {
     );
 
     // Step 2: Enroll all contact IDs (existing + freshly converted) into the sequence.
-    const allContactIds = [...dto.contactIds, ...convertedContactIds];
+    // For existing contacts missing an email, enrich and patch Apollo before enrollment.
+    await Promise.all(
+      dto.contactIds.map((contactId) =>
+        this.ensureContactHasEmail(organizationId, contactId),
+      ),
+    );
+    const enrichedContactIds = dto.contactIds;
 
+    const allContactIds = [...enrichedContactIds, ...convertedContactIds];
     let result: unknown = null;
 
     if (allContactIds.length > 0) {
+      // Get email account via MCP (OAuth context), fall back to API key
+      interface EmailAccountResult {
+        email_accounts?: Array<{ id: string; active?: boolean }>;
+      }
+      const mcpEmailAccounts = await this.apolloMcpService
+        .callTool<EmailAccountResult>(
+          organizationId,
+          'apollo_email_accounts_index',
+          {},
+        )
+        .catch(() => null);
+
+      let emailAccountId = mcpEmailAccounts?.email_accounts?.find(
+        (a) => a.active !== false,
+      )?.id;
+
+      if (!emailAccountId) {
+        const emailAccountsResp = await fetch(`${APOLLO_BASE}/email_accounts`, {
+          headers: this.apiKeyHeaders(),
+        });
+        if (emailAccountsResp.ok) {
+          const data = (await emailAccountsResp.json()) as {
+            email_accounts?: Array<{ id: string; active?: boolean }>;
+          };
+          emailAccountId = data.email_accounts?.find(
+            (a) => a.active !== false,
+          )?.id;
+        }
+      }
+
+      if (!emailAccountId) {
+        throw new BadGatewayException(
+          'No email inbox connected in Apollo. Go to Apollo → Settings → Mailboxes and connect an inbox.',
+        );
+      }
+
+      // MCP schema requires both id + emailer_campaign_id (same value)
       result = await this.apolloMcpService.callTool(
         organizationId,
         'apollo_emailer_campaigns_add_contact_ids',
         {
-          _conversation_ref: `zuko_${organizationId}`,
-          _rationale: 'Enrolling contacts into sequence from Zuko',
           id: dto.sequenceId,
+          emailer_campaign_id: dto.sequenceId,
           contact_ids: allContactIds,
+          send_email_from_email_account_id: emailAccountId,
+          sequence_active_in_other_campaigns: true,
         },
       );
     }
 
     return { result, failedPersonIds };
+  }
+
+  // ─── Sequence contacts ───────────────────────────────────────────────────────
+
+  async syncRepliesToLeads(
+    organizationId: number,
+    sequenceId: string,
+    icpProfileId: number,
+    campaignId?: number,
+  ): Promise<{ created: number; skipped: number }> {
+    const contacts = await this.getSequenceContacts(organizationId, sequenceId);
+    const replied = contacts.filter((c) => c.emailLabel === 'replied');
+
+    let created = 0;
+    let skipped = 0;
+
+    for (const contact of replied) {
+      const existing = contact.id
+        ? await this.leadsRepository.findByApolloPersonId(
+            organizationId,
+            contact.id,
+          )
+        : null;
+
+      if (existing) {
+        skipped++;
+        continue;
+      }
+
+      await this.leadsRepository.create({
+        organizationId,
+        icpProfileId,
+        campaignId,
+        name: contact.name,
+        email: contact.email,
+        title: contact.title,
+        companyName: contact.organizationName,
+        apolloPersonId: contact.id,
+        source: 'apollo',
+        status: 'replied',
+      });
+      created++;
+    }
+
+    return { created, skipped };
+  }
+
+  async getSequenceContacts(
+    organizationId: number,
+    sequenceId: string,
+  ): Promise<SequenceContact[]> {
+    // Contacts belong to the OAuth account (created via MCP) — must use Bearer token
+    const accessToken =
+      await this.apolloMcpService.getAccessToken(organizationId);
+    const resp = await fetch(`${APOLLO_BASE}/contacts/search`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        emailer_campaign_ids: [sequenceId],
+        per_page: 100,
+      }),
+    });
+
+    if (!resp.ok) {
+      const body = await resp.text();
+      this.handleFetchError('getSequenceContacts', resp.status, body);
+    }
+
+    const data = (await resp.json()) as {
+      contacts?: Array<{
+        id: string;
+        name?: string;
+        first_name?: string;
+        last_name?: string;
+        email?: string;
+        email_true_status?: string;
+        title?: string;
+        organization_name?: string;
+        contact_campaign_statuses?: Array<{
+          emailer_campaign_id: string;
+          status: string;
+          inactive_reason?: string | null;
+        }>;
+      }>;
+    };
+
+    return (data.contacts ?? []).map((c) => {
+      const campaignStatus = c.contact_campaign_statuses?.find(
+        (s) => s.emailer_campaign_id === sequenceId,
+      );
+      return {
+        id: c.id,
+        name:
+          c.name ??
+          ([c.first_name, c.last_name].filter(Boolean).join(' ') || 'Unknown'),
+        email: c.email,
+        emailStatus: c.email_true_status,
+        title: c.title,
+        organizationName: c.organization_name,
+        sequenceStatus: campaignStatus?.status,
+        emailLabel: campaignStatus?.inactive_reason ?? undefined,
+      };
+    });
   }
 }
