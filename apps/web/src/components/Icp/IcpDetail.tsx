@@ -306,25 +306,6 @@ function DetailsPanel({
   const queryClient = useQueryClient();
   const { data: profile } = useQuery(getIcpProfile(profileId));
 
-  const descMutation = useMutation({
-    mutationFn: (description: OutputData) =>
-      icpApi.updateProfile(profileId, {
-        description: description as unknown as Record<string, unknown>,
-      }),
-    onSuccess: () =>
-      queryClient.invalidateQueries({
-        queryKey: ['icp', 'profile', profileId],
-      }),
-  });
-
-  const descField = useAutosaveField<OutputData>(
-    ensureOutputData(profile?.description),
-    {
-      fieldName: 'description',
-      onSave: (val) => descMutation.mutateAsync(val),
-    },
-  );
-
   const notesMutation = useMutation({
     mutationFn: (notes: OutputData) =>
       icpApi.updateProfile(profileId, {
@@ -336,43 +317,16 @@ function DetailsPanel({
       }),
   });
 
-  const notesField = useAutosaveField<OutputData>(
-    ensureOutputData(profile?.notes),
-    {
-      fieldName: 'notes',
-      onSave: (val) => notesMutation.mutateAsync(val),
-    },
-  );
+  // Fall back to description content if notes is empty
+  const initialNotes = ensureOutputData(profile?.notes ?? profile?.description);
+
+  const notesField = useAutosaveField<OutputData>(initialNotes, {
+    fieldName: 'notes',
+    onSave: (val) => notesMutation.mutateAsync(val),
+  });
 
   return (
-    <div className="space-y-8">
-      {/* Description */}
-      <div className="relative">
-        <div className="mb-2 flex items-center justify-between">
-          <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
-            Description
-          </p>
-          {descField.isSaving && (
-            <span className="text-xs text-zinc-400">Saving…</span>
-          )}
-        </div>
-        <Editor
-          key={`icp-desc-${profileId}`}
-          holder={`icp-desc-editor-${profileId}`}
-          data={descField.value}
-          onChange={(val) => descField.setValue(val)}
-          placeholder="Describe your ideal customer profile…"
-        />
-        <Button
-          onClick={onCompile}
-          disabled={isCompiling}
-          className="mt-3 w-full"
-        >
-          {isCompiling ? 'Compiling…' : 'Compile from Description'}
-        </Button>
-      </div>
-
-      {/* Notes */}
+    <div className="space-y-4">
       <div className="relative">
         <div className="mb-2 flex items-center justify-between">
           <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
@@ -389,6 +343,13 @@ function DetailsPanel({
           onChange={(val) => notesField.setValue(val)}
           placeholder="Write notes about this ICP profile…"
         />
+        <Button
+          onClick={onCompile}
+          disabled={isCompiling}
+          className="mt-3 w-full"
+        >
+          {isCompiling ? 'Compiling…' : 'Compile from Notes'}
+        </Button>
       </div>
     </div>
   );
@@ -1075,8 +1036,9 @@ export default function IcpDetail({ profileId }: IcpDetailProps) {
   });
 
   async function handleCompile() {
-    if (!profile?.description) return;
-    const text = editorJsonToMarkdown(JSON.stringify(profile.description));
+    const source = profile?.notes ?? profile?.description;
+    if (!source) return;
+    const text = editorJsonToMarkdown(JSON.stringify(source));
     if (!text) return;
     setIsCompiling(true);
     try {
