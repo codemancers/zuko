@@ -656,6 +656,26 @@ function ProfileSidebar({
     useState<PreviewFiltersResponse | null>(null);
   const [isCompiling, setIsCompiling] = useState(false);
 
+  const updateDescriptionMutation = useMutation({
+    mutationFn: (description: OutputData) =>
+      icpApi.updateProfile(profileId, {
+        description: description as unknown as Record<string, unknown>,
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ['icp', 'profile', profileId],
+      });
+    },
+  });
+
+  const descriptionField = useAutosaveField<OutputData>(
+    ensureOutputData(profile?.description),
+    {
+      fieldName: 'description',
+      onSave: (val) => updateDescriptionMutation.mutateAsync(val),
+    },
+  );
+
   const applyMutation = useMutation({
     mutationFn: (filters: IcpFilters) =>
       icpApi.updateProfile(profileId, { filters }),
@@ -676,8 +696,7 @@ function ProfileSidebar({
   });
 
   async function handleCompile() {
-    if (!profile?.description) return;
-    const text = editorJsonToMarkdown(JSON.stringify(profile.description));
+    const text = editorJsonToMarkdown(JSON.stringify(descriptionField.value));
     if (!text) return;
     setIsCompiling(true);
     try {
@@ -739,28 +758,32 @@ function ProfileSidebar({
           </Button>
         </div>
 
-        {profile.description && (
-          <div>
-            <Text className="text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
-              Description
-            </Text>
-            <div className="mt-1 text-sm text-zinc-700 dark:text-zinc-300 [&_.codex-editor]:px-0">
-              <Editor
-                key={`icp-desc-sidebar-${profileId}`}
-                holder={`icp-desc-sidebar-editor-${profileId}`}
-                data={ensureOutputData(profile.description)}
-                readOnly
-              />
-            </div>
-            <Button
-              onClick={handleCompile}
-              disabled={isCompiling}
-              className="mt-2 w-full text-xs"
-            >
-              {isCompiling ? 'Compiling…' : 'Compile from Description'}
-            </Button>
+        <div className="relative">
+          <Text className="text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+            Description
+          </Text>
+          {descriptionField.isSaving && (
+            <span className="absolute right-0 top-0 text-xs text-zinc-400">
+              Saving…
+            </span>
+          )}
+          <div className="mt-1 text-sm text-zinc-700 dark:text-zinc-300 [&_.codex-editor]:px-0">
+            <Editor
+              key={`icp-desc-sidebar-${profileId}`}
+              holder={`icp-desc-sidebar-editor-${profileId}`}
+              data={descriptionField.value}
+              onChange={(val) => descriptionField.setValue(val)}
+              placeholder="Describe your ideal customer…"
+            />
           </div>
-        )}
+          <Button
+            onClick={handleCompile}
+            disabled={isCompiling}
+            className="mt-2 w-full text-xs"
+          >
+            {isCompiling ? 'Compiling…' : 'Compile from Description'}
+          </Button>
+        </div>
 
         <div>
           <Text className="text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
