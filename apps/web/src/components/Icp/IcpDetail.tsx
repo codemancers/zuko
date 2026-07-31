@@ -502,23 +502,34 @@ function CompiledFiltersPreviewSheet({
       </SheetHeader>
       <SheetBody>
         <div className="space-y-5">
-          {counts && (
-            <div className="rounded-lg bg-zinc-50 px-4 py-3 dark:bg-zinc-900">
-              <Text className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                {[
-                  counts.companiesCount != null
-                    ? `${counts.companiesCount.toLocaleString()} companies`
-                    : null,
-                  counts.contactsCount != null
-                    ? `${counts.contactsCount.toLocaleString()} contacts`
-                    : null,
-                ]
-                  .filter(Boolean)
-                  .join(' · ')}{' '}
-                match
-              </Text>
-            </div>
-          )}
+          {counts &&
+            (() => {
+              const noResults =
+                (counts.companiesCount ?? 0) === 0 &&
+                (counts.contactsCount ?? 0) === 0;
+              return (
+                <div
+                  className={`rounded-lg px-4 py-3 ${noResults ? 'bg-amber-50 dark:bg-amber-950/30' : 'bg-zinc-50 dark:bg-zinc-900'}`}
+                >
+                  <Text
+                    className={`text-sm font-medium ${noResults ? 'text-amber-700 dark:text-amber-400' : 'text-zinc-700 dark:text-zinc-300'}`}
+                  >
+                    {noResults
+                      ? 'No matches found — filters may be too narrow. Try simplifying your notes and recompiling.'
+                      : [
+                          counts.companiesCount != null
+                            ? `${counts.companiesCount.toLocaleString()} companies`
+                            : null,
+                          counts.contactsCount != null
+                            ? `${counts.contactsCount.toLocaleString()} contacts`
+                            : null,
+                        ]
+                          .filter(Boolean)
+                          .join(' · ') + ' match'}
+                  </Text>
+                </div>
+              );
+            })()}
 
           {filters && (
             <div className="space-y-4">
