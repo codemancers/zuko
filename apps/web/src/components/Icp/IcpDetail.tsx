@@ -294,7 +294,13 @@ const TABS: { id: Tab; label: string }[] = [
 
 // ---------- Details Panel ----------
 
-function DetailsPanel({ profileId }: { profileId: number }) {
+function DetailsPanel({
+  profileId,
+  onNotesChange,
+}: {
+  profileId: number;
+  onNotesChange?: (val: OutputData) => void;
+}) {
   const queryClient = useQueryClient();
   const { data: profile } = useQuery(getIcpProfile(profileId));
 
@@ -332,7 +338,10 @@ function DetailsPanel({ profileId }: { profileId: number }) {
           key={`icp-notes-${profileId}`}
           holder={`icp-notes-editor-${profileId}`}
           data={notesField.value}
-          onChange={(val) => notesField.setValue(val)}
+          onChange={(val) => {
+            notesField.setValue(val);
+            onNotesChange?.(val);
+          }}
           placeholder="Write notes about this ICP profile…"
         />
       </div>
@@ -1031,6 +1040,7 @@ export default function IcpDetail({ profileId }: IcpDetailProps) {
   const [activeTab, setActiveTab] = useQueryState('tab', tabParser);
   const [newCampaignOpen, setNewCampaignOpen] = useState(false);
   const [isCompiling, setIsCompiling] = useState(false);
+  const [currentNotes, setCurrentNotes] = useState<OutputData | null>(null);
   const [compiledFilters, setCompiledFilters] = useState<IcpFilters | null>(
     null,
   );
@@ -1064,7 +1074,7 @@ export default function IcpDetail({ profileId }: IcpDetailProps) {
   });
 
   async function handleCompile() {
-    const source = profile?.notes ?? profile?.description;
+    const source = currentNotes ?? profile?.notes ?? profile?.description;
     if (!source) return;
     const text = editorJsonToMarkdown(JSON.stringify(source));
     if (!text) return;
@@ -1118,7 +1128,12 @@ export default function IcpDetail({ profileId }: IcpDetailProps) {
       <div className="mt-6 flex items-start gap-8">
         {/* Main content */}
         <div className="min-w-0 flex-1">
-          {activeTab === 'details' && <DetailsPanel profileId={profileId} />}
+          {activeTab === 'details' && (
+            <DetailsPanel
+              profileId={profileId}
+              onNotesChange={setCurrentNotes}
+            />
+          )}
           {activeTab === 'companies' && (
             <div className="overflow-x-auto">
               <CompaniesPanel profileId={profileId} />
