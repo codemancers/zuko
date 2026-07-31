@@ -147,7 +147,7 @@ export default function IcpForm({
 
   const [name, setName] = useState(profile?.name ?? '');
   const [description, setDescription] = useState<OutputData>(
-    ensureOutputData(profile?.description),
+    ensureOutputData(profile?.notes ?? profile?.description),
   );
   const [filterFields, setFilterFields] = useState<FilterFields>(
     filtersToFormState(profile?.filters),

@@ -294,42 +294,57 @@ const TABS: { id: Tab; label: string }[] = [
 
 // ---------- Details Panel ----------
 
-function DetailsPanel({ profileId }: { profileId: number }) {
+function DetailsPanel({
+  profileId,
+  onNotesChange,
+}: {
+  profileId: number;
+  onNotesChange?: (val: OutputData) => void;
+}) {
   const queryClient = useQueryClient();
   const { data: profile } = useQuery(getIcpProfile(profileId));
 
-  const updateMutation = useMutation({
+  const notesMutation = useMutation({
     mutationFn: (notes: OutputData) =>
       icpApi.updateProfile(profileId, {
         notes: notes as unknown as Record<string, unknown>,
       }),
-    onSuccess: () => {
+    onSuccess: () =>
       queryClient.invalidateQueries({
         queryKey: ['icp', 'profile', profileId],
-      });
-    },
+      }),
   });
 
-  const notesField = useAutosaveField<OutputData>(
-    ensureOutputData(profile?.notes),
-    {
-      fieldName: 'notes',
-      onSave: (val) => updateMutation.mutateAsync(val),
-    },
-  );
+  // Fall back to description content if notes is empty
+  const initialNotes = ensureOutputData(profile?.notes ?? profile?.description);
+
+  const notesField = useAutosaveField<OutputData>(initialNotes, {
+    fieldName: 'notes',
+    onSave: (val) => notesMutation.mutateAsync(val),
+  });
 
   return (
-    <div className="relative">
-      {notesField.isSaving && (
-        <p className="absolute right-0 -top-6 text-xs text-zinc-400">Saving…</p>
-      )}
-      <Editor
-        key={`icp-notes-${profileId}`}
-        holder={`icp-notes-editor-${profileId}`}
-        data={notesField.value}
-        onChange={(val) => notesField.setValue(val)}
-        placeholder="Write notes about this ICP profile…"
-      />
+    <div className="space-y-4">
+      <div className="relative">
+        <div className="mb-2 flex items-center justify-between">
+          <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+            Notes
+          </p>
+          {notesField.isSaving && (
+            <span className="text-xs text-zinc-400">Saving…</span>
+          )}
+        </div>
+        <Editor
+          key={`icp-notes-${profileId}`}
+          holder={`icp-notes-editor-${profileId}`}
+          data={notesField.value}
+          onChange={(val) => {
+            notesField.setValue(val);
+            onNotesChange?.(val);
+          }}
+          placeholder="Write notes about this ICP profile…"
+        />
+      </div>
     </div>
   );
 }
@@ -496,23 +511,34 @@ function CompiledFiltersPreviewSheet({
       </SheetHeader>
       <SheetBody>
         <div className="space-y-5">
-          {counts && (
-            <div className="rounded-lg bg-zinc-50 px-4 py-3 dark:bg-zinc-900">
-              <Text className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                {[
-                  counts.companiesCount != null
-                    ? `${counts.companiesCount.toLocaleString()} companies`
-                    : null,
-                  counts.contactsCount != null
-                    ? `${counts.contactsCount.toLocaleString()} contacts`
-                    : null,
-                ]
-                  .filter(Boolean)
-                  .join(' · ')}{' '}
-                match
-              </Text>
-            </div>
-          )}
+          {counts &&
+            (() => {
+              const noResults =
+                (counts.companiesCount ?? 0) === 0 &&
+                (counts.contactsCount ?? 0) === 0;
+              return (
+                <div
+                  className={`rounded-lg px-4 py-3 ${noResults ? 'bg-amber-50 dark:bg-amber-950/30' : 'bg-zinc-50 dark:bg-zinc-900'}`}
+                >
+                  <Text
+                    className={`text-sm font-medium ${noResults ? 'text-amber-700 dark:text-amber-400' : 'text-zinc-700 dark:text-zinc-300'}`}
+                  >
+                    {noResults
+                      ? 'No matches found — filters may be too narrow. Try simplifying your notes and recompiling.'
+                      : [
+                          counts.companiesCount != null
+                            ? `${counts.companiesCount.toLocaleString()} companies`
+                            : null,
+                          counts.contactsCount != null
+                            ? `${counts.contactsCount.toLocaleString()} contacts`
+                            : null,
+                        ]
+                          .filter(Boolean)
+                          .join(' · ') + ' match'}
+                  </Text>
+                </div>
+              );
+            })()}
 
           {filters && (
             <div className="space-y-4">
@@ -641,57 +667,26 @@ function CompiledFiltersPreviewSheet({
 function ProfileSidebar({
   profileId,
   onEditSuccess,
+  compiledFilters,
+  previewCounts,
+  isPreviewOpen,
+  setIsPreviewOpen,
+  applyMutation,
+  onCompile,
+  isCompiling,
 }: {
   profileId: number;
   onEditSuccess: () => void;
+  compiledFilters: IcpFilters | null;
+  previewCounts: PreviewFiltersResponse | null;
+  isPreviewOpen: boolean;
+  setIsPreviewOpen: (open: boolean) => void;
+  applyMutation: ReturnType<typeof useMutation<unknown, Error, IcpFilters>>;
+  onCompile: () => void;
+  isCompiling: boolean;
 }) {
-  const queryClient = useQueryClient();
   const { data: profile } = useQuery(getIcpProfile(profileId));
   const [isSheetOpen, setIsSheetOpen] = useState(false);
-  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
-  const [compiledFilters, setCompiledFilters] = useState<IcpFilters | null>(
-    null,
-  );
-  const [previewCounts, setPreviewCounts] =
-    useState<PreviewFiltersResponse | null>(null);
-  const [isCompiling, setIsCompiling] = useState(false);
-
-  const applyMutation = useMutation({
-    mutationFn: (filters: IcpFilters) =>
-      icpApi.updateProfile(profileId, { filters }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ['icp', 'profile', profileId],
-      });
-      queryClient.invalidateQueries({
-        queryKey: ['icp', 'companies', profileId],
-      });
-      queryClient.invalidateQueries({
-        queryKey: ['icp', 'contacts', profileId],
-      });
-      setIsPreviewOpen(false);
-      toast.success('Filters applied');
-    },
-    onError: () => toast.error('Failed to apply filters'),
-  });
-
-  async function handleCompile() {
-    if (!profile?.description) return;
-    const text = editorJsonToMarkdown(JSON.stringify(profile.description));
-    if (!text) return;
-    setIsCompiling(true);
-    try {
-      const filters = await icpApi.compileDescription(text);
-      const counts = await icpApi.previewFilters(profileId, filters);
-      setCompiledFilters(filters);
-      setPreviewCounts(counts);
-      setIsPreviewOpen(true);
-    } catch {
-      toast.error('Failed to compile description');
-    } finally {
-      setIsCompiling(false);
-    }
-  }
 
   if (!profile) return null;
 
@@ -739,28 +734,14 @@ function ProfileSidebar({
           </Button>
         </div>
 
-        {profile.description && (
-          <div>
-            <Text className="text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
-              Description
-            </Text>
-            <div className="mt-1 text-sm text-zinc-700 dark:text-zinc-300 [&_.codex-editor]:px-0">
-              <Editor
-                key={`icp-desc-sidebar-${profileId}`}
-                holder={`icp-desc-sidebar-editor-${profileId}`}
-                data={ensureOutputData(profile.description)}
-                readOnly
-              />
-            </div>
-            <Button
-              onClick={handleCompile}
-              disabled={isCompiling}
-              className="mt-2 w-full text-xs"
-            >
-              {isCompiling ? 'Compiling…' : 'Compile from Description'}
-            </Button>
-          </div>
-        )}
+        <Button
+          onClick={onCompile}
+          disabled={isCompiling}
+          className="w-full"
+          color="dark"
+        >
+          {isCompiling ? 'Compiling…' : 'Compile Filters from Notes'}
+        </Button>
 
         <div>
           <Text className="text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
@@ -825,6 +806,41 @@ function ProfileSidebar({
           </div>
         </div>
 
+        <FilterBadges
+          label="Exclude Locations"
+          items={filters.excludeLocations}
+          color="red"
+        />
+        <FilterBadges
+          label="Technologies (any of)"
+          items={filters.technologiesAnyOf}
+          color="purple"
+        />
+        <FilterBadges
+          label="Technologies (all of)"
+          items={filters.technologiesAllOf}
+          color="purple"
+        />
+        <FilterBadges
+          label="Technologies (none of)"
+          items={filters.technologiesNoneOf}
+          color="zinc"
+        />
+        <FilterBadges
+          label="Job Titles"
+          items={filters.personTitles}
+          color="blue"
+        />
+        <FilterBadges
+          label="Seniorities"
+          items={filters.personSeniorities}
+          color="green"
+        />
+        <FilterBadges
+          label="Person Locations"
+          items={filters.personLocations}
+          color="orange"
+        />
         <FilterBadges
           label="Region"
           items={filters.region}
@@ -1020,14 +1036,61 @@ function NewCampaignSheet({
 // ---------- Main Component ----------
 
 export default function IcpDetail({ profileId }: IcpDetailProps) {
+  const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useQueryState('tab', tabParser);
   const [newCampaignOpen, setNewCampaignOpen] = useState(false);
+  const [isCompiling, setIsCompiling] = useState(false);
+  const [currentNotes, setCurrentNotes] = useState<OutputData | null>(null);
+  const [compiledFilters, setCompiledFilters] = useState<IcpFilters | null>(
+    null,
+  );
+  const [previewCounts, setPreviewCounts] =
+    useState<PreviewFiltersResponse | null>(null);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
   const {
     data: profile,
     isLoading,
     refetch,
   } = useQuery(getIcpProfile(profileId));
+
+  const applyMutation = useMutation({
+    mutationFn: (filters: IcpFilters) =>
+      icpApi.updateProfile(profileId, { filters }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ['icp', 'profile', profileId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ['icp', 'companies', profileId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ['icp', 'contacts', profileId],
+      });
+      setIsPreviewOpen(false);
+      toast.success('Filters applied');
+    },
+    onError: () => toast.error('Failed to apply filters'),
+  });
+
+  async function handleCompile() {
+    const source = currentNotes ?? profile?.notes ?? profile?.description;
+    if (!source) return;
+    const text = editorJsonToMarkdown(JSON.stringify(source));
+    if (!text) return;
+    setIsCompiling(true);
+    try {
+      const filters = await icpApi.compileDescription(text);
+      const counts = await icpApi.previewFilters(profileId, filters);
+      setCompiledFilters(filters);
+      setPreviewCounts(counts);
+      setIsPreviewOpen(true);
+    } catch {
+      toast.error('Failed to compile description');
+    } finally {
+      setIsCompiling(false);
+    }
+  }
 
   if (isLoading) return <LoadingState message="Loading ICP profile…" />;
   if (!profile)
@@ -1065,7 +1128,12 @@ export default function IcpDetail({ profileId }: IcpDetailProps) {
       <div className="mt-6 flex items-start gap-8">
         {/* Main content */}
         <div className="min-w-0 flex-1">
-          {activeTab === 'details' && <DetailsPanel profileId={profileId} />}
+          {activeTab === 'details' && (
+            <DetailsPanel
+              profileId={profileId}
+              onNotesChange={setCurrentNotes}
+            />
+          )}
           {activeTab === 'companies' && (
             <div className="overflow-x-auto">
               <CompaniesPanel profileId={profileId} />
@@ -1089,6 +1157,13 @@ export default function IcpDetail({ profileId }: IcpDetailProps) {
           <ProfileSidebar
             profileId={profileId}
             onEditSuccess={() => refetch()}
+            compiledFilters={compiledFilters}
+            previewCounts={previewCounts}
+            isPreviewOpen={isPreviewOpen}
+            setIsPreviewOpen={setIsPreviewOpen}
+            applyMutation={applyMutation}
+            onCompile={handleCompile}
+            isCompiling={isCompiling}
           />
         </div>
       </div>
