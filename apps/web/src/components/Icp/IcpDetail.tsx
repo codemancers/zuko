@@ -798,6 +798,41 @@ function ProfileSidebar({
         </div>
 
         <FilterBadges
+          label="Exclude Locations"
+          items={filters.excludeLocations}
+          color="red"
+        />
+        <FilterBadges
+          label="Technologies (any of)"
+          items={filters.technologiesAnyOf}
+          color="purple"
+        />
+        <FilterBadges
+          label="Technologies (all of)"
+          items={filters.technologiesAllOf}
+          color="purple"
+        />
+        <FilterBadges
+          label="Technologies (none of)"
+          items={filters.technologiesNoneOf}
+          color="zinc"
+        />
+        <FilterBadges
+          label="Job Titles"
+          items={filters.personTitles}
+          color="blue"
+        />
+        <FilterBadges
+          label="Seniorities"
+          items={filters.personSeniorities}
+          color="green"
+        />
+        <FilterBadges
+          label="Person Locations"
+          items={filters.personLocations}
+          color="orange"
+        />
+        <FilterBadges
           label="Region"
           items={filters.region}
           color="blue"
