@@ -294,15 +294,7 @@ const TABS: { id: Tab; label: string }[] = [
 
 // ---------- Details Panel ----------
 
-function DetailsPanel({
-  profileId,
-  onCompile,
-  isCompiling,
-}: {
-  profileId: number;
-  onCompile: () => void;
-  isCompiling: boolean;
-}) {
+function DetailsPanel({ profileId }: { profileId: number }) {
   const queryClient = useQueryClient();
   const { data: profile } = useQuery(getIcpProfile(profileId));
 
@@ -343,13 +335,6 @@ function DetailsPanel({
           onChange={(val) => notesField.setValue(val)}
           placeholder="Write notes about this ICP profile…"
         />
-        <Button
-          onClick={onCompile}
-          disabled={isCompiling}
-          className="mt-3 w-full"
-        >
-          {isCompiling ? 'Compiling…' : 'Compile from Notes'}
-        </Button>
       </div>
     </div>
   );
@@ -667,6 +652,8 @@ function ProfileSidebar({
   isPreviewOpen,
   setIsPreviewOpen,
   applyMutation,
+  onCompile,
+  isCompiling,
 }: {
   profileId: number;
   onEditSuccess: () => void;
@@ -675,6 +662,8 @@ function ProfileSidebar({
   isPreviewOpen: boolean;
   setIsPreviewOpen: (open: boolean) => void;
   applyMutation: ReturnType<typeof useMutation<unknown, Error, IcpFilters>>;
+  onCompile: () => void;
+  isCompiling: boolean;
 }) {
   const { data: profile } = useQuery(getIcpProfile(profileId));
   const [isSheetOpen, setIsSheetOpen] = useState(false);
@@ -725,21 +714,14 @@ function ProfileSidebar({
           </Button>
         </div>
 
-        {profile.description && (
-          <div>
-            <Text className="text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
-              Description
-            </Text>
-            <div className="mt-1 text-sm text-zinc-700 dark:text-zinc-300 [&_.codex-editor]:px-0">
-              <Editor
-                key={`icp-desc-sidebar-${profileId}`}
-                holder={`icp-desc-sidebar-editor-${profileId}`}
-                data={ensureOutputData(profile.description)}
-                readOnly
-              />
-            </div>
-          </div>
-        )}
+        <Button
+          onClick={onCompile}
+          disabled={isCompiling}
+          className="w-full"
+          color="dark"
+        >
+          {isCompiling ? 'Compiling…' : 'Compile Filters from Notes'}
+        </Button>
 
         <div>
           <Text className="text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
@@ -1090,13 +1072,7 @@ export default function IcpDetail({ profileId }: IcpDetailProps) {
       <div className="mt-6 flex items-start gap-8">
         {/* Main content */}
         <div className="min-w-0 flex-1">
-          {activeTab === 'details' && (
-            <DetailsPanel
-              profileId={profileId}
-              onCompile={handleCompile}
-              isCompiling={isCompiling}
-            />
-          )}
+          {activeTab === 'details' && <DetailsPanel profileId={profileId} />}
           {activeTab === 'companies' && (
             <div className="overflow-x-auto">
               <CompaniesPanel profileId={profileId} />
@@ -1125,6 +1101,8 @@ export default function IcpDetail({ profileId }: IcpDetailProps) {
             isPreviewOpen={isPreviewOpen}
             setIsPreviewOpen={setIsPreviewOpen}
             applyMutation={applyMutation}
+            onCompile={handleCompile}
+            isCompiling={isCompiling}
           />
         </div>
       </div>
