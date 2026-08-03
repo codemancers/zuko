@@ -10,7 +10,7 @@ import { ApolloSequencesController } from './apollo/sequences/apollo-sequences.c
 import { ApolloCampaignsController } from './apollo/sequences/apollo-campaigns.controller';
 import { ApolloProspectsService } from './apollo/prospects/apollo-prospects.service';
 import { ApolloProspectsController } from './apollo/prospects/apollo-prospects.controller';
-import { ApolloWebhookController } from './apollo/apollo-webhook.controller';
+import { ApolloSyncService } from './apollo/apollo-sync.service';
 import {
   CampaignsRepository,
   ContactsRepository,
@@ -26,10 +26,10 @@ import { PrismaService } from '../../prisma/prisma.service';
     ApolloSequencesController,
     ApolloCampaignsController,
     ApolloProspectsController,
-    ApolloWebhookController,
   ],
   providers: [
     OrganizationGuard,
+    ApolloSyncService,
     ApolloIntegrationRepository,
     ApolloIntegrationService,
     ApolloMcpService,
