@@ -806,6 +806,21 @@ function ProfileSidebar({
           </div>
         </div>
 
+        {filters.organizationName && (
+          <div>
+            <Text className="text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+              Organization Name
+            </Text>
+            <Text className="mt-1 text-sm text-zinc-700 dark:text-zinc-300">
+              {filters.organizationName}
+            </Text>
+          </div>
+        )}
+        <FilterBadges
+          label="Domains"
+          items={filters.organizationDomains}
+          color="zinc"
+        />
         <FilterBadges
           label="Exclude Locations"
           items={filters.excludeLocations}
