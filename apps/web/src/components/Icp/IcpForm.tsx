@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import type { OutputData } from '@editorjs/editorjs';
 import {
   Button,
   Field,
@@ -33,7 +32,6 @@ import {
   PRODUCT_MATURITY_OPTIONS,
   CONSULTING_FIT_OPTIONS,
 } from '@/lib/constants/icp';
-import Editor, { ensureOutputData } from '@/components/Common/Editor/Editor';
 import { toast } from 'sonner';
 
 interface IcpFormProps {
@@ -146,9 +144,6 @@ export default function IcpForm({
   const queryClient = useQueryClient();
 
   const [name, setName] = useState(profile?.name ?? '');
-  const [description, setDescription] = useState<OutputData>(
-    ensureOutputData(profile?.notes ?? profile?.description),
-  );
   const [filterFields, setFilterFields] = useState<FilterFields>(
     filtersToFormState(profile?.filters),
   );
@@ -158,7 +153,6 @@ export default function IcpForm({
     mutationFn: () =>
       icpApi.createProfile({
         name,
-        description: description as unknown as Record<string, unknown>,
         filters: formStateToFilters(filterFields),
       }),
     onSuccess: () => {
@@ -173,7 +167,6 @@ export default function IcpForm({
     mutationFn: () =>
       icpApi.updateProfile(profile!.id, {
         name,
-        description: description as unknown as Record<string, unknown>,
         filters: formStateToFilters(filterFields),
       }),
     onSuccess: () => {
@@ -225,19 +218,6 @@ export default function IcpForm({
             disabled={isPending}
           />
           {errors['name'] && <ErrorMessage>{errors['name']}</ErrorMessage>}
-        </Field>
-
-        <Field>
-          <Label>Description</Label>
-          <div className="rounded-lg border border-zinc-200 bg-white p-4 min-h-24 shadow-sm dark:border-zinc-700 dark:bg-zinc-900">
-            <Editor
-              key={`icp-description-${profile?.id ?? 'new'}`}
-              holder={`icp-description-editor-${profile?.id ?? 'new'}`}
-              data={description}
-              onChange={setDescription}
-              placeholder="Brief description of this ICP…"
-            />
-          </div>
         </Field>
       </FieldGroup>
 
