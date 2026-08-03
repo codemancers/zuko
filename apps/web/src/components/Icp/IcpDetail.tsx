@@ -811,9 +811,9 @@ function ProfileSidebar({
             <Text className="text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
               Organization Name
             </Text>
-            <Text className="mt-1 text-sm text-zinc-700 dark:text-zinc-300">
-              {filters.organizationName}
-            </Text>
+            <div className="mt-1.5">
+              <Badge color="blue">{filters.organizationName}</Badge>
+            </div>
           </div>
         )}
         <FilterBadges
