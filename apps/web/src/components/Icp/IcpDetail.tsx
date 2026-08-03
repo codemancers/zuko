@@ -806,16 +806,13 @@ function ProfileSidebar({
           </div>
         </div>
 
-        {filters.organizationName && (
-          <div>
-            <Text className="text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
-              Organization Name
-            </Text>
-            <div className="mt-1.5">
-              <Badge color="blue">{filters.organizationName}</Badge>
-            </div>
-          </div>
-        )}
+        <FilterBadges
+          label="Organization Name"
+          items={
+            filters.organizationName ? [filters.organizationName] : undefined
+          }
+          color="blue"
+        />
         <FilterBadges
           label="Domains"
           items={filters.organizationDomains}
