@@ -398,6 +398,7 @@ export default function CampaignDetail({ zukoId }: CampaignDetailProps) {
             onClose={() => {
               setAddContactsOpen(false);
               void refetchContacts();
+              setTimeout(() => void refetchContacts(), 4000);
             }}
           />
         )}
