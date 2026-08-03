@@ -326,7 +326,7 @@ function DetailsPanel({
   return (
     <div className="space-y-4">
       <div className="relative">
-        <div className="mb-2 flex items-center justify-between">
+        <div className="sticky top-0 z-10 mb-2 flex items-center justify-between bg-white pb-2 dark:bg-zinc-900">
           <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
             Notes
           </p>
@@ -1114,69 +1114,73 @@ export default function IcpDetail({ profileId }: IcpDetailProps) {
 
   return (
     <>
-      <BackLink href="/icps">ICP Profiles</BackLink>
+      <div className="flex h-[calc(100vh-3rem)] flex-col">
+        <div className="shrink-0">
+          <BackLink href="/icps">ICP Profiles</BackLink>
 
-      <div className="mt-4 flex items-center justify-between">
-        <Heading>{profile.name}</Heading>
-        {activeTab === 'campaigns' && (
-          <Button onClick={() => setNewCampaignOpen(true)}>
-            <PlusIcon className="size-4" />
-            New Campaign
-          </Button>
-        )}
-      </div>
+          <div className="mt-4 flex items-center justify-between">
+            <Heading>{profile.name}</Heading>
+            {activeTab === 'campaigns' && (
+              <Button onClick={() => setNewCampaignOpen(true)}>
+                <PlusIcon className="size-4" />
+                New Campaign
+              </Button>
+            )}
+          </div>
 
-      <Tabs
-        selectedIndex={TABS.findIndex((t) => t.id === activeTab)}
-        onChange={(index: number) => setActiveTab(TABS[index].id)}
-      >
-        <TabsList variant="line" className="mt-6 !justify-start">
-          {TABS.map(({ id, label }) => (
-            <TabsTrigger key={id}>{label}</TabsTrigger>
-          ))}
-        </TabsList>
-      </Tabs>
-
-      <div className="mt-6 flex items-start gap-8">
-        {/* Main content */}
-        <div className="min-w-0 flex-1">
-          {activeTab === 'details' && (
-            <DetailsPanel
-              profileId={profileId}
-              onNotesChange={setCurrentNotes}
-            />
-          )}
-          {activeTab === 'companies' && (
-            <div className="overflow-x-auto">
-              <CompaniesPanel profileId={profileId} />
-            </div>
-          )}
-          {activeTab === 'contacts' && (
-            <div className="overflow-x-auto">
-              <ContactsPanel profileId={profileId} />
-            </div>
-          )}
-          {activeTab === 'campaigns' && (
-            <IcpCampaignsPanel
-              profileId={profileId}
-              onNew={() => setNewCampaignOpen(true)}
-            />
-          )}
+          <Tabs
+            selectedIndex={TABS.findIndex((t) => t.id === activeTab)}
+            onChange={(index: number) => setActiveTab(TABS[index].id)}
+          >
+            <TabsList variant="line" className="mt-6 !justify-start">
+              {TABS.map(({ id, label }) => (
+                <TabsTrigger key={id}>{label}</TabsTrigger>
+              ))}
+            </TabsList>
+          </Tabs>
         </div>
 
-        {/* Sidebar */}
-        <div className="w-64 shrink-0 border-l border-zinc-200 pl-8 dark:border-zinc-700/50">
-          <ProfileSidebar
-            profileId={profileId}
-            onEditSuccess={() => refetch()}
-            compiledFilters={compiledFilters}
-            previewCounts={previewCounts}
-            isPreviewOpen={isPreviewOpen}
-            setIsPreviewOpen={setIsPreviewOpen}
-            applyMutation={applyMutation}
-            onCompile={handleCompile}
-            isCompiling={isCompiling}
-          />
+        <div className="mt-6 flex min-h-0 flex-1 items-start gap-8">
+          {/* Main content */}
+          <div className="-ml-20 min-w-0 flex-1 self-stretch overflow-y-auto pl-20">
+            {activeTab === 'details' && (
+              <DetailsPanel
+                profileId={profileId}
+                onNotesChange={setCurrentNotes}
+              />
+            )}
+            {activeTab === 'companies' && (
+              <div className="overflow-x-auto">
+                <CompaniesPanel profileId={profileId} />
+              </div>
+            )}
+            {activeTab === 'contacts' && (
+              <div className="overflow-x-auto">
+                <ContactsPanel profileId={profileId} />
+              </div>
+            )}
+            {activeTab === 'campaigns' && (
+              <IcpCampaignsPanel
+                profileId={profileId}
+                onNew={() => setNewCampaignOpen(true)}
+              />
+            )}
+          </div>
+
+          {/* Sidebar */}
+          <div className="w-64 shrink-0 self-stretch overflow-y-auto border-l border-zinc-200 pl-8 dark:border-zinc-700/50">
+            <ProfileSidebar
+              profileId={profileId}
+              onEditSuccess={() => refetch()}
+              compiledFilters={compiledFilters}
+              previewCounts={previewCounts}
+              isPreviewOpen={isPreviewOpen}
+              setIsPreviewOpen={setIsPreviewOpen}
+              applyMutation={applyMutation}
+              onCompile={handleCompile}
+              isCompiling={isCompiling}
+            />
+          </div>
         </div>
       </div>
 
