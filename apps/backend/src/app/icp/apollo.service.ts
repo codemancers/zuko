@@ -273,13 +273,19 @@ export class ApolloService {
         payload['organization_num_employees_ranges'] = normalized;
     }
     if (filters.locations?.length) {
-      payload['person_locations'] = filters.locations;
+      payload['organization_locations'] = filters.locations;
     }
     if (filters.revenueRange?.min) {
       payload['revenue_range[min]'] = filters.revenueRange.min;
     }
     if (filters.revenueRange?.max) {
       payload['revenue_range[max]'] = filters.revenueRange.max;
+    }
+    if (filters.organizationName) {
+      payload['q_organization_name'] = filters.organizationName;
+    }
+    if (filters.excludeLocations?.length) {
+      payload['organization_not_locations'] = filters.excludeLocations;
     }
     if (filters.organizationIds?.length) {
       payload['organization_ids'] = filters.organizationIds;
@@ -340,7 +346,9 @@ export class ApolloService {
       payload['q_keywords'] = filters.keywords;
     }
 
-    this.logger.debug(`[APOLLO] searchContacts page=${page}`);
+    this.logger.debug(
+      `[APOLLO] searchContacts payload=${JSON.stringify(payload)}`,
+    );
 
     try {
       const { data } = await axios.post<{

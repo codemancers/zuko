@@ -807,6 +807,18 @@ function ProfileSidebar({
         </div>
 
         <FilterBadges
+          label="Organization Name"
+          items={
+            filters.organizationName ? [filters.organizationName] : undefined
+          }
+          color="blue"
+        />
+        <FilterBadges
+          label="Domains"
+          items={filters.organizationDomains}
+          color="zinc"
+        />
+        <FilterBadges
           label="Exclude Locations"
           items={filters.excludeLocations}
           color="red"
