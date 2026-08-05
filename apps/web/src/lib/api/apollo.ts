@@ -80,6 +80,7 @@ export interface ZukoCampaign {
   id: number;
   organizationId: number;
   icpProfileId?: number | null;
+  icpProfile?: { id: number; name: string } | null;
   name: string;
   provider: string;
   providerSequenceId?: string | null;
@@ -201,6 +202,10 @@ export const apolloSequencesApi = {
     return apiClient.get(
       `/integrations/apollo/campaigns/${icpProfileId}/campaigns`,
     );
+  },
+
+  async listAll(): Promise<ZukoCampaign[]> {
+    return apiClient.get('/integrations/apollo/campaigns');
   },
 
   async createMeta(payload: {

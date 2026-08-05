@@ -351,12 +351,20 @@ export const getCampaignsInfinite = (search?: string) =>
       return page < total_pages ? page + 1 : undefined;
     },
     retry: false,
+    staleTime: 5 * 60 * 1000,
   });
 
 export const getCampaignsByIcpProfile = (icpProfileId: number) =>
   queryOptions({
     queryKey: ['campaigns', 'by-icp', icpProfileId],
     queryFn: () => apolloSequencesApi.listByIcpProfile(icpProfileId),
+  });
+
+export const getAllZukoCampaigns = () =>
+  queryOptions({
+    queryKey: ['campaigns', 'zuko', 'all'],
+    queryFn: () => apolloSequencesApi.listAll(),
+    staleTime: 2 * 60 * 1000,
   });
 
 export const getZukoCampaignByDbId = (id: number) =>
