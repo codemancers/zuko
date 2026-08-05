@@ -47,6 +47,7 @@ import {
   UserGroupIcon,
   AdjustmentsHorizontalIcon,
   FunnelIcon,
+  MegaphoneIcon,
 } from '@heroicons/react/20/solid';
 import { usePathname, useRouter } from 'next/navigation';
 import { authClient } from '@/lib/auth-client';
@@ -100,6 +101,7 @@ const baseNavigation = [
   { name: 'Deals', href: '/deals', icon: BriefcaseIcon },
   { name: 'Leads', href: '/leads', icon: FunnelIcon },
   { name: 'ICPs', href: '/icps', icon: AdjustmentsHorizontalIcon },
+  { name: 'Campaigns', href: '/campaigns', icon: MegaphoneIcon },
   { divider: true },
   { name: 'Tasks', href: '/tasks', icon: ClipboardDocumentListIcon },
   { name: 'Wiki', href: '/pages', icon: DocumentTextIcon },
