@@ -32,7 +32,7 @@ const AddContactsDialog = lazy(() => import('./AddContactsDialog'));
 
 type Tab = 'sequence' | 'contacts' | 'analytics';
 const TAB_VALUES = ['sequence', 'contacts', 'analytics'] as const;
-const tabParser = parseAsStringLiteral(TAB_VALUES).withDefault('sequence');
+const tabParser = parseAsStringLiteral(TAB_VALUES).withDefault('analytics');
 
 const TABS: { id: Tab; label: string }[] = [
   { id: 'sequence', label: 'Sequence Editor' },
