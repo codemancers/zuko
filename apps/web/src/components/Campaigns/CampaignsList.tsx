@@ -12,7 +12,10 @@ import type { ColumnDef } from '@tanstack/react-table';
 import { Button, BadgeButton } from '@zuko/ui-kit';
 import { PlusIcon, ArrowPathIcon } from '@heroicons/react/20/solid';
 import { MegaphoneIcon } from '@heroicons/react/24/outline';
-import { getCampaignsInfinite, getAllZukoCampaigns } from '@/server/query-options';
+import {
+  getCampaignsInfinite,
+  getAllZukoCampaigns,
+} from '@/server/query-options';
 import { apolloSequencesApi, type ApolloSequence } from '@/lib/api/apollo';
 import { PageHeader, SearchBar } from '@/components/shared';
 import { BaseTable, DataField } from '@/components/Table';
@@ -50,7 +53,6 @@ export default function CampaignsList() {
     [data],
   );
   const totalCount = data?.pages[0]?.pagination?.total_entries ?? 0;
-
 
   const approveMutation = useMutation({
     mutationFn: (id: string) => apolloSequencesApi.approve(id),
