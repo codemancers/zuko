@@ -12,7 +12,10 @@ import {
   Text,
 } from '@zuko/ui-kit';
 import { parseAsStringLiteral, useQueryState } from 'nuqs';
-import { getZukoCampaignByDbId } from '@/server/query-options';
+import {
+  getZukoCampaignByDbId,
+  getCampaignsByIcpProfile,
+} from '@/server/query-options';
 import {
   apolloSequencesApi,
   apolloProspectsApi,
@@ -386,6 +389,13 @@ export default function CampaignDetail({ zukoId }: CampaignDetailProps) {
                 </Text>
               </div>
             )}
+
+            {campaign.icpProfileId && (
+              <IcpCampaignsList
+                icpProfileId={campaign.icpProfileId}
+                currentCampaignId={campaign.id}
+              />
+            )}
           </div>
         </div>
       </div>
@@ -404,6 +414,50 @@ export default function CampaignDetail({ zukoId }: CampaignDetailProps) {
         )}
       </Suspense>
     </>
+  );
+}
+
+// ─── Sidebar campaigns list ───────────────────────────────────────────────────
+
+function IcpCampaignsList({
+  icpProfileId,
+  currentCampaignId,
+}: {
+  icpProfileId: number;
+  currentCampaignId: number;
+}) {
+  const { data: campaigns = [], isLoading } = useQuery(
+    getCampaignsByIcpProfile(icpProfileId),
+  );
+
+  const others = campaigns.filter((c) => c.id !== currentCampaignId);
+
+  if (isLoading)
+    return <p className="text-xs text-zinc-500">Loading campaigns…</p>;
+
+  if (others.length === 0) return null;
+
+  return (
+    <div>
+      <Text className="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+        Other Campaigns
+      </Text>
+      <ul className="mt-2 space-y-2">
+        {others.map((c) => (
+          <li key={c.id}>
+            <a
+              href={`/campaigns/${c.id}`}
+              className="flex items-center justify-between gap-2 text-sm text-zinc-700 hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-white"
+            >
+              <span className="truncate">{c.name}</span>
+              <Badge color={c.active ? 'green' : 'zinc'} className="shrink-0">
+                {c.active ? 'Active' : 'Inactive'}
+              </Badge>
+            </a>
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }
 

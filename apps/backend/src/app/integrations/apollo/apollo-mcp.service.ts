@@ -33,6 +33,13 @@ export class ApolloMcpService {
     });
 
     const raw = await response.text();
+
+    if (!response.ok) {
+      throw new Error(
+        `Apollo MCP HTTP ${response.status} for tool ${toolName}: ${raw.slice(0, 200)}`,
+      );
+    }
+
     const jsonLine = raw
       .split('\n')
       .find((line) => line.startsWith('data:'))
@@ -40,7 +47,9 @@ export class ApolloMcpService {
       .trim();
 
     if (!jsonLine) {
-      throw new Error(`No data in MCP response for tool: ${toolName}`);
+      throw new Error(
+        `No data in MCP response for tool: ${toolName}. Raw: ${raw.slice(0, 200)}`,
+      );
     }
 
     const envelope = JSON.parse(jsonLine) as {

@@ -20,6 +20,12 @@ export class ApolloCampaignsController {
     private readonly apolloSequencesService: ApolloSequencesService,
   ) {}
 
+  @Get()
+  @ApiOperation({ summary: 'List all Zuko campaigns with ICP profile' })
+  getAllCampaigns(@OrgId() organizationId: number) {
+    return this.apolloSequencesService.getAllCampaigns(organizationId);
+  }
+
   @Get(':icpProfileId/campaigns')
   @ApiOperation({ summary: 'List Zuko campaigns linked to an ICP profile' })
   getCampaignsByIcp(

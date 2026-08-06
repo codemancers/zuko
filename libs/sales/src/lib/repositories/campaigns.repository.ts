@@ -133,6 +133,7 @@ export class CampaignsRepository {
     return this.prisma.campaign.findMany({
       where: { organizationId },
       orderBy: { createdAt: 'desc' },
+      include: { icpProfile: { select: { id: true, name: true } } },
     });
   }
 }

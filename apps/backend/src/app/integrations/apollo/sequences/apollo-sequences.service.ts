@@ -87,7 +87,6 @@ export class ApolloSequencesService {
         _conversation_ref: `zuko_${organizationId}`,
         _rationale: 'User searching sequences from Zuko',
         q_name: dto.name,
-        q_active: false, // include inactive sequences
         page: dto.page?.toString(),
         per_page: dto.perPage?.toString(),
       },
@@ -351,6 +350,10 @@ export class ApolloSequencesService {
       organizationId,
       icpProfileId,
     );
+  }
+
+  async getAllCampaigns(organizationId: number) {
+    return this.campaignsRepository.findAll(organizationId);
   }
 
   async createCampaignMeta(

@@ -3,6 +3,7 @@
 import { useMemo } from 'react';
 import {
   useInfiniteQuery,
+  useQuery,
   useMutation,
   useQueryClient,
 } from '@tanstack/react-query';
@@ -11,7 +12,10 @@ import type { ColumnDef } from '@tanstack/react-table';
 import { Button, BadgeButton } from '@zuko/ui-kit';
 import { PlusIcon, ArrowPathIcon } from '@heroicons/react/20/solid';
 import { MegaphoneIcon } from '@heroicons/react/24/outline';
-import { getCampaignsInfinite } from '@/server/query-options';
+import {
+  getCampaignsInfinite,
+  getAllZukoCampaigns,
+} from '@/server/query-options';
 import { apolloSequencesApi, type ApolloSequence } from '@/lib/api/apollo';
 import { PageHeader, SearchBar } from '@/components/shared';
 import { BaseTable, DataField } from '@/components/Table';
@@ -33,6 +37,16 @@ export default function CampaignsList() {
     fetchNextPage,
     refetch,
   } = useInfiniteQuery(getCampaignsInfinite(debouncedValue || undefined));
+
+  const { data: zukoCampaigns } = useQuery(getAllZukoCampaigns());
+
+  const zukoIdBySequenceId = useMemo(() => {
+    const map = new Map<string, number>();
+    zukoCampaigns?.forEach((c) => {
+      if (c.providerSequenceId) map.set(c.providerSequenceId, c.id);
+    });
+    return map;
+  }, [zukoCampaigns]);
 
   const campaigns = useMemo(
     () => data?.pages.flatMap((p) => p.emailer_campaigns) ?? [],
@@ -186,7 +200,10 @@ export default function CampaignsList() {
         data={campaigns}
         loading={isLoading}
         entityName="campaigns"
-        onRowClick={(campaign) => router.push(`/campaigns/${campaign.id}`)}
+        onRowClick={(campaign) => {
+          const zukoId = zukoIdBySequenceId.get(campaign.id);
+          if (zukoId) router.push(`/campaigns/${zukoId}`);
+        }}
         totalCount={totalCount}
         hasNextPage={hasNextPage}
         isFetchingNextPage={isFetchingNextPage}
