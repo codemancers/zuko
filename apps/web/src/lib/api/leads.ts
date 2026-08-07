@@ -107,6 +107,10 @@ export const leadsApi = {
     return apiClient.post(`/leads/${id}/convert`, {});
   },
 
+  async revert(id: number): Promise<Lead> {
+    return apiClient.post(`/leads/${id}/revert`, {});
+  },
+
   async getTableViewLeads(filters?: {
     search?: string;
     status?: string;

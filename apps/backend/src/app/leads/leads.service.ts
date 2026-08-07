@@ -59,6 +59,15 @@ export class LeadsService {
     return this.leadsRepository.delete(id);
   }
 
+  async revert(id: number, organizationId: number) {
+    await this.findById(id, organizationId);
+    return this.leadsRepository.update(id, {
+      status: 'replied',
+      dealId: null,
+      contactId: null,
+    });
+  }
+
   async convert(id: number, organizationId: number) {
     const lead = await this.findById(id, organizationId);
 
