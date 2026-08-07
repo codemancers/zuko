@@ -2,6 +2,7 @@
 
 import { useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useSheetState } from '@/hooks/use-sheet-state';
 import { PlusIcon, XMarkIcon, FunnelIcon } from '@heroicons/react/24/outline';
 import { Button, Sheet, SheetHeader, SheetTitle } from '@zuko/ui-kit';
@@ -28,6 +29,7 @@ import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { useSearchParam } from '@/hooks/use-search-param';
 
 const LeadsList = () => {
+  const router = useRouter();
   const queryClient = useQueryClient();
   const openAddColumnRef = useRef<(() => void) | undefined>(undefined);
   const [isSheetOpen, setIsSheetOpen] = useSheetState();
@@ -166,7 +168,7 @@ const LeadsList = () => {
         showAddColumn={false}
         onAddColumn={() => {}}
         openAddColumnRef={openAddColumnRef}
-        disableRowClick={true}
+        onRowClick={(row) => router.push(`/leads/${row.id}`)}
         onFetchNextPage={fetchNextPage}
         isFetchingNextPage={isFetchingNextPage}
         hasNextPage={hasNextPage}
