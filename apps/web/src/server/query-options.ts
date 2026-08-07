@@ -122,6 +122,12 @@ export const getTableViewTasksInfinite = (filters?: { search?: string }) =>
     },
   });
 
+export const getLead = (id: number) =>
+  queryOptions({
+    queryKey: ['lead', id],
+    queryFn: () => leadsApi.get(id),
+  });
+
 export const getTableViewLeadsInfinite = (filters?: {
   search?: string;
   status?: string;
