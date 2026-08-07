@@ -148,4 +148,35 @@ export class LeadsRepository {
   delete(id: number) {
     return this.prisma.lead.delete({ where: { id } });
   }
+
+  async findLists(organizationId: number) {
+    const grouped = await this.prisma.lead.groupBy({
+      by: ['campaignId'],
+      where: { organizationId },
+      _count: { id: true },
+      orderBy: { _count: { id: 'desc' } },
+    });
+
+    const campaignIds = grouped
+      .map((g) => g.campaignId)
+      .filter((id): id is number => id !== null);
+
+    const campaigns =
+      campaignIds.length > 0
+        ? await this.prisma.campaign.findMany({
+            where: { id: { in: campaignIds } },
+            select: { id: true, name: true },
+          })
+        : [];
+
+    const campaignMap = new Map(campaigns.map((c) => [c.id, c.name]));
+
+    return grouped.map((g) => ({
+      campaignId: g.campaignId,
+      campaignName: g.campaignId
+        ? (campaignMap.get(g.campaignId) ?? null)
+        : null,
+      leadCount: g._count.id,
+    }));
+  }
 }

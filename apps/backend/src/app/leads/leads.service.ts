@@ -14,6 +14,10 @@ export class LeadsService {
     private readonly prisma: PrismaService,
   ) {}
 
+  findLists(organizationId: number) {
+    return this.leadsRepository.findLists(organizationId);
+  }
+
   findAll(organizationId: number, query: ListLeadsQueryDto) {
     const status = query.status
       ? Array.isArray(query.status)

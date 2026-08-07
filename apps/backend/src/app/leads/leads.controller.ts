@@ -35,6 +35,12 @@ import {
 export class LeadsController {
   constructor(private readonly leadsService: LeadsService) {}
 
+  @Get('lists')
+  @ApiOperation({ summary: 'List lead lists grouped by campaign' })
+  findLists(@OrgId() organizationId: number) {
+    return this.leadsService.findLists(organizationId);
+  }
+
   @Get()
   @ApiOperation({ summary: 'List leads' })
   findAll(@OrgId() organizationId: number, @Query() query: ListLeadsQueryDto) {
