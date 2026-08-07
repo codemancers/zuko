@@ -25,7 +25,7 @@ export interface Lead {
   createdAt: string;
   updatedAt: string;
   icpProfile?: { id: number; name: string };
-  campaign?: { id: number; name: string };
+  campaign?: { id: number; name: string; providerSequenceId?: string };
   contact?: { id: number; name: string; email?: string };
   deal?: { id: number; title: string };
 }
@@ -105,6 +105,23 @@ export const leadsApi = {
 
   async convert(id: number) {
     return apiClient.post(`/leads/${id}/convert`, {});
+  },
+
+  async getSequenceActivity(id: number): Promise<{
+    sequenceStatus?: string;
+    sequenceName?: string;
+    messages: Array<{
+      id: string;
+      subject?: string;
+      bodyText?: string;
+      bodyHtml?: string;
+      sentAt?: string;
+      type?: string;
+      fromEmail?: string;
+      toEmail?: string;
+    }>;
+  }> {
+    return apiClient.get(`/integrations/apollo/leads/${id}/sequence-activity`);
   },
 
   async getTableViewLeads(filters?: {

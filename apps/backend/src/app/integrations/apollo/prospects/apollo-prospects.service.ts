@@ -616,6 +616,110 @@ export class ApolloProspectsService {
     return { created, skipped };
   }
 
+  async getLeadSequenceActivity(
+    organizationId: number,
+    leadId: number,
+  ): Promise<{
+    sequenceStatus?: string;
+    sequenceName?: string;
+    messages: Array<{
+      id: string;
+      subject?: string;
+      bodyText?: string;
+      bodyHtml?: string;
+      sentAt?: string;
+      type?: string;
+      fromEmail?: string;
+      toEmail?: string;
+    }>;
+  }> {
+    const lead = await this.leadsRepository.findById(leadId, organizationId);
+    if (!lead) return { messages: [] };
+
+    const apolloContactId = lead.apolloPersonId;
+    const sequenceId = (lead.campaign as { providerSequenceId?: string } | null)
+      ?.providerSequenceId;
+
+    if (!apolloContactId || !sequenceId) return { messages: [] };
+
+    const accessToken =
+      await this.apolloMcpService.getAccessToken(organizationId);
+    const headers = {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    };
+
+    // Get sequence status for this contact
+    let sequenceStatus: string | undefined;
+    try {
+      const contactResp = await fetch(
+        `${APOLLO_BASE}/contacts/${apolloContactId}`,
+        {
+          headers,
+        },
+      );
+      if (contactResp.ok) {
+        const contactData = (await contactResp.json()) as {
+          contact?: {
+            contact_campaign_statuses?: Array<{
+              emailer_campaign_id: string;
+              status?: string;
+              inactive_reason?: string | null;
+            }>;
+          };
+        };
+        const status = contactData.contact?.contact_campaign_statuses?.find(
+          (s) => s.emailer_campaign_id === sequenceId,
+        );
+        sequenceStatus = status?.inactive_reason ?? status?.status;
+      }
+    } catch {
+      // non-fatal
+    }
+
+    // Get emailer messages for this contact in the sequence
+    const params = new URLSearchParams({
+      'contact_ids[]': apolloContactId,
+      emailer_campaign_id: sequenceId,
+      per_page: '50',
+    });
+    const msgResp = await fetch(`${APOLLO_BASE}/emailer_messages?${params}`, {
+      headers,
+    });
+
+    if (!msgResp.ok) return { sequenceStatus, messages: [] };
+
+    const msgData = (await msgResp.json()) as {
+      emailer_messages?: Array<{
+        id: string;
+        subject?: string;
+        body_text?: string;
+        body_html?: string;
+        sent_at?: string;
+        type?: string;
+        from_email?: string;
+        to_email?: string;
+      }>;
+    };
+
+    const messages = (msgData.emailer_messages ?? []).map((m) => ({
+      id: m.id,
+      subject: m.subject,
+      bodyText: m.body_text,
+      bodyHtml: m.body_html,
+      sentAt: m.sent_at,
+      type: m.type,
+      fromEmail: m.from_email,
+      toEmail: m.to_email,
+    }));
+
+    return {
+      sequenceStatus,
+      sequenceName: (lead.campaign as { name?: string } | null)?.name,
+      messages,
+    };
+  }
+
   async getSequenceContacts(
     organizationId: number,
     sequenceId: string,

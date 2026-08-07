@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getLead } from '@/server/query-options';
+import { getLead, getLeadSequenceActivity } from '@/server/query-options';
 import { leadsApi } from '@/lib/api/leads';
 import { BackLink, LoadingState } from '@/components/shared';
 import { Badge, Button, Heading, Text } from '@zuko/ui-kit';
@@ -44,6 +44,10 @@ export default function LeadDetail({ leadId }: { leadId: number }) {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { data: lead, isLoading } = useQuery(getLead(leadId));
+  const { data: sequenceActivity } = useQuery({
+    ...getLeadSequenceActivity(leadId),
+    enabled: !!(lead?.apolloPersonId && lead?.campaign?.providerSequenceId),
+  });
 
   const convertMutation = useMutation({
     mutationFn: () => leadsApi.convert(leadId),
@@ -215,6 +219,67 @@ export default function LeadDetail({ leadId }: { leadId: number }) {
           </SidebarField>
         </div>
       </div>
+
+      {sequenceActivity && (
+        <div className="mt-8">
+          <div className="mb-4 flex items-center justify-between">
+            <Heading level={2} className="text-base font-semibold">
+              Sequence Emails
+              {sequenceActivity.sequenceName
+                ? ` — ${sequenceActivity.sequenceName}`
+                : ''}
+            </Heading>
+            {sequenceActivity.sequenceStatus && (
+              <Badge color="blue" className="capitalize">
+                {sequenceActivity.sequenceStatus.replace(/_/g, ' ')}
+              </Badge>
+            )}
+          </div>
+
+          {sequenceActivity.messages.length === 0 ? (
+            <p className="text-sm text-zinc-500">
+              No emails found for this contact in the sequence.
+            </p>
+          ) : (
+            <div className="space-y-4">
+              {sequenceActivity.messages.map((msg) => (
+                <div
+                  key={msg.id}
+                  className={`rounded-lg border p-4 ${
+                    msg.type === 'reply'
+                      ? 'border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950/20'
+                      : 'border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800/40'
+                  }`}
+                >
+                  <div className="mb-2 flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      {msg.subject && (
+                        <p className="truncate text-sm font-medium text-zinc-900 dark:text-zinc-100">
+                          {msg.subject}
+                        </p>
+                      )}
+                      <p className="mt-0.5 text-xs text-zinc-500">
+                        {msg.type === 'reply' ? '← Reply from' : '→ Sent to'}{' '}
+                        {msg.type === 'reply' ? msg.fromEmail : msg.toEmail}
+                      </p>
+                    </div>
+                    {msg.sentAt && (
+                      <time className="shrink-0 text-xs text-zinc-400">
+                        {dayjs(msg.sentAt).format('MMM D, YYYY h:mm A')}
+                      </time>
+                    )}
+                  </div>
+                  {msg.bodyText && (
+                    <p className="mt-2 line-clamp-6 whitespace-pre-wrap text-sm text-zinc-700 dark:text-zinc-300">
+                      {msg.bodyText}
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

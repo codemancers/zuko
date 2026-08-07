@@ -82,6 +82,15 @@ export class ApolloProspectsController {
     );
   }
 
+  @Get('leads/:leadId/sequence-activity')
+  @ApiOperation({ summary: 'Get Apollo sequence email activity for a lead' })
+  getLeadSequenceActivity(
+    @OrgId() orgId: number,
+    @Param('leadId', ParseIntPipe) leadId: number,
+  ) {
+    return this.apolloProspectsService.getLeadSequenceActivity(orgId, leadId);
+  }
+
   @Post('prospects/add-to-sequence')
   @ApiOperation({
     summary:

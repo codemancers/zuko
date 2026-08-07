@@ -44,7 +44,7 @@ export interface LeadFilters {
 
 const defaultInclude = {
   icpProfile: { select: { id: true, name: true } },
-  campaign: { select: { id: true, name: true } },
+  campaign: { select: { id: true, name: true, providerSequenceId: true } },
   contact: { select: { id: true, name: true, email: true } },
   deal: { select: { id: true, title: true } },
 } satisfies Prisma.LeadInclude;

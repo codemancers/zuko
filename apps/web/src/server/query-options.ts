@@ -128,6 +128,13 @@ export const getLead = (id: number) =>
     queryFn: () => leadsApi.get(id),
   });
 
+export const getLeadSequenceActivity = (id: number) =>
+  queryOptions({
+    queryKey: ['lead', id, 'sequence-activity'],
+    queryFn: () => leadsApi.getSequenceActivity(id),
+    enabled: id > 0,
+  });
+
 export const getTableViewLeadsInfinite = (filters?: {
   search?: string;
   status?: string;
