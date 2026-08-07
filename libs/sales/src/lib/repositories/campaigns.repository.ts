@@ -41,6 +41,7 @@ export class CampaignsRepository {
   async findById(id: number, organizationId: number) {
     return this.prisma.campaign.findFirst({
       where: { id, organizationId },
+      include: { icpProfile: { select: { id: true, name: true } } },
     });
   }
 

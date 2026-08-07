@@ -372,9 +372,9 @@ export default function CampaignDetail({ zukoId }: CampaignDetailProps) {
                 </Text>
                 <a
                   href={`/icps/${campaign.icpProfileId}?tab=campaigns`}
-                  className="mt-1 block text-sm text-blue-400 hover:underline"
+                  className="mt-1 block text-sm text-zinc-700 hover:underline dark:text-zinc-300"
                 >
-                  View ICP →
+                  {campaign.icpProfile?.name ?? `ICP #${campaign.icpProfileId}`}
                 </a>
               </div>
             )}
