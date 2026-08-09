@@ -18,6 +18,7 @@ export interface CreateCampaignMetaInput {
   createdById: number;
   icpProfileId?: number;
   name: string;
+  providerSequenceId?: string;
 }
 
 @Injectable()
@@ -34,6 +35,7 @@ export class CampaignsRepository {
         active: false,
         permissions: 'team_can_use',
         sequence: [],
+        providerSequenceId: input.providerSequenceId ?? null,
       },
     });
   }

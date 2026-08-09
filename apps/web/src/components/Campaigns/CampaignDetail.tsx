@@ -33,14 +33,14 @@ const AddContactsDialog = lazy(() => import('./AddContactsDialog'));
 
 // ─── Tab config ───────────────────────────────────────────────────────────────
 
-type Tab = 'sequence' | 'contacts' | 'analytics';
-const TAB_VALUES = ['sequence', 'contacts', 'analytics'] as const;
+type Tab = 'analytics' | 'sequence' | 'contacts';
+const TAB_VALUES = ['analytics', 'sequence', 'contacts'] as const;
 const tabParser = parseAsStringLiteral(TAB_VALUES).withDefault('analytics');
 
 const TABS: { id: Tab; label: string }[] = [
+  { id: 'analytics', label: 'Analytics' },
   { id: 'sequence', label: 'Sequence Editor' },
   { id: 'contacts', label: 'Contacts' },
-  { id: 'analytics', label: 'Analytics' },
 ];
 
 // ─── Stat card ────────────────────────────────────────────────────────────────
@@ -132,11 +132,32 @@ export default function CampaignDetail({ zukoId }: CampaignDetailProps) {
 
   const { data: campaign, isLoading } = useQuery(getZukoCampaignByDbId(zukoId));
 
+  const { data: liveSequence } = useQuery({
+    queryKey: ['campaign', campaign?.providerSequenceId],
+    queryFn: async () => {
+      const res = await apolloSequencesApi.list({ name: '' });
+      return (
+        res.emailer_campaigns.find(
+          (c) => c.id === campaign!.providerSequenceId,
+        ) ?? null
+      );
+    },
+    enabled: !!campaign?.providerSequenceId,
+    staleTime: 30_000,
+  });
+
+  const isActive = liveSequence
+    ? liveSequence.active
+    : (campaign?.active ?? false);
+
   const approveMutation = useMutation({
     mutationFn: () => apolloSequencesApi.approve(campaign!.providerSequenceId!),
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: ['campaign', 'zuko-db', zukoId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ['campaign', campaign?.providerSequenceId],
       });
       toast.success('Campaign activated');
     },
@@ -149,6 +170,9 @@ export default function CampaignDetail({ zukoId }: CampaignDetailProps) {
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: ['campaign', 'zuko-db', zukoId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ['campaign', campaign?.providerSequenceId],
       });
       toast.success('Campaign deactivated');
     },
@@ -197,15 +221,7 @@ export default function CampaignDetail({ zukoId }: CampaignDetailProps) {
   return (
     <>
       <div className="flex min-h-0 flex-col">
-        <BackLink
-          href={
-            campaign.icpProfileId
-              ? `/icps/${campaign.icpProfileId}?tab=campaigns`
-              : '/icps'
-          }
-        >
-          {campaign.icpProfileId ? 'Back to ICP' : 'ICP Profiles'}
-        </BackLink>
+        <BackLink href="/campaigns">Campaigns</BackLink>
 
         <div className="mt-4 flex items-start justify-between gap-4">
           <Heading>{campaign.name}</Heading>
@@ -239,7 +255,7 @@ export default function CampaignDetail({ zukoId }: CampaignDetailProps) {
               </>
             )}
             {hasSequence &&
-              (campaign.active ? (
+              (isActive ? (
                 <Button
                   outline
                   disabled={isMutating}
@@ -350,8 +366,8 @@ export default function CampaignDetail({ zukoId }: CampaignDetailProps) {
                 Status
               </Text>
               <div className="mt-1.5">
-                <Badge color={campaign.active ? 'green' : 'zinc'}>
-                  {campaign.active ? 'Active' : 'Inactive'}
+                <Badge color={isActive ? 'green' : 'zinc'}>
+                  {isActive ? 'Active' : 'Inactive'}
                 </Badge>
               </div>
             </div>

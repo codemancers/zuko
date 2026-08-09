@@ -366,6 +366,7 @@ export class ApolloSequencesService {
       createdById: userId,
       icpProfileId: dto.icpProfileId,
       name: dto.name,
+      providerSequenceId: dto.providerSequenceId,
     });
   }
 

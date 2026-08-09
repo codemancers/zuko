@@ -54,6 +54,24 @@ export default function CampaignsList() {
   );
   const totalCount = data?.pages[0]?.pagination?.total_entries ?? 0;
 
+  const linkAndNavigate = async (campaign: ApolloSequence) => {
+    const existing = zukoIdBySequenceId.get(campaign.id);
+    if (existing) {
+      router.push(`/campaigns/${existing}`);
+      return;
+    }
+    try {
+      const created = await apolloSequencesApi.createMeta({
+        name: campaign.name,
+        providerSequenceId: campaign.id,
+      });
+      queryClient.invalidateQueries({ queryKey: ['campaigns', 'all'] });
+      router.push(`/campaigns/${created.id}`);
+    } catch {
+      toast.error('Failed to open campaign');
+    }
+  };
+
   const approveMutation = useMutation({
     mutationFn: (id: string) => apolloSequencesApi.approve(id),
     onSuccess: () => {
@@ -200,10 +218,7 @@ export default function CampaignsList() {
         data={campaigns}
         loading={isLoading}
         entityName="campaigns"
-        onRowClick={(campaign) => {
-          const zukoId = zukoIdBySequenceId.get(campaign.id);
-          if (zukoId) router.push(`/campaigns/${zukoId}`);
-        }}
+        onRowClick={(campaign) => void linkAndNavigate(campaign)}
         totalCount={totalCount}
         hasNextPage={hasNextPage}
         isFetchingNextPage={isFetchingNextPage}
