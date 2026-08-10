@@ -211,6 +211,7 @@ export const apolloSequencesApi = {
   async createMeta(payload: {
     name: string;
     icpProfileId?: number;
+    providerSequenceId?: string;
   }): Promise<ZukoCampaign> {
     return apiClient.post('/integrations/apollo/sequences/campaigns', payload);
   },

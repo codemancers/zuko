@@ -20,6 +20,11 @@ export class CreateCampaignDto {
   @IsOptional()
   @IsInt()
   icpProfileId?: number;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  providerSequenceId?: string;
 }
 
 export class EmailerTemplateDto {
