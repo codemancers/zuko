@@ -25,7 +25,7 @@ import SequenceEditorPanel from './SequenceEditorPanel';
 
 // ─── Tab config ───────────────────────────────────────────────────────────────
 
-type Tab = 'analytics' | 'sequence'
+type Tab = 'analytics' | 'sequence';
 const TAB_VALUES = ['analytics', 'sequence'] as const;
 const tabParser = parseAsStringLiteral(TAB_VALUES).withDefault('analytics');
 
