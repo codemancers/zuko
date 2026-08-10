@@ -280,15 +280,13 @@ const contactColumns: ColumnDef<ApolloPerson & { id: string }>[] = [
 
 // ---------- Tab panels ----------
 
-type Tab = 'details' | 'companies' | 'contacts' | 'campaigns';
+type Tab = 'details' | 'campaigns';
 
-const TAB_VALUES = ['details', 'companies', 'contacts', 'campaigns'] as const;
+const TAB_VALUES = ['details', 'campaigns'] as const;
 const tabParser = parseAsStringLiteral(TAB_VALUES).withDefault('details');
 
 const TABS: { id: Tab; label: string }[] = [
   { id: 'details', label: 'Details' },
-  { id: 'companies', label: 'Companies' },
-  { id: 'contacts', label: 'Contacts' },
   { id: 'campaigns', label: 'Campaigns' },
 ];
 
@@ -349,113 +347,114 @@ function DetailsPanel({
   );
 }
 
-function CompaniesPanel({ profileId }: { profileId: number }) {
-  const { data: apolloStatus } = useQuery(getApolloConnectionStatus());
+//TODO: uncomment when we need this for now we are just hinding companies and contacts
+// function CompaniesPanel({ profileId }: { profileId: number }) {
+//   const { data: apolloStatus } = useQuery(getApolloConnectionStatus());
 
-  const {
-    data,
-    isLoading,
-    isError,
-    error,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
-  } = useInfiniteQuery({
-    ...getIcpCompaniesInfinite(profileId),
-    enabled: apolloStatus?.connected === true,
-  });
+//   const {
+//     data,
+//     isLoading,
+//     isError,
+//     error,
+//     fetchNextPage,
+//     hasNextPage,
+//     isFetchingNextPage,
+//   } = useInfiniteQuery({
+//     ...getIcpCompaniesInfinite(profileId),
+//     enabled: apolloStatus?.connected === true,
+//   });
 
-  const organizations = data?.pages.flatMap((p) => p.organizations) ?? [];
-  const totalCount = data?.pages[0]?.pagination?.total_entries;
+//   const organizations = data?.pages.flatMap((p) => p.organizations) ?? [];
+//   const totalCount = data?.pages[0]?.pagination?.total_entries;
 
-  if (apolloStatus?.connected === false) {
-    return <ApolloUpgradeError error={new Error('Apollo is not connected')} />;
-  }
+//   if (apolloStatus?.connected === false) {
+//     return <ApolloUpgradeError error={new Error('Apollo is not connected')} />;
+//   }
 
-  if (isError) return <ApolloUpgradeError error={error} />;
+//   if (isError) return <ApolloUpgradeError error={error} />;
 
-  return (
-    <div className="space-y-4 [&>div]:mt-0">
-      <BaseTable
-        columns={companyColumns}
-        data={organizations}
-        loading={isLoading || apolloStatus === undefined}
-        entityName="companies"
-        disableRowClick
-        totalCount={totalCount}
-        showEmptyState={!isLoading}
-        emptyStateConfig={{
-          icon: () => null,
-          title: 'No companies found',
-          description: 'Try adjusting your ICP filters.',
-          action: { label: '', onClick: () => {} },
-        }}
-        onFetchNextPage={fetchNextPage}
-        hasNextPage={hasNextPage}
-        isFetchingNextPage={isFetchingNextPage}
-      />
-      {totalCount != null && (
-        <p className="text-sm text-zinc-500 dark:text-zinc-400">
-          {totalCount.toLocaleString()} companies found
-        </p>
-      )}
-    </div>
-  );
-}
+//   return (
+//     <div className="space-y-4 [&>div]:mt-0">
+//       <BaseTable
+//         columns={companyColumns}
+//         data={organizations}
+//         loading={isLoading || apolloStatus === undefined}
+//         entityName="companies"
+//         disableRowClick
+//         totalCount={totalCount}
+//         showEmptyState={!isLoading}
+//         emptyStateConfig={{
+//           icon: () => null,
+//           title: 'No companies found',
+//           description: 'Try adjusting your ICP filters.',
+//           action: { label: '', onClick: () => {} },
+//         }}
+//         onFetchNextPage={fetchNextPage}
+//         hasNextPage={hasNextPage}
+//         isFetchingNextPage={isFetchingNextPage}
+//       />
+//       {totalCount != null && (
+//         <p className="text-sm text-zinc-500 dark:text-zinc-400">
+//           {totalCount.toLocaleString()} companies found
+//         </p>
+//       )}
+//     </div>
+//   );
+// }
 
-function ContactsPanel({ profileId }: { profileId: number }) {
-  const { data: apolloStatus } = useQuery(getApolloConnectionStatus());
+// function ContactsPanel({ profileId }: { profileId: number }) {
+//   const { data: apolloStatus } = useQuery(getApolloConnectionStatus());
 
-  const {
-    data,
-    isLoading,
-    isError,
-    error,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
-  } = useInfiniteQuery({
-    ...getIcpContactsInfinite(profileId),
-    enabled: apolloStatus?.connected === true,
-  });
+//   const {
+//     data,
+//     isLoading,
+//     isError,
+//     error,
+//     fetchNextPage,
+//     hasNextPage,
+//     isFetchingNextPage,
+//   } = useInfiniteQuery({
+//     ...getIcpContactsInfinite(profileId),
+//     enabled: apolloStatus?.connected === true,
+//   });
 
-  const people = data?.pages.flatMap((p) => p.people) ?? [];
-  const totalCount = data?.pages[0]?.pagination?.total_entries;
+//   const people = data?.pages.flatMap((p) => p.people) ?? [];
+//   const totalCount = data?.pages[0]?.pagination?.total_entries;
 
-  if (apolloStatus?.connected === false) {
-    return <ApolloUpgradeError error={new Error('Apollo is not connected')} />;
-  }
+//   if (apolloStatus?.connected === false) {
+//     return <ApolloUpgradeError error={new Error('Apollo is not connected')} />;
+//   }
 
-  if (isError) return <ApolloUpgradeError error={error} />;
+//   if (isError) return <ApolloUpgradeError error={error} />;
 
-  return (
-    <div className="space-y-4 [&>div]:mt-0">
-      <BaseTable
-        columns={contactColumns}
-        data={people}
-        loading={isLoading || apolloStatus === undefined}
-        entityName="contacts"
-        disableRowClick
-        totalCount={totalCount}
-        showEmptyState={!isLoading}
-        emptyStateConfig={{
-          icon: () => null,
-          title: 'No contacts found',
-          description: 'Try adjusting your ICP filters.',
-          action: { label: '', onClick: () => {} },
-        }}
-        onFetchNextPage={fetchNextPage}
-        hasNextPage={hasNextPage}
-        isFetchingNextPage={isFetchingNextPage}
-      />
-      {totalCount != null && (
-        <p className="text-sm text-zinc-500 dark:text-zinc-400">
-          {totalCount.toLocaleString()} contacts found
-        </p>
-      )}
-    </div>
-  );
-}
+//   return (
+//     <div className="space-y-4 [&>div]:mt-0">
+//       <BaseTable
+//         columns={contactColumns}
+//         data={people}
+//         loading={isLoading || apolloStatus === undefined}
+//         entityName="contacts"
+//         disableRowClick
+//         totalCount={totalCount}
+//         showEmptyState={!isLoading}
+//         emptyStateConfig={{
+//           icon: () => null,
+//           title: 'No contacts found',
+//           description: 'Try adjusting your ICP filters.',
+//           action: { label: '', onClick: () => {} },
+//         }}
+//         onFetchNextPage={fetchNextPage}
+//         hasNextPage={hasNextPage}
+//         isFetchingNextPage={isFetchingNextPage}
+//       />
+//       {totalCount != null && (
+//         <p className="text-sm text-zinc-500 dark:text-zinc-400">
+//           {totalCount.toLocaleString()} contacts found
+//         </p>
+//       )}
+//     </div>
+//   );
+// }
 
 // ---------- Sidebar ----------
 
@@ -1148,16 +1147,6 @@ export default function IcpDetail({ profileId }: IcpDetailProps) {
                 profileId={profileId}
                 onNotesChange={setCurrentNotes}
               />
-            )}
-            {activeTab === 'companies' && (
-              <div className="overflow-x-auto">
-                <CompaniesPanel profileId={profileId} />
-              </div>
-            )}
-            {activeTab === 'contacts' && (
-              <div className="overflow-x-auto">
-                <ContactsPanel profileId={profileId} />
-              </div>
             )}
             {activeTab === 'campaigns' && (
               <IcpCampaignsPanel
