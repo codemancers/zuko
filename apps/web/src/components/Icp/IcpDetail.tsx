@@ -3,16 +3,9 @@
 import { useState } from 'react';
 import { parseAsStringLiteral, useQueryState } from 'nuqs';
 import { useRouter } from 'next/navigation';
-import {
-  useQuery,
-  useInfiniteQuery,
-  useMutation,
-  useQueryClient,
-} from '@tanstack/react-query';
-import type { ColumnDef } from '@tanstack/react-table';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import type { OutputData } from '@editorjs/editorjs';
 import {
-  Avatar,
   Badge,
   Button,
   ErrorMessage,
@@ -30,25 +23,13 @@ import {
   TabsTrigger,
   Text,
 } from '@zuko/ui-kit';
-import { LinkIcon, PencilIcon, PlusIcon } from '@heroicons/react/20/solid';
-import { ExclamationTriangleIcon } from '@heroicons/react/24/outline';
-import {
-  getIcpProfile,
-  getIcpCompaniesInfinite,
-  getIcpContactsInfinite,
-  getApolloConnectionStatus,
-} from '@/server/query-options';
+import { PencilIcon, PlusIcon } from '@heroicons/react/20/solid';
+import { getIcpProfile } from '@/server/query-options';
 import { LoadingState, BackLink } from '@/components/shared';
 import Editor, { ensureOutputData } from '@/components/Common/Editor/Editor';
 import { useAutosaveField } from '@/hooks/useAutosaveField';
 import { icpApi } from '@/lib/api/icp';
-import { BaseTable } from '@/components/Table';
-import type {
-  ApolloOrganization,
-  ApolloPerson,
-  IcpFilters,
-  PreviewFiltersResponse,
-} from '@/lib/api/icp';
+import type { IcpFilters, PreviewFiltersResponse } from '@/lib/api/icp';
 import {
   EMPLOYEE_RANGE_LABEL,
   REGION_OPTIONS,
@@ -90,193 +71,155 @@ function formatRevenue(value?: number): string {
   return `$${value}`;
 }
 
-// ---------- Apollo error ----------
+// // ---------- Column definitions ----------
 
-function ApolloUpgradeError({ error }: { error: unknown }) {
-  const message = (error as Error)?.message ?? '';
-  const isNotConnected =
-    message.toLowerCase().includes('not connected') ||
-    message.toLowerCase().includes('apollo is not connected');
+// const companyColumns: ColumnDef<ApolloOrganization & { id: string }>[] = [
+//   {
+//     accessorKey: 'name',
+//     header: 'Company',
+//     cell: ({ row }) => {
+//       const org = row.original;
+//       return (
+//         <div className="flex items-center gap-3">
+//           <Avatar
+//             src={org.logo_url}
+//             square
+//             initials={org.name?.[0]?.toUpperCase()}
+//             alt={`${org.name} logo`}
+//             className="size-7 bg-zinc-200 dark:bg-zinc-700 text-xs text-zinc-900 dark:text-zinc-100"
+//           />
+//           <div>
+//             <div className="font-medium text-zinc-900 dark:text-white">
+//               {org.website_url ? (
+//                 <a
+//                   href={org.website_url}
+//                   target="_blank"
+//                   rel="noopener noreferrer"
+//                   className="hover:underline"
+//                   onClick={(e) => e.stopPropagation()}
+//                 >
+//                   {org.name}
+//                 </a>
+//               ) : (
+//                 org.name
+//               )}
+//             </div>
+//             {org.primary_domain && (
+//               <div className="text-xs text-zinc-400">{org.primary_domain}</div>
+//             )}
+//           </div>
+//         </div>
+//       );
+//     },
+//   },
+//   {
+//     accessorKey: 'industry',
+//     header: 'Industry',
+//     cell: ({ getValue }) => getValue<string>() ?? '—',
+//   },
+//   {
+//     accessorKey: 'estimated_num_employees',
+//     header: 'Employees',
+//     cell: ({ getValue }) => getValue<number>()?.toLocaleString() ?? '—',
+//   },
+//   {
+//     accessorKey: 'annual_revenue',
+//     header: 'Revenue',
+//     cell: ({ getValue }) => formatRevenue(getValue<number>()),
+//   },
+//   {
+//     id: 'location',
+//     header: 'Location',
+//     cell: ({ row }) => {
+//       const org = row.original;
+//       return [org.city, org.country].filter(Boolean).join(', ') || '—';
+//     },
+//   },
+//   {
+//     accessorKey: 'linkedin_url',
+//     header: 'LinkedIn',
+//     cell: ({ getValue }) => {
+//       const url = getValue<string>();
+//       if (!url) return '—';
+//       return (
+//         <a
+//           href={url}
+//           target="_blank"
+//           rel="noopener noreferrer"
+//           className="text-blue-400 hover:text-blue-300 underline text-xs"
+//         >
+//           Profile
+//         </a>
+//       );
+//     },
+//   },
+// ];
 
-  if (isNotConnected) {
-    return (
-      <div className="flex flex-col items-center justify-center gap-4 rounded-xl border border-zinc-200 bg-zinc-50 px-6 py-12 text-center dark:border-zinc-800 dark:bg-zinc-900/50">
-        <div className="flex size-12 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-900/30">
-          <LinkIcon className="size-5 text-amber-600 dark:text-amber-400" />
-        </div>
-        <div className="space-y-1">
-          <Heading level={3}>Apollo is not connected</Heading>
-          <Text>
-            Connect your Apollo account to search companies and contacts.
-          </Text>
-        </div>
-        <Button href="/settings?tab=integrations" color="dark">
-          <LinkIcon className="size-4" />
-          Connect Apollo
-        </Button>
-      </div>
-    );
-  }
-
-  return (
-    <div className="flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 dark:border-red-900/40 dark:bg-red-950/20">
-      <ExclamationTriangleIcon className="mt-0.5 size-4 shrink-0 text-red-500" />
-      <Text className="text-red-700 dark:text-red-400">
-        Failed to fetch data from Apollo.{message ? ` ${message}` : ''}
-      </Text>
-    </div>
-  );
-}
-
-// ---------- Column definitions ----------
-
-const companyColumns: ColumnDef<ApolloOrganization & { id: string }>[] = [
-  {
-    accessorKey: 'name',
-    header: 'Company',
-    cell: ({ row }) => {
-      const org = row.original;
-      return (
-        <div className="flex items-center gap-3">
-          <Avatar
-            src={org.logo_url}
-            square
-            initials={org.name?.[0]?.toUpperCase()}
-            alt={`${org.name} logo`}
-            className="size-7 bg-zinc-200 dark:bg-zinc-700 text-xs text-zinc-900 dark:text-zinc-100"
-          />
-          <div>
-            <div className="font-medium text-zinc-900 dark:text-white">
-              {org.website_url ? (
-                <a
-                  href={org.website_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="hover:underline"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  {org.name}
-                </a>
-              ) : (
-                org.name
-              )}
-            </div>
-            {org.primary_domain && (
-              <div className="text-xs text-zinc-400">{org.primary_domain}</div>
-            )}
-          </div>
-        </div>
-      );
-    },
-  },
-  {
-    accessorKey: 'industry',
-    header: 'Industry',
-    cell: ({ getValue }) => getValue<string>() ?? '—',
-  },
-  {
-    accessorKey: 'estimated_num_employees',
-    header: 'Employees',
-    cell: ({ getValue }) => getValue<number>()?.toLocaleString() ?? '—',
-  },
-  {
-    accessorKey: 'annual_revenue',
-    header: 'Revenue',
-    cell: ({ getValue }) => formatRevenue(getValue<number>()),
-  },
-  {
-    id: 'location',
-    header: 'Location',
-    cell: ({ row }) => {
-      const org = row.original;
-      return [org.city, org.country].filter(Boolean).join(', ') || '—';
-    },
-  },
-  {
-    accessorKey: 'linkedin_url',
-    header: 'LinkedIn',
-    cell: ({ getValue }) => {
-      const url = getValue<string>();
-      if (!url) return '—';
-      return (
-        <a
-          href={url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-blue-400 hover:text-blue-300 underline text-xs"
-        >
-          Profile
-        </a>
-      );
-    },
-  },
-];
-
-const contactColumns: ColumnDef<ApolloPerson & { id: string }>[] = [
-  {
-    accessorKey: 'name',
-    header: 'Name',
-    cell: ({ row }) => {
-      const person = row.original;
-      const firstName = person.first_name || '';
-      const lastName = person.last_name_obfuscated || '';
-      const fullName = [firstName, lastName].filter(Boolean).join(' ') || '';
-      const initials =
-        (
-          (firstName.charAt(0) || '') + (lastName.charAt(0) || '')
-        ).toUpperCase() || '??';
-      return (
-        <div className="flex items-center gap-3">
-          <Avatar
-            initials={initials}
-            alt={fullName}
-            className="size-7 bg-zinc-200 dark:bg-zinc-700 text-xs text-zinc-900 dark:text-zinc-100"
-          />
-          <span className="font-medium text-zinc-900 dark:text-white">
-            {fullName}
-          </span>
-        </div>
-      );
-    },
-  },
-  {
-    accessorKey: 'title',
-    header: 'Title',
-    cell: ({ getValue }) => getValue<string>() ?? '—',
-  },
-  {
-    id: 'company',
-    header: 'Company',
-    cell: ({ row }) => row.original.organization?.name ?? '—',
-  },
-  {
-    id: 'location',
-    header: 'Location',
-    cell: ({ row }) => {
-      const p = row.original;
-      return p.has_city || p.has_state || p.has_country ? '***' : '—';
-    },
-  },
-  {
-    accessorKey: 'linkedin_url',
-    header: 'LinkedIn',
-    cell: ({ getValue }) => {
-      const url = getValue<string>();
-      return url ? (
-        <a
-          href={url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-blue-600 hover:underline dark:text-blue-400"
-        >
-          View
-        </a>
-      ) : (
-        '—'
-      );
-    },
-  },
-];
+// const contactColumns: ColumnDef<ApolloPerson & { id: string }>[] = [
+//   {
+//     accessorKey: 'name',
+//     header: 'Name',
+//     cell: ({ row }) => {
+//       const person = row.original;
+//       const firstName = person.first_name || '';
+//       const lastName = person.last_name_obfuscated || '';
+//       const fullName = [firstName, lastName].filter(Boolean).join(' ') || '';
+//       const initials =
+//         (
+//           (firstName.charAt(0) || '') + (lastName.charAt(0) || '')
+//         ).toUpperCase() || '??';
+//       return (
+//         <div className="flex items-center gap-3">
+//           <Avatar
+//             initials={initials}
+//             alt={fullName}
+//             className="size-7 bg-zinc-200 dark:bg-zinc-700 text-xs text-zinc-900 dark:text-zinc-100"
+//           />
+//           <span className="font-medium text-zinc-900 dark:text-white">
+//             {fullName}
+//           </span>
+//         </div>
+//       );
+//     },
+//   },
+//   {
+//     accessorKey: 'title',
+//     header: 'Title',
+//     cell: ({ getValue }) => getValue<string>() ?? '—',
+//   },
+//   {
+//     id: 'company',
+//     header: 'Company',
+//     cell: ({ row }) => row.original.organization?.name ?? '—',
+//   },
+//   {
+//     id: 'location',
+//     header: 'Location',
+//     cell: ({ row }) => {
+//       const p = row.original;
+//       return p.has_city || p.has_state || p.has_country ? '***' : '—';
+//     },
+//   },
+//   {
+//     accessorKey: 'linkedin_url',
+//     header: 'LinkedIn',
+//     cell: ({ getValue }) => {
+//       const url = getValue<string>();
+//       return url ? (
+//         <a
+//           href={url}
+//           target="_blank"
+//           rel="noopener noreferrer"
+//           className="text-blue-600 hover:underline dark:text-blue-400"
+//         >
+//           View
+//         </a>
+//       ) : (
+//         '—'
+//       );
+//     },
+//   },
+// ];
 
 // ---------- Tab panels ----------
 
@@ -346,119 +289,6 @@ function DetailsPanel({
     </div>
   );
 }
-
-//TODO: uncomment when we need this for now we are just hinding companies and contacts
-// function CompaniesPanel({ profileId }: { profileId: number }) {
-//   const { data: apolloStatus } = useQuery(getApolloConnectionStatus());
-
-//   const {
-//     data,
-//     isLoading,
-//     isError,
-//     error,
-//     fetchNextPage,
-//     hasNextPage,
-//     isFetchingNextPage,
-//   } = useInfiniteQuery({
-//     ...getIcpCompaniesInfinite(profileId),
-//     enabled: apolloStatus?.connected === true,
-//   });
-
-//   const organizations = data?.pages.flatMap((p) => p.organizations) ?? [];
-//   const totalCount = data?.pages[0]?.pagination?.total_entries;
-
-//   if (apolloStatus?.connected === false) {
-//     return <ApolloUpgradeError error={new Error('Apollo is not connected')} />;
-//   }
-
-//   if (isError) return <ApolloUpgradeError error={error} />;
-
-//   return (
-//     <div className="space-y-4 [&>div]:mt-0">
-//       <BaseTable
-//         columns={companyColumns}
-//         data={organizations}
-//         loading={isLoading || apolloStatus === undefined}
-//         entityName="companies"
-//         disableRowClick
-//         totalCount={totalCount}
-//         showEmptyState={!isLoading}
-//         emptyStateConfig={{
-//           icon: () => null,
-//           title: 'No companies found',
-//           description: 'Try adjusting your ICP filters.',
-//           action: { label: '', onClick: () => {} },
-//         }}
-//         onFetchNextPage={fetchNextPage}
-//         hasNextPage={hasNextPage}
-//         isFetchingNextPage={isFetchingNextPage}
-//       />
-//       {totalCount != null && (
-//         <p className="text-sm text-zinc-500 dark:text-zinc-400">
-//           {totalCount.toLocaleString()} companies found
-//         </p>
-//       )}
-//     </div>
-//   );
-// }
-
-// function ContactsPanel({ profileId }: { profileId: number }) {
-//   const { data: apolloStatus } = useQuery(getApolloConnectionStatus());
-
-//   const {
-//     data,
-//     isLoading,
-//     isError,
-//     error,
-//     fetchNextPage,
-//     hasNextPage,
-//     isFetchingNextPage,
-//   } = useInfiniteQuery({
-//     ...getIcpContactsInfinite(profileId),
-//     enabled: apolloStatus?.connected === true,
-//   });
-
-//   const people = data?.pages.flatMap((p) => p.people) ?? [];
-//   const totalCount = data?.pages[0]?.pagination?.total_entries;
-
-//   if (apolloStatus?.connected === false) {
-//     return <ApolloUpgradeError error={new Error('Apollo is not connected')} />;
-//   }
-
-//   if (isError) return <ApolloUpgradeError error={error} />;
-
-//   return (
-//     <div className="space-y-4 [&>div]:mt-0">
-//       <BaseTable
-//         columns={contactColumns}
-//         data={people}
-//         loading={isLoading || apolloStatus === undefined}
-//         entityName="contacts"
-//         disableRowClick
-//         totalCount={totalCount}
-//         showEmptyState={!isLoading}
-//         emptyStateConfig={{
-//           icon: () => null,
-//           title: 'No contacts found',
-//           description: 'Try adjusting your ICP filters.',
-//           action: { label: '', onClick: () => {} },
-//         }}
-//         onFetchNextPage={fetchNextPage}
-//         hasNextPage={hasNextPage}
-//         isFetchingNextPage={isFetchingNextPage}
-//       />
-//       {totalCount != null && (
-//         <p className="text-sm text-zinc-500 dark:text-zinc-400">
-//           {totalCount.toLocaleString()} contacts found
-//         </p>
-//       )}
-//     </div>
-//   );
-// }
-
-// ---------- Sidebar ----------
-
-// ---------- Compiled Filters Preview Sheet ----------
 
 function FilterBadges({
   label,

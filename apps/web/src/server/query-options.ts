@@ -432,32 +432,3 @@ export const getIcpProfile = (id: number) =>
     queryKey: ['icp', 'profile', id],
     queryFn: () => icpApi.getProfile(id),
   });
-
-export const getIcpCompaniesInfinite = (id: number, perPage = 25) =>
-  infiniteQueryOptions({
-    queryKey: ['icp', 'companies', id, 'infinite', perPage],
-    queryFn: ({ pageParam }) => icpApi.getCompanies(id, pageParam, perPage),
-    initialPageParam: 1,
-    getNextPageParam: (lastPage) => {
-      const page = Number(lastPage.pagination.page);
-      const totalPages = Number(lastPage.pagination.total_pages);
-      return page < totalPages ? page + 1 : undefined;
-    },
-    retry: false,
-    enabled: id > 0,
-  });
-
-export const getIcpContactsInfinite = (id: number, perPage = 25) =>
-  infiniteQueryOptions({
-    queryKey: ['icp', 'contacts', id, 'infinite', perPage],
-    queryFn: ({ pageParam }) => icpApi.getContacts(id, pageParam, perPage),
-    initialPageParam: 1,
-    getNextPageParam: (lastPage) => {
-      if (!lastPage.people.length) return undefined;
-      const page = Number(lastPage.pagination.page);
-      const totalPages = Number(lastPage.pagination.total_pages);
-      return page < totalPages ? page + 1 : undefined;
-    },
-    retry: false,
-    enabled: id > 0,
-  });
