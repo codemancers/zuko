@@ -13,11 +13,7 @@ import { activitiesApi } from '@/lib/api/activities';
 import { pagesApi } from '@/lib/api/pages';
 import { meetingsApi, type MeetingFilters } from '@/lib/api/meetings';
 import { authClient } from '@/lib/auth-client';
-import {
-  apolloSequencesApi,
-  apolloIntegrationApi,
-  apolloProspectsApi,
-} from '@/lib/api/apollo';
+import { apolloSequencesApi, apolloIntegrationApi } from '@/lib/api/apollo';
 
 const TABLE_PAGE_SIZE = 10;
 
@@ -393,37 +389,6 @@ export const getApolloConnectionStatus = () =>
     queryKey: ['apollo', 'connection-status'],
     queryFn: () => apolloIntegrationApi.getConnectionStatus(),
     staleTime: 30_000,
-    retry: false,
-  });
-
-export const getProspectSearch = (params: {
-  personName?: string;
-  personTitles?: string[];
-  personLocations?: string[];
-  organizationIds?: string[];
-  organizationDomains?: string[];
-  page?: number;
-}) =>
-  queryOptions({
-    queryKey: ['prospects', 'search', params],
-    queryFn: () => apolloProspectsApi.search({ ...params, perPage: 25 }),
-    enabled: Boolean(
-      params.personName ||
-      params.personTitles?.length ||
-      params.personLocations?.length ||
-      params.organizationIds?.length ||
-      params.organizationDomains?.length,
-    ),
-    staleTime: 30_000,
-    retry: false,
-  });
-
-export const getOrgSearch = (name: string) =>
-  queryOptions({
-    queryKey: ['apollo', 'orgs', 'search', name],
-    queryFn: () => apolloProspectsApi.searchOrgs(name),
-    enabled: name.trim().length >= 2,
-    staleTime: 60_000,
     retry: false,
   });
 
