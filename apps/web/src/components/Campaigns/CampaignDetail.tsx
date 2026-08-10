@@ -1,6 +1,6 @@
 'use client';
 
-import { lazy, Suspense, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   Badge,
@@ -16,31 +16,22 @@ import {
   getZukoCampaignByDbId,
   getCampaignsByIcpProfile,
 } from '@/server/query-options';
-import {
-  apolloSequencesApi,
-  apolloProspectsApi,
-  type SequenceContact,
-} from '@/lib/api/apollo';
-import type { ColumnDef } from '@tanstack/react-table';
-import { BaseTable } from '@/components/Table';
+import { apolloSequencesApi } from '@/lib/api/apollo';
 import { BackLink, LoadingState } from '@/components/shared';
 import { toast } from 'sonner';
 import dayjs from 'dayjs';
 import { formatRate } from './campaign-shared';
 import SequenceEditorPanel from './SequenceEditorPanel';
 
-const AddContactsDialog = lazy(() => import('./AddContactsDialog'));
-
 // ─── Tab config ───────────────────────────────────────────────────────────────
 
-type Tab = 'analytics' | 'sequence' | 'contacts';
-const TAB_VALUES = ['analytics', 'sequence', 'contacts'] as const;
+type Tab = 'analytics' | 'sequence';
+const TAB_VALUES = ['analytics', 'sequence'] as const;
 const tabParser = parseAsStringLiteral(TAB_VALUES).withDefault('analytics');
 
 const TABS: { id: Tab; label: string }[] = [
   { id: 'analytics', label: 'Analytics' },
   { id: 'sequence', label: 'Sequence Editor' },
-  { id: 'contacts', label: 'Contacts' },
 ];
 
 // ─── Stat card ────────────────────────────────────────────────────────────────
@@ -56,67 +47,6 @@ function StatCard({ label, value }: { label: string; value: string }) {
   );
 }
 
-// ─── Contact table columns ────────────────────────────────────────────────────
-
-const contactColumns: ColumnDef<SequenceContact>[] = [
-  {
-    accessorKey: 'name',
-    header: 'Name',
-    cell: ({ getValue }) => (
-      <span className="font-medium">{getValue<string>()}</span>
-    ),
-  },
-  {
-    accessorKey: 'email',
-    header: 'Email',
-    cell: ({ getValue }) => getValue<string>() ?? '—',
-  },
-  {
-    accessorKey: 'title',
-    header: 'Title',
-    cell: ({ getValue }) => getValue<string>() ?? '—',
-  },
-  {
-    accessorKey: 'organizationName',
-    header: 'Company',
-    cell: ({ getValue }) => getValue<string>() ?? '—',
-  },
-  {
-    accessorKey: 'sequenceStatus',
-    header: 'Status',
-    cell: ({ getValue }) => {
-      const s = getValue<string>();
-      if (!s) return '—';
-      const color =
-        s === 'active'
-          ? 'green'
-          : s === 'finished'
-            ? 'blue'
-            : s === 'paused'
-              ? 'yellow'
-              : ('zinc' as const);
-      return <Badge color={color}>{s}</Badge>;
-    },
-  },
-  {
-    accessorKey: 'emailLabel',
-    header: 'Email Status',
-    cell: ({ row }) => {
-      const label = row.original.emailLabel;
-      if (!label) return '—';
-      const color =
-        label === 'replied'
-          ? 'green'
-          : label === 'bounced' || label === 'hard_bounced'
-            ? 'red'
-            : label === 'opened'
-              ? 'blue'
-              : ('zinc' as const);
-      return <Badge color={color}>{label.replace(/_/g, ' ')}</Badge>;
-    },
-  },
-];
-
 // ─── Main component ────────────────────────────────────────────────────────────
 
 interface CampaignDetailProps {
@@ -126,7 +56,6 @@ interface CampaignDetailProps {
 export default function CampaignDetail({ zukoId }: CampaignDetailProps) {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useQueryState('tab', tabParser);
-  const [addContactsOpen, setAddContactsOpen] = useState(false);
   const saveSequenceRef = useRef<{ save: () => void } | null>(null);
   const [isSavingSequence, setIsSavingSequence] = useState(false);
 
@@ -181,33 +110,6 @@ export default function CampaignDetail({ zukoId }: CampaignDetailProps) {
 
   const isMutating = approveMutation.isPending || deactivateMutation.isPending;
 
-  const syncRepliesMutation = useMutation({
-    mutationFn: () =>
-      apolloProspectsApi.syncRepliesToLeads(
-        campaign!.providerSequenceId!,
-        campaign!.icpProfileId!,
-        campaign!.id,
-      ),
-    onSuccess: (res) => {
-      toast.success(
-        `Synced ${res.created} new lead${res.created !== 1 ? 's' : ''}${res.skipped ? ` (${res.skipped} already existed)` : ''}`,
-      );
-    },
-    onError: () => toast.error('Failed to sync replies'),
-  });
-
-  const {
-    data: sequenceContacts = [],
-    isLoading: isLoadingContacts,
-    refetch: refetchContacts,
-  } = useQuery({
-    queryKey: ['sequence-contacts', campaign?.providerSequenceId],
-    queryFn: () =>
-      apolloProspectsApi.getSequenceContacts(campaign!.providerSequenceId!),
-    enabled: !!campaign?.providerSequenceId && activeTab === 'contacts',
-    staleTime: 0,
-  });
-
   if (isLoading) return <LoadingState message="Loading campaign…" />;
   if (!campaign)
     return (
@@ -235,24 +137,6 @@ export default function CampaignDetail({ zukoId }: CampaignDetailProps) {
               >
                 {isSavingSequence ? 'Saving…' : 'Save Sequence'}
               </Button>
-            )}
-            {activeTab === 'contacts' && hasSequence && (
-              <>
-                {campaign.icpProfileId && (
-                  <Button
-                    outline
-                    disabled={syncRepliesMutation.isPending}
-                    onClick={() => syncRepliesMutation.mutate()}
-                  >
-                    {syncRepliesMutation.isPending
-                      ? 'Syncing…'
-                      : 'Sync Replies → Leads'}
-                  </Button>
-                )}
-                <Button color="dark" onClick={() => setAddContactsOpen(true)}>
-                  Add Contacts
-                </Button>
-              </>
             )}
             {hasSequence &&
               (isActive ? (
@@ -296,48 +180,6 @@ export default function CampaignDetail({ zukoId }: CampaignDetailProps) {
                 actionRef={saveSequenceRef}
                 onPendingChange={setIsSavingSequence}
               />
-            )}
-
-            {/* Contacts tab */}
-            {activeTab === 'contacts' && (
-              <div>
-                {!hasSequence ? (
-                  <div className="rounded-xl border border-zinc-700/60 bg-zinc-900 p-8 text-center">
-                    <Text className="text-sm text-zinc-400">
-                      Save your sequence first to add contacts.
-                    </Text>
-                    <Button
-                      className="mt-4"
-                      outline
-                      onClick={() => setActiveTab('sequence')}
-                    >
-                      Go to Sequence Editor
-                    </Button>
-                  </div>
-                ) : (
-                  <BaseTable<SequenceContact>
-                    columns={contactColumns}
-                    data={sequenceContacts}
-                    loading={isLoadingContacts}
-                    totalCount={sequenceContacts.length}
-                    entityName="contacts"
-                    showAddColumn={false}
-                    onAddColumn={() => {}}
-                    disableRowClick
-                    showEmptyState
-                    emptyStateConfig={{
-                      icon: () => null,
-                      title: 'No contacts enrolled',
-                      description:
-                        'Use "Add Contacts" to enroll people into this sequence.',
-                      action: {
-                        label: 'Add Contacts',
-                        onClick: () => setAddContactsOpen(true),
-                      },
-                    }}
-                  />
-                )}
-              </div>
             )}
 
             {/* Analytics tab */}
@@ -415,20 +257,6 @@ export default function CampaignDetail({ zukoId }: CampaignDetailProps) {
           </div>
         </div>
       </div>
-
-      <Suspense fallback={null}>
-        {addContactsOpen && campaign.providerSequenceId && (
-          <AddContactsDialog
-            sequenceId={campaign.providerSequenceId}
-            open={addContactsOpen}
-            onClose={() => {
-              setAddContactsOpen(false);
-              void refetchContacts();
-              setTimeout(() => void refetchContacts(), 4000);
-            }}
-          />
-        )}
-      </Suspense>
     </>
   );
 }
