@@ -90,4 +90,15 @@ export class LeadsController {
   ) {
     return this.leadsService.convert(id, organizationId);
   }
+
+  @Post(':id/revert')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Revert converted lead back to replied status' })
+  @ApiParam({ name: 'id', type: Number })
+  revert(
+    @OrgId() organizationId: number,
+    @Param('id', ParseIntPipe) id: number,
+  ) {
+    return this.leadsService.revert(id, organizationId);
+  }
 }

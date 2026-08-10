@@ -73,6 +73,15 @@ const LeadsList = () => {
     onError: () => toast.error('Failed to convert lead'),
   });
 
+  const { mutate: revertLead } = useMutation({
+    mutationFn: (id: number) => leadsApi.revert(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['leads'] });
+      toast.success('Lead reverted');
+    },
+    onError: () => toast.error('Failed to revert lead'),
+  });
+
   const leads = leadsData?.pages.flatMap((p) => p.data) ?? [];
   const metadata = leadsData?.pages[0]?.metadata ?? [];
   const totalCount = leadsData?.pages[0]?.pagination?.total;
@@ -81,27 +90,31 @@ const LeadsList = () => {
     () => ({
       id: 'actions',
       header: 'Actions',
-      cell: ({ row }) => (
-        <TableActions>
-          <Button
-            plain
-            className="text-xs"
-            onClick={() => convertLead(Number(row.original.id))}
-            disabled={
-              (row.original as unknown as Record<string, unknown>)['status'] ===
-              'converted'
-            }
-          >
-            → Deal
-          </Button>
-          <DeleteAction
-            onClick={() => setLeadToDelete(Number(row.original.id))}
-            disabled={isDeleting}
-          />
-        </TableActions>
-      ),
+      cell: ({ row }) => {
+        const status = (row.original as unknown as Record<string, unknown>)[
+          'status'
+        ] as string;
+        const id = Number(row.original.id);
+        return (
+          <TableActions>
+            {status === 'converted' ? (
+              <Button plain className="text-xs" onClick={() => revertLead(id)}>
+                ← Revert
+              </Button>
+            ) : (
+              <Button plain className="text-xs" onClick={() => convertLead(id)}>
+                → Deal
+              </Button>
+            )}
+            <DeleteAction
+              onClick={() => setLeadToDelete(id)}
+              disabled={isDeleting}
+            />
+          </TableActions>
+        );
+      },
     }),
-    [convertLead, isDeleting],
+    [convertLead, revertLead, isDeleting],
   );
 
   const icpProfileColumn: ColumnDef<BaseRow> = useMemo(
