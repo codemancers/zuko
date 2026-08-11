@@ -142,7 +142,6 @@ export const getLead = (id: number) =>
     queryFn: () => leadsApi.get(id),
   });
 
-
 export const getTableViewMeetingsInfinite = (
   filters?: Omit<MeetingFilters, 'page' | 'limit'>,
 ) =>
