@@ -124,12 +124,16 @@ export const getLeadLists = () =>
     queryFn: () => leadsApi.lists(),
   });
 
-export const getLeads = (
+export const getLeadsInfinite = (
   filters: { campaignId?: number; search?: string } = {},
 ) =>
-  queryOptions({
-    queryKey: ['leads', 'list', filters],
-    queryFn: () => leadsApi.list(filters),
+  infiniteQueryOptions({
+    queryKey: ['leads', 'list', 'infinite', filters],
+    queryFn: ({ pageParam }) =>
+      leadsApi.list({ ...filters, page: pageParam, perPage: 50 }),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) =>
+      lastPage.page < lastPage.totalPages ? lastPage.page + 1 : undefined,
   });
 
 export const getLead = (id: number) =>

@@ -1,10 +1,10 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import type { ColumnDef } from '@tanstack/react-table';
-import { getLeads } from '@/server/query-options';
+import { getLeadsInfinite } from '@/server/query-options';
 import { leadsApi, type Lead } from '@/lib/api/leads';
 import { BackLink, LoadingState } from '@/components/shared';
 import { Badge, Button, Heading, Sheet, SheetHeader, SheetTitle } from '@zuko/ui-kit';
@@ -29,14 +29,16 @@ export default function LeadsInList({ campaignId }: LeadsInListProps) {
   const router = useRouter();
   const queryClient = useQueryClient();
   const [isSheetOpen, setIsSheetOpen] = useState(false);
-  const { data, isLoading } = useQuery(getLeads({ campaignId }));
-  const leads = data?.data ?? [];
+  const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } =
+    useInfiniteQuery(getLeadsInfinite({ campaignId }));
+  const leads = data?.pages.flatMap((p) => p.data) ?? [];
+  const totalCount = data?.pages[0]?.total;
   const campaignName = leads[0]?.campaign?.name;
 
   const convertMutation = useMutation({
     mutationFn: (id: number) => leadsApi.convert(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['leads', 'list'] });
+      queryClient.invalidateQueries({ queryKey: ['leads', 'list', 'infinite'] });
       toast.success('Lead converted to deal');
     },
     onError: () => toast.error('Failed to convert lead'),
@@ -45,7 +47,7 @@ export default function LeadsInList({ campaignId }: LeadsInListProps) {
   const revertMutation = useMutation({
     mutationFn: (id: number) => leadsApi.revert(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['leads', 'list'] });
+      queryClient.invalidateQueries({ queryKey: ['leads', 'list', 'infinite'] });
       toast.success('Lead reverted');
     },
     onError: () => toast.error('Failed to revert lead'),
@@ -54,7 +56,7 @@ export default function LeadsInList({ campaignId }: LeadsInListProps) {
   const deleteMutation = useMutation({
     mutationFn: (id: number) => leadsApi.delete(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['leads', 'list'] });
+      queryClient.invalidateQueries({ queryKey: ['leads', 'list', 'infinite'] });
       queryClient.invalidateQueries({ queryKey: ['leads', 'lists'] });
       toast.success('Lead deleted');
     },
@@ -196,6 +198,10 @@ export default function LeadsInList({ campaignId }: LeadsInListProps) {
         data={leads}
         loading={isLoading}
         entityName="leads"
+        totalCount={totalCount}
+        onFetchNextPage={fetchNextPage}
+        hasNextPage={hasNextPage}
+        isFetchingNextPage={isFetchingNextPage}
         onRowClick={(lead) =>
           router.push(`/leads/campaign/${campaignId}/${lead.id}`)
         }

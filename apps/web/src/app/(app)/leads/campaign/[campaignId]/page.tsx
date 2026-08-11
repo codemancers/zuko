@@ -1,6 +1,6 @@
 import LeadsInList from '@/components/Leads/LeadsInList';
 import { getQueryClient } from '@/lib/react-query/get-query-client';
-import { getLeads } from '@/server/query-options';
+import { getLeadsInfinite } from '@/server/query-options';
 import { dehydrate, HydrationBoundary } from '@tanstack/react-query';
 
 export const dynamic = 'force-dynamic';
@@ -14,7 +14,7 @@ const LeadsInListPage = async ({ params }: Props) => {
   const id = parseInt(campaignId, 10);
 
   const queryClient = getQueryClient();
-  if (!isNaN(id)) await queryClient.prefetchQuery(getLeads({ campaignId: id }));
+  if (!isNaN(id)) await queryClient.prefetchInfiniteQuery(getLeadsInfinite({ campaignId: id }));
 
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
