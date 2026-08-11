@@ -7,9 +7,9 @@ import type { ColumnDef } from '@tanstack/react-table';
 import { getLeads } from '@/server/query-options';
 import { leadsApi, type Lead } from '@/lib/api/leads';
 import { BackLink, LoadingState } from '@/components/shared';
-import { Badge, Button, Heading } from '@zuko/ui-kit';
-import { BaseTable, TableActions, DeleteAction } from '@/components/Table';
-import { FunnelIcon } from '@heroicons/react/24/outline';
+import { Badge, Heading } from '@zuko/ui-kit';
+import { BaseTable, TableActions, TableActionButton, DeleteAction } from '@/components/Table';
+import { FunnelIcon, ArrowRightIcon, ArrowUturnLeftIcon, ArrowTopRightOnSquareIcon } from '@heroicons/react/24/outline';
 import Link from 'next/link';
 import { toast } from 'sonner';
 
@@ -120,8 +120,15 @@ export default function LeadsInList({ campaignId }: LeadsInListProps) {
         header: 'ICP Profile',
         cell: ({ getValue }) => {
           const profile = getValue<{ id: number; name: string } | undefined>();
+          if (!profile) return '—';
           return (
-            <span className="text-zinc-500 dark:text-zinc-400">{profile?.name ?? '—'}</span>
+            <Link
+              href={`/icps/${profile.id}`}
+              className="font-medium text-zinc-900 hover:underline dark:text-white"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {profile.name}
+            </Link>
           );
         },
       },
@@ -133,39 +140,31 @@ export default function LeadsInList({ campaignId }: LeadsInListProps) {
           return (
             <TableActions>
               {lead.status !== 'converted' && (
-                <Button
-                  plain
-                  className="text-xs"
+                <TableActionButton
+                  onClick={() => convertMutation.mutate(lead.id)}
+                  label="Convert to Deal"
                   disabled={convertMutation.isPending}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    convertMutation.mutate(lead.id);
-                  }}
+                  variant="success"
                 >
-                  → Deal
-                </Button>
+                  <ArrowRightIcon className="h-4 w-4" />
+                </TableActionButton>
               )}
               {lead.status === 'converted' && (
-                <Button
-                  plain
-                  className="text-xs"
+                <TableActionButton
+                  onClick={() => revertMutation.mutate(lead.id)}
+                  label="Revert"
                   disabled={revertMutation.isPending}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    revertMutation.mutate(lead.id);
-                  }}
                 >
-                  Revert
-                </Button>
+                  <ArrowUturnLeftIcon className="h-4 w-4" />
+                </TableActionButton>
               )}
               {lead.deal && (
-                <Link
-                  href={`/deals/${lead.deal.id}`}
-                  className="text-xs text-blue-500 hover:underline"
-                  onClick={(e) => e.stopPropagation()}
+                <TableActionButton
+                  onClick={() => router.push(`/deals/${lead.deal!.id}`)}
+                  label="View Deal"
                 >
-                  View Deal
-                </Link>
+                  <ArrowTopRightOnSquareIcon className="h-4 w-4" />
+                </TableActionButton>
               )}
               <DeleteAction
                 onClick={() => deleteMutation.mutate(lead.id)}
