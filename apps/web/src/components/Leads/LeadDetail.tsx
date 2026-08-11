@@ -81,6 +81,16 @@ export default function LeadDetail({ leadId }: { leadId: number }) {
     onError: () => toast.error('Failed to convert lead'),
   });
 
+  const revertMutation = useMutation({
+    mutationFn: () => leadsApi.revert(leadId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['lead', leadId] });
+      queryClient.invalidateQueries({ queryKey: ['leads'] });
+      toast.success('Lead reverted');
+    },
+    onError: () => toast.error('Failed to revert lead'),
+  });
+
   const deleteMutation = useMutation({
     mutationFn: () => leadsApi.delete(leadId),
     onSuccess: () => {
@@ -120,6 +130,15 @@ export default function LeadDetail({ leadId }: { leadId: number }) {
               onClick={() => convertMutation.mutate()}
             >
               {convertMutation.isPending ? 'Converting…' : '→ Convert to Deal'}
+            </Button>
+          )}
+          {lead.status === 'converted' && (
+            <Button
+              outline
+              disabled={revertMutation.isPending}
+              onClick={() => revertMutation.mutate()}
+            >
+              {revertMutation.isPending ? 'Reverting…' : 'Revert'}
             </Button>
           )}
           <Button

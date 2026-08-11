@@ -118,12 +118,6 @@ export const getTableViewTasksInfinite = (filters?: { search?: string }) =>
     },
   });
 
-<<<<<<< HEAD
-export const getLead = (id: number) =>
-  queryOptions({
-    queryKey: ['lead', id],
-    queryFn: () => leadsApi.get(id),
-=======
 export const getLeadLists = () =>
   queryOptions({
     queryKey: ['leads', 'lists'],
@@ -136,7 +130,12 @@ export const getLeads = (
   queryOptions({
     queryKey: ['leads', 'list', filters],
     queryFn: () => leadsApi.list(filters),
->>>>>>> 86feea4 (feat(leads): group leads by campaign as lead lists with table UI)
+  });
+
+export const getLead = (id: number) =>
+  queryOptions({
+    queryKey: ['lead', id],
+    queryFn: () => leadsApi.get(id),
   });
 
 export const getTableViewLeadsInfinite = (filters?: {

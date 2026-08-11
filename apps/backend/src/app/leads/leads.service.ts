@@ -64,7 +64,10 @@ export class LeadsService {
   }
 
   async revert(id: number, organizationId: number) {
-    await this.findById(id, organizationId);
+    const lead = await this.findById(id, organizationId);
+    if (lead.dealId) {
+      await this.prisma.deal.delete({ where: { id: lead.dealId } });
+    }
     return this.leadsRepository.update(id, {
       status: 'replied',
       dealId: null,

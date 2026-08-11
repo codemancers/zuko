@@ -11,7 +11,6 @@ import { Badge, Button, Heading } from '@zuko/ui-kit';
 import { BaseTable, TableActions, DeleteAction } from '@/components/Table';
 import { FunnelIcon } from '@heroicons/react/24/outline';
 import Link from 'next/link';
-import dayjs from 'dayjs';
 import { toast } from 'sonner';
 
 const STATUS_COLORS: Record<string, 'green' | 'blue' | 'red' | 'zinc'> = {
@@ -41,6 +40,15 @@ export default function LeadsInList({ campaignId }: LeadsInListProps) {
     onError: () => toast.error('Failed to convert lead'),
   });
 
+  const revertMutation = useMutation({
+    mutationFn: (id: number) => leadsApi.revert(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['leads', 'list'] });
+      toast.success('Lead reverted');
+    },
+    onError: () => toast.error('Failed to revert lead'),
+  });
+
   const deleteMutation = useMutation({
     mutationFn: (id: number) => leadsApi.delete(id),
     onSuccess: () => {
@@ -56,26 +64,36 @@ export default function LeadsInList({ campaignId }: LeadsInListProps) {
       {
         accessorKey: 'name',
         header: 'Name',
+        cell: ({ row }) => (
+          <Link
+            href={`/leads/${row.original.id}`}
+            className="font-medium text-zinc-900 hover:underline dark:text-white"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {row.original.name}
+          </Link>
+        ),
+      },
+      {
+        accessorKey: 'companyName',
+        header: 'Company',
         cell: ({ getValue }) => (
-          <span className="font-medium text-zinc-900 dark:text-white">
-            {getValue<string>()}
-          </span>
+          <span className="text-zinc-500 dark:text-zinc-400">{getValue<string>() ?? '—'}</span>
+        ),
+      },
+      {
+        accessorKey: 'title',
+        header: 'Title',
+        cell: ({ getValue }) => (
+          <span className="text-zinc-500 dark:text-zinc-400">{getValue<string>() ?? '—'}</span>
         ),
       },
       {
         accessorKey: 'email',
         header: 'Email',
-        cell: ({ getValue }) => getValue<string>() ?? '—',
-      },
-      {
-        accessorKey: 'companyName',
-        header: 'Company',
-        cell: ({ getValue }) => getValue<string>() ?? '—',
-      },
-      {
-        accessorKey: 'title',
-        header: 'Title',
-        cell: ({ getValue }) => getValue<string>() ?? '—',
+        cell: ({ getValue }) => (
+          <span className="text-zinc-500 dark:text-zinc-400">{getValue<string>() ?? '—'}</span>
+        ),
       },
       {
         accessorKey: 'status',
@@ -90,9 +108,22 @@ export default function LeadsInList({ campaignId }: LeadsInListProps) {
         },
       },
       {
-        accessorKey: 'createdAt',
-        header: 'Created',
-        cell: ({ getValue }) => dayjs(getValue<string>()).format('MMM D, YYYY'),
+        accessorKey: 'source',
+        header: 'Source',
+        cell: ({ getValue }) => {
+          const s = getValue<string>();
+          return s ? <Badge color="zinc">{s}</Badge> : '—';
+        },
+      },
+      {
+        accessorKey: 'icpProfile',
+        header: 'ICP Profile',
+        cell: ({ getValue }) => {
+          const profile = getValue<{ id: number; name: string } | undefined>();
+          return (
+            <span className="text-zinc-500 dark:text-zinc-400">{profile?.name ?? '—'}</span>
+          );
+        },
       },
       {
         id: 'actions',
@@ -114,6 +145,19 @@ export default function LeadsInList({ campaignId }: LeadsInListProps) {
                   → Deal
                 </Button>
               )}
+              {lead.status === 'converted' && (
+                <Button
+                  plain
+                  className="text-xs"
+                  disabled={revertMutation.isPending}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    revertMutation.mutate(lead.id);
+                  }}
+                >
+                  Revert
+                </Button>
+              )}
               {lead.deal && (
                 <Link
                   href={`/deals/${lead.deal.id}`}
@@ -132,7 +176,7 @@ export default function LeadsInList({ campaignId }: LeadsInListProps) {
         },
       },
     ],
-    [convertMutation, deleteMutation],
+    [convertMutation, revertMutation, deleteMutation],
   );
 
   if (isLoading) return <LoadingState message="Loading leads…" />;
