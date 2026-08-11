@@ -14,7 +14,10 @@ const LeadsInListPage = async ({ params }: Props) => {
   const id = parseInt(campaignId, 10);
 
   const queryClient = getQueryClient();
-  if (!isNaN(id)) await queryClient.prefetchInfiniteQuery(getLeadsInfinite({ campaignId: id }));
+  if (!isNaN(id))
+    await queryClient.prefetchInfiniteQuery(
+      getLeadsInfinite({ campaignId: id }),
+    );
 
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>

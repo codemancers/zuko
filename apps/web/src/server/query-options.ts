@@ -142,24 +142,6 @@ export const getLead = (id: number) =>
     queryFn: () => leadsApi.get(id),
   });
 
-export const getTableViewLeadsInfinite = (filters?: {
-  search?: string;
-  status?: string;
-}) =>
-  infiniteQueryOptions({
-    queryKey: ['leads', 'table', 'infinite', filters],
-    queryFn: ({ pageParam }) =>
-      leadsApi.getTableViewLeads({
-        ...filters,
-        page: pageParam,
-        limit: TABLE_PAGE_SIZE,
-      }),
-    initialPageParam: 1,
-    getNextPageParam: (lastPage) => {
-      const { page, totalPages } = lastPage.pagination;
-      return page < totalPages ? page + 1 : undefined;
-    },
-  });
 
 export const getTableViewMeetingsInfinite = (
   filters?: Omit<MeetingFilters, 'page' | 'limit'>,

@@ -1,15 +1,37 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import {
+  useInfiniteQuery,
+  useMutation,
+  useQueryClient,
+} from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import type { ColumnDef } from '@tanstack/react-table';
 import { getLeadsInfinite } from '@/server/query-options';
 import { leadsApi, type Lead } from '@/lib/api/leads';
 import { BackLink, LoadingState } from '@/components/shared';
-import { Badge, Button, Heading, Sheet, SheetHeader, SheetTitle } from '@zuko/ui-kit';
-import { BaseTable, TableActions, TableActionButton, DeleteAction } from '@/components/Table';
-import { FunnelIcon, ArrowRightIcon, ArrowUturnLeftIcon, ArrowTopRightOnSquareIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import {
+  Badge,
+  Button,
+  Heading,
+  Sheet,
+  SheetHeader,
+  SheetTitle,
+} from '@zuko/ui-kit';
+import {
+  BaseTable,
+  TableActions,
+  TableActionButton,
+  DeleteAction,
+} from '@/components/Table';
+import {
+  FunnelIcon,
+  ArrowRightIcon,
+  ArrowUturnLeftIcon,
+  ArrowTopRightOnSquareIcon,
+  XMarkIcon,
+} from '@heroicons/react/24/outline';
 import Link from 'next/link';
 import { toast } from 'sonner';
 import LeadForm from './LeadForm';
@@ -38,7 +60,9 @@ export default function LeadsInList({ campaignId }: LeadsInListProps) {
   const convertMutation = useMutation({
     mutationFn: (id: number) => leadsApi.convert(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['leads', 'list', 'infinite'] });
+      queryClient.invalidateQueries({
+        queryKey: ['leads', 'list', 'infinite'],
+      });
       toast.success('Lead converted to deal');
     },
     onError: () => toast.error('Failed to convert lead'),
@@ -47,7 +71,9 @@ export default function LeadsInList({ campaignId }: LeadsInListProps) {
   const revertMutation = useMutation({
     mutationFn: (id: number) => leadsApi.revert(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['leads', 'list', 'infinite'] });
+      queryClient.invalidateQueries({
+        queryKey: ['leads', 'list', 'infinite'],
+      });
       toast.success('Lead reverted');
     },
     onError: () => toast.error('Failed to revert lead'),
@@ -56,7 +82,9 @@ export default function LeadsInList({ campaignId }: LeadsInListProps) {
   const deleteMutation = useMutation({
     mutationFn: (id: number) => leadsApi.delete(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['leads', 'list', 'infinite'] });
+      queryClient.invalidateQueries({
+        queryKey: ['leads', 'list', 'infinite'],
+      });
       queryClient.invalidateQueries({ queryKey: ['leads', 'lists'] });
       toast.success('Lead deleted');
     },
@@ -82,21 +110,27 @@ export default function LeadsInList({ campaignId }: LeadsInListProps) {
         accessorKey: 'companyName',
         header: 'Company',
         cell: ({ getValue }) => (
-          <span className="text-zinc-500 dark:text-zinc-400">{getValue<string>() ?? '—'}</span>
+          <span className="text-zinc-500 dark:text-zinc-400">
+            {getValue<string>() ?? '—'}
+          </span>
         ),
       },
       {
         accessorKey: 'title',
         header: 'Title',
         cell: ({ getValue }) => (
-          <span className="text-zinc-500 dark:text-zinc-400">{getValue<string>() ?? '—'}</span>
+          <span className="text-zinc-500 dark:text-zinc-400">
+            {getValue<string>() ?? '—'}
+          </span>
         ),
       },
       {
         accessorKey: 'email',
         header: 'Email',
         cell: ({ getValue }) => (
-          <span className="text-zinc-500 dark:text-zinc-400">{getValue<string>() ?? '—'}</span>
+          <span className="text-zinc-500 dark:text-zinc-400">
+            {getValue<string>() ?? '—'}
+          </span>
         ),
       },
       {
@@ -190,7 +224,9 @@ export default function LeadsInList({ campaignId }: LeadsInListProps) {
 
       <div className="mt-4 flex items-center justify-between">
         <Heading>{campaignName ?? 'Leads'}</Heading>
-        <Button color="dark" onClick={() => setIsSheetOpen(true)}>Add Lead</Button>
+        <Button color="dark" onClick={() => setIsSheetOpen(true)}>
+          Add Lead
+        </Button>
       </div>
 
       <BaseTable<Lead>
