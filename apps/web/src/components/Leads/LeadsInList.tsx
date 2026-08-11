@@ -1,17 +1,18 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import type { ColumnDef } from '@tanstack/react-table';
 import { getLeads } from '@/server/query-options';
 import { leadsApi, type Lead } from '@/lib/api/leads';
 import { BackLink, LoadingState } from '@/components/shared';
-import { Badge, Heading } from '@zuko/ui-kit';
+import { Badge, Button, Heading, Sheet, SheetHeader, SheetTitle } from '@zuko/ui-kit';
 import { BaseTable, TableActions, TableActionButton, DeleteAction } from '@/components/Table';
-import { FunnelIcon, ArrowRightIcon, ArrowUturnLeftIcon, ArrowTopRightOnSquareIcon } from '@heroicons/react/24/outline';
+import { FunnelIcon, ArrowRightIcon, ArrowUturnLeftIcon, ArrowTopRightOnSquareIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import Link from 'next/link';
 import { toast } from 'sonner';
+import LeadForm from './LeadForm';
 
 const STATUS_COLORS: Record<string, 'green' | 'blue' | 'red' | 'zinc'> = {
   replied: 'blue',
@@ -27,6 +28,7 @@ interface LeadsInListProps {
 export default function LeadsInList({ campaignId }: LeadsInListProps) {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
   const { data, isLoading } = useQuery(getLeads({ campaignId }));
   const leads = data?.data ?? [];
   const campaignName = leads[0]?.campaign?.name;
@@ -184,7 +186,10 @@ export default function LeadsInList({ campaignId }: LeadsInListProps) {
     <div className="flex min-h-0 flex-col">
       <BackLink href="/leads">Leads</BackLink>
 
-      <Heading className="mt-4">{campaignName ?? 'Leads'}</Heading>
+      <div className="mt-4 flex items-center justify-between">
+        <Heading>{campaignName ?? 'Leads'}</Heading>
+        <Button color="dark" onClick={() => setIsSheetOpen(true)}>Add Lead</Button>
+      </div>
 
       <BaseTable<Lead>
         columns={columns}
@@ -202,6 +207,15 @@ export default function LeadsInList({ campaignId }: LeadsInListProps) {
           action: { label: 'Back', onClick: () => router.push('/leads') },
         }}
       />
+      <Sheet open={isSheetOpen} onClose={setIsSheetOpen} side="right">
+        <SheetHeader>
+          <SheetTitle>New Lead</SheetTitle>
+          <Button plain onClick={() => setIsSheetOpen(false)}>
+            <XMarkIcon className="h-5 w-5" />
+          </Button>
+        </SheetHeader>
+        <LeadForm onSuccess={() => setIsSheetOpen(false)} />
+      </Sheet>
     </div>
   );
 }

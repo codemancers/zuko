@@ -1,19 +1,22 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import type { ColumnDef } from '@tanstack/react-table';
 import { getLeadLists } from '@/server/query-options';
 import type { LeadList } from '@/lib/api/leads';
-
-type LeadListRow = LeadList & { id: number | string };
 import { PageHeader } from '@/components/shared';
 import { BaseTable } from '@/components/Table';
-import { FunnelIcon } from '@heroicons/react/24/outline';
+import { Button, Sheet, SheetHeader, SheetTitle } from '@zuko/ui-kit';
+import { XMarkIcon, FunnelIcon } from '@heroicons/react/24/outline';
+import LeadForm from './LeadForm';
+
+type LeadListRow = LeadList & { id: number | string };
 
 export default function LeadLists() {
   const router = useRouter();
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
   const { data: rawLists = [], isLoading } = useQuery(getLeadLists());
   const lists: LeadListRow[] = useMemo(
     () => rawLists.map((l) => ({ ...l, id: l.campaignId ?? 'uncampaigned' })),
@@ -42,7 +45,15 @@ export default function LeadLists() {
 
   return (
     <>
-      <PageHeader title="Leads" description="Prospects grouped by campaign" />
+      <PageHeader
+        title="Leads"
+        description="Prospects grouped by campaign"
+        action={
+          <Button color="dark" onClick={() => setIsSheetOpen(true)}>
+            Add Lead
+          </Button>
+        }
+      />
 
       <BaseTable<LeadListRow>
         columns={columns}
@@ -61,9 +72,19 @@ export default function LeadLists() {
           icon: FunnelIcon,
           title: 'No leads yet',
           description: 'Connect Apollo to auto-capture replies from campaigns.',
-          action: { label: 'Add Lead', onClick: () => {} },
+          action: { label: 'Add Lead', onClick: () => setIsSheetOpen(true) },
         }}
       />
+
+      <Sheet open={isSheetOpen} onClose={setIsSheetOpen} side="right">
+        <SheetHeader>
+          <SheetTitle>New Lead</SheetTitle>
+          <Button plain onClick={() => setIsSheetOpen(false)}>
+            <XMarkIcon className="h-5 w-5" />
+          </Button>
+        </SheetHeader>
+        <LeadForm onSuccess={() => setIsSheetOpen(false)} />
+      </Sheet>
     </>
   );
 }
