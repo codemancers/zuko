@@ -92,7 +92,7 @@ export default function IcpList() {
         accessorKey: 'name',
         header: 'Name',
         cell: ({ row }) => (
-          <div className="font-medium text-zinc-900 dark:text-white">
+          <div className="font-medium text-zinc-900 hover:underline dark:text-white">
             {row.original.name}
           </div>
         ),

@@ -26,7 +26,7 @@ export default function LeadLists() {
         accessorKey: 'campaignName',
         header: 'Campaign',
         cell: ({ getValue }) => (
-          <span className="font-medium text-zinc-900 dark:text-white">
+          <span className="font-medium text-zinc-900 hover:underline dark:text-white">
             {getValue<string>() ?? 'Uncampaigned'}
           </span>
         ),
