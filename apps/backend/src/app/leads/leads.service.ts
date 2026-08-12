@@ -14,6 +14,10 @@ export class LeadsService {
     private readonly prisma: PrismaService,
   ) {}
 
+  findLists(organizationId: number) {
+    return this.leadsRepository.findLists(organizationId);
+  }
+
   findAll(organizationId: number, query: ListLeadsQueryDto) {
     const status = query.status
       ? Array.isArray(query.status)
@@ -60,7 +64,10 @@ export class LeadsService {
   }
 
   async revert(id: number, organizationId: number) {
-    await this.findById(id, organizationId);
+    const lead = await this.findById(id, organizationId);
+    if (lead.dealId) {
+      await this.prisma.deal.delete({ where: { id: lead.dealId } });
+    }
     return this.leadsRepository.update(id, {
       status: 'replied',
       dealId: null,

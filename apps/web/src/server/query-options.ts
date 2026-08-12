@@ -118,29 +118,28 @@ export const getTableViewTasksInfinite = (filters?: { search?: string }) =>
     },
   });
 
+export const getLeadLists = () =>
+  queryOptions({
+    queryKey: ['leads', 'lists'],
+    queryFn: () => leadsApi.lists(),
+  });
+
+export const getLeadsInfinite = (
+  filters: { campaignId?: number; search?: string } = {},
+) =>
+  infiniteQueryOptions({
+    queryKey: ['leads', 'list', 'infinite', filters],
+    queryFn: ({ pageParam }) =>
+      leadsApi.list({ ...filters, page: pageParam, perPage: 50 }),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) =>
+      lastPage.page < lastPage.totalPages ? lastPage.page + 1 : undefined,
+  });
+
 export const getLead = (id: number) =>
   queryOptions({
     queryKey: ['lead', id],
     queryFn: () => leadsApi.get(id),
-  });
-
-export const getTableViewLeadsInfinite = (filters?: {
-  search?: string;
-  status?: string;
-}) =>
-  infiniteQueryOptions({
-    queryKey: ['leads', 'table', 'infinite', filters],
-    queryFn: ({ pageParam }) =>
-      leadsApi.getTableViewLeads({
-        ...filters,
-        page: pageParam,
-        limit: TABLE_PAGE_SIZE,
-      }),
-    initialPageParam: 1,
-    getNextPageParam: (lastPage) => {
-      const { page, totalPages } = lastPage.pagination;
-      return page < totalPages ? page + 1 : undefined;
-    },
   });
 
 export const getTableViewMeetingsInfinite = (

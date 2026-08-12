@@ -62,6 +62,12 @@ export interface UpdateLeadDto {
   notes?: OutputData;
 }
 
+export interface LeadList {
+  campaignId: number | null;
+  campaignName: string | null;
+  leadCount: number;
+}
+
 export interface LeadFilters {
   page?: number;
   perPage?: number;
@@ -73,6 +79,10 @@ export interface LeadFilters {
 }
 
 export const leadsApi = {
+  async lists(): Promise<LeadList[]> {
+    return apiClient.get('/leads/lists');
+  },
+
   async list(filters: LeadFilters = {}): Promise<LeadsListResponse> {
     const params = new URLSearchParams();
     if (filters.page) params.set('page', String(filters.page));
