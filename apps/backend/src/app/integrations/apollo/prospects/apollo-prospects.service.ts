@@ -580,7 +580,7 @@ export class ApolloProspectsService {
     campaignId?: number,
   ): Promise<{ created: number; skipped: number }> {
     const contacts = await this.getSequenceContacts(organizationId, sequenceId);
-const replied = contacts.filter((c) => c.emailLabel === 'replied');
+    const replied = contacts.filter((c) => c.emailLabel === 'replied');
 
     let created = 0;
     let skipped = 0;
@@ -672,7 +672,10 @@ const replied = contacts.filter((c) => c.emailLabel === 'replied');
         title: c.title,
         organizationName: c.organization_name,
         sequenceStatus: campaignStatus?.status,
-        emailLabel: campaignStatus?.inactive_reason ?? campaignStatus?.status ?? undefined,
+        emailLabel:
+          campaignStatus?.inactive_reason ??
+          campaignStatus?.status ??
+          undefined,
       };
     });
   }
