@@ -576,7 +576,7 @@ export class ApolloProspectsService {
   async syncRepliesToLeads(
     organizationId: number,
     sequenceId: string,
-    icpProfileId: number,
+    icpProfileId?: number,
     campaignId?: number,
   ): Promise<{ created: number; skipped: number }> {
     const contacts = await this.getSequenceContacts(organizationId, sequenceId);
@@ -672,7 +672,10 @@ export class ApolloProspectsService {
         title: c.title,
         organizationName: c.organization_name,
         sequenceStatus: campaignStatus?.status,
-        emailLabel: campaignStatus?.inactive_reason ?? undefined,
+        emailLabel:
+          campaignStatus?.inactive_reason ??
+          campaignStatus?.status ??
+          undefined,
       };
     });
   }

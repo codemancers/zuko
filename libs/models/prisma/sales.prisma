@@ -275,7 +275,7 @@ model Campaign {
 model Lead {
   id             Int      @id @default(autoincrement())
   organizationId Int      @map("organization_id")
-  icpProfileId   Int      @map("icp_profile_id")
+  icpProfileId   Int?     @map("icp_profile_id")
   campaignId     Int?     @map("campaign_id")
   contactId      Int?     @map("contact_id")
   dealId         Int?     @map("deal_id")
@@ -294,7 +294,7 @@ model Lead {
   updatedAt      DateTime @updatedAt @map("updated_at")
 
   organization Organization @relation("OrganizationLeads", fields: [organizationId], references: [id], onDelete: Cascade)
-  icpProfile   IcpProfile   @relation("IcpLeads", fields: [icpProfileId], references: [id])
+  icpProfile   IcpProfile?  @relation("IcpLeads", fields: [icpProfileId], references: [id])
   campaign     Campaign?    @relation("CampaignLeads", fields: [campaignId], references: [id], onDelete: SetNull)
   contact      Contact?     @relation("ContactLeads", fields: [contactId], references: [id], onDelete: SetNull)
   deal         Deal?        @relation("DealLeads", fields: [dealId], references: [id], onDelete: SetNull)

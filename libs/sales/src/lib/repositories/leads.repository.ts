@@ -4,7 +4,7 @@ import type { PrismaService } from '../modules/prisma.types';
 
 export interface CreateLeadInput {
   organizationId: number;
-  icpProfileId: number;
+  icpProfileId?: number;
   campaignId?: number;
   contactId?: number;
   name: string;
