@@ -299,6 +299,14 @@ const authInstance: any = betterAuth({
         ? {
             sameSite: 'none', // Allow cross-origin requests
             secure: true, // HTTPS only
+            // Shares the session cookie across sibling subdomains (e.g.
+            // web and api hosts) so the direct browser -> backend OAuth
+            // authorize/consent redirect (MCP login flow) can see the
+            // session set on the frontend host. Unset in envs where web
+            // and api share one origin.
+            ...(process.env.COOKIE_DOMAIN
+              ? { domain: process.env.COOKIE_DOMAIN }
+              : {}),
           }
         : {
             sameSite: 'lax', // Standard for same-origin
