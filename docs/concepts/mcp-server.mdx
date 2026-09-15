@@ -33,6 +33,8 @@ Tokens are JWTs verified locally against `{BACKEND_URL}/auth/jwks` — no round-
 | `tasks:write`        | Create and update tasks                |
 | `deals:read`         | List and retrieve deals                |
 | `deals:write`        | Create and update deals                |
+| `companies:read`     | List and retrieve companies            |
+| `companies:write`    | Create and update companies            |
 
 ## Tools
 
@@ -175,6 +177,62 @@ Updates one or more fields on an existing deal. Stage changes and closings are r
 | `expectedCloseDate` | `string`  | New expected close date, ISO 8601 (optional) |
 | `actualCloseDate`   | `string`  | Actual close date, ISO 8601 (optional)       |
 | `lostReason`        | `string`  | Reason the deal was lost (optional)          |
+
+---
+
+### `list_companies`
+
+**Scope:** `companies:read`
+
+Returns up to 50 non-hidden companies (oldest first) across all organizations the user belongs to.
+
+| Input            | Type      | Description                                                 |
+| ---------------- | --------- | ----------------------------------------------------------- |
+| `organizationId` | `integer` | Restrict to one organization the user belongs to (optional) |
+| `search`         | `string`  | Search by company name, website, or LinkedIn URL (optional) |
+| `mine`           | `boolean` | Only companies where the user is an owner (optional)        |
+
+---
+
+### `get_company`
+
+**Scope:** `companies:read`
+
+Returns full company detail including owners and linked (active) contacts.
+
+| Input       | Type      | Description                   |
+| ----------- | --------- | ----------------------------- |
+| `companyId` | `integer` | ID of the company to retrieve |
+
+---
+
+### `create_company`
+
+**Scope:** `companies:write`
+
+Creates a company via the same service the REST API uses — validation and activity-timeline events apply. If the user belongs to exactly one organization, `organizationId` can be omitted.
+
+| Input            | Type      | Description                                            |
+| ---------------- | --------- | ------------------------------------------------------ |
+| `companyName`    | `string`  | Company name (required)                                |
+| `organizationId` | `integer` | Target organization (optional if user has exactly one) |
+| `website`        | `string`  | Company website URL (optional)                         |
+| `linkedinUrl`    | `string`  | Company LinkedIn URL (optional)                        |
+
+---
+
+### `update_company`
+
+**Scope:** `companies:write`
+
+Updates one or more fields on an existing company. Only supplied fields are changed, and each change is recorded on the company activity timeline.
+
+| Input         | Type      | Description                            |
+| ------------- | --------- | -------------------------------------- |
+| `companyId`   | `integer` | ID of the company to update (required) |
+| `companyName` | `string`  | New company name (optional)            |
+| `website`     | `string`  | New company website URL (optional)     |
+| `linkedinUrl` | `string`  | New company LinkedIn URL (optional)    |
 
 ## Connecting a client
 

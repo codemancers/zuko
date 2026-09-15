@@ -271,6 +271,27 @@ function dealsSvc(over: Record<string, unknown> = {}) {
   };
 }
 
+function companyDb(over: Record<string, unknown> = {}) {
+  return {
+    member: { findMany: vi.fn(async () => [{ organizationId: 1 }]) },
+    company: {
+      findMany: vi.fn(async () => []),
+      findFirst: vi.fn(async () => ({ id: 7, organizationId: 1 })),
+    },
+    ...over,
+  } as never;
+}
+
+function companiesSvc(over: Record<string, unknown> = {}) {
+  return {
+    companies: {
+      create: vi.fn(async () => ({ id: 100, companyName: 'New Co' })),
+      update: vi.fn(async () => ({ id: 7, companyName: 'Existing Co' })),
+      ...over,
+    },
+  };
+}
+
 describe('list_deals tool', () => {
   it('rejects when token lacks deals:read', async () => {
     const client = await connect(dealDb(), ['deals:write'], dealsSvc());
@@ -392,6 +413,147 @@ describe('update_deal tool', () => {
     expect(dealId).toBe(7);
     expect(orgId).toBe(1);
     expect(input.stage).toBe('negotiation');
+    expect(actorId).toBe(42);
+    expect(source).toBe('mcp');
+  });
+});
+
+describe('list_companies tool', () => {
+  it('rejects when token lacks companies:read', async () => {
+    const client = await connect(
+      companyDb(),
+      ['companies:write'],
+      companiesSvc(),
+    );
+    const res = (await client.callTool({
+      name: 'list_companies',
+      arguments: {},
+    })) as { isError?: boolean };
+    expect(res.isError).toBe(true);
+  });
+
+  it('passes search and mine filters to prisma', async () => {
+    const findMany = vi.fn(async () => []);
+    const client = await connect(
+      companyDb({
+        member: { findMany: vi.fn(async () => [{ organizationId: 1 }]) },
+        company: { findMany },
+      }),
+      ['companies:read'],
+      companiesSvc(),
+    );
+    await client.callTool({
+      name: 'list_companies',
+      arguments: { search: 'acme', mine: true },
+    });
+    const where = findMany.mock.calls[0][0].where as Record<string, unknown>;
+    expect(where.OR).toBeDefined();
+    expect(where.owners).toEqual({ some: { userId: 42 } });
+  });
+
+  it('rejects an organizationId the user is not a member of', async () => {
+    const client = await connect(
+      companyDb(),
+      ['companies:read'],
+      companiesSvc(),
+    );
+    const res = (await client.callTool({
+      name: 'list_companies',
+      arguments: { organizationId: 99 },
+    })) as { isError?: boolean };
+    expect(res.isError).toBe(true);
+  });
+});
+
+describe('get_company tool', () => {
+  it('returns error when company not found', async () => {
+    const db = companyDb({
+      company: {
+        findFirst: vi.fn(async () => null),
+        findMany: vi.fn(async () => []),
+      },
+    });
+    const client = await connect(db, ['companies:read'], companiesSvc());
+    const res = (await client.callTool({
+      name: 'get_company',
+      arguments: { companyId: 99 },
+    })) as { isError?: boolean };
+    expect(res.isError).toBe(true);
+  });
+});
+
+describe('create_company tool', () => {
+  it('rejects when token lacks companies:write', async () => {
+    const client = await connect(
+      companyDb(),
+      ['companies:read'],
+      companiesSvc(),
+    );
+    const res = (await client.callTool({
+      name: 'create_company',
+      arguments: { companyName: 'New Co' },
+    })) as { isError?: boolean };
+    expect(res.isError).toBe(true);
+  });
+
+  it('auto-resolves org and calls CompaniesService.create with mcp source', async () => {
+    const svc = companiesSvc();
+    const client = await connect(companyDb(), ['companies:write'], svc);
+    await client.callTool({
+      name: 'create_company',
+      arguments: { companyName: 'New Co' },
+    });
+    expect(svc.companies.create).toHaveBeenCalledTimes(1);
+    const [input, actorId, source] = svc.companies.create.mock.calls[0];
+    expect(input.organizationId).toBe(1);
+    expect(actorId).toBe(42);
+    expect(source).toBe('mcp');
+  });
+
+  it('surfaces service validation errors', async () => {
+    const svc = companiesSvc({
+      create: vi.fn(async () => {
+        throw new Error('Company name is required');
+      }),
+    });
+    const client = await connect(companyDb(), ['companies:write'], svc);
+    const res = (await client.callTool({
+      name: 'create_company',
+      arguments: { companyName: '' },
+    })) as { isError?: boolean };
+    expect(res.isError).toBe(true);
+  });
+});
+
+describe('update_company tool', () => {
+  it('errors when company not found or inaccessible', async () => {
+    const db = companyDb({
+      company: {
+        findFirst: vi.fn(async () => null),
+        findMany: vi.fn(async () => []),
+      },
+    });
+    const client = await connect(db, ['companies:write'], companiesSvc());
+    const res = (await client.callTool({
+      name: 'update_company',
+      arguments: { companyId: 99, companyName: 'Renamed' },
+    })) as { isError?: boolean };
+    expect(res.isError).toBe(true);
+  });
+
+  it('delegates to CompaniesService.update with the resolved org id', async () => {
+    const svc = companiesSvc();
+    const client = await connect(companyDb(), ['companies:write'], svc);
+    await client.callTool({
+      name: 'update_company',
+      arguments: { companyId: 7, website: 'https://acme.example.com' },
+    });
+    expect(svc.companies.update).toHaveBeenCalledTimes(1);
+    const [companyId, orgId, input, actorId, source] =
+      svc.companies.update.mock.calls[0];
+    expect(companyId).toBe(7);
+    expect(orgId).toBe(1);
+    expect(input.website).toBe('https://acme.example.com');
     expect(actorId).toBe(42);
     expect(source).toBe('mcp');
   });
