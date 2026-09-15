@@ -865,5 +865,81 @@ export function buildMcpServer(
     },
   );
 
+  server.registerTool(
+    'update_company_summary',
+    {
+      description:
+        'Replace the free-form Editor.js summary document for a company. This replaces the ' +
+        'entire document, so call get_company first if you need to preserve existing content ' +
+        'and append to it. Supported block types: paragraph, header, list, checklist, quote, ' +
+        'code, table, warning, delimiter. Inline formatting (bold/italic/highlight/inline-code) ' +
+        'is embedded as HTML tags inside a block\'s "text" field, e.g. "<b>bold</b>" or ' +
+        '"<mark>highlighted</mark>", not as separate block types.',
+      inputSchema: {
+        companyId: z.int().describe('The ID of the company to update'),
+        summary: z
+          .object({
+            time: z.number().optional(),
+            blocks: z
+              .array(
+                z
+                  .object({
+                    id: z.string().optional(),
+                    type: z
+                      .string()
+                      .describe(
+                        'Editor.js block type, e.g. "paragraph", "header", "list", "checklist", "quote", "code", "table", "warning", "delimiter"',
+                      ),
+                    data: z
+                      .record(z.string(), z.unknown())
+                      .describe(
+                        'Block data shaped for the given type, e.g. header: { text, level }, list: { style, items }, checklist: { items: [{ text, checked }] }',
+                      ),
+                  })
+                  .passthrough(),
+              )
+              .describe('The full ordered list of Editor.js blocks'),
+            version: z.string().optional(),
+          })
+          .describe('The full Editor.js document to replace the summary with'),
+      },
+    },
+    async ({ companyId, summary }) => {
+      if (!authCtx.scopes.includes('companies:write')) {
+        return missingScope('companies:write');
+      }
+      if (!deps?.companies) {
+        return toolError('Company management is not available.');
+      }
+
+      const orgIds = await memberOrgIds();
+
+      const existing = await prisma.company.findFirst({
+        where: { id: companyId, organizationId: { in: orgIds } },
+        select: { organizationId: true },
+      });
+      if (!existing) {
+        return toolError(
+          `Company with ID ${companyId} not found or not accessible.`,
+        );
+      }
+
+      try {
+        const company = await deps.companies.update(
+          companyId,
+          existing.organizationId,
+          { summary },
+          authCtx.userId,
+          'mcp',
+        );
+        return json(company);
+      } catch (error: unknown) {
+        return toolError(
+          error instanceof Error ? error.message : String(error),
+        );
+      }
+    },
+  );
+
   return server;
 }

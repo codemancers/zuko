@@ -292,6 +292,10 @@ function companiesSvc(over: Record<string, unknown> = {}) {
   };
 }
 
+const SAMPLE_SUMMARY = {
+  blocks: [{ type: 'paragraph', data: { text: 'hello' } }],
+};
+
 describe('list_deals tool', () => {
   it('rejects when token lacks deals:read', async () => {
     const client = await connect(dealDb(), ['deals:write'], dealsSvc());
@@ -556,5 +560,66 @@ describe('update_company tool', () => {
     expect(input.website).toBe('https://acme.example.com');
     expect(actorId).toBe(42);
     expect(source).toBe('mcp');
+  });
+});
+
+describe('update_company_summary tool', () => {
+  it('rejects when token lacks companies:write', async () => {
+    const client = await connect(
+      companyDb(),
+      ['companies:read'],
+      companiesSvc(),
+    );
+    const res = (await client.callTool({
+      name: 'update_company_summary',
+      arguments: { companyId: 7, summary: SAMPLE_SUMMARY },
+    })) as { isError?: boolean };
+    expect(res.isError).toBe(true);
+  });
+
+  it('errors when company not found or inaccessible', async () => {
+    const db = companyDb({
+      company: {
+        findFirst: vi.fn(async () => null),
+        findMany: vi.fn(async () => []),
+      },
+    });
+    const client = await connect(db, ['companies:write'], companiesSvc());
+    const res = (await client.callTool({
+      name: 'update_company_summary',
+      arguments: { companyId: 99, summary: SAMPLE_SUMMARY },
+    })) as { isError?: boolean };
+    expect(res.isError).toBe(true);
+  });
+
+  it('delegates to CompaniesService.update with the resolved org id and full summary', async () => {
+    const svc = companiesSvc();
+    const client = await connect(companyDb(), ['companies:write'], svc);
+    await client.callTool({
+      name: 'update_company_summary',
+      arguments: { companyId: 7, summary: SAMPLE_SUMMARY },
+    });
+    expect(svc.companies.update).toHaveBeenCalledTimes(1);
+    const [companyId, orgId, input, actorId, source] =
+      svc.companies.update.mock.calls[0];
+    expect(companyId).toBe(7);
+    expect(orgId).toBe(1);
+    expect(input.summary).toEqual(SAMPLE_SUMMARY);
+    expect(actorId).toBe(42);
+    expect(source).toBe('mcp');
+  });
+
+  it('surfaces service validation errors', async () => {
+    const svc = companiesSvc({
+      update: vi.fn(async () => {
+        throw new Error('Company not found');
+      }),
+    });
+    const client = await connect(companyDb(), ['companies:write'], svc);
+    const res = (await client.callTool({
+      name: 'update_company_summary',
+      arguments: { companyId: 7, summary: SAMPLE_SUMMARY },
+    })) as { isError?: boolean };
+    expect(res.isError).toBe(true);
   });
 });
