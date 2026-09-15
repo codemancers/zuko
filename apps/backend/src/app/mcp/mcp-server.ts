@@ -1,7 +1,7 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { Prisma, type TaskStatus } from '@prisma/client';
 import type { PrismaClient } from '@zuko/models';
-import type { DealsService } from '@zuko/sales';
+import type { DealsService, CompaniesService } from '@zuko/sales';
 import { DEAL_STAGE_VALUES } from '@zuko/sales';
 import { z } from 'zod';
 
@@ -11,13 +11,14 @@ export interface McpAuthContext {
 }
 
 /**
- * Optional NestJS services the controller wires in. Deal writes go through
- * DealsService so they run the same validation and emit the same activity-feed
- * events as the REST API; deal reads stay on prisma for full control of
- * ordering and org scoping.
+ * Optional NestJS services the controller wires in. Deal and company writes
+ * go through their services so they run the same validation and emit the
+ * same activity-feed events as the REST API; reads stay on prisma for full
+ * control of ordering and org scoping.
  */
 export interface McpDeps {
   deals: DealsService;
+  companies: CompaniesService;
 }
 
 /** Prisma Decimal (e.g. Deal.value) does not JSON-serialize to a number. */
@@ -631,6 +632,234 @@ export function buildMcpServer(
           'mcp',
         );
         return json({ ...deal, value: money(deal.value) });
+      } catch (error: unknown) {
+        return toolError(
+          error instanceof Error ? error.message : String(error),
+        );
+      }
+    },
+  );
+
+  server.registerTool(
+    'list_companies',
+    {
+      description:
+        'List companies in the organizations the authorized user belongs to. Returns up to 50 companies, oldest first.',
+      inputSchema: {
+        organizationId: z
+          .number()
+          .optional()
+          .describe('Restrict results to a specific organization'),
+        search: z
+          .string()
+          .optional()
+          .describe('Search by company name, website, or LinkedIn URL'),
+        mine: z
+          .boolean()
+          .optional()
+          .describe('Only companies where the authorized user is an owner'),
+      },
+    },
+    async ({ organizationId, search, mine }) => {
+      if (!authCtx.scopes.includes('companies:read')) {
+        return missingScope('companies:read');
+      }
+
+      const orgIds = await memberOrgIds();
+      if (organizationId && !orgIds.includes(organizationId)) {
+        return toolError(
+          `You do not have access to organization ${organizationId}.`,
+        );
+      }
+
+      const companies = await prisma.company.findMany({
+        where: {
+          organizationId: organizationId ? organizationId : { in: orgIds },
+          isHidden: false,
+          ...(search !== undefined
+            ? {
+                OR: [
+                  { companyName: { contains: search, mode: 'insensitive' } },
+                  { website: { contains: search, mode: 'insensitive' } },
+                  { linkedinUrl: { contains: search, mode: 'insensitive' } },
+                ],
+              }
+            : {}),
+          ...(mine ? { owners: { some: { userId: authCtx.userId } } } : {}),
+        },
+        select: {
+          id: true,
+          organizationId: true,
+          companyName: true,
+          website: true,
+          linkedinUrl: true,
+          isHidden: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+        orderBy: { createdAt: 'asc' },
+        take: 50,
+      });
+
+      return json(companies);
+    },
+  );
+
+  server.registerTool(
+    'get_company',
+    {
+      description:
+        'Get detailed information about a specific company by ID, including owners and linked contacts.',
+      inputSchema: {
+        companyId: z.int().describe('The ID of the company to retrieve'),
+      },
+    },
+    async ({ companyId }) => {
+      if (!authCtx.scopes.includes('companies:read')) {
+        return missingScope('companies:read');
+      }
+
+      const orgIds = await memberOrgIds();
+
+      const company = await prisma.company.findFirst({
+        where: { id: companyId, organizationId: { in: orgIds } },
+        include: {
+          owners: {
+            include: {
+              user: { select: { id: true, name: true, email: true } },
+            },
+          },
+          contacts: {
+            where: { leftAt: null },
+            include: {
+              contact: { select: { id: true, name: true, email: true } },
+            },
+          },
+        },
+      });
+
+      if (!company) {
+        return toolError(
+          `Company with ID ${companyId} not found or not accessible.`,
+        );
+      }
+
+      return json(company);
+    },
+  );
+
+  server.registerTool(
+    'create_company',
+    {
+      description:
+        'Create a new company in an organization. organizationId is optional when the user belongs to exactly one organization — call list_organizations first to pick one if needed.',
+      inputSchema: {
+        organizationId: z
+          .int()
+          .optional()
+          .describe(
+            'Organization ID to create the company in. Omit if you belong to exactly one organization; call list_organizations to find the correct id otherwise.',
+          ),
+        companyName: z.string().describe('The name of the company'),
+        website: z.string().optional().describe('Company website URL'),
+        linkedinUrl: z.string().optional().describe('Company LinkedIn URL'),
+      },
+    },
+    async (args) => {
+      if (!authCtx.scopes.includes('companies:write')) {
+        return missingScope('companies:write');
+      }
+      if (!deps?.companies) {
+        return toolError('Company management is not available.');
+      }
+
+      const orgIds = await memberOrgIds();
+
+      let resolvedOrgId = args.organizationId;
+      if (resolvedOrgId === undefined) {
+        if (orgIds.length === 0) {
+          return toolError('User is not a member of any organization.');
+        }
+        if (orgIds.length > 1) {
+          return toolError(
+            `User belongs to multiple organizations. Call list_organizations to find the correct id, then pass it as organizationId.`,
+          );
+        }
+        resolvedOrgId = orgIds[0];
+      } else if (!orgIds.includes(resolvedOrgId)) {
+        return toolError(
+          `You do not have access to organization ${resolvedOrgId}.`,
+        );
+      }
+
+      try {
+        const company = await deps.companies.create(
+          {
+            organizationId: resolvedOrgId,
+            companyName: args.companyName,
+            website: args.website,
+            linkedinUrl: args.linkedinUrl,
+          },
+          authCtx.userId,
+          'mcp',
+        );
+        return json(company);
+      } catch (error: unknown) {
+        return toolError(
+          error instanceof Error ? error.message : String(error),
+        );
+      }
+    },
+  );
+
+  server.registerTool(
+    'update_company',
+    {
+      description:
+        'Update an existing company. Field changes are recorded on the company activity timeline.',
+      inputSchema: {
+        companyId: z.int().describe('The ID of the company to update'),
+        companyName: z.string().optional().describe('New company name'),
+        website: z.string().optional().describe('New company website URL'),
+        linkedinUrl: z
+          .string()
+          .optional()
+          .describe('New company LinkedIn URL'),
+      },
+    },
+    async (args) => {
+      if (!authCtx.scopes.includes('companies:write')) {
+        return missingScope('companies:write');
+      }
+      if (!deps?.companies) {
+        return toolError('Company management is not available.');
+      }
+
+      const orgIds = await memberOrgIds();
+
+      const existing = await prisma.company.findFirst({
+        where: { id: args.companyId, organizationId: { in: orgIds } },
+        select: { organizationId: true },
+      });
+      if (!existing) {
+        return toolError(
+          `Company with ID ${args.companyId} not found or not accessible.`,
+        );
+      }
+
+      try {
+        const company = await deps.companies.update(
+          args.companyId,
+          existing.organizationId,
+          {
+            companyName: args.companyName,
+            website: args.website,
+            linkedinUrl: args.linkedinUrl,
+          },
+          authCtx.userId,
+          'mcp',
+        );
+        return json(company);
       } catch (error: unknown) {
         return toolError(
           error instanceof Error ? error.message : String(error),

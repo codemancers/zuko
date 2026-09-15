@@ -2,7 +2,7 @@ import { All, Controller, Req, Res, UseGuards } from '@nestjs/common';
 import type { Response } from 'express';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { AllowAnonymous } from '@thallesp/nestjs-better-auth';
-import { DealsService } from '@zuko/sales';
+import { DealsService, CompaniesService } from '@zuko/sales';
 import { PrismaService } from '../../prisma/prisma.service';
 import { buildMcpServer } from './mcp-server';
 import { McpBearerGuard, type McpAuthedRequest } from './mcp-bearer.guard';
@@ -22,6 +22,7 @@ export class McpController {
   constructor(
     private readonly prisma: PrismaService,
     private readonly deals: DealsService,
+    private readonly companies: CompaniesService,
   ) {}
 
   @All()
@@ -41,7 +42,7 @@ export class McpController {
     const server = buildMcpServer(
       this.prisma,
       { userId, scopes },
-      { deals: this.deals },
+      { deals: this.deals, companies: this.companies },
     );
     const transport = new StreamableHTTPServerTransport({
       // Stateless: a fresh server+transport per request, no session ids.
