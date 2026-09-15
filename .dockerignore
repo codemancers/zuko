@@ -150,7 +150,7 @@ prisma
 **/vitest.config.*.timestamp*
 fly.toml
 
-# eve ai-agent artifacts and local agent credentials
+# eve harness artifacts and local agent credentials
 **/.eve
 **/.output
 **/.zuko

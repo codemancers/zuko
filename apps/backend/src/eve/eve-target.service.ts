@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common';
 
 /**
- * Resolves the ai-agent (eve) upstream for the reverse proxy.
+ * Resolves the harness (eve) upstream for the reverse proxy.
  *
- * Eve runs as a SEPARATE deployment (apps/ai-agent): in prod `EVE_BASE_URL`
+ * Eve runs as a SEPARATE deployment (apps/harness): in prod `EVE_BASE_URL`
  * points at its Fly private address (e.g. http://zuko-ai-agent.flycast),
  * in dev at a locally running `eve dev` server. This replaces the
  * exploration branch's in-process EveSupervisorService — spawning eve as a

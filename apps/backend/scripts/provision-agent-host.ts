@@ -1,5 +1,5 @@
 /**
- * Provision an AgentHost for an external agent harness (e.g. apps/ai-agent).
+ * Provision an AgentHost for an external agent harness (e.g. apps/harness).
  *
  * The agent-auth plugin's dynamic host registration expects string host ids,
  * but our schema uses serial Ints — so external agents cannot self-register a

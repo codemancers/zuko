@@ -17,7 +17,7 @@ export function env(): z.infer<typeof envSchema> {
     const parsed = envSchema.safeParse(process.env);
     if (!parsed.success) {
       throw new Error(
-        `ai-agent env invalid: ${parsed.error.issues
+        `harness env invalid: ${parsed.error.issues
           .map((i) => `${i.path.join('.')}: ${i.message}`)
           .join('; ')}`,
       );
