@@ -72,7 +72,7 @@
       "webpack": false,
       "ignoreDependencies": ["@zuko/models", "swagger-ui-express"]
     },
-    "apps/ai-agent": {
+    "apps/harness": {
       "entry": [
         "agent/agent.ts",
         "agent/channels/*.ts",

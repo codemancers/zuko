@@ -1,4 +1,4 @@
-# @zuko/ai-agent
+# @zuko/harness
 
 A standalone AI agent for Zuko, built on [eve](https://eve.dev) — Vercel's
 filesystem-first agent framework. The agent manages tasks by calling the
@@ -33,7 +33,7 @@ agent/
 ## Setup
 
 ```sh
-cp apps/ai-agent/.env.example apps/ai-agent/.env
+cp apps/harness/.env.example apps/harness/.env
 # fill in OPENAI_API_KEY
 ```
 
@@ -44,9 +44,9 @@ the user's Better Auth session cookie — the channel verifies it against the
 backend and forwards it to tool calls.
 
 ```sh
-bun nx run @zuko/ai-agent:dev   # from repo root
+bun nx run @zuko/harness:dev   # from repo root
 # or:
-cd apps/ai-agent && bunx eve dev
+cd apps/harness && bunx eve dev
 ```
 
 ## HTTP API
@@ -84,14 +84,14 @@ same endpoint the web UI uses. No separate agent credentials needed.
 ## Build & run (production)
 
 ```sh
-bun nx run @zuko/ai-agent:build   # eve build
-bun nx run @zuko/ai-agent:start   # eve start --port 3002
+bun nx run @zuko/harness:build   # eve build
+bun nx run @zuko/harness:start   # eve start --port 3002
 ```
 
 ## Docker
 
 ```sh
-docker build -f apps/ai-agent/Dockerfile -t zuko-ai-agent .
+docker build -f apps/harness/Dockerfile -t zuko-ai-agent .
 
 docker run -p 3002:3002 \
   -e OPENAI_API_KEY=... \

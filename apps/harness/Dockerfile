@@ -1,5 +1,5 @@
 # Build from the repo root:
-#   docker build -f apps/ai-agent/Dockerfile -t zuko-ai-agent .
+#   docker build -f apps/harness/Dockerfile -t zuko-ai-agent .
 #
 FROM node:24-bullseye-slim AS build
 
@@ -11,10 +11,10 @@ ENV PATH="/root/.bun/bin:$PATH"
 WORKDIR /app
 
 # The app has no @zuko/* workspace deps, so it installs standalone.
-COPY apps/ai-agent/package.json ./
+COPY apps/harness/package.json ./
 RUN bun install
 
-COPY apps/ai-agent/ ./
+COPY apps/harness/ ./
 # eve build emits a self-contained nitro server at .output/
 RUN bunx eve build
 

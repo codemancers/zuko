@@ -1,4 +1,4 @@
-// NOTE: keep byte-identical (logic) with apps/ai-agent/agent/lib/eve-principal.ts — duplicated across the eve/backend build boundary (eve bundles separately and cannot import backend code).
+// NOTE: keep byte-identical (logic) with apps/harness/agent/lib/eve-principal.ts — duplicated across the eve/backend build boundary (eve bundles separately and cannot import backend code).
 import { createHmac, timingSafeEqual } from 'node:crypto';
 
 export interface EvePrincipal {

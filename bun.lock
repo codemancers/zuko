@@ -112,8 +112,8 @@
         "webpack-cli": "^5.1.4",
       },
     },
-    "apps/ai-agent": {
-      "name": "@zuko/ai-agent",
+    "apps/harness": {
+      "name": "@zuko/harness",
       "version": "0.1.0",
       "dependencies": {
         "@anthropic-ai/claude-agent-sdk": "^0.2.114",
@@ -2142,7 +2142,7 @@
 
     "@zkochan/js-yaml": ["@zkochan/js-yaml@0.0.7", "", { "dependencies": { "argparse": "^2.0.1" }, "bin": { "js-yaml": "bin/js-yaml.js" } }, "sha512-nrUSn7hzt7J6JWgWGz78ZYI8wj+gdIJdk0Ynjpp8l+trkn58Uqsf6RYrYkEK+3X18EX+TNdtJI0WxAtc+L84SQ=="],
 
-    "@zuko/ai-agent": ["@zuko/ai-agent@workspace:apps/ai-agent"],
+    "@zuko/harness": ["@zuko/harness@workspace:apps/harness"],
 
     "@zuko/backend": ["@zuko/backend@workspace:apps/backend"],
 

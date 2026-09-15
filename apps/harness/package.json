@@ -1,5 +1,5 @@
 {
-  "name": "@zuko/ai-agent",
+  "name": "@zuko/harness",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -20,7 +20,7 @@
         "continuous": true,
         "options": {
           "command": "eve dev",
-          "cwd": "apps/ai-agent"
+          "cwd": "apps/harness"
         }
       },
       "build": {
@@ -36,7 +36,7 @@
         ],
         "options": {
           "command": "eve build",
-          "cwd": "apps/ai-agent"
+          "cwd": "apps/harness"
         }
       },
       "start": {
@@ -47,16 +47,16 @@
         ],
         "options": {
           "command": "eve start --port 3002",
-          "cwd": "apps/ai-agent"
+          "cwd": "apps/harness"
         }
       },
       "test": {
         "executor": "@nx/vitest:test",
         "outputs": [
-          "{workspaceRoot}/apps/ai-agent/test-output/vitest/coverage"
+          "{workspaceRoot}/apps/harness/test-output/vitest/coverage"
         ],
         "options": {
-          "configFile": "apps/ai-agent/vitest.config.mts"
+          "configFile": "apps/harness/vitest.config.mts"
         },
         "configurations": {
           "watch": {
