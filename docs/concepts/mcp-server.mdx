@@ -234,6 +234,38 @@ Updates one or more fields on an existing company. Only supplied fields are chan
 | `website`     | `string`  | New company website URL (optional)     |
 | `linkedinUrl` | `string`  | New company LinkedIn URL (optional)    |
 
+---
+
+### `update_company_summary`
+
+**Scope:** `companies:write`
+
+Replaces the company's free-form [Editor.js](https://editorjs.io) summary document. This is a **full replace** — call `get_company` first if you need to preserve existing content, since there's no partial/block-level edit yet (see note below).
+
+Supported block types: `paragraph`, `header`, `list`, `checklist`, `quote`, `code`, `table`, `warning`, `delimiter`. Inline formatting (bold, italic, highlight, inline code) is embedded as HTML tags inside a block's `text` field — e.g. `"<b>bold</b>"`, `"<mark>highlighted</mark>"` — not as separate block types.
+
+| Input       | Type      | Description                                                              |
+| ----------- | --------- | ------------------------------------------------------------------------ |
+| `companyId` | `integer` | ID of the company to update (required)                                   |
+| `summary`   | `object`  | Full Editor.js document: `{ blocks: [...], time?, version? }` (required) |
+
+```json
+{
+  "companyId": 42,
+  "summary": {
+    "blocks": [
+      { "type": "header", "data": { "text": "Overview", "level": 2 } },
+      {
+        "type": "paragraph",
+        "data": { "text": "Enterprise account, <mark>renewal due Q3</mark>." }
+      }
+    ]
+  }
+}
+```
+
+> **Note:** block-level operations (append/insert/update/delete a single block by id, without resending the whole document) are planned as a follow-up — full-replace is the only mode today, matching how the web UI's autosave already writes this field.
+
 ## Connecting a client
 
 ### Claude Desktop
