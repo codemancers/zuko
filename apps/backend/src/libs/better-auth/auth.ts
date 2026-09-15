@@ -9,7 +9,13 @@ const prisma = new PrismaService();
 
 // OAuth scopes granted to external MCP clients (Claude, Cursor, …).
 // Resource servers (McpController) enforce these per tool.
-export const MCP_SCOPES = ['tasks:read', 'tasks:write', 'organizations:read'];
+export const MCP_SCOPES = [
+  'tasks:read',
+  'tasks:write',
+  'organizations:read',
+  'deals:read',
+  'deals:write',
+];
 
 const AGENT_CAPABILITIES: Capability[] = [
   // CRM — deals

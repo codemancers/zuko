@@ -1,5 +1,6 @@
 export const ACTIVITY_SOURCES = {
   AI: 'ai',
+  MCP: 'mcp',
 } as const;
 
 export type ActivitySource =
