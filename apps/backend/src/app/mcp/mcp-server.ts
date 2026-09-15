@@ -821,10 +821,7 @@ export function buildMcpServer(
         companyId: z.int().describe('The ID of the company to update'),
         companyName: z.string().optional().describe('New company name'),
         website: z.string().optional().describe('New company website URL'),
-        linkedinUrl: z
-          .string()
-          .optional()
-          .describe('New company LinkedIn URL'),
+        linkedinUrl: z.string().optional().describe('New company LinkedIn URL'),
       },
     },
     async (args) => {

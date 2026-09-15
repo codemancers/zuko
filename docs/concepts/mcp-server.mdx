@@ -186,11 +186,11 @@ Updates one or more fields on an existing deal. Stage changes and closings are r
 
 Returns up to 50 non-hidden companies (oldest first) across all organizations the user belongs to.
 
-| Input            | Type      | Description                                                  |
-| ---------------- | --------- | -------------------------------------------------------------|
-| `organizationId` | `integer` | Restrict to one organization the user belongs to (optional)  |
-| `search`         | `string`  | Search by company name, website, or LinkedIn URL (optional)  |
-| `mine`           | `boolean` | Only companies where the user is an owner (optional)         |
+| Input            | Type      | Description                                                 |
+| ---------------- | --------- | ----------------------------------------------------------- |
+| `organizationId` | `integer` | Restrict to one organization the user belongs to (optional) |
+| `search`         | `string`  | Search by company name, website, or LinkedIn URL (optional) |
+| `mine`           | `boolean` | Only companies where the user is an owner (optional)        |
 
 ---
 
@@ -201,7 +201,7 @@ Returns up to 50 non-hidden companies (oldest first) across all organizations th
 Returns full company detail including owners and linked (active) contacts.
 
 | Input       | Type      | Description                   |
-| ----------- | --------- | ------------------------------|
+| ----------- | --------- | ----------------------------- |
 | `companyId` | `integer` | ID of the company to retrieve |
 
 ---
@@ -212,12 +212,12 @@ Returns full company detail including owners and linked (active) contacts.
 
 Creates a company via the same service the REST API uses — validation and activity-timeline events apply. If the user belongs to exactly one organization, `organizationId` can be omitted.
 
-| Input            | Type      | Description                                             |
-| ---------------- | --------- | -------------------------------------------------------- |
-| `companyName`    | `string`  | Company name (required)                                  |
-| `organizationId` | `integer` | Target organization (optional if user has exactly one)   |
-| `website`        | `string`  | Company website URL (optional)                           |
-| `linkedinUrl`    | `string`  | Company LinkedIn URL (optional)                           |
+| Input            | Type      | Description                                            |
+| ---------------- | --------- | ------------------------------------------------------ |
+| `companyName`    | `string`  | Company name (required)                                |
+| `organizationId` | `integer` | Target organization (optional if user has exactly one) |
+| `website`        | `string`  | Company website URL (optional)                         |
+| `linkedinUrl`    | `string`  | Company LinkedIn URL (optional)                        |
 
 ---
 
@@ -228,11 +228,11 @@ Creates a company via the same service the REST API uses — validation and acti
 Updates one or more fields on an existing company. Only supplied fields are changed, and each change is recorded on the company activity timeline.
 
 | Input         | Type      | Description                            |
-| ------------- | --------- | --------------------------------------- |
-| `companyId`   | `integer` | ID of the company to update (required)  |
-| `companyName` | `string`  | New company name (optional)             |
-| `website`     | `string`  | New company website URL (optional)      |
-| `linkedinUrl` | `string`  | New company LinkedIn URL (optional)     |
+| ------------- | --------- | -------------------------------------- |
+| `companyId`   | `integer` | ID of the company to update (required) |
+| `companyName` | `string`  | New company name (optional)            |
+| `website`     | `string`  | New company website URL (optional)     |
+| `linkedinUrl` | `string`  | New company LinkedIn URL (optional)    |
 
 ## Connecting a client
 
