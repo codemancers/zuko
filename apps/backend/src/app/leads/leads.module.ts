@@ -23,5 +23,6 @@ import { LeadsService } from './leads.service';
       inject: [LeadsRepository, PrismaService],
     },
   ],
+  exports: [LeadsService],
 })
 export class LeadsModule {}

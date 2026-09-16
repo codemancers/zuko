@@ -5,6 +5,7 @@ import { AllowAnonymous } from '@thallesp/nestjs-better-auth';
 import { DealsService, CompaniesService, ContactsService } from '@zuko/sales';
 import { PrismaService } from '../../prisma/prisma.service';
 import { IcpService } from '../icp/icp.service';
+import { LeadsService } from '../leads/leads.service';
 import { buildMcpServer } from './mcp-server';
 import { McpBearerGuard, type McpAuthedRequest } from './mcp-bearer.guard';
 
@@ -26,6 +27,7 @@ export class McpController {
     private readonly companies: CompaniesService,
     private readonly contacts: ContactsService,
     private readonly icps: IcpService,
+    private readonly leads: LeadsService,
   ) {}
 
   @All()
@@ -50,6 +52,7 @@ export class McpController {
         companies: this.companies,
         contacts: this.contacts,
         icps: this.icps,
+        leads: this.leads,
       },
     );
     const transport = new StreamableHTTPServerTransport({
