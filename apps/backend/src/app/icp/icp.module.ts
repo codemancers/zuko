@@ -28,5 +28,6 @@ import { IcpService } from './icp.service';
       inject: [IcpRepository, ApolloService],
     },
   ],
+  exports: [IcpService],
 })
 export class IcpModule {}

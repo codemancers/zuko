@@ -8,6 +8,7 @@ import type {
 } from '@zuko/sales';
 import { DEAL_STAGE_VALUES } from '@zuko/sales';
 import { z } from 'zod';
+import type { IcpService } from '../icp/icp.service';
 
 export interface McpAuthContext {
   userId: number;
@@ -24,6 +25,7 @@ export interface McpDeps {
   deals: DealsService;
   companies: CompaniesService;
   contacts: ContactsService;
+  icps: IcpService;
 }
 
 /** Prisma Decimal (e.g. Deal.value) does not JSON-serialize to a number. */
@@ -1073,7 +1075,7 @@ export function buildMcpServer(
         }
         if (orgIds.length > 1) {
           return toolError(
-            `User belongs to multiple organizations. Call list_organizations to find the correct id, then pass it as organizationId.`,
+            'User belongs to multiple organizations. Call list_organizations to find the correct id, then pass it as organizationId.',
           );
         }
         resolvedOrgId = orgIds[0];
@@ -1157,6 +1159,232 @@ export function buildMcpServer(
           'mcp',
         );
         return json(contact);
+      } catch (error: unknown) {
+        return toolError(
+          error instanceof Error ? error.message : String(error),
+        );
+      }
+    },
+  );
+
+  const icpFiltersSchema = z
+    .record(z.string(), z.unknown())
+    .optional()
+    .describe(
+      'Apollo-style ICP filter object, e.g. { industries: string[], employeeRanges: string[], ' +
+        'revenueRange: {min,max}, locations: string[], technologiesAnyOf: string[], ' +
+        'personTitles: string[], personSeniorities: string[], keywords: string }. ' +
+        'Omit fields that do not apply.',
+    );
+
+  server.registerTool(
+    'list_icp_profiles',
+    {
+      description:
+        'List Ideal Customer Profile (ICP) definitions for the organizations the authorized user belongs to.',
+      inputSchema: {
+        organizationId: z
+          .int()
+          .optional()
+          .describe('Organization ID to list ICP profiles for'),
+        page: z.int().optional().default(1),
+        perPage: z.int().optional().default(20),
+      },
+    },
+    async ({ organizationId, page, perPage }) => {
+      if (!authCtx.scopes.includes('icps:read')) {
+        return missingScope('icps:read');
+      }
+      if (!deps?.icps) {
+        return toolError('ICP management is not available.');
+      }
+
+      const orgIds = await memberOrgIds();
+      let resolvedOrgId = organizationId;
+      if (resolvedOrgId === undefined) {
+        if (orgIds.length === 0) {
+          return toolError('User is not a member of any organization.');
+        }
+        if (orgIds.length > 1) {
+          return toolError(
+            'User belongs to multiple organizations. Call list_organizations to find the correct id, then pass it as organizationId.',
+          );
+        }
+        resolvedOrgId = orgIds[0];
+      } else if (!orgIds.includes(resolvedOrgId)) {
+        return toolError(
+          `You do not have access to organization ${resolvedOrgId}.`,
+        );
+      }
+
+      const result = await deps.icps.findAll(resolvedOrgId, page, perPage);
+      return json(result);
+    },
+  );
+
+  server.registerTool(
+    'get_icp_profile',
+    {
+      description: 'Get a single ICP profile by ID, including its filters.',
+      inputSchema: {
+        icpId: z.int().describe('The ID of the ICP profile to retrieve'),
+      },
+    },
+    async ({ icpId }) => {
+      if (!authCtx.scopes.includes('icps:read')) {
+        return missingScope('icps:read');
+      }
+      if (!deps?.icps) {
+        return toolError('ICP management is not available.');
+      }
+
+      const orgIds = await memberOrgIds();
+      const existing = await prisma.icpProfile.findFirst({
+        where: { id: icpId, organizationId: { in: orgIds } },
+        select: { organizationId: true },
+      });
+      if (!existing) {
+        return toolError(
+          `ICP profile with ID ${icpId} not found or not accessible.`,
+        );
+      }
+
+      const profile = await deps.icps.findById(icpId, existing.organizationId);
+      return json(profile);
+    },
+  );
+
+  server.registerTool(
+    'create_icp_profile',
+    {
+      description:
+        'Create a new ICP profile. organizationId is optional when the user belongs to exactly one organization — call list_organizations first to pick one if needed.',
+      inputSchema: {
+        organizationId: z
+          .int()
+          .optional()
+          .describe(
+            'Organization ID to create the ICP profile in. Omit if you belong to exactly one organization; call list_organizations to find the correct id otherwise.',
+          ),
+        name: z.string().describe('The name of the ICP profile'),
+        filters: icpFiltersSchema,
+      },
+    },
+    async (args) => {
+      if (!authCtx.scopes.includes('icps:write')) {
+        return missingScope('icps:write');
+      }
+      if (!deps?.icps) {
+        return toolError('ICP management is not available.');
+      }
+
+      const orgIds = await memberOrgIds();
+
+      let resolvedOrgId = args.organizationId;
+      if (resolvedOrgId === undefined) {
+        if (orgIds.length === 0) {
+          return toolError('User is not a member of any organization.');
+        }
+        if (orgIds.length > 1) {
+          return toolError(
+            'User belongs to multiple organizations. Call list_organizations to find the correct id, then pass it as organizationId.',
+          );
+        }
+        resolvedOrgId = orgIds[0];
+      } else if (!orgIds.includes(resolvedOrgId)) {
+        return toolError(
+          `You do not have access to organization ${resolvedOrgId}.`,
+        );
+      }
+
+      try {
+        const profile = await deps.icps.create(resolvedOrgId, {
+          name: args.name,
+          filters: args.filters,
+        });
+        return json(profile);
+      } catch (error: unknown) {
+        return toolError(
+          error instanceof Error ? error.message : String(error),
+        );
+      }
+    },
+  );
+
+  server.registerTool(
+    'update_icp_profile',
+    {
+      description: 'Update an existing ICP profile.',
+      inputSchema: {
+        icpId: z.int().describe('The ID of the ICP profile to update'),
+        name: z.string().optional().describe('New ICP profile name'),
+        filters: icpFiltersSchema,
+      },
+    },
+    async (args) => {
+      if (!authCtx.scopes.includes('icps:write')) {
+        return missingScope('icps:write');
+      }
+      if (!deps?.icps) {
+        return toolError('ICP management is not available.');
+      }
+
+      const orgIds = await memberOrgIds();
+      const existing = await prisma.icpProfile.findFirst({
+        where: { id: args.icpId, organizationId: { in: orgIds } },
+        select: { organizationId: true },
+      });
+      if (!existing) {
+        return toolError(
+          `ICP profile with ID ${args.icpId} not found or not accessible.`,
+        );
+      }
+
+      try {
+        const profile = await deps.icps.update(
+          args.icpId,
+          existing.organizationId,
+          { name: args.name, filters: args.filters },
+        );
+        return json(profile);
+      } catch (error: unknown) {
+        return toolError(
+          error instanceof Error ? error.message : String(error),
+        );
+      }
+    },
+  );
+
+  server.registerTool(
+    'delete_icp_profile',
+    {
+      description: 'Delete an ICP profile.',
+      inputSchema: {
+        icpId: z.int().describe('The ID of the ICP profile to delete'),
+      },
+    },
+    async ({ icpId }) => {
+      if (!authCtx.scopes.includes('icps:write')) {
+        return missingScope('icps:write');
+      }
+      if (!deps?.icps) {
+        return toolError('ICP management is not available.');
+      }
+
+      const orgIds = await memberOrgIds();
+      const existing = await prisma.icpProfile.findFirst({
+        where: { id: icpId, organizationId: { in: orgIds } },
+        select: { organizationId: true },
+      });
+      if (!existing) {
+        return toolError(
+          `ICP profile with ID ${icpId} not found or not accessible.`,
+        );
+      }
+
+      try {
+        await deps.icps.delete(icpId, existing.organizationId);
+        return json({ deleted: true, icpId });
       } catch (error: unknown) {
         return toolError(
           error instanceof Error ? error.message : String(error),
