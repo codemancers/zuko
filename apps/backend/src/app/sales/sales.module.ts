@@ -4,13 +4,6 @@ import { ContactsController } from './contacts.controller';
 import { CompaniesController } from './companies.controller';
 import { DealsController } from './deals.controller';
 import {
-  ActivitiesController,
-  ContactActivitiesController,
-  CompanyActivitiesController,
-  DealActivitiesController,
-  TaskActivitiesController,
-} from './activities.controller';
-import {
   ContactsRepository,
   ContactsService,
   CompaniesRepository,
@@ -31,19 +24,13 @@ import { OrganizationGuard } from '../../common/auth/organization.guard';
 import { TableController } from './table/table.controller';
 import { TableService } from './table/table.service';
 import { TableRowBuilder } from './table/row-builder/table-row.builder';
-import { TasksModule } from '../tasks/tasks.module';
 
 @Module({
-  imports: [PrismaModule, TasksModule],
+  imports: [PrismaModule],
   controllers: [
     ContactsController,
     CompaniesController,
     DealsController,
-    ActivitiesController,
-    ContactActivitiesController,
-    CompanyActivitiesController,
-    DealActivitiesController,
-    TaskActivitiesController,
     TableController,
   ],
   providers: [
