@@ -9,6 +9,7 @@ import type {
 import { DEAL_STAGE_VALUES } from '@zuko/sales';
 import { z } from 'zod';
 import type { IcpService } from '../icp/icp.service';
+import type { LeadsService } from '../leads/leads.service';
 
 export interface McpAuthContext {
   userId: number;
@@ -26,6 +27,7 @@ export interface McpDeps {
   companies: CompaniesService;
   contacts: ContactsService;
   icps: IcpService;
+  leads: LeadsService;
 }
 
 /** Prisma Decimal (e.g. Deal.value) does not JSON-serialize to a number. */
@@ -1385,6 +1387,358 @@ export function buildMcpServer(
       try {
         await deps.icps.delete(icpId, existing.organizationId);
         return json({ deleted: true, icpId });
+      } catch (error: unknown) {
+        return toolError(
+          error instanceof Error ? error.message : String(error),
+        );
+      }
+    },
+  );
+
+  server.registerTool(
+    'list_leads',
+    {
+      description:
+        'List leads (people who replied to a campaign or were sourced manually) for an organization. Returns up to 50 leads, most recent first.',
+      inputSchema: {
+        organizationId: z
+          .int()
+          .optional()
+          .describe('Target organization (optional if user has exactly one)'),
+        search: z
+          .string()
+          .optional()
+          .describe('Search by lead name, email, or company (optional)'),
+        icpProfileId: z
+          .int()
+          .optional()
+          .describe('Filter by ICP profile ID (optional)'),
+        campaignId: z
+          .int()
+          .optional()
+          .describe('Filter by campaign ID (optional)'),
+        status: z
+          .enum(['replied', 'interested', 'not_interested', 'converted'])
+          .optional()
+          .describe('Filter by lead status (optional)'),
+        source: z
+          .enum(['apollo', 'origami', 'linkedin', 'manual'])
+          .optional()
+          .describe('Filter by lead source (optional)'),
+        page: z.int().optional().default(1),
+        perPage: z.int().optional().default(50),
+      },
+    },
+    async (args) => {
+      if (!authCtx.scopes.includes('leads:read')) {
+        return missingScope('leads:read');
+      }
+      if (!deps?.leads) {
+        return toolError('Lead management is not available.');
+      }
+
+      const orgIds = await memberOrgIds();
+      let resolvedOrgId = args.organizationId;
+      if (resolvedOrgId === undefined) {
+        if (orgIds.length === 0) {
+          return toolError('User is not a member of any organization.');
+        }
+        if (orgIds.length > 1) {
+          return toolError(
+            'User belongs to multiple organizations. Call list_organizations to find the correct id, then pass it as organizationId.',
+          );
+        }
+        resolvedOrgId = orgIds[0];
+      } else if (!orgIds.includes(resolvedOrgId)) {
+        return toolError(
+          `You do not have access to organization ${resolvedOrgId}.`,
+        );
+      }
+
+      const result = await deps.leads.findAll(resolvedOrgId, {
+        search: args.search,
+        icpProfileId: args.icpProfileId,
+        campaignId: args.campaignId,
+        status: args.status,
+        source: args.source,
+        page: args.page,
+        perPage: args.perPage,
+      });
+      return json(result);
+    },
+  );
+
+  server.registerTool(
+    'get_lead',
+    {
+      description: 'Get a single lead by ID.',
+      inputSchema: {
+        leadId: z.int().describe('The ID of the lead to retrieve'),
+      },
+    },
+    async ({ leadId }) => {
+      if (!authCtx.scopes.includes('leads:read')) {
+        return missingScope('leads:read');
+      }
+      if (!deps?.leads) {
+        return toolError('Lead management is not available.');
+      }
+
+      const orgIds = await memberOrgIds();
+      const existing = await prisma.lead.findFirst({
+        where: { id: leadId, organizationId: { in: orgIds } },
+        select: { organizationId: true },
+      });
+      if (!existing) {
+        return toolError(`Lead with ID ${leadId} not found or not accessible.`);
+      }
+
+      const lead = await deps.leads.findById(leadId, existing.organizationId);
+      return json(lead);
+    },
+  );
+
+  server.registerTool(
+    'create_lead',
+    {
+      description:
+        'Create a new lead. organizationId is optional when the user belongs to exactly one organization — call list_organizations first to pick one if needed.',
+      inputSchema: {
+        organizationId: z
+          .int()
+          .optional()
+          .describe(
+            'Organization ID to create the lead in. Omit if you belong to exactly one organization; call list_organizations to find the correct id otherwise.',
+          ),
+        icpProfileId: z
+          .int()
+          .describe('ICP profile this lead was sourced against'),
+        name: z.string().describe('Lead name'),
+        campaignId: z.int().optional().describe('Campaign ID (optional)'),
+        contactId: z
+          .int()
+          .optional()
+          .describe('Existing contact ID to link (optional)'),
+        email: z.string().optional().describe('Lead email address'),
+        phone: z.string().optional().describe('Lead phone number'),
+        companyName: z.string().optional().describe('Lead company name'),
+        title: z.string().optional().describe('Lead job title'),
+        linkedinUrl: z.string().optional().describe('Lead LinkedIn URL'),
+        status: z
+          .enum(['replied', 'interested', 'not_interested', 'converted'])
+          .optional()
+          .describe('Initial status, defaults to "replied"'),
+        source: z
+          .enum(['apollo', 'origami', 'linkedin', 'manual'])
+          .optional()
+          .describe('Lead source, defaults to "manual"'),
+        apolloPersonId: z.string().optional().describe('Apollo person ID'),
+      },
+    },
+    async (args) => {
+      if (!authCtx.scopes.includes('leads:write')) {
+        return missingScope('leads:write');
+      }
+      if (!deps?.leads) {
+        return toolError('Lead management is not available.');
+      }
+
+      const orgIds = await memberOrgIds();
+
+      let resolvedOrgId = args.organizationId;
+      if (resolvedOrgId === undefined) {
+        if (orgIds.length === 0) {
+          return toolError('User is not a member of any organization.');
+        }
+        if (orgIds.length > 1) {
+          return toolError(
+            'User belongs to multiple organizations. Call list_organizations to find the correct id, then pass it as organizationId.',
+          );
+        }
+        resolvedOrgId = orgIds[0];
+      } else if (!orgIds.includes(resolvedOrgId)) {
+        return toolError(
+          `You do not have access to organization ${resolvedOrgId}.`,
+        );
+      }
+
+      try {
+        const { organizationId: _omit, ...dto } = args;
+        const lead = await deps.leads.create(resolvedOrgId, dto);
+        return json(lead);
+      } catch (error: unknown) {
+        return toolError(
+          error instanceof Error ? error.message : String(error),
+        );
+      }
+    },
+  );
+
+  server.registerTool(
+    'update_lead',
+    {
+      description: 'Update an existing lead.',
+      inputSchema: {
+        leadId: z.int().describe('The ID of the lead to update'),
+        name: z.string().optional().describe('New lead name'),
+        email: z.string().optional().describe('New lead email address'),
+        phone: z.string().optional().describe('New lead phone number'),
+        companyName: z.string().optional().describe('New lead company name'),
+        title: z.string().optional().describe('New lead job title'),
+        linkedinUrl: z.string().optional().describe('New lead LinkedIn URL'),
+        status: z
+          .enum(['replied', 'interested', 'not_interested', 'converted'])
+          .optional()
+          .describe('New lead status'),
+      },
+    },
+    async (args) => {
+      if (!authCtx.scopes.includes('leads:write')) {
+        return missingScope('leads:write');
+      }
+      if (!deps?.leads) {
+        return toolError('Lead management is not available.');
+      }
+
+      const orgIds = await memberOrgIds();
+      const existing = await prisma.lead.findFirst({
+        where: { id: args.leadId, organizationId: { in: orgIds } },
+        select: { organizationId: true },
+      });
+      if (!existing) {
+        return toolError(
+          `Lead with ID ${args.leadId} not found or not accessible.`,
+        );
+      }
+
+      try {
+        const lead = await deps.leads.update(
+          args.leadId,
+          existing.organizationId,
+          {
+            name: args.name,
+            email: args.email,
+            phone: args.phone,
+            companyName: args.companyName,
+            title: args.title,
+            linkedinUrl: args.linkedinUrl,
+            status: args.status,
+          },
+        );
+        return json(lead);
+      } catch (error: unknown) {
+        return toolError(
+          error instanceof Error ? error.message : String(error),
+        );
+      }
+    },
+  );
+
+  server.registerTool(
+    'delete_lead',
+    {
+      description: 'Delete a lead.',
+      inputSchema: {
+        leadId: z.int().describe('The ID of the lead to delete'),
+      },
+    },
+    async ({ leadId }) => {
+      if (!authCtx.scopes.includes('leads:write')) {
+        return missingScope('leads:write');
+      }
+      if (!deps?.leads) {
+        return toolError('Lead management is not available.');
+      }
+
+      const orgIds = await memberOrgIds();
+      const existing = await prisma.lead.findFirst({
+        where: { id: leadId, organizationId: { in: orgIds } },
+        select: { organizationId: true },
+      });
+      if (!existing) {
+        return toolError(`Lead with ID ${leadId} not found or not accessible.`);
+      }
+
+      try {
+        await deps.leads.delete(leadId, existing.organizationId);
+        return json({ deleted: true, leadId });
+      } catch (error: unknown) {
+        return toolError(
+          error instanceof Error ? error.message : String(error),
+        );
+      }
+    },
+  );
+
+  server.registerTool(
+    'convert_lead',
+    {
+      description:
+        'Convert a lead into a deal (and upserts a linked contact/company). Recorded via the same flow as the REST API.',
+      inputSchema: {
+        leadId: z.int().describe('The ID of the lead to convert'),
+      },
+    },
+    async ({ leadId }) => {
+      if (!authCtx.scopes.includes('leads:write')) {
+        return missingScope('leads:write');
+      }
+      if (!deps?.leads) {
+        return toolError('Lead management is not available.');
+      }
+
+      const orgIds = await memberOrgIds();
+      const existing = await prisma.lead.findFirst({
+        where: { id: leadId, organizationId: { in: orgIds } },
+        select: { organizationId: true },
+      });
+      if (!existing) {
+        return toolError(`Lead with ID ${leadId} not found or not accessible.`);
+      }
+
+      try {
+        const result = await deps.leads.convert(
+          leadId,
+          existing.organizationId,
+        );
+        return json(result);
+      } catch (error: unknown) {
+        return toolError(
+          error instanceof Error ? error.message : String(error),
+        );
+      }
+    },
+  );
+
+  server.registerTool(
+    'revert_lead',
+    {
+      description:
+        'Revert a converted lead back to "replied" status, deleting the deal that was created for it.',
+      inputSchema: {
+        leadId: z.int().describe('The ID of the lead to revert'),
+      },
+    },
+    async ({ leadId }) => {
+      if (!authCtx.scopes.includes('leads:write')) {
+        return missingScope('leads:write');
+      }
+      if (!deps?.leads) {
+        return toolError('Lead management is not available.');
+      }
+
+      const orgIds = await memberOrgIds();
+      const existing = await prisma.lead.findFirst({
+        where: { id: leadId, organizationId: { in: orgIds } },
+        select: { organizationId: true },
+      });
+      if (!existing) {
+        return toolError(`Lead with ID ${leadId} not found or not accessible.`);
+      }
+
+      try {
+        const result = await deps.leads.revert(leadId, existing.organizationId);
+        return json(result);
       } catch (error: unknown) {
         return toolError(
           error instanceof Error ? error.message : String(error),

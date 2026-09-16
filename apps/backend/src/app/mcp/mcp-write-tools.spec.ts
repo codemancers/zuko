@@ -908,6 +908,215 @@ describe('delete_icp_profile tool', () => {
   });
 });
 
+function leadDb(over: Record<string, unknown> = {}) {
+  return {
+    member: { findMany: vi.fn(async () => [{ organizationId: 1 }]) },
+    lead: {
+      findFirst: vi.fn(async () => ({ id: 7, organizationId: 1 })),
+    },
+    ...over,
+  } as never;
+}
+
+function leadsSvc(over: Record<string, unknown> = {}) {
+  return {
+    leads: {
+      findAll: vi.fn(async () => ({ data: [], total: 0 })),
+      findById: vi.fn(async () => ({ id: 7, name: 'Existing Lead' })),
+      create: vi.fn(async () => ({ id: 100, name: 'New Lead' })),
+      update: vi.fn(async () => ({ id: 7, name: 'Existing Lead' })),
+      delete: vi.fn(async () => ({ id: 7 })),
+      convert: vi.fn(async () => ({ id: 7, dealId: 55 })),
+      revert: vi.fn(async () => ({ id: 7, status: 'replied' })),
+      ...over,
+    },
+  };
+}
+
+describe('list_leads tool', () => {
+  it('rejects when token lacks leads:read', async () => {
+    const client = await connect(leadDb(), ['leads:write'], leadsSvc());
+    const res = (await client.callTool({
+      name: 'list_leads',
+      arguments: {},
+    })) as { isError?: boolean };
+    expect(res.isError).toBe(true);
+  });
+
+  it('auto-resolves org when user belongs to exactly one', async () => {
+    const svc = leadsSvc();
+    const client = await connect(leadDb(), ['leads:read'], svc);
+    await client.callTool({ name: 'list_leads', arguments: {} });
+    expect(svc.leads.findAll).toHaveBeenCalledTimes(1);
+    expect(svc.leads.findAll.mock.calls[0][0]).toBe(1);
+  });
+
+  it('errors when user belongs to multiple orgs and no organizationId given', async () => {
+    const db = leadDb({
+      member: {
+        findMany: vi.fn(async () => [
+          { organizationId: 1 },
+          { organizationId: 2 },
+        ]),
+      },
+    });
+    const client = await connect(db, ['leads:read'], leadsSvc());
+    const res = (await client.callTool({
+      name: 'list_leads',
+      arguments: {},
+    })) as { isError?: boolean };
+    expect(res.isError).toBe(true);
+  });
+});
+
+describe('get_lead tool', () => {
+  it('errors when lead not found or inaccessible', async () => {
+    const db = leadDb({ lead: { findFirst: vi.fn(async () => null) } });
+    const client = await connect(db, ['leads:read'], leadsSvc());
+    const res = (await client.callTool({
+      name: 'get_lead',
+      arguments: { leadId: 99 },
+    })) as { isError?: boolean };
+    expect(res.isError).toBe(true);
+  });
+
+  it('returns lead data when found', async () => {
+    const client = await connect(leadDb(), ['leads:read'], leadsSvc());
+    const res = await client.callTool({
+      name: 'get_lead',
+      arguments: { leadId: 7 },
+    });
+    const lead = parse(res);
+    expect(lead.id).toBe(7);
+  });
+});
+
+describe('create_lead tool', () => {
+  it('rejects when token lacks leads:write', async () => {
+    const client = await connect(leadDb(), ['leads:read'], leadsSvc());
+    const res = (await client.callTool({
+      name: 'create_lead',
+      arguments: { icpProfileId: 1, name: 'New Lead' },
+    })) as { isError?: boolean };
+    expect(res.isError).toBe(true);
+  });
+
+  it('auto-resolves org and calls LeadsService.create', async () => {
+    const svc = leadsSvc();
+    const client = await connect(leadDb(), ['leads:write'], svc);
+    await client.callTool({
+      name: 'create_lead',
+      arguments: { icpProfileId: 1, name: 'New Lead' },
+    });
+    expect(svc.leads.create).toHaveBeenCalledTimes(1);
+    const [orgId, dto] = svc.leads.create.mock.calls[0];
+    expect(orgId).toBe(1);
+    expect(dto.name).toBe('New Lead');
+    expect(dto.organizationId).toBeUndefined();
+  });
+
+  it('surfaces service validation errors', async () => {
+    const svc = leadsSvc({
+      create: vi.fn(async () => {
+        throw new Error('Name is required');
+      }),
+    });
+    const client = await connect(leadDb(), ['leads:write'], svc);
+    const res = (await client.callTool({
+      name: 'create_lead',
+      arguments: { icpProfileId: 1, name: '' },
+    })) as { isError?: boolean };
+    expect(res.isError).toBe(true);
+  });
+});
+
+describe('update_lead tool', () => {
+  it('errors when lead not found or inaccessible', async () => {
+    const db = leadDb({ lead: { findFirst: vi.fn(async () => null) } });
+    const client = await connect(db, ['leads:write'], leadsSvc());
+    const res = (await client.callTool({
+      name: 'update_lead',
+      arguments: { leadId: 99, name: 'Renamed' },
+    })) as { isError?: boolean };
+    expect(res.isError).toBe(true);
+  });
+
+  it('delegates to LeadsService.update with the resolved org id', async () => {
+    const svc = leadsSvc();
+    const client = await connect(leadDb(), ['leads:write'], svc);
+    await client.callTool({
+      name: 'update_lead',
+      arguments: { leadId: 7, status: 'interested' },
+    });
+    expect(svc.leads.update).toHaveBeenCalledTimes(1);
+    const [leadId, orgId, dto] = svc.leads.update.mock.calls[0];
+    expect(leadId).toBe(7);
+    expect(orgId).toBe(1);
+    expect(dto.status).toBe('interested');
+  });
+});
+
+describe('delete_lead tool', () => {
+  it('rejects when token lacks leads:write', async () => {
+    const client = await connect(leadDb(), ['leads:read'], leadsSvc());
+    const res = (await client.callTool({
+      name: 'delete_lead',
+      arguments: { leadId: 7 },
+    })) as { isError?: boolean };
+    expect(res.isError).toBe(true);
+  });
+
+  it('delegates to LeadsService.delete with the resolved org id', async () => {
+    const svc = leadsSvc();
+    const client = await connect(leadDb(), ['leads:write'], svc);
+    const res = await client.callTool({
+      name: 'delete_lead',
+      arguments: { leadId: 7 },
+    });
+    expect(svc.leads.delete).toHaveBeenCalledTimes(1);
+    expect(svc.leads.delete.mock.calls[0]).toEqual([7, 1]);
+    expect(parse(res)).toEqual({ deleted: true, leadId: 7 });
+  });
+});
+
+describe('convert_lead tool', () => {
+  it('errors when lead not found or inaccessible', async () => {
+    const db = leadDb({ lead: { findFirst: vi.fn(async () => null) } });
+    const client = await connect(db, ['leads:write'], leadsSvc());
+    const res = (await client.callTool({
+      name: 'convert_lead',
+      arguments: { leadId: 99 },
+    })) as { isError?: boolean };
+    expect(res.isError).toBe(true);
+  });
+
+  it('delegates to LeadsService.convert with the resolved org id', async () => {
+    const svc = leadsSvc();
+    const client = await connect(leadDb(), ['leads:write'], svc);
+    const res = await client.callTool({
+      name: 'convert_lead',
+      arguments: { leadId: 7 },
+    });
+    expect(svc.leads.convert).toHaveBeenCalledTimes(1);
+    expect(svc.leads.convert.mock.calls[0]).toEqual([7, 1]);
+    expect(parse(res)).toEqual({ id: 7, dealId: 55 });
+  });
+});
+
+describe('revert_lead tool', () => {
+  it('delegates to LeadsService.revert with the resolved org id', async () => {
+    const svc = leadsSvc();
+    const client = await connect(leadDb(), ['leads:write'], svc);
+    const res = await client.callTool({
+      name: 'revert_lead',
+      arguments: { leadId: 7 },
+    });
+    expect(svc.leads.revert).toHaveBeenCalledTimes(1);
+    expect(svc.leads.revert.mock.calls[0]).toEqual([7, 1]);
+    expect(parse(res)).toEqual({ id: 7, status: 'replied' });
+  });
+});
+
 describe('update_company_summary tool', () => {
   it('rejects when token lacks companies:write', async () => {
     const client = await connect(

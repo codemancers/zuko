@@ -26,19 +26,21 @@ Tokens are JWTs verified locally against `{BACKEND_URL}/auth/jwks` — no round-
 
 ## Scopes
 
-| Scope                | Grants                                  |
-| -------------------- | --------------------------------------- |
-| `organizations:read` | List organizations the user belongs to  |
-| `tasks:read`         | List and retrieve tasks                 |
-| `tasks:write`        | Create and update tasks                 |
-| `deals:read`         | List and retrieve deals                 |
-| `deals:write`        | Create and update deals                 |
-| `companies:read`     | List and retrieve companies             |
-| `companies:write`    | Create and update companies             |
-| `contacts:read`      | List and retrieve contacts              |
-| `contacts:write`     | Create and update contacts              |
-| `icps:read`          | List and retrieve ICP profiles          |
-| `icps:write`         | Create, update, and delete ICP profiles |
+| Scope                | Grants                                            |
+| -------------------- | ------------------------------------------------- |
+| `organizations:read` | List organizations the user belongs to            |
+| `tasks:read`         | List and retrieve tasks                           |
+| `tasks:write`        | Create and update tasks                           |
+| `deals:read`         | List and retrieve deals                           |
+| `deals:write`        | Create and update deals                           |
+| `companies:read`     | List and retrieve companies                       |
+| `companies:write`    | Create and update companies                       |
+| `contacts:read`      | List and retrieve contacts                        |
+| `contacts:write`     | Create and update contacts                        |
+| `icps:read`          | List and retrieve ICP profiles                    |
+| `icps:write`         | Create, update, and delete ICP profiles           |
+| `leads:read`         | List and retrieve leads                           |
+| `leads:write`        | Create, update, delete, convert, and revert leads |
 
 ## Tools
 
@@ -409,6 +411,116 @@ Deletes an ICP profile.
 | Input   | Type      | Description                     |
 | ------- | --------- | ------------------------------- |
 | `icpId` | `integer` | ID of the ICP profile to delete |
+
+---
+
+### `list_leads`
+
+**Scope:** `leads:read`
+
+Returns up to 50 leads (most recent first) for an organization — people who replied to a campaign or were sourced manually.
+
+| Input            | Type      | Description                                                       |
+| ---------------- | --------- | ----------------------------------------------------------------- |
+| `organizationId` | `integer` | Target organization (optional if user has exactly one)            |
+| `search`         | `string`  | Search by lead name, email, or company (optional)                 |
+| `icpProfileId`   | `integer` | Filter by ICP profile ID (optional)                               |
+| `campaignId`     | `integer` | Filter by campaign ID (optional)                                  |
+| `status`         | enum      | `replied \| interested \| not_interested \| converted` (optional) |
+| `source`         | enum      | `apollo \| origami \| linkedin \| manual` (optional)              |
+| `page`           | `integer` | Page number, defaults to `1` (optional)                           |
+| `perPage`        | `integer` | Page size, defaults to `50` (optional)                            |
+
+---
+
+### `get_lead`
+
+**Scope:** `leads:read`
+
+Returns a single lead by ID.
+
+| Input    | Type      | Description                |
+| -------- | --------- | -------------------------- |
+| `leadId` | `integer` | ID of the lead to retrieve |
+
+---
+
+### `create_lead`
+
+**Scope:** `leads:write`
+
+Creates a lead. If the user belongs to exactly one organization, `organizationId` can be omitted.
+
+| Input            | Type      | Description                                            |
+| ---------------- | --------- | ------------------------------------------------------ |
+| `icpProfileId`   | `integer` | ICP profile this lead was sourced against (required)   |
+| `name`           | `string`  | Lead name (required)                                   |
+| `organizationId` | `integer` | Target organization (optional if user has exactly one) |
+| `campaignId`     | `integer` | Campaign ID (optional)                                 |
+| `contactId`      | `integer` | Existing contact ID to link (optional)                 |
+| `email`          | `string`  | Lead email address (optional)                          |
+| `phone`          | `string`  | Lead phone number (optional)                           |
+| `companyName`    | `string`  | Lead company name (optional)                           |
+| `title`          | `string`  | Lead job title (optional)                              |
+| `linkedinUrl`    | `string`  | Lead LinkedIn URL (optional)                           |
+| `status`         | enum      | Initial status, defaults to `"replied"` (optional)     |
+| `source`         | enum      | Lead source, defaults to `"manual"` (optional)         |
+| `apolloPersonId` | `string`  | Apollo person ID (optional)                            |
+
+---
+
+### `update_lead`
+
+**Scope:** `leads:write`
+
+Updates one or more fields on an existing lead.
+
+| Input         | Type      | Description                         |
+| ------------- | --------- | ----------------------------------- |
+| `leadId`      | `integer` | ID of the lead to update (required) |
+| `name`        | `string`  | New lead name (optional)            |
+| `email`       | `string`  | New lead email address (optional)   |
+| `phone`       | `string`  | New lead phone number (optional)    |
+| `companyName` | `string`  | New lead company name (optional)    |
+| `title`       | `string`  | New lead job title (optional)       |
+| `linkedinUrl` | `string`  | New lead LinkedIn URL (optional)    |
+| `status`      | enum      | New lead status (optional)          |
+
+---
+
+### `delete_lead`
+
+**Scope:** `leads:write`
+
+Deletes a lead.
+
+| Input    | Type      | Description              |
+| -------- | --------- | ------------------------ |
+| `leadId` | `integer` | ID of the lead to delete |
+
+---
+
+### `convert_lead`
+
+**Scope:** `leads:write`
+
+Converts a lead into a deal via the same flow the REST API uses — upserts a linked contact (by email) and company (by name) if they don't already exist.
+
+| Input    | Type      | Description               |
+| -------- | --------- | ------------------------- |
+| `leadId` | `integer` | ID of the lead to convert |
+
+---
+
+### `revert_lead`
+
+**Scope:** `leads:write`
+
+Reverts a converted lead back to `"replied"` status, deleting the deal that was created for it.
+
+| Input    | Type      | Description              |
+| -------- | --------- | ------------------------ |
+| `leadId` | `integer` | ID of the lead to revert |
 
 ## Connecting a client
 
