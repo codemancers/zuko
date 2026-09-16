@@ -165,5 +165,6 @@ import { TableRowBuilder } from './table/row-builder/table-row.builder';
     TableService,
     TableRowBuilder,
   ],
+  exports: [DealsService, CompaniesService],
 })
 export class SalesModule {}

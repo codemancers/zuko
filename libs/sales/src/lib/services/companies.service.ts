@@ -20,6 +20,7 @@ import { COMPANY_EVENTS } from '../events/company-events';
 import type { ActivitySource } from '../events/deal-events';
 import type { ColumnConfig, ColumnType } from '../types/table-metadata';
 import { validateCellValue, castFieldValue } from '../utils/custom-fields';
+import { jsonEqual } from '../utils/json-equal';
 
 /**
  * Validates URL format
@@ -219,7 +220,9 @@ export class CompaniesService {
       if (input[field] === undefined) continue;
       const oldVal = existingCompany[field as keyof typeof existingCompany];
       const newVal = input[field];
-      if (String(oldVal) !== String(newVal)) {
+      // jsonEqual, not String(): String(obj) is always "[object Object]", so
+      // object-valued fields (e.g. summary) never compared as different.
+      if (!jsonEqual(oldVal, newVal)) {
         await this.eventEmitter.emitAsync(COMPANY_EVENTS.FIELD_UPDATED, {
           ...eventBase,
           field,

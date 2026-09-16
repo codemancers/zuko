@@ -13,6 +13,7 @@ import type {
   DealCompanyUnlinkedEvent,
   DealContactLinkedEvent,
   DealContactUnlinkedEvent,
+  ActivitySource,
 } from '../events/deal-events';
 import { DEAL_EVENTS } from '../events/deal-events';
 
@@ -20,7 +21,7 @@ import { DEAL_EVENTS } from '../events/deal-events';
 export class DealActivityListener {
   constructor(private readonly activityService: ActivityService) {}
 
-  private src(event: { source?: 'ai' }) {
+  private src(event: { source?: ActivitySource }) {
     return event.source ? { source: event.source } : {};
   }
 

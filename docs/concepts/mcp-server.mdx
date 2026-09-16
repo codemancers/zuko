@@ -31,6 +31,10 @@ Tokens are JWTs verified locally against `{BACKEND_URL}/auth/jwks` — no round-
 | `organizations:read` | List organizations the user belongs to |
 | `tasks:read`         | List and retrieve tasks                |
 | `tasks:write`        | Create and update tasks                |
+| `deals:read`         | List and retrieve deals                |
+| `deals:write`        | Create and update deals                |
+| `companies:read`     | List and retrieve companies            |
+| `companies:write`    | Create and update companies            |
 
 ## Tools
 
@@ -105,6 +109,162 @@ Updates one or more fields on an existing task. Only supplied fields are changed
 | `status`      | enum      | New status (optional)                              |
 | `assignee`    | `string`  | New assignee (optional)                            |
 | `completedAt` | `string`  | Completion timestamp in ISO 8601 format (optional) |
+
+---
+
+### `list_deals`
+
+**Scope:** `deals:read`
+
+Returns up to 50 deals (most recently updated) across all organizations the user belongs to.
+
+| Input            | Type      | Description                                                 |
+| ---------------- | --------- | ----------------------------------------------------------- |
+| `stage`          | enum      | Filter by pipeline stage (optional)                         |
+| `organizationId` | `integer` | Restrict to one organization the user belongs to (optional) |
+| `mine`           | `boolean` | Only deals where the user is an owner (optional)            |
+
+Stages: `negotiation`, `proposal`, `qualification`, `prospecting`, `closed_won`, `closed_lost`.
+
+---
+
+### `get_deal`
+
+**Scope:** `deals:read`
+
+Returns full deal detail including owners, linked companies, and linked contacts.
+
+| Input    | Type      | Description                |
+| -------- | --------- | -------------------------- |
+| `dealId` | `integer` | ID of the deal to retrieve |
+
+---
+
+### `create_deal`
+
+**Scope:** `deals:write`
+
+Creates a deal via the same service the REST API uses — validation and activity-timeline events apply. If the user belongs to exactly one organization, `organizationId` can be omitted.
+
+| Input               | Type      | Description                                            |
+| ------------------- | --------- | ------------------------------------------------------ |
+| `title`             | `string`  | Deal title (required)                                  |
+| `organizationId`    | `integer` | Target organization (optional if user has exactly one) |
+| `value`             | `number`  | Monetary value (optional)                              |
+| `currency`          | `string`  | ISO currency code, default `USD` (optional)            |
+| `stage`             | enum      | Initial pipeline stage (optional)                      |
+| `probability`       | `number`  | Win probability, 0–100 (optional)                      |
+| `priority`          | `number`  | 0 (critical) to 4 (backlog) (optional)                 |
+| `expectedCloseDate` | `string`  | ISO 8601 date (optional)                               |
+
+---
+
+### `update_deal`
+
+**Scope:** `deals:write`
+
+Updates one or more fields on an existing deal. Stage changes and closings are recorded on the deal activity timeline.
+
+| Input               | Type      | Description                                  |
+| ------------------- | --------- | -------------------------------------------- |
+| `dealId`            | `integer` | ID of the deal to update (required)          |
+| `title`             | `string`  | New title (optional)                         |
+| `stage`             | enum      | New pipeline stage (optional)                |
+| `value`             | `number`  | New monetary value (optional)                |
+| `currency`          | `string`  | New ISO currency code (optional)             |
+| `probability`       | `number`  | New win probability, 0–100 (optional)        |
+| `priority`          | `number`  | New priority, 0–4 (optional)                 |
+| `expectedCloseDate` | `string`  | New expected close date, ISO 8601 (optional) |
+| `actualCloseDate`   | `string`  | Actual close date, ISO 8601 (optional)       |
+| `lostReason`        | `string`  | Reason the deal was lost (optional)          |
+
+---
+
+### `list_companies`
+
+**Scope:** `companies:read`
+
+Returns up to 50 non-hidden companies (oldest first) across all organizations the user belongs to.
+
+| Input            | Type      | Description                                                 |
+| ---------------- | --------- | ----------------------------------------------------------- |
+| `organizationId` | `integer` | Restrict to one organization the user belongs to (optional) |
+| `search`         | `string`  | Search by company name, website, or LinkedIn URL (optional) |
+| `mine`           | `boolean` | Only companies where the user is an owner (optional)        |
+
+---
+
+### `get_company`
+
+**Scope:** `companies:read`
+
+Returns full company detail including owners and linked (active) contacts.
+
+| Input       | Type      | Description                   |
+| ----------- | --------- | ----------------------------- |
+| `companyId` | `integer` | ID of the company to retrieve |
+
+---
+
+### `create_company`
+
+**Scope:** `companies:write`
+
+Creates a company via the same service the REST API uses — validation and activity-timeline events apply. If the user belongs to exactly one organization, `organizationId` can be omitted.
+
+| Input            | Type      | Description                                            |
+| ---------------- | --------- | ------------------------------------------------------ |
+| `companyName`    | `string`  | Company name (required)                                |
+| `organizationId` | `integer` | Target organization (optional if user has exactly one) |
+| `website`        | `string`  | Company website URL (optional)                         |
+| `linkedinUrl`    | `string`  | Company LinkedIn URL (optional)                        |
+
+---
+
+### `update_company`
+
+**Scope:** `companies:write`
+
+Updates one or more fields on an existing company. Only supplied fields are changed, and each change is recorded on the company activity timeline.
+
+| Input         | Type      | Description                            |
+| ------------- | --------- | -------------------------------------- |
+| `companyId`   | `integer` | ID of the company to update (required) |
+| `companyName` | `string`  | New company name (optional)            |
+| `website`     | `string`  | New company website URL (optional)     |
+| `linkedinUrl` | `string`  | New company LinkedIn URL (optional)    |
+
+---
+
+### `update_company_summary`
+
+**Scope:** `companies:write`
+
+Replaces the company's free-form [Editor.js](https://editorjs.io) summary document. This is a **full replace** — call `get_company` first if you need to preserve existing content, since there's no partial/block-level edit yet (see note below).
+
+Supported block types: `paragraph`, `header`, `list`, `checklist`, `quote`, `code`, `table`, `warning`, `delimiter`. Inline formatting (bold, italic, highlight, inline code) is embedded as HTML tags inside a block's `text` field — e.g. `"<b>bold</b>"`, `"<mark>highlighted</mark>"` — not as separate block types.
+
+| Input       | Type      | Description                                                              |
+| ----------- | --------- | ------------------------------------------------------------------------ |
+| `companyId` | `integer` | ID of the company to update (required)                                   |
+| `summary`   | `object`  | Full Editor.js document: `{ blocks: [...], time?, version? }` (required) |
+
+```json
+{
+  "companyId": 42,
+  "summary": {
+    "blocks": [
+      { "type": "header", "data": { "text": "Overview", "level": 2 } },
+      {
+        "type": "paragraph",
+        "data": { "text": "Enterprise account, <mark>renewal due Q3</mark>." }
+      }
+    ]
+  }
+}
+```
+
+> **Note:** block-level operations (append/insert/update/delete a single block by id, without resending the whole document) are planned as a follow-up — full-replace is the only mode today, matching how the web UI's autosave already writes this field.
 
 ## Connecting a client
 

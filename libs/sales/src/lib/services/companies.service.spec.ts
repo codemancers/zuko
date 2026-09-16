@@ -1,16 +1,19 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { Test } from '@nestjs/testing';
-import { EventEmitterModule } from '@nestjs/event-emitter';
+import { EventEmitterModule, EventEmitter2 } from '@nestjs/event-emitter';
 import type { Company, TableColumn, User } from '@prisma/client';
 import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { CompaniesService } from './companies.service';
 import { CompaniesRepository } from '../repositories/companies.repository';
 import { TableColumnRepository } from '../repositories/table-column.repository';
+import { COMPANY_EVENTS } from '../events/company-events';
+import type { CompanyFieldUpdatedEvent } from '../events/company-events';
 
 describe('CompaniesService', () => {
   let service: CompaniesService;
   let prisma: PrismaClient;
+  let eventEmitter: EventEmitter2;
   const ORG_ID = 999_001;
   const TEST_USER_EMAIL = `test-actor-1-${ORG_ID}@example.com`;
   let company1: Company;
@@ -47,6 +50,7 @@ describe('CompaniesService', () => {
     }).compile();
 
     service = module.get(CompaniesService);
+    eventEmitter = module.get(EventEmitter2);
 
     // 3. Seed initial data
     await prisma.organization.upsert({
@@ -147,6 +151,56 @@ describe('CompaniesService', () => {
           user.id,
         ),
       ).rejects.toThrow('Invalid option "invalid_option" for select field');
+    });
+  });
+
+  describe('field_update events for object-valued fields', () => {
+    it('emits field_update when summary content actually changes', async () => {
+      const events: CompanyFieldUpdatedEvent[] = [];
+      const handler = (event: CompanyFieldUpdatedEvent) => events.push(event);
+      eventEmitter.on(COMPANY_EVENTS.FIELD_UPDATED, handler);
+
+      try {
+        await service.update(
+          company1.id,
+          ORG_ID,
+          {
+            summary: { blocks: [{ type: 'paragraph', data: { text: 'v1' } }] },
+          },
+          user.id,
+        );
+
+        const summaryEvents = events.filter((e) => e.field === 'summary');
+        expect(summaryEvents).toHaveLength(1);
+      } finally {
+        eventEmitter.off(COMPANY_EVENTS.FIELD_UPDATED, handler);
+      }
+    });
+
+    it('does not emit field_update when re-saving an unchanged summary', async () => {
+      const summary = {
+        blocks: [{ type: 'paragraph', data: { text: 'stable' } }],
+      };
+      await service.update(company1.id, ORG_ID, { summary }, user.id);
+
+      const events: CompanyFieldUpdatedEvent[] = [];
+      const handler = (event: CompanyFieldUpdatedEvent) => events.push(event);
+      eventEmitter.on(COMPANY_EVENTS.FIELD_UPDATED, handler);
+
+      try {
+        // Same content, distinct object reference — value comparison, not
+        // reference comparison, must treat this as a no-op.
+        await service.update(
+          company1.id,
+          ORG_ID,
+          { summary: JSON.parse(JSON.stringify(summary)) },
+          user.id,
+        );
+
+        expect(events.filter((e) => e.field === 'summary')).toHaveLength(0);
+      } finally {
+        eventEmitter.off(COMPANY_EVENTS.FIELD_UPDATED, handler);
+      }
     });
   });
 });
