@@ -2,7 +2,12 @@ import { All, Controller, Req, Res, UseGuards } from '@nestjs/common';
 import type { Response } from 'express';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { AllowAnonymous } from '@thallesp/nestjs-better-auth';
-import { DealsService, CompaniesService, ContactsService } from '@zuko/sales';
+import {
+  DealsService,
+  CompaniesService,
+  ContactsService,
+  ActivityService,
+} from '@zuko/sales';
 import { PrismaService } from '../../prisma/prisma.service';
 import { IcpService } from '../icp/icp.service';
 import { LeadsService } from '../leads/leads.service';
@@ -30,6 +35,7 @@ export class McpController {
     private readonly icps: IcpService,
     private readonly leads: LeadsService,
     private readonly campaigns: ApolloSequencesService,
+    private readonly activity: ActivityService,
   ) {}
 
   @All()
@@ -56,6 +62,7 @@ export class McpController {
         icps: this.icps,
         leads: this.leads,
         campaigns: this.campaigns,
+        activity: this.activity,
       },
     );
     const transport = new StreamableHTTPServerTransport({

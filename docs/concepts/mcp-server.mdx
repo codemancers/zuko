@@ -43,6 +43,8 @@ Tokens are JWTs verified locally against `{BACKEND_URL}/auth/jwks` — no round-
 | `leads:write`        | Create, update, delete, convert, and revert leads |
 | `campaigns:read`     | List and retrieve campaigns                       |
 | `campaigns:write`    | Create campaign records                           |
+| `comments:read`      | List comments on any entity                       |
+| `comments:write`     | Add, edit, and delete comments                    |
 
 ## Tools
 
@@ -562,6 +564,59 @@ Creates a campaign record by name (and optional ICP profile link). This **only c
 | `name`           | `string`  | Campaign name (required)                               |
 | `organizationId` | `integer` | Target organization (optional if user has exactly one) |
 | `icpProfileId`   | `integer` | ICP profile to link this campaign to (optional)        |
+
+---
+
+### `add_comment`
+
+**Scope:** `comments:write`
+
+Adds a comment to a task, deal, company, or contact. Appears on that entity's activity timeline, attributed to the authorized user. Comment content is plain text/Markdown, not Editor.js — unrelated to `update_company_summary`.
+
+| Input        | Type      | Description                                             |
+| ------------ | --------- | ------------------------------------------------------- |
+| `entityType` | enum      | `"task" \| "deal" \| "company" \| "contact"` (required) |
+| `entityId`   | `integer` | ID of the entity to comment on (required)               |
+| `content`    | `string`  | Comment text (required)                                 |
+
+---
+
+### `list_comments`
+
+**Scope:** `comments:read`
+
+Lists comments on an entity (filtered from its activity timeline — other activity types like `field_update` are excluded).
+
+| Input        | Type      | Description                                             |
+| ------------ | --------- | ------------------------------------------------------- |
+| `entityType` | enum      | `"task" \| "deal" \| "company" \| "contact"` (required) |
+| `entityId`   | `integer` | ID of the entity (required)                             |
+| `limit`      | `integer` | Max comments to return, default 50 (optional)           |
+
+---
+
+### `update_comment`
+
+**Scope:** `comments:write`
+
+Edits a comment. Only the comment's original author can edit it — the underlying `ActivityService` rejects otherwise.
+
+| Input       | Type      | Description                            |
+| ----------- | --------- | -------------------------------------- |
+| `commentId` | `integer` | ID of the comment to update (required) |
+| `content`   | `string`  | New comment text (required)            |
+
+---
+
+### `delete_comment`
+
+**Scope:** `comments:write`
+
+Deletes a comment. Only the comment's original author can delete it.
+
+| Input       | Type      | Description                            |
+| ----------- | --------- | -------------------------------------- |
+| `commentId` | `integer` | ID of the comment to delete (required) |
 
 ## Connecting a client
 

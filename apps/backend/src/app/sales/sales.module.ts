@@ -31,9 +31,10 @@ import { OrganizationGuard } from '../../common/auth/organization.guard';
 import { TableController } from './table/table.controller';
 import { TableService } from './table/table.service';
 import { TableRowBuilder } from './table/row-builder/table-row.builder';
+import { TasksModule } from '../tasks/tasks.module';
 
 @Module({
-  imports: [PrismaModule],
+  imports: [PrismaModule, TasksModule],
   controllers: [
     ContactsController,
     CompaniesController,
@@ -165,6 +166,6 @@ import { TableRowBuilder } from './table/row-builder/table-row.builder';
     TableService,
     TableRowBuilder,
   ],
-  exports: [DealsService, CompaniesService, ContactsService],
+  exports: [DealsService, CompaniesService, ContactsService, ActivityService],
 })
 export class SalesModule {}

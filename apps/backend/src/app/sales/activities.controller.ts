@@ -13,6 +13,7 @@ import {
   HttpStatus,
   UseGuards,
   Logger,
+  BadRequestException,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -25,8 +26,16 @@ import {
   ApiPropertyOptional,
 } from '@nestjs/swagger';
 import { AuthGuard } from '@thallesp/nestjs-better-auth';
-import { ActivityService } from '@zuko/sales';
+import {
+  ActivityService,
+  DealsService,
+  CompaniesService,
+  ContactsService,
+  TaskService,
+} from '@zuko/sales';
 import type { RequestWithUser } from '@zuko/core';
+import { OrganizationGuard } from '../../common/auth/organization.guard';
+import { OrgId } from '../../common/auth/org-id.decorator';
 
 // DTOs for API requests
 export class CreateCommentDto {
@@ -56,29 +65,91 @@ export class ActivityQueryDto {
   offset?: number;
 }
 
+/** Activity has no organizationId, so verify the underlying entity's org before touching it. */
+async function assertEntityAccessible(
+  entityType: string,
+  entityId: number,
+  organizationId: number,
+  services: {
+    deals: DealsService;
+    companies: CompaniesService;
+    contacts: ContactsService;
+    tasks: TaskService;
+  },
+): Promise<void> {
+  switch (entityType) {
+    case 'deal':
+      await services.deals.findById(entityId, organizationId);
+      return;
+    case 'company':
+      await services.companies.findById(entityId, organizationId);
+      return;
+    case 'contact':
+      await services.contacts.findById(entityId, organizationId);
+      return;
+    case 'task':
+      await services.tasks.getTaskById(organizationId, entityId);
+      return;
+    default:
+      throw new BadRequestException(`Unsupported entity type: ${entityType}`);
+  }
+}
+
 @ApiTags('Activities')
 @ApiBearerAuth('session')
 @Controller('activities')
-@UseGuards(AuthGuard)
+@UseGuards(AuthGuard, OrganizationGuard)
 export class ActivitiesController {
   private readonly logger = new Logger(ActivitiesController.name);
 
-  constructor(private readonly activityService: ActivityService) {}
+  constructor(
+    private readonly activityService: ActivityService,
+    private readonly deals: DealsService,
+    private readonly companies: CompaniesService,
+    private readonly contacts: ContactsService,
+    private readonly tasks: TaskService,
+  ) {}
+
+  private assertAccessible(
+    entityType: string,
+    entityId: number,
+    organizationId: number,
+  ) {
+    return assertEntityAccessible(entityType, entityId, organizationId, {
+      deals: this.deals,
+      companies: this.companies,
+      contacts: this.contacts,
+      tasks: this.tasks,
+    });
+  }
 
   @Get()
-  @ApiOperation({ summary: 'List activities with optional filters' })
-  @ApiQuery({ name: 'entityType', required: false, type: String })
-  @ApiQuery({ name: 'entityId', required: false, type: Number })
+  @ApiOperation({
+    summary:
+      'List activities filtered to one entity (entityType and entityId are required — this endpoint has no org-wide "browse everything" mode)',
+  })
+  @ApiQuery({ name: 'entityType', required: true, type: String })
+  @ApiQuery({ name: 'entityId', required: true, type: Number })
   @ApiQuery({ name: 'activityType', required: false, type: String })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiQuery({ name: 'offset', required: false, type: Number })
   @ApiResponse({ status: 200, description: 'Activity list' })
-  async list(@Query() query: ActivityQueryDto) {
+  async list(
+    @OrgId() organizationId: number,
+    @Query() query: ActivityQueryDto,
+  ) {
     this.logger.log('[LIST_ACTIVITIES] Request received');
+
+    if (!query.entityType || !query.entityId) {
+      throw new BadRequestException('entityType and entityId are required');
+    }
+    const entityId = Number(query.entityId);
+
+    await this.assertAccessible(query.entityType, entityId, organizationId);
 
     const filters = {
       entityType: query.entityType,
-      entityId: query.entityId ? Number(query.entityId) : undefined,
+      entityId,
       activityType: query.activityType,
     };
 
@@ -94,9 +165,18 @@ export class ActivitiesController {
   @ApiOperation({ summary: 'Get an activity by ID' })
   @ApiParam({ name: 'id', type: Number })
   @ApiResponse({ status: 200, description: 'Activity details' })
-  async findOne(@Param('id', ParseIntPipe) id: number) {
+  async findOne(
+    @OrgId() organizationId: number,
+    @Param('id', ParseIntPipe) id: number,
+  ) {
     this.logger.log(`[GET_ACTIVITY] Request for ID: ${id}`);
-    return this.activityService.findById(id);
+    const activity = await this.activityService.findById(id);
+    await this.assertAccessible(
+      activity.entityType,
+      activity.entityId,
+      organizationId,
+    );
+    return activity;
   }
 
   @Delete(':id')
@@ -106,11 +186,18 @@ export class ActivitiesController {
   @ApiResponse({ status: 204, description: 'Activity deleted' })
   async delete(
     @Req() req: RequestWithUser,
+    @OrgId() organizationId: number,
     @Param('id', ParseIntPipe) id: number,
   ) {
     const userId = parseInt(req.user.id, 10);
     this.logger.log(
       `[DELETE_ACTIVITY] Request for ID: ${id} by user: ${userId}`,
+    );
+    const activity = await this.activityService.findById(id);
+    await this.assertAccessible(
+      activity.entityType,
+      activity.entityId,
+      organizationId,
     );
     await this.activityService.delete(id, userId);
   }
@@ -121,12 +208,19 @@ export class ActivitiesController {
   @ApiResponse({ status: 200, description: 'Updated activity' })
   async update(
     @Req() req: RequestWithUser,
+    @OrgId() organizationId: number,
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateCommentDto,
   ) {
     const userId = parseInt(req.user.id, 10);
     this.logger.log(
       `[UPDATE_ACTIVITY] Request for ID: ${id} by user: ${userId}`,
+    );
+    const activity = await this.activityService.findById(id);
+    await this.assertAccessible(
+      activity.entityType,
+      activity.entityId,
+      organizationId,
     );
     return this.activityService.update(id, userId, dto.content);
   }
@@ -136,11 +230,14 @@ export class ActivitiesController {
 @ApiTags('Contact Activities')
 @ApiBearerAuth('session')
 @Controller('contacts/:contactId/activities')
-@UseGuards(AuthGuard)
+@UseGuards(AuthGuard, OrganizationGuard)
 export class ContactActivitiesController {
   private readonly logger = new Logger(ContactActivitiesController.name);
 
-  constructor(private readonly activityService: ActivityService) {}
+  constructor(
+    private readonly activityService: ActivityService,
+    private readonly contacts: ContactsService,
+  ) {}
 
   @Get()
   @ApiOperation({ summary: 'Get activity timeline for a contact' })
@@ -148,10 +245,12 @@ export class ContactActivitiesController {
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiResponse({ status: 200, description: 'Activity timeline' })
   async getTimeline(
+    @OrgId() organizationId: number,
     @Param('contactId', ParseIntPipe) contactId: number,
     @Query('limit') limitStr?: string,
   ) {
     this.logger.log(`[GET_CONTACT_TIMELINE] Contact ID: ${contactId}`);
+    await this.contacts.findById(contactId, organizationId);
     const limit = limitStr ? parseInt(limitStr, 10) : undefined;
     return this.activityService.getTimeline('contact', contactId, limit);
   }
@@ -163,6 +262,7 @@ export class ContactActivitiesController {
   @ApiResponse({ status: 201, description: 'Comment created' })
   async createComment(
     @Req() req: RequestWithUser,
+    @OrgId() organizationId: number,
     @Param('contactId', ParseIntPipe) contactId: number,
     @Body() dto: CreateCommentDto,
   ) {
@@ -172,6 +272,7 @@ export class ContactActivitiesController {
     );
 
     try {
+      await this.contacts.findById(contactId, organizationId);
       const result = await this.activityService.createComment(
         'contact',
         contactId,
@@ -194,11 +295,14 @@ export class ContactActivitiesController {
 @ApiTags('Deal Activities')
 @ApiBearerAuth('session')
 @Controller('deals/:dealId/activities')
-@UseGuards(AuthGuard)
+@UseGuards(AuthGuard, OrganizationGuard)
 export class DealActivitiesController {
   private readonly logger = new Logger(DealActivitiesController.name);
 
-  constructor(private readonly activityService: ActivityService) {}
+  constructor(
+    private readonly activityService: ActivityService,
+    private readonly deals: DealsService,
+  ) {}
 
   @Get()
   @ApiOperation({ summary: 'Get activity timeline for a deal' })
@@ -206,10 +310,12 @@ export class DealActivitiesController {
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiResponse({ status: 200, description: 'Activity timeline' })
   async getTimeline(
+    @OrgId() organizationId: number,
     @Param('dealId', ParseIntPipe) dealId: number,
     @Query('limit') limitStr?: string,
   ) {
     this.logger.log(`[GET_DEAL_TIMELINE] Deal ID: ${dealId}`);
+    await this.deals.findById(dealId, organizationId);
     const limit = limitStr ? parseInt(limitStr, 10) : undefined;
     return this.activityService.getTimeline('deal', dealId, limit);
   }
@@ -221,6 +327,7 @@ export class DealActivitiesController {
   @ApiResponse({ status: 201, description: 'Comment created' })
   async createComment(
     @Req() req: RequestWithUser,
+    @OrgId() organizationId: number,
     @Param('dealId', ParseIntPipe) dealId: number,
     @Body() dto: CreateCommentDto,
   ) {
@@ -228,6 +335,7 @@ export class DealActivitiesController {
     this.logger.log(`[CREATE_COMMENT] Deal ID: ${dealId}, User: ${userId}`);
 
     try {
+      await this.deals.findById(dealId, organizationId);
       const result = await this.activityService.createComment(
         'deal',
         dealId,
@@ -250,11 +358,14 @@ export class DealActivitiesController {
 @ApiTags('Task Activities')
 @ApiBearerAuth('session')
 @Controller('tasks/:taskId/activities')
-@UseGuards(AuthGuard)
+@UseGuards(AuthGuard, OrganizationGuard)
 export class TaskActivitiesController {
   private readonly logger = new Logger(TaskActivitiesController.name);
 
-  constructor(private readonly activityService: ActivityService) {}
+  constructor(
+    private readonly activityService: ActivityService,
+    private readonly tasks: TaskService,
+  ) {}
 
   @Get()
   @ApiOperation({ summary: 'Get activity timeline for a task' })
@@ -262,10 +373,12 @@ export class TaskActivitiesController {
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiResponse({ status: 200, description: 'Activity timeline' })
   async getTimeline(
+    @OrgId() organizationId: number,
     @Param('taskId', ParseIntPipe) taskId: number,
     @Query('limit') limitStr?: string,
   ) {
     this.logger.log(`[GET_TASK_TIMELINE] Task ID: ${taskId}`);
+    await this.tasks.getTaskById(organizationId, taskId);
     const limit = limitStr ? parseInt(limitStr, 10) : undefined;
     return this.activityService.getTimeline('task', taskId, limit);
   }
@@ -277,6 +390,7 @@ export class TaskActivitiesController {
   @ApiResponse({ status: 201, description: 'Comment created' })
   async createComment(
     @Req() req: RequestWithUser,
+    @OrgId() organizationId: number,
     @Param('taskId', ParseIntPipe) taskId: number,
     @Body() dto: CreateCommentDto,
   ) {
@@ -284,6 +398,7 @@ export class TaskActivitiesController {
     this.logger.log(`[CREATE_COMMENT] Task ID: ${taskId}, User: ${userId}`);
 
     try {
+      await this.tasks.getTaskById(organizationId, taskId);
       const result = await this.activityService.createComment(
         'task',
         taskId,
@@ -302,15 +417,18 @@ export class TaskActivitiesController {
   }
 }
 
-// Company activities (entityType 'company': contact | company | deal).
+// Company activities
 @ApiTags('Company Activities')
 @ApiBearerAuth('session')
 @Controller('companies/:companyId/activities')
-@UseGuards(AuthGuard)
+@UseGuards(AuthGuard, OrganizationGuard)
 export class CompanyActivitiesController {
   private readonly logger = new Logger(CompanyActivitiesController.name);
 
-  constructor(private readonly activityService: ActivityService) {}
+  constructor(
+    private readonly activityService: ActivityService,
+    private readonly companies: CompaniesService,
+  ) {}
 
   @Get()
   @ApiOperation({ summary: 'Get activity timeline for a company' })
@@ -318,10 +436,12 @@ export class CompanyActivitiesController {
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiResponse({ status: 200, description: 'Activity timeline' })
   async getTimeline(
+    @OrgId() organizationId: number,
     @Param('companyId', ParseIntPipe) companyId: number,
     @Query('limit') limitStr?: string,
   ) {
     this.logger.log(`[GET_COMPANY_TIMELINE] Company ID: ${companyId}`);
+    await this.companies.findById(companyId, organizationId);
     const limit = limitStr ? parseInt(limitStr, 10) : undefined;
     return this.activityService.getTimeline('company', companyId, limit);
   }
@@ -333,6 +453,7 @@ export class CompanyActivitiesController {
   @ApiResponse({ status: 201, description: 'Comment created' })
   async createComment(
     @Req() req: RequestWithUser,
+    @OrgId() organizationId: number,
     @Param('companyId', ParseIntPipe) companyId: number,
     @Body() dto: CreateCommentDto,
   ) {
@@ -342,6 +463,7 @@ export class CompanyActivitiesController {
     );
 
     try {
+      await this.companies.findById(companyId, organizationId);
       const result = await this.activityService.createComment(
         'company',
         companyId,
