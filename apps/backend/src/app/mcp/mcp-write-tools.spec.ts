@@ -563,6 +563,351 @@ describe('update_company tool', () => {
   });
 });
 
+function contactDb(over: Record<string, unknown> = {}) {
+  return {
+    member: { findMany: vi.fn(async () => [{ organizationId: 1 }]) },
+    contact: {
+      findFirst: vi.fn(async () => ({ id: 7, organizationId: 1 })),
+    },
+    ...over,
+  } as never;
+}
+
+function contactsSvc(over: Record<string, unknown> = {}) {
+  return {
+    contacts: {
+      findAll: vi.fn(async () => ({ contacts: [], total: 0 })),
+      create: vi.fn(async () => ({ id: 100, name: 'New Contact' })),
+      update: vi.fn(async () => ({ id: 7, name: 'Existing Contact' })),
+      ...over,
+    },
+  };
+}
+
+describe('list_contacts tool', () => {
+  it('rejects when token lacks contacts:read', async () => {
+    const client = await connect(
+      contactDb(),
+      ['contacts:write'],
+      contactsSvc(),
+    );
+    const res = (await client.callTool({
+      name: 'list_contacts',
+      arguments: {},
+    })) as { isError?: boolean };
+    expect(res.isError).toBe(true);
+  });
+
+  it('auto-resolves org when user belongs to exactly one', async () => {
+    const svc = contactsSvc();
+    const client = await connect(contactDb(), ['contacts:read'], svc);
+    await client.callTool({ name: 'list_contacts', arguments: {} });
+    expect(svc.contacts.findAll).toHaveBeenCalledTimes(1);
+    expect(svc.contacts.findAll.mock.calls[0][0].organizationId).toBe(1);
+  });
+
+  it('errors when user belongs to multiple orgs and no organizationId given', async () => {
+    const db = contactDb({
+      member: {
+        findMany: vi.fn(async () => [
+          { organizationId: 1 },
+          { organizationId: 2 },
+        ]),
+      },
+    });
+    const client = await connect(db, ['contacts:read'], contactsSvc());
+    const res = (await client.callTool({
+      name: 'list_contacts',
+      arguments: {},
+    })) as { isError?: boolean };
+    expect(res.isError).toBe(true);
+  });
+
+  it('rejects an organizationId the user is not a member of', async () => {
+    const client = await connect(contactDb(), ['contacts:read'], contactsSvc());
+    const res = (await client.callTool({
+      name: 'list_contacts',
+      arguments: { organizationId: 99 },
+    })) as { isError?: boolean };
+    expect(res.isError).toBe(true);
+  });
+});
+
+describe('get_contact tool', () => {
+  it('returns error when contact not found', async () => {
+    const db = contactDb({ contact: { findFirst: vi.fn(async () => null) } });
+    const client = await connect(db, ['contacts:read'], contactsSvc());
+    const res = (await client.callTool({
+      name: 'get_contact',
+      arguments: { contactId: 99 },
+    })) as { isError?: boolean };
+    expect(res.isError).toBe(true);
+  });
+
+  it('returns contact data when found', async () => {
+    const client = await connect(contactDb(), ['contacts:read'], contactsSvc());
+    const res = await client.callTool({
+      name: 'get_contact',
+      arguments: { contactId: 7 },
+    });
+    const contact = parse(res);
+    expect(contact.id).toBe(7);
+  });
+});
+
+describe('create_contact tool', () => {
+  it('rejects when token lacks contacts:write', async () => {
+    const client = await connect(contactDb(), ['contacts:read'], contactsSvc());
+    const res = (await client.callTool({
+      name: 'create_contact',
+      arguments: { name: 'New Contact' },
+    })) as { isError?: boolean };
+    expect(res.isError).toBe(true);
+  });
+
+  it('auto-resolves org and calls ContactsService.create with mcp source', async () => {
+    const svc = contactsSvc();
+    const client = await connect(contactDb(), ['contacts:write'], svc);
+    await client.callTool({
+      name: 'create_contact',
+      arguments: { name: 'New Contact' },
+    });
+    expect(svc.contacts.create).toHaveBeenCalledTimes(1);
+    const [input, actorId, source] = svc.contacts.create.mock.calls[0];
+    expect(input.organizationId).toBe(1);
+    expect(actorId).toBe(42);
+    expect(source).toBe('mcp');
+  });
+
+  it('surfaces service validation errors', async () => {
+    const svc = contactsSvc({
+      create: vi.fn(async () => {
+        throw new Error('A contact with email x@y.com already exists');
+      }),
+    });
+    const client = await connect(contactDb(), ['contacts:write'], svc);
+    const res = (await client.callTool({
+      name: 'create_contact',
+      arguments: { name: 'New Contact', email: 'x@y.com' },
+    })) as { isError?: boolean };
+    expect(res.isError).toBe(true);
+  });
+});
+
+describe('update_contact tool', () => {
+  it('errors when contact not found or inaccessible', async () => {
+    const db = contactDb({ contact: { findFirst: vi.fn(async () => null) } });
+    const client = await connect(db, ['contacts:write'], contactsSvc());
+    const res = (await client.callTool({
+      name: 'update_contact',
+      arguments: { contactId: 99, name: 'Renamed' },
+    })) as { isError?: boolean };
+    expect(res.isError).toBe(true);
+  });
+
+  it('delegates to ContactsService.update with the resolved org id', async () => {
+    const svc = contactsSvc();
+    const client = await connect(contactDb(), ['contacts:write'], svc);
+    await client.callTool({
+      name: 'update_contact',
+      arguments: { contactId: 7, phone: '+14155552671' },
+    });
+    expect(svc.contacts.update).toHaveBeenCalledTimes(1);
+    const [contactId, orgId, input, actorId, source] =
+      svc.contacts.update.mock.calls[0];
+    expect(contactId).toBe(7);
+    expect(orgId).toBe(1);
+    expect(input.phone).toBe('+14155552671');
+    expect(actorId).toBe(42);
+    expect(source).toBe('mcp');
+  });
+});
+
+function icpDb(over: Record<string, unknown> = {}) {
+  return {
+    member: { findMany: vi.fn(async () => [{ organizationId: 1 }]) },
+    icpProfile: {
+      findFirst: vi.fn(async () => ({ id: 7, organizationId: 1 })),
+    },
+    ...over,
+  } as never;
+}
+
+function icpsSvc(over: Record<string, unknown> = {}) {
+  return {
+    icps: {
+      findAll: vi.fn(async () => ({ data: [], total: 0 })),
+      findById: vi.fn(async () => ({ id: 7, name: 'Existing ICP' })),
+      create: vi.fn(async () => ({ id: 100, name: 'New ICP' })),
+      update: vi.fn(async () => ({ id: 7, name: 'Existing ICP' })),
+      delete: vi.fn(async () => ({ id: 7 })),
+      ...over,
+    },
+  };
+}
+
+describe('list_icp_profiles tool', () => {
+  it('rejects when token lacks icps:read', async () => {
+    const client = await connect(icpDb(), ['icps:write'], icpsSvc());
+    const res = (await client.callTool({
+      name: 'list_icp_profiles',
+      arguments: {},
+    })) as { isError?: boolean };
+    expect(res.isError).toBe(true);
+  });
+
+  it('auto-resolves org when user belongs to exactly one', async () => {
+    const svc = icpsSvc();
+    const client = await connect(icpDb(), ['icps:read'], svc);
+    await client.callTool({ name: 'list_icp_profiles', arguments: {} });
+    expect(svc.icps.findAll).toHaveBeenCalledTimes(1);
+    expect(svc.icps.findAll.mock.calls[0][0]).toBe(1);
+  });
+
+  it('errors when user belongs to multiple orgs and no organizationId given', async () => {
+    const db = icpDb({
+      member: {
+        findMany: vi.fn(async () => [
+          { organizationId: 1 },
+          { organizationId: 2 },
+        ]),
+      },
+    });
+    const client = await connect(db, ['icps:read'], icpsSvc());
+    const res = (await client.callTool({
+      name: 'list_icp_profiles',
+      arguments: {},
+    })) as { isError?: boolean };
+    expect(res.isError).toBe(true);
+  });
+});
+
+describe('get_icp_profile tool', () => {
+  it('errors when ICP profile not found or inaccessible', async () => {
+    const db = icpDb({
+      icpProfile: { findFirst: vi.fn(async () => null) },
+    });
+    const client = await connect(db, ['icps:read'], icpsSvc());
+    const res = (await client.callTool({
+      name: 'get_icp_profile',
+      arguments: { icpId: 99 },
+    })) as { isError?: boolean };
+    expect(res.isError).toBe(true);
+  });
+
+  it('returns profile data when found', async () => {
+    const client = await connect(icpDb(), ['icps:read'], icpsSvc());
+    const res = await client.callTool({
+      name: 'get_icp_profile',
+      arguments: { icpId: 7 },
+    });
+    const profile = parse(res);
+    expect(profile.id).toBe(7);
+  });
+});
+
+describe('create_icp_profile tool', () => {
+  it('rejects when token lacks icps:write', async () => {
+    const client = await connect(icpDb(), ['icps:read'], icpsSvc());
+    const res = (await client.callTool({
+      name: 'create_icp_profile',
+      arguments: { name: 'New ICP' },
+    })) as { isError?: boolean };
+    expect(res.isError).toBe(true);
+  });
+
+  it('auto-resolves org and calls IcpService.create', async () => {
+    const svc = icpsSvc();
+    const client = await connect(icpDb(), ['icps:write'], svc);
+    await client.callTool({
+      name: 'create_icp_profile',
+      arguments: { name: 'New ICP', filters: { industries: ['saas'] } },
+    });
+    expect(svc.icps.create).toHaveBeenCalledTimes(1);
+    const [orgId, dto] = svc.icps.create.mock.calls[0];
+    expect(orgId).toBe(1);
+    expect(dto.name).toBe('New ICP');
+    expect(dto.filters).toEqual({ industries: ['saas'] });
+  });
+
+  it('surfaces service validation errors', async () => {
+    const svc = icpsSvc({
+      create: vi.fn(async () => {
+        throw new Error('Name is required');
+      }),
+    });
+    const client = await connect(icpDb(), ['icps:write'], svc);
+    const res = (await client.callTool({
+      name: 'create_icp_profile',
+      arguments: { name: '' },
+    })) as { isError?: boolean };
+    expect(res.isError).toBe(true);
+  });
+});
+
+describe('update_icp_profile tool', () => {
+  it('errors when ICP profile not found or inaccessible', async () => {
+    const db = icpDb({
+      icpProfile: { findFirst: vi.fn(async () => null) },
+    });
+    const client = await connect(db, ['icps:write'], icpsSvc());
+    const res = (await client.callTool({
+      name: 'update_icp_profile',
+      arguments: { icpId: 99, name: 'Renamed' },
+    })) as { isError?: boolean };
+    expect(res.isError).toBe(true);
+  });
+
+  it('delegates to IcpService.update with the resolved org id', async () => {
+    const svc = icpsSvc();
+    const client = await connect(icpDb(), ['icps:write'], svc);
+    await client.callTool({
+      name: 'update_icp_profile',
+      arguments: { icpId: 7, filters: { employeeRanges: ['50,200'] } },
+    });
+    expect(svc.icps.update).toHaveBeenCalledTimes(1);
+    const [icpId, orgId, dto] = svc.icps.update.mock.calls[0];
+    expect(icpId).toBe(7);
+    expect(orgId).toBe(1);
+    expect(dto.filters).toEqual({ employeeRanges: ['50,200'] });
+  });
+});
+
+describe('delete_icp_profile tool', () => {
+  it('rejects when token lacks icps:write', async () => {
+    const client = await connect(icpDb(), ['icps:read'], icpsSvc());
+    const res = (await client.callTool({
+      name: 'delete_icp_profile',
+      arguments: { icpId: 7 },
+    })) as { isError?: boolean };
+    expect(res.isError).toBe(true);
+  });
+
+  it('errors when ICP profile not found or inaccessible', async () => {
+    const db = icpDb({
+      icpProfile: { findFirst: vi.fn(async () => null) },
+    });
+    const client = await connect(db, ['icps:write'], icpsSvc());
+    const res = (await client.callTool({
+      name: 'delete_icp_profile',
+      arguments: { icpId: 99 },
+    })) as { isError?: boolean };
+    expect(res.isError).toBe(true);
+  });
+
+  it('delegates to IcpService.delete with the resolved org id', async () => {
+    const svc = icpsSvc();
+    const client = await connect(icpDb(), ['icps:write'], svc);
+    const res = await client.callTool({
+      name: 'delete_icp_profile',
+      arguments: { icpId: 7 },
+    });
+    expect(svc.icps.delete).toHaveBeenCalledTimes(1);
+    expect(svc.icps.delete.mock.calls[0]).toEqual([7, 1]);
+    expect(parse(res)).toEqual({ deleted: true, icpId: 7 });
+  });
+});
+
 describe('update_company_summary tool', () => {
   it('rejects when token lacks companies:write', async () => {
     const client = await connect(
