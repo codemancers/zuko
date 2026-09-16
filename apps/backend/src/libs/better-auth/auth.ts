@@ -19,6 +19,8 @@ export const MCP_SCOPES = [
   'companies:write',
   'contacts:read',
   'contacts:write',
+  'icps:read',
+  'icps:write',
 ];
 
 const AGENT_CAPABILITIES: Capability[] = [

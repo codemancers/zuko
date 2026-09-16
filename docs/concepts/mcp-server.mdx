@@ -26,15 +26,19 @@ Tokens are JWTs verified locally against `{BACKEND_URL}/auth/jwks` — no round-
 
 ## Scopes
 
-| Scope                | Grants                                 |
-| -------------------- | -------------------------------------- |
-| `organizations:read` | List organizations the user belongs to |
-| `tasks:read`         | List and retrieve tasks                |
-| `tasks:write`        | Create and update tasks                |
-| `deals:read`         | List and retrieve deals                |
-| `deals:write`        | Create and update deals                |
-| `companies:read`     | List and retrieve companies            |
-| `companies:write`    | Create and update companies            |
+| Scope                | Grants                                  |
+| -------------------- | --------------------------------------- |
+| `organizations:read` | List organizations the user belongs to  |
+| `tasks:read`         | List and retrieve tasks                 |
+| `tasks:write`        | Create and update tasks                 |
+| `deals:read`         | List and retrieve deals                 |
+| `deals:write`        | Create and update deals                 |
+| `companies:read`     | List and retrieve companies             |
+| `companies:write`    | Create and update companies             |
+| `contacts:read`      | List and retrieve contacts              |
+| `contacts:write`     | Create and update contacts              |
+| `icps:read`          | List and retrieve ICP profiles          |
+| `icps:write`         | Create, update, and delete ICP profiles |
 
 ## Tools
 
@@ -265,6 +269,146 @@ Supported block types: `paragraph`, `header`, `list`, `checklist`, `quote`, `cod
 ```
 
 > **Note:** block-level operations (append/insert/update/delete a single block by id, without resending the whole document) are planned as a follow-up — full-replace is the only mode today, matching how the web UI's autosave already writes this field.
+
+---
+
+### `list_contacts`
+
+**Scope:** `contacts:read`
+
+Returns up to 50 contacts (oldest first) across all organizations the user belongs to.
+
+| Input            | Type      | Description                                                 |
+| ---------------- | --------- | ----------------------------------------------------------- |
+| `organizationId` | `integer` | Restrict to one organization the user belongs to (optional) |
+| `search`         | `string`  | Search by contact name, email, or phone (optional)          |
+
+---
+
+### `get_contact`
+
+**Scope:** `contacts:read`
+
+Returns full contact detail including owners.
+
+| Input       | Type      | Description                   |
+| ----------- | --------- | ----------------------------- |
+| `contactId` | `integer` | ID of the contact to retrieve |
+
+---
+
+### `create_contact`
+
+**Scope:** `contacts:write`
+
+Creates a contact via the same service the REST API uses — E.164 phone validation, duplicate-email checks, and activity-timeline events apply. If the user belongs to exactly one organization, `organizationId` can be omitted.
+
+| Input            | Type      | Description                                                  |
+| ---------------- | --------- | ------------------------------------------------------------ |
+| `name`           | `string`  | Contact name (required)                                      |
+| `organizationId` | `integer` | Target organization (optional if user has exactly one)       |
+| `email`          | `string`  | Contact email address (optional)                             |
+| `phone`          | `string`  | Phone number in E.164 format, e.g. `+14155552671` (optional) |
+| `linkedinId`     | `string`  | Contact LinkedIn identifier (optional)                       |
+
+---
+
+### `update_contact`
+
+**Scope:** `contacts:write`
+
+Updates one or more fields on an existing contact. Only supplied fields are changed, and each change is recorded on the contact activity timeline.
+
+| Input        | Type      | Description                                 |
+| ------------ | --------- | ------------------------------------------- |
+| `contactId`  | `integer` | ID of the contact to update (required)      |
+| `name`       | `string`  | New contact name (optional)                 |
+| `email`      | `string`  | New contact email address (optional)        |
+| `phone`      | `string`  | New phone number in E.164 format (optional) |
+| `linkedinId` | `string`  | New LinkedIn identifier (optional)          |
+
+---
+
+### `list_icp_profiles`
+
+**Scope:** `icps:read`
+
+Returns Ideal Customer Profile (ICP) definitions for an organization, paginated.
+
+| Input            | Type      | Description                                            |
+| ---------------- | --------- | ------------------------------------------------------ |
+| `organizationId` | `integer` | Target organization (optional if user has exactly one) |
+| `page`           | `integer` | Page number, defaults to `1` (optional)                |
+| `perPage`        | `integer` | Page size, defaults to `20` (optional)                 |
+
+---
+
+### `get_icp_profile`
+
+**Scope:** `icps:read`
+
+Returns a single ICP profile, including its filters.
+
+| Input   | Type      | Description                       |
+| ------- | --------- | --------------------------------- |
+| `icpId` | `integer` | ID of the ICP profile to retrieve |
+
+---
+
+### `create_icp_profile`
+
+**Scope:** `icps:write`
+
+Creates an ICP profile. If the user belongs to exactly one organization, `organizationId` can be omitted.
+
+| Input            | Type      | Description                                            |
+| ---------------- | --------- | ------------------------------------------------------ |
+| `name`           | `string`  | ICP profile name (required)                            |
+| `organizationId` | `integer` | Target organization (optional if user has exactly one) |
+| `filters`        | `object`  | Apollo-style filter object (optional) — see below      |
+
+`filters` is a loose key/value object matching Apollo's search filters, e.g.:
+
+```json
+{
+  "industries": ["saas"],
+  "employeeRanges": ["50,200"],
+  "revenueRange": { "min": 30000 },
+  "locations": ["United States"],
+  "technologiesAnyOf": ["salesforce"],
+  "personTitles": ["VP of Sales", "CTO"],
+  "personSeniorities": ["vp", "c_suite"],
+  "keywords": "enterprise software CRM"
+}
+```
+
+Omit any field that doesn't apply. See `IcpFiltersDto` in `apps/backend/src/app/icp/dto/icp.dto.ts` for the full set of supported keys.
+
+---
+
+### `update_icp_profile`
+
+**Scope:** `icps:write`
+
+Updates an ICP profile. `filters` **fully replaces** the existing filter object — call `get_icp_profile` first if you need to preserve existing filters and merge in new ones.
+
+| Input     | Type      | Description                                |
+| --------- | --------- | ------------------------------------------ |
+| `icpId`   | `integer` | ID of the ICP profile to update (required) |
+| `name`    | `string`  | New ICP profile name (optional)            |
+| `filters` | `object`  | Full replacement filter object (optional)  |
+
+---
+
+### `delete_icp_profile`
+
+**Scope:** `icps:write`
+
+Deletes an ICP profile.
+
+| Input   | Type      | Description                     |
+| ------- | --------- | ------------------------------- |
+| `icpId` | `integer` | ID of the ICP profile to delete |
 
 ## Connecting a client
 
