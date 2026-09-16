@@ -5,6 +5,7 @@ import type {
   DealsService,
   CompaniesService,
   ContactsService,
+  ActivityService,
 } from '@zuko/sales';
 import { DEAL_STAGE_VALUES } from '@zuko/sales';
 import { z } from 'zod';
@@ -30,6 +31,47 @@ export interface McpDeps {
   icps: IcpService;
   leads: LeadsService;
   campaigns: ApolloSequencesService;
+  activity: ActivityService;
+}
+
+/** Activity has no organizationId, so comment tools resolve the commented-on entity's org and check it against the caller's memberships. */
+const COMMENT_ENTITY_TYPES = ['task', 'deal', 'company', 'contact'] as const;
+
+async function resolveEntityOrgId(
+  prisma: PrismaClient,
+  entityType: (typeof COMMENT_ENTITY_TYPES)[number],
+  entityId: number,
+): Promise<number | null> {
+  switch (entityType) {
+    case 'deal': {
+      const deal = await prisma.deal.findUnique({
+        where: { id: entityId },
+        select: { organizationId: true },
+      });
+      return deal?.organizationId ?? null;
+    }
+    case 'company': {
+      const company = await prisma.company.findUnique({
+        where: { id: entityId },
+        select: { organizationId: true },
+      });
+      return company?.organizationId ?? null;
+    }
+    case 'contact': {
+      const contact = await prisma.contact.findUnique({
+        where: { id: entityId },
+        select: { organizationId: true },
+      });
+      return contact?.organizationId ?? null;
+    }
+    case 'task': {
+      const task = await prisma.task.findUnique({
+        where: { id: entityId },
+        select: { organizationId: true },
+      });
+      return task?.organizationId ?? null;
+    }
+  }
 }
 
 /** Prisma Decimal (e.g. Deal.value) does not JSON-serialize to a number. */
@@ -1898,6 +1940,189 @@ export function buildMcpServer(
           { name: args.name, icpProfileId: args.icpProfileId },
         );
         return json(campaign);
+      } catch (error: unknown) {
+        return toolError(
+          error instanceof Error ? error.message : String(error),
+        );
+      }
+    },
+  );
+
+  const commentEntityType = z.enum(COMMENT_ENTITY_TYPES);
+
+  server.registerTool(
+    'add_comment',
+    {
+      description:
+        'Add a comment to a task, deal, company, or contact. The comment appears on that ' +
+        "entity's activity timeline, attributed to the authorized user.",
+      inputSchema: {
+        entityType: commentEntityType.describe(
+          'The type of entity to comment on',
+        ),
+        entityId: z.int().describe('The ID of the entity to comment on'),
+        content: z.string().describe('The comment text'),
+      },
+    },
+    async ({ entityType, entityId, content }) => {
+      if (!authCtx.scopes.includes('comments:write')) {
+        return missingScope('comments:write');
+      }
+      if (!deps?.activity) {
+        return toolError('Comments are not available.');
+      }
+
+      const orgIds = await memberOrgIds();
+      const entityOrgId = await resolveEntityOrgId(
+        prisma,
+        entityType,
+        entityId,
+      );
+      if (!entityOrgId || !orgIds.includes(entityOrgId)) {
+        return toolError(
+          `${entityType} with ID ${entityId} not found or not accessible.`,
+        );
+      }
+
+      try {
+        const comment = await deps.activity.createComment(
+          entityType,
+          entityId,
+          authCtx.userId,
+          content,
+        );
+        return json(comment);
+      } catch (error: unknown) {
+        return toolError(
+          error instanceof Error ? error.message : String(error),
+        );
+      }
+    },
+  );
+
+  server.registerTool(
+    'list_comments',
+    {
+      description:
+        'List comments on a task, deal, company, or contact, most recent first.',
+      inputSchema: {
+        entityType: commentEntityType.describe(
+          'The type of entity to list comments for',
+        ),
+        entityId: z.int().describe('The ID of the entity'),
+        limit: z
+          .int()
+          .optional()
+          .describe('Max comments to return (default 50)'),
+      },
+    },
+    async ({ entityType, entityId, limit }) => {
+      if (!authCtx.scopes.includes('comments:read')) {
+        return missingScope('comments:read');
+      }
+      if (!deps?.activity) {
+        return toolError('Comments are not available.');
+      }
+
+      const orgIds = await memberOrgIds();
+      const entityOrgId = await resolveEntityOrgId(
+        prisma,
+        entityType,
+        entityId,
+      );
+      if (!entityOrgId || !orgIds.includes(entityOrgId)) {
+        return toolError(
+          `${entityType} with ID ${entityId} not found or not accessible.`,
+        );
+      }
+
+      const result = await deps.activity.findAll(
+        { entityType, entityId, activityType: 'comment' },
+        { limit: limit ?? 50 },
+      );
+      return json(result);
+    },
+  );
+
+  server.registerTool(
+    'update_comment',
+    {
+      description:
+        'Edit an existing comment. Only the comment you authored can be edited.',
+      inputSchema: {
+        commentId: z.int().describe('The ID of the comment to update'),
+        content: z.string().describe('The new comment text'),
+      },
+    },
+    async ({ commentId, content }) => {
+      if (!authCtx.scopes.includes('comments:write')) {
+        return missingScope('comments:write');
+      }
+      if (!deps?.activity) {
+        return toolError('Comments are not available.');
+      }
+
+      try {
+        const existing = await deps.activity.findById(commentId);
+        const orgIds = await memberOrgIds();
+        const entityOrgId = await resolveEntityOrgId(
+          prisma,
+          existing.entityType as (typeof COMMENT_ENTITY_TYPES)[number],
+          existing.entityId,
+        );
+        if (!entityOrgId || !orgIds.includes(entityOrgId)) {
+          return toolError(
+            `Comment with ID ${commentId} not found or not accessible.`,
+          );
+        }
+
+        const updated = await deps.activity.update(
+          commentId,
+          authCtx.userId,
+          content,
+        );
+        return json(updated);
+      } catch (error: unknown) {
+        return toolError(
+          error instanceof Error ? error.message : String(error),
+        );
+      }
+    },
+  );
+
+  server.registerTool(
+    'delete_comment',
+    {
+      description:
+        'Delete an existing comment. Only the comment you authored can be deleted.',
+      inputSchema: {
+        commentId: z.int().describe('The ID of the comment to delete'),
+      },
+    },
+    async ({ commentId }) => {
+      if (!authCtx.scopes.includes('comments:write')) {
+        return missingScope('comments:write');
+      }
+      if (!deps?.activity) {
+        return toolError('Comments are not available.');
+      }
+
+      try {
+        const existing = await deps.activity.findById(commentId);
+        const orgIds = await memberOrgIds();
+        const entityOrgId = await resolveEntityOrgId(
+          prisma,
+          existing.entityType as (typeof COMMENT_ENTITY_TYPES)[number],
+          existing.entityId,
+        );
+        if (!entityOrgId || !orgIds.includes(entityOrgId)) {
+          return toolError(
+            `Comment with ID ${commentId} not found or not accessible.`,
+          );
+        }
+
+        await deps.activity.delete(commentId, authCtx.userId);
+        return json({ deleted: true, commentId });
       } catch (error: unknown) {
         return toolError(
           error instanceof Error ? error.message : String(error),

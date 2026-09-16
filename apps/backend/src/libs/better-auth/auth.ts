@@ -25,6 +25,8 @@ export const MCP_SCOPES = [
   'leads:write',
   'campaigns:read',
   'campaigns:write',
+  'comments:read',
+  'comments:write',
 ];
 
 const AGENT_CAPABILITIES: Capability[] = [

@@ -4,13 +4,6 @@ import { ContactsController } from './contacts.controller';
 import { CompaniesController } from './companies.controller';
 import { DealsController } from './deals.controller';
 import {
-  ActivitiesController,
-  ContactActivitiesController,
-  CompanyActivitiesController,
-  DealActivitiesController,
-  TaskActivitiesController,
-} from './activities.controller';
-import {
   ContactsRepository,
   ContactsService,
   CompaniesRepository,
@@ -38,11 +31,6 @@ import { TableRowBuilder } from './table/row-builder/table-row.builder';
     ContactsController,
     CompaniesController,
     DealsController,
-    ActivitiesController,
-    ContactActivitiesController,
-    CompanyActivitiesController,
-    DealActivitiesController,
-    TaskActivitiesController,
     TableController,
   ],
   providers: [
@@ -165,6 +153,6 @@ import { TableRowBuilder } from './table/row-builder/table-row.builder';
     TableService,
     TableRowBuilder,
   ],
-  exports: [DealsService, CompaniesService, ContactsService],
+  exports: [DealsService, CompaniesService, ContactsService, ActivityService],
 })
 export class SalesModule {}

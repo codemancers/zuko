@@ -1326,3 +1326,237 @@ describe('update_company_summary tool', () => {
     expect(res.isError).toBe(true);
   });
 });
+
+function commentDb(over: Record<string, unknown> = {}) {
+  return {
+    member: { findMany: vi.fn(async () => [{ organizationId: 1 }]) },
+    deal: {
+      findUnique: vi.fn(async () => ({ organizationId: 1 })),
+    },
+    company: {
+      findUnique: vi.fn(async () => ({ organizationId: 1 })),
+    },
+    contact: {
+      findUnique: vi.fn(async () => ({ organizationId: 1 })),
+    },
+    task: {
+      findUnique: vi.fn(async () => ({ organizationId: 1 })),
+    },
+    ...over,
+  } as never;
+}
+
+function activitySvc(over: Record<string, unknown> = {}) {
+  return {
+    activity: {
+      createComment: vi.fn(async () => ({
+        id: 500,
+        activityType: 'comment',
+        entityType: 'deal',
+        entityId: 7,
+        content: 'Great call today',
+      })),
+      findAll: vi.fn(async () => ({ activities: [], total: 0 })),
+      findById: vi.fn(async () => ({
+        id: 500,
+        entityType: 'deal',
+        entityId: 7,
+        actorId: 42,
+      })),
+      update: vi.fn(async () => ({ id: 500, content: 'Edited' })),
+      delete: vi.fn(async () => undefined),
+      ...over,
+    },
+  };
+}
+
+describe('add_comment tool', () => {
+  it('rejects when token lacks comments:write', async () => {
+    const client = await connect(commentDb(), ['comments:read'], activitySvc());
+    const res = (await client.callTool({
+      name: 'add_comment',
+      arguments: { entityType: 'deal', entityId: 7, content: 'Hi' },
+    })) as { isError?: boolean };
+    expect(res.isError).toBe(true);
+  });
+
+  it('rejects when the entity org is not one of the caller memberships', async () => {
+    const client = await connect(
+      commentDb({
+        deal: { findUnique: vi.fn(async () => ({ organizationId: 99 })) },
+      }),
+      ['comments:write'],
+      activitySvc(),
+    );
+    const res = (await client.callTool({
+      name: 'add_comment',
+      arguments: { entityType: 'deal', entityId: 7, content: 'Hi' },
+    })) as { isError?: boolean };
+    expect(res.isError).toBe(true);
+  });
+
+  it('rejects when the entity does not exist', async () => {
+    const client = await connect(
+      commentDb({ task: { findUnique: vi.fn(async () => null) } }),
+      ['comments:write'],
+      activitySvc(),
+    );
+    const res = (await client.callTool({
+      name: 'add_comment',
+      arguments: { entityType: 'task', entityId: 999, content: 'Hi' },
+    })) as { isError?: boolean };
+    expect(res.isError).toBe(true);
+  });
+
+  it('delegates to ActivityService.createComment with the authorized user as actor', async () => {
+    const svc = activitySvc();
+    const client = await connect(commentDb(), ['comments:write'], svc);
+    await client.callTool({
+      name: 'add_comment',
+      arguments: {
+        entityType: 'deal',
+        entityId: 7,
+        content: 'Great call today',
+      },
+    });
+    expect(svc.activity.createComment).toHaveBeenCalledTimes(1);
+    const [entityType, entityId, actorId, content] =
+      svc.activity.createComment.mock.calls[0];
+    expect(entityType).toBe('deal');
+    expect(entityId).toBe(7);
+    expect(actorId).toBe(42);
+    expect(content).toBe('Great call today');
+  });
+});
+
+describe('list_comments tool', () => {
+  it('rejects when token lacks comments:read', async () => {
+    const client = await connect(
+      commentDb(),
+      ['comments:write'],
+      activitySvc(),
+    );
+    const res = (await client.callTool({
+      name: 'list_comments',
+      arguments: { entityType: 'company', entityId: 7 },
+    })) as { isError?: boolean };
+    expect(res.isError).toBe(true);
+  });
+
+  it('rejects when the entity org is not one of the caller memberships', async () => {
+    const client = await connect(
+      commentDb({
+        company: { findUnique: vi.fn(async () => ({ organizationId: 99 })) },
+      }),
+      ['comments:read'],
+      activitySvc(),
+    );
+    const res = (await client.callTool({
+      name: 'list_comments',
+      arguments: { entityType: 'company', entityId: 7 },
+    })) as { isError?: boolean };
+    expect(res.isError).toBe(true);
+  });
+
+  it('filters to activityType comment', async () => {
+    const svc = activitySvc();
+    const client = await connect(commentDb(), ['comments:read'], svc);
+    await client.callTool({
+      name: 'list_comments',
+      arguments: { entityType: 'contact', entityId: 7 },
+    });
+    expect(svc.activity.findAll).toHaveBeenCalledTimes(1);
+    const [filters] = svc.activity.findAll.mock.calls[0];
+    expect(filters).toEqual({
+      entityType: 'contact',
+      entityId: 7,
+      activityType: 'comment',
+    });
+  });
+});
+
+describe('update_comment tool', () => {
+  it('rejects when token lacks comments:write', async () => {
+    const client = await connect(commentDb(), ['comments:read'], activitySvc());
+    const res = (await client.callTool({
+      name: 'update_comment',
+      arguments: { commentId: 500, content: 'Edited' },
+    })) as { isError?: boolean };
+    expect(res.isError).toBe(true);
+  });
+
+  it('rejects when the underlying entity org is not one of the caller memberships', async () => {
+    const client = await connect(
+      commentDb({
+        deal: { findUnique: vi.fn(async () => ({ organizationId: 99 })) },
+      }),
+      ['comments:write'],
+      activitySvc(),
+    );
+    const res = (await client.callTool({
+      name: 'update_comment',
+      arguments: { commentId: 500, content: 'Edited' },
+    })) as { isError?: boolean };
+    expect(res.isError).toBe(true);
+  });
+
+  it('surfaces ForbiddenException from ActivityService.update as a tool error', async () => {
+    const svc = activitySvc({
+      update: vi.fn(async () => {
+        throw new Error('You can only edit your own activities');
+      }),
+    });
+    const client = await connect(commentDb(), ['comments:write'], svc);
+    const res = (await client.callTool({
+      name: 'update_comment',
+      arguments: { commentId: 500, content: 'Edited' },
+    })) as { isError?: boolean };
+    expect(res.isError).toBe(true);
+  });
+
+  it('delegates to ActivityService.update as the authorized user', async () => {
+    const svc = activitySvc();
+    const client = await connect(commentDb(), ['comments:write'], svc);
+    await client.callTool({
+      name: 'update_comment',
+      arguments: { commentId: 500, content: 'Edited content' },
+    });
+    expect(svc.activity.update).toHaveBeenCalledWith(500, 42, 'Edited content');
+  });
+});
+
+describe('delete_comment tool', () => {
+  it('rejects when token lacks comments:write', async () => {
+    const client = await connect(commentDb(), ['comments:read'], activitySvc());
+    const res = (await client.callTool({
+      name: 'delete_comment',
+      arguments: { commentId: 500 },
+    })) as { isError?: boolean };
+    expect(res.isError).toBe(true);
+  });
+
+  it('rejects when the underlying entity org is not one of the caller memberships', async () => {
+    const client = await connect(
+      commentDb({
+        deal: { findUnique: vi.fn(async () => ({ organizationId: 99 })) },
+      }),
+      ['comments:write'],
+      activitySvc(),
+    );
+    const res = (await client.callTool({
+      name: 'delete_comment',
+      arguments: { commentId: 500 },
+    })) as { isError?: boolean };
+    expect(res.isError).toBe(true);
+  });
+
+  it('delegates to ActivityService.delete as the authorized user', async () => {
+    const svc = activitySvc();
+    const client = await connect(commentDb(), ['comments:write'], svc);
+    await client.callTool({
+      name: 'delete_comment',
+      arguments: { commentId: 500 },
+    });
+    expect(svc.activity.delete).toHaveBeenCalledWith(500, 42);
+  });
+});

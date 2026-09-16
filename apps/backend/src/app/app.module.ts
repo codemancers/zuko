@@ -10,6 +10,7 @@ import { ChatsModule } from '../chats/chats.module';
 import { agentsEnvSchema } from './env.validation';
 import { SalesModule } from './sales/sales.module';
 import { TasksModule } from './tasks/tasks.module';
+import { ActivitiesModule } from './activities/activities.module';
 import { AgentsWrapperModule } from './agents/agents.module';
 import { AdminModule } from './admin/admin.module';
 import { MeetingModule } from './meeting/meeting.module';
@@ -43,6 +44,7 @@ const authModule = AuthModule.forRoot({ auth, disableGlobalAuthGuard: true });
     AgentsWrapperModule,
     SalesModule,
     TasksModule,
+    ActivitiesModule,
     ChatsModule,
     AdminModule,
     MeetingModule,

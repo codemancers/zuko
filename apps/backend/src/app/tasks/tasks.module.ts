@@ -9,6 +9,7 @@ import { OrganizationGuard } from '../../common/auth/organization.guard';
 @Module({
   imports: [PrismaModule],
   controllers: [TasksController],
+  exports: [TaskService],
   providers: [
     OrganizationGuard,
     {
