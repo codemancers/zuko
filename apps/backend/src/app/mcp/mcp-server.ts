@@ -10,6 +10,7 @@ import { DEAL_STAGE_VALUES } from '@zuko/sales';
 import { z } from 'zod';
 import type { IcpService } from '../icp/icp.service';
 import type { LeadsService } from '../leads/leads.service';
+import type { ApolloSequencesService } from '../integrations/apollo/sequences/apollo-sequences.service';
 
 export interface McpAuthContext {
   userId: number;
@@ -28,6 +29,7 @@ export interface McpDeps {
   contacts: ContactsService;
   icps: IcpService;
   leads: LeadsService;
+  campaigns: ApolloSequencesService;
 }
 
 /** Prisma Decimal (e.g. Deal.value) does not JSON-serialize to a number. */
@@ -1739,6 +1741,163 @@ export function buildMcpServer(
       try {
         const result = await deps.leads.revert(leadId, existing.organizationId);
         return json(result);
+      } catch (error: unknown) {
+        return toolError(
+          error instanceof Error ? error.message : String(error),
+        );
+      }
+    },
+  );
+
+  server.registerTool(
+    'list_campaigns',
+    {
+      description:
+        'List outreach campaigns (Apollo sequences tracked in Zuko) for an organization, optionally filtered by ICP profile.',
+      inputSchema: {
+        organizationId: z
+          .int()
+          .optional()
+          .describe('Target organization (optional if user has exactly one)'),
+        icpProfileId: z
+          .int()
+          .optional()
+          .describe('Restrict to campaigns linked to this ICP profile'),
+      },
+    },
+    async ({ organizationId, icpProfileId }) => {
+      if (!authCtx.scopes.includes('campaigns:read')) {
+        return missingScope('campaigns:read');
+      }
+      if (!deps?.campaigns) {
+        return toolError('Campaign management is not available.');
+      }
+
+      const orgIds = await memberOrgIds();
+      let resolvedOrgId = organizationId;
+      if (resolvedOrgId === undefined) {
+        if (orgIds.length === 0) {
+          return toolError('User is not a member of any organization.');
+        }
+        if (orgIds.length > 1) {
+          return toolError(
+            'User belongs to multiple organizations. Call list_organizations to find the correct id, then pass it as organizationId.',
+          );
+        }
+        resolvedOrgId = orgIds[0];
+      } else if (!orgIds.includes(resolvedOrgId)) {
+        return toolError(
+          `You do not have access to organization ${resolvedOrgId}.`,
+        );
+      }
+
+      const campaigns = icpProfileId
+        ? await deps.campaigns.getCampaignsByIcpProfile(
+            resolvedOrgId,
+            icpProfileId,
+          )
+        : await deps.campaigns.getAllCampaigns(resolvedOrgId);
+      return json(campaigns);
+    },
+  );
+
+  server.registerTool(
+    'get_campaign',
+    {
+      description: 'Get a single campaign by its Zuko database ID.',
+      inputSchema: {
+        campaignId: z.int().describe('The ID of the campaign to retrieve'),
+      },
+    },
+    async ({ campaignId }) => {
+      if (!authCtx.scopes.includes('campaigns:read')) {
+        return missingScope('campaigns:read');
+      }
+      if (!deps?.campaigns) {
+        return toolError('Campaign management is not available.');
+      }
+
+      const orgIds = await memberOrgIds();
+      const existing = await prisma.campaign.findFirst({
+        where: { id: campaignId, organizationId: { in: orgIds } },
+        select: { organizationId: true },
+      });
+      if (!existing) {
+        return toolError(
+          `Campaign with ID ${campaignId} not found or not accessible.`,
+        );
+      }
+
+      try {
+        const campaign = await deps.campaigns.getZukoCampaignById(
+          existing.organizationId,
+          campaignId,
+        );
+        return json(campaign);
+      } catch (error: unknown) {
+        return toolError(
+          error instanceof Error ? error.message : String(error),
+        );
+      }
+    },
+  );
+
+  server.registerTool(
+    'create_campaign',
+    {
+      description:
+        'Create a campaign record by name (and optional ICP profile link). This only creates the ' +
+        'Zuko-side metadata row — it does not create or activate an Apollo sequence. Use the web ' +
+        'UI or Apollo sequence tools to build and launch the actual outreach sequence afterward. ' +
+        'organizationId is optional when the user belongs to exactly one organization.',
+      inputSchema: {
+        organizationId: z
+          .int()
+          .optional()
+          .describe(
+            'Organization ID to create the campaign in. Omit if you belong to exactly one organization; call list_organizations to find the correct id otherwise.',
+          ),
+        name: z.string().describe('Campaign name'),
+        icpProfileId: z
+          .int()
+          .optional()
+          .describe('ICP profile to link this campaign to (optional)'),
+      },
+    },
+    async (args) => {
+      if (!authCtx.scopes.includes('campaigns:write')) {
+        return missingScope('campaigns:write');
+      }
+      if (!deps?.campaigns) {
+        return toolError('Campaign management is not available.');
+      }
+
+      const orgIds = await memberOrgIds();
+
+      let resolvedOrgId = args.organizationId;
+      if (resolvedOrgId === undefined) {
+        if (orgIds.length === 0) {
+          return toolError('User is not a member of any organization.');
+        }
+        if (orgIds.length > 1) {
+          return toolError(
+            'User belongs to multiple organizations. Call list_organizations to find the correct id, then pass it as organizationId.',
+          );
+        }
+        resolvedOrgId = orgIds[0];
+      } else if (!orgIds.includes(resolvedOrgId)) {
+        return toolError(
+          `You do not have access to organization ${resolvedOrgId}.`,
+        );
+      }
+
+      try {
+        const campaign = await deps.campaigns.createCampaignMeta(
+          resolvedOrgId,
+          authCtx.userId,
+          { name: args.name, icpProfileId: args.icpProfileId },
+        );
+        return json(campaign);
       } catch (error: unknown) {
         return toolError(
           error instanceof Error ? error.message : String(error),

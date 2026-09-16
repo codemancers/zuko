@@ -41,6 +41,8 @@ Tokens are JWTs verified locally against `{BACKEND_URL}/auth/jwks` — no round-
 | `icps:write`         | Create, update, and delete ICP profiles           |
 | `leads:read`         | List and retrieve leads                           |
 | `leads:write`        | Create, update, delete, convert, and revert leads |
+| `campaigns:read`     | List and retrieve campaigns                       |
+| `campaigns:write`    | Create campaign records                           |
 
 ## Tools
 
@@ -521,6 +523,45 @@ Reverts a converted lead back to `"replied"` status, deleting the deal that was 
 | Input    | Type      | Description              |
 | -------- | --------- | ------------------------ |
 | `leadId` | `integer` | ID of the lead to revert |
+
+---
+
+### `list_campaigns`
+
+**Scope:** `campaigns:read`
+
+Lists outreach campaigns (Apollo sequences tracked in Zuko) for an organization, optionally filtered by ICP profile.
+
+| Input            | Type      | Description                                                 |
+| ---------------- | --------- | ----------------------------------------------------------- |
+| `organizationId` | `integer` | Target organization (optional if user has exactly one)      |
+| `icpProfileId`   | `integer` | Restrict to campaigns linked to this ICP profile (optional) |
+
+---
+
+### `get_campaign`
+
+**Scope:** `campaigns:read`
+
+Gets a single campaign by its Zuko database ID.
+
+| Input        | Type      | Description                    |
+| ------------ | --------- | ------------------------------ |
+| `campaignId` | `integer` | ID of the campaign to retrieve |
+
+---
+
+### `create_campaign`
+
+**Scope:** `campaigns:write`
+
+Creates a campaign record by name (and optional ICP profile link). This **only creates the Zuko-side metadata row** — it does not create or activate an Apollo sequence. Use the web UI or Apollo sequence tools to build and launch the actual outreach sequence afterward.
+
+| Input            | Type      | Description                                            |
+| ---------------- | --------- | ------------------------------------------------------ |
+| `name`           | `string`  | Campaign name (required)                               |
+| `organizationId` | `integer` | Target organization (optional if user has exactly one) |
+| `icpProfileId`   | `integer` | ICP profile to link this campaign to (optional)        |
 
 ## Connecting a client
 

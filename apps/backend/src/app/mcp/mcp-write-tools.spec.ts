@@ -1117,6 +1117,155 @@ describe('revert_lead tool', () => {
   });
 });
 
+function campaignDb(over: Record<string, unknown> = {}) {
+  return {
+    member: { findMany: vi.fn(async () => [{ organizationId: 1 }]) },
+    campaign: {
+      findFirst: vi.fn(async () => ({ id: 7, organizationId: 1 })),
+    },
+    ...over,
+  } as never;
+}
+
+function campaignsSvc(over: Record<string, unknown> = {}) {
+  return {
+    campaigns: {
+      getAllCampaigns: vi.fn(async () => []),
+      getCampaignsByIcpProfile: vi.fn(async () => []),
+      getZukoCampaignById: vi.fn(async () => ({
+        id: 7,
+        name: 'Existing Campaign',
+      })),
+      createCampaignMeta: vi.fn(async () => ({
+        id: 100,
+        name: 'New Campaign',
+      })),
+      ...over,
+    },
+  };
+}
+
+describe('list_campaigns tool', () => {
+  it('rejects when token lacks campaigns:read', async () => {
+    const client = await connect(
+      campaignDb(),
+      ['campaigns:write'],
+      campaignsSvc(),
+    );
+    const res = (await client.callTool({
+      name: 'list_campaigns',
+      arguments: {},
+    })) as { isError?: boolean };
+    expect(res.isError).toBe(true);
+  });
+
+  it('auto-resolves org and calls getAllCampaigns when no icpProfileId given', async () => {
+    const svc = campaignsSvc();
+    const client = await connect(campaignDb(), ['campaigns:read'], svc);
+    await client.callTool({ name: 'list_campaigns', arguments: {} });
+    expect(svc.campaigns.getAllCampaigns).toHaveBeenCalledWith(1);
+    expect(svc.campaigns.getCampaignsByIcpProfile).not.toHaveBeenCalled();
+  });
+
+  it('calls getCampaignsByIcpProfile when icpProfileId given', async () => {
+    const svc = campaignsSvc();
+    const client = await connect(campaignDb(), ['campaigns:read'], svc);
+    await client.callTool({
+      name: 'list_campaigns',
+      arguments: { icpProfileId: 5 },
+    });
+    expect(svc.campaigns.getCampaignsByIcpProfile).toHaveBeenCalledWith(1, 5);
+  });
+
+  it('errors when user belongs to multiple orgs and no organizationId given', async () => {
+    const db = campaignDb({
+      member: {
+        findMany: vi.fn(async () => [
+          { organizationId: 1 },
+          { organizationId: 2 },
+        ]),
+      },
+    });
+    const client = await connect(db, ['campaigns:read'], campaignsSvc());
+    const res = (await client.callTool({
+      name: 'list_campaigns',
+      arguments: {},
+    })) as { isError?: boolean };
+    expect(res.isError).toBe(true);
+  });
+});
+
+describe('get_campaign tool', () => {
+  it('errors when campaign not found or inaccessible', async () => {
+    const db = campaignDb({
+      campaign: { findFirst: vi.fn(async () => null) },
+    });
+    const client = await connect(db, ['campaigns:read'], campaignsSvc());
+    const res = (await client.callTool({
+      name: 'get_campaign',
+      arguments: { campaignId: 99 },
+    })) as { isError?: boolean };
+    expect(res.isError).toBe(true);
+  });
+
+  it('returns campaign data when found', async () => {
+    const client = await connect(
+      campaignDb(),
+      ['campaigns:read'],
+      campaignsSvc(),
+    );
+    const res = await client.callTool({
+      name: 'get_campaign',
+      arguments: { campaignId: 7 },
+    });
+    const campaign = parse(res);
+    expect(campaign.id).toBe(7);
+  });
+});
+
+describe('create_campaign tool', () => {
+  it('rejects when token lacks campaigns:write', async () => {
+    const client = await connect(
+      campaignDb(),
+      ['campaigns:read'],
+      campaignsSvc(),
+    );
+    const res = (await client.callTool({
+      name: 'create_campaign',
+      arguments: { name: 'New Campaign' },
+    })) as { isError?: boolean };
+    expect(res.isError).toBe(true);
+  });
+
+  it('auto-resolves org and calls createCampaignMeta with the authorized user id', async () => {
+    const svc = campaignsSvc();
+    const client = await connect(campaignDb(), ['campaigns:write'], svc);
+    await client.callTool({
+      name: 'create_campaign',
+      arguments: { name: 'New Campaign', icpProfileId: 3 },
+    });
+    expect(svc.campaigns.createCampaignMeta).toHaveBeenCalledTimes(1);
+    const [orgId, userId, dto] = svc.campaigns.createCampaignMeta.mock.calls[0];
+    expect(orgId).toBe(1);
+    expect(userId).toBe(42);
+    expect(dto).toEqual({ name: 'New Campaign', icpProfileId: 3 });
+  });
+
+  it('surfaces service errors', async () => {
+    const svc = campaignsSvc({
+      createCampaignMeta: vi.fn(async () => {
+        throw new Error('Name is required');
+      }),
+    });
+    const client = await connect(campaignDb(), ['campaigns:write'], svc);
+    const res = (await client.callTool({
+      name: 'create_campaign',
+      arguments: { name: '' },
+    })) as { isError?: boolean };
+    expect(res.isError).toBe(true);
+  });
+});
+
 describe('update_company_summary tool', () => {
   it('rejects when token lacks companies:write', async () => {
     const client = await connect(
