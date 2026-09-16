@@ -1,7 +1,11 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { Prisma, type TaskStatus } from '@prisma/client';
 import type { PrismaClient } from '@zuko/models';
-import type { DealsService, CompaniesService } from '@zuko/sales';
+import type {
+  DealsService,
+  CompaniesService,
+  ContactsService,
+} from '@zuko/sales';
 import { DEAL_STAGE_VALUES } from '@zuko/sales';
 import { z } from 'zod';
 
@@ -19,6 +23,7 @@ export interface McpAuthContext {
 export interface McpDeps {
   deals: DealsService;
   companies: CompaniesService;
+  contacts: ContactsService;
 }
 
 /** Prisma Decimal (e.g. Deal.value) does not JSON-serialize to a number. */
@@ -933,6 +938,225 @@ export function buildMcpServer(
           'mcp',
         );
         return json(company);
+      } catch (error: unknown) {
+        return toolError(
+          error instanceof Error ? error.message : String(error),
+        );
+      }
+    },
+  );
+
+  server.registerTool(
+    'list_contacts',
+    {
+      description:
+        'List contacts in the organizations the authorized user belongs to. Returns up to 50 contacts, oldest first.',
+      inputSchema: {
+        organizationId: z
+          .number()
+          .optional()
+          .describe('Restrict results to a specific organization'),
+        search: z
+          .string()
+          .optional()
+          .describe('Search by contact name, email, or phone'),
+      },
+    },
+    async ({ organizationId, search }) => {
+      if (!authCtx.scopes.includes('contacts:read')) {
+        return missingScope('contacts:read');
+      }
+
+      const orgIds = await memberOrgIds();
+      if (organizationId && !orgIds.includes(organizationId)) {
+        return toolError(
+          `You do not have access to organization ${organizationId}.`,
+        );
+      }
+      if (!organizationId && orgIds.length !== 1) {
+        return toolError(
+          orgIds.length === 0
+            ? 'User is not a member of any organization.'
+            : 'User belongs to multiple organizations. Call list_organizations to find the correct id, then pass it as organizationId.',
+        );
+      }
+
+      const { contacts } = await deps!.contacts.findAll(
+        {
+          organizationId: organizationId ?? orgIds[0],
+          search,
+        },
+        { limit: 50 },
+      );
+
+      return json(contacts);
+    },
+  );
+
+  server.registerTool(
+    'get_contact',
+    {
+      description:
+        'Get detailed information about a specific contact by ID, including owners.',
+      inputSchema: {
+        contactId: z.int().describe('The ID of the contact to retrieve'),
+      },
+    },
+    async ({ contactId }) => {
+      if (!authCtx.scopes.includes('contacts:read')) {
+        return missingScope('contacts:read');
+      }
+
+      const orgIds = await memberOrgIds();
+
+      const contact = await prisma.contact.findFirst({
+        where: { id: contactId, organizationId: { in: orgIds } },
+        include: {
+          owners: {
+            include: {
+              user: { select: { id: true, name: true, email: true } },
+            },
+          },
+        },
+      });
+
+      if (!contact) {
+        return toolError(
+          `Contact with ID ${contactId} not found or not accessible.`,
+        );
+      }
+
+      return json(contact);
+    },
+  );
+
+  server.registerTool(
+    'create_contact',
+    {
+      description:
+        'Create a new contact in an organization. organizationId is optional when the user belongs to exactly one organization — call list_organizations first to pick one if needed.',
+      inputSchema: {
+        organizationId: z
+          .int()
+          .optional()
+          .describe(
+            'Organization ID to create the contact in. Omit if you belong to exactly one organization; call list_organizations to find the correct id otherwise.',
+          ),
+        name: z.string().describe('The name of the contact'),
+        email: z.string().optional().describe('Contact email address'),
+        phone: z
+          .string()
+          .optional()
+          .describe(
+            'Contact phone number in E.164 format (e.g., +14155552671)',
+          ),
+        linkedinId: z
+          .string()
+          .optional()
+          .describe('Contact LinkedIn identifier'),
+      },
+    },
+    async (args) => {
+      if (!authCtx.scopes.includes('contacts:write')) {
+        return missingScope('contacts:write');
+      }
+      if (!deps?.contacts) {
+        return toolError('Contact management is not available.');
+      }
+
+      const orgIds = await memberOrgIds();
+
+      let resolvedOrgId = args.organizationId;
+      if (resolvedOrgId === undefined) {
+        if (orgIds.length === 0) {
+          return toolError('User is not a member of any organization.');
+        }
+        if (orgIds.length > 1) {
+          return toolError(
+            `User belongs to multiple organizations. Call list_organizations to find the correct id, then pass it as organizationId.`,
+          );
+        }
+        resolvedOrgId = orgIds[0];
+      } else if (!orgIds.includes(resolvedOrgId)) {
+        return toolError(
+          `You do not have access to organization ${resolvedOrgId}.`,
+        );
+      }
+
+      try {
+        const contact = await deps.contacts.create(
+          {
+            organizationId: resolvedOrgId,
+            name: args.name,
+            email: args.email,
+            phone: args.phone,
+            linkedinId: args.linkedinId,
+          },
+          authCtx.userId,
+          'mcp',
+        );
+        return json(contact);
+      } catch (error: unknown) {
+        return toolError(
+          error instanceof Error ? error.message : String(error),
+        );
+      }
+    },
+  );
+
+  server.registerTool(
+    'update_contact',
+    {
+      description:
+        'Update an existing contact. Field changes are recorded on the contact activity timeline.',
+      inputSchema: {
+        contactId: z.int().describe('The ID of the contact to update'),
+        name: z.string().optional().describe('New contact name'),
+        email: z.string().optional().describe('New contact email address'),
+        phone: z
+          .string()
+          .optional()
+          .describe('New contact phone number in E.164 format'),
+        linkedinId: z
+          .string()
+          .optional()
+          .describe('New contact LinkedIn identifier'),
+      },
+    },
+    async (args) => {
+      if (!authCtx.scopes.includes('contacts:write')) {
+        return missingScope('contacts:write');
+      }
+      if (!deps?.contacts) {
+        return toolError('Contact management is not available.');
+      }
+
+      const orgIds = await memberOrgIds();
+
+      const existing = await prisma.contact.findFirst({
+        where: { id: args.contactId, organizationId: { in: orgIds } },
+        select: { organizationId: true },
+      });
+      if (!existing) {
+        return toolError(
+          `Contact with ID ${args.contactId} not found or not accessible.`,
+        );
+      }
+
+      try {
+        const contact = await deps.contacts.update(
+          args.contactId,
+          existing.organizationId,
+          {
+            name: args.name,
+            email: args.email,
+            phone: args.phone,
+            linkedinId: args.linkedinId,
+          },
+          authCtx.userId,
+          'mcp',
+        );
+        return json(contact);
       } catch (error: unknown) {
         return toolError(
           error instanceof Error ? error.message : String(error),
