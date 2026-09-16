@@ -54,6 +54,6 @@ import { PrismaService } from '../../prisma/prisma.service';
       inject: [PrismaService],
     },
   ],
-  exports: [ApolloIntegrationService, ApolloMcpService],
+  exports: [ApolloIntegrationService, ApolloMcpService, ApolloSequencesService],
 })
 export class IntegrationsModule {}

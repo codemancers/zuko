@@ -6,9 +6,10 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { SalesModule } from '../sales/sales.module';
 import { IcpModule } from '../icp/icp.module';
 import { LeadsModule } from '../leads/leads.module';
+import { IntegrationsModule } from '../integrations/integrations.module';
 
 @Module({
-  imports: [SalesModule, IcpModule, LeadsModule],
+  imports: [SalesModule, IcpModule, LeadsModule, IntegrationsModule],
   controllers: [McpController, WellKnownController],
   providers: [McpBearerGuard, PrismaService],
 })

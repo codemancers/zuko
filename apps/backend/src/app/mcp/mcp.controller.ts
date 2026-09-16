@@ -6,6 +6,7 @@ import { DealsService, CompaniesService, ContactsService } from '@zuko/sales';
 import { PrismaService } from '../../prisma/prisma.service';
 import { IcpService } from '../icp/icp.service';
 import { LeadsService } from '../leads/leads.service';
+import { ApolloSequencesService } from '../integrations/apollo/sequences/apollo-sequences.service';
 import { buildMcpServer } from './mcp-server';
 import { McpBearerGuard, type McpAuthedRequest } from './mcp-bearer.guard';
 
@@ -28,6 +29,7 @@ export class McpController {
     private readonly contacts: ContactsService,
     private readonly icps: IcpService,
     private readonly leads: LeadsService,
+    private readonly campaigns: ApolloSequencesService,
   ) {}
 
   @All()
@@ -53,6 +55,7 @@ export class McpController {
         contacts: this.contacts,
         icps: this.icps,
         leads: this.leads,
+        campaigns: this.campaigns,
       },
     );
     const transport = new StreamableHTTPServerTransport({
