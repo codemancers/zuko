@@ -37,6 +37,7 @@
             "group": "Concepts",
             "pages": [
               "concepts/architecture",
+              "concepts/prospect-lifecycle",
               "concepts/sandbox",
               "concepts/mcp-server"
             ]

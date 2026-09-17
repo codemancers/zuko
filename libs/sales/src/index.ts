@@ -5,6 +5,7 @@ export * from './lib/modules';
 export * from './lib/constants/table-metadata';
 export * from './lib/constants/deals';
 export * from './lib/constants/tasks';
+export * from './lib/constants/prospects';
 export * from './lib/events/deal-events';
 export * from './lib/events/contact-events';
 export * from './lib/events/company-events';

@@ -1,0 +1,239 @@
+---
+title: Prospect Lifecycle
+description: Terminology, states, events, and transition rules that govern a person's journey from outbound target to closed deal.
+---
+
+Zuko tracks a person across two very different phases of a sales motion: the **outbound** phase, where we reach out and most people never answer, and the **CRM** phase, where a human relationship exists and is worth managing. Collapsing the two into one record makes both worse — outbound noise pollutes the CRM, and CRM semantics do not survive bulk enrolment.
+
+This page defines the vocabulary, the states, the events that drive them, and the rules for moving between them. The machine-readable version of everything here lives in `libs/sales/src/lib/constants/prospects.ts` and is exported from `@zuko/sales` — code must import it rather than re-declare string literals.
+
+## Terminology
+
+| Term                    | Means                                                                                              | Lives in             |
+| ----------------------- | -------------------------------------------------------------------------------------------------- | -------------------- |
+| **ICP Profile**         | The definition of who we want to reach — filters, notes, positioning.                              | `IcpProfile`         |
+| **Prospect**            | A person we intend to contact. Sourced from a provider or added manually. No relationship yet.     | `Prospect`           |
+| **Campaign**            | An outbound sequence, usually backed by a provider sequence (Apollo).                              | `Campaign`           |
+| **Campaign Membership** | One prospect's participation in one campaign. Carries campaign state, engagement, and disposition. | `CampaignMembership` |
+| **Lead**                | A prospect who showed intent and was promoted. Owned by a human, worked by hand.                   | `Lead`               |
+| **Contact / Company**   | CRM records for people and organizations we have a real relationship with.                         | `Contact`, `Company` |
+| **Deal**                | The revenue opportunity opened on conversion.                                                      | `Deal`               |
+
+The line to hold: **a prospect is a target, a lead is a conversation.** Automation owns prospects; people own leads.
+
+<Note>
+  `Prospect` and `CampaignMembership` do not exist yet — they are introduced by
+  the data-model task that follows this one. Until then, `Lead` carries both
+  meanings and campaign recipients live only in Apollo.
+</Note>
+
+## Events are not states
+
+The distinction that keeps this model honest:
+
+- An **event** is something that happened at a point in time. It is immutable, appended to history, and never overwritten. `message_opened`, `reply_received`, `message_bounced`.
+- A **state** is what is true right now. It is derived from events, and it changes.
+
+Three opens and a click are three events and a click — they are not a state. They are worth storing and worth scoring, but nothing about the membership changed: the person still has not answered. Only a reply moves `contacted` to `responded`.
+
+Keeping the two apart means campaign activity can be re-processed from history without corrupting standing, and it stops "opened twice" from being mistaken for interest.
+
+## The three axes of a membership
+
+A membership answers three independent questions, and conflating them is the usual modelling mistake. Someone can be `completed` on the campaign axis, `no_response` on the engagement axis, and `nurture` on the disposition axis — all at once.
+
+| Axis            | Question                                    | Values                                                                      |
+| --------------- | ------------------------------------------- | --------------------------------------------------------------------------- |
+| **Campaign**    | Where are they in the campaign's mechanics? | `identified` · `enrolled` · `active` · `completed` · `removed`              |
+| **Engagement**  | How have they responded?                    | `not_contacted` · `contacted` · `responded` · `no_response` · `unreachable` |
+| **Disposition** | What did we conclude about them?            | `interested` · `nurture` · `disqualified` · `opted_out`                     |
+
+### Campaign state
+
+| State        | Means                                                                    |
+| ------------ | ------------------------------------------------------------------------ |
+| `identified` | Selected for the campaign, not yet handed to the provider.               |
+| `enrolled`   | Added to the sequence, nothing sent yet.                                 |
+| `active`     | The sequence is running.                                                 |
+| `completed`  | The sequence finished on its own. **Terminal.**                          |
+| `removed`    | Pulled out early — opt-out, bounce, promotion, or by hand. **Terminal.** |
+
+```
+  ┌────────────┐      ┌──────────┐      ┌────────┐      ┌───────────┐
+  │ identified │─────►│ enrolled │─────►│ active │─────►│ completed │
+  └─────┬──────┘      └────┬─────┘      └───┬────┘      └───────────┘
+        │                  │                │
+        └──────────────────┴────────────────┴──────────►  removed
+                    (opt-out · bounce · promotion · manual)
+```
+
+### Engagement state
+
+| State           | Means                                                          |
+| --------------- | -------------------------------------------------------------- |
+| `not_contacted` | Enrolled, nothing delivered yet.                               |
+| `contacted`     | At least one message delivered.                                |
+| `responded`     | They answered. **Terminal.**                                   |
+| `no_response`   | The sequence ended in silence. Reversible by a late reply.     |
+| `unreachable`   | Hard bounce, invalid address, no usable channel. **Terminal.** |
+
+```
+  ┌───────────────┐      ┌───────────┐      ┌───────────┐
+  │ not_contacted │─────►│ contacted │─────►│ responded │
+  └───────┬───────┘      └─────┬─────┘      └───────────┘
+          │                    │                  ▲
+          │                    ▼                  │ late reply
+          │              ┌─────────────┐          │
+          │              │ no_response │──────────┘
+          │              └─────────────┘
+          └────────────────────┴──────────────────► unreachable
+```
+
+`no_response` is deliberately not terminal. People reply weeks after a sequence gives up, and that reply is worth as much as a prompt one.
+
+### Disposition
+
+The disposition is our conclusion, and it is the bridge from campaign activity to prospect standing. A membership must carry one once its campaign state is terminal.
+
+| Disposition    | Means                                    | Prospect becomes |
+| -------------- | ---------------------------------------- | ---------------- |
+| `interested`   | Positive intent — worth a human.         | `engaged`        |
+| `nurture`      | Not now. Try again another time.         | `new`            |
+| `disqualified` | Not a fit, wrong person, or unreachable. | `disqualified`   |
+| `opted_out`    | Asked us to stop.                        | `suppressed`     |
+
+`nurture` returning a prospect to `new` is the point: silence is not rejection, and a prospect who ignored one campaign is a legitimate target for the next.
+
+## How events land
+
+| Event               | Campaign state | Engagement state | Disposition    |
+| ------------------- | -------------- | ---------------- | -------------- |
+| `enrolled`          | `enrolled`     | —                | —              |
+| `message_sent`      | `active`       | —                | —              |
+| `message_delivered` | —              | `contacted`      | —              |
+| `message_opened`    | —              | —                | —              |
+| `message_clicked`   | —              | —                | —              |
+| `message_bounced`   | `removed`      | `unreachable`    | `disqualified` |
+| `reply_received`    | —              | `responded`      | —              |
+| `meeting_booked`    | —              | `responded`      | `interested`   |
+| `opted_out`         | `removed`      | —                | `opted_out`    |
+| `sequence_finished` | `completed`    | `no_response`    | —              |
+| `removed`           | `removed`      | —                | —              |
+
+Two rows deserve attention. `reply_received` sets engagement but no disposition — a reply proves contact, not intent; "no thanks" is a reply too, so a human or a classifier decides between `interested`, `nurture`, and `disqualified`. And `sequence_finished` only forces `no_response` when nothing was heard back; a membership already at `responded` keeps it.
+
+## Prospect status
+
+Status is the prospect's **standing with the organization** — one value, spanning every campaign it has ever been in.
+
+| Status         | Means                                                          |
+| -------------- | -------------------------------------------------------------- |
+| `new`          | Sourced or nurtured back. Eligible for outbound.               |
+| `enrolled`     | Has an open membership in at least one campaign.               |
+| `engaged`      | Showed intent. Awaiting promotion; automation paused.          |
+| `promoted`     | A `Lead` exists for this person. Outbound must not touch them. |
+| `disqualified` | Ruled out — not a fit, wrong person, or unreachable.           |
+| `suppressed`   | Must not be contacted. Opt-out or complaint.                   |
+
+```
+  ┌─────┐   enrol    ┌──────────┐    interested     ┌─────────┐   promote   ┌──────────┐
+  │ new │───────────►│ enrolled │──────────────────►│ engaged │────────────►│ promoted │
+  └─────┘◄───────────└──────────┘◄──────────────────└─────────┘◄────────────└──────────┘
+     ▲     nurture               re-enrol (nurture)            lead reverted / deleted
+     │
+     │  manual revive — leaving suppression also requires fresh consent
+     │
+     ├───────────────────────┐
+     │                       │
+┌────┴─────────┐      ┌──────┴───────┐
+│ disqualified │      │  suppressed  │   ◄── both reachable from any status above
+└──────────────┘      └──────────────┘
+```
+
+| From           | To             | Trigger                                              |
+| -------------- | -------------- | ---------------------------------------------------- |
+| `new`          | `enrolled`     | First membership opens.                              |
+| `enrolled`     | `new`          | Last membership closed with `nurture`.               |
+| `enrolled`     | `engaged`      | A membership closed `interested`.                    |
+| `engaged`      | `promoted`     | Promotion creates a `Lead`.                          |
+| `engaged`      | `enrolled`     | Re-enrolled instead of promoted.                     |
+| `promoted`     | `engaged`      | The lead was reverted or deleted.                    |
+| _any_          | `disqualified` | Closed `disqualified`, or judged out of ICP by hand. |
+| _any_          | `suppressed`   | Closed `opted_out`, or a spam complaint.             |
+| `suppressed`   | `new`          | **Manual only**, and only on recorded fresh consent. |
+| `disqualified` | `new`          | **Manual only** — a human decides to revive.         |
+
+Two rules carry weight beyond the table:
+
+1. **Suppression wins.** It is reachable from every status, including `disqualified`, and reversible only by an explicit human action backed by new consent. No campaign event may ever lift it.
+2. **Promotion pauses automation.** Entering `promoted` removes the prospect from every open membership. A person being worked by a human is never also being emailed by a sequence.
+
+## Identity: one human, one record
+
+A person sourced twice is one prospect, and a person we already know is not a new prospect at all. Resolution runs on every ingest, in priority order: `apolloPersonId`, then `email`, then `linkedinUrl`, all scoped to the organization.
+
+The outcomes:
+
+- **Matches an existing prospect** → the existing record is enriched. No second prospect, and its campaign history stays whole.
+- **Matches an existing `Contact`** → the prospect links to that contact rather than shadowing it. The CRM record stays the source of truth for who this person is; the prospect carries only outbound state.
+- **Matches nothing** → a new prospect is created.
+
+A contact we already do business with can legitimately enter a new campaign — that is a new opportunity, not a new person. It produces a new membership against the same linked contact, and on promotion the existing `Contact` and `Company` are reused while a **new `Deal`** is opened. Existing contacts are never duplicated as fresh leads.
+
+## Enrolment eligibility
+
+A prospect may be enrolled only from `new` or `enrolled`. Everything else is blocked, for a different reason each time:
+
+- `engaged` — awaiting a promotion decision; enrolling would talk over the reply.
+- `promoted` — a human owns this person now.
+- `disqualified` — we decided not to pursue them.
+- `suppressed` — we are not allowed to contact them.
+
+Four more gates apply on top of status:
+
+1. **A contactable channel.** At least one channel the campaign can use must not be revoked.
+2. **One campaign at a time.** A prospect with an open membership anywhere is blocked from a second. Two cold sequences arriving at once read as spam to the person on the other end, whatever the org chart says.
+3. **No open membership in the same campaign.** Enforced in the database by a partial unique index, so a race cannot produce two.
+4. **Cooldown.** A membership that closed `nurture` sets `nextEligibleAt` — the date from the reply if one was given, otherwise the default of `DEFAULT_NO_RESPONSE_COOLDOWN_DAYS` (75). Until it passes, enrolment is refused.
+
+Gates 2 and 4 can be overridden by an authorized human passing `force`, which is recorded. **Consent cannot**: `force` never enrols a suppressed prospect, and the MCP tools never expose it at all — an agent gets no override.
+
+## Audit trail
+
+Every event carries `actorId` and `source` (`system`, `user`, `agent`, or `provider`), so the history answers _who_ as well as _what_. A provider webhook records `provider` and no actor; an MCP tool records `agent` with the token's user; the UI records `user`. Concluding a membership writes its own `removed` event, so a disposition set by hand is as traceable as one a campaign produced.
+
+A membership is also bound to the `channel` it runs on, because consent is per channel — an email sequence and a LinkedIn sequence are different conversations with different permissions.
+
+## Channel consent
+
+Consent is tracked **per channel** — `email`, `linkedin`, `phone` — with three states: `unknown`, `granted`, `revoked`.
+
+Outbound is opt-out, not opt-in: `unknown` is contactable. Only `revoked` silences a channel, and it silences only that channel — an email opt-out does not close LinkedIn. A prospect whose every channel is revoked is recorded as `suppressed` outright rather than left to be inferred at send time.
+
+Consent is a permission; `unreachable` is a fact about deliverability. A bounce does not revoke consent, and an opt-out does not mean the address was bad. They are stored separately because they expire differently and answer to different rules.
+
+## Agent surface
+
+Everything here is exposed over the [MCP server](/concepts/mcp-server) under two new scopes, `prospects:read` and `prospects:write`, alongside the existing `leads:*` and `campaigns:*` tools.
+
+| Tool                    | Scope             | Does                                                             |
+| ----------------------- | ----------------- | ---------------------------------------------------------------- |
+| `list_prospects`        | `prospects:read`  | Filter by status, campaign, ICP, engagement, or search text.     |
+| `get_prospect`          | `prospects:read`  | One prospect with campaign history, consent, and linked contact. |
+| `create_prospect`       | `prospects:write` | Add manually; resolves identity before creating.                 |
+| `enrol_prospect`        | `prospects:write` | Add to a campaign; refuses when eligibility rules block it.      |
+| `record_campaign_event` | `prospects:write` | Append an event and let the derived states follow.               |
+| `set_disposition`       | `prospects:write` | Conclude a membership.                                           |
+| `promote_prospect`      | `prospects:write` | Promote to a lead and close open memberships.                    |
+| `suppress_prospect`     | `prospects:write` | Revoke consent on a channel, or suppress outright.               |
+
+Two rules keep the agent surface honest:
+
+1. **Enum values come from `@zuko/sales`.** Tool schemas build their `z.enum` from the exported constants — a status added here reaches the agent without a second edit, and the two can never drift.
+2. **Tools cannot bypass the state machine.** Every write validates through the same `canTransition*` helpers the HTTP API uses, so an agent gets the same refusals a human does — including the manual-only rule on leaving suppression, which an agent cannot satisfy on its own.
+
+## Handoff to the CRM
+
+Promotion creates a `Lead` with status `replied`, the entry point of the existing lead state machine (`replied → interested → not_interested → converted`). The prospect stays in the system at `promoted` and keeps its campaign history — the lead is the working record, the prospect remains the outbound audit trail.
+
+Converting that lead produces a `Contact` (reused when identity resolution already linked one), optionally a `Company`, and a `Deal`. Reverting a converted lead deletes the deal and returns the lead to `replied`; the prospect stays `promoted`. Deleting the lead outright returns the prospect to `engaged`.
