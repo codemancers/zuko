@@ -115,7 +115,8 @@ export class ProspectsService {
   ) {
     const identity: ProspectIdentity = {
       email: input.email,
-      apolloPersonId: input.apolloPersonId,
+      externalType: input.externalType,
+      externalId: input.externalId,
       linkedinUrl: input.linkedinUrl,
     };
 
@@ -482,9 +483,7 @@ export class ProspectsService {
       ...(prospect.companyName ? { companyName: prospect.companyName } : {}),
       ...(prospect.title ? { title: prospect.title } : {}),
       ...(prospect.linkedinUrl ? { linkedinUrl: prospect.linkedinUrl } : {}),
-      ...(prospect.apolloPersonId
-        ? { apolloPersonId: prospect.apolloPersonId }
-        : {}),
+      ...(prospect.externalId ? { externalId: prospect.externalId } : {}),
       ...(prospect.icpProfileId ? { icpProfileId: prospect.icpProfileId } : {}),
       ...(primaryCampaignId ? { campaignId: primaryCampaignId } : {}),
       // Reuse the CRM contact identity resolution already found, so an

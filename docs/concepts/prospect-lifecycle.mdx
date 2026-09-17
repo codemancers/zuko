@@ -170,7 +170,16 @@ Two rules carry weight beyond the table:
 
 ## Identity: one human, one record
 
-A person sourced twice is one prospect, and a person we already know is not a new prospect at all. Resolution runs on every ingest, in priority order: `apolloPersonId`, then `email`, then `linkedinUrl`, all scoped to the organization.
+A person sourced twice is one prospect, and a person we already know is not a new prospect at all. Resolution runs on every ingest, in priority order: the **external identity**, then `email`, then `linkedinUrl`, all scoped to the organization.
+
+Prospects come from Apollo, Origami, Salesforce, a CSV, or a person typing a name — so identity is stored as a generic pair rather than a column per vendor:
+
+| Field          | Holds                                                        |
+| -------------- | ------------------------------------------------------------ |
+| `externalType` | Which system — `apollo`, `origami`, `salesforce`, `manual`, … |
+| `externalId`   | Who they are in that system                                   |
+
+The pair is matched together, never the id alone: Apollo `12345` and Salesforce `12345` are different people, and an id with no system attached cannot be matched at all. Adding a provider needs no migration — only a new `externalType` value. The same scheme now runs across `Contact`, `Company`, `Lead`, `Campaign` and `Prospect`; `Contact` and `Company` additionally carry `externalRecordId`, the vendor's pointer to *our* record in *their* workspace, which is a sync detail and never used for matching.
 
 The outcomes:
 

@@ -16,7 +16,7 @@ export class ApolloSyncService {
   async syncAllCampaignReplies() {
     const campaigns = await this.prisma.campaign.findMany({
       where: {
-        providerSequenceId: { not: null },
+        externalId: { not: null },
       },
     });
 
@@ -28,7 +28,7 @@ export class ApolloSyncService {
       try {
         const result = await this.apolloProspectsService.syncRepliesToLeads(
           campaign.organizationId,
-          campaign.providerSequenceId!,
+          campaign.externalId!,
           campaign.icpProfileId ?? undefined,
           campaign.id,
         );

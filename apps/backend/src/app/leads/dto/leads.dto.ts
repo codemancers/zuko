@@ -71,7 +71,7 @@ export class CreateLeadDto {
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
-  apolloPersonId?: string;
+  externalId?: string;
 
   @ApiPropertyOptional({ type: Object })
   @IsOptional()

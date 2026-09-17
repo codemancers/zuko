@@ -2,12 +2,17 @@ import { Injectable } from '@nestjs/common';
 import type { Prisma } from '@prisma/client';
 import type { PrismaService } from '../modules/prisma.types';
 
+/** Campaigns are Apollo sequences today; other systems set this explicitly. */
+const DEFAULT_EXTERNAL_TYPE = 'apollo';
+
 export interface UpsertCampaignInput {
   organizationId: number;
   createdById: number;
   icpProfileId?: number;
   name: string;
-  providerSequenceId: string;
+  /** Which system the campaign lives in — apollo | origami | salesforce | … */
+  externalType?: string;
+  externalId: string;
   active: boolean;
   permissions: string;
   sequence: unknown[];
@@ -18,7 +23,8 @@ export interface CreateCampaignMetaInput {
   createdById: number;
   icpProfileId?: number;
   name: string;
-  providerSequenceId?: string;
+  externalType?: string;
+  externalId?: string;
 }
 
 @Injectable()
@@ -35,7 +41,8 @@ export class CampaignsRepository {
         active: false,
         permissions: 'team_can_use',
         sequence: [],
-        providerSequenceId: input.providerSequenceId ?? null,
+        externalType: input.externalType ?? DEFAULT_EXTERNAL_TYPE,
+        externalId: input.externalId ?? null,
       },
     });
   }
@@ -47,22 +54,22 @@ export class CampaignsRepository {
     });
   }
 
-  async setProviderSequenceId(id: number, providerSequenceId: string) {
+  async setExternalId(id: number, externalId: string) {
     return this.prisma.campaign.update({
       where: { id },
-      data: { providerSequenceId },
+      data: { externalId },
     });
   }
 
-  async linkProviderSequence(
+  async linkExternalSequence(
     id: number,
-    providerSequenceId: string,
+    externalId: string,
     sequence: unknown[],
   ) {
     return this.prisma.campaign.update({
       where: { id },
       data: {
-        providerSequenceId,
+        externalId,
         sequence: sequence as Prisma.InputJsonValue,
       },
     });
@@ -71,9 +78,10 @@ export class CampaignsRepository {
   async upsert(input: UpsertCampaignInput) {
     return this.prisma.campaign.upsert({
       where: {
-        organizationId_providerSequenceId: {
+        organizationId_externalType_externalId: {
           organizationId: input.organizationId,
-          providerSequenceId: input.providerSequenceId,
+          externalType: input.externalType ?? DEFAULT_EXTERNAL_TYPE,
+          externalId: input.externalId,
         },
       },
       create: {
@@ -81,7 +89,8 @@ export class CampaignsRepository {
         createdById: input.createdById,
         icpProfileId: input.icpProfileId ?? null,
         name: input.name,
-        providerSequenceId: input.providerSequenceId,
+        externalType: input.externalType ?? DEFAULT_EXTERNAL_TYPE,
+        externalId: input.externalId,
         active: input.active,
         permissions: input.permissions,
         sequence: input.sequence as Prisma.InputJsonValue,
@@ -105,12 +114,17 @@ export class CampaignsRepository {
     });
   }
 
-  async findBySequenceId(organizationId: number, providerSequenceId: string) {
+  async findByExternalId(
+    organizationId: number,
+    externalId: string,
+    externalType: string = DEFAULT_EXTERNAL_TYPE,
+  ) {
     return this.prisma.campaign.findUnique({
       where: {
-        organizationId_providerSequenceId: {
+        organizationId_externalType_externalId: {
           organizationId,
-          providerSequenceId,
+          externalType,
+          externalId,
         },
       },
     });
@@ -118,14 +132,16 @@ export class CampaignsRepository {
 
   async updateActive(
     organizationId: number,
-    providerSequenceId: string,
+    externalId: string,
     active: boolean,
+    externalType: string = DEFAULT_EXTERNAL_TYPE,
   ) {
     return this.prisma.campaign.update({
       where: {
-        organizationId_providerSequenceId: {
+        organizationId_externalType_externalId: {
           organizationId,
-          providerSequenceId,
+          externalType,
+          externalId,
         },
       },
       data: { active },

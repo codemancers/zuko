@@ -49,10 +49,20 @@ export class CreateProspectDto {
   @IsString()
   linkedinUrl?: string;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({
+    description:
+      'System this prospect came from (apollo, origami, salesforce, …). Required alongside externalId.',
+  })
   @IsOptional()
   @IsString()
-  apolloPersonId?: string;
+  externalType?: string;
+
+  @ApiPropertyOptional({
+    description: "Identity within externalType's system.",
+  })
+  @IsOptional()
+  @IsString()
+  externalId?: string;
 
   @ApiPropertyOptional()
   @IsOptional()

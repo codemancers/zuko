@@ -168,7 +168,7 @@ export class ApolloSequencesService {
       const sequence = this.buildSequenceSteps(result);
       if (zukoId != null) {
         // Update the existing Zuko campaign record (avoids unique constraint collision)
-        await this.campaignsRepository.linkProviderSequence(
+        await this.campaignsRepository.linkExternalSequence(
           zukoId,
           result.emailer_campaign.id,
           sequence,
@@ -179,7 +179,7 @@ export class ApolloSequencesService {
           createdById: userId,
           icpProfileId: dto.icpProfileId,
           name: result.emailer_campaign.name ?? dto.name,
-          providerSequenceId: result.emailer_campaign.id,
+          externalId: result.emailer_campaign.id,
           active: result.emailer_campaign.active ?? false,
           permissions:
             result.emailer_campaign.permissions ??
@@ -199,7 +199,7 @@ export class ApolloSequencesService {
     userId: number,
     dto: CreateSequenceDto,
   ) {
-    const campaign = await this.campaignsRepository.findBySequenceId(
+    const campaign = await this.campaignsRepository.findByExternalId(
       organizationId,
       sequenceId,
     );
@@ -263,7 +263,7 @@ export class ApolloSequencesService {
       organizationId,
       createdById: userId,
       name: dto.name,
-      providerSequenceId: sequenceId,
+      externalId: sequenceId,
       active: !wasInactive,
       permissions: dto.permissions ?? 'team_can_use',
       sequence,
@@ -296,7 +296,7 @@ export class ApolloSequencesService {
   }
 
   async deactivateSequence(organizationId: number, sequenceId: string) {
-    const campaign = await this.campaignsRepository.findBySequenceId(
+    const campaign = await this.campaignsRepository.findByExternalId(
       organizationId,
       sequenceId,
     );
@@ -337,7 +337,7 @@ export class ApolloSequencesService {
   }
 
   async getCampaign(organizationId: number, sequenceId: string) {
-    const campaign = await this.campaignsRepository.findBySequenceId(
+    const campaign = await this.campaignsRepository.findByExternalId(
       organizationId,
       sequenceId,
     );
@@ -366,7 +366,7 @@ export class ApolloSequencesService {
       createdById: userId,
       icpProfileId: dto.icpProfileId,
       name: dto.name,
-      providerSequenceId: dto.providerSequenceId,
+      externalId: dto.externalId,
     });
   }
 
@@ -399,11 +399,11 @@ export class ApolloSequencesService {
       sequence: dto.sequence,
     };
 
-    if (campaign.providerSequenceId) {
+    if (campaign.externalId) {
       // Sequence already exists in Apollo — update it
       return this.updateSequence(
         organizationId,
-        campaign.providerSequenceId,
+        campaign.externalId,
         userId,
         createDto,
       );

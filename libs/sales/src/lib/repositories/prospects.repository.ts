@@ -12,7 +12,8 @@ export interface CreateProspectInput {
   companyName?: string;
   title?: string;
   linkedinUrl?: string;
-  apolloPersonId?: string;
+  externalType?: string;
+  externalId?: string;
   status?: string;
   source?: string;
   emailConsent?: string;
@@ -32,6 +33,8 @@ export interface UpdateProspectInput {
   companyName?: string;
   title?: string;
   linkedinUrl?: string;
+  externalType?: string;
+  externalId?: string;
   status?: string;
   emailConsent?: string;
   linkedinConsent?: string;
@@ -51,7 +54,9 @@ export interface ProspectFilters {
 
 export interface ProspectIdentity {
   email?: string | null;
-  apolloPersonId?: string | null;
+  /** Which system externalId belongs to — apollo | origami | salesforce | … */
+  externalType?: string | null;
+  externalId?: string | null;
   linkedinUrl?: string | null;
 }
 
@@ -90,7 +95,7 @@ export interface RecordEventInput {
 }
 
 const membershipInclude = {
-  campaign: { select: { id: true, name: true, provider: true } },
+  campaign: { select: { id: true, name: true, externalType: true } },
 } satisfies Prisma.CampaignMembershipInclude;
 
 const defaultInclude = {
@@ -181,11 +186,13 @@ export class ProspectsRepository {
    * Returns null when nothing matches, so the caller creates a new record.
    */
   async findByIdentity(organizationId: number, identity: ProspectIdentity) {
-    const { apolloPersonId, email, linkedinUrl } = identity;
+    const { externalType, externalId, email, linkedinUrl } = identity;
 
-    if (apolloPersonId) {
+    // An id is only meaningful alongside the system it came from: Apollo
+    // "12345" and Salesforce "12345" are different people.
+    if (externalType && externalId) {
       const match = await this.prisma.prospect.findFirst({
-        where: { organizationId, apolloPersonId },
+        where: { organizationId, externalType, externalId },
         include: defaultInclude,
       });
       if (match) return match;
@@ -213,8 +220,11 @@ export class ProspectsRepository {
   /** The matching CRM contact, so a known customer is never duplicated. */
   findMatchingContact(organizationId: number, identity: ProspectIdentity) {
     const or: Prisma.ContactWhereInput[] = [];
-    if (identity.apolloPersonId) {
-      or.push({ apolloPersonId: identity.apolloPersonId });
+    if (identity.externalType && identity.externalId) {
+      or.push({
+        externalType: identity.externalType,
+        externalId: identity.externalId,
+      });
     }
     if (identity.email) or.push({ email: identity.email });
     if (identity.linkedinUrl) or.push({ linkedinId: identity.linkedinUrl });

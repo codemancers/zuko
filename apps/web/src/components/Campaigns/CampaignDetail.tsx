@@ -62,16 +62,14 @@ export default function CampaignDetail({ zukoId }: CampaignDetailProps) {
   const { data: campaign, isLoading } = useQuery(getZukoCampaignByDbId(zukoId));
 
   const { data: liveSequence } = useQuery({
-    queryKey: ['campaign', campaign?.providerSequenceId],
+    queryKey: ['campaign', campaign?.externalId],
     queryFn: async () => {
       const res = await apolloSequencesApi.list({ name: '' });
       return (
-        res.emailer_campaigns.find(
-          (c) => c.id === campaign!.providerSequenceId,
-        ) ?? null
+        res.emailer_campaigns.find((c) => c.id === campaign!.externalId) ?? null
       );
     },
-    enabled: !!campaign?.providerSequenceId,
+    enabled: !!campaign?.externalId,
     staleTime: 30_000,
   });
 
@@ -80,13 +78,13 @@ export default function CampaignDetail({ zukoId }: CampaignDetailProps) {
     : (campaign?.active ?? false);
 
   const approveMutation = useMutation({
-    mutationFn: () => apolloSequencesApi.approve(campaign!.providerSequenceId!),
+    mutationFn: () => apolloSequencesApi.approve(campaign!.externalId!),
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: ['campaign', 'zuko-db', zukoId],
       });
       queryClient.invalidateQueries({
-        queryKey: ['campaign', campaign?.providerSequenceId],
+        queryKey: ['campaign', campaign?.externalId],
       });
       toast.success('Campaign activated');
     },
@@ -94,14 +92,13 @@ export default function CampaignDetail({ zukoId }: CampaignDetailProps) {
   });
 
   const deactivateMutation = useMutation({
-    mutationFn: () =>
-      apolloSequencesApi.deactivate(campaign!.providerSequenceId!),
+    mutationFn: () => apolloSequencesApi.deactivate(campaign!.externalId!),
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: ['campaign', 'zuko-db', zukoId],
       });
       queryClient.invalidateQueries({
-        queryKey: ['campaign', campaign?.providerSequenceId],
+        queryKey: ['campaign', campaign?.externalId],
       });
       toast.success('Campaign deactivated');
     },
@@ -118,7 +115,7 @@ export default function CampaignDetail({ zukoId }: CampaignDetailProps) {
       </p>
     );
 
-  const hasSequence = !!campaign.providerSequenceId;
+  const hasSequence = !!campaign.externalId;
 
   return (
     <>
@@ -193,9 +190,7 @@ export default function CampaignDetail({ zukoId }: CampaignDetailProps) {
                     </Text>
                   </div>
                 ) : (
-                  <CampaignAnalytics
-                    sequenceId={campaign.providerSequenceId!}
-                  />
+                  <CampaignAnalytics sequenceId={campaign.externalId!} />
                 )}
               </div>
             )}
@@ -243,7 +238,7 @@ export default function CampaignDetail({ zukoId }: CampaignDetailProps) {
                   Sequence ID
                 </Text>
                 <Text className="mt-1 break-all font-mono text-xs text-zinc-500">
-                  {campaign.providerSequenceId}
+                  {campaign.externalId}
                 </Text>
               </div>
             )}

@@ -20,7 +20,8 @@ export interface Lead {
   linkedinUrl?: string;
   status: 'replied' | 'interested' | 'not_interested' | 'converted';
   source: 'apollo' | 'origami' | 'linkedin' | 'manual';
-  apolloPersonId?: string;
+  externalType?: string;
+  externalId?: string;
   notes?: OutputData;
   createdAt: string;
   updatedAt: string;

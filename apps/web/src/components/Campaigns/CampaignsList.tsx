@@ -43,7 +43,7 @@ export default function CampaignsList() {
   const zukoIdBySequenceId = useMemo(() => {
     const map = new Map<string, number>();
     zukoCampaigns?.forEach((c) => {
-      if (c.providerSequenceId) map.set(c.providerSequenceId, c.id);
+      if (c.externalId) map.set(c.externalId, c.id);
     });
     return map;
   }, [zukoCampaigns]);
@@ -63,7 +63,7 @@ export default function CampaignsList() {
     try {
       const created = await apolloSequencesApi.createMeta({
         name: campaign.name,
-        providerSequenceId: campaign.id,
+        externalId: campaign.id,
       });
       queryClient.invalidateQueries({ queryKey: ['campaigns', 'all'] });
       router.push(`/campaigns/${created.id}`);

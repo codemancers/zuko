@@ -12,6 +12,9 @@ import type {
   AddPeopleToSequenceDto,
 } from './dto/prospects.dto';
 
+/** Identifies records this integration owns in the generic external-id scheme. */
+const APOLLO = 'apollo';
+
 const APOLLO_BASE = 'https://api.apollo.io/api/v1';
 
 // ─── Apollo REST response shapes ─────────────────────────────────────────────
@@ -328,7 +331,7 @@ export class ApolloProspectsService {
   private async enrichEmail(
     organizationId: number,
     personData: {
-      apolloPersonId?: string;
+      externalId?: string;
       firstName?: string;
       lastName?: string;
       organizationName?: string;
@@ -336,7 +339,7 @@ export class ApolloProspectsService {
   ): Promise<string | undefined> {
     const body: Record<string, string> = { reveal_personal_emails: 'false' };
     // Person ID gives Apollo an exact match — much more reliable than name lookup
-    if (personData.apolloPersonId) body['id'] = personData.apolloPersonId;
+    if (personData.externalId) body['id'] = personData.externalId;
     if (personData.firstName) body['first_name'] = personData.firstName;
     if (personData.lastName) body['last_name'] = personData.lastName;
     if (personData.organizationName)
@@ -446,7 +449,7 @@ export class ApolloProspectsService {
           let email = personData.email;
           if (!email) {
             email = await this.enrichEmail(organizationId, {
-              apolloPersonId: personId,
+              externalId: personId,
               ...personData,
             });
           }
@@ -481,8 +484,8 @@ export class ApolloProspectsService {
               .create({
                 organizationId,
                 name,
-                apolloPersonId: personId,
-                apolloContactId: contactId,
+                externalId: personId,
+                externalRecordId: contactId,
               })
               .catch((err: unknown) => {
                 // Non-fatal — CRM record creation is best-effort.
@@ -587,8 +590,9 @@ export class ApolloProspectsService {
 
     for (const contact of replied) {
       const existing = contact.id
-        ? await this.leadsRepository.findByApolloPersonId(
+        ? await this.leadsRepository.findByExternalIdentity(
             organizationId,
+            APOLLO,
             contact.id,
           )
         : null;
@@ -606,8 +610,9 @@ export class ApolloProspectsService {
         email: contact.email,
         title: contact.title,
         companyName: contact.organizationName,
-        apolloPersonId: contact.id,
+        externalId: contact.id,
         source: 'apollo',
+        externalType: APOLLO,
         status: 'replied',
       });
       created++;

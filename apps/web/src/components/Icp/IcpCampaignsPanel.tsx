@@ -28,8 +28,7 @@ function CampaignStatusCell({
       className="cursor-pointer"
       onClick={(e) => {
         e.stopPropagation();
-        if (campaign.providerSequenceId)
-          onDeactivate(campaign.providerSequenceId);
+        if (campaign.externalId) onDeactivate(campaign.externalId);
       }}
     >
       Active
@@ -41,7 +40,7 @@ function CampaignStatusCell({
       className="cursor-pointer"
       onClick={(e) => {
         e.stopPropagation();
-        if (campaign.providerSequenceId) onApprove(campaign.providerSequenceId);
+        if (campaign.externalId) onApprove(campaign.externalId);
       }}
     >
       Inactive

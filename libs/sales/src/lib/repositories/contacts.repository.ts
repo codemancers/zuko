@@ -14,8 +14,8 @@ export interface CreateContactInput {
   ownerIds?: number[];
   primaryOwnerId?: number;
   fields?: Record<string, unknown>;
-  apolloPersonId?: string;
-  apolloContactId?: string;
+  externalId?: string;
+  externalRecordId?: string;
 }
 
 export interface UpdateContactInput {
@@ -26,8 +26,8 @@ export interface UpdateContactInput {
   notes?: EditorData;
   isHidden?: boolean;
   fields?: Record<string, unknown>;
-  apolloPersonId?: string;
-  apolloContactId?: string;
+  externalId?: string;
+  externalRecordId?: string;
 }
 
 export interface ContactFilters {
@@ -89,9 +89,17 @@ export class ContactsRepository {
     });
   }
 
-  async findByApolloPersonId(apolloPersonId: string, organizationId: number) {
+  /**
+   * Match on an external system's identity. Scoped by externalType because the
+   * same id string can mean different people in different systems.
+   */
+  async findByExternalIdentity(
+    organizationId: number,
+    externalType: string,
+    externalId: string,
+  ) {
     return this.prisma.contact.findFirst({
-      where: { apolloPersonId, organizationId },
+      where: { organizationId, externalType, externalId },
     });
   }
 

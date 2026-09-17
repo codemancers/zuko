@@ -71,12 +71,12 @@ export class CreateContactDto implements Omit<
     example: '587cf802f65125cad923a266',
     description: 'Apollo global person ID (stable across workspaces)',
   })
-  apolloPersonId?: string;
+  externalId?: string;
 
   @ApiPropertyOptional({
     description: 'Apollo workspace contact ID (exists once saved to Apollo)',
   })
-  apolloContactId?: string;
+  externalRecordId?: string;
 }
 
 export class UpdateContactDto implements Partial<UpdateContactInput> {
@@ -101,12 +101,12 @@ export class UpdateContactDto implements Partial<UpdateContactInput> {
   @ApiPropertyOptional({
     description: 'Apollo global person ID (stable across workspaces)',
   })
-  apolloPersonId?: string;
+  externalId?: string;
 
   @ApiPropertyOptional({
     description: 'Apollo workspace contact ID (exists once saved to Apollo)',
   })
-  apolloContactId?: string;
+  externalRecordId?: string;
 }
 
 export class ContactListQueryDto {

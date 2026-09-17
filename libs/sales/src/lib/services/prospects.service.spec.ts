@@ -193,20 +193,70 @@ describe('ProspectsService', () => {
       expect(second.title).toBe('Rear Admiral');
     });
 
-    it('Matches on Apollo person id ahead of email', async () => {
+    it('Matches on the external identity ahead of email', async () => {
       const first = await service.create(ORG_ID, {
         name: 'Alan Turing',
         email: 'alan@example.com',
-        apolloPersonId: 'apollo-123',
+        externalType: 'apollo',
+        externalId: 'person-123',
       });
 
       const second = await service.create(ORG_ID, {
         name: 'Alan Turing',
         email: 'alan.turing@example.com',
-        apolloPersonId: 'apollo-123',
+        externalType: 'apollo',
+        externalId: 'person-123',
       });
 
       expect(second.id).toBe(first.id);
+    });
+
+    it('Treats the same id in different systems as different people', async () => {
+      const apollo = await service.create(ORG_ID, {
+        name: 'Apollo Person',
+        email: 'from-apollo@example.com',
+        externalType: 'apollo',
+        externalId: 'shared-id-999',
+      });
+
+      const salesforce = await service.create(ORG_ID, {
+        name: 'Salesforce Person',
+        email: 'from-salesforce@example.com',
+        externalType: 'salesforce',
+        externalId: 'shared-id-999',
+      });
+
+      expect(salesforce.id).not.toBe(apollo.id);
+      expect((await service.findAll(ORG_ID)).total).toBe(2);
+    });
+
+    it('Sources a prospect from any system without a schema change', async () => {
+      for (const externalType of ['origami', 'salesforce', 'hubspot']) {
+        const p = await service.create(ORG_ID, {
+          name: `Person from ${externalType}`,
+          email: `${externalType}@example.com`,
+          externalType,
+          externalId: `${externalType}-1`,
+        });
+        expect(p.externalType).toBe(externalType);
+      }
+    });
+
+    it('Ignores a bare id with no system to interpret it', async () => {
+      const first = await service.create(ORG_ID, {
+        name: 'No System',
+        email: 'nosystem-a@example.com',
+        externalId: 'dangling-1',
+      });
+      const second = await service.create(ORG_ID, {
+        name: 'No System Two',
+        email: 'nosystem-b@example.com',
+        externalId: 'dangling-1',
+      });
+
+      // Without externalType the id cannot be matched on, so these stay
+      // separate people rather than being wrongly merged.
+      expect(second.id).not.toBe(first.id);
     });
 
     it('Links to an existing CRM contact rather than shadowing it', async () => {

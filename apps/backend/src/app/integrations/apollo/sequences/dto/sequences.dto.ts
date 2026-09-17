@@ -24,7 +24,7 @@ export class CreateCampaignDto {
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
-  providerSequenceId?: string;
+  externalId?: string;
 }
 
 export class EmailerTemplateDto {

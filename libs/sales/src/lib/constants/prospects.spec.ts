@@ -8,6 +8,7 @@ import {
   ENGAGEMENT_STATE_VALUES,
   ENGAGEMENT_TRANSITIONS,
   OPEN_MEMBERSHIP_STATES,
+  KNOWN_EXTERNAL_TYPE_VALUES,
   PROSPECT_IDENTITY_KEYS,
   PROSPECT_STATUS_TRANSITIONS,
   PROSPECT_STATUS_VALUES,
@@ -313,12 +314,18 @@ describe('prospect lifecycle', () => {
   });
 
   describe('identity resolution', () => {
-    it('Matches on the provider id before falling back to email or LinkedIn', () => {
+    it('Matches on the external identity before email or LinkedIn', () => {
       expect(PROSPECT_IDENTITY_KEYS).toEqual([
-        'apolloPersonId',
+        'externalId',
         'email',
         'linkedinUrl',
       ]);
+    });
+
+    it('Names the systems we sync, without closing the set', () => {
+      expect(KNOWN_EXTERNAL_TYPE_VALUES).toEqual(
+        expect.arrayContaining(['apollo', 'origami', 'salesforce']),
+      );
     });
   });
 });

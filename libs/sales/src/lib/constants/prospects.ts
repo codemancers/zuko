@@ -433,14 +433,34 @@ export function isChannelContactable(consent: ConsentState): boolean {
  * Fields used to match a sourced person against records we already hold, in
  * priority order. A prospect that matches an existing Contact links to it
  * instead of becoming a second copy of the same human.
+ *
+ * `externalId` is only ever matched together with `externalType`: the same id
+ * string means different people in different systems.
  */
 export const PROSPECT_IDENTITY_KEYS = [
-  'apolloPersonId',
+  'externalId',
   'email',
   'linkedinUrl',
 ] as const;
 
 export type ProspectIdentityKey = (typeof PROSPECT_IDENTITY_KEYS)[number];
+
+/**
+ * Systems a prospect can come from. Open by design — a value outside this list
+ * is allowed, since the point of the generic pair is that adding a provider
+ * needs no schema change. These are the ones we know how to sync.
+ */
+export const KNOWN_EXTERNAL_TYPES = [
+  { label: 'Apollo', value: 'apollo' },
+  { label: 'Origami', value: 'origami' },
+  { label: 'Salesforce', value: 'salesforce' },
+  { label: 'LinkedIn', value: 'linkedin' },
+  { label: 'Manual', value: 'manual' },
+] as const;
+
+export const KNOWN_EXTERNAL_TYPE_VALUES: string[] = KNOWN_EXTERNAL_TYPES.map(
+  (t) => t.value as string,
+);
 
 // ============================================
 // LEAD HANDOFF

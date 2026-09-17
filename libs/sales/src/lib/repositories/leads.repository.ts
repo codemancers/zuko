@@ -15,7 +15,8 @@ export interface CreateLeadInput {
   linkedinUrl?: string;
   status?: string;
   source?: string;
-  apolloPersonId?: string;
+  externalType?: string;
+  externalId?: string;
   notes?: unknown;
   metadata?: unknown;
 }
@@ -106,9 +107,14 @@ export class LeadsRepository {
     });
   }
 
-  findByApolloPersonId(organizationId: number, apolloPersonId: string) {
+  /** Match on an external system's identity, scoped by that system. */
+  findByExternalIdentity(
+    organizationId: number,
+    externalType: string,
+    externalId: string,
+  ) {
     return this.prisma.lead.findFirst({
-      where: { organizationId, apolloPersonId },
+      where: { organizationId, externalType, externalId },
     });
   }
 

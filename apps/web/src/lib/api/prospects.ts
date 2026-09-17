@@ -69,7 +69,8 @@ export interface Prospect {
   companyName: string | null;
   title: string | null;
   linkedinUrl: string | null;
-  apolloPersonId: string | null;
+  externalType: string | null;
+  externalId: string | null;
   status: ProspectStatus;
   source: string;
   emailConsent: ConsentState;
@@ -113,6 +114,8 @@ export interface CreateProspectDto {
   companyName?: string;
   title?: string;
   linkedinUrl?: string;
+  externalType?: string;
+  externalId?: string;
   icpProfileId?: number;
   source?: string;
 }

@@ -1592,7 +1592,14 @@ export function buildMcpServer(
           .enum(['apollo', 'origami', 'linkedin', 'manual'])
           .optional()
           .describe('Lead source, defaults to "manual"'),
-        apolloPersonId: z.string().optional().describe('Apollo person ID'),
+        externalType: z
+          .string()
+          .optional()
+          .describe('System the lead came from (apollo, salesforce, …)'),
+        externalId: z
+          .string()
+          .optional()
+          .describe("Identity within externalType's system"),
       },
     },
     async (args) => {
@@ -2300,7 +2307,16 @@ export function buildMcpServer(
         companyName: z.string().optional(),
         title: z.string().optional(),
         linkedinUrl: z.string().optional(),
-        apolloPersonId: z.string().optional(),
+        externalType: z
+          .string()
+          .optional()
+          .describe(
+            'System this prospect came from (apollo, origami, salesforce, …). Pass with externalId so the pair can be matched.',
+          ),
+        externalId: z
+          .string()
+          .optional()
+          .describe("Identity within externalType's system"),
         icpProfileId: z.int().optional(),
         source: z
           .string()

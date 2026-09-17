@@ -12,8 +12,14 @@ model Contact {
   notes          Json?        @map("notes")
   fields         Json         @default("{}") @map("fields")
   isHidden       Boolean      @default(false) @map("is_hidden")
-  apolloPersonId  String?     @map("apollo_person_id") // Apollo global person ID (stable across workspaces)
-  apolloContactId String?     @map("apollo_contact_id") // Apollo workspace contact ID (exists once saved/enrolled in Apollo)
+  // External system identity. externalType names the system (apollo | origami |
+  // salesforce | ...), externalId is who they are in it. See
+  // docs/concepts/external-identity.mdx.
+  externalType String? @map("external_type")
+  externalId   String? @map("external_id")
+  // Our record inside that system's workspace (e.g. Apollo contact id),
+  // as opposed to the identity above. Written on sync, never used to match.
+  externalRecordId String? @map("external_record_id")
   createdAt      DateTime     @default(now()) @map("created_at")
   updatedAt      DateTime     @updatedAt @map("updated_at")
 
@@ -29,8 +35,8 @@ model Contact {
   @@index([email])
   @@index([phone])
   @@index([linkedinId])
-  @@index([apolloPersonId])
-  @@index([apolloContactId])
+  @@index([externalType, externalId])
+  @@index([externalRecordId])
   @@map("contact")
   @@schema("sales")
 }
@@ -80,8 +86,12 @@ model Company {
   summary        Json?    @map("summary")
   isHidden       Boolean  @default(false) @map("is_hidden")
   fields         Json     @default("{}") @map("fields")
-  apolloOrganizationId String? @map("apollo_organization_id") // Apollo global organization ID (stable across workspaces)
-  apolloAccountId      String? @map("apollo_account_id") // Apollo workspace account ID (exists once saved to Apollo)
+  // External system identity. externalType names the system (apollo | origami |
+  // salesforce | ...), externalId is who they are in it. See
+  // docs/concepts/external-identity.mdx.
+  externalType String? @map("external_type")
+  externalId   String? @map("external_id")
+  externalRecordId String? @map("external_record_id")
   createdAt      DateTime @default(now()) @map("created_at")
   updatedAt     DateTime @updatedAt @map("updated_at")
 
@@ -93,8 +103,8 @@ model Company {
   @@index([organizationId])
   @@index([isHidden])
   @@index([companyName])
-  @@index([apolloOrganizationId])
-  @@index([apolloAccountId])
+  @@index([externalType, externalId])
+  @@index([externalRecordId])
   @@map("company")
   @@schema("sales")
 }
@@ -253,9 +263,11 @@ model Campaign {
   createdById        Int      @map("created_by_id")
   icpProfileId       Int?     @map("icp_profile_id")
   name               String
-  provider           String   @default("apollo")
-  platform           String   @default("apollo")
-  providerSequenceId String?  @map("provider_sequence_id")
+  // External system identity. externalType names the system (apollo | origami |
+  // salesforce | ...), externalId is who they are in it. See
+  // docs/concepts/external-identity.mdx.
+  externalType String  @default("apollo") @map("external_type")
+  externalId   String? @map("external_id")
   active             Boolean  @default(false)
   permissions        String   @default("team_can_use")
   sequence           Json     @default("[]")
@@ -268,7 +280,7 @@ model Campaign {
   leads        Lead[]       @relation("CampaignLeads")
   memberships  CampaignMembership[] @relation("CampaignMemberships")
 
-  @@unique([organizationId, providerSequenceId])
+  @@unique([organizationId, externalType, externalId])
   @@index([organizationId])
   @@index([icpProfileId])
   @@map("campaign")
@@ -290,7 +302,8 @@ model Lead {
   linkedinUrl    String?  @map("linkedin_url")
   status         String   @default("replied")
   source         String   @default("manual")
-  apolloPersonId String?  @map("apollo_person_id")
+  externalType   String?  @map("external_type")
+  externalId     String?  @map("external_id")
   notes          Json?
   metadata       Json?
   createdAt      DateTime @default(now()) @map("created_at")
@@ -307,6 +320,7 @@ model Lead {
   @@index([icpProfileId])
   @@index([campaignId])
   @@index([status])
+  @@index([externalType, externalId])
   @@map("lead")
   @@schema("sales")
 }
@@ -360,7 +374,12 @@ model Prospect {
   companyName    String? @map("company_name")
   title          String?
   linkedinUrl    String? @map("linkedin_url")
-  apolloPersonId String? @map("apollo_person_id")
+
+  // External system identity. externalType names the system (apollo | origami |
+  // salesforce | ...), externalId is who they are in it. See
+  // docs/concepts/external-identity.mdx.
+  externalType String? @map("external_type")
+  externalId   String? @map("external_id")
 
   status String @default("new")
   source String @default("manual")
@@ -387,7 +406,7 @@ model Prospect {
 
   // Identity resolution keys — one human, one prospect, per organization.
   @@unique([organizationId, email])
-  @@unique([organizationId, apolloPersonId])
+  @@unique([organizationId, externalType, externalId])
   @@unique([organizationId, linkedinUrl])
   @@index([organizationId])
   @@index([organizationId, status])
