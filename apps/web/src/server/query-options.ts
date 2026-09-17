@@ -9,6 +9,8 @@ import { dealsApi } from '@/lib/api/deals';
 import type { TaskFilters } from '@/lib/api/tasks';
 import { tasksApi } from '@/lib/api/tasks';
 import { leadsApi } from '@/lib/api/leads';
+import { prospectsApi } from '@/lib/api/prospects';
+import type { ProspectFilters } from '@/lib/api/prospects';
 import { activitiesApi } from '@/lib/api/activities';
 import { pagesApi } from '@/lib/api/pages';
 import { meetingsApi, type MeetingFilters } from '@/lib/api/meetings';
@@ -140,6 +142,30 @@ export const getLead = (id: number) =>
   queryOptions({
     queryKey: ['lead', id],
     queryFn: () => leadsApi.get(id),
+  });
+
+export const getProspects = (filters: ProspectFilters = {}) =>
+  queryOptions({
+    queryKey: ['prospects', 'list', filters],
+    queryFn: () => prospectsApi.list(filters),
+  });
+
+export const getProspectStats = () =>
+  queryOptions({
+    queryKey: ['prospects', 'stats'],
+    queryFn: () => prospectsApi.stats(),
+  });
+
+export const getProspect = (id: number) =>
+  queryOptions({
+    queryKey: ['prospect', id],
+    queryFn: () => prospectsApi.get(id),
+  });
+
+export const getProspectEvents = (id: number) =>
+  queryOptions({
+    queryKey: ['prospect', id, 'events'],
+    queryFn: () => prospectsApi.events(id),
   });
 
 export const getTableViewMeetingsInfinite = (
