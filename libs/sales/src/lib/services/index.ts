@@ -3,3 +3,4 @@ export * from './activity.service';
 export * from './companies.service';
 export * from './deals.service';
 export * from './task.service';
+export * from './prospects.service';
