@@ -7,6 +7,7 @@ import {
   CompaniesService,
   ContactsService,
   ActivityService,
+  ProspectsService,
 } from '@zuko/sales';
 import { PrismaService } from '../../prisma/prisma.service';
 import { IcpService } from '../icp/icp.service';
@@ -36,6 +37,7 @@ export class McpController {
     private readonly leads: LeadsService,
     private readonly campaigns: ApolloSequencesService,
     private readonly activity: ActivityService,
+    private readonly prospects: ProspectsService,
   ) {}
 
   @All()
@@ -63,6 +65,7 @@ export class McpController {
         leads: this.leads,
         campaigns: this.campaigns,
         activity: this.activity,
+        prospects: this.prospects,
       },
     );
     const transport = new StreamableHTTPServerTransport({

@@ -6,8 +6,16 @@ import type {
   CompaniesService,
   ContactsService,
   ActivityService,
+  ProspectsService,
 } from '@zuko/sales';
-import { DEAL_STAGE_VALUES } from '@zuko/sales';
+import {
+  CAMPAIGN_DISPOSITION_VALUES,
+  CAMPAIGN_EVENT_VALUES,
+  CONTACT_CHANNEL_VALUES,
+  DEAL_STAGE_VALUES,
+  ENGAGEMENT_STATE_VALUES,
+  PROSPECT_STATUS_VALUES,
+} from '@zuko/sales';
 import { z } from 'zod';
 import type { IcpService } from '../icp/icp.service';
 import type { LeadsService } from '../leads/leads.service';
@@ -32,6 +40,7 @@ export interface McpDeps {
   leads: LeadsService;
   campaigns: ApolloSequencesService;
   activity: ActivityService;
+  prospects: ProspectsService;
 }
 
 /** Activity has no organizationId, so comment tools resolve the commented-on entity's org and check it against the caller's memberships. */
@@ -100,6 +109,13 @@ const toolError = (message: string): ToolResult => ({
   isError: true,
   content: [{ type: 'text', text: message }],
 });
+
+/**
+ * Builds a tool enum from a shared @zuko/sales constant, so the agent surface
+ * and the domain cannot drift: a value added there reaches the tools with no
+ * second edit.
+ */
+const mcpEnum = (values: string[]) => z.enum(values as [string, ...string[]]);
 
 /**
  * Builds a per-request MCP server whose tools run as the token's user.
@@ -2129,6 +2145,312 @@ export function buildMcpServer(
         );
       }
     },
+  );
+
+  // ---- Prospects ----
+
+  /**
+   * Org resolution shared by the prospect tools: an explicit id must be one
+   * the user belongs to; otherwise it is inferred only when unambiguous.
+   */
+  const resolveProspectOrg = async (
+    organizationId?: number,
+  ): Promise<{ orgId: number } | { error: ToolResult }> => {
+    const orgIds = await memberOrgIds();
+    if (organizationId === undefined) {
+      if (orgIds.length === 0) {
+        return {
+          error: toolError('User is not a member of any organization.'),
+        };
+      }
+      if (orgIds.length > 1) {
+        return {
+          error: toolError(
+            'User belongs to multiple organizations. Call list_organizations to find the correct id, then pass it as organizationId.',
+          ),
+        };
+      }
+      return { orgId: orgIds[0] };
+    }
+    if (!orgIds.includes(organizationId)) {
+      return {
+        error: toolError(
+          `You do not have access to organization ${organizationId}.`,
+        ),
+      };
+    }
+    return { orgId: organizationId };
+  };
+
+  /** Runs a prospect tool body, turning service validation into tool errors. */
+  const prospectTool = async (
+    scope: 'prospects:read' | 'prospects:write',
+    organizationId: number | undefined,
+    run: (orgId: number, prospects: ProspectsService) => Promise<unknown>,
+  ): Promise<ToolResult> => {
+    if (!authCtx.scopes.includes(scope)) return missingScope(scope);
+    if (!deps?.prospects) {
+      return toolError('Prospect management is not available.');
+    }
+
+    const resolved = await resolveProspectOrg(organizationId);
+    if ('error' in resolved) return resolved.error;
+
+    try {
+      return json(await run(resolved.orgId, deps.prospects));
+    } catch (error: unknown) {
+      return toolError(error instanceof Error ? error.message : String(error));
+    }
+  };
+
+  server.registerTool(
+    'list_prospects',
+    {
+      description:
+        'List prospects (people targeted by outbound, before they become leads) for an organization. Filter by lifecycle status, campaign, ICP profile, or engagement state.',
+      inputSchema: {
+        organizationId: z
+          .int()
+          .optional()
+          .describe('Target organization (optional if user has exactly one)'),
+        search: z
+          .string()
+          .optional()
+          .describe('Search by name, email, or company (optional)'),
+        status: mcpEnum(PROSPECT_STATUS_VALUES)
+          .optional()
+          .describe('Filter by prospect lifecycle status (optional)'),
+        engagement: mcpEnum(ENGAGEMENT_STATE_VALUES)
+          .optional()
+          .describe('Filter by campaign engagement state (optional)'),
+        campaignId: z
+          .int()
+          .optional()
+          .describe('Only prospects with a membership in this campaign'),
+        icpProfileId: z.int().optional().describe('Filter by ICP profile ID'),
+        page: z.int().optional().default(1),
+        perPage: z.int().optional().default(50),
+      },
+    },
+    async (args) =>
+      prospectTool('prospects:read', args.organizationId, (orgId, prospects) =>
+        prospects.findAll(
+          orgId,
+          {
+            search: args.search,
+            icpProfileId: args.icpProfileId,
+            campaignId: args.campaignId,
+            ...(args.status ? { status: [args.status] } : {}),
+            ...(args.engagement ? { engagement: [args.engagement] } : {}),
+          },
+          args.page,
+          args.perPage,
+        ),
+      ),
+  );
+
+  server.registerTool(
+    'get_prospect',
+    {
+      description:
+        'Get one prospect with its campaign memberships, per-channel consent, and linked CRM contact or lead.',
+      inputSchema: {
+        prospectId: z.int().describe('The ID of the prospect to retrieve'),
+        organizationId: z.int().optional(),
+      },
+    },
+    async (args) =>
+      prospectTool('prospects:read', args.organizationId, (orgId, prospects) =>
+        prospects.findById(args.prospectId, orgId),
+      ),
+  );
+
+  server.registerTool(
+    'get_prospect_events',
+    {
+      description:
+        'Campaign event history for a prospect, most recent first. Events are the immutable record of what happened; prospect and membership states are derived from them.',
+      inputSchema: {
+        prospectId: z.int(),
+        organizationId: z.int().optional(),
+        limit: z.int().optional().default(100),
+      },
+    },
+    async (args) =>
+      prospectTool(
+        'prospects:read',
+        args.organizationId,
+        async (orgId, prospects) => {
+          await prospects.findById(args.prospectId, orgId);
+          return prospects.findEvents(args.prospectId, args.limit);
+        },
+      ),
+  );
+
+  server.registerTool(
+    'create_prospect',
+    {
+      description:
+        'Create a prospect. Identity is resolved first against existing prospects and CRM contacts (by Apollo person id, then email, then LinkedIn URL), so a person we already hold is enriched or linked rather than duplicated.',
+      inputSchema: {
+        name: z.string().describe('Full name of the person'),
+        organizationId: z.int().optional(),
+        email: z.string().optional(),
+        phone: z.string().optional(),
+        companyName: z.string().optional(),
+        title: z.string().optional(),
+        linkedinUrl: z.string().optional(),
+        apolloPersonId: z.string().optional(),
+        icpProfileId: z.int().optional(),
+        source: z
+          .string()
+          .optional()
+          .describe('Where the prospect came from, defaults to "manual"'),
+      },
+    },
+    async (args) =>
+      prospectTool(
+        'prospects:write',
+        args.organizationId,
+        (orgId, prospects) => {
+          const { organizationId: _ignored, ...input } = args;
+          return prospects.create(orgId, input);
+        },
+      ),
+  );
+
+  server.registerTool(
+    'enrol_prospect',
+    {
+      description:
+        'Enrol a prospect in a campaign. Refuses when the prospect is engaged, promoted, disqualified or suppressed, when it already has an open membership in that campaign, or when no contactable channel remains.',
+      inputSchema: {
+        prospectId: z.int(),
+        campaignId: z.int(),
+        organizationId: z.int().optional(),
+        channel: mcpEnum(CONTACT_CHANNEL_VALUES)
+          .optional()
+          .describe('Channel the campaign will use, defaults to email'),
+      },
+    },
+    async (args) =>
+      prospectTool('prospects:write', args.organizationId, (orgId, prospects) =>
+        // An agent never overrides the safeguards: no `force` is exposed.
+        prospects.enrol(args.prospectId, orgId, args.campaignId, {
+          channel: args.channel,
+          actor: { userId: authCtx.userId, source: 'agent' },
+        }),
+      ),
+  );
+
+  server.registerTool(
+    'record_campaign_event',
+    {
+      description:
+        'Append a campaign event to a membership and let the derived states follow. Pass externalId for provider events so replays stay idempotent. Opens and clicks are recorded but deliberately change no state — only a reply does.',
+      inputSchema: {
+        membershipId: z
+          .int()
+          .describe('Campaign membership id (from get_prospect)'),
+        eventType: mcpEnum(CAMPAIGN_EVENT_VALUES),
+        organizationId: z.int().optional(),
+        externalId: z
+          .string()
+          .optional()
+          .describe('Provider event id, for idempotent replay'),
+      },
+    },
+    async (args) =>
+      prospectTool('prospects:write', args.organizationId, (orgId, prospects) =>
+        prospects.recordEvent(
+          args.membershipId,
+          orgId,
+          args.eventType,
+          undefined,
+          args.externalId,
+          undefined,
+          { userId: authCtx.userId, source: 'agent' },
+        ),
+      ),
+  );
+
+  server.registerTool(
+    'set_prospect_disposition',
+    {
+      description:
+        'Conclude a campaign membership. The disposition settles the prospect’s standing: interested makes it engaged, nurture returns it to the pool, disqualified rules it out, opted_out suppresses it.',
+      inputSchema: {
+        membershipId: z.int(),
+        disposition: mcpEnum(CAMPAIGN_DISPOSITION_VALUES),
+        organizationId: z.int().optional(),
+      },
+    },
+    async (args) =>
+      prospectTool('prospects:write', args.organizationId, (orgId, prospects) =>
+        prospects.setDisposition(args.membershipId, orgId, args.disposition, {
+          actor: { userId: authCtx.userId, source: 'agent' },
+        }),
+      ),
+  );
+
+  server.registerTool(
+    'set_prospect_status',
+    {
+      description:
+        'Apply a prospect lifecycle status transition. Invalid moves are refused. Leaving "suppressed" or "disqualified" requires an explicit human action and cannot be done by an agent.',
+      inputSchema: {
+        prospectId: z.int(),
+        status: mcpEnum(PROSPECT_STATUS_VALUES),
+        organizationId: z.int().optional(),
+      },
+    },
+    async (args) =>
+      prospectTool('prospects:write', args.organizationId, (orgId, prospects) =>
+        // manual is deliberately not exposed: an agent is not a human action.
+        prospects.setStatus(args.prospectId, orgId, args.status),
+      ),
+  );
+
+  server.registerTool(
+    'promote_prospect',
+    {
+      description:
+        'Promote an engaged prospect to a lead. Creates the lead, closes every open campaign membership so automation stops, and marks the prospect promoted. Only an engaged prospect can be promoted.',
+      inputSchema: {
+        prospectId: z.int(),
+        organizationId: z.int().optional(),
+      },
+    },
+    async (args) =>
+      prospectTool('prospects:write', args.organizationId, (orgId, prospects) =>
+        prospects.promote(args.prospectId, orgId),
+      ),
+  );
+
+  server.registerTool(
+    'suppress_prospect',
+    {
+      description:
+        'Stop contacting a prospect. With a channel, revokes consent for that channel only; without one, suppresses the prospect outright and closes every open membership.',
+      inputSchema: {
+        prospectId: z.int(),
+        organizationId: z.int().optional(),
+        channel: mcpEnum(CONTACT_CHANNEL_VALUES)
+          .optional()
+          .describe('Revoke just this channel; omit to suppress entirely'),
+      },
+    },
+    async (args) =>
+      prospectTool('prospects:write', args.organizationId, (orgId, prospects) =>
+        args.channel
+          ? prospects.setConsent(
+              args.prospectId,
+              orgId,
+              args.channel,
+              'revoked',
+            )
+          : prospects.suppress(args.prospectId, orgId),
+      ),
   );
 
   return server;
