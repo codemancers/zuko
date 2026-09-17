@@ -22,6 +22,7 @@ model Contact {
   companyHistory CompanyContact[]
   deals          DealContact[]
   leads          Lead[]       @relation("ContactLeads")
+  prospects      Prospect[]   @relation("ContactProspects")
 
   @@index([organizationId])
   @@index([isHidden])
@@ -239,6 +240,7 @@ model IcpProfile {
   organization Organization @relation("OrganizationIcpProfiles", fields: [organizationId], references: [id], onDelete: Cascade)
   campaigns    Campaign[]   @relation("IcpCampaigns")
   leads        Lead[]       @relation("IcpLeads")
+  prospects    Prospect[]   @relation("IcpProspects")
 
   @@index([organizationId])
   @@map("icp_profile")
@@ -264,6 +266,7 @@ model Campaign {
   createdBy    User         @relation("CreatedCampaigns", fields: [createdById], references: [id])
   icpProfile   IcpProfile?  @relation("IcpCampaigns", fields: [icpProfileId], references: [id], onDelete: SetNull)
   leads        Lead[]       @relation("CampaignLeads")
+  memberships  CampaignMembership[] @relation("CampaignMemberships")
 
   @@unique([organizationId, providerSequenceId])
   @@index([organizationId])
@@ -298,6 +301,7 @@ model Lead {
   campaign     Campaign?    @relation("CampaignLeads", fields: [campaignId], references: [id], onDelete: SetNull)
   contact      Contact?     @relation("ContactLeads", fields: [contactId], references: [id], onDelete: SetNull)
   deal         Deal?        @relation("DealLeads", fields: [dealId], references: [id], onDelete: SetNull)
+  prospect     Prospect?    @relation("ProspectLead")
 
   @@index([organizationId])
   @@index([icpProfileId])
@@ -329,5 +333,138 @@ model TableColumn {
   @@index([organizationId, tableName])
 
   @@map("table_column")
+  @@schema("sales")
+}
+
+
+// ============================================
+// PROSPECT LIFECYCLE
+// See docs/concepts/prospect-lifecycle.mdx — states and transitions are
+// defined in libs/sales/src/lib/constants/prospects.ts.
+// ============================================
+
+model Prospect {
+  id             Int     @id @default(autoincrement())
+  organizationId Int     @map("organization_id")
+  icpProfileId   Int?    @map("icp_profile_id")
+  // Set when identity resolution matched someone we already know. The contact
+  // stays the source of truth for who they are; the prospect holds only
+  // outbound state, so an existing customer is never duplicated as a new lead.
+  contactId      Int?    @map("contact_id")
+  // Set on promotion. Its presence is what makes the status `promoted`.
+  leadId         Int?    @unique @map("lead_id")
+
+  name           String
+  email          String?
+  phone          String?
+  companyName    String? @map("company_name")
+  title          String?
+  linkedinUrl    String? @map("linkedin_url")
+  apolloPersonId String? @map("apollo_person_id")
+
+  status String @default("new")
+  source String @default("manual")
+
+  // Per-channel consent: unknown | granted | revoked. Outbound is opt-out, so
+  // `unknown` is contactable and only `revoked` silences a channel.
+  emailConsent    String @default("unknown") @map("email_consent")
+  linkedinConsent String @default("unknown") @map("linkedin_consent")
+  phoneConsent    String @default("unknown") @map("phone_consent")
+
+  fields   Json  @default("{}")
+  notes    Json?
+  metadata Json?
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  organization Organization         @relation("OrganizationProspects", fields: [organizationId], references: [id], onDelete: Cascade)
+  icpProfile   IcpProfile?          @relation("IcpProspects", fields: [icpProfileId], references: [id], onDelete: SetNull)
+  contact      Contact?             @relation("ContactProspects", fields: [contactId], references: [id], onDelete: SetNull)
+  lead         Lead?                @relation("ProspectLead", fields: [leadId], references: [id], onDelete: SetNull)
+  memberships  CampaignMembership[] @relation("ProspectMemberships")
+  events       CampaignEvent[]      @relation("ProspectEvents")
+
+  // Identity resolution keys — one human, one prospect, per organization.
+  @@unique([organizationId, email])
+  @@unique([organizationId, apolloPersonId])
+  @@unique([organizationId, linkedinUrl])
+  @@index([organizationId])
+  @@index([organizationId, status])
+  @@index([icpProfileId])
+  @@index([contactId])
+  @@map("prospect")
+  @@schema("sales")
+}
+
+model CampaignMembership {
+  id         Int @id @default(autoincrement())
+  prospectId Int @map("prospect_id")
+  campaignId Int @map("campaign_id")
+
+  // The three independent axes. `disposition` stays null until the membership
+  // closes; a terminal state without one is invalid.
+  state       String  @default("identified")
+  engagement  String  @default("not_contacted")
+  disposition String?
+
+  // Which channel this campaign reaches them on. Consent is per channel, so a
+  // membership is bound to one.
+  channel String @default("email")
+
+  enrolledAt DateTime? @map("enrolled_at")
+  closedAt   DateTime? @map("closed_at")
+  // When this prospect may be approached again after this membership closed:
+  // the no-response cooldown, or the date a "not now" reply asked us to wait for.
+  nextEligibleAt DateTime? @map("next_eligible_at")
+  metadata       Json?
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  prospect Prospect        @relation("ProspectMemberships", fields: [prospectId], references: [id], onDelete: Cascade)
+  campaign Campaign        @relation("CampaignMemberships", fields: [campaignId], references: [id], onDelete: Cascade)
+  events   CampaignEvent[] @relation("MembershipEvents")
+
+  // At most one OPEN membership per prospect per campaign is enforced by a
+  // partial unique index (see migration) — closed ones may repeat on re-enrolment.
+  @@index([prospectId])
+  @@index([campaignId])
+  @@index([campaignId, state])
+  @@index([state])
+  @@index([engagement])
+  @@index([nextEligibleAt])
+  @@map("campaign_membership")
+  @@schema("sales")
+}
+
+model CampaignEvent {
+  id           Int @id @default(autoincrement())
+  membershipId Int @map("membership_id")
+  prospectId   Int @map("prospect_id")
+
+  eventType  String   @map("event_type")
+  occurredAt DateTime @map("occurred_at")
+  payload    Json?
+  // Provider event id — makes webhook replay idempotent.
+  externalId String?  @map("external_id")
+
+  // Audit: who caused this, and through what. `actorId` is null for events the
+  // provider or a scheduler raised; source is one of
+  // system | user | agent | provider.
+  actorId Int?   @map("actor_id")
+  source  String @default("system")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  membership CampaignMembership @relation("MembershipEvents", fields: [membershipId], references: [id], onDelete: Cascade)
+  prospect   Prospect           @relation("ProspectEvents", fields: [prospectId], references: [id], onDelete: Cascade)
+
+  @@unique([membershipId, externalId])
+  @@index([membershipId, occurredAt])
+  @@index([actorId])
+  @@index([prospectId, occurredAt])
+  @@index([eventType])
+  @@map("campaign_event")
   @@schema("sales")
 }
