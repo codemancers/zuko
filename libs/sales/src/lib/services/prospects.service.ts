@@ -30,6 +30,8 @@ import {
   PROMOTED_LEAD_STATUS,
   canEnrollProspect,
   canTransitionEngagement,
+  isOutboundBlocked,
+  outboundBlockedReason,
   canTransitionMembership,
   canTransitionProspect,
   isCampaignDisposition,
@@ -208,6 +210,15 @@ export class ProspectsService {
     const prospect = await this.findById(id, organizationId);
     const status = prospect.status as ProspectStatus;
 
+    // Checked before `force`, because force overrules eligibility, never
+    // permission. A background sync must not re-enrol someone who opted out
+    // or who a human has already taken over.
+    if (isOutboundBlocked(status)) {
+      throw new BadRequestException(
+        `Cannot enrol this prospect: ${outboundBlockedReason(status)}.`,
+      );
+    }
+
     if (!options.force && !canEnrollProspect(status)) {
       throw new BadRequestException(
         `A prospect with status "${status}" cannot be enrolled in a campaign.`,
@@ -271,7 +282,10 @@ export class ProspectsService {
       source: options.actor?.source ?? 'system',
     });
 
-    if (status !== 'enrolled') {
+    // Only move the prospect if the lifecycle allows it. Without this a
+    // forced enrol would rewrite any status to `enrolled`, so a background job
+    // could quietly undo a promotion.
+    if (status !== 'enrolled' && canTransitionProspect(status, 'enrolled')) {
       await this.prospects.update(id, { status: 'enrolled' });
     }
 
@@ -312,6 +326,17 @@ export class ProspectsService {
     const prospect = await this.findById(id, organizationId);
 
     const outbound = !INBOUND_EVENTS.includes(eventType as CampaignEvent);
+
+    // Standing first: suppressing someone closes their memberships but does
+    // not touch per-channel consent, so a consent-only gate would happily let
+    // an outbound touch through seconds after they opted out.
+    const status = prospect.status as ProspectStatus;
+    if (outbound && isOutboundBlocked(status)) {
+      throw new BadRequestException(
+        `Cannot contact this prospect: ${outboundBlockedReason(status)}.`,
+      );
+    }
+
     if (outbound && !this.isChannelUsable(prospect, channel)) {
       throw new BadRequestException(
         `Cannot contact this prospect on ${channel}: consent revoked or no address on file.`,
@@ -584,7 +609,13 @@ export class ProspectsService {
       ...(prospect.companyName ? { companyName: prospect.companyName } : {}),
       ...(prospect.title ? { title: prospect.title } : {}),
       ...(prospect.linkedinUrl ? { linkedinUrl: prospect.linkedinUrl } : {}),
-      ...(prospect.externalId ? { externalId: prospect.externalId } : {}),
+      // Both halves or neither: an id without its system cannot be matched.
+      ...(prospect.externalType && prospect.externalId
+        ? {
+            externalType: prospect.externalType,
+            externalId: prospect.externalId,
+          }
+        : {}),
       ...(prospect.icpProfileId ? { icpProfileId: prospect.icpProfileId } : {}),
       ...(primaryCampaignId ? { campaignId: primaryCampaignId } : {}),
       // Reuse the CRM contact identity resolution already found, so an

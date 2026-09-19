@@ -243,7 +243,9 @@ Four more gates apply on top of status:
 3. **No open membership in the same campaign.** Enforced in the database by a partial unique index, so a race cannot produce two.
 4. **Cooldown.** A membership that closed `nurture` sets `nextEligibleAt` — the date from the reply if one was given, otherwise the default of `DEFAULT_NO_RESPONSE_COOLDOWN_DAYS` (75). Until it passes, enrolment is refused.
 
-Gates 2 and 4 can be overridden by an authorized human passing `force`, which is recorded. **Consent cannot**: `force` never enrols a suppressed prospect, and the MCP tools never expose it at all — an agent gets no override.
+Gates 2 and 4 can be overridden by an authorized human passing `force`. **Permission cannot be.** `suppressed`, `disqualified` and `promoted` are checked before `force` is consulted, so no override and no background sync can approach someone who opted out, was ruled out, or is already being worked by a human. The MCP tools do not expose `force` at all.
+
+The same three statuses gate every outbound touch, campaign or not. Suppressing someone closes their memberships but deliberately leaves per-channel consent alone — consent records what *they* told us, not what we decided — so standing has to be checked in its own right. Inbound is always accepted: someone who stopped us contacting them can still contact us.
 
 ## Audit trail
 

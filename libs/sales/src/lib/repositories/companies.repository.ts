@@ -13,6 +13,7 @@ export interface CreateCompanyInput {
   ownerIds?: number[];
   primaryOwnerId?: number;
   fields?: Record<string, unknown>;
+  externalType?: string;
   externalId?: string;
   externalRecordId?: string;
 }
@@ -24,6 +25,7 @@ export interface UpdateCompanyInput {
   summary?: EditorData;
   isHidden?: boolean;
   fields?: Record<string, unknown>;
+  externalType?: string;
   externalId?: string;
   externalRecordId?: string;
 }

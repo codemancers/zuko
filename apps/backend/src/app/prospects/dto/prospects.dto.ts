@@ -1,6 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
-  IsArray,
   IsBoolean,
   IsDateString,
   IsInt,
@@ -150,23 +149,30 @@ export class ListProspectsQueryDto {
   @IsInt()
   campaignId?: number;
 
-  @ApiPropertyOptional({ enum: PROSPECT_STATUS_VALUES, isArray: true })
+  // A single ?status=enrolled arrives as a string, not an array. @IsArray()
+  // rejected it outright, so one filter chip emptied the table with a 400.
+  @ApiPropertyOptional({
+    enum: PROSPECT_STATUS_VALUES,
+    isArray: true,
+    type: String,
+  })
   @IsOptional()
-  @IsArray()
-  @Type(() => String)
-  status?: string[];
+  @IsString({ each: true })
+  status?: string | string[];
 
-  @ApiPropertyOptional({ enum: ENGAGEMENT_STATE_VALUES, isArray: true })
+  @ApiPropertyOptional({
+    enum: ENGAGEMENT_STATE_VALUES,
+    isArray: true,
+    type: String,
+  })
   @IsOptional()
-  @IsArray()
-  @Type(() => String)
-  engagement?: string[];
+  @IsString({ each: true })
+  engagement?: string | string[];
 
-  @ApiPropertyOptional({ isArray: true })
+  @ApiPropertyOptional({ isArray: true, type: String })
   @IsOptional()
-  @IsArray()
-  @Type(() => String)
-  source?: string[];
+  @IsString({ each: true })
+  source?: string | string[];
 
   @ApiPropertyOptional({ default: 1 })
   @IsOptional()

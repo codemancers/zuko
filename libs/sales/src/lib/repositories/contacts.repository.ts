@@ -14,6 +14,9 @@ export interface CreateContactInput {
   ownerIds?: number[];
   primaryOwnerId?: number;
   fields?: Record<string, unknown>;
+  // externalId is meaningless without the system that issued it — writing one
+  // without the other leaves findByExternalIdentity unable to match.
+  externalType?: string;
   externalId?: string;
   externalRecordId?: string;
 }
@@ -26,6 +29,7 @@ export interface UpdateContactInput {
   notes?: EditorData;
   isHidden?: boolean;
   fields?: Record<string, unknown>;
+  externalType?: string;
   externalId?: string;
   externalRecordId?: string;
 }

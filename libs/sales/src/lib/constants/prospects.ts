@@ -109,6 +109,36 @@ export function canEnrollProspect(status: ProspectStatus): boolean {
   return ENROLLABLE_PROSPECT_STATUSES.includes(status);
 }
 
+/**
+ * Statuses no override may contact through. `force` exists to overrule
+ * eligibility judgements — a cooldown, a competing campaign — never a decision
+ * about whether we are allowed to approach this person at all.
+ */
+export const NON_CONTACTABLE_STATUSES: readonly ProspectStatus[] = [
+  'suppressed',
+  'disqualified',
+  'promoted',
+];
+
+/** True when outbound must not reach them, whatever the channel says. */
+export function isOutboundBlocked(status: ProspectStatus): boolean {
+  return NON_CONTACTABLE_STATUSES.includes(status);
+}
+
+/** Why outbound is refused, for an error a human can act on. */
+export function outboundBlockedReason(status: ProspectStatus): string {
+  switch (status) {
+    case 'suppressed':
+      return 'they asked us to stop';
+    case 'disqualified':
+      return 'they have been disqualified';
+    case 'promoted':
+      return 'they have been promoted to a lead and are worked by hand';
+    default:
+      return '';
+  }
+}
+
 /** Statuses a prospect may be promoted to a lead from. */
 export function isPromotableProspect(status: ProspectStatus): boolean {
   return status === 'engaged';

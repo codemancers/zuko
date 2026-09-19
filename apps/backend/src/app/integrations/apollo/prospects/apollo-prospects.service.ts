@@ -488,6 +488,7 @@ export class ApolloProspectsService {
               .create({
                 organizationId,
                 name,
+                externalType: APOLLO,
                 externalId: personId,
                 externalRecordId: contactId,
               })

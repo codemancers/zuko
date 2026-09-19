@@ -44,14 +44,24 @@ test.describe('Prospects - Authenticated', () => {
     ).toBeVisible();
   });
 
-  test('filters the list by lifecycle status', async ({ page }) => {
+  test('filters the list by lifecycle status without erroring', async ({
+    page,
+  }) => {
+    const failed: number[] = [];
+    page.on('response', (res) => {
+      if (res.url().includes('/prospects?') && res.status() >= 400) {
+        failed.push(res.status());
+      }
+    });
+
     await page.goto('/prospects');
+    await page.getByRole('button', { name: /^Enrolled/ }).click();
+    await page.waitForLoadState('networkidle');
 
-    await page.getByRole('button', { name: /^Suppressed/ }).click();
-
-    // The filter is reflected in the query the page runs, and the table
-    // renders either matching rows or its empty state — never an error.
-    await expect(page.getByText(/error/i)).toHaveCount(0);
+    // A single ?status=enrolled used to 400, emptying the table silently
+    // while the chip still showed a count. Asserting on absent error text
+    // missed it entirely — the request itself has to be checked.
+    expect(failed).toEqual([]);
   });
 
   test('opens a prospect and shows its lifecycle detail', async ({

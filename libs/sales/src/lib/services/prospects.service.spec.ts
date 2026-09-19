@@ -276,6 +276,51 @@ describe('ProspectsService', () => {
       expect(prospect.contactId).toBe(contact.id);
     });
 
+    it('Matches an existing contact on its external identity, not only email', async () => {
+      const contact = await prisma.contact.create({
+        data: {
+          organizationId: ORG_ID,
+          name: 'Known By Apollo',
+          // Deliberately a different address: only the identity can match.
+          email: 'old-address@example.com',
+          externalType: 'apollo',
+          externalId: 'apollo-known-1',
+        },
+      });
+
+      const prospect = await service.create(ORG_ID, {
+        name: 'Known By Apollo',
+        email: 'new-address@example.com',
+        externalType: 'apollo',
+        externalId: 'apollo-known-1',
+      });
+
+      // Writing externalId without externalType left this lookup unable to
+      // match, so the "never duplicate a customer" guarantee never fired.
+      expect(prospect.contactId).toBe(contact.id);
+    });
+
+    it('Does not match a contact whose identity came from another system', async () => {
+      await prisma.contact.create({
+        data: {
+          organizationId: ORG_ID,
+          name: 'Salesforce Person',
+          email: 'sf-only@example.com',
+          externalType: 'salesforce',
+          externalId: 'shared-id-42',
+        },
+      });
+
+      const prospect = await service.create(ORG_ID, {
+        name: 'Apollo Person',
+        email: 'apollo-only@example.com',
+        externalType: 'apollo',
+        externalId: 'shared-id-42',
+      });
+
+      expect(prospect.contactId).toBeNull();
+    });
+
     it('Keeps prospects of different organizations apart', async () => {
       await service.create(ORG_ID, {
         name: 'Shared Email',
@@ -365,13 +410,13 @@ describe('ProspectsService', () => {
       expect(events[0].source).toBe('user');
     });
 
-    it('Refuses to enrol a suppressed prospect', async () => {
+    it('Refuses to enrol a suppressed prospect, saying why', async () => {
       const prospect = await newProspect();
       await service.suppress(prospect.id, ORG_ID);
 
       await expect(
         service.enrol(prospect.id, ORG_ID, campaign.id),
-      ).rejects.toThrow(/cannot be enrolled/);
+      ).rejects.toThrow(/asked us to stop/);
     });
 
     it('Refuses to enrol someone with no contactable channel', async () => {
@@ -631,6 +676,122 @@ describe('ProspectsService', () => {
           'phone',
         ),
       ).rejects.toThrow(/is a email event/);
+    });
+  });
+
+  describe('outbound is blocked by standing, not just by consent', () => {
+    it('Refuses an outbound touch after suppression, even on a consenting channel', async () => {
+      const prospect = await newProspect({ phone: '+14155551111' });
+      await service.suppress(prospect.id, ORG_ID);
+
+      // suppress() closes memberships but leaves per-channel consent alone,
+      // so a consent-only gate let this through seconds after the opt-out.
+      await expect(
+        service.recordDirectOutreach(
+          prospect.id,
+          ORG_ID,
+          'call_placed',
+          'phone',
+        ),
+      ).rejects.toThrow(/asked us to stop/);
+    });
+
+    it('Refuses outbound to a disqualified prospect', async () => {
+      const prospect = await newProspect({ phone: '+14155551112' });
+      await service.setStatus(prospect.id, ORG_ID, 'disqualified');
+
+      await expect(
+        service.recordDirectOutreach(
+          prospect.id,
+          ORG_ID,
+          'call_placed',
+          'phone',
+        ),
+      ).rejects.toThrow(/disqualified/);
+    });
+
+    it('Refuses outbound to a promoted prospect, who a human now owns', async () => {
+      const prospect = await newProspect({ phone: '+14155551113' });
+      await service.recordDirectOutreach(
+        prospect.id,
+        ORG_ID,
+        'reply_received',
+        'phone',
+      );
+      await service.promote(prospect.id, ORG_ID);
+
+      await expect(
+        service.recordDirectOutreach(
+          prospect.id,
+          ORG_ID,
+          'call_placed',
+          'phone',
+        ),
+      ).rejects.toThrow(/promoted/);
+    });
+
+    it('Still accepts inbound from a suppressed prospect', async () => {
+      const prospect = await newProspect({ phone: '+14155551114' });
+      await service.suppress(prospect.id, ORG_ID);
+
+      await expect(
+        service.recordDirectOutreach(
+          prospect.id,
+          ORG_ID,
+          'reply_received',
+          'phone',
+        ),
+      ).resolves.toBeTruthy();
+    });
+  });
+
+  describe('force never overrides permission', () => {
+    it('Refuses to force-enrol a suppressed prospect', async () => {
+      const prospect = await newProspect();
+      await service.suppress(prospect.id, ORG_ID);
+
+      await expect(
+        service.enrol(prospect.id, ORG_ID, campaign.id, { force: true }),
+      ).rejects.toThrow(/asked us to stop/);
+    });
+
+    it('Refuses to force-enrol a promoted prospect', async () => {
+      const prospect = await newProspect();
+      await service.recordDirectOutreach(
+        prospect.id,
+        ORG_ID,
+        'reply_received',
+        'email',
+      );
+      await service.promote(prospect.id, ORG_ID);
+
+      // The 10-minute Apollo cron force-enrols; it must not reach into a
+      // person someone is already working by hand.
+      await expect(
+        service.enrol(prospect.id, ORG_ID, campaign.id, { force: true }),
+      ).rejects.toThrow(/promoted/);
+
+      const after = await service.findById(prospect.id, ORG_ID);
+      expect(after.status).toBe('promoted');
+    });
+
+    it('Never writes a status the lifecycle disallows', async () => {
+      const prospect = await newProspect();
+      await service.recordDirectOutreach(
+        prospect.id,
+        ORG_ID,
+        'reply_received',
+        'email',
+      );
+      expect((await service.findById(prospect.id, ORG_ID)).status).toBe(
+        'engaged',
+      );
+
+      // engaged -> enrolled is legal, so this one is allowed to move.
+      await service.enrol(prospect.id, ORG_ID, campaign.id, { force: true });
+      expect((await service.findById(prospect.id, ORG_ID)).status).toBe(
+        'enrolled',
+      );
     });
   });
 
@@ -936,6 +1097,23 @@ describe('ProspectsService', () => {
         where: { organizationId: ORG_ID },
       });
       expect(leads).toBe(1);
+    });
+
+    it('Carries the external identity onto the lead, both halves', async () => {
+      const prospect = await service.create(ORG_ID, {
+        name: 'Sourced Person',
+        email: `sourced-${Date.now()}@example.com`,
+        externalType: 'apollo',
+        externalId: 'apollo-promote-1',
+      });
+      const membership = await service.enrol(prospect.id, ORG_ID, campaign.id);
+      await service.setDisposition(membership.id, ORG_ID, 'interested');
+
+      const { lead } = await service.promote(prospect.id, ORG_ID);
+
+      // An id without its system cannot be matched later.
+      expect(lead.externalType).toBe('apollo');
+      expect(lead.externalId).toBe('apollo-promote-1');
     });
 
     it('Carries the linked CRM contact onto the lead instead of duplicating it', async () => {
