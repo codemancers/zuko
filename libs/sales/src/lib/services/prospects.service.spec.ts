@@ -753,6 +753,54 @@ describe('ProspectsService', () => {
       expect(delivered?.actorId).toBeNull();
     });
 
+    it('Concluding as interested engages but does not promote', async () => {
+      const prospect = await newProspect();
+      const membership = await service.enrol(prospect.id, ORG_ID, campaign.id);
+
+      const closed = await service.setDisposition(
+        membership.id,
+        ORG_ID,
+        'interested',
+      );
+
+      // Interested says "worth a human". Promotion assigns one, and that is a
+      // separate decision — so no Lead exists yet.
+      expect(closed.state).toBe('removed');
+      expect(closed.closedAt).not.toBeNull();
+
+      const after = await service.findById(prospect.id, ORG_ID);
+      expect(after.status).toBe('engaged');
+      expect(after.leadId).toBeNull();
+      expect(
+        await prisma.lead.count({ where: { organizationId: ORG_ID } }),
+      ).toBe(0);
+    });
+
+    it('Closes the membership on every disposition, not just the positive one', async () => {
+      for (const disposition of [
+        'interested',
+        'nurture',
+        'disqualified',
+        'opted_out',
+      ] as const) {
+        const prospect = await newProspect();
+        const membership = await service.enrol(
+          prospect.id,
+          ORG_ID,
+          campaign.id,
+        );
+
+        const closed = await service.setDisposition(
+          membership.id,
+          ORG_ID,
+          disposition,
+        );
+
+        expect(closed.state).toBe('removed');
+        expect(closed.closedAt).not.toBeNull();
+      }
+    });
+
     it('Rejects a disposition outside the vocabulary', async () => {
       const prospect = await newProspect();
       const membership = await service.enrol(prospect.id, ORG_ID, campaign.id);
@@ -760,6 +808,69 @@ describe('ProspectsService', () => {
       await expect(
         service.setDisposition(membership.id, ORG_ID, 'maybe_later'),
       ).rejects.toThrow(/Unknown disposition/);
+    });
+  });
+
+  describe('re-enrolment after a membership closes', () => {
+    it('Opens a second membership in the same campaign, leaving the first closed', async () => {
+      const prospect = await newProspect();
+      const first = await service.enrol(prospect.id, ORG_ID, campaign.id);
+      await service.setDisposition(first.id, ORG_ID, 'nurture');
+
+      // Cooldown is the gate on re-enrolment; expire it to get past.
+      await prisma.campaignMembership.update({
+        where: { id: first.id },
+        data: { nextEligibleAt: new Date(Date.now() - 1000) },
+      });
+
+      const second = await service.enrol(prospect.id, ORG_ID, campaign.id);
+
+      expect(second.id).not.toBe(first.id);
+
+      const all = await prisma.campaignMembership.findMany({
+        where: { prospectId: prospect.id, campaignId: campaign.id },
+        orderBy: { id: 'asc' },
+      });
+      // The partial unique index allows this precisely because the first is
+      // closed: one open membership per campaign, any number of closed ones.
+      expect(all).toHaveLength(2);
+      expect(all[0].state).toBe('removed');
+      expect(all[0].disposition).toBe('nurture');
+      expect(all[1].state).toBe('enrolled');
+      expect(all[1].disposition).toBeNull();
+    });
+
+    it('Refuses a second OPEN membership in the same campaign', async () => {
+      const prospect = await newProspect();
+      await service.enrol(prospect.id, ORG_ID, campaign.id);
+
+      await expect(
+        service.enrol(prospect.id, ORG_ID, campaign.id, { force: true }),
+      ).rejects.toThrow();
+    });
+
+    it('Keeps the closed history intact across re-enrolment', async () => {
+      const prospect = await newProspect();
+      const first = await service.enrol(prospect.id, ORG_ID, campaign.id);
+      await service.recordEvent(first.id, ORG_ID, 'email_sent');
+      await service.setDisposition(first.id, ORG_ID, 'nurture');
+      await prisma.campaignMembership.update({
+        where: { id: first.id },
+        data: { nextEligibleAt: new Date(Date.now() - 1000) },
+      });
+
+      const second = await service.enrol(prospect.id, ORG_ID, campaign.id);
+      await service.recordEvent(second.id, ORG_ID, 'email_sent');
+
+      const firstEvents = await prisma.campaignEvent.count({
+        where: { membershipId: first.id },
+      });
+      const secondEvents = await prisma.campaignEvent.count({
+        where: { membershipId: second.id },
+      });
+      // Touches stay with the cycle that produced them.
+      expect(firstEvents).toBeGreaterThan(0);
+      expect(secondEvents).toBeGreaterThan(0);
     });
   });
 

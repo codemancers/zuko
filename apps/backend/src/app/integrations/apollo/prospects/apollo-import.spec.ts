@@ -161,6 +161,38 @@ describe('Apollo import', () => {
     expect(prospects.recordEvent).not.toHaveBeenCalled();
   });
 
+  it('Starts a new membership when the previous one was closed', async () => {
+    const { service, prospects } = build([contact()]);
+    prospects.findById.mockResolvedValue({
+      id: 7,
+      memberships: [
+        { id: 30, campaignId: 4, state: 'removed', disposition: 'nurture' },
+      ],
+    } as never);
+
+    await service.syncSequenceActivity(1, 'seq-1', undefined, 4);
+
+    // Reusing the closed one would append touches to a concluded history.
+    expect(prospects.enrol).toHaveBeenCalled();
+    expect(prospects.recordEvent.mock.calls[0][0]).toBe(33);
+  });
+
+  it('Reuses the membership that is still open', async () => {
+    const { service, prospects } = build([contact()]);
+    prospects.findById.mockResolvedValue({
+      id: 7,
+      memberships: [
+        { id: 30, campaignId: 4, state: 'removed', disposition: 'nurture' },
+        { id: 31, campaignId: 4, state: 'active', disposition: null },
+      ],
+    } as never);
+
+    await service.syncSequenceActivity(1, 'seq-1', undefined, 4);
+
+    expect(prospects.enrol).not.toHaveBeenCalled();
+    expect(prospects.recordEvent.mock.calls[0][0]).toBe(31);
+  });
+
   it('Skips a contact with no Apollo id rather than inventing one', async () => {
     const { service, prospects } = build([contact({ id: '' })]);
 

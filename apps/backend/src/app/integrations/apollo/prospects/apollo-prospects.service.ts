@@ -6,7 +6,11 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ApolloMcpService } from '../apollo-mcp.service';
-import { ContactsRepository, ProspectsService } from '@zuko/sales';
+import {
+  ContactsRepository,
+  OPEN_MEMBERSHIP_STATES,
+  ProspectsService,
+} from '@zuko/sales';
 import type {
   SearchProspectsDto,
   AddPeopleToSequenceDto,
@@ -676,8 +680,14 @@ export class ApolloProspectsService {
     campaignId: number,
   ) {
     const prospect = await this.prospects.findById(prospectId, organizationId);
+    // Only an OPEN membership may be reused. A closed one has a disposition
+    // and a closedAt; hanging new touches off it would rewrite a concluded
+    // history. Apollo re-enrolling someone starts a new membership, which the
+    // partial unique index permits precisely because the old one is closed.
     const existing = prospect.memberships.find(
-      (m) => m.campaignId === campaignId,
+      (m) =>
+        m.campaignId === campaignId &&
+        OPEN_MEMBERSHIP_STATES.includes(m.state as never),
     );
     if (existing) return existing;
 
