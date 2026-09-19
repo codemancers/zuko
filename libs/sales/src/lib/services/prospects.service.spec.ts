@@ -444,6 +444,61 @@ describe('ProspectsService', () => {
       expect(afterDelivery?.engagement).toBe('contacted');
     });
 
+    it('Leaves closedAt null while the membership is still open', async () => {
+      const prospect = await newProspect();
+      const membership = await service.enrol(prospect.id, ORG_ID, campaign.id);
+
+      const active = await service.recordEvent(
+        membership.id,
+        ORG_ID,
+        'email_sent',
+      );
+
+      // 'active' is an accepted transition, but it is the work starting.
+      expect(active?.state).toBe('active');
+      expect(active?.closedAt).toBeNull();
+    });
+
+    it('Stamps closedAt only once the membership reaches a terminal state', async () => {
+      const prospect = await newProspect();
+      const membership = await service.enrol(prospect.id, ORG_ID, campaign.id);
+      await service.recordEvent(membership.id, ORG_ID, 'email_sent');
+      await service.recordEvent(membership.id, ORG_ID, 'email_delivered');
+
+      const open = await prisma.campaignMembership.findUnique({
+        where: { id: membership.id },
+      });
+      expect(open?.closedAt).toBeNull();
+
+      const closed = await service.recordEvent(
+        membership.id,
+        ORG_ID,
+        'sequence_finished',
+      );
+
+      expect(closed?.state).toBe('completed');
+      expect(closed?.closedAt).not.toBeNull();
+    });
+
+    it('Keeps closedAt null through a full open lifecycle', async () => {
+      const prospect = await newProspect();
+      const membership = await service.enrol(prospect.id, ORG_ID, campaign.id);
+
+      for (const event of [
+        'email_sent',
+        'email_delivered',
+        'email_opened',
+        'email_clicked',
+        'reply_received',
+      ]) {
+        await service.recordEvent(membership.id, ORG_ID, event);
+        const row = await prisma.campaignMembership.findUnique({
+          where: { id: membership.id },
+        });
+        expect(row?.closedAt).toBeNull();
+      }
+    });
+
     it('Leaves state untouched on an open, because an open is not an answer', async () => {
       const prospect = await newProspect();
       const membership = await service.enrol(prospect.id, ORG_ID, campaign.id);

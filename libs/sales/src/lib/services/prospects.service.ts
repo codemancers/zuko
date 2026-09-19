@@ -31,6 +31,7 @@ import {
   canEnrollProspect,
   canTransitionEngagement,
   isOutboundBlocked,
+  isTerminalMembershipState,
   outboundBlockedReason,
   canTransitionMembership,
   canTransitionProspect,
@@ -461,7 +462,12 @@ export class ProspectsService {
       canTransitionMembership(currentState, effect.membershipState)
     ) {
       update.state = effect.membershipState;
-      update.closedAt = new Date();
+      // Only a terminal state closes a membership. `active` is the work
+      // starting, not ending — stamping closedAt there gives every membership
+      // that saw a send a close time it never had.
+      if (isTerminalMembershipState(effect.membershipState)) {
+        update.closedAt = new Date();
+      }
     }
 
     const currentEngagement = membership.engagement as EngagementState;
@@ -479,9 +485,6 @@ export class ProspectsService {
     if (Object.keys(update).length === 0) {
       return this.prospects.findMembership(membership.id);
     }
-
-    // closedAt only belongs on a membership that actually closed.
-    if (!update.state) delete update.closedAt;
 
     const updated = await this.prospects.updateMembership(
       membership.id,
