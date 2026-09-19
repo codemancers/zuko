@@ -50,7 +50,10 @@ export const PROSPECT_STATUS_TRANSITIONS: Record<
   ProspectStatus,
   readonly ProspectStatus[]
 > = {
-  new: ['enrolled', 'disqualified', 'suppressed'],
+  // `engaged` is reachable directly: a rep can call someone who is in no
+  // campaign at all and get a response. Requiring `enrolled` first would
+  // assume every conversation starts in a sequence.
+  new: ['enrolled', 'engaged', 'disqualified', 'suppressed'],
   enrolled: ['new', 'engaged', 'disqualified', 'suppressed'],
   engaged: ['enrolled', 'promoted', 'disqualified', 'suppressed'],
   promoted: ['engaged', 'disqualified', 'suppressed'],
@@ -311,11 +314,28 @@ export function isPositiveDisposition(
 
 export const CAMPAIGN_EVENTS = [
   { label: 'Enrolled', value: 'enrolled' },
-  { label: 'Message Sent', value: 'message_sent' },
-  { label: 'Message Delivered', value: 'message_delivered' },
-  { label: 'Message Opened', value: 'message_opened' },
-  { label: 'Message Clicked', value: 'message_clicked' },
-  { label: 'Message Bounced', value: 'message_bounced' },
+
+  // Email
+  { label: 'Email Sent', value: 'email_sent' },
+  { label: 'Email Delivered', value: 'email_delivered' },
+  { label: 'Email Opened', value: 'email_opened' },
+  { label: 'Email Clicked', value: 'email_clicked' },
+  { label: 'Email Bounced', value: 'email_bounced' },
+
+  // Phone — a call has outcomes an email does not, and flattening them into
+  // "delivered" would throw away what the rep actually learned.
+  { label: 'Call Placed', value: 'call_placed' },
+  { label: 'Call Connected', value: 'call_connected' },
+  { label: 'Voicemail Left', value: 'voicemail_left' },
+  { label: 'No Answer', value: 'call_no_answer' },
+  { label: 'Call Failed', value: 'call_failed' },
+
+  // LinkedIn
+  { label: 'Connection Requested', value: 'connection_requested' },
+  { label: 'Connection Accepted', value: 'connection_accepted' },
+  { label: 'Message Sent', value: 'linkedin_message_sent' },
+
+  // Channel-neutral — a callback and an email reply are both replies.
   { label: 'Reply Received', value: 'reply_received' },
   { label: 'Meeting Booked', value: 'meeting_booked' },
   { label: 'Opted Out', value: 'opted_out' },
@@ -329,6 +349,31 @@ export const CAMPAIGN_EVENT_VALUES: string[] = CAMPAIGN_EVENTS.map(
   (e) => e.value as string,
 );
 
+/** Which channel an event can occur on. Null means any. */
+export const EVENT_CHANNEL: Partial<Record<CampaignEvent, ContactChannel>> = {
+  email_sent: 'email',
+  email_delivered: 'email',
+  email_opened: 'email',
+  email_clicked: 'email',
+  email_bounced: 'email',
+  call_placed: 'phone',
+  call_connected: 'phone',
+  voicemail_left: 'phone',
+  call_no_answer: 'phone',
+  call_failed: 'phone',
+  connection_requested: 'linkedin',
+  connection_accepted: 'linkedin',
+  linkedin_message_sent: 'linkedin',
+};
+
+/** Touches the prospect initiated, rather than ones we sent. */
+export const INBOUND_EVENTS: readonly CampaignEvent[] = [
+  'reply_received',
+  'meeting_booked',
+  'opted_out',
+  'connection_accepted',
+];
+
 export interface CampaignEventEffect {
   /** Campaign state the event moves the membership to, if any. */
   membershipState?: CampaignMembershipState;
@@ -340,23 +385,42 @@ export interface CampaignEventEffect {
 
 /**
  * How each event lands on the three axes. An empty effect is deliberate:
- * opens and clicks are signals worth storing and scoring, but they do not
- * change what is true about the membership — only a reply does.
+ * opens, clicks and unanswered dials are worth storing and scoring, but they
+ * do not change what is true about the prospect — only a response does.
  */
 export const CAMPAIGN_EVENT_EFFECTS: Record<
   CampaignEvent,
   CampaignEventEffect
 > = {
   enrolled: { membershipState: 'enrolled' },
-  message_sent: { membershipState: 'active' },
-  message_delivered: { engagementState: 'contacted' },
-  message_opened: {},
-  message_clicked: {},
-  message_bounced: {
+
+  email_sent: { membershipState: 'active' },
+  email_delivered: { engagementState: 'contacted' },
+  email_opened: {},
+  email_clicked: {},
+  email_bounced: {
     membershipState: 'removed',
     engagementState: 'unreachable',
     disposition: 'disqualified',
   },
+
+  call_placed: { membershipState: 'active' },
+  // Reaching a human is contact; reaching their voicemail is still contact.
+  call_connected: { engagementState: 'contacted' },
+  voicemail_left: { engagementState: 'contacted' },
+  // A dial nobody picked up tells us nothing about them.
+  call_no_answer: {},
+  // Disconnected or wrong number — the equivalent of a hard bounce.
+  call_failed: {
+    membershipState: 'removed',
+    engagementState: 'unreachable',
+    disposition: 'disqualified',
+  },
+
+  connection_requested: { membershipState: 'active' },
+  connection_accepted: { engagementState: 'contacted' },
+  linkedin_message_sent: { engagementState: 'contacted' },
+
   reply_received: { engagementState: 'responded' },
   meeting_booked: {
     engagementState: 'responded',
@@ -366,8 +430,6 @@ export const CAMPAIGN_EVENT_EFFECTS: Record<
     membershipState: 'removed',
     disposition: 'opted_out',
   },
-  // Engagement is only forced to no_response when nothing was heard back;
-  // processing leaves an already-responded membership alone.
   sequence_finished: {
     membershipState: 'completed',
     engagementState: 'no_response',

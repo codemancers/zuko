@@ -99,11 +99,19 @@ export const CONSENT_COLORS: Record<ConsentState, BadgeColor> = {
 /** What each event means in the timeline, in plain words. */
 export const EVENT_LABELS: Record<string, string> = {
   enrolled: 'Enrolled in campaign',
-  message_sent: 'Message sent',
-  message_delivered: 'Message delivered',
-  message_opened: 'Opened',
-  message_clicked: 'Clicked a link',
-  message_bounced: 'Bounced',
+  email_sent: 'Email sent',
+  email_delivered: 'Email delivered',
+  email_opened: 'Opened',
+  email_clicked: 'Clicked a link',
+  email_bounced: 'Bounced',
+  call_placed: 'Called',
+  call_connected: 'Call connected',
+  voicemail_left: 'Left voicemail',
+  call_no_answer: 'No answer',
+  call_failed: 'Number unreachable',
+  connection_requested: 'Connection requested',
+  connection_accepted: 'Connection accepted',
+  linkedin_message_sent: 'LinkedIn message sent',
   reply_received: 'Replied',
   meeting_booked: 'Booked a meeting',
   opted_out: 'Opted out',
@@ -113,8 +121,9 @@ export const EVENT_LABELS: Record<string, string> = {
 
 /** Opens and clicks are signals, not state changes — shown muted. */
 export const SIGNAL_ONLY_EVENTS = new Set([
-  'message_opened',
-  'message_clicked',
+  'email_opened',
+  'email_clicked',
+  'call_no_answer',
 ]);
 
 export const isOpenMembership = (state: CampaignMembershipState) =>

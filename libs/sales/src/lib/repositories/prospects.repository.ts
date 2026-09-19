@@ -82,8 +82,11 @@ export interface UpdateMembershipInput {
 }
 
 export interface RecordEventInput {
-  membershipId: number;
+  /** Optional: a touch outside any campaign belongs to the prospect alone. */
+  membershipId?: number;
   prospectId: number;
+  channel?: string;
+  direction?: string;
   eventType: string;
   occurredAt?: Date;
   payload?: unknown;

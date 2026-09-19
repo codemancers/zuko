@@ -3,6 +3,13 @@ title: Prospect Lifecycle
 description: Terminology, states, events, and transition rules that govern a person's journey from outbound target to closed deal.
 ---
 
+<Note>
+  **Zuko is the system of record.** Prospects, leads and contacts are created
+  and worked here. Apollo, Origami and Salesforce are sources that feed the
+  same records through the API — integrations, not owners. Nothing on this page
+  requires a provider, a sequence, or even a campaign.
+</Note>
+
 Zuko tracks a person across two very different phases of a sales motion: the **outbound** phase, where we reach out and most people never answer, and the **CRM** phase, where a human relationship exists and is worth managing. Collapsing the two into one record makes both worse — outbound noise pollutes the CRM, and CRM semantics do not survive bulk enrolment.
 
 This page defines the vocabulary, the states, the events that drive them, and the rules for moving between them. The machine-readable version of everything here lives in `libs/sales/src/lib/constants/prospects.ts` and is exported from `@zuko/sales` — code must import it rather than re-declare string literals.
@@ -104,16 +111,42 @@ The disposition is our conclusion, and it is the bridge from campaign activity t
 
 `nurture` returning a prospect to `new` is the point: silence is not rejection, and a prospect who ignored one campaign is a legitimate target for the next.
 
+## Outreach without a campaign
+
+A campaign is a convenience for running the same sequence against many people. It is not a precondition for talking to someone. A rep can add a prospect by hand and call them, and that touch is recorded against the **prospect** — `membershipId` is null, the channel is on the touch itself.
+
+Such a touch runs the same consent gate as campaign outreach: outbound on a revoked channel is refused, whoever initiated it. Inbound is always accepted — someone who stopped us contacting them can still contact us.
+
+Because there is no membership to hold engagement, the effect lands on the prospect's own standing: a reply moves `new` straight to `engaged`, and it can be promoted to a lead from there with no campaign ever involved.
+
+## Channels
+
+Every touch declares the channel it happened on, and the vocabulary is specific where the semantics differ — a voicemail is not an email delivery, and flattening them would throw away what the rep learned.
+
+| Channel    | Events                                                                          |
+| ---------- | ------------------------------------------------------------------------------- |
+| `email`    | `email_sent` · `email_delivered` · `email_opened` · `email_clicked` · `email_bounced` |
+| `phone`    | `call_placed` · `call_connected` · `voicemail_left` · `call_no_answer` · `call_failed` |
+| `linkedin` | `connection_requested` · `connection_accepted` · `linkedin_message_sent`         |
+| _any_      | `reply_received` · `meeting_booked` · `opted_out` · `removed`                     |
+
+`call_no_answer` changes no state, for the same reason `email_opened` doesn't: a dial nobody picked up tells us nothing about the person. `call_failed` — a disconnected or wrong number — is the phone equivalent of a hard bounce.
+
 ## How events land
 
 | Event               | Campaign state | Engagement state | Disposition    |
 | ------------------- | -------------- | ---------------- | -------------- |
 | `enrolled`          | `enrolled`     | —                | —              |
-| `message_sent`      | `active`       | —                | —              |
-| `message_delivered` | —              | `contacted`      | —              |
-| `message_opened`    | —              | —                | —              |
-| `message_clicked`   | —              | —                | —              |
-| `message_bounced`   | `removed`      | `unreachable`    | `disqualified` |
+| `email_sent`        | `active`       | —                | —              |
+| `email_delivered`   | —              | `contacted`      | —              |
+| `email_opened`      | —              | —                | —              |
+| `email_clicked`     | —              | —                | —              |
+| `email_bounced`     | `removed`      | `unreachable`    | `disqualified` |
+| `call_placed`       | `active`       | —                | —              |
+| `call_connected`    | —              | `contacted`      | —              |
+| `voicemail_left`    | —              | `contacted`      | —              |
+| `call_no_answer`    | —              | —                | —              |
+| `call_failed`       | `removed`      | `unreachable`    | `disqualified` |
 | `reply_received`    | —              | `responded`      | —              |
 | `meeting_booked`    | —              | `responded`      | `interested`   |
 | `opted_out`         | `removed`      | —                | `opted_out`    |
@@ -153,6 +186,7 @@ Status is the prospect's **standing with the organization** — one value, spann
 | From           | To             | Trigger                                              |
 | -------------- | -------------- | ---------------------------------------------------- |
 | `new`          | `enrolled`     | First membership opens.                              |
+| `new`          | `engaged`      | Answered a direct touch, with no campaign involved.  |
 | `enrolled`     | `new`          | Last membership closed with `nurture`.               |
 | `enrolled`     | `engaged`      | A membership closed `interested`.                    |
 | `engaged`      | `promoted`     | Promotion creates a `Lead`.                          |
@@ -174,12 +208,12 @@ A person sourced twice is one prospect, and a person we already know is not a ne
 
 Prospects come from Apollo, Origami, Salesforce, a CSV, or a person typing a name — so identity is stored as a generic pair rather than a column per vendor:
 
-| Field          | Holds                                                        |
-| -------------- | ------------------------------------------------------------ |
+| Field          | Holds                                                         |
+| -------------- | ------------------------------------------------------------- |
 | `externalType` | Which system — `apollo`, `origami`, `salesforce`, `manual`, … |
 | `externalId`   | Who they are in that system                                   |
 
-The pair is matched together, never the id alone: Apollo `12345` and Salesforce `12345` are different people, and an id with no system attached cannot be matched at all. Adding a provider needs no migration — only a new `externalType` value. The same scheme now runs across `Contact`, `Company`, `Lead`, `Campaign` and `Prospect`; `Contact` and `Company` additionally carry `externalRecordId`, the vendor's pointer to *our* record in *their* workspace, which is a sync detail and never used for matching.
+The pair is matched together, never the id alone: Apollo `12345` and Salesforce `12345` are different people, and an id with no system attached cannot be matched at all. Adding a provider needs no migration — only a new `externalType` value. The same scheme now runs across `Contact`, `Company`, `Lead`, `Campaign` and `Prospect`; `Contact` and `Company` additionally carry `externalRecordId`, the vendor's pointer to _our_ record in _their_ workspace, which is a sync detail and never used for matching.
 
 The outcomes:
 
@@ -217,7 +251,7 @@ A membership is also bound to the `channel` it runs on, because consent is per c
 
 Consent is tracked **per channel** — `email`, `linkedin`, `phone` — with three states: `unknown`, `granted`, `revoked`.
 
-Outbound is opt-out, not opt-in: `unknown` is contactable. Only `revoked` silences a channel, and it silences only that channel — an email opt-out does not close LinkedIn. A prospect whose every channel is revoked is recorded as `suppressed` outright rather than left to be inferred at send time.
+Outbound is opt-out, not opt-in: `unknown` is contactable. Only `revoked` silences a channel, and it silences only that channel — an email opt-out does not close LinkedIn. An opt-out revokes the channel it arrived on, and does so unconditionally: consent is a fact about a channel, never a side effect of a status change. A prospect whose every channel is revoked is recorded as `suppressed` outright rather than left to be inferred at send time.
 
 Consent is a permission; `unreachable` is a fact about deliverability. A bounce does not revoke consent, and an opt-out does not mean the address was bad. They are stored separately because they expire differently and answer to different rules.
 

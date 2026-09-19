@@ -23,6 +23,9 @@ import type {
 import {
   CAMPAIGN_EVENT_EFFECTS,
   CONSENT_STATE_VALUES,
+  CONTACT_CHANNEL_VALUES,
+  EVENT_CHANNEL,
+  INBOUND_EVENTS,
   OPEN_MEMBERSHIP_STATES,
   PROMOTED_LEAD_STATUS,
   canEnrollProspect,
@@ -275,6 +278,98 @@ export class ProspectsService {
     return membership;
   }
 
+  // ---- Direct outreach ----
+
+  /**
+   * Record a touch made outside any campaign — a call someone picked up the
+   * phone to make, a one-off email. Zuko is the system of record, so this does
+   * not require a campaign, a sequence, or a provider to exist.
+   *
+   * It runs the same consent gate as campaign outreach: if the channel has
+   * been revoked, we do not contact them, however the touch was initiated.
+   */
+  async recordDirectOutreach(
+    id: number,
+    organizationId: number,
+    eventType: string,
+    channel: string,
+    actor: ProspectActor = {},
+  ) {
+    if (!isCampaignEvent(eventType)) {
+      throw new BadRequestException(`Unknown outreach event "${eventType}"`);
+    }
+    if (!CONTACT_CHANNEL_VALUES.includes(channel)) {
+      throw new BadRequestException(`Unknown channel "${channel}"`);
+    }
+
+    const expected = EVENT_CHANNEL[eventType as CampaignEvent];
+    if (expected && expected !== channel) {
+      throw new BadRequestException(
+        `"${eventType}" is a ${expected} event and cannot be recorded on ${channel}.`,
+      );
+    }
+
+    const prospect = await this.findById(id, organizationId);
+
+    const outbound = !INBOUND_EVENTS.includes(eventType as CampaignEvent);
+    if (outbound && !this.isChannelUsable(prospect, channel)) {
+      throw new BadRequestException(
+        `Cannot contact this prospect on ${channel}: consent revoked or no address on file.`,
+      );
+    }
+
+    await this.prospects.recordEvent({
+      prospectId: id,
+      eventType,
+      channel,
+      direction: outbound ? 'outbound' : 'inbound',
+      actorId: actor.userId,
+      source: actor.source ?? 'user',
+    });
+
+    // Without a campaign there is no membership to hold engagement, so the
+    // effect lands on the prospect's own standing instead.
+    const effect = CAMPAIGN_EVENT_EFFECTS[eventType as CampaignEvent];
+    if (effect.disposition) {
+      await this.applyDispositionToProspect(
+        id,
+        organizationId,
+        effect.disposition,
+        channel,
+      );
+    } else if (effect.engagementState === 'responded') {
+      const from = prospect.status as ProspectStatus;
+      if (canTransitionProspect(from, 'engaged')) {
+        await this.prospects.update(id, { status: 'engaged' });
+      }
+    }
+
+    return this.findById(id, organizationId);
+  }
+
+  /** The channel has an address on file and has not been revoked. */
+  private isChannelUsable(
+    prospect: {
+      email?: string | null;
+      linkedinUrl?: string | null;
+      phone?: string | null;
+      emailConsent: string;
+      linkedinConsent: string;
+      phoneConsent: string;
+    },
+    channel: string,
+  ): boolean {
+    const byChannel: Record<string, [string | null | undefined, string]> = {
+      email: [prospect.email, prospect.emailConsent],
+      linkedin: [prospect.linkedinUrl, prospect.linkedinConsent],
+      phone: [prospect.phone, prospect.phoneConsent],
+    };
+    const entry = byChannel[channel];
+    if (!entry) return false;
+    const [value, consent] = entry;
+    return Boolean(value) && isChannelContactable(consent as never);
+  }
+
   // ---- Campaign activity ----
 
   /**
@@ -373,6 +468,7 @@ export class ProspectsService {
         membership.prospectId,
         membership.prospect.organizationId,
         update.disposition as CampaignDisposition,
+        membership.channel,
       );
     }
 
@@ -423,6 +519,7 @@ export class ProspectsService {
       membership.prospectId,
       membership.prospect.organizationId,
       disposition,
+      membership.channel,
     );
 
     return updated;
@@ -432,24 +529,28 @@ export class ProspectsService {
     prospectId: number,
     organizationId: number,
     disposition: CampaignDisposition,
+    channel?: string,
   ) {
     const target = prospectStatusForDisposition(disposition);
     const prospect = await this.prospects.findById(prospectId, organizationId);
     if (!prospect) return;
+
+    // Consent is revoked first and unconditionally: it is a legal fact about
+    // one channel, not a consequence of a status change. Skipping it when the
+    // status happens to be a no-op would silently keep contacting someone who
+    // asked us to stop on a second channel.
+    if (disposition === 'opted_out' && channel) {
+      const field = CONSENT_FIELD_BY_CHANNEL[channel as ContactChannel];
+      if (field) {
+        await this.prospects.update(prospectId, { [field]: 'revoked' });
+      }
+    }
 
     const from = prospect.status as ProspectStatus;
     if (from === target) return;
     if (!canTransitionProspect(from, target)) return;
 
     await this.prospects.update(prospectId, { status: target });
-
-    if (disposition === 'opted_out') {
-      await this.prospects.update(prospectId, {
-        emailConsent: 'revoked',
-        linkedinConsent: 'revoked',
-        phoneConsent: 'revoked',
-      });
-    }
   }
 
   // ---- Promotion ----

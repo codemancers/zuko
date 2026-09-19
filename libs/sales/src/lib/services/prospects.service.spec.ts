@@ -388,11 +388,11 @@ describe('ProspectsService', () => {
       const prospect = await newProspect();
       const membership = await service.enrol(prospect.id, ORG_ID, campaign.id);
 
-      await service.recordEvent(membership.id, ORG_ID, 'message_sent');
+      await service.recordEvent(membership.id, ORG_ID, 'email_sent');
       const afterDelivery = await service.recordEvent(
         membership.id,
         ORG_ID,
-        'message_delivered',
+        'email_delivered',
       );
 
       expect(afterDelivery?.state).toBe('active');
@@ -402,13 +402,13 @@ describe('ProspectsService', () => {
     it('Leaves state untouched on an open, because an open is not an answer', async () => {
       const prospect = await newProspect();
       const membership = await service.enrol(prospect.id, ORG_ID, campaign.id);
-      await service.recordEvent(membership.id, ORG_ID, 'message_sent');
-      await service.recordEvent(membership.id, ORG_ID, 'message_delivered');
+      await service.recordEvent(membership.id, ORG_ID, 'email_sent');
+      await service.recordEvent(membership.id, ORG_ID, 'email_delivered');
 
       const afterOpen = await service.recordEvent(
         membership.id,
         ORG_ID,
-        'message_opened',
+        'email_opened',
       );
 
       expect(afterOpen?.state).toBe('active');
@@ -418,17 +418,17 @@ describe('ProspectsService', () => {
     it('Still records an open as history even though it changes nothing', async () => {
       const prospect = await newProspect();
       const membership = await service.enrol(prospect.id, ORG_ID, campaign.id);
-      await service.recordEvent(membership.id, ORG_ID, 'message_opened');
+      await service.recordEvent(membership.id, ORG_ID, 'email_opened');
 
       const events = await service.findEvents(prospect.id);
-      expect(events.map((e) => e.eventType)).toContain('message_opened');
+      expect(events.map((e) => e.eventType)).toContain('email_opened');
     });
 
     it('Marks engagement responded on a reply, without concluding anything', async () => {
       const prospect = await newProspect();
       const membership = await service.enrol(prospect.id, ORG_ID, campaign.id);
-      await service.recordEvent(membership.id, ORG_ID, 'message_sent');
-      await service.recordEvent(membership.id, ORG_ID, 'message_delivered');
+      await service.recordEvent(membership.id, ORG_ID, 'email_sent');
+      await service.recordEvent(membership.id, ORG_ID, 'email_delivered');
 
       const replied = await service.recordEvent(
         membership.id,
@@ -446,8 +446,8 @@ describe('ProspectsService', () => {
     it('Treats a booked meeting as interest and engages the prospect', async () => {
       const prospect = await newProspect();
       const membership = await service.enrol(prospect.id, ORG_ID, campaign.id);
-      await service.recordEvent(membership.id, ORG_ID, 'message_sent');
-      await service.recordEvent(membership.id, ORG_ID, 'message_delivered');
+      await service.recordEvent(membership.id, ORG_ID, 'email_sent');
+      await service.recordEvent(membership.id, ORG_ID, 'email_delivered');
       await service.recordEvent(membership.id, ORG_ID, 'meeting_booked');
 
       const reloaded = await service.findById(prospect.id, ORG_ID);
@@ -477,7 +477,7 @@ describe('ProspectsService', () => {
       const bounced = await service.recordEvent(
         membership.id,
         ORG_ID,
-        'message_bounced',
+        'email_bounced',
       );
 
       expect(bounced?.engagement).toBe('unreachable');
@@ -494,22 +494,20 @@ describe('ProspectsService', () => {
       await service.recordEvent(
         membership.id,
         ORG_ID,
-        'message_delivered',
+        'email_delivered',
         undefined,
         'provider-evt-1',
       );
       await service.recordEvent(
         membership.id,
         ORG_ID,
-        'message_delivered',
+        'email_delivered',
         undefined,
         'provider-evt-1',
       );
 
       const events = await service.findEvents(prospect.id);
-      const delivered = events.filter(
-        (e) => e.eventType === 'message_delivered',
-      );
+      const delivered = events.filter((e) => e.eventType === 'email_delivered');
       expect(delivered).toHaveLength(1);
     });
 
@@ -527,8 +525,128 @@ describe('ProspectsService', () => {
       const membership = await service.enrol(prospect.id, ORG_ID, campaign.id);
 
       await expect(
-        service.recordEvent(membership.id, OTHER_ORG_ID, 'message_sent'),
+        service.recordEvent(membership.id, OTHER_ORG_ID, 'email_sent'),
       ).rejects.toThrow(/not found/);
+    });
+  });
+
+  describe('outreach without a campaign', () => {
+    it('Logs a phone call against a prospect that is in no campaign', async () => {
+      const prospect = await newProspect({ phone: '+14155550001' });
+
+      await service.recordDirectOutreach(
+        prospect.id,
+        ORG_ID,
+        'call_placed',
+        'phone',
+        { userId: user.id, source: 'user' },
+      );
+
+      const events = await service.findEvents(prospect.id);
+      expect(events[0].eventType).toBe('call_placed');
+      expect(events[0].channel).toBe('phone');
+      expect(events[0].membershipId).toBeNull();
+    });
+
+    it('Engages the prospect when a call is returned', async () => {
+      const prospect = await newProspect({ phone: '+14155550002' });
+      await service.recordDirectOutreach(
+        prospect.id,
+        ORG_ID,
+        'call_connected',
+        'phone',
+      );
+      const after = await service.recordDirectOutreach(
+        prospect.id,
+        ORG_ID,
+        'reply_received',
+        'phone',
+      );
+
+      expect(after.status).toBe('engaged');
+    });
+
+    it('Promotes from a direct call with no campaign anywhere in sight', async () => {
+      const prospect = await newProspect({ phone: '+14155550003' });
+      await service.recordDirectOutreach(
+        prospect.id,
+        ORG_ID,
+        'reply_received',
+        'phone',
+      );
+
+      const { lead } = await service.promote(prospect.id, ORG_ID);
+      expect(lead.status).toBe('replied');
+    });
+
+    it('Refuses outbound on a revoked channel', async () => {
+      const prospect = await newProspect({ phone: '+14155550004' });
+      await service.setConsent(prospect.id, ORG_ID, 'phone', 'revoked');
+
+      await expect(
+        service.recordDirectOutreach(
+          prospect.id,
+          ORG_ID,
+          'call_placed',
+          'phone',
+        ),
+      ).rejects.toThrow(/consent revoked|no address/);
+    });
+
+    it('Refuses outbound on a channel with no address on file', async () => {
+      const prospect = await newProspect();
+
+      await expect(
+        service.recordDirectOutreach(
+          prospect.id,
+          ORG_ID,
+          'call_placed',
+          'phone',
+        ),
+      ).rejects.toThrow(/no address/);
+    });
+
+    it('Still accepts an inbound reply on a revoked channel', async () => {
+      const prospect = await newProspect({ phone: '+14155550005' });
+      await service.setConsent(prospect.id, ORG_ID, 'phone', 'revoked');
+
+      // They stopped us contacting them; they can still contact us.
+      const after = await service.recordDirectOutreach(
+        prospect.id,
+        ORG_ID,
+        'reply_received',
+        'phone',
+      );
+      expect(after).toBeTruthy();
+    });
+
+    it('Refuses an event that does not belong to the channel', async () => {
+      const prospect = await newProspect({ phone: '+14155550006' });
+
+      await expect(
+        service.recordDirectOutreach(
+          prospect.id,
+          ORG_ID,
+          'email_opened',
+          'phone',
+        ),
+      ).rejects.toThrow(/is a email event/);
+    });
+  });
+
+  describe('per-channel opt-out', () => {
+    it('Revokes only the channel the opt-out happened on', async () => {
+      const prospect = await newProspect({ linkedinUrl: 'https://li/x' });
+      const membership = await service.enrol(prospect.id, ORG_ID, campaign.id, {
+        channel: 'email',
+      });
+
+      await service.recordEvent(membership.id, ORG_ID, 'opted_out');
+
+      const after = await service.findById(prospect.id, ORG_ID);
+      expect(after.emailConsent).toBe('revoked');
+      // The documented rule: an email opt-out does not close LinkedIn.
+      expect(after.linkedinConsent).toBe('unknown');
     });
   });
 
@@ -624,13 +742,13 @@ describe('ProspectsService', () => {
       await service.recordEvent(
         membership.id,
         ORG_ID,
-        'message_delivered',
+        'email_delivered',
         undefined,
         'provider-evt-audit',
       );
 
       const events = await service.findEvents(prospect.id);
-      const delivered = events.find((e) => e.eventType === 'message_delivered');
+      const delivered = events.find((e) => e.eventType === 'email_delivered');
       expect(delivered?.source).toBe('provider');
       expect(delivered?.actorId).toBeNull();
     });

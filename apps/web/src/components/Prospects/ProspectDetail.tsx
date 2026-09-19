@@ -37,6 +37,22 @@ const DISPOSITIONS: CampaignDisposition[] = [
   'opted_out',
 ];
 
+/** What a rep can record by hand, per channel. */
+const QUICK_TOUCHES: Record<ContactChannel, { type: string; label: string }[]> =
+  {
+    phone: [
+      { type: 'call_placed', label: 'Logged call' },
+      { type: 'call_connected', label: 'Connected' },
+      { type: 'voicemail_left', label: 'Voicemail' },
+      { type: 'call_no_answer', label: 'No answer' },
+    ],
+    email: [{ type: 'email_sent', label: 'Sent email' }],
+    linkedin: [
+      { type: 'connection_requested', label: 'Sent request' },
+      { type: 'linkedin_message_sent', label: 'Sent message' },
+    ],
+  };
+
 const CHANNELS: { channel: ContactChannel; label: string }[] = [
   { channel: 'email', label: 'Email' },
   { channel: 'linkedin', label: 'LinkedIn' },
@@ -93,6 +109,21 @@ export default function ProspectDetail({ prospectId }: ProspectDetailProps) {
       toast.success('Consent updated');
     },
     onError: failWith('Could not update consent'),
+  });
+
+  const outreachMutation = useMutation({
+    mutationFn: ({
+      eventType,
+      channel,
+    }: {
+      eventType: string;
+      channel: ContactChannel;
+    }) => prospectsApi.recordOutreach(prospectId, eventType, channel),
+    onSuccess: () => {
+      refresh();
+      toast.success('Outreach logged');
+    },
+    onError: failWith('Could not log that touch'),
   });
 
   const dispositionMutation = useMutation({
@@ -225,7 +256,24 @@ export default function ProspectDetail({ prospectId }: ProspectDetailProps) {
                     {value ?? '—'}
                   </p>
                 </div>
-                <div className="flex shrink-0 items-center gap-2">
+                <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
+                  {value &&
+                    consent !== 'revoked' &&
+                    QUICK_TOUCHES[channel].map((touch) => (
+                      <Button
+                        key={touch.type}
+                        plain
+                        disabled={outreachMutation.isPending}
+                        onClick={() =>
+                          outreachMutation.mutate({
+                            eventType: touch.type,
+                            channel,
+                          })
+                        }
+                      >
+                        {touch.label}
+                      </Button>
+                    ))}
                   <Badge color={CONSENT_COLORS[consent] ?? 'zinc'}>
                     {CONSENT_LABELS[consent] ?? consent}
                   </Badge>

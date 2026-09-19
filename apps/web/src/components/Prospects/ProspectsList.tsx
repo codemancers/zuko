@@ -8,7 +8,9 @@ import { getProspects, getProspectStats } from '@/server/query-options';
 import type { Prospect, ProspectStatus } from '@/lib/api/prospects';
 import { PageHeader } from '@/components/shared';
 import { BaseTable } from '@/components/Table';
-import { Badge, Button } from '@zuko/ui-kit';
+import { Badge, Button, Sheet, SheetHeader, SheetTitle } from '@zuko/ui-kit';
+import { XMarkIcon } from '@heroicons/react/24/outline';
+import ProspectForm from './ProspectForm';
 import {
   PROSPECT_STATUS_COLORS,
   PROSPECT_STATUS_LABELS,
@@ -29,6 +31,7 @@ const STATUS_FILTERS: (ProspectStatus | 'all')[] = [
 export default function ProspectsList() {
   const router = useRouter();
   const [status, setStatus] = useState<ProspectStatus | 'all'>('all');
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
 
   const { data, isLoading } = useQuery(
     getProspects(status === 'all' ? {} : { status: [status] }),
@@ -129,6 +132,11 @@ export default function ProspectsList() {
       <PageHeader
         title="Prospects"
         description="People targeted by outbound, before they become leads"
+        action={
+          <Button color="dark" onClick={() => setIsSheetOpen(true)}>
+            Add Prospect
+          </Button>
+        }
       />
 
       <div className="mb-4 flex flex-wrap gap-2">
@@ -162,6 +170,16 @@ export default function ProspectsList() {
         entityName="prospects"
         totalCount={data?.total}
       />
+
+      <Sheet open={isSheetOpen} onClose={() => setIsSheetOpen(false)}>
+        <SheetHeader>
+          <SheetTitle>Add Prospect</SheetTitle>
+          <Button plain onClick={() => setIsSheetOpen(false)}>
+            <XMarkIcon className="size-5" />
+          </Button>
+        </SheetHeader>
+        <ProspectForm onDone={() => setIsSheetOpen(false)} />
+      </Sheet>
     </>
   );
 }

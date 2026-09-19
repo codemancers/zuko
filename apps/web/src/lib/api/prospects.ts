@@ -164,6 +164,14 @@ export const prospectsApi = {
     return apiClient.patch(`/prospects/${id}/status`, { status, manual });
   },
 
+  async recordOutreach(
+    id: number,
+    eventType: string,
+    channel: ContactChannel,
+  ): Promise<Prospect> {
+    return apiClient.post(`/prospects/${id}/outreach`, { eventType, channel });
+  },
+
   async promote(id: number) {
     return apiClient.post(`/prospects/${id}/promote`, {});
   },

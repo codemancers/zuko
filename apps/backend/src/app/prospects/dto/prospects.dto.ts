@@ -248,6 +248,19 @@ export class SetDispositionDto {
   nextEligibleAt?: string;
 }
 
+export class RecordOutreachDto {
+  @ApiProperty({
+    enum: CAMPAIGN_EVENT_VALUES,
+    description: 'What happened — e.g. call_placed, email_sent, reply_received',
+  })
+  @IsString()
+  eventType!: string;
+
+  @ApiProperty({ enum: CONTACT_CHANNEL_VALUES })
+  @IsString()
+  channel!: string;
+}
+
 export class SetConsentDto {
   @ApiProperty({ enum: CONTACT_CHANNEL_VALUES })
   @IsString()

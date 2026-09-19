@@ -2428,6 +2428,30 @@ export function buildMcpServer(
   );
 
   server.registerTool(
+    'log_prospect_outreach',
+    {
+      description:
+        'Log a touch made outside any campaign — a phone call, a one-off email, a LinkedIn message. No campaign or provider sequence is needed. Refuses outbound touches on a channel whose consent was revoked.',
+      inputSchema: {
+        prospectId: z.int(),
+        eventType: mcpEnum(CAMPAIGN_EVENT_VALUES),
+        channel: mcpEnum(CONTACT_CHANNEL_VALUES),
+        organizationId: z.int().optional(),
+      },
+    },
+    async (args) =>
+      prospectTool('prospects:write', args.organizationId, (orgId, prospects) =>
+        prospects.recordDirectOutreach(
+          args.prospectId,
+          orgId,
+          args.eventType,
+          args.channel,
+          { userId: authCtx.userId, source: 'agent' },
+        ),
+      ),
+  );
+
+  server.registerTool(
     'promote_prospect',
     {
       description:

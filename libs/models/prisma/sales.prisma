@@ -266,7 +266,9 @@ model Campaign {
   // External system identity. externalType names the system (apollo | origami |
   // salesforce | ...), externalId is who they are in it. See
   // docs/concepts/external-identity.mdx.
-  externalType String  @default("apollo") @map("external_type")
+  // Null until the campaign is linked to an external sequence. A campaign
+  // created in Zuko belongs to Zuko.
+  externalType String? @map("external_type")
   externalId   String? @map("external_id")
   active             Boolean  @default(false)
   permissions        String   @default("team_can_use")
@@ -458,11 +460,18 @@ model CampaignMembership {
 }
 
 model CampaignEvent {
-  id           Int @id @default(autoincrement())
-  membershipId Int @map("membership_id")
-  prospectId   Int @map("prospect_id")
+  id         Int @id @default(autoincrement())
+  prospectId Int @map("prospect_id")
+  // Optional: a touch may belong to a campaign, or be a one-off call or email
+  // a person made directly. The prospect is what it always belongs to.
+  membershipId Int? @map("membership_id")
 
   eventType  String   @map("event_type")
+  // Which channel the touch happened on — consent is per channel, so every
+  // touch has to declare one.
+  channel    String   @default("email")
+  // outbound = we contacted them, inbound = they contacted us.
+  direction  String   @default("outbound")
   occurredAt DateTime @map("occurred_at")
   payload    Json?
   // Provider event id — makes webhook replay idempotent.
@@ -476,11 +485,12 @@ model CampaignEvent {
 
   createdAt DateTime @default(now()) @map("created_at")
 
-  membership CampaignMembership @relation("MembershipEvents", fields: [membershipId], references: [id], onDelete: Cascade)
+  membership CampaignMembership? @relation("MembershipEvents", fields: [membershipId], references: [id], onDelete: Cascade)
   prospect   Prospect           @relation("ProspectEvents", fields: [prospectId], references: [id], onDelete: Cascade)
 
   @@unique([membershipId, externalId])
   @@index([membershipId, occurredAt])
+  @@index([channel])
   @@index([actorId])
   @@index([prospectId, occurredAt])
   @@index([eventType])

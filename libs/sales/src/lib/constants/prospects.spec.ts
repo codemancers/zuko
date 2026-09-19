@@ -1,6 +1,9 @@
 import {
   CAMPAIGN_DISPOSITION_VALUES,
   CAMPAIGN_EVENT_EFFECTS,
+  CONTACT_CHANNEL_VALUES,
+  EVENT_CHANNEL,
+  INBOUND_EVENTS,
   CAMPAIGN_EVENT_VALUES,
   CAMPAIGN_MEMBERSHIP_STATE_VALUES,
   CAMPAIGN_MEMBERSHIP_TRANSITIONS,
@@ -236,14 +239,14 @@ describe('prospect lifecycle', () => {
 
   describe('campaign events', () => {
     it('Keeps opens and clicks as signals that change no state', () => {
-      expect(isSignalOnlyEvent('message_opened')).toBe(true);
-      expect(isSignalOnlyEvent('message_clicked')).toBe(true);
+      expect(isSignalOnlyEvent('email_opened')).toBe(true);
+      expect(isSignalOnlyEvent('email_clicked')).toBe(true);
     });
 
     it('Changes state on the events that actually mean something', () => {
       expect(isSignalOnlyEvent('reply_received')).toBe(false);
       expect(isSignalOnlyEvent('opted_out')).toBe(false);
-      expect(isSignalOnlyEvent('message_bounced')).toBe(false);
+      expect(isSignalOnlyEvent('email_bounced')).toBe(false);
     });
 
     it('Drives a reply to responded without settling a disposition', () => {
@@ -268,7 +271,7 @@ describe('prospect lifecycle', () => {
     });
 
     it('Marks a bounced recipient unreachable and removes them', () => {
-      const effect = CAMPAIGN_EVENT_EFFECTS.message_bounced;
+      const effect = CAMPAIGN_EVENT_EFFECTS.email_bounced;
       expect(effect.membershipState).toBe('removed');
       expect(effect.engagementState).toBe('unreachable');
     });
@@ -302,6 +305,53 @@ describe('prospect lifecycle', () => {
           ).toBe(true);
         }
       }
+    });
+  });
+
+  describe('channels beyond email', () => {
+    it('Records a call without pretending it was an email', () => {
+      expect(CAMPAIGN_EVENT_EFFECTS.call_connected.engagementState).toBe(
+        'contacted',
+      );
+      expect(CAMPAIGN_EVENT_EFFECTS.voicemail_left.engagementState).toBe(
+        'contacted',
+      );
+    });
+
+    it('Treats an unanswered dial as a signal, not contact', () => {
+      expect(isSignalOnlyEvent('call_no_answer')).toBe(true);
+    });
+
+    it('Treats a dead number like a hard bounce', () => {
+      const effect = CAMPAIGN_EVENT_EFFECTS.call_failed;
+      expect(effect.engagementState).toBe('unreachable');
+      expect(effect.membershipState).toBe('removed');
+    });
+
+    it('Supports LinkedIn as its own channel', () => {
+      expect(CAMPAIGN_EVENT_EFFECTS.connection_accepted.engagementState).toBe(
+        'contacted',
+      );
+    });
+
+    it('Binds channel-specific events to their channel', () => {
+      expect(EVENT_CHANNEL.call_placed).toBe('phone');
+      expect(EVENT_CHANNEL.email_sent).toBe('email');
+      expect(EVENT_CHANNEL.connection_requested).toBe('linkedin');
+      // A reply is a reply, whatever carried it.
+      expect(EVENT_CHANNEL.reply_received).toBeUndefined();
+    });
+
+    it('Covers every channel we claim to have consent for', () => {
+      const covered = new Set(Object.values(EVENT_CHANNEL));
+      for (const channel of CONTACT_CHANNEL_VALUES) {
+        expect(covered.has(channel as never)).toBe(true);
+      }
+    });
+
+    it('Knows which touches the prospect initiated', () => {
+      expect(INBOUND_EVENTS).toContain('reply_received');
+      expect(INBOUND_EVENTS).not.toContain('email_sent');
     });
   });
 

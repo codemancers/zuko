@@ -28,6 +28,7 @@ import {
   EnrolProspectDto,
   ListProspectsQueryDto,
   RecordCampaignEventDto,
+  RecordOutreachDto,
   SetConsentDto,
   SetDispositionDto,
   SetProspectStatusDto,
@@ -138,6 +139,26 @@ export class ProspectsController {
       force: dto.force,
       actor: { userId, source: 'user' },
     });
+  }
+
+  @Post(':id/outreach')
+  @ApiOperation({
+    summary: 'Log a touch made outside any campaign (call, one-off email)',
+  })
+  @ApiParam({ name: 'id', type: Number })
+  recordOutreach(
+    @OrgId() organizationId: number,
+    @UserId() userId: number,
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: RecordOutreachDto,
+  ) {
+    return this.prospects.recordDirectOutreach(
+      id,
+      organizationId,
+      dto.eventType,
+      dto.channel,
+      { userId, source: 'user' },
+    );
   }
 
   @Post(':id/promote')
