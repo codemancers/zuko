@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ApolloMcpService } from '../apollo-mcp.service';
-import { ContactsRepository, LeadsRepository } from '@zuko/sales';
+import { ContactsRepository, ProspectsService } from '@zuko/sales';
 import type {
   SearchProspectsDto,
   AddPeopleToSequenceDto,
@@ -133,7 +133,7 @@ export class ApolloProspectsService {
     private readonly apolloMcpService: ApolloMcpService,
     private readonly contactsRepository: ContactsRepository,
     private readonly configService: ConfigService,
-    private readonly leadsRepository: LeadsRepository,
+    private readonly prospects: ProspectsService,
   ) {}
 
   // ─── Auth ────────────────────────────────────────────────────────────────────
@@ -576,49 +576,149 @@ export class ApolloProspectsService {
 
   // ─── Sequence contacts ───────────────────────────────────────────────────────
 
-  async syncRepliesToLeads(
+  /**
+   * Pull a sequence's audience into Zuko.
+   *
+   * Apollo is a source, not an owner: everyone in the sequence becomes a
+   * prospect, their enrolment becomes a membership, and what happened to them
+   * becomes touches. A reply produces a touch and nothing more — promoting to
+   * a lead is a judgement someone makes, not something a webhook decides,
+   * because "no thanks" is a reply too.
+   */
+  async syncSequenceActivity(
     organizationId: number,
     sequenceId: string,
     icpProfileId?: number,
     campaignId?: number,
-  ): Promise<{ created: number; skipped: number }> {
+  ): Promise<{
+    prospects: number;
+    enrolled: number;
+    touches: number;
+    skipped: number;
+  }> {
     const contacts = await this.getSequenceContacts(organizationId, sequenceId);
-    const replied = contacts.filter((c) => c.emailLabel === 'replied');
 
-    let created = 0;
+    let prospectCount = 0;
+    let enrolled = 0;
+    let touches = 0;
     let skipped = 0;
 
-    for (const contact of replied) {
-      const existing = contact.id
-        ? await this.leadsRepository.findByExternalIdentity(
-            organizationId,
-            APOLLO,
-            contact.id,
-          )
-        : null;
-
-      if (existing) {
+    for (const contact of contacts) {
+      if (!contact.id) {
         skipped++;
         continue;
       }
 
-      await this.leadsRepository.create({
+      let prospect;
+      try {
+        prospect = await this.prospects.create(organizationId, {
+          name: contact.name,
+          ...(contact.email ? { email: contact.email } : {}),
+          ...(contact.title ? { title: contact.title } : {}),
+          ...(contact.organizationName
+            ? { companyName: contact.organizationName }
+            : {}),
+          ...(icpProfileId ? { icpProfileId } : {}),
+          externalType: APOLLO,
+          externalId: contact.id,
+          source: APOLLO,
+        });
+        prospectCount++;
+      } catch (err) {
+        this.logger.warn(
+          `[APOLLO] could not import contact ${contact.id}: ${String(err)}`,
+        );
+        skipped++;
+        continue;
+      }
+
+      if (!campaignId) continue;
+
+      // The enrolment already happened in Apollo — we are recording a fact,
+      // not requesting permission, so the eligibility rules are overridden.
+      // Consent is not: a suppressed prospect still refuses.
+      const membership = await this.ensureMembership(
+        prospect.id,
         organizationId,
-        icpProfileId,
         campaignId,
-        name: contact.name,
-        email: contact.email,
-        title: contact.title,
-        companyName: contact.organizationName,
-        externalId: contact.id,
-        source: 'apollo',
-        externalType: APOLLO,
-        status: 'replied',
-      });
-      created++;
+      );
+      if (!membership) continue;
+      enrolled++;
+
+      for (const eventType of this.touchesFor(contact)) {
+        try {
+          await this.prospects.recordEvent(
+            membership.id,
+            organizationId,
+            eventType,
+            undefined,
+            // Same contact + same outcome must not double-count on re-sync.
+            `apollo:${sequenceId}:${contact.id}:${eventType}`,
+            undefined,
+            { source: 'provider' },
+          );
+          touches++;
+        } catch (err) {
+          this.logger.warn(
+            `[APOLLO] could not record ${eventType} for ${contact.id}: ${String(err)}`,
+          );
+        }
+      }
     }
 
-    return { created, skipped };
+    return { prospects: prospectCount, enrolled, touches, skipped };
+  }
+
+  /** The membership for this campaign, creating it if Apollo just added them. */
+  private async ensureMembership(
+    prospectId: number,
+    organizationId: number,
+    campaignId: number,
+  ) {
+    const prospect = await this.prospects.findById(prospectId, organizationId);
+    const existing = prospect.memberships.find(
+      (m) => m.campaignId === campaignId,
+    );
+    if (existing) return existing;
+
+    try {
+      return await this.prospects.enrol(
+        prospectId,
+        organizationId,
+        campaignId,
+        {
+          force: true,
+          channel: 'email',
+          actor: { source: 'provider' },
+        },
+      );
+    } catch (err) {
+      // A suppressed prospect, or one with no usable channel, is refused —
+      // which is the point of routing Apollo through the same rules.
+      this.logger.warn(
+        `[APOLLO] not enrolling prospect ${prospectId}: ${String(err)}`,
+      );
+      return null;
+    }
+  }
+
+  /** What Apollo's label tells us happened, in the domain's vocabulary. */
+  private touchesFor(contact: SequenceContact): string[] {
+    switch (contact.emailLabel) {
+      case 'replied':
+        return ['email_delivered', 'reply_received'];
+      case 'bounced':
+        return ['email_bounced'];
+      case 'opened':
+        return ['email_delivered', 'email_opened'];
+      case 'clicked':
+        return ['email_delivered', 'email_clicked'];
+      case 'delivered':
+      case 'sent':
+        return ['email_delivered'];
+      default:
+        return [];
+    }
   }
 
   async getSequenceContacts(

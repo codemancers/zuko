@@ -11,16 +11,13 @@ import { ApolloCampaignsController } from './apollo/sequences/apollo-campaigns.c
 import { ApolloProspectsService } from './apollo/prospects/apollo-prospects.service';
 import { ApolloProspectsController } from './apollo/prospects/apollo-prospects.controller';
 import { ApolloSyncService } from './apollo/apollo-sync.service';
-import {
-  CampaignsRepository,
-  ContactsRepository,
-  LeadsRepository,
-} from '@zuko/sales';
+import { ProspectsModule } from '../prospects/prospects.module';
+import { CampaignsRepository, ContactsRepository } from '@zuko/sales';
 import { OrganizationGuard } from '../../common/auth/organization.guard';
 import { PrismaService } from '../../prisma/prisma.service';
 
 @Module({
-  imports: [PrismaModule, ConfigModule],
+  imports: [PrismaModule, ConfigModule, ProspectsModule],
   controllers: [
     ApolloIntegrationController,
     ApolloSequencesController,
@@ -45,12 +42,6 @@ import { PrismaService } from '../../prisma/prisma.service';
       provide: ContactsRepository,
       useFactory: (prismaService: PrismaService) =>
         new ContactsRepository(prismaService),
-      inject: [PrismaService],
-    },
-    {
-      provide: LeadsRepository,
-      useFactory: (prismaService: PrismaService) =>
-        new LeadsRepository(prismaService),
       inject: [PrismaService],
     },
   ],

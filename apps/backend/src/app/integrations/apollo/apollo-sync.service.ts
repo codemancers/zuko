@@ -13,7 +13,7 @@ export class ApolloSyncService {
   ) {}
 
   @Cron(CronExpression.EVERY_10_MINUTES)
-  async syncAllCampaignReplies() {
+  async syncAllCampaignActivity() {
     const campaigns = await this.prisma.campaign.findMany({
       where: {
         externalId: { not: null },
@@ -22,19 +22,21 @@ export class ApolloSyncService {
 
     if (!campaigns.length) return;
 
-    this.logger.log(`Syncing replies for ${campaigns.length} campaigns`);
+    this.logger.log(`Syncing activity for ${campaigns.length} campaigns`);
 
     for (const campaign of campaigns) {
       try {
-        const result = await this.apolloProspectsService.syncRepliesToLeads(
+        const result = await this.apolloProspectsService.syncSequenceActivity(
           campaign.organizationId,
           campaign.externalId!,
           campaign.icpProfileId ?? undefined,
           campaign.id,
         );
-        if (result.created > 0) {
+        if (result.prospects > 0 || result.touches > 0) {
           this.logger.log(
-            `Campaign ${campaign.id}: created ${result.created} leads, skipped ${result.skipped}`,
+            `Campaign ${campaign.id}: ${result.prospects} prospects, ` +
+              `${result.enrolled} enrolled, ${result.touches} touches, ` +
+              `${result.skipped} skipped`,
           );
         }
       } catch (err) {

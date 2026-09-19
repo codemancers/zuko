@@ -65,16 +65,18 @@ export class ApolloProspectsController {
   }
 
   @Post('sequences/:sequenceId/sync-replies')
-  @ApiOperation({ summary: 'Sync replied contacts from sequence into Leads' })
+  @ApiOperation({
+    summary: 'Import a sequence audience as prospects, memberships and touches',
+  })
   @ApiQuery({ name: 'icpProfileId', required: true, type: Number })
   @ApiQuery({ name: 'campaignId', required: false, type: Number })
-  syncRepliesToLeads(
+  syncSequenceActivity(
     @OrgId() orgId: number,
     @Param('sequenceId') sequenceId: string,
     @Query('icpProfileId', ParseIntPipe) icpProfileId: number,
     @Query('campaignId') campaignId?: string,
   ) {
-    return this.apolloProspectsService.syncRepliesToLeads(
+    return this.apolloProspectsService.syncSequenceActivity(
       orgId,
       sequenceId,
       icpProfileId,

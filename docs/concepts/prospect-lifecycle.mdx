@@ -255,6 +255,21 @@ Outbound is opt-out, not opt-in: `unknown` is contactable. Only `revoked` silenc
 
 Consent is a permission; `unreachable` is a fact about deliverability. A bounce does not revoke consent, and an opt-out does not mean the address was bad. They are stored separately because they expire differently and answer to different rules.
 
+## Integrations feed the domain
+
+Apollo, Origami and Salesforce are sources. They call the same operations a person does, and none of them may create a `Lead`.
+
+| What the provider reports | What Zuko records                                                  |
+| ------------------------- | ------------------------------------------------------------------ |
+| A person in a sequence    | A prospect, deduped on `externalType` + `externalId`                |
+| Their enrolment           | A membership on the Zuko campaign linked to that sequence           |
+| Sent / delivered / opened / bounced | Touches, keyed by provider event id so a re-sync cannot double-count |
+| **A reply**               | A touch, and nothing else                                           |
+
+That last row is the one that matters. A reply is not a qualification — "no thanks" is a reply too. It moves engagement to `responded` and stops there; a lead appears only when someone sets the disposition to `interested` and promotes.
+
+Two things follow. The **whole audience** becomes visible, not just the people who answered, so silence is finally data we hold. And **consent applies to provider traffic**: an enrolment Apollo already made is refused on import if the prospect is suppressed, because the import runs the same rules as everything else.
+
 ## Agent surface
 
 Everything here is exposed over the [MCP server](/concepts/mcp-server) under two new scopes, `prospects:read` and `prospects:write`, alongside the existing `leads:*` and `campaigns:*` tools.
