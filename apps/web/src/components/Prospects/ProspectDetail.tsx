@@ -1,17 +1,23 @@
 'use client';
 
+import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
 import { toast } from 'sonner';
-import { Badge, Button, Heading, Text } from '@zuko/ui-kit';
+import { Badge, Button, Heading, Select, Text } from '@zuko/ui-kit';
 import { BackLink, LoadingState } from '@/components/shared';
-import { getProspect, getProspectEvents } from '@/server/query-options';
+import {
+  getAllZukoCampaigns,
+  getProspect,
+  getProspectEvents,
+} from '@/server/query-options';
 import {
   prospectsApi,
   type CampaignDisposition,
   type CampaignMembership,
   type ContactChannel,
   type ConsentState,
+  type ProspectStatus,
 } from '@/lib/api/prospects';
 import {
   CONSENT_COLORS,
@@ -68,6 +74,8 @@ export default function ProspectDetail({ prospectId }: ProspectDetailProps) {
 
   const { data: prospect, isLoading } = useQuery(getProspect(prospectId));
   const { data: events = [] } = useQuery(getProspectEvents(prospectId));
+  const { data: campaigns = [] } = useQuery(getAllZukoCampaigns());
+  const [enrolCampaignId, setEnrolCampaignId] = useState<string>('');
 
   const refresh = () => {
     queryClient.invalidateQueries({ queryKey: ['prospect', prospectId] });
@@ -126,6 +134,19 @@ export default function ProspectDetail({ prospectId }: ProspectDetailProps) {
     onError: failWith('Could not log that touch'),
   });
 
+  const enrolMutation = useMutation({
+    mutationFn: (campaignId: number) =>
+      prospectsApi.enrol(prospectId, campaignId),
+    onSuccess: () => {
+      refresh();
+      setEnrolCampaignId('');
+      toast.success('Enrolled in campaign');
+    },
+    // The service refuses for a reason — a cooldown, a competing campaign, a
+    // revoked channel. Show which, rather than a generic failure.
+    onError: failWith('Could not enrol this prospect'),
+  });
+
   const dispositionMutation = useMutation({
     mutationFn: ({
       membershipId,
@@ -152,6 +173,18 @@ export default function ProspectDetail({ prospectId }: ProspectDetailProps) {
   const openMemberships = prospect.memberships.filter((m) =>
     isOpenMembership(m.state),
   );
+
+  // Mirrors canEnrollProspect on the server. Duplicated deliberately: the UI
+  // should say why an action is unavailable instead of offering it and failing.
+  const canEnrol = prospect.status === 'new' || prospect.status === 'enrolled';
+  const ENROL_BLOCKED: Partial<Record<ProspectStatus, string>> = {
+    engaged:
+      'Awaiting a promotion decision — enrolling would talk over the reply.',
+    promoted: 'A human owns this person now; outbound is paused.',
+    disqualified: 'Ruled out. Revive the prospect before enrolling.',
+    suppressed: 'They asked us to stop. Enrolment is blocked.',
+  };
+  const enrolBlockedReason = ENROL_BLOCKED[prospect.status] ?? '';
 
   return (
     <div className="flex min-h-0 flex-col">
@@ -300,6 +333,38 @@ export default function ProspectDetail({ prospectId }: ProspectDetailProps) {
         <h2 className="text-sm font-semibold text-zinc-900 dark:text-white">
           Campaign history
         </h2>
+        {canEnrol && (
+          <div className="mt-2 flex flex-wrap items-center gap-2 rounded-lg border border-dashed border-zinc-300 p-3 dark:border-zinc-700">
+            <Select
+              aria-label="Campaign"
+              className="max-w-xs"
+              value={enrolCampaignId}
+              onChange={(e) => setEnrolCampaignId(e.target.value)}
+            >
+              <option value="">Choose a campaign…</option>
+              {campaigns.map((c) => (
+                <option key={c.id} value={String(c.id)}>
+                  {c.name}
+                  {c.active ? '' : ' (inactive)'}
+                </option>
+              ))}
+            </Select>
+            <Button
+              outline
+              disabled={!enrolCampaignId || enrolMutation.isPending}
+              onClick={() => enrolMutation.mutate(Number(enrolCampaignId))}
+            >
+              {enrolMutation.isPending ? 'Enrolling…' : 'Enrol'}
+            </Button>
+          </div>
+        )}
+
+        {!canEnrol && prospect.status !== 'new' && (
+          <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
+            {enrolBlockedReason}
+          </p>
+        )}
+
         {prospect.memberships.length === 0 ? (
           <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
             Never enrolled in a campaign.

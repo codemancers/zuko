@@ -82,7 +82,8 @@ export interface ZukoCampaign {
   icpProfileId?: number | null;
   icpProfile?: { id: number; name: string } | null;
   name: string;
-  provider: string;
+  // Null until the campaign is linked to an external sequence.
+  externalType?: string | null;
   externalId?: string | null;
   active: boolean;
   permissions: string;

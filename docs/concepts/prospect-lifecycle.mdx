@@ -5,8 +5,8 @@ description: Terminology, states, events, and transition rules that govern a per
 
 <Note>
   **Zuko is the system of record.** Prospects, leads and contacts are created
-  and worked here. Apollo, Origami and Salesforce are sources that feed the
-  same records through the API — integrations, not owners. Nothing on this page
+  and worked here. Apollo, Origami and Salesforce are sources that feed the same
+  records through the API — integrations, not owners. Nothing on this page
   requires a provider, a sequence, or even a campaign.
 </Note>
 
@@ -123,12 +123,12 @@ Because there is no membership to hold engagement, the effect lands on the prosp
 
 Every touch declares the channel it happened on, and the vocabulary is specific where the semantics differ — a voicemail is not an email delivery, and flattening them would throw away what the rep learned.
 
-| Channel    | Events                                                                          |
-| ---------- | ------------------------------------------------------------------------------- |
-| `email`    | `email_sent` · `email_delivered` · `email_opened` · `email_clicked` · `email_bounced` |
+| Channel    | Events                                                                                 |
+| ---------- | -------------------------------------------------------------------------------------- |
+| `email`    | `email_sent` · `email_delivered` · `email_opened` · `email_clicked` · `email_bounced`  |
 | `phone`    | `call_placed` · `call_connected` · `voicemail_left` · `call_no_answer` · `call_failed` |
-| `linkedin` | `connection_requested` · `connection_accepted` · `linkedin_message_sent`         |
-| _any_      | `reply_received` · `meeting_booked` · `opted_out` · `removed`                     |
+| `linkedin` | `connection_requested` · `connection_accepted` · `linkedin_message_sent`               |
+| _any_      | `reply_received` · `meeting_booked` · `opted_out` · `removed`                          |
 
 `call_no_answer` changes no state, for the same reason `email_opened` doesn't: a dial nobody picked up tells us nothing about the person. `call_failed` — a disconnected or wrong number — is the phone equivalent of a hard bounce.
 

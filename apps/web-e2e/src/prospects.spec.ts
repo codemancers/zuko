@@ -96,6 +96,81 @@ test.describe('Prospects - Authenticated', () => {
     await expect(page.getByText('Never enrolled in a campaign.')).toBeVisible();
   });
 
+  test('offers an enrol control for a new prospect', async ({
+    page,
+    request,
+  }) => {
+    const created = await request.post(
+      `${process.env.NEXT_PUBLIC_BACKEND_URL ?? 'http://localhost:3001'}/api/prospects`,
+      {
+        data: {
+          name: 'E2E Enrollable',
+          email: `e2e-enrol-${Date.now()}@example.com`,
+        },
+        failOnStatusCode: false,
+      },
+    );
+    test.skip(!created.ok(), 'API session unavailable in this environment');
+
+    const prospect = await created.json();
+    await page.goto(`/prospects/${prospect.id}`);
+
+    // Enrolment belongs with campaign history, which is what it changes.
+    await expect(page.getByRole('button', { name: 'Enrol' })).toBeVisible();
+    await expect(
+      page.getByRole('combobox', { name: 'Campaign' }),
+    ).toBeVisible();
+  });
+
+  test('explains why enrolment is unavailable instead of hiding it silently', async ({
+    page,
+    request,
+  }) => {
+    const base = process.env.NEXT_PUBLIC_BACKEND_URL ?? 'http://localhost:3001';
+    const created = await request.post(`${base}/api/prospects`, {
+      data: {
+        name: 'E2E Suppressed',
+        email: `e2e-suppressed-${Date.now()}@example.com`,
+      },
+      failOnStatusCode: false,
+    });
+    test.skip(!created.ok(), 'API session unavailable in this environment');
+
+    const prospect = await created.json();
+    await request.post(`${base}/api/prospects/${prospect.id}/suppress`, {
+      data: {},
+      failOnStatusCode: false,
+    });
+
+    await page.goto(`/prospects/${prospect.id}`);
+
+    await expect(page.getByRole('button', { name: 'Enrol' })).toHaveCount(0);
+    await expect(page.getByText(/asked us to stop/i)).toBeVisible();
+  });
+
+  test('can log a phone call without any campaign', async ({
+    page,
+    request,
+  }) => {
+    const created = await request.post(
+      `${process.env.NEXT_PUBLIC_BACKEND_URL ?? 'http://localhost:3001'}/api/prospects`,
+      {
+        data: {
+          name: 'E2E Caller',
+          phone: '+14155559999',
+        },
+        failOnStatusCode: false,
+      },
+    );
+    test.skip(!created.ok(), 'API session unavailable in this environment');
+
+    const prospect = await created.json();
+    await page.goto(`/prospects/${prospect.id}`);
+
+    await page.getByRole('button', { name: 'Logged call' }).click();
+    await expect(page.getByText('Called')).toBeVisible();
+  });
+
   test('offers suppression but not promotion for a new prospect', async ({
     page,
     request,
