@@ -27,6 +27,20 @@ export function EmailPasswordAuth({
 
   const isSignup = mode === 'signup';
 
+  /**
+   * When an MCP client sent the user here via /oauth2/authorize, the
+   * oauth-provider plugin resumes that authorization the moment a session
+   * cookie is set and hands the next hop (the consent page) back on the
+   * sign-in response. Follow it instead of falling through to the default
+   * post-login routing, which would strand the client waiting on a callback.
+   */
+  const followOAuthResume = (data: unknown) => {
+    const resume = data as { redirect?: boolean; url?: string } | null;
+    if (!resume?.redirect || !resume.url) return false;
+    window.location.href = resume.url;
+    return true;
+  };
+
   /** Shared post-auth redirect: org → chat, invitations → settings, else → create org */
   const redirectAfterAuth = async () => {
     const { data } = await authClient.organization.list();
@@ -69,7 +83,7 @@ export function EmailPasswordAuth({
             result.error.message ||
               'Failed to create account. Please try again.',
           );
-        } else {
+        } else if (!followOAuthResume(result.data)) {
           await redirectAfterAuth();
         }
       } else {
@@ -83,7 +97,7 @@ export function EmailPasswordAuth({
             result.error.message ||
               'Failed to sign in. Please check your credentials.',
           );
-        } else {
+        } else if (!followOAuthResume(result.data)) {
           await redirectAfterAuth();
         }
       }
