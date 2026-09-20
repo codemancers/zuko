@@ -26,7 +26,7 @@ agent/
 
 ## Prerequisites
 
-- Node ≥ 24 (eve requirement); bun for installs.
+- Node ≥ 24 (eve requirement); pnpm for installs.
 - The Zuko backend running (default `http://localhost:3001`).
 - An OpenAI API key (`OPENAI_API_KEY`) — the agent uses gpt-4.1.
 
@@ -44,9 +44,9 @@ the user's Better Auth session cookie — the channel verifies it against the
 backend and forwards it to tool calls.
 
 ```sh
-bun nx run @zuko/harness:dev   # from repo root
+pnpm exec nx run @zuko/harness:dev   # from repo root
 # or:
-cd apps/harness && bunx eve dev
+cd apps/harness && pnpm exec eve dev
 ```
 
 ## HTTP API
@@ -84,8 +84,8 @@ same endpoint the web UI uses. No separate agent credentials needed.
 ## Build & run (production)
 
 ```sh
-bun nx run @zuko/harness:build   # eve build
-bun nx run @zuko/harness:start   # eve start --port 3002
+pnpm exec nx run @zuko/harness:build   # eve build
+pnpm exec nx run @zuko/harness:start   # eve start --port 3002
 ```
 
 ## Docker
