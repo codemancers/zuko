@@ -30,7 +30,7 @@ overrides:
 
 # pnpm blocks dependency install/postinstall scripts unless they are listed
 # here (`pnpm approve-builds` maintains this). @scarf/scarf is denied on
-# purpose: it is analytics, not a build.
+# purpose: it is analytics, not a build. sharp is denied too — see below.
 allowBuilds:
   '@parcel/watcher': true
   '@prisma/engines': true
@@ -40,5 +40,14 @@ allowBuilds:
   esbuild: true
   nx: true
   prisma: true
-  sharp: true
+  # sharp's install script is `node install/check.js || npm run build`, and
+  # check.js exits 1 whenever it detects a compatible system libvips
+  # (lib/libvips.js useGlobalLibvips) — true on any machine with libvips-dev
+  # or Homebrew libvips. That exit triggers the source-build fallback, which
+  # dies on `sharp: Please add node-gyp to your dependencies` and prints a
+  # scary error on every install. We never want a source build: sharp 0.34
+  # ships its binary as the @img/sharp-* optional deps, which pnpm installs
+  # as ordinary packages and which are what require('sharp') loads. Skipping
+  # the script loses nothing (check.js does nothing on success).
+  sharp: false
   unrs-resolver: true
