@@ -102,3 +102,7 @@ nango-data/
 # Claude Code agent skills
 .agents/
 skills-lock.json
+
+.nx/polygraph
+.nx/self-healing
+.nx/migrate-runs

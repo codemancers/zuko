@@ -21,7 +21,7 @@ cd zuko
 From the repo root, install all workspace dependencies:
 
 ```bash
-bun install
+pnpm install
 ```
 
 ---
@@ -144,13 +144,13 @@ createdb zuko_dev
 **Generate the Prisma client:**
 
 ```bash
-bun nx run @zuko/models:prisma:generate
+pnpm exec nx run @zuko/models:prisma:generate
 ```
 
 **Run database migrations:**
 
 ```bash
-bun nx run @zuko/models:prisma:migrate -- --name init
+pnpm exec nx run @zuko/models:prisma:migrate -- --name init
 ```
 
 **Seed test data (optional):**
@@ -158,13 +158,13 @@ bun nx run @zuko/models:prisma:migrate -- --name init
 Creates a test user (`e2e@example.com` / `TestPassword123!`) and sample CRM data:
 
 ```bash
-bun nx run @zuko/models:seed
+pnpm exec nx run @zuko/models:seed
 ```
 
 **Browse the database (optional):**
 
 ```bash
-bun nx run @zuko/models:prisma:studio
+pnpm exec nx run @zuko/models:prisma:studio
 # Opens Prisma Studio at http://localhost:5555
 ```
 
@@ -188,7 +188,7 @@ bun nx run @zuko/models:prisma:studio
 **Recommended — start backend + frontend together:**
 
 ```bash
-bun nx run @zuko/web:dev
+pnpm exec nx run @zuko/web:dev
 ```
 
 This starts both the NestJS backend and the Next.js frontend with hot reload.
@@ -206,7 +206,7 @@ This starts both the NestJS backend and the Next.js frontend with hot reload.
 In a separate terminal:
 
 ```bash
-bun nx run @zuko/ai-agents:dev
+pnpm exec nx run @zuko/ai-agents:dev
 ```
 
 This starts the LangGraph agent runtime at **http://localhost:8080** with LangGraph Studio for debugging.
@@ -232,39 +232,39 @@ Email/password auth is enabled by default in the config above. Log in with `e2e@
 
 ```bash
 # Install dependencies
-bun install
+pnpm install
 
 # Database
-bun nx run @zuko/models:prisma:generate                  # Generate Prisma client
-bun nx run @zuko/models:prisma:migrate -- --name init    # Run migrations
-bun nx run @zuko/models:seed                             # Seed test data
-bun nx run @zuko/models:prisma:studio                    # Open DB browser (port 5555)
-bun nx run @zuko/models:prisma:reset                     # Reset DB (destructive!)
+pnpm exec nx run @zuko/models:prisma:generate                  # Generate Prisma client
+pnpm exec nx run @zuko/models:prisma:migrate -- --name init    # Run migrations
+pnpm exec nx run @zuko/models:seed                             # Seed test data
+pnpm exec nx run @zuko/models:prisma:studio                    # Open DB browser (port 5555)
+pnpm exec nx run @zuko/models:prisma:reset                     # Reset DB (destructive!)
 
 # Development
-bun nx run @zuko/web:dev                                 # Start frontend + backend
-bun nx run @zuko/backend:serve                           # Start backend only
-bun nx run @zuko/ai-agents:dev                           # Start AI agents (port 8080)
-bun nx run @zuko/meeting-bot:dev                         # Start meeting bot (port 8000)
+pnpm exec nx run @zuko/web:dev                                 # Start frontend + backend
+pnpm exec nx run @zuko/backend:serve                           # Start backend only
+pnpm exec nx run @zuko/ai-agents:dev                           # Start AI agents (port 8080)
+pnpm exec nx run @zuko/meeting-bot:dev                         # Start meeting bot (port 8000)
 
 # Tests
-bun nx run @zuko/backend:test                            # Backend unit tests
-bun nx run @zuko/web:test                                # Web unit tests
-bun nx affected -t test                                  # Test only affected projects
+pnpm exec nx run @zuko/backend:test                            # Backend unit tests
+pnpm exec nx run @zuko/web:test                                # Web unit tests
+pnpm exec nx affected -t test                                  # Test only affected projects
 
 # E2E tests
-NODE_ENV=test bunx nx run web-e2e:e2e                    # Run E2E tests
-NODE_ENV=test bunx nx run web-e2e:e2e --ui               # E2E with UI mode
+NODE_ENV=test pnpm exec nx run web-e2e:e2e                    # Run E2E tests
+NODE_ENV=test pnpm exec nx run web-e2e:e2e --ui               # E2E with UI mode
 
 # Build
-bun nx run @zuko/backend:build
-bun nx run @zuko/web:build
-bun nx run @zuko/ai-agents:build
+pnpm exec nx run @zuko/backend:build
+pnpm exec nx run @zuko/web:build
+pnpm exec nx run @zuko/ai-agents:build
 
 # Utilities
-bun nx graph                                             # Visualize project dependency graph
-bun nx show project @zuko/backend                        # Show available targets
-bun nx affected -t lint                                  # Lint affected projects
+pnpm exec nx graph                                             # Visualize project dependency graph
+pnpm exec nx show project @zuko/backend                        # Show available targets
+pnpm exec nx affected -t lint                                  # Lint affected projects
 ```
 
 ---
@@ -293,7 +293,7 @@ bun nx affected -t lint                                  # Lint affected project
 
 <Accordion title="Prisma client errors">
   Clear the cached client and regenerate: ```bash rm -rf node_modules/.prisma/
-  bun nx run @zuko/models:prisma:generate ```
+  pnpm exec nx run @zuko/models:prisma:generate ```
 </Accordion>
 
 <Accordion title="Auth / CORS errors">
@@ -309,8 +309,8 @@ bun nx affected -t lint                                  # Lint affected project
   Check the backend terminal for startup errors
 </Accordion>
 
-<Accordion title="Bun install fails or lock file issues">
-  ```bash rm bun.lockb bun install --force ```
+<Accordion title="pnpm install fails or lock file issues">
+  ```bash rm -rf node_modules pnpm install ```
 </Accordion>
 
 <Accordion title="Port already in use">

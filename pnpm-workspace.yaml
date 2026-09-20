@@ -1,0 +1,44 @@
+packages:
+  - apps/harness
+  - apps/backend
+  - apps/web
+  - apps/web-e2e
+  - libs/core
+  - libs/ui-kit
+  - libs/models
+  - libs/sales
+
+# Keep the flat node_modules layout bun gave us. apps/meeting-bot and
+# apps/backend-e2e are not workspace members and resolve their deps from the
+# root install, which a symlinked store would not give them.
+nodeLinker: hoisted
+
+# Stands in for the old .npmrc legacy-peer-deps=true: don't pull in peers a
+# package didn't get from the tree, and don't fail the install over peer
+# conflicts. Auto-installing peers also pulls the newest matching version of
+# every unsatisfied peer (e.g. @better-auth/core 1.7.x next to better-auth
+# 1.6.22), which blows the resolution graph up.
+autoInstallPeers: false
+strictPeerDependencies: false
+
+# `pnpm exec nx ...` otherwise shells out to a full install on every run.
+verifyDepsBeforeRun: false
+
+overrides:
+  '@langchain/core': ^1.1.43
+  ai: ^7.0.0
+
+# pnpm blocks dependency install/postinstall scripts unless they are listed
+# here (`pnpm approve-builds` maintains this). @scarf/scarf is denied on
+# purpose: it is analytics, not a build.
+allowBuilds:
+  '@parcel/watcher': true
+  '@prisma/engines': true
+  '@scarf/scarf': false
+  '@swc/core': true
+  bcrypt: true
+  esbuild: true
+  nx: true
+  prisma: true
+  sharp: true
+  unrs-resolver: true

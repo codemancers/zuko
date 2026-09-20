@@ -8,7 +8,7 @@
  * external harness needs to register its agents using the numeric-issuer path.
  *
  * Run from apps/backend (reads DATABASE_URL and BETTER_AUTH_SECRET from env):
- *   bun run provision:agent-host [host-name]
+ *   pnpm run provision:agent-host [host-name]
  */
 import { PrismaClient } from '@zuko/models';
 import { PrismaPg } from '@prisma/adapter-pg';
