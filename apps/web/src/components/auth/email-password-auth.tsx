@@ -36,9 +36,11 @@ export function EmailPasswordAuth({
   /**
    * Where better-auth sends a successful login, via `callbackURL`.
    *
-   * Normally /post-login. But when oauthProvider bounced an MCP client's
-   * authorization here, the signed query is still on the URL and the login
-   * has to return to the authorize endpoint before a code can be minted.
+   * Normally /chat, whose layout decides whether this user actually belongs
+   * there or needs to create an organization first. But when oauthProvider
+   * bounced an MCP client's authorization here, the signed query is still on
+   * the URL and the login has to return to the authorize endpoint before a
+   * code can be minted.
    * oauthProvider resumes that itself on any response it can rewrite, which
    * covers email sign-in — a social login round-trips through Google first,
    * so name the destination explicitly and let whichever lands first win.
@@ -55,7 +57,7 @@ export function EmailPasswordAuth({
     const search = window.location.search;
     return new URLSearchParams(search).has('sig')
       ? `${window.location.origin}/auth/oauth2/authorize${search}`
-      : `${window.location.origin}/post-login`;
+      : `${window.location.origin}/chat`;
   };
 
   /**
