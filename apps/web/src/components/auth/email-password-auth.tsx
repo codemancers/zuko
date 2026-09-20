@@ -35,48 +35,22 @@ export function EmailPasswordAuth({
   const [authQuery, setAuthQuery] = useState('');
   useEffect(() => setAuthQuery(window.location.search), []);
 
-  /**
-   * When an MCP client sent the user here via /oauth2/authorize, the
-   * oauth-provider plugin resumes that authorization the moment a session
-   * cookie is set and hands the next hop (the consent page) back on the
-   * sign-in response as { redirect, url }.
-   *
-   * better-auth's own redirectPlugin (client/fetch-plugins.mjs) already
-   * navigates on that shape, so the assignment below is belt-and-braces. The
-   * load-bearing part is the return value: it stops redirectAfterAuth() from
-   * racing the plugin with a router.push('/chat'), which is what stranded the
-   * MCP client waiting on a callback.
-   */
-  const followOAuthResume = (data: unknown) => {
-    const resume = data as { redirect?: boolean; url?: string } | null;
-    if (!resume?.redirect || !resume.url) return false;
-    window.location.href = resume.url;
-    return true;
-  };
+  /** Where better-auth sends every successful login; see app/post-login. */
+  const postLoginURL = () => `${window.location.origin}/post-login`;
 
-  /** Shared post-auth redirect: org → chat, invitations → settings, else → create org */
-  const redirectAfterAuth = async () => {
-    const { data } = await authClient.organization.list();
-    if (data && data.length > 0) {
-      router.push('/chat');
-    } else {
-      // Retry a few times to handle session propagation timing for new accounts
-      let invitations = null;
-      for (let attempt = 0; attempt < 3; attempt++) {
-        if (attempt > 0) await new Promise((r) => setTimeout(r, 500));
-        const { data } = await authClient.organization.listUserInvitations();
-        if (data && data.length > 0) {
-          invitations = data;
-          break;
-        }
-      }
-      if (invitations && invitations.length > 0) {
-        router.push('/settings?tab=invitations');
-      } else {
-        router.push('/organization/create');
-      }
-    }
-  };
+  /**
+   * better-auth's redirectPlugin (client/fetch-plugins.mjs) navigates by
+   * itself whenever a response comes back as { redirect, url } — which is
+   * both how `callbackURL` is honoured and how oauthProvider hands back the
+   * consent screen after resuming an MCP authorization.
+   *
+   * signUp.email is the one endpoint that never sets those fields: it returns
+   * { token, user } and uses callbackURL only for the verification link
+   * (api/routes/sign-up.mjs). So that branch still has to navigate on its
+   * own, and has to check first or it races the plugin.
+   */
+  const pluginWillRedirect = (data: unknown) =>
+    Boolean((data as { redirect?: boolean } | null)?.redirect);
 
   const handleEmailPasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -101,13 +75,14 @@ export function EmailPasswordAuth({
               'Failed to create account. Please try again.',
           );
         } else {
-          leaving = followOAuthResume(result.data);
-          if (!leaving) await redirectAfterAuth();
+          leaving = true;
+          if (!pluginWillRedirect(result.data)) router.push('/post-login');
         }
       } else {
         const result = await authClient.signIn.email({
           email,
           password,
+          callbackURL: postLoginURL(),
         });
 
         if (result.error) {
@@ -116,8 +91,7 @@ export function EmailPasswordAuth({
               'Failed to sign in. Please check your credentials.',
           );
         } else {
-          leaving = followOAuthResume(result.data);
-          if (!leaving) await redirectAfterAuth();
+          leaving = true;
         }
       }
     } catch (err) {
@@ -131,7 +105,7 @@ export function EmailPasswordAuth({
   const handleGoogleSignIn = () => {
     authClient.signIn.social({
       provider: 'google',
-      callbackURL: `${window.location.origin}/chat`,
+      callbackURL: postLoginURL(),
     });
   };
 
