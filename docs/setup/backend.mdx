@@ -9,7 +9,7 @@ The backend is a **NestJS** server that lives in `apps/backend`. It handles the 
 
 ## Prerequisites
 
-- Repo cloned and dependencies installed (`bun install`)
+- Repo cloned and dependencies installed (`pnpm install`)
 - PostgreSQL running locally
 
 ---
@@ -102,13 +102,13 @@ createdb zuko_dev
 ### Generate the Prisma client
 
 ```bash
-bun nx run @zuko/models:prisma:generate
+pnpm exec nx run @zuko/models:prisma:generate
 ```
 
 ### Run migrations
 
 ```bash
-bun nx run @zuko/models:prisma:migrate -- --name init
+pnpm exec nx run @zuko/models:prisma:migrate -- --name init
 ```
 
 ### Seed test data
@@ -116,13 +116,13 @@ bun nx run @zuko/models:prisma:migrate -- --name init
 Creates a test user (`e2e@example.com` / `TestPassword123!`) and sample CRM data:
 
 ```bash
-bun nx run @zuko/models:seed
+pnpm exec nx run @zuko/models:seed
 ```
 
 ### Browse the database
 
 ```bash
-bun nx run @zuko/models:prisma:studio
+pnpm exec nx run @zuko/models:prisma:studio
 # Opens Prisma Studio at http://localhost:5555
 ```
 
@@ -180,7 +180,7 @@ Once configured, users can connect their Apollo account from **Settings → Conn
 ## Start the development server
 
 ```bash
-bun nx run @zuko/backend:serve
+pnpm exec nx run @zuko/backend:serve
 ```
 
 The API is available at **http://localhost:3001**.
@@ -195,17 +195,17 @@ The API is available at **http://localhost:3001**.
 ## Useful commands
 
 ```bash
-bun nx run @zuko/backend:serve         # Start backend only
-bun nx run @zuko/backend:build         # Production build
-bun nx run @zuko/backend:test          # Unit tests
-bun nx run @zuko/backend:lint          # Lint
+pnpm exec nx run @zuko/backend:serve         # Start backend only
+pnpm exec nx run @zuko/backend:build         # Production build
+pnpm exec nx run @zuko/backend:test          # Unit tests
+pnpm exec nx run @zuko/backend:lint          # Lint
 
 # Database
-bun nx run @zuko/models:prisma:generate                   # Regenerate Prisma client
-bun nx run @zuko/models:prisma:migrate -- --name <name>   # New migration
-bun nx run @zuko/models:prisma:studio                     # DB browser (port 5555)
-bun nx run @zuko/models:prisma:reset                      # Reset DB (destructive!)
-bun nx run @zuko/models:seed                              # Seed test data
+pnpm exec nx run @zuko/models:prisma:generate                   # Regenerate Prisma client
+pnpm exec nx run @zuko/models:prisma:migrate -- --name <name>   # New migration
+pnpm exec nx run @zuko/models:prisma:studio                     # DB browser (port 5555)
+pnpm exec nx run @zuko/models:prisma:reset                      # Reset DB (destructive!)
+pnpm exec nx run @zuko/models:seed                              # Seed test data
 ```
 
 ---
@@ -239,7 +239,7 @@ bun nx run @zuko/models:seed                              # Seed test data
 
     ```bash
     rm -rf node_modules/.prisma/
-    bun nx run @zuko/models:prisma:generate
+    pnpm exec nx run @zuko/models:prisma:generate
     ```
 
   </Accordion>

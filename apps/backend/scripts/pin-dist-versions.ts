@@ -1,28 +1,34 @@
 /**
  * Pin the pruned dist/package.json to the versions the workspace actually installed.
  *
- * The backend image runs `bun install --production` against dist/package.json
- * (see apps/backend/Dockerfile). That install has no lockfile to go on, because
- * @nx/js:prune-lockfile cannot emit one for bun -- it prints "Bun lockfile
- * generation is not supported. Only package.json will be generated."
+ * The backend image runs `pnpm install --prod` against dist/package.json (see
+ * apps/backend/Dockerfile). That install has no lockfile to go on:
+ * @nx/js:prune-lockfile emits a pnpm-lock.yaml that is a copy of the whole
+ * workspace graph rather than a pruned one, so its importers do not match the
+ * single-package dist/package.json. We delete it below.
  *
  * So every dependency's caret range is re-resolved against the registry at image
  * build time, and two builds of the same commit can produce different images.
- * That is not hypothetical: `better-auth` is declared `^1.6.22`, the workspace
+ * That is not hypothetical: `better-auth` was declared `^1.6.22`, the workspace
  * resolved 1.6.22, and a later clean build picked up 1.7.5, which dropped the
  * `verifyAccessToken` export that mcp-bearer.guard.ts imports -- so the bundle
- * threw at module load and the machine never came up. The root `overrides` block
- * is dropped by pruning too, which is why the image installed ai@6 while the
- * workspace runs ai@7.
+ * threw at module load and the machine never came up. (That one is now pinned
+ * to 1.6.22 in the manifests, but every other caret range is still live.) The
+ * root `overrides` block is dropped by pruning too, which is why the image
+ * installed ai@6 while the workspace runs ai@7.
  *
  * Rewriting each range to the exact installed version makes the image match what
- * was built, linted and tested. Workspace packages are left alone: they are
- * already rewritten to `file:` paths by the fix-lockfile-symlinks target.
+ * was built, linted and tested. Workspace packages are left alone: prune-lockfile
+ * already rewrites their `workspace:*` ranges to `file:` paths.
+ *
+ * This also deletes the lockfile prune-lockfile leaves behind, so the image does
+ * not install against a manifest and lockfile that disagree.
  */
-import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 
 const distPackageJson = resolve(import.meta.dirname, '../dist/package.json');
+const distLockfile = resolve(import.meta.dirname, '../dist/pnpm-lock.yaml');
 const appDir = resolve(import.meta.dirname, '..');
 const workspaceRoot = resolve(import.meta.dirname, '../../..');
 
@@ -69,18 +75,19 @@ for (const [name, range] of Object.entries(deps)) {
 if (unresolved.length > 0) {
   console.error(
     `Could not resolve an installed version for: ${unresolved.join(', ')}.\n` +
-      'Run `bun install` at the workspace root before building the image.',
+      'Run `pnpm install` at the workspace root before building the image.',
   );
   process.exit(1);
 }
 
-// The image only ever runs `bun install --production`, and the nx block is build
+// The image only ever runs `pnpm install --prod`, and the nx block is build
 // metadata that the runtime has no use for. Dropping both keeps the manifest to
 // what the image actually installs.
 delete pkg.devDependencies;
 delete pkg.nx;
 
 writeFileSync(distPackageJson, `${JSON.stringify(pkg, null, 2)}\n`);
+rmSync(distLockfile, { force: true });
 
 console.log(
   `Pinned ${Object.keys(deps).length} dependencies to installed versions.`,

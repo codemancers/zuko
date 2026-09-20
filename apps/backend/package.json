@@ -3,15 +3,15 @@
   "version": "0.0.1",
   "private": true,
   "scripts": {
-    "pin:dist-versions": "bun scripts/pin-dist-versions.ts",
-    "provision:agent-host": "bun scripts/provision-agent-host.ts"
+    "pin:dist-versions": "tsx scripts/pin-dist-versions.ts",
+    "provision:agent-host": "tsx scripts/provision-agent-host.ts"
   },
   "type": "module",
   "dependencies": {
     "@ai-sdk/openai": "^4.0.17",
     "@auth/agent": "^0.4.5",
     "@better-auth/agent-auth": "^0.4.5",
-    "@better-auth/oauth-provider": "^1.6.22",
+    "@better-auth/oauth-provider": "1.6.22",
     "@modelcontextprotocol/sdk": "^1.29.0",
     "@nangohq/node": "^0.70.9",
     "@nestjs/common": "^11.0.0",
@@ -26,12 +26,12 @@
     "@prisma/adapter-pg": "^7.7.0",
     "@prisma/client": "^7.7.0",
     "@thallesp/nestjs-better-auth": "^2.5.1",
-    "@zuko/core": "^0.0.1",
-    "@zuko/models": "^0.0.1",
-    "@zuko/sales": "^0.0.1",
+    "@zuko/core": "workspace:*",
+    "@zuko/models": "workspace:*",
+    "@zuko/sales": "workspace:*",
     "ai": "^6.0.70",
     "axios": "^1.6.0",
-    "better-auth": "^1.6.22",
+    "better-auth": "1.6.22",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.0",
     "dayjs": "^1.11.19",
@@ -98,7 +98,7 @@
         "executor": "@nx/js:prune-lockfile",
         "outputs": [
           "{workspaceRoot}/apps/backend/dist/package.json",
-          "{workspaceRoot}/apps/backend/dist/package-lock.json"
+          "{workspaceRoot}/apps/backend/dist/pnpm-workspace.yaml"
         ],
         "options": {
           "buildTarget": "build"
@@ -117,24 +117,13 @@
           "buildTarget": "build"
         }
       },
-      "fix-lockfile-symlinks": {
+      "pin-dist-versions": {
         "dependsOn": [
           "prune-lockfile"
         ],
         "executor": "nx:run-commands",
         "options": {
-          "command": "for lib in agents core models sales; do if [ -f dist/package-lock.json ]; then sed -e \"s|\\\"resolved\\\": \\\"libs/$lib\\\"|\\\"resolved\\\": \\\"workspace_modules/@zuko/$lib\\\"|g\" -e \"s|\\\"libs/$lib\\\":|\\\"workspace_modules/@zuko/$lib\\\":|g\" dist/package-lock.json > dist/package-lock.json.tmp && mv dist/package-lock.json.tmp dist/package-lock.json; fi; if [ -f dist/package.json ]; then sed -e \"s|\\\"@zuko/$lib\\\": \\\"[^,}]*\\\"|\\\"@zuko/$lib\\\": \\\"file:./workspace_modules/@zuko/$lib\\\"|g\" dist/package.json > dist/package.json.tmp && mv dist/package.json.tmp dist/package.json; fi; done",
-          "cwd": "apps/backend"
-        }
-      },
-      "pin-dist-versions": {
-        "dependsOn": [
-          "prune-lockfile",
-          "fix-lockfile-symlinks"
-        ],
-        "executor": "nx:run-commands",
-        "options": {
-          "command": "bun run pin:dist-versions",
+          "command": "pnpm run pin:dist-versions",
           "cwd": "apps/backend"
         }
       },
@@ -142,7 +131,6 @@
         "dependsOn": [
           "prune-lockfile",
           "copy-workspace-modules",
-          "fix-lockfile-symlinks",
           "pin-dist-versions"
         ],
         "executor": "nx:noop"

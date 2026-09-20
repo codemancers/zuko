@@ -66,57 +66,58 @@ jobs:
       # - On main: uses last successful CI run
       - uses: nrwl/nx-set-shas@v4
 
+      - uses: pnpm/action-setup@v4
+
       # Cache node_modules
       - uses: actions/setup-node@v4
         with:
           node-version: 24
-
-      - uses: oven-sh/setup-bun@v2
+          cache: pnpm
 
       - name: Install dependencies
-        run: bun install --frozen-lockfile
+        run: pnpm install --frozen-lockfile
 
       - name: Install chromium browser
-        run: bunx playwright install chromium --with-deps
+        run: pnpm exec playwright install chromium --with-deps
 
       - name: Generate Prisma client
-        run: bunx nx run @zuko/models:prisma:generate
+        run: pnpm exec nx run @zuko/models:prisma:generate
 
       - name: Migrate Prisma (deploy)
-        run: bunx prisma migrate deploy
+        run: pnpm exec prisma migrate deploy
         working-directory: libs/models
 
       - name: Seed E2E test data
-        run: bunx nx run @zuko/models:seed
+        run: pnpm exec nx run @zuko/models:seed
 
       # Prepend any command with "nx-cloud record --" to record its logs to Nx Cloud
 
       # Lint & Format (parallel)
       - name: Format check
-        run: bun run fmt:check
+        run: pnpm run fmt:check
 
       - name: Lint
-        run: bunx nx affected -t lint --parallel=3 --nxBail
+        run: pnpm exec nx affected -t lint --parallel=3 --nxBail
 
       # Dead code check (per-project, cached — @berenddeboer/nx-knip plugin)
       # TODO: remove continue-on-error once existing dead code is resolved
       - name: Knip
-        run: bunx nx affected -t knip --parallel=3
+        run: pnpm exec nx affected -t knip --parallel=3
 
       # typecheck & Build (parallel)
       - name: Typecheck
-        run: bunx nx affected -t typecheck --parallel=50% --nxBail
+        run: pnpm exec nx affected -t typecheck --parallel=50% --nxBail
 
       - name: Build
-        run: bunx nx affected -t build --parallel=50% --nxBail
+        run: pnpm exec nx affected -t build --parallel=50% --nxBail
 
       # Tests (Sequential)
       - name: Unit tests
-        run: bunx nx affected -t test --parallel=1 --nxBail
+        run: pnpm exec nx affected -t test --parallel=1 --nxBail
 
       - name: E2E tests
-        run: bunx nx affected -t e2e --exclude=backend-e2e --exclude=ai-agents-e2e --nxBail
+        run: pnpm exec nx affected -t e2e --exclude=backend-e2e --exclude=ai-agents-e2e --nxBail
 
       # Nx Cloud recommends fixes for failures to help you get CI green faster. Learn more: https://nx.dev/ci/features/self-healing-ci
-      - run: bunx nx fix-ci
+      - run: pnpm exec nx fix-ci
         if: always()

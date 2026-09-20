@@ -1,5 +1,19 @@
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
 
+/**
+ * Shell prelude that puts the repo's pinned pnpm on PATH inside a sprite.
+ *
+ * The sprite image ships Node, so Corepack resolves the version from the
+ * cloned repo's `packageManager` field -- no pnpm needs to be baked into the
+ * image. `corepack enable` symlinks into Node's bin directory, which is not
+ * writable for an unprivileged sprite user, so fall back to a user-local shim.
+ * Each exec is its own shell, so every command that needs pnpm prepends this.
+ */
+const PNPM_ON_PATH = [
+  'corepack enable pnpm >/dev/null 2>&1 || corepack enable --install-directory "$HOME/.local/bin" pnpm',
+  'export PATH="$HOME/.local/bin:$PATH"',
+].join('; ');
+
 export type SpriteRecord = {
   id: string;
   name: string;
@@ -282,7 +296,7 @@ export class SpritesService {
 
     // install dependencies
     await this.executeCommandPost(threadId, {
-      cmd: ['bash', '-c', 'bun install'],
+      cmd: ['bash', '-c', `${PNPM_ON_PATH}; pnpm install --frozen-lockfile`],
       env: this.getEnvironmentVariables(),
       dir: '/home/sprite/zuko',
     });
@@ -303,10 +317,13 @@ export class SpritesService {
         'bash',
         '-c',
         [
+          PNPM_ON_PATH,
           // Kill any existing process on 8080 (might be bound to ::1 only)
           'fuser -k 8080/tcp 2>/dev/null || true',
           'sleep 1',
-          'nohup bunx @langchain/langgraph-cli dev -p 8080 --host 0.0.0.0 > dev.log 2>&1 &',
+          // @langchain/langgraph-cli is not a workspace dependency, so this
+          // fetches it on demand the way `bunx` used to.
+          'nohup pnpm dlx @langchain/langgraph-cli dev -p 8080 --host 0.0.0.0 > dev.log 2>&1 &',
           'DEADLINE=$((SECONDS+120))',
           'until curl -s http://0.0.0.0:8080/info > /dev/null; do',
           '  [ $SECONDS -ge $DEADLINE ] && echo "warn: agent server did not start within 120s" && exit 0',

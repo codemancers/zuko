@@ -10,7 +10,7 @@ export default defineConfig({
     ...(process.env['CI']
       ? {
           pool: 'forks' as const,
-          poolOptions: { forks: { minForks: 1, maxForks: 1 } },
+          maxWorkers: 1,
           fileParallelism: false,
         }
       : {}),

@@ -2,7 +2,8 @@ import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
   // shiki gets auto-externalized by Turbopack with a broken hashed specifier
-  // (ERR_MODULE_NOT_FOUND for `shiki-<hash>`) under bun's node_modules layout.
+  // (ERR_MODULE_NOT_FOUND for `shiki-<hash>`) under a hoisted node_modules
+  // layout, which is what pnpm is configured for here (see pnpm-workspace.yaml).
   // Transpiling it forces Turbopack to bundle it rather than emit that bad
   // external import.
   transpilePackages: ['@zuko/ui-kit', 'shiki'],

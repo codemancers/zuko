@@ -5,7 +5,7 @@ Zuko is an **agentic CRM** — a monorepo with a **Next.js web app** and **NestJ
 ## Prerequisites
 
 - **Node.js** 24 (matches CI)
-- **bun**
+- **pnpm** 11 (`corepack enable pnpm` — the version is pinned in `package.json`)
 - **PostgreSQL** (for the backend database)
 
 ## Setup
@@ -21,7 +21,7 @@ git clone <repository-url> zuko && cd zuko
 ### 2. Install dependencies
 
 ```sh
-bun install
+pnpm install
 ```
 
 ### 3. Environment variables
@@ -54,13 +54,13 @@ Generate the Prisma client and run migrations:
 
 ```sh
 # Generate Prisma client
-bun nx run @zuko/models:prisma:generate
+pnpm exec nx run @zuko/models:prisma:generate
 
 # Run migrations (creates/updates DB schema)
-bun nx run @zuko/models:prisma:migrate -- --name init
+pnpm exec nx run @zuko/models:prisma:migrate -- --name init
 
 # Optional: seed test data
-bun nx run @zuko/models:seed
+pnpm exec nx run @zuko/models:seed
 ```
 
 ## Running the app
@@ -68,7 +68,7 @@ bun nx run @zuko/models:seed
 **Recommended — backend + web together:**
 
 ```sh
-bun nx run @zuko/web:dev
+pnpm exec nx run @zuko/web:dev
 ```
 
 This starts the NestJS backend (e.g. port 3001) and the Next.js app (e.g. port 3000).
@@ -76,7 +76,7 @@ This starts the NestJS backend (e.g. port 3001) and the Next.js app (e.g. port 3
 **AI Agents only:**
 
 ```sh
-bun nx run @zuko/ai-agents:dev
+pnpm exec nx run @zuko/ai-agents:dev
 ```
 
 Starts the LangGraph-based agents service.
@@ -84,28 +84,28 @@ Starts the LangGraph-based agents service.
 **Backend only:**
 
 ```sh
-bun nx run @zuko/backend:serve
+pnpm exec nx run @zuko/backend:serve
 ```
 
 **Build (production):**
 
 ```sh
-bun nx run @zuko/backend:build
-bun nx run @zuko/web:build
-bun nx run @zuko/ai-agents:build
+pnpm exec nx run @zuko/backend:build
+pnpm exec nx run @zuko/web:build
+pnpm exec nx run @zuko/ai-agents:build
 ```
 
 ## Tests
 
-- **Unit tests:** `bun nx run @zuko/backend:test`, `bun nx run @zuko/web:test`  
-  Or for affected projects: `bun nx affected -t test`
+- **Unit tests:** `pnpm exec nx run @zuko/backend:test`, `pnpm exec nx run @zuko/web:test`  
+  Or for affected projects: `pnpm exec nx affected -t test`
 - **E2E (web):** Run Playwright against the web app locally with the test environment (see [apps/web-e2e/README.md](apps/web-e2e/README.md) for setup):
 
   ```sh
-  NODE_ENV=test bunx nx run web-e2e:e2e
+  NODE_ENV=test pnpm exec nx run web-e2e:e2e
   ```
 
-- **Lint / typecheck:** `bun nx affected -t lint`, `bun nx affected -t typecheck`
+- **Lint / typecheck:** `pnpm exec nx affected -t lint`, `pnpm exec nx affected -t typecheck`
 
 ## Project structure
 
@@ -136,9 +136,9 @@ bun nx run @zuko/ai-agents:build
 
 This workspace is powered by [Nx](https://nx.dev). Useful commands:
 
-- **Explore project graph:** `bun nx graph`
-- **List targets for a project:** `bun nx show project @zuko/backend` (or `@zuko/web`)
-- **Run tasks:** Use `bun nx run <project>:<target>` — e.g. `@zuko/backend`, `@zuko/web`, `@zuko/models`. [Nx run tasks](https://nx.dev/features/run-tasks).
+- **Explore project graph:** `pnpm exec nx graph`
+- **List targets for a project:** `pnpm exec nx show project @zuko/backend` (or `@zuko/web`)
+- **Run tasks:** Use `pnpm exec nx run <project>:<target>` — e.g. `@zuko/backend`, `@zuko/web`, `@zuko/models`. [Nx run tasks](https://nx.dev/features/run-tasks).
 - **IDE:** [Nx Console](https://nx.dev/getting-started/editor-setup) for VSCode/IntelliJ.
 
 ## License

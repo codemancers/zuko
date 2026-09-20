@@ -49,7 +49,7 @@ RUN mkdir -p /opt/chrome && \
     unzip -q /tmp/chrome-linux64.zip -d /opt/chrome && \
     rm -f /tmp/chrome-linux64.zip
 
-RUN corepack enable && corepack prepare pnpm@latest --activate
+RUN corepack enable && corepack prepare pnpm@11.26.0 --activate
 
 WORKDIR /app
 

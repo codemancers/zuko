@@ -9,7 +9,7 @@ The meeting bot is a standalone service in `apps/meeting-bot` that joins video c
 
 ## Prerequisites
 
-- Repo cloned and dependencies installed (`bun install`)
+- Repo cloned and dependencies installed (`pnpm install`)
 - Backend running at `http://localhost:3001`
 - AI agents service running at `http://localhost:8080` (optional, for agent routing)
 
@@ -139,7 +139,7 @@ FLY_REGION=sin
 ## Start the development server
 
 ```bash
-bun nx run @zuko/meeting-bot:dev
+pnpm exec nx run @zuko/meeting-bot:dev
 ```
 
 The service starts at **http://localhost:8000**.
@@ -149,9 +149,9 @@ The service starts at **http://localhost:8000**.
 ## Useful commands
 
 ```bash
-bun nx run @zuko/meeting-bot:dev      # Start with hot reload
-bun nx run @zuko/meeting-bot:build    # Production build
-bun nx run @zuko/meeting-bot:lint     # Lint
+pnpm exec nx run @zuko/meeting-bot:dev      # Start with hot reload
+pnpm exec nx run @zuko/meeting-bot:build    # Production build
+pnpm exec nx run @zuko/meeting-bot:lint     # Lint
 ```
 
 ---
