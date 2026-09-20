@@ -320,16 +320,16 @@ const authInstance: any = betterAuth({
             sameSite: 'none', // Allow cross-origin requests
             secure: true, // HTTPS only
             // No `domain` here on purpose. A previous COOKIE_DOMAIN env var
-            // tried to share the session cookie across web/api hosts so the
-            // direct browser -> backend /oauth2/authorize hit would see it.
-            // That was never needed: oauthProvider bounces an unauthenticated
+            // tried to share the session cookie across the web and api hosts
+            // so the direct browser -> backend /oauth2/authorize hit would
+            // see it. Never needed: oauthProvider bounces an unauthenticated
             // authorize request to `loginPage` and resumes the flow itself
             // once a session cookie is set, which happens on the frontend
-            // origin via the /auth proxy. It also could not work on *.fly.dev
-            // (a public suffix — browsers reject `Domain=fly.dev`), and the
-            // proxy strips `domain=` from every Set-Cookie anyway. If web and
-            // api ever become real siblings of a domain we own, use
-            // better-auth's `advanced.crossSubDomainCookies` instead.
+            // origin via the /auth proxy — which also strips `domain=` from
+            // every Set-Cookie, so it never reached a browser anyway. If web
+            // and api ever share a registrable domain, reach for
+            // better-auth's `advanced.crossSubDomainCookies` rather than
+            // setting `domain` by hand.
           }
         : {
             sameSite: 'lax', // Standard for same-origin

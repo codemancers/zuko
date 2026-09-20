@@ -46,9 +46,9 @@ export function EmailPasswordAuth({
    * so name the destination explicitly and let whichever lands first win.
    *
    * Deliberately the same-origin /auth proxy and not BACKEND_URL: web and api
-   * are sibling *.fly.dev hosts with no shared cookie domain, so hitting the
-   * backend authorize endpoint directly would carry no session and bounce
-   * straight back to this page. The proxy forwards the cookie. Re-encoding
+   * are separate origins with no shared cookie domain, so hitting the backend
+   * authorize endpoint directly would carry no session and bounce straight
+   * back to this page. The proxy forwards the cookie. Re-encoding
    * the query on the way through is safe — the signature is verified over a
    * canonicalised, re-sorted URLSearchParams on both sides
    * (@better-auth/oauth-provider/dist/version-DaSfXJQ1.mjs:5).
