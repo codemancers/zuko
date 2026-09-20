@@ -3,6 +3,7 @@
   "version": "0.0.1",
   "private": true,
   "scripts": {
+    "pin:dist-versions": "bun scripts/pin-dist-versions.ts",
     "provision:agent-host": "bun scripts/provision-agent-host.ts"
   },
   "type": "module",
@@ -122,7 +123,18 @@
         ],
         "executor": "nx:run-commands",
         "options": {
-          "command": "LIBS=(agents core models sales); for lib in \"${LIBS[@]}\"; do [ -f dist/package-lock.json ] && sed -i '' \"s|\\\"resolved\\\": \\\"libs/${lib}\\\"|\\\"resolved\\\": \\\"workspace_modules/@zuko/${lib}\\\"|g\" dist/package-lock.json && sed -i '' \"s|\\\"libs/${lib}\\\":|\\\"workspace_modules/@zuko/${lib}\\\":|g\" dist/package-lock.json; [ -f dist/package.json ] && sed -i '' \"s|\\\"@zuko/${lib}\\\": \\\"[^,}]*\\\"|\\\"@zuko/${lib}\\\": \\\"file:./workspace_modules/@zuko/${lib}\\\"|g\" dist/package.json; done",
+          "command": "for lib in agents core models sales; do if [ -f dist/package-lock.json ]; then sed -e \"s|\\\"resolved\\\": \\\"libs/$lib\\\"|\\\"resolved\\\": \\\"workspace_modules/@zuko/$lib\\\"|g\" -e \"s|\\\"libs/$lib\\\":|\\\"workspace_modules/@zuko/$lib\\\":|g\" dist/package-lock.json > dist/package-lock.json.tmp && mv dist/package-lock.json.tmp dist/package-lock.json; fi; if [ -f dist/package.json ]; then sed -e \"s|\\\"@zuko/$lib\\\": \\\"[^,}]*\\\"|\\\"@zuko/$lib\\\": \\\"file:./workspace_modules/@zuko/$lib\\\"|g\" dist/package.json > dist/package.json.tmp && mv dist/package.json.tmp dist/package.json; fi; done",
+          "cwd": "apps/backend"
+        }
+      },
+      "pin-dist-versions": {
+        "dependsOn": [
+          "prune-lockfile",
+          "fix-lockfile-symlinks"
+        ],
+        "executor": "nx:run-commands",
+        "options": {
+          "command": "bun run pin:dist-versions",
           "cwd": "apps/backend"
         }
       },
@@ -130,7 +142,8 @@
         "dependsOn": [
           "prune-lockfile",
           "copy-workspace-modules",
-          "fix-lockfile-symlinks"
+          "fix-lockfile-symlinks",
+          "pin-dist-versions"
         ],
         "executor": "nx:noop"
       },
@@ -167,8 +180,7 @@
         "executor": "nx:run-commands",
         "dependsOn": [
           "build",
-          "prune",
-          "fix-lockfile-symlinks"
+          "prune"
         ],
         "options": {
           "command": "export FLY_APP=$(grep '^app = ' apps/backend/fly.toml | cut -d \"'\" -f 2) && export GIT_SHA=$(git rev-parse --short HEAD) && docker build --platform linux/amd64 -f apps/backend/Dockerfile -t registry.fly.io/$FLY_APP:$GIT_SHA ."
