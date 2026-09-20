@@ -1,8 +1,7 @@
 'use client';
 
 import Image from 'next/image';
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
 import { AuthLayout, Button, Field, Label, Input } from '@zuko/ui-kit';
 import { authClient } from '@/lib/auth-client';
 import Link from 'next/link';
@@ -16,7 +15,6 @@ export function EmailPasswordAuth({
   mode = 'signin',
   emailPasswordEnabled = false,
 }: EmailPasswordAuthProps) {
-  const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -27,34 +25,63 @@ export function EmailPasswordAuth({
 
   const isSignup = mode === 'signup';
 
-  /** Shared post-auth redirect: org → chat, invitations → settings, else → create org */
-  const redirectAfterAuth = async () => {
-    const { data } = await authClient.organization.list();
-    if (data && data.length > 0) {
-      router.push('/chat');
-    } else {
-      // Retry a few times to handle session propagation timing for new accounts
-      let invitations = null;
-      for (let attempt = 0; attempt < 3; attempt++) {
-        if (attempt > 0) await new Promise((r) => setTimeout(r, 500));
-        const { data } = await authClient.organization.listUserInvitations();
-        if (data && data.length > 0) {
-          invitations = data;
-          break;
-        }
-      }
-      if (invitations && invitations.length > 0) {
-        router.push('/settings?tab=invitations');
-      } else {
-        router.push('/organization/create');
-      }
-    }
+  // A signed authorization query lands on whichever of /sign-in or /sign-up
+  // oauthProvider sent the user to. The cross-link between the two pages has
+  // to carry it, or a user who signs up mid-authorization arrives with no
+  // query for the client plugin to attach and the MCP client is left waiting.
+  // Read after mount so the server render and first client render agree.
+  const [authQuery, setAuthQuery] = useState('');
+  useEffect(() => setAuthQuery(window.location.search), []);
+
+  /**
+   * Where better-auth sends a successful login, via `callbackURL`.
+   *
+   * Normally /chat, whose layout decides whether this user actually belongs
+   * there or needs to create an organization first. But when oauthProvider
+   * bounced an MCP client's authorization here, the signed query is still on
+   * the URL and the login has to return to the authorize endpoint before a
+   * code can be minted.
+   * oauthProvider resumes that itself on any response it can rewrite, which
+   * covers email sign-in — a social login round-trips through Google first,
+   * so name the destination explicitly and let whichever lands first win.
+   *
+   * Deliberately the same-origin /auth proxy and not BACKEND_URL: web and api
+   * are separate origins with no shared cookie domain, so hitting the backend
+   * authorize endpoint directly would carry no session and bounce straight
+   * back to this page. The proxy forwards the cookie. Re-encoding
+   * the query on the way through is safe — the signature is verified over a
+   * canonicalised, re-sorted URLSearchParams on both sides
+   * (@better-auth/oauth-provider/dist/version-DaSfXJQ1.mjs:5).
+   */
+  const postAuthURL = () => {
+    const search = window.location.search;
+    return new URLSearchParams(search).has('sig')
+      ? `${window.location.origin}/auth/oauth2/authorize${search}`
+      : `${window.location.origin}/chat`;
   };
+
+  /**
+   * better-auth's redirectPlugin (client/fetch-plugins.mjs) navigates by
+   * itself whenever a response comes back as { redirect, url } — which is
+   * both how `callbackURL` is honoured and how oauthProvider hands back the
+   * consent screen after resuming an MCP authorization.
+   *
+   * signUp.email is the one endpoint that never sets those fields: it returns
+   * { token, user } and uses callbackURL only for the verification link
+   * (api/routes/sign-up.mjs). So that branch still has to navigate on its
+   * own, and has to check first or it races the plugin.
+   */
+  const pluginWillRedirect = (data: unknown) =>
+    Boolean((data as { redirect?: boolean } | null)?.redirect);
 
   const handleEmailPasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError(null);
+
+    // Set once we hand off to a full-page navigation; the button must stay
+    // disabled for the round trip rather than flicking back to enabled.
+    let leaving = false;
 
     try {
       if (isSignup) {
@@ -70,12 +97,15 @@ export function EmailPasswordAuth({
               'Failed to create account. Please try again.',
           );
         } else {
-          await redirectAfterAuth();
+          leaving = true;
+          if (!pluginWillRedirect(result.data))
+            window.location.href = postAuthURL();
         }
       } else {
         const result = await authClient.signIn.email({
           email,
           password,
+          callbackURL: postAuthURL(),
         });
 
         if (result.error) {
@@ -84,21 +114,21 @@ export function EmailPasswordAuth({
               'Failed to sign in. Please check your credentials.',
           );
         } else {
-          await redirectAfterAuth();
+          leaving = true;
         }
       }
     } catch (err) {
       setError('An unexpected error occurred. Please try again.');
       console.error('Email/password auth error:', err);
     } finally {
-      setIsLoading(false);
+      if (!leaving) setIsLoading(false);
     }
   };
 
   const handleGoogleSignIn = () => {
     authClient.signIn.social({
       provider: 'google',
-      callbackURL: `${window.location.origin}/chat`,
+      callbackURL: postAuthURL(),
     });
   };
 
@@ -208,7 +238,7 @@ export function EmailPasswordAuth({
                 <>
                   Already have an account?{' '}
                   <Link
-                    href="/sign-in"
+                    href={`/sign-in${authQuery}`}
                     className="font-semibold text-zinc-950 hover:text-zinc-700 dark:text-white dark:hover:text-zinc-300"
                   >
                     Sign in
@@ -218,7 +248,7 @@ export function EmailPasswordAuth({
                 <>
                   Don&apos;t have an account?{' '}
                   <Link
-                    href="/sign-up"
+                    href={`/sign-up${authQuery}`}
                     className="font-semibold text-zinc-950 hover:text-zinc-700 dark:text-white dark:hover:text-zinc-300"
                   >
                     Sign up
