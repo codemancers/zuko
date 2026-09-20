@@ -1,5 +1,10 @@
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
+import {
+  isTopLevelNavigation,
+  redirectTargetFromBody,
+  rewriteCookieForProxy,
+} from '@/lib/auth-proxy';
 
 const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:3001';
 
@@ -38,6 +43,19 @@ export async function PATCH(
   context: { params: Promise<{ auth: string[] }> },
 ) {
   return proxyToBackend(request, context);
+}
+
+/** Copy the backend's cookies across, re-scoped onto this origin. */
+function applyCookies(from: Response, to: NextResponse, label: string) {
+  from.headers.getSetCookie().forEach((cookie) => {
+    const rewrittenCookie = rewriteCookieForProxy(cookie);
+
+    console.log(`[AUTH PROXY] Rewriting cookie on ${label}:`, {
+      original: cookie,
+      rewritten: rewrittenCookie,
+    });
+    to.headers.append('Set-Cookie', rewrittenCookie);
+  });
 }
 
 async function proxyToBackend(
@@ -130,28 +148,29 @@ async function proxyToBackend(
           response.status,
         );
 
-        // Set cookies on redirect response
-        const cookies = response.headers.getSetCookie();
-        cookies.forEach((cookie) => {
-          const rewrittenCookie = cookie
-            .split(';')
-            .map((part) => part.trim())
-            .filter((part) => !part.toLowerCase().startsWith('domain='))
-            .map((part) => {
-              if (part.toLowerCase() === 'samesite=none') {
-                return 'SameSite=Lax';
-              }
-              return part;
-            })
-            .join('; ');
+        applyCookies(response, redirectResponse, 'redirect');
 
-          console.log('[AUTH PROXY] Rewriting cookie on redirect:', {
-            original: cookie,
-            rewritten: rewrittenCookie,
-          });
-          redirectResponse.headers.append('Set-Cookie', rewrittenCookie);
-        });
+        return redirectResponse;
+      }
+    }
 
+    // better-auth's oauth-provider content-negotiates its redirects: a browser
+    // fetch gets { redirect, url } to act on, anything else gets a real 302
+    // (oauth-provider/dist/index.mjs handleRedirect). It decides by
+    // sec-fetch-mode === 'cors' — and Node's fetch sets that header on every
+    // request and will not let us override it, so the backend cannot tell this
+    // proxy apart from an XHR. Harmless when the browser is doing an XHR and
+    // will act on the JSON itself. Fatal on a top-level navigation, such as
+    // returning to /oauth2/authorize after login: the browser renders the JSON
+    // as text, the authorization code sits unused on screen, and the MCP
+    // client waits forever. So turn it back into the 302 the backend meant.
+    if (response.ok && isTopLevelNavigation(request)) {
+      const location = await redirectTargetFromBody(response);
+
+      if (location) {
+        console.log('[AUTH PROXY] JSON redirect → 302:', location);
+        const redirectResponse = NextResponse.redirect(location, 302);
+        applyCookies(response, redirectResponse, 'json redirect');
         return redirectResponse;
       }
     }
@@ -179,30 +198,7 @@ async function proxyToBackend(
     });
 
     // Forward all Set-Cookie headers, rewriting for same-site usage
-    const cookies = response.headers.getSetCookie();
-    cookies.forEach((cookie) => {
-      // Parse cookie and:
-      // 1. Remove Domain attribute so it defaults to current domain (frontend)
-      // 2. Change SameSite=None to SameSite=Lax (we're now same-site, not cross-site)
-      const rewrittenCookie = cookie
-        .split(';')
-        .map((part) => part.trim())
-        .filter((part) => !part.toLowerCase().startsWith('domain='))
-        .map((part) => {
-          // Change SameSite=None to SameSite=Lax
-          if (part.toLowerCase() === 'samesite=none') {
-            return 'SameSite=Lax';
-          }
-          return part;
-        })
-        .join('; ');
-
-      console.log('[AUTH PROXY] Rewriting cookie:', {
-        original: cookie,
-        rewritten: rewrittenCookie,
-      });
-      nextResponse.headers.append('Set-Cookie', rewrittenCookie);
-    });
+    applyCookies(response, nextResponse, 'response');
 
     return nextResponse;
   } catch (error) {
