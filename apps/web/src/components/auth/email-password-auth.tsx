@@ -2,7 +2,6 @@
 
 import Image from 'next/image';
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { AuthLayout, Button, Field, Label, Input } from '@zuko/ui-kit';
 import { authClient } from '@/lib/auth-client';
 import Link from 'next/link';
@@ -16,7 +15,6 @@ export function EmailPasswordAuth({
   mode = 'signin',
   emailPasswordEnabled = false,
 }: EmailPasswordAuthProps) {
-  const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -35,8 +33,30 @@ export function EmailPasswordAuth({
   const [authQuery, setAuthQuery] = useState('');
   useEffect(() => setAuthQuery(window.location.search), []);
 
-  /** Where better-auth sends every successful login; see app/post-login. */
-  const postLoginURL = () => `${window.location.origin}/post-login`;
+  /**
+   * Where better-auth sends a successful login, via `callbackURL`.
+   *
+   * Normally /post-login. But when oauthProvider bounced an MCP client's
+   * authorization here, the signed query is still on the URL and the login
+   * has to return to the authorize endpoint before a code can be minted.
+   * oauthProvider resumes that itself on any response it can rewrite, which
+   * covers email sign-in — a social login round-trips through Google first,
+   * so name the destination explicitly and let whichever lands first win.
+   *
+   * Deliberately the same-origin /auth proxy and not BACKEND_URL: web and api
+   * are sibling *.fly.dev hosts with no shared cookie domain, so hitting the
+   * backend authorize endpoint directly would carry no session and bounce
+   * straight back to this page. The proxy forwards the cookie. Re-encoding
+   * the query on the way through is safe — the signature is verified over a
+   * canonicalised, re-sorted URLSearchParams on both sides
+   * (@better-auth/oauth-provider/dist/version-DaSfXJQ1.mjs:5).
+   */
+  const postAuthURL = () => {
+    const search = window.location.search;
+    return new URLSearchParams(search).has('sig')
+      ? `${window.location.origin}/auth/oauth2/authorize${search}`
+      : `${window.location.origin}/post-login`;
+  };
 
   /**
    * better-auth's redirectPlugin (client/fetch-plugins.mjs) navigates by
@@ -76,13 +96,14 @@ export function EmailPasswordAuth({
           );
         } else {
           leaving = true;
-          if (!pluginWillRedirect(result.data)) router.push('/post-login');
+          if (!pluginWillRedirect(result.data))
+            window.location.href = postAuthURL();
         }
       } else {
         const result = await authClient.signIn.email({
           email,
           password,
-          callbackURL: postLoginURL(),
+          callbackURL: postAuthURL(),
         });
 
         if (result.error) {
@@ -105,7 +126,7 @@ export function EmailPasswordAuth({
   const handleGoogleSignIn = () => {
     authClient.signIn.social({
       provider: 'google',
-      callbackURL: postLoginURL(),
+      callbackURL: postAuthURL(),
     });
   };
 
