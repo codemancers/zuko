@@ -1,7 +1,7 @@
 'use client';
 
 import Image from 'next/image';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { AuthLayout, Button, Field, Label, Input } from '@zuko/ui-kit';
 import { authClient } from '@/lib/auth-client';
@@ -27,12 +27,25 @@ export function EmailPasswordAuth({
 
   const isSignup = mode === 'signup';
 
+  // A signed authorization query lands on whichever of /sign-in or /sign-up
+  // oauthProvider sent the user to. The cross-link between the two pages has
+  // to carry it, or a user who signs up mid-authorization arrives with no
+  // query for the client plugin to attach and the MCP client is left waiting.
+  // Read after mount so the server render and first client render agree.
+  const [authQuery, setAuthQuery] = useState('');
+  useEffect(() => setAuthQuery(window.location.search), []);
+
   /**
    * When an MCP client sent the user here via /oauth2/authorize, the
    * oauth-provider plugin resumes that authorization the moment a session
    * cookie is set and hands the next hop (the consent page) back on the
-   * sign-in response. Follow it instead of falling through to the default
-   * post-login routing, which would strand the client waiting on a callback.
+   * sign-in response as { redirect, url }.
+   *
+   * better-auth's own redirectPlugin (client/fetch-plugins.mjs) already
+   * navigates on that shape, so the assignment below is belt-and-braces. The
+   * load-bearing part is the return value: it stops redirectAfterAuth() from
+   * racing the plugin with a router.push('/chat'), which is what stranded the
+   * MCP client waiting on a callback.
    */
   const followOAuthResume = (data: unknown) => {
     const resume = data as { redirect?: boolean; url?: string } | null;
@@ -70,6 +83,10 @@ export function EmailPasswordAuth({
     setIsLoading(true);
     setError(null);
 
+    // Set once we hand off to a full-page navigation; the button must stay
+    // disabled for the round trip rather than flicking back to enabled.
+    let leaving = false;
+
     try {
       if (isSignup) {
         const result = await authClient.signUp.email({
@@ -83,8 +100,9 @@ export function EmailPasswordAuth({
             result.error.message ||
               'Failed to create account. Please try again.',
           );
-        } else if (!followOAuthResume(result.data)) {
-          await redirectAfterAuth();
+        } else {
+          leaving = followOAuthResume(result.data);
+          if (!leaving) await redirectAfterAuth();
         }
       } else {
         const result = await authClient.signIn.email({
@@ -97,15 +115,16 @@ export function EmailPasswordAuth({
             result.error.message ||
               'Failed to sign in. Please check your credentials.',
           );
-        } else if (!followOAuthResume(result.data)) {
-          await redirectAfterAuth();
+        } else {
+          leaving = followOAuthResume(result.data);
+          if (!leaving) await redirectAfterAuth();
         }
       }
     } catch (err) {
       setError('An unexpected error occurred. Please try again.');
       console.error('Email/password auth error:', err);
     } finally {
-      setIsLoading(false);
+      if (!leaving) setIsLoading(false);
     }
   };
 
@@ -222,7 +241,7 @@ export function EmailPasswordAuth({
                 <>
                   Already have an account?{' '}
                   <Link
-                    href="/sign-in"
+                    href={`/sign-in${authQuery}`}
                     className="font-semibold text-zinc-950 hover:text-zinc-700 dark:text-white dark:hover:text-zinc-300"
                   >
                     Sign in
@@ -232,7 +251,7 @@ export function EmailPasswordAuth({
                 <>
                   Don&apos;t have an account?{' '}
                   <Link
-                    href="/sign-up"
+                    href={`/sign-up${authQuery}`}
                     className="font-semibold text-zinc-950 hover:text-zinc-700 dark:text-white dark:hover:text-zinc-300"
                   >
                     Sign up
