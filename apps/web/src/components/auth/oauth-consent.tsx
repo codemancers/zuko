@@ -35,9 +35,19 @@ const SCOPE_DESCRIPTIONS: Record<string, string> = {
   // CRM - Tasks
   'tasks:read': 'Read your tasks',
   'tasks:write': 'Create and update tasks',
-  // CRM - Relations
-  'relations:read': 'Read entity relations',
-  'relations:write': 'Manage entity relations',
+  // CRM - Prospects and leads
+  'prospects:read': 'Read your prospects',
+  'prospects:write': 'Create and update prospects',
+  'leads:read': 'Read your leads',
+  'leads:write': 'Create and update leads',
+  // CRM - Targeting
+  'icps:read': 'Read your ideal customer profiles',
+  'icps:write': 'Create and update ideal customer profiles',
+  'campaigns:read': 'Read your campaigns',
+  'campaigns:write': 'Create and update campaigns',
+  // CRM - Comments
+  'comments:read': 'Read comments',
+  'comments:write': 'Write comments',
 };
 
 /**
