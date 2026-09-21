@@ -882,6 +882,82 @@ describe('ProspectsService', () => {
       ).rejects.toThrow(/cooldown until/);
     });
 
+    it('Keeps a prospect enrolled while another campaign is still open', async () => {
+      const prospect = await newProspect();
+      const first = await service.enrol(prospect.id, ORG_ID, campaign.id);
+      await service.enrol(prospect.id, ORG_ID, otherCampaign.id, {
+        force: true,
+      });
+
+      await service.setDisposition(first.id, ORG_ID, 'nurture');
+
+      // "Not now" from one campaign says nothing about the other, and must not
+      // advertise the prospect as available while it is still running.
+      const reloaded = await service.findById(prospect.id, ORG_ID);
+      expect(reloaded.status).toBe('enrolled');
+    });
+
+    it('Returns the prospect to the pool once the last membership closes', async () => {
+      const prospect = await newProspect();
+      const first = await service.enrol(prospect.id, ORG_ID, campaign.id);
+      const second = await service.enrol(
+        prospect.id,
+        ORG_ID,
+        otherCampaign.id,
+        { force: true },
+      );
+
+      await service.setDisposition(first.id, ORG_ID, 'nurture');
+      await service.setDisposition(second.id, ORG_ID, 'nurture');
+
+      const reloaded = await service.findById(prospect.id, ORG_ID);
+      expect(reloaded.status).toBe('new');
+    });
+
+    it('Engages a prospect who showed intent in one of several campaigns', async () => {
+      const prospect = await newProspect();
+      const first = await service.enrol(prospect.id, ORG_ID, campaign.id);
+      await service.enrol(prospect.id, ORG_ID, otherCampaign.id, {
+        force: true,
+      });
+
+      await service.setDisposition(first.id, ORG_ID, 'interested');
+
+      // Interest is about the person too — awaiting a promotion decision must
+      // not wait on an unrelated campaign finishing.
+      const reloaded = await service.findById(prospect.id, ORG_ID);
+      expect(reloaded.status).toBe('engaged');
+    });
+
+    it('Disqualifies a prospect even with a campaign still open', async () => {
+      const prospect = await newProspect();
+      const first = await service.enrol(prospect.id, ORG_ID, campaign.id);
+      await service.enrol(prospect.id, ORG_ID, otherCampaign.id, {
+        force: true,
+      });
+
+      await service.setDisposition(first.id, ORG_ID, 'disqualified');
+
+      const reloaded = await service.findById(prospect.id, ORG_ID);
+      expect(reloaded.status).toBe('disqualified');
+    });
+
+    it('Lets an opt-out settle standing even with a campaign still open', async () => {
+      const prospect = await newProspect();
+      const first = await service.enrol(prospect.id, ORG_ID, campaign.id);
+      await service.enrol(prospect.id, ORG_ID, otherCampaign.id, {
+        force: true,
+      });
+
+      await service.setDisposition(first.id, ORG_ID, 'opted_out');
+
+      // Unlike `nurture`, an opt-out is a fact about the person rather than
+      // about the campaign it arrived from, so an open membership cannot hold
+      // it back.
+      const reloaded = await service.findById(prospect.id, ORG_ID);
+      expect(reloaded.status).toBe('suppressed');
+    });
+
     it('Honours an explicit re-eligibility date from a "not now" reply', async () => {
       const prospect = await newProspect();
       const membership = await service.enrol(prospect.id, ORG_ID, campaign.id);

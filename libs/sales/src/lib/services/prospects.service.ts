@@ -576,6 +576,22 @@ export class ProspectsService {
 
     const from = prospect.status as ProspectStatus;
     if (from === target) return;
+
+    // Returning a prospect to the pool says they are in no campaign at all.
+    // `force` lets a prospect hold more than one open membership, so one
+    // campaign concluding `nurture` must not advertise them as available
+    // while another is still running — that would also make them enrollable
+    // again with no override needed. The other three targets are judgements
+    // about the person rather than about a campaign, and hold however many
+    // memberships are still open.
+    if (target === 'new') {
+      const stillOpen = await this.prospects.findOpenMemberships(
+        prospectId,
+        OPEN_MEMBERSHIP_STATES,
+      );
+      if (stillOpen.length > 0) return;
+    }
+
     if (!canTransitionProspect(from, target)) return;
 
     await this.prospects.update(prospectId, { status: target });
