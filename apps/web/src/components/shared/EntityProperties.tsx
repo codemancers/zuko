@@ -1,3 +1,5 @@
+'use client';
+
 import type { ReactNode } from 'react';
 import React, { useState } from 'react';
 import {
@@ -554,7 +556,7 @@ export function EntityProperties({
                   <div key={i} className="flex items-center gap-1.5">
                     <Avatar
                       initials={initials}
-                      className="size-6 bg-zinc-900 text-zinc-50"
+                      className="size-6 bg-zinc-900 text-zinc-50 dark:bg-zinc-600"
                     />
                     <span className="text-sm">{name}</span>
                   </div>
@@ -617,7 +619,7 @@ export function EntityProperties({
           <div className="flex items-center self-end pb-0.5">
             <button
               onClick={() => setIsExpanded(!isExpanded)}
-              className="group flex items-center gap-1.5 rounded-full bg-zinc-50 px-3 py-1 text-[11px] font-semibold text-zinc-500 transition-all hover:bg-zinc-100 hover:text-zinc-900 dark:bg-zinc-800/50 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-white"
+              className="group flex items-center gap-1.5 rounded-full bg-zinc-50 px-3 py-1 text-[11px] font-semibold text-zinc-500 transition-[background-color,color] duration-150 ease-out hover:bg-zinc-100 hover:text-zinc-900 dark:bg-zinc-800/50 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-white"
             >
               {isExpanded ? (
                 <>
