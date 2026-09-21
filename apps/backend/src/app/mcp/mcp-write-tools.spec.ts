@@ -1342,6 +1342,12 @@ function commentDb(over: Record<string, unknown> = {}) {
     task: {
       findUnique: vi.fn(async () => ({ organizationId: 1 })),
     },
+    prospect: {
+      findUnique: vi.fn(async () => ({ organizationId: 1 })),
+    },
+    lead: {
+      findUnique: vi.fn(async () => ({ organizationId: 1 })),
+    },
     ...over,
   } as never;
 }
@@ -1426,6 +1432,80 @@ describe('add_comment tool', () => {
     expect(entityId).toBe(7);
     expect(actorId).toBe(42);
     expect(content).toBe('Great call today');
+  });
+});
+
+describe('add_comment on the outbound records', () => {
+  it('comments on a prospect', async () => {
+    const svc = activitySvc();
+    const client = await connect(commentDb(), ['comments:write'], svc);
+    await client.callTool({
+      name: 'add_comment',
+      arguments: {
+        entityType: 'prospect',
+        entityId: 11,
+        content: 'Left a voicemail.',
+      },
+    });
+
+    expect(svc.activity.createComment).toHaveBeenCalledWith(
+      'prospect',
+      11,
+      42,
+      'Left a voicemail.',
+    );
+  });
+
+  it('comments on a lead', async () => {
+    const svc = activitySvc();
+    const client = await connect(commentDb(), ['comments:write'], svc);
+    await client.callTool({
+      name: 'add_comment',
+      arguments: {
+        entityType: 'lead',
+        entityId: 12,
+        content: 'Booked the follow-up.',
+      },
+    });
+
+    expect(svc.activity.createComment).toHaveBeenCalledWith(
+      'lead',
+      12,
+      42,
+      'Booked the follow-up.',
+    );
+  });
+
+  it('refuses a prospect in an organization the caller is not a member of', async () => {
+    const svc = activitySvc();
+    const client = await connect(
+      commentDb({
+        prospect: { findUnique: vi.fn(async () => ({ organizationId: 99 })) },
+      }),
+      ['comments:write'],
+      svc,
+    );
+    const res = (await client.callTool({
+      name: 'add_comment',
+      arguments: { entityType: 'prospect', entityId: 11, content: 'Hi' },
+    })) as { isError?: boolean };
+
+    expect(res.isError).toBe(true);
+    expect(svc.activity.createComment).not.toHaveBeenCalled();
+  });
+
+  it('reads a prospect timeline back', async () => {
+    const svc = activitySvc();
+    const client = await connect(commentDb(), ['comments:read'], svc);
+    await client.callTool({
+      name: 'list_comments',
+      arguments: { entityType: 'prospect', entityId: 11 },
+    });
+
+    expect(svc.activity.findAll).toHaveBeenCalledWith(
+      { entityType: 'prospect', entityId: 11, activityType: 'comment' },
+      { limit: 50 },
+    );
   });
 });
 
