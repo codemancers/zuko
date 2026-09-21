@@ -81,7 +81,10 @@ vitest.config.*.timestamp*
 /[0-9]*-*
 
 # AI agents and rules files
-.claude/
+# Local Claude Code state stays out, but .claude/skills is shared: it holds the
+# symlinks that point Claude Code at the canonical skills in .agents/skills.
+.claude/*
+!.claude/skills/
 .cursorrules
 .windsurfrules
 .gemini
@@ -99,9 +102,11 @@ GEMINI.md
 # Nango runtime data
 nango-data/
 
-# Claude Code agent skills
-.agents/
-skills-lock.json
+# Agent skills are committed. The canonical copies live in .agents/skills, where
+# every agent that follows the convention reads them, and skills-lock.json
+# records each skill's source repo and content hash so installs are reproducible.
+.agents/*
+!.agents/skills/
 
 .nx/polygraph
 .nx/self-healing
