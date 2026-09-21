@@ -140,7 +140,7 @@ const WikiEditorComponent = ({
       ref={holderRef}
       data-testid="wiki-editor"
       className={cn(
-        'editor-js-container transition-all',
+        'editor-js-container transition-opacity duration-200 ease-out',
         !isReady && 'opacity-50',
         className,
       )}

@@ -10,16 +10,16 @@ type SheetSide = 'left' | 'right' | 'top' | 'bottom';
 const panelClasses: Record<SheetSide, string> = {
   right:
     'inset-y-0 right-0 h-full w-3/4 sm:max-w-sm ' +
-    'data-closed:translate-x-full data-enter:ease-out data-leave:ease-in',
+    'data-closed:translate-x-full',
   left:
     'inset-y-0 left-0 h-full w-3/4 sm:max-w-sm ' +
-    'data-closed:-translate-x-full data-enter:ease-out data-leave:ease-in',
+    'data-closed:-translate-x-full',
   top:
     'inset-x-0 top-0 w-full h-auto max-h-[80vh] ' +
-    'data-closed:-translate-y-full data-enter:ease-out data-leave:ease-in',
+    'data-closed:-translate-y-full',
   bottom:
     'inset-x-0 bottom-0 w-full h-auto max-h-[80vh] rounded-t-3xl ' +
-    'data-closed:translate-y-full data-enter:ease-out data-leave:ease-in',
+    'data-closed:translate-y-full',
 };
 
 export function Sheet({
@@ -36,7 +36,7 @@ export function Sheet({
     <Headless.Dialog {...props}>
       <Headless.DialogBackdrop
         transition
-        className="fixed inset-0 bg-zinc-950/25 transition duration-500 ease-out focus:outline-0 data-closed:opacity-0 data-leave:ease-in dark:bg-zinc-950/50"
+        className="fixed inset-0 bg-zinc-950/25 transition-opacity duration-300 ease-out focus:outline-0 data-closed:opacity-0 data-leave:duration-200 dark:bg-zinc-950/50"
       />
 
       <div className="fixed inset-0 overflow-hidden">
@@ -45,7 +45,7 @@ export function Sheet({
           className={clsx(
             className,
             'absolute flex flex-col bg-white shadow-lg ring-1 ring-zinc-950/10 dark:bg-zinc-900 dark:ring-white/10 forced-colors:outline',
-            'transition duration-500 ease-out will-change-transform',
+            'transition duration-300 ease-drawer will-change-transform data-leave:duration-200',
             panelClasses[side],
           )}
         >

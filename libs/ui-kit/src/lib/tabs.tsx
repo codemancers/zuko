@@ -76,7 +76,7 @@ export function TabsTrigger({
   return (
     <Headless.Tab
       className={clsx(
-        'relative flex items-center justify-center whitespace-nowrap px-3 py-1.5 text-sm font-medium outline-none transition-all focus:outline-none focus:ring-0',
+        'relative flex items-center justify-center whitespace-nowrap px-3 py-1.5 text-sm font-medium outline-none transition-[color,background-color,box-shadow] duration-150 ease-out focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500',
         // Default (segmented) styles
         'group-data-[variant=default]/tabs-list:rounded-md group-data-[variant=default]/tabs-list:data-selected:bg-white group-data-[variant=default]/tabs-list:data-selected:text-zinc-950 group-data-[variant=default]/tabs-list:data-selected:shadow-xs dark:group-data-[variant=default]/tabs-list:data-selected:bg-zinc-700 dark:group-data-[variant=default]/tabs-list:data-selected:text-white',
         // Line styles
@@ -91,7 +91,7 @@ export function TabsTrigger({
           {selected && (
             <motion.span
               layoutId={indicatorId}
-              transition={{ type: 'spring', stiffness: 500, damping: 40 }}
+              transition={{ type: 'spring', duration: 0.3, bounce: 0 }}
               className="absolute inset-x-0 -bottom-px h-px bg-zinc-950 group-data-[variant=default]/tabs-list:hidden dark:bg-white"
             />
           )}

@@ -172,7 +172,7 @@ export function MultiSelect({
                 : 'max-h-48 p-1 empty:invisible scroll-py-1',
               'bg-white/75 backdrop-blur-xl dark:bg-zinc-800/75',
               'shadow-lg ring-1 ring-zinc-950/10 dark:ring-white/10 dark:ring-inset',
-              'transition-opacity duration-100 ease-in data-closed:data-leave:opacity-0 data-transition:pointer-events-none',
+              'transition-opacity duration-100 ease-out data-closed:data-leave:opacity-0 data-transition:pointer-events-none',
               'z-50',
             )}
           >
@@ -359,7 +359,7 @@ export function MultiCombobox({
             'outline outline-transparent',
             'bg-white/75 backdrop-blur-xl dark:bg-zinc-800/75',
             'shadow-lg ring-1 ring-zinc-950/10 dark:ring-white/10 dark:ring-inset',
-            'transition-opacity duration-100 ease-in data-closed:data-leave:opacity-0 data-transition:pointer-events-none',
+            'transition-opacity duration-100 ease-out data-closed:data-leave:opacity-0 data-transition:pointer-events-none',
           )}
         >
           {filteredOptions.length === 0 ? (

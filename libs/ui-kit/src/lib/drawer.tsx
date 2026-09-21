@@ -26,7 +26,7 @@ export function Drawer({
     <Headless.Dialog {...props}>
       <Headless.DialogBackdrop
         transition
-        className="fixed inset-0 bg-zinc-950/25 transition duration-300 ease-in-out data-closed:opacity-0 dark:bg-zinc-950/50"
+        className="fixed inset-0 bg-zinc-950/25 transition-opacity duration-300 ease-out data-closed:opacity-0 data-leave:duration-200 dark:bg-zinc-950/50"
       />
 
       <div className="fixed inset-0 overflow-hidden">
@@ -37,7 +37,7 @@ export function Drawer({
               className={clsx(
                 className,
                 drawerSizes[size],
-                'pointer-events-auto w-screen transition duration-300 ease-in-out data-closed:translate-x-full',
+                'pointer-events-auto w-screen transition duration-300 ease-drawer will-change-transform data-closed:translate-x-full data-leave:duration-200',
                 'flex h-full flex-col overflow-y-scroll bg-white shadow-xl dark:bg-zinc-900',
               )}
             >

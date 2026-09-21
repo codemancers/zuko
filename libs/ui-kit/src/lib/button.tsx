@@ -7,6 +7,12 @@ const styles = {
   base: [
     // Base
     'relative isolate inline-flex items-baseline justify-center gap-x-2 rounded-lg border text-base/6 font-semibold',
+    // An icon carries the optical weight of the label beside it: 2px
+    // against semibold text, not the icon set's default 1.5px hairline.
+    '[&_svg]:[stroke-width:2]',
+    // Press feedback. Transition only `scale` so a release mid-press returns
+    // smoothly instead of restarting, and nothing else gets animated by accident.
+    'transition-[scale] duration-150 ease-out',
     // Sizing
     'px-[calc(--spacing(3.5)-1px)] py-[calc(--spacing(2.5)-1px)] sm:px-[calc(--spacing(3)-1px)] sm:py-[calc(--spacing(1.5)-1px)] sm:text-sm/6',
     // Focus
@@ -158,11 +164,22 @@ const styles = {
   },
 };
 
+/**
+ * Pressing scales to 0.96. Anything below 0.95 reads as exaggerated, and a
+ * button with no press state feels like the interface did not hear the click.
+ */
+const tapScale = 'active:not-data-disabled:scale-[0.96]';
+
 type ButtonProps = (
   | { color?: keyof typeof styles.colors; outline?: never; plain?: never }
   | { color?: never; outline: true; plain?: never }
   | { color?: never; outline?: never; plain: true }
-) & { className?: string; children: React.ReactNode } & (
+) & {
+  className?: string;
+  children: React.ReactNode;
+  /** Opt out of the press scale where the motion would distract. */
+  static?: boolean;
+} & (
     | ({ href?: never } & Omit<Headless.ButtonProps, 'as' | 'className'>)
     | ({ href: string } & Omit<
         React.ComponentPropsWithoutRef<typeof Link>,
@@ -171,11 +188,12 @@ type ButtonProps = (
   );
 
 export const Button = forwardRef<HTMLElement, ButtonProps>(function Button(
-  { color, outline, plain, className, children, ...props },
+  { color, outline, plain, className, static: isStatic, children, ...props },
   ref,
 ) {
   const classes = clsx(
     styles.base,
+    !isStatic && tapScale,
     outline
       ? styles.outline
       : plain

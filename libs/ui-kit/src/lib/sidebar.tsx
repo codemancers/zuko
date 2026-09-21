@@ -173,6 +173,9 @@ export const SidebarItem = forwardRef(function SidebarItem(
   const classes = clsx(
     // Base
     'flex w-full items-center gap-3 rounded-lg px-2 py-2.5 text-left text-base/6 font-medium text-zinc-950 sm:py-2 sm:text-sm/5',
+    // High-frequency target: the shortest transition that still reads as a
+    // response, on the three properties that actually change
+    'transition-[background-color,color,fill] duration-100 ease-out',
     // Leading icon/icon-only
     '*:data-[slot=icon]:size-6 *:data-[slot=icon]:shrink-0 *:data-[slot=icon]:fill-zinc-500 sm:*:data-[slot=icon]:size-5',
     // Trailing icon (down chevron or similar)
@@ -200,6 +203,7 @@ export const SidebarItem = forwardRef(function SidebarItem(
       {current && (
         <motion.span
           layoutId="current-indicator"
+          transition={{ type: 'spring', duration: 0.3, bounce: 0 }}
           className="absolute inset-y-2 -left-4 w-0.5 rounded-full bg-zinc-950 dark:bg-white"
         />
       )}

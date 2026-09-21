@@ -8,6 +8,23 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-sm: calc(var(--radius) - 4px);
 
+  /* Motion curves. The built-in CSS easings are too weak to read as
+     intentional; these are the strong variants we use everywhere. Entering and
+     exiting elements both use --ease-out — never ease-in, which delays the
+     first frame, exactly where the eye is. */
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  /* iOS-like curve for drawers and sheets travelling a long distance. */
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+  /* Icon cross-fades, a CSS approximation of a spring with no bounce. */
+  --ease-icon: cubic-bezier(0.2, 0, 0, 1);
+
+  /* Depth as a shadow rather than a border: transparency adapts to whatever
+     sits underneath, which a fixed border color never could. Structural
+     borders (dividers, table cells, input outlines) stay borders. */
+  --shadow-border: var(--surface-ring);
+  --shadow-border-hover: var(--surface-ring-hover);
+
   /* Semantic colors mapped to CSS variables */
   --color-background: hsl(var(--background));
   --color-foreground: hsl(var(--foreground));
@@ -61,6 +78,14 @@
   --chart-4: 43 74% 66%;
   --chart-5: 27 87% 67%;
   --radius: 0.5rem;
+
+  /* Three layers: a 1px ring, a tight lift, then ambient depth. */
+  --surface-ring:
+    0px 0px 0px 1px oklch(0 0 0 / 0.06), 0px 1px 2px -1px oklch(0 0 0 / 0.06),
+    0px 2px 4px 0px oklch(0 0 0 / 0.04);
+  --surface-ring-hover:
+    0px 0px 0px 1px oklch(0 0 0 / 0.08), 0px 1px 2px -1px oklch(0 0 0 / 0.08),
+    0px 2px 4px 0px oklch(0 0 0 / 0.06);
 }
 
 .dark {
@@ -88,6 +113,21 @@
   --chart-3: 30 80% 55%;
   --chart-4: 280 65% 60%;
   --chart-5: 340 75% 55%;
+
+  /* Layered depth shadows do not read on a dark background, so the ring
+     carries the whole effect. */
+  --surface-ring: 0 0 0 1px oklch(1 0 0 / 0.08);
+  --surface-ring-hover: 0 0 0 1px oklch(1 0 0 / 0.13);
+}
+
+@layer base {
+  /* The semantic tokens above were defined but never applied to the page
+     itself, so anywhere a layout did not paint its own surface (the auth
+     pages below `lg`, for one) fell through to the browser default. */
+  body {
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+  }
 }
 
 /* ===== EDITOR.JS STYLES ===== */

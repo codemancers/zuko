@@ -7,7 +7,10 @@ function Spinner({ className, ...props }: React.ComponentProps<'svg'>) {
     <ArrowPathIcon
       role="status"
       aria-label="Loading"
-      className={cn('size-4 animate-spin', className)}
+      className={cn(
+        'size-4 animate-spin [animation-duration:600ms]',
+        className,
+      )}
       {...props}
     />
   );
