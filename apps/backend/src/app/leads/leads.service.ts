@@ -37,6 +37,7 @@ export class LeadsService {
         search: query.search,
         icpProfileId: query.icpProfileId,
         campaignId: query.campaignId,
+        uncampaigned: query.uncampaigned,
         status,
         source,
       },

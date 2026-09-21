@@ -75,6 +75,8 @@ export interface LeadFilters {
   search?: string;
   icpProfileId?: number;
   campaignId?: number;
+  /** Leads that belong to no campaign. Mutually exclusive with campaignId. */
+  uncampaigned?: boolean;
   status?: string[];
   source?: string[];
 }
@@ -93,6 +95,7 @@ export const leadsApi = {
       params.set('icpProfileId', String(filters.icpProfileId));
     if (filters.campaignId)
       params.set('campaignId', String(filters.campaignId));
+    if (filters.uncampaigned) params.set('uncampaigned', 'true');
     filters.status?.forEach((s) => params.append('status', s));
     filters.source?.forEach((s) => params.append('source', s));
     return apiClient.get(`/leads?${params.toString()}`);

@@ -44,18 +44,27 @@ const STATUS_COLORS: Record<string, 'green' | 'blue' | 'red' | 'zinc'> = {
 };
 
 interface LeadsInListProps {
-  campaignId: number;
+  campaignId?: number;
+  /** The group of leads that belong to no campaign. */
+  uncampaigned?: boolean;
 }
 
-export default function LeadsInList({ campaignId }: LeadsInListProps) {
+export default function LeadsInList({
+  campaignId,
+  uncampaigned = false,
+}: LeadsInListProps) {
   const router = useRouter();
   const queryClient = useQueryClient();
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } =
-    useInfiniteQuery(getLeadsInfinite({ campaignId }));
+    useInfiniteQuery(
+      getLeadsInfinite(uncampaigned ? { uncampaigned: true } : { campaignId }),
+    );
   const leads = data?.pages.flatMap((p) => p.data) ?? [];
   const totalCount = data?.pages[0]?.total;
-  const campaignName = leads[0]?.campaign?.name;
+  const listName = uncampaigned
+    ? 'Uncampaigned'
+    : (leads[0]?.campaign?.name ?? 'Leads');
 
   const convertMutation = useMutation({
     mutationFn: (id: number) => leadsApi.convert(id),
@@ -223,7 +232,7 @@ export default function LeadsInList({ campaignId }: LeadsInListProps) {
       <BackLink href="/leads">Leads</BackLink>
 
       <div className="mt-4 flex items-center justify-between">
-        <Heading>{campaignName ?? 'Leads'}</Heading>
+        <Heading>{listName}</Heading>
         <Button color="dark" onClick={() => setIsSheetOpen(true)}>
           Add Lead
         </Button>
@@ -238,9 +247,7 @@ export default function LeadsInList({ campaignId }: LeadsInListProps) {
         onFetchNextPage={fetchNextPage}
         hasNextPage={hasNextPage}
         isFetchingNextPage={isFetchingNextPage}
-        onRowClick={(lead) =>
-          router.push(`/leads/campaign/${campaignId}/${lead.id}`)
-        }
+        onRowClick={(lead) => router.push(`/leads/${lead.id}`)}
         showEmptyState
         emptyStateConfig={{
           icon: FunnelIcon,

@@ -1,12 +1,13 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
+  IsBoolean,
   IsInt,
   IsOptional,
   IsString,
   IsPositive,
   IsObject,
 } from 'class-validator';
-import { Type } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 
 export class CreateLeadDto {
   @ApiProperty()
@@ -154,6 +155,14 @@ export class ListLeadsQueryDto {
   @Type(() => Number)
   @IsInt()
   campaignId?: number;
+
+  @ApiPropertyOptional({
+    description: 'Only leads that belong to no campaign',
+  })
+  @IsOptional()
+  @Transform(({ value }) => value === true || value === 'true')
+  @IsBoolean()
+  uncampaigned?: boolean;
 
   @ApiPropertyOptional({ isArray: true, type: String })
   @IsOptional()

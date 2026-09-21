@@ -39,6 +39,8 @@ export interface LeadFilters {
   search?: string;
   icpProfileId?: number;
   campaignId?: number;
+  /** Leads that belong to no campaign — a promoted prospect nobody sequenced. */
+  uncampaigned?: boolean;
   status?: string[];
   source?: string[];
 }
@@ -64,7 +66,11 @@ export class LeadsRepository {
     const where: Prisma.LeadWhereInput = {
       organizationId,
       ...(filters.icpProfileId ? { icpProfileId: filters.icpProfileId } : {}),
-      ...(filters.campaignId ? { campaignId: filters.campaignId } : {}),
+      ...(filters.uncampaigned
+        ? { campaignId: null }
+        : filters.campaignId
+          ? { campaignId: filters.campaignId }
+          : {}),
       ...(filters.status?.length ? { status: { in: filters.status } } : {}),
       ...(filters.source?.length ? { source: { in: filters.source } } : {}),
       ...(filters.search

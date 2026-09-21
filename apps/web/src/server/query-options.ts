@@ -127,7 +127,11 @@ export const getLeadLists = () =>
   });
 
 export const getLeadsInfinite = (
-  filters: { campaignId?: number; search?: string } = {},
+  filters: {
+    campaignId?: number;
+    uncampaigned?: boolean;
+    search?: string;
+  } = {},
 ) =>
   infiniteQueryOptions({
     queryKey: ['leads', 'list', 'infinite', filters],
