@@ -16,6 +16,8 @@ import {
   ContactActivityListener,
   CompanyActivityListener,
   TaskActivityListener,
+  ProspectActivityListener,
+  LeadActivityListener,
   TableColumnRepository,
 } from '@zuko/sales';
 import { PrismaModule } from '../../prisma/prisma.module';
@@ -147,6 +149,20 @@ import { TableRowBuilder } from './table/row-builder/table-row.builder';
       provide: TaskActivityListener,
       useFactory: (activityService: ActivityService) => {
         return new TaskActivityListener(activityService);
+      },
+      inject: [ActivityService],
+    },
+    {
+      provide: ProspectActivityListener,
+      useFactory: (activityService: ActivityService) => {
+        return new ProspectActivityListener(activityService);
+      },
+      inject: [ActivityService],
+    },
+    {
+      provide: LeadActivityListener,
+      useFactory: (activityService: ActivityService) => {
+        return new LeadActivityListener(activityService);
       },
       inject: [ActivityService],
     },

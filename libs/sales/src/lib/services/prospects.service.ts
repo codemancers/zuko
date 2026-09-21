@@ -4,6 +4,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { ProspectsRepository } from '../repositories/prospects.repository';
 import type {
   CreateProspectInput,
@@ -20,6 +21,10 @@ import type {
   EngagementState,
   ProspectStatus,
 } from '../constants/prospects';
+import { ACTIVITY_SOURCES } from '../events/deal-events';
+import type { ActivitySource } from '../events/deal-events';
+import { PROSPECT_EVENTS } from '../events/prospect-events';
+import { LEAD_EVENTS } from '../events/lead-events';
 import {
   CAMPAIGN_EVENT_EFFECTS,
   CONSENT_STATE_VALUES,
@@ -53,6 +58,7 @@ export interface EnrolProspectOptions {
 
 export interface SetStatusOptions {
   manual?: boolean;
+  actor?: ProspectActor;
 }
 
 /**
@@ -85,7 +91,40 @@ export class ProspectsService {
   constructor(
     private readonly prospects: ProspectsRepository,
     private readonly leads: LeadsRepository,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
+
+  /**
+   * Prospect actors speak system | user | agent | provider; the timeline only
+   * labels the ones a person did not do themselves.
+   */
+  private activitySource(actor?: ProspectActor): ActivitySource | undefined {
+    return actor?.source === 'agent' ? ACTIVITY_SOURCES.AI : undefined;
+  }
+
+  /**
+   * Move a prospect's status and record the move on its timeline. Every status
+   * write goes through here, so the timeline cannot fall behind the prospect.
+   */
+  private async changeStatus(
+    id: number,
+    from: string,
+    to: string,
+    actor?: ProspectActor,
+    extra: UpdateProspectInput = {},
+  ) {
+    const updated = await this.prospects.update(id, { ...extra, status: to });
+
+    await this.eventEmitter.emitAsync(PROSPECT_EVENTS.STATUS_CHANGED, {
+      prospectId: id,
+      from,
+      to,
+      actorId: actor?.userId,
+      source: this.activitySource(actor),
+    });
+
+    return updated;
+  }
 
   findAll(
     organizationId: number,
@@ -118,6 +157,7 @@ export class ProspectsService {
   async create(
     organizationId: number,
     input: Omit<CreateProspectInput, 'organizationId'>,
+    actor: ProspectActor = {},
   ) {
     const identity: ProspectIdentity = {
       email: input.email,
@@ -151,11 +191,19 @@ export class ProspectsService {
         ? await this.prospects.findMatchingContact(organizationId, identity)
         : null;
 
-    return this.prospects.create({
+    const created = await this.prospects.create({
       ...input,
       organizationId,
       ...(contact ? { contactId: contact.id } : {}),
     });
+
+    await this.eventEmitter.emitAsync(PROSPECT_EVENTS.CREATED, {
+      prospectId: created.id,
+      actorId: actor.userId,
+      source: this.activitySource(actor),
+    });
+
+    return created;
   }
 
   async update(id: number, organizationId: number, input: UpdateProspectInput) {
@@ -197,7 +245,7 @@ export class ProspectsService {
       );
     }
 
-    return this.prospects.update(id, { status });
+    return this.changeStatus(id, from, status, options.actor);
   }
 
   // ---- Enrolment ----
@@ -287,8 +335,16 @@ export class ProspectsService {
     // forced enrol would rewrite any status to `enrolled`, so a background job
     // could quietly undo a promotion.
     if (status !== 'enrolled' && canTransitionProspect(status, 'enrolled')) {
-      await this.prospects.update(id, { status: 'enrolled' });
+      await this.changeStatus(id, status, 'enrolled', options.actor);
     }
+
+    await this.eventEmitter.emitAsync(PROSPECT_EVENTS.ENROLLED, {
+      prospectId: id,
+      campaignId,
+      channel: membership.channel,
+      actorId: options.actor?.userId,
+      source: this.activitySource(options.actor),
+    });
 
     return membership;
   }
@@ -362,11 +418,12 @@ export class ProspectsService {
         organizationId,
         effect.disposition,
         channel,
+        actor,
       );
     } else if (effect.engagementState === 'responded') {
       const from = prospect.status as ProspectStatus;
       if (canTransitionProspect(from, 'engaged')) {
-        await this.prospects.update(id, { status: 'engaged' });
+        await this.changeStatus(id, from, 'engaged', actor);
       }
     }
 
@@ -439,7 +496,11 @@ export class ProspectsService {
       source: actor.source ?? (externalId ? 'provider' : 'system'),
     });
 
-    return this.applyEventEffects(membership, eventType as CampaignEvent);
+    return this.applyEventEffects(
+      membership,
+      eventType as CampaignEvent,
+      actor,
+    );
   }
 
   private async applyEventEffects(
@@ -447,6 +508,7 @@ export class ProspectsService {
       Awaited<ReturnType<ProspectsRepository['findMembership']>>
     >,
     event: CampaignEvent,
+    actor: ProspectActor = {},
   ) {
     const effect = CAMPAIGN_EVENT_EFFECTS[event];
     const update: {
@@ -497,6 +559,7 @@ export class ProspectsService {
         membership.prospect.organizationId,
         update.disposition as CampaignDisposition,
         membership.channel,
+        actor,
       );
     }
 
@@ -548,6 +611,7 @@ export class ProspectsService {
       membership.prospect.organizationId,
       disposition,
       membership.channel,
+      options.actor,
     );
 
     return updated;
@@ -558,19 +622,29 @@ export class ProspectsService {
     organizationId: number,
     disposition: CampaignDisposition,
     channel?: string,
+    actor: ProspectActor = {},
   ) {
     const target = prospectStatusForDisposition(disposition);
     const prospect = await this.prospects.findById(prospectId, organizationId);
     if (!prospect) return;
 
-    // Consent is revoked first and unconditionally: it is a legal fact about
-    // one channel, not a consequence of a status change. Skipping it when the
-    // status happens to be a no-op would silently keep contacting someone who
-    // asked us to stop on a second channel.
+    // Consent is revoked first, whatever the status does: it is a legal fact
+    // about one channel, not a consequence of a status change. Skipping it when
+    // the status happens to be a no-op would silently keep contacting someone
+    // who asked us to stop on a second channel. A channel already revoked is
+    // left alone so the timeline does not repeat itself.
     if (disposition === 'opted_out' && channel) {
       const field = CONSENT_FIELD_BY_CHANNEL[channel as ContactChannel];
-      if (field) {
+      if (field && prospect[field] !== 'revoked') {
         await this.prospects.update(prospectId, { [field]: 'revoked' });
+        await this.eventEmitter.emitAsync(PROSPECT_EVENTS.CONSENT_CHANGED, {
+          prospectId,
+          channel,
+          from: prospect[field],
+          to: 'revoked',
+          actorId: actor.userId,
+          source: this.activitySource(actor),
+        });
       }
     }
 
@@ -594,7 +668,7 @@ export class ProspectsService {
 
     if (!canTransitionProspect(from, target)) return;
 
-    await this.prospects.update(prospectId, { status: target });
+    await this.changeStatus(prospectId, from, target, actor);
   }
 
   // ---- Promotion ----
@@ -603,7 +677,7 @@ export class ProspectsService {
    * Promote an engaged prospect to a lead: create the lead, close every open
    * membership so automation stops, and mark the prospect promoted.
    */
-  async promote(id: number, organizationId: number) {
+  async promote(id: number, organizationId: number, actor: ProspectActor = {}) {
     const prospect = await this.findById(id, organizationId);
     const status = prospect.status as ProspectStatus;
 
@@ -646,22 +720,52 @@ export class ProspectsService {
 
     await this.closeOpenMemberships(id, 'interested');
 
-    const promoted = await this.prospects.update(id, {
-      status: 'promoted',
+    const promoted = await this.changeStatus(id, status, 'promoted', actor, {
       leadId: lead.id,
+    });
+
+    await this.eventEmitter.emitAsync(PROSPECT_EVENTS.PROMOTED, {
+      prospectId: id,
+      leadId: lead.id,
+      actorId: actor.userId,
+      source: this.activitySource(actor),
+    });
+
+    // The lead starts its own timeline with the promotion that created it.
+    await this.eventEmitter.emitAsync(LEAD_EVENTS.CREATED, {
+      leadId: lead.id,
+      prospectId: id,
+      actorId: actor.userId,
+      source: this.activitySource(actor),
     });
 
     return { prospect: promoted, lead };
   }
 
   /** Reverse a promotion — the lead is gone, the prospect returns to engaged. */
-  async demote(id: number, organizationId: number) {
+  async demote(id: number, organizationId: number, actor: ProspectActor = {}) {
     const prospect = await this.findById(id, organizationId);
     if (!prospect.leadId) {
       throw new BadRequestException('Prospect has not been promoted.');
     }
 
-    return this.prospects.update(id, { status: 'engaged', leadId: null });
+    const leadId = prospect.leadId;
+    const demoted = await this.changeStatus(
+      id,
+      prospect.status,
+      'engaged',
+      actor,
+      { leadId: null },
+    );
+
+    await this.eventEmitter.emitAsync(PROSPECT_EVENTS.DEMOTED, {
+      prospectId: id,
+      leadId,
+      actorId: actor.userId,
+      source: this.activitySource(actor),
+    });
+
+    return demoted;
   }
 
   private async closeOpenMemberships(
@@ -693,6 +797,7 @@ export class ProspectsService {
     organizationId: number,
     channel: string,
     consent: string,
+    actor: ProspectActor = {},
   ) {
     const field = CONSENT_FIELD_BY_CHANNEL[channel as ContactChannel];
     if (!field) {
@@ -702,19 +807,34 @@ export class ProspectsService {
       throw new BadRequestException(`Unknown consent state "${consent}"`);
     }
 
-    await this.findById(id, organizationId);
+    const prospect = await this.findById(id, organizationId);
     const updated = await this.prospects.update(id, { [field]: consent });
+
+    if (prospect[field] !== consent) {
+      await this.eventEmitter.emitAsync(PROSPECT_EVENTS.CONSENT_CHANGED, {
+        prospectId: id,
+        channel,
+        from: prospect[field],
+        to: consent,
+        actorId: actor.userId,
+        source: this.activitySource(actor),
+      });
+    }
 
     // Nothing left to reach them on — record that as suppression rather than
     // leaving it to be rediscovered at send time.
     if (!this.hasContactableChannel(updated)) {
-      return this.suppress(id, organizationId);
+      return this.suppress(id, organizationId, actor);
     }
 
     return updated;
   }
 
-  async suppress(id: number, organizationId: number) {
+  async suppress(
+    id: number,
+    organizationId: number,
+    actor: ProspectActor = {},
+  ) {
     const prospect = await this.findById(id, organizationId);
     const from = prospect.status as ProspectStatus;
 
@@ -722,7 +842,15 @@ export class ProspectsService {
 
     if (from === 'suppressed') return prospect;
 
-    return this.prospects.update(id, { status: 'suppressed' });
+    const suppressed = await this.changeStatus(id, from, 'suppressed', actor);
+
+    await this.eventEmitter.emitAsync(PROSPECT_EVENTS.SUPPRESSED, {
+      prospectId: id,
+      actorId: actor.userId,
+      source: this.activitySource(actor),
+    });
+
+    return suppressed;
   }
 
   private hasContactableChannel(prospect: {

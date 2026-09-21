@@ -12,6 +12,8 @@ import { DealActivityListener } from '../listeners/deal-activity.listener';
 import { ContactActivityListener } from '../listeners/contact-activity.listener';
 import { CompanyActivityListener } from '../listeners/company-activity.listener';
 import { TaskActivityListener } from '../listeners/task-activity.listener';
+import { ProspectActivityListener } from '../listeners/prospect-activity.listener';
+import { LeadActivityListener } from '../listeners/lead-activity.listener';
 
 @Module({
   imports: [EventEmitterModule.forRoot()],
@@ -28,6 +30,8 @@ import { TaskActivityListener } from '../listeners/task-activity.listener';
     ContactActivityListener,
     CompanyActivityListener,
     TaskActivityListener,
+    ProspectActivityListener,
+    LeadActivityListener,
   ],
   exports: [
     ContactsRepository,
@@ -42,6 +46,8 @@ import { TaskActivityListener } from '../listeners/task-activity.listener';
     ContactActivityListener,
     CompanyActivityListener,
     TaskActivityListener,
+    ProspectActivityListener,
+    LeadActivityListener,
   ],
 })
 export class SalesModule {}

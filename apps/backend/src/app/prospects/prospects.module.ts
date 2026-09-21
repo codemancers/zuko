@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import {
   LeadsRepository,
   ProspectsRepository,
@@ -26,9 +27,12 @@ import { ProspectsController } from './prospects.controller';
     },
     {
       provide: ProspectsService,
-      useFactory: (prospects: ProspectsRepository, leads: LeadsRepository) =>
-        new ProspectsService(prospects, leads),
-      inject: [ProspectsRepository, LeadsRepository],
+      useFactory: (
+        prospects: ProspectsRepository,
+        leads: LeadsRepository,
+        eventEmitter: EventEmitter2,
+      ) => new ProspectsService(prospects, leads, eventEmitter),
+      inject: [ProspectsRepository, LeadsRepository, EventEmitter2],
     },
   ],
   exports: [ProspectsService],

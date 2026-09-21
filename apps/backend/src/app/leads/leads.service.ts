@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { LeadsRepository } from '@zuko/sales';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { LEAD_EVENTS, LeadsRepository } from '@zuko/sales';
 import type {
   CreateLeadDto,
   UpdateLeadDto,
@@ -12,6 +13,7 @@ export class LeadsService {
   constructor(
     private readonly leadsRepository: LeadsRepository,
     private readonly prisma: PrismaService,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   findLists(organizationId: number) {
@@ -49,8 +51,15 @@ export class LeadsService {
     return lead;
   }
 
-  create(organizationId: number, dto: CreateLeadDto) {
-    return this.leadsRepository.create({ ...dto, organizationId });
+  async create(organizationId: number, dto: CreateLeadDto, actorId?: number) {
+    const lead = await this.leadsRepository.create({ ...dto, organizationId });
+
+    await this.eventEmitter.emitAsync(LEAD_EVENTS.CREATED, {
+      leadId: lead.id,
+      actorId,
+    });
+
+    return lead;
   }
 
   async update(id: number, organizationId: number, dto: UpdateLeadDto) {
@@ -63,19 +72,27 @@ export class LeadsService {
     return this.leadsRepository.delete(id);
   }
 
-  async revert(id: number, organizationId: number) {
+  async revert(id: number, organizationId: number, actorId?: number) {
     const lead = await this.findById(id, organizationId);
     if (lead.dealId) {
       await this.prisma.deal.delete({ where: { id: lead.dealId } });
     }
-    return this.leadsRepository.update(id, {
+    const reverted = await this.leadsRepository.update(id, {
       status: 'replied',
       dealId: null,
       contactId: null,
     });
+
+    await this.eventEmitter.emitAsync(LEAD_EVENTS.REVERTED, {
+      leadId: id,
+      ...(lead.dealId ? { dealId: lead.dealId } : {}),
+      actorId,
+    });
+
+    return reverted;
   }
 
-  async convert(id: number, organizationId: number) {
+  async convert(id: number, organizationId: number, actorId?: number) {
     const lead = await this.findById(id, organizationId);
 
     // Upsert contact by email
@@ -132,6 +149,14 @@ export class LeadsService {
       dealId: deal.id,
       contactId: contact?.id ?? undefined,
       status: 'converted',
+    });
+
+    await this.eventEmitter.emitAsync(LEAD_EVENTS.CONVERTED, {
+      leadId: id,
+      dealId: deal.id,
+      ...(contact ? { contactId: contact.id } : {}),
+      ...(company ? { companyId: company.id } : {}),
+      actorId,
     });
 
     return { deal, contact, company };

@@ -36,6 +36,11 @@ function formatFieldName(field: string) {
   return FIELD_LABELS[field] ?? field;
 }
 
+/** Lifecycle values travel as snake_case enums; read them as words. */
+function humanizeValue(value: unknown) {
+  return String(value ?? '').replace(/_/g, ' ');
+}
+
 function formatFieldValue(field: string, val: unknown): string {
   if (val === null || val === undefined) return EMPTY_VALUE;
   if (field === 'expectedCloseDate' || field === 'actualCloseDate') {
@@ -54,6 +59,28 @@ function renderSystemEventText(activity: {
   switch (activity.activityType) {
     case 'deal_created':
       return 'created this deal';
+    case 'prospect_created':
+      return 'added this prospect';
+    case 'prospect_status_changed':
+      return `moved prospect from ${humanizeValue(m.from)} to ${humanizeValue(m.to)}`;
+    case 'prospect_enrolled':
+      return `enrolled in ${m.campaignName ?? `campaign ${m.campaignId}`} on ${m.channel}`;
+    case 'prospect_promoted':
+      return 'promoted this prospect to a lead';
+    case 'prospect_demoted':
+      return 'reversed the promotion — back to prospect';
+    case 'prospect_consent_changed':
+      return `set ${m.channel} consent to ${humanizeValue(m.to)}`;
+    case 'prospect_suppressed':
+      return 'suppressed this prospect — all outbound stops';
+    case 'lead_created':
+      return m.prospectId
+        ? 'created this lead from a promoted prospect'
+        : 'created this lead';
+    case 'lead_converted':
+      return 'converted this lead to a deal';
+    case 'lead_reverted':
+      return 'reverted this lead — the deal was removed';
     case 'company_created':
       return 'created this company';
     case 'contact_created':

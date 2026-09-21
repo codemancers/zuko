@@ -99,10 +99,16 @@ test.describe('Prospects - Authenticated', () => {
     await expect(page.getByText('New', { exact: true })).toBeVisible();
 
     // Channels, campaign history and activity are the three panels that make
-    // the lifecycle legible.
+    // the lifecycle legible. Campaign touches and the comment timeline are
+    // separate feeds, so each is named in full.
     await expect(page.getByText('Channels')).toBeVisible();
     await expect(page.getByText('Campaign history')).toBeVisible();
-    await expect(page.getByText('Activity')).toBeVisible();
+    await expect(
+      page.getByRole('heading', { name: 'Campaign activity' }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole('heading', { name: 'Activity', exact: true }),
+    ).toBeVisible();
     await expect(page.getByText('Never enrolled in a campaign.')).toBeVisible();
   });
 

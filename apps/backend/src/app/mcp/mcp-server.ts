@@ -44,7 +44,14 @@ export interface McpDeps {
 }
 
 /** Activity has no organizationId, so comment tools resolve the commented-on entity's org and check it against the caller's memberships. */
-const COMMENT_ENTITY_TYPES = ['task', 'deal', 'company', 'contact'] as const;
+const COMMENT_ENTITY_TYPES = [
+  'task',
+  'deal',
+  'company',
+  'contact',
+  'prospect',
+  'lead',
+] as const;
 
 async function resolveEntityOrgId(
   prisma: PrismaClient,
@@ -79,6 +86,20 @@ async function resolveEntityOrgId(
         select: { organizationId: true },
       });
       return task?.organizationId ?? null;
+    }
+    case 'prospect': {
+      const prospect = await prisma.prospect.findUnique({
+        where: { id: entityId },
+        select: { organizationId: true },
+      });
+      return prospect?.organizationId ?? null;
+    }
+    case 'lead': {
+      const lead = await prisma.lead.findUnique({
+        where: { id: entityId },
+        select: { organizationId: true },
+      });
+      return lead?.organizationId ?? null;
     }
   }
 }
@@ -1977,8 +1998,8 @@ export function buildMcpServer(
     'add_comment',
     {
       description:
-        'Add a comment to a task, deal, company, or contact. The comment appears on that ' +
-        "entity's activity timeline, attributed to the authorized user.",
+        'Add a comment to a task, deal, company, contact, prospect, or lead. The comment ' +
+        "appears on that entity's activity timeline, attributed to the authorized user.",
       inputSchema: {
         entityType: commentEntityType.describe(
           'The type of entity to comment on',
@@ -2027,7 +2048,7 @@ export function buildMcpServer(
     'list_comments',
     {
       description:
-        'List comments on a task, deal, company, or contact, most recent first.',
+        'List comments on a task, deal, company, contact, prospect, or lead, oldest first.',
       inputSchema: {
         entityType: commentEntityType.describe(
           'The type of entity to list comments for',

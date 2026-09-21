@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { toast } from 'sonner';
 import { Badge, Button, Heading, Select, Text } from '@zuko/ui-kit';
 import { BackLink, EmptyState, LoadingState } from '@/components/shared';
+import ActivityTimeline from '@/components/Activity/ActivityTimeline';
 import {
   getAllZukoCampaigns,
   getProspect,
@@ -67,9 +68,13 @@ const CHANNELS: { channel: ContactChannel; label: string }[] = [
 
 interface ProspectDetailProps {
   prospectId: number;
+  currentUserId?: number;
 }
 
-export default function ProspectDetail({ prospectId }: ProspectDetailProps) {
+export default function ProspectDetail({
+  prospectId,
+  currentUserId,
+}: ProspectDetailProps) {
   const queryClient = useQueryClient();
 
   const { data: prospect, isLoading } = useQuery(getProspect(prospectId));
@@ -80,6 +85,10 @@ export default function ProspectDetail({ prospectId }: ProspectDetailProps) {
   const refresh = () => {
     queryClient.invalidateQueries({ queryKey: ['prospect', prospectId] });
     queryClient.invalidateQueries({ queryKey: ['prospects'] });
+    // Lifecycle changes write to the timeline, so it has to follow them.
+    queryClient.invalidateQueries({
+      queryKey: ['timeline', 'prospect', prospectId],
+    });
   };
 
   /** Service refusals carry the lifecycle rule that was broken — show it. */
@@ -395,10 +404,10 @@ export default function ProspectDetail({ prospectId }: ProspectDetailProps) {
         )}
       </section>
 
-      {/* Event timeline */}
-      <section className="mt-6 mb-8">
+      {/* Campaign event timeline */}
+      <section className="mt-6">
         <h2 className="text-sm font-semibold text-zinc-900 dark:text-white">
-          Activity
+          Campaign activity
         </h2>
         {events.length === 0 ? (
           <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
@@ -431,6 +440,13 @@ export default function ProspectDetail({ prospectId }: ProspectDetailProps) {
           </ol>
         )}
       </section>
+
+      {/* Comments and lifecycle history */}
+      <ActivityTimeline
+        entityType="prospect"
+        entityId={prospectId}
+        currentUserId={currentUserId}
+      />
     </div>
   );
 }

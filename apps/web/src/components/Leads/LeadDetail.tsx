@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getLead } from '@/server/query-options';
 import { leadsApi } from '@/lib/api/leads';
 import { BackLink, EmptyState, LoadingState } from '@/components/shared';
+import ActivityTimeline from '@/components/Activity/ActivityTimeline';
 import {
   Badge,
   Button,
@@ -65,17 +66,29 @@ function SidebarField({
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
-export default function LeadDetail({ leadId }: { leadId: number }) {
+export default function LeadDetail({
+  leadId,
+  currentUserId,
+}: {
+  leadId: number;
+  currentUserId?: number;
+}) {
   const router = useRouter();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useQueryState('tab', tabParser);
   const { data: lead, isLoading } = useQuery(getLead(leadId));
 
+  /** Conversion and reversal both land on the timeline, so refresh it too. */
+  const refresh = () => {
+    queryClient.invalidateQueries({ queryKey: ['lead', leadId] });
+    queryClient.invalidateQueries({ queryKey: ['leads'] });
+    queryClient.invalidateQueries({ queryKey: ['timeline', 'lead', leadId] });
+  };
+
   const convertMutation = useMutation({
     mutationFn: () => leadsApi.convert(leadId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['lead', leadId] });
-      queryClient.invalidateQueries({ queryKey: ['leads'] });
+      refresh();
       toast.success('Lead converted to deal');
     },
     onError: () => toast.error('Failed to convert lead'),
@@ -84,8 +97,7 @@ export default function LeadDetail({ leadId }: { leadId: number }) {
   const revertMutation = useMutation({
     mutationFn: () => leadsApi.revert(leadId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['lead', leadId] });
-      queryClient.invalidateQueries({ queryKey: ['leads'] });
+      refresh();
       toast.success('Lead reverted');
     },
     onError: () => toast.error('Failed to revert lead'),
@@ -281,6 +293,12 @@ export default function LeadDetail({ leadId }: { leadId: number }) {
           </div>
         )}
       </div>
+
+      <ActivityTimeline
+        entityType="lead"
+        entityId={leadId}
+        currentUserId={currentUserId}
+      />
     </div>
   );
 }

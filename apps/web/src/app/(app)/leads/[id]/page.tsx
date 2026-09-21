@@ -1,7 +1,9 @@
 import LeadDetail from '@/components/Leads/LeadDetail';
 import { getQueryClient } from '@/lib/react-query/get-query-client';
 import { getLead } from '@/server/query-options';
+import { authClient } from '@/lib/auth-client';
 import { dehydrate, HydrationBoundary } from '@tanstack/react-query';
+import { headers } from 'next/headers';
 
 export const dynamic = 'force-dynamic';
 
@@ -29,9 +31,16 @@ const LeadPage = async ({ params }: LeadPageProps) => {
   const queryClient = getQueryClient();
   await queryClient.prefetchQuery(getLead(leadId));
 
+  const session = await authClient.getSession({
+    fetchOptions: { headers: Object.fromEntries((await headers()).entries()) },
+  });
+  const currentUserId = session?.data?.user?.id
+    ? parseInt(session.data.user.id, 10)
+    : undefined;
+
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
-      <LeadDetail leadId={leadId} />
+      <LeadDetail leadId={leadId} currentUserId={currentUserId} />
     </HydrationBoundary>
   );
 };

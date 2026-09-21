@@ -291,6 +291,91 @@ describe('ActivityTimeline - system event text', () => {
     ).toBeInTheDocument();
   });
 
+  it('renders "added this prospect" for prospect_created', async () => {
+    renderTimeline([makeActivity({ activityType: 'prospect_created' })]);
+    expect(await screen.findByText('added this prospect')).toBeInTheDocument();
+  });
+
+  it('reads prospect status transitions as words', async () => {
+    renderTimeline([
+      makeActivity({
+        activityType: 'prospect_status_changed',
+        metadata: { from: 'new', to: 'no_response' },
+      }),
+    ]);
+    expect(
+      await screen.findByText('moved prospect from new to no response'),
+    ).toBeInTheDocument();
+  });
+
+  it('names the campaign and channel for prospect_enrolled', async () => {
+    renderTimeline([
+      makeActivity({
+        activityType: 'prospect_enrolled',
+        metadata: {
+          campaignId: 4,
+          campaignName: 'Q3 Outbound',
+          channel: 'email',
+        },
+      }),
+    ]);
+    expect(
+      await screen.findByText('enrolled in Q3 Outbound on email'),
+    ).toBeInTheDocument();
+  });
+
+  it('falls back to the campaign id when the name is missing', async () => {
+    renderTimeline([
+      makeActivity({
+        activityType: 'prospect_enrolled',
+        metadata: { campaignId: 4, channel: 'linkedin' },
+      }),
+    ]);
+    expect(
+      await screen.findByText('enrolled in campaign 4 on linkedin'),
+    ).toBeInTheDocument();
+  });
+
+  it('renders consent changes per channel', async () => {
+    renderTimeline([
+      makeActivity({
+        activityType: 'prospect_consent_changed',
+        metadata: { channel: 'email', from: 'unknown', to: 'revoked' },
+      }),
+    ]);
+    expect(
+      await screen.findByText('set email consent to revoked'),
+    ).toBeInTheDocument();
+  });
+
+  it('distinguishes a promoted lead from one created by hand', async () => {
+    renderTimeline([
+      makeActivity({ id: 1, activityType: 'lead_created' }),
+      makeActivity({
+        id: 2,
+        activityType: 'lead_created',
+        metadata: { prospectId: 30 },
+      }),
+    ]);
+
+    expect(await screen.findByText('created this lead')).toBeInTheDocument();
+    expect(
+      screen.getByText('created this lead from a promoted prospect'),
+    ).toBeInTheDocument();
+  });
+
+  it('renders "converted this lead to a deal" for lead_converted', async () => {
+    renderTimeline([
+      makeActivity({
+        activityType: 'lead_converted',
+        metadata: { dealId: 9 },
+      }),
+    ]);
+    expect(
+      await screen.findByText('converted this lead to a deal'),
+    ).toBeInTheDocument();
+  });
+
   it('renders multiple events in the timeline', async () => {
     renderTimeline([
       makeActivity({ id: 1, activityType: 'deal_created' }),

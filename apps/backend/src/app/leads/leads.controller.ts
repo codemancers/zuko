@@ -21,6 +21,7 @@ import {
 import { AuthGuard } from '@thallesp/nestjs-better-auth';
 import { OrganizationGuard } from '../../common/auth/organization.guard';
 import { OrgId } from '../../common/auth/org-id.decorator';
+import { UserId } from '../../common/auth/user-id.decorator';
 import { LeadsService } from './leads.service';
 import {
   CreateLeadDto,
@@ -60,8 +61,12 @@ export class LeadsController {
   @Post()
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Create lead' })
-  create(@OrgId() organizationId: number, @Body() dto: CreateLeadDto) {
-    return this.leadsService.create(organizationId, dto);
+  create(
+    @OrgId() organizationId: number,
+    @UserId() userId: number,
+    @Body() dto: CreateLeadDto,
+  ) {
+    return this.leadsService.create(organizationId, dto, userId);
   }
 
   @Patch(':id')
@@ -92,9 +97,10 @@ export class LeadsController {
   @ApiParam({ name: 'id', type: Number })
   convert(
     @OrgId() organizationId: number,
+    @UserId() userId: number,
     @Param('id', ParseIntPipe) id: number,
   ) {
-    return this.leadsService.convert(id, organizationId);
+    return this.leadsService.convert(id, organizationId, userId);
   }
 
   @Post(':id/revert')
@@ -103,8 +109,9 @@ export class LeadsController {
   @ApiParam({ name: 'id', type: Number })
   revert(
     @OrgId() organizationId: number,
+    @UserId() userId: number,
     @Param('id', ParseIntPipe) id: number,
   ) {
-    return this.leadsService.revert(id, organizationId);
+    return this.leadsService.revert(id, organizationId, userId);
   }
 }

@@ -7,8 +7,10 @@ import {
   DealsService,
   CompaniesService,
   ContactsService,
+  ProspectsService,
   TaskService,
 } from '@zuko/sales';
+import { LeadsService } from '../leads/leads.service';
 import { AuthGuard } from '@thallesp/nestjs-better-auth';
 import { OrganizationGuard } from '../../common/auth/organization.guard';
 import {
@@ -17,6 +19,8 @@ import {
   CompanyActivitiesController,
   DealActivitiesController,
   TaskActivitiesController,
+  ProspectActivitiesController,
+  LeadActivitiesController,
 } from './activities.controller';
 
 const ORG_ID = 1;
@@ -37,6 +41,8 @@ describe('Activities cross-org access', () => {
   const mockCompaniesService = { findById: vi.fn() };
   const mockContactsService = { findById: vi.fn() };
   const mockTaskService = { getTaskById: vi.fn() };
+  const mockProspectsService = { findById: vi.fn() };
+  const mockLeadsService = { findById: vi.fn() };
 
   async function buildModule() {
     const module: TestingModule = await Test.createTestingModule({
@@ -46,6 +52,8 @@ describe('Activities cross-org access', () => {
         CompanyActivitiesController,
         DealActivitiesController,
         TaskActivitiesController,
+        ProspectActivitiesController,
+        LeadActivitiesController,
       ],
       providers: [
         { provide: ActivityService, useValue: mockActivityService },
@@ -53,6 +61,8 @@ describe('Activities cross-org access', () => {
         { provide: CompaniesService, useValue: mockCompaniesService },
         { provide: ContactsService, useValue: mockContactsService },
         { provide: TaskService, useValue: mockTaskService },
+        { provide: ProspectsService, useValue: mockProspectsService },
+        { provide: LeadsService, useValue: mockLeadsService },
       ],
     })
       .overrideGuard(AuthGuard)
@@ -127,6 +137,84 @@ describe('Activities cross-org access', () => {
       expect(mockActivityService.createComment).toHaveBeenCalledWith(
         'contact',
         3,
+        42,
+        'hi',
+      );
+    });
+
+    it('ProspectActivitiesController.getTimeline verifies the prospect is in the caller org first', async () => {
+      const controller = module.get(ProspectActivitiesController);
+      mockProspectsService.findById.mockResolvedValue({
+        id: 11,
+        organizationId: ORG_ID,
+      });
+      mockActivityService.getTimeline.mockResolvedValue({ activities: [] });
+
+      await controller.getTimeline(ORG_ID, 11);
+
+      expect(mockProspectsService.findById).toHaveBeenCalledWith(11, ORG_ID);
+      expect(mockActivityService.getTimeline).toHaveBeenCalledWith(
+        'prospect',
+        11,
+        undefined,
+      );
+    });
+
+    it('ProspectActivitiesController.createComment succeeds for a same-org prospect', async () => {
+      const controller = module.get(ProspectActivitiesController);
+      mockProspectsService.findById.mockResolvedValue({
+        id: 11,
+        organizationId: ORG_ID,
+      });
+      mockActivityService.createComment.mockResolvedValue({ id: 502 });
+
+      await controller.createComment(mockReq, ORG_ID, 11, { content: 'hi' });
+
+      expect(mockActivityService.createComment).toHaveBeenCalledWith(
+        'prospect',
+        11,
+        42,
+        'hi',
+      );
+    });
+
+    it('ProspectActivitiesController.createComment refuses a cross-org prospect', async () => {
+      const controller = module.get(ProspectActivitiesController);
+      mockProspectsService.findById.mockRejectedValue(
+        new NotFoundException('Prospect 11 not found'),
+      );
+
+      await expect(
+        controller.createComment(mockReq, OTHER_ORG_ID, 11, { content: 'hi' }),
+      ).rejects.toThrow(NotFoundException);
+      expect(mockActivityService.createComment).not.toHaveBeenCalled();
+    });
+
+    it('LeadActivitiesController.getTimeline verifies org access', async () => {
+      const controller = module.get(LeadActivitiesController);
+      mockLeadsService.findById.mockRejectedValue(
+        new NotFoundException('Lead 12 not found'),
+      );
+
+      await expect(controller.getTimeline(OTHER_ORG_ID, 12)).rejects.toThrow(
+        NotFoundException,
+      );
+      expect(mockActivityService.getTimeline).not.toHaveBeenCalled();
+    });
+
+    it('LeadActivitiesController.createComment succeeds for a same-org lead', async () => {
+      const controller = module.get(LeadActivitiesController);
+      mockLeadsService.findById.mockResolvedValue({
+        id: 12,
+        organizationId: ORG_ID,
+      });
+      mockActivityService.createComment.mockResolvedValue({ id: 503 });
+
+      await controller.createComment(mockReq, ORG_ID, 12, { content: 'hi' });
+
+      expect(mockActivityService.createComment).toHaveBeenCalledWith(
+        'lead',
+        12,
         42,
         'hi',
       );
@@ -238,6 +326,38 @@ describe('Activities cross-org access', () => {
         controller.delete(mockReq, OTHER_ORG_ID, 500),
       ).rejects.toThrow(NotFoundException);
       expect(mockActivityService.delete).not.toHaveBeenCalled();
+    });
+
+    it('list accepts prospect as an entityType once the org check passes', async () => {
+      const controller = module.get(ActivitiesController);
+      mockProspectsService.findById.mockResolvedValue({
+        id: 11,
+        organizationId: ORG_ID,
+      });
+      mockActivityService.findAll.mockResolvedValue({ activities: [] });
+
+      await controller.list(ORG_ID, {
+        entityType: 'prospect',
+        entityId: 11,
+      } as any);
+
+      expect(mockProspectsService.findById).toHaveBeenCalledWith(11, ORG_ID);
+      expect(mockActivityService.findAll).toHaveBeenCalled();
+    });
+
+    it('list rejects a cross-org lead id', async () => {
+      const controller = module.get(ActivitiesController);
+      mockLeadsService.findById.mockRejectedValue(
+        new NotFoundException('Lead 12 not found'),
+      );
+
+      await expect(
+        controller.list(OTHER_ORG_ID, {
+          entityType: 'lead',
+          entityId: 12,
+        } as any),
+      ).rejects.toThrow(NotFoundException);
+      expect(mockActivityService.findAll).not.toHaveBeenCalled();
     });
 
     it('rejects an unsupported entityType', async () => {

@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PrismaModule } from '../../prisma/prisma.module';
 import { PrismaService } from '../../prisma/prisma.service';
 import { OrganizationGuard } from '../../common/auth/organization.guard';
@@ -18,9 +19,12 @@ import { LeadsService } from './leads.service';
     },
     {
       provide: LeadsService,
-      useFactory: (repo: LeadsRepository, prisma: PrismaService) =>
-        new LeadsService(repo, prisma),
-      inject: [LeadsRepository, PrismaService],
+      useFactory: (
+        repo: LeadsRepository,
+        prisma: PrismaService,
+        eventEmitter: EventEmitter2,
+      ) => new LeadsService(repo, prisma, eventEmitter),
+      inject: [LeadsRepository, PrismaService, EventEmitter2],
     },
   ],
   exports: [LeadsService],

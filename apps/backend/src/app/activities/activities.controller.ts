@@ -31,9 +31,11 @@ import {
   DealsService,
   CompaniesService,
   ContactsService,
+  ProspectsService,
   TaskService,
 } from '@zuko/sales';
 import type { RequestWithUser } from '@zuko/core';
+import { LeadsService } from '../leads/leads.service';
 import { OrganizationGuard } from '../../common/auth/organization.guard';
 import { OrgId } from '../../common/auth/org-id.decorator';
 
@@ -75,6 +77,8 @@ async function assertEntityAccessible(
     companies: CompaniesService;
     contacts: ContactsService;
     tasks: TaskService;
+    prospects: ProspectsService;
+    leads: LeadsService;
   },
 ): Promise<void> {
   switch (entityType) {
@@ -89,6 +93,12 @@ async function assertEntityAccessible(
       return;
     case 'task':
       await services.tasks.getTaskById(organizationId, entityId);
+      return;
+    case 'prospect':
+      await services.prospects.findById(entityId, organizationId);
+      return;
+    case 'lead':
+      await services.leads.findById(entityId, organizationId);
       return;
     default:
       throw new BadRequestException(`Unsupported entity type: ${entityType}`);
@@ -108,6 +118,8 @@ export class ActivitiesController {
     private readonly companies: CompaniesService,
     private readonly contacts: ContactsService,
     private readonly tasks: TaskService,
+    private readonly prospects: ProspectsService,
+    private readonly leads: LeadsService,
   ) {}
 
   private assertAccessible(
@@ -120,6 +132,8 @@ export class ActivitiesController {
       companies: this.companies,
       contacts: this.contacts,
       tasks: this.tasks,
+      prospects: this.prospects,
+      leads: this.leads,
     });
   }
 
@@ -467,6 +481,134 @@ export class CompanyActivitiesController {
       const result = await this.activityService.createComment(
         'company',
         companyId,
+        userId,
+        dto.content,
+      );
+      this.logger.log(`[CREATE_COMMENT] Success - Activity ID: ${result.id}`);
+      return result;
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      const errorStack = error instanceof Error ? error.stack : undefined;
+      this.logger.error(`[CREATE_COMMENT] Failed: ${errorMessage}`, errorStack);
+      throw error;
+    }
+  }
+}
+
+// Prospect activities
+@ApiTags('Prospect Activities')
+@ApiBearerAuth('session')
+@Controller('prospects/:prospectId/activities')
+@UseGuards(AuthGuard, OrganizationGuard)
+export class ProspectActivitiesController {
+  private readonly logger = new Logger(ProspectActivitiesController.name);
+
+  constructor(
+    private readonly activityService: ActivityService,
+    private readonly prospects: ProspectsService,
+  ) {}
+
+  @Get()
+  @ApiOperation({ summary: 'Get activity timeline for a prospect' })
+  @ApiParam({ name: 'prospectId', type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiResponse({ status: 200, description: 'Activity timeline' })
+  async getTimeline(
+    @OrgId() organizationId: number,
+    @Param('prospectId', ParseIntPipe) prospectId: number,
+    @Query('limit') limitStr?: string,
+  ) {
+    this.logger.log(`[GET_PROSPECT_TIMELINE] Prospect ID: ${prospectId}`);
+    await this.prospects.findById(prospectId, organizationId);
+    const limit = limitStr ? parseInt(limitStr, 10) : undefined;
+    return this.activityService.getTimeline('prospect', prospectId, limit);
+  }
+
+  @Post('comments')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'Add a comment to a prospect' })
+  @ApiParam({ name: 'prospectId', type: Number })
+  @ApiResponse({ status: 201, description: 'Comment created' })
+  async createComment(
+    @Req() req: RequestWithUser,
+    @OrgId() organizationId: number,
+    @Param('prospectId', ParseIntPipe) prospectId: number,
+    @Body() dto: CreateCommentDto,
+  ) {
+    const userId = parseInt(req.user.id, 10);
+    this.logger.log(
+      `[CREATE_COMMENT] Prospect ID: ${prospectId}, User: ${userId}`,
+    );
+
+    try {
+      await this.prospects.findById(prospectId, organizationId);
+      const result = await this.activityService.createComment(
+        'prospect',
+        prospectId,
+        userId,
+        dto.content,
+      );
+      this.logger.log(`[CREATE_COMMENT] Success - Activity ID: ${result.id}`);
+      return result;
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      const errorStack = error instanceof Error ? error.stack : undefined;
+      this.logger.error(`[CREATE_COMMENT] Failed: ${errorMessage}`, errorStack);
+      throw error;
+    }
+  }
+}
+
+// Lead activities
+@ApiTags('Lead Activities')
+@ApiBearerAuth('session')
+@Controller('leads/:leadId/activities')
+@UseGuards(AuthGuard, OrganizationGuard)
+export class LeadActivitiesController {
+  private readonly logger = new Logger(LeadActivitiesController.name);
+
+  constructor(
+    private readonly activityService: ActivityService,
+    private readonly leads: LeadsService,
+  ) {}
+
+  @Get()
+  @ApiOperation({ summary: 'Get activity timeline for a lead' })
+  @ApiParam({ name: 'leadId', type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiResponse({ status: 200, description: 'Activity timeline' })
+  async getTimeline(
+    @OrgId() organizationId: number,
+    @Param('leadId', ParseIntPipe) leadId: number,
+    @Query('limit') limitStr?: string,
+  ) {
+    this.logger.log(`[GET_LEAD_TIMELINE] Lead ID: ${leadId}`);
+    await this.leads.findById(leadId, organizationId);
+    const limit = limitStr ? parseInt(limitStr, 10) : undefined;
+    return this.activityService.getTimeline('lead', leadId, limit);
+  }
+
+  @Post('comments')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'Add a comment to a lead' })
+  @ApiParam({ name: 'leadId', type: Number })
+  @ApiResponse({ status: 201, description: 'Comment created' })
+  async createComment(
+    @Req() req: RequestWithUser,
+    @OrgId() organizationId: number,
+    @Param('leadId', ParseIntPipe) leadId: number,
+    @Body() dto: CreateCommentDto,
+  ) {
+    const userId = parseInt(req.user.id, 10);
+    this.logger.log(`[CREATE_COMMENT] Lead ID: ${leadId}, User: ${userId}`);
+
+    try {
+      await this.leads.findById(leadId, organizationId);
+      const result = await this.activityService.createComment(
+        'lead',
+        leadId,
         userId,
         dto.content,
       );

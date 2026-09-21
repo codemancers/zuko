@@ -1,5 +1,6 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { Test } from '@nestjs/testing';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 import type { Campaign, Organization, User } from '@prisma/client';
 import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
@@ -37,6 +38,7 @@ describe('ProspectsService', () => {
     await prisma.$connect();
 
     const module = await Test.createTestingModule({
+      imports: [EventEmitterModule.forRoot()],
       providers: [
         ProspectsService,
         {

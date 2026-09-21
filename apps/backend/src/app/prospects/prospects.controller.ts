@@ -97,8 +97,15 @@ export class ProspectsController {
   @ApiOperation({
     summary: 'Create a prospect, resolving identity against existing records',
   })
-  create(@OrgId() organizationId: number, @Body() dto: CreateProspectDto) {
-    return this.prospects.create(organizationId, dto);
+  create(
+    @OrgId() organizationId: number,
+    @UserId() userId: number,
+    @Body() dto: CreateProspectDto,
+  ) {
+    return this.prospects.create(organizationId, dto, {
+      userId,
+      source: 'user',
+    });
   }
 
   @Patch(':id')
@@ -117,11 +124,13 @@ export class ProspectsController {
   @ApiParam({ name: 'id', type: Number })
   setStatus(
     @OrgId() organizationId: number,
+    @UserId() userId: number,
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: SetProspectStatusDto,
   ) {
     return this.prospects.setStatus(id, organizationId, dto.status, {
       manual: dto.manual,
+      actor: { userId, source: 'user' },
     });
   }
 
@@ -166,9 +175,13 @@ export class ProspectsController {
   @ApiParam({ name: 'id', type: Number })
   promote(
     @OrgId() organizationId: number,
+    @UserId() userId: number,
     @Param('id', ParseIntPipe) id: number,
   ) {
-    return this.prospects.promote(id, organizationId);
+    return this.prospects.promote(id, organizationId, {
+      userId,
+      source: 'user',
+    });
   }
 
   @Post(':id/suppress')
@@ -176,9 +189,13 @@ export class ProspectsController {
   @ApiParam({ name: 'id', type: Number })
   suppress(
     @OrgId() organizationId: number,
+    @UserId() userId: number,
     @Param('id', ParseIntPipe) id: number,
   ) {
-    return this.prospects.suppress(id, organizationId);
+    return this.prospects.suppress(id, organizationId, {
+      userId,
+      source: 'user',
+    });
   }
 
   @Patch(':id/consent')
@@ -186,6 +203,7 @@ export class ProspectsController {
   @ApiParam({ name: 'id', type: Number })
   setConsent(
     @OrgId() organizationId: number,
+    @UserId() userId: number,
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: SetConsentDto,
   ) {
@@ -194,6 +212,7 @@ export class ProspectsController {
       organizationId,
       dto.channel,
       dto.consent,
+      { userId, source: 'user' },
     );
   }
 

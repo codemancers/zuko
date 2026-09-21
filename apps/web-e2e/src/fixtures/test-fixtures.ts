@@ -16,6 +16,8 @@ import {
   TasksPage,
   TaskDetailPage,
   TablePage,
+  ProspectDetailPage,
+  LeadDetailPage,
 } from '../pages';
 import { createUserWithSession, AuthUser } from '../lib/auth';
 
@@ -36,6 +38,8 @@ type TestFixtures = {
   teamsPage: TeamsPage;
   meetingsPage: MeetingsPage;
   meetingDetailPage: MeetingDetailPage;
+  prospectDetailPage: ProspectDetailPage;
+  leadDetailPage: LeadDetailPage;
   /**
    * Fixture that creates a fresh test user, injects signed session cookies into
    * the page context, and cleans up the user after the test.
@@ -68,6 +72,12 @@ export const test = base.extend<TestFixtures>({
   },
   contactDetailPage: async ({ page }, use) => {
     await use(new ContactDetailPage(page));
+  },
+  prospectDetailPage: async ({ page }, use) => {
+    await use(new ProspectDetailPage(page));
+  },
+  leadDetailPage: async ({ page }, use) => {
+    await use(new LeadDetailPage(page));
   },
   companiesPage: async ({ page }, use) => {
     await use(new CompaniesPage(page));
