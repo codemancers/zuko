@@ -39,6 +39,7 @@ import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import {
   BackLink,
   DetailHeader,
+  EmptyState,
   EntityProperties,
   LoadingState,
 } from '@/components/shared';
@@ -190,7 +191,12 @@ export default function DealDetail({ dealId, currentUserId }: DealDetailProps) {
   }
 
   if (!deal) {
-    return <LoadingState message="Deal not found" />;
+    return (
+      <EmptyState
+        title="Deal not found"
+        description="It may have been deleted, or you may not have access to it."
+      />
+    );
   }
 
   const primaryOwner = deal.owners.find((o) => o.isPrimary);
@@ -262,7 +268,7 @@ export default function DealDetail({ dealId, currentUserId }: DealDetailProps) {
     <>
       <BackLink href="/deals">Deals</BackLink>
 
-      <div className="mt-4 flex items-start justify-between">
+      <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between sm:gap-6">
         <DetailHeader
           icon={BriefcaseIcon}
           title={titleField.value}
@@ -279,7 +285,7 @@ export default function DealDetail({ dealId, currentUserId }: DealDetailProps) {
             </>
           }
         />
-        <div className="flex gap-3">
+        <div className="flex shrink-0 items-center gap-3">
           <Button onClick={handleEdit}>
             <PencilIcon className="h-4 w-4" />
             Edit

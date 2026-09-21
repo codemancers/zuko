@@ -134,130 +134,142 @@ export function EmailPasswordAuth({
 
   return (
     <AuthLayout>
-      <div className="grid w-full max-w-sm grid-cols-1 gap-8">
-        <div>
-          <h1 className="text-center text-2xl font-semibold">
+      {/* Signing in is a rare, first-load moment rather than a routine
+          interaction, so the three chunks enter in sequence: title, then the
+          ways in, then the cross-link. `fill-mode-backwards` holds each one
+          hidden through its own delay. */}
+      <div className="w-full max-w-sm">
+        <div className="animate-in fade-in-0 slide-in-from-bottom-2 blur-in-4 fill-mode-backwards text-center duration-300 ease-out">
+          <h1 className="text-2xl font-semibold text-zinc-950 dark:text-white">
             {isSignup ? 'Create your account' : 'Sign in to Zuko'}
           </h1>
-          <div className="mt-4 border-t border-zinc-200 dark:border-zinc-700" />
+          <p className="mt-2 text-sm text-pretty text-zinc-500 dark:text-zinc-400">
+            {isSignup
+              ? 'Start selling faster with Zuko.'
+              : 'Welcome back. Pick up where you left off.'}
+          </p>
         </div>
 
-        {error && (
-          <div className="rounded-lg bg-red-50 p-4 text-sm text-red-800 dark:bg-red-900/50 dark:text-red-200">
-            {error}
-          </div>
-        )}
+        <div className="animate-in fade-in-0 slide-in-from-bottom-2 blur-in-4 fill-mode-backwards mt-8 delay-100 duration-300 ease-out">
+          {error && (
+            <div
+              role="alert"
+              className="mb-6 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-800 dark:bg-red-900/50 dark:text-red-200"
+            >
+              {error}
+            </div>
+          )}
 
-        {/* Google OAuth button */}
-        <div className="flex justify-center">
+          {/* Google OAuth button. Full width so it shares an edge with the
+              submit button below instead of floating at its own measure. */}
           <Button
             type="button"
             onClick={handleGoogleSignIn}
             outline
-            className="flex gap-2 items-center"
+            className="flex w-full items-center justify-center gap-2"
           >
             <Image
               src="/icons/google.svg"
-              alt="Google"
+              alt=""
+              aria-hidden="true"
               width={20}
               height={20}
             />
             Continue with Google
           </Button>
-        </div>
 
-        {emailPasswordEnabled && (
-          <>
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-zinc-200 dark:border-zinc-700" />
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="bg-white px-2 text-zinc-500 dark:bg-zinc-900 dark:text-zinc-400">
+          {emailPasswordEnabled && (
+            <>
+              <div className="my-6 flex items-center gap-3">
+                <div className="h-px flex-1 bg-zinc-200 dark:bg-zinc-700" />
+                <span className="text-sm text-zinc-500 dark:text-zinc-400">
                   Or continue with email
                 </span>
+                <div className="h-px flex-1 bg-zinc-200 dark:bg-zinc-700" />
               </div>
-            </div>
 
-            <form onSubmit={handleEmailPasswordSubmit} className="grid gap-6">
-              {isSignup && (
+              <form onSubmit={handleEmailPasswordSubmit} className="grid gap-5">
+                {isSignup && (
+                  <Field>
+                    <Label>Full name</Label>
+                    <Input
+                      type="text"
+                      name="name"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      required
+                      disabled={isLoading}
+                      autoComplete="name"
+                    />
+                  </Field>
+                )}
+
                 <Field>
-                  <Label>Full name</Label>
+                  <Label>Email</Label>
                   <Input
-                    type="text"
-                    name="name"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
+                    type="email"
+                    name="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
                     required
                     disabled={isLoading}
-                    autoComplete="name"
+                    autoComplete="email"
                   />
                 </Field>
-              )}
 
-              <Field>
-                <Label>Email</Label>
-                <Input
-                  type="email"
-                  name="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  disabled={isLoading}
-                  autoComplete="email"
-                />
-              </Field>
+                <Field>
+                  <Label>Password</Label>
+                  <Input
+                    type="password"
+                    name="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    disabled={isLoading}
+                    autoComplete={
+                      isSignup ? 'new-password' : 'current-password'
+                    }
+                    minLength={8}
+                  />
+                </Field>
 
-              <Field>
-                <Label>Password</Label>
-                <Input
-                  type="password"
-                  name="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  disabled={isLoading}
-                  autoComplete={isSignup ? 'new-password' : 'current-password'}
-                  minLength={8}
-                />
-              </Field>
+                <Button type="submit" className="w-full" disabled={isLoading}>
+                  {isLoading
+                    ? isSignup
+                      ? 'Creating account...'
+                      : 'Signing in...'
+                    : isSignup
+                      ? 'Create account'
+                      : 'Sign in'}
+                </Button>
+              </form>
 
-              <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading
-                  ? isSignup
-                    ? 'Creating account...'
-                    : 'Signing in...'
-                  : isSignup
-                    ? 'Create account'
-                    : 'Sign in'}
-              </Button>
-            </form>
-
-            <div className="text-center text-sm text-zinc-600 dark:text-zinc-400">
-              {isSignup ? (
-                <>
-                  Already have an account?{' '}
-                  <Link
-                    href={`/sign-in${authQuery}`}
-                    className="font-semibold text-zinc-950 hover:text-zinc-700 dark:text-white dark:hover:text-zinc-300"
-                  >
-                    Sign in
-                  </Link>
-                </>
-              ) : (
-                <>
-                  Don&apos;t have an account?{' '}
-                  <Link
-                    href={`/sign-up${authQuery}`}
-                    className="font-semibold text-zinc-950 hover:text-zinc-700 dark:text-white dark:hover:text-zinc-300"
-                  >
-                    Sign up
-                  </Link>
-                </>
-              )}
-            </div>
-          </>
-        )}
+              <div className="animate-in fade-in-0 slide-in-from-bottom-2 blur-in-4 fill-mode-backwards mt-6 text-center text-sm text-zinc-600 delay-200 duration-300 ease-out dark:text-zinc-400">
+                {isSignup ? (
+                  <>
+                    Already have an account?{' '}
+                    <Link
+                      href={`/sign-in${authQuery}`}
+                      className="font-semibold text-zinc-950 hover:text-zinc-700 dark:text-white dark:hover:text-zinc-300"
+                    >
+                      Sign in
+                    </Link>
+                  </>
+                ) : (
+                  <>
+                    Don&apos;t have an account?{' '}
+                    <Link
+                      href={`/sign-up${authQuery}`}
+                      className="font-semibold text-zinc-950 hover:text-zinc-700 dark:text-white dark:hover:text-zinc-300"
+                    >
+                      Sign up
+                    </Link>
+                  </>
+                )}
+              </div>
+            </>
+          )}
+        </div>
       </div>
     </AuthLayout>
   );

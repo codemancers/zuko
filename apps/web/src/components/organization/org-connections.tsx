@@ -447,7 +447,7 @@ export const OrgConnections = () => {
                     </div>
                     <div className="h-1.5 w-full overflow-hidden rounded-full bg-zinc-200 dark:bg-zinc-700">
                       <div
-                        className={`h-full rounded-full transition-all ${isHigh ? 'bg-red-500' : 'bg-blue-500'}`}
+                        className={`h-full rounded-full transition-[width,background-color] duration-300 ease-out ${isHigh ? 'bg-red-500' : 'bg-blue-500'}`}
                         style={{ width: `${pct}%` }}
                       />
                     </div>

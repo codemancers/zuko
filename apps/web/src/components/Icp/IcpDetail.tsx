@@ -25,7 +25,7 @@ import {
 } from '@zuko/ui-kit';
 import { PencilIcon, PlusIcon } from '@heroicons/react/20/solid';
 import { getIcpProfile } from '@/server/query-options';
-import { LoadingState, BackLink } from '@/components/shared';
+import { BackLink, EmptyState, LoadingState } from '@/components/shared';
 import Editor, { ensureOutputData } from '@/components/Common/Editor/Editor';
 import { useAutosaveField } from '@/hooks/useAutosaveField';
 import { icpApi } from '@/lib/api/icp';
@@ -936,9 +936,10 @@ export default function IcpDetail({ profileId }: IcpDetailProps) {
   if (isLoading) return <LoadingState message="Loading ICP profile…" />;
   if (!profile)
     return (
-      <p className="py-8 text-center text-sm text-zinc-500">
-        Profile not found.
-      </p>
+      <EmptyState
+        title="Profile not found"
+        description="It may have been deleted, or you may not have access to it."
+      />
     );
 
   return (

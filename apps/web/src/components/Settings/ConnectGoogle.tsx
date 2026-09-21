@@ -51,7 +51,7 @@ export default function ConnectGoogle() {
   }
 
   return (
-    <div className="rounded-2xl border border-zinc-200/70 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-zinc-900">
+    <div className="rounded-2xl bg-white p-6 shadow-border dark:bg-zinc-900">
       <div className="flex items-start justify-between">
         <div className="flex items-start gap-4">
           <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-gray-50 to-gray-100 ring-1 ring-gray-200 dark:from-gray-900/20 dark:to-gray-800/20 dark:ring-gray-800">

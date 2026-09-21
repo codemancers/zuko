@@ -103,19 +103,19 @@ export function OAuthConsent() {
 
   return (
     <AuthLayout>
-      <div className="grid w-full max-w-sm grid-cols-1 gap-8">
-        <div>
-          <Heading className="text-center">Authorize application</Heading>
-          <div className="mt-4 border-t border-zinc-200 dark:border-zinc-700" />
-        </div>
+      <div className="w-full max-w-sm">
+        <Heading className="text-center">Authorize application</Heading>
 
         {error && (
-          <div className="rounded-lg bg-red-50 p-4 text-sm text-red-800 dark:bg-red-900/50 dark:text-red-200">
+          <div
+            role="alert"
+            className="mt-6 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-800 dark:bg-red-900/50 dark:text-red-200"
+          >
             {error}
           </div>
         )}
 
-        <Text>
+        <Text className="mt-6">
           {clientId ? (
             <>
               An application (client{' '}
@@ -127,7 +127,7 @@ export function OAuthConsent() {
           )}
         </Text>
 
-        <ul className="list-disc space-y-1 pl-5 text-sm text-zinc-700 dark:text-zinc-300">
+        <ul className="mt-4 list-disc space-y-1 pl-5 text-sm text-zinc-700 dark:text-zinc-300">
           {scopes.map((scopeItem) => (
             <li key={scopeItem}>
               {SCOPE_DESCRIPTIONS[scopeItem] ?? scopeItem}
@@ -135,7 +135,7 @@ export function OAuthConsent() {
           ))}
         </ul>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="mt-8 grid grid-cols-2 gap-4">
           <Button
             outline
             disabled={submitting !== null}

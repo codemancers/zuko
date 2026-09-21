@@ -12,7 +12,7 @@ import {
 import { useEffect, Suspense, useState } from 'react';
 import { AddMemberDialog } from '@/components/organization/add-member-dialog';
 import { CreateTeamDialog } from '@/components/organization/create-team-dialog';
-import { PageHeader } from '@/components/shared';
+import { LoadingState, PageHeader } from '@/components/shared';
 import { useQueryClient, useQuery } from '@tanstack/react-query';
 import { authClient } from '@/lib/auth-client';
 import { OrgTeams } from '@/components/organization/org-teams';
@@ -51,13 +51,7 @@ const ALL_TABS = [
 
 export default function SettingsPage() {
   return (
-    <Suspense
-      fallback={
-        <div className="py-10 text-center text-sm text-zinc-500">
-          Loading settings...
-        </div>
-      }
-    >
+    <Suspense fallback={<LoadingState message="Loading settings..." />}>
       <SettingsPageContent />
     </Suspense>
   );

@@ -215,7 +215,7 @@ export function BaseTable<TData extends BaseRow>(props: BaseTableProps<TData>) {
     return (
       <div className={clsx('mt-8', className)}>
         <div className="flex flex-col items-center justify-center py-16 text-center">
-          <div className="rounded-2xl border border-zinc-200 p-4 dark:border-white/10">
+          <div className="rounded-2xl p-4 shadow-border">
             <emptyStateConfig.icon className="size-8 text-zinc-400" />
           </div>
           <div className="mt-6 text-base font-semibold text-zinc-950 dark:text-white">

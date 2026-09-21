@@ -81,14 +81,14 @@ export const CreateOrg = () => {
   };
 
   return (
-    <form onSubmit={form.handleSubmit(onSubmit)} className="">
+    <form onSubmit={form.handleSubmit(onSubmit)}>
       <Heading>Create Organization</Heading>
       {form.formState.errors.root && (
         <Field>
           <ErrorMessage>{form.formState.errors.root.message}</ErrorMessage>
         </Field>
       )}
-      <Divider className="my-10 mt-6" />
+      <Divider className="mt-6 mb-10" />
 
       <section className="grid gap-x-8 gap-y-6 sm:grid-cols-2">
         <div className="space-y-1">
@@ -131,7 +131,7 @@ export const CreateOrg = () => {
         </Field>
       </section>
 
-      <div className="flex justify-end gap-4 mt-10">
+      <div className="mt-10 flex justify-end gap-4">
         <Button type="button" plain onClick={() => form.reset()}>
           Reset
         </Button>

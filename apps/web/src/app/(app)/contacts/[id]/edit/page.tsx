@@ -1,7 +1,7 @@
 'use client';
 
+import { EmptyState, FormPageLayout, LoadingState } from '@/components/shared';
 import ContactForm from '@/components/Contacts/ContactForm';
-import { Heading, Divider } from '@zuko/ui-kit';
 import { useQuery } from '@tanstack/react-query';
 import { getContact } from '@/server/query-options';
 import { authClient } from '@/lib/auth-client';
@@ -30,35 +30,24 @@ const EditContactPage = ({ params }: EditContactPageProps) => {
   });
 
   if (session.isPending || !session.data || contactLoading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <div className="text-sm text-zinc-600 dark:text-zinc-400">
-          Loading...
-        </div>
-      </div>
-    );
+    return <LoadingState />;
   }
 
   if (!contact) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <div className="text-sm text-zinc-600 dark:text-zinc-400">
-          Contact not found
-        </div>
-      </div>
+      <EmptyState
+        title="Contact not found"
+        description="It may have been deleted, or you may not have access to it."
+      />
     );
   }
 
   const userId = parseInt(session.data.user.id, 10);
 
   return (
-    <>
-      <Heading>Edit Contact</Heading>
-      <Divider className="mt-6" />
-      <div className="mt-8 max-w-2xl">
-        <ContactForm contact={contact} mode="edit" currentUserId={userId} />
-      </div>
-    </>
+    <FormPageLayout title="Edit Contact">
+      <ContactForm contact={contact} mode="edit" currentUserId={userId} />
+    </FormPageLayout>
   );
 };
 

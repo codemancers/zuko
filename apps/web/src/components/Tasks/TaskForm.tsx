@@ -204,7 +204,7 @@ const TaskForm = ({
               render={({ field }) => (
                 <div
                   data-slot="control"
-                  className="rounded-lg border border-zinc-200 dark:border-zinc-800 p-3 min-h-20 max-h-32 overflow-y-auto bg-white dark:bg-zinc-900 shadow-sm transition-all focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-500"
+                  className="rounded-lg border border-zinc-200 dark:border-zinc-800 p-3 min-h-20 max-h-32 overflow-y-auto bg-white dark:bg-zinc-900 shadow-sm transition-[box-shadow,border-color] duration-150 ease-out focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-500"
                 >
                   <Editor
                     holder="task-description-editor"

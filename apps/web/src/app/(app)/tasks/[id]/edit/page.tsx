@@ -1,8 +1,8 @@
+import { FormPageLayout } from '@/components/shared/FormPageLayout';
 import TaskForm from '@/components/Tasks/TaskForm';
 import { getQueryClient } from '@/lib/react-query/get-query-client';
 import { getTask } from '@/server/query-options';
 import { dehydrate, HydrationBoundary } from '@tanstack/react-query';
-import { Heading, Divider } from '@zuko/ui-kit';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,11 +16,9 @@ const EditTaskPageInner = async ({ taskId }: { taskId: number }) => {
 
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
-      <Heading>Edit Task</Heading>
-      <Divider className="mt-6" />
-      <div className="mt-8 max-w-2xl">
+      <FormPageLayout title="Edit Task">
         <TaskForm mode="edit" task={task} />
-      </div>
+      </FormPageLayout>
     </HydrationBoundary>
   );
 };

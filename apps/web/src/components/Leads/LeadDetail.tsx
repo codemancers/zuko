@@ -3,7 +3,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getLead } from '@/server/query-options';
 import { leadsApi } from '@/lib/api/leads';
-import { BackLink, LoadingState } from '@/components/shared';
+import { BackLink, EmptyState, LoadingState } from '@/components/shared';
 import {
   Badge,
   Button,
@@ -103,7 +103,10 @@ export default function LeadDetail({ leadId }: { leadId: number }) {
   if (isLoading) return <LoadingState message="Loading lead…" />;
   if (!lead)
     return (
-      <p className="py-8 text-center text-sm text-zinc-500">Lead not found.</p>
+      <EmptyState
+        title="Lead not found"
+        description="It may have been deleted, or you may not have access to it."
+      />
     );
 
   return (

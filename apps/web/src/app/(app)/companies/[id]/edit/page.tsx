@@ -1,7 +1,7 @@
 'use client';
 
+import { EmptyState, FormPageLayout, LoadingState } from '@/components/shared';
 import CompanyForm from '@/components/Companies/CompanyForm';
-import { Heading, Divider } from '@zuko/ui-kit';
 import { useQuery } from '@tanstack/react-query';
 import { getCompany } from '@/server/query-options';
 import { authClient } from '@/lib/auth-client';
@@ -30,35 +30,24 @@ const EditCompanyPage = ({ params }: EditCompanyPageProps) => {
   });
 
   if (session.isPending || !session.data || companyLoading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <div className="text-sm text-zinc-600 dark:text-zinc-400">
-          Loading...
-        </div>
-      </div>
-    );
+    return <LoadingState />;
   }
 
   if (!company) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <div className="text-sm text-zinc-600 dark:text-zinc-400">
-          Company not found
-        </div>
-      </div>
+      <EmptyState
+        title="Company not found"
+        description="It may have been deleted, or you may not have access to it."
+      />
     );
   }
 
   const userId = parseInt(session.data.user.id, 10);
 
   return (
-    <>
-      <Heading>Edit Company</Heading>
-      <Divider className="mt-6" />
-      <div className="mt-8 max-w-2xl">
-        <CompanyForm company={company} mode="edit" currentUserId={userId} />
-      </div>
-    </>
+    <FormPageLayout title="Edit Company">
+      <CompanyForm company={company} mode="edit" currentUserId={userId} />
+    </FormPageLayout>
   );
 };
 

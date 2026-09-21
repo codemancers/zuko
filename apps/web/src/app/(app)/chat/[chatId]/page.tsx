@@ -1,5 +1,6 @@
 'use client';
 
+import { EmptyState, LoadingState } from '@/components/shared';
 import { useParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { ChatSurface } from '@/components/Chat/ChatSurface';
@@ -30,10 +31,12 @@ export default function ChatPage() {
 
   if (isError)
     return (
-      <p className="text-muted-foreground p-6 text-sm">Session not found.</p>
+      <EmptyState
+        title="Session not found"
+        description="It may have been deleted, or you may not have access to it."
+      />
     );
-  if (isLoading || !data)
-    return <p className="text-muted-foreground p-6 text-sm">Loading…</p>;
+  if (isLoading || !data) return <LoadingState message="Loading chat…" />;
 
   return (
     <ChatSurface

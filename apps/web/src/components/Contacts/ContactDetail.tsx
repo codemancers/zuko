@@ -33,6 +33,7 @@ import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import {
   BackLink,
   DetailHeader,
+  EmptyState,
   EntityProperties,
   LoadingState,
 } from '@/components/shared';
@@ -96,7 +97,12 @@ export default function ContactDetail({
   }
 
   if (!contact) {
-    return <LoadingState message="Contact not found." />;
+    return (
+      <EmptyState
+        title="Contact not found"
+        description="It may have been deleted, or you may not have access to it."
+      />
+    );
   }
 
   const primaryOwner = contact.owners.find((o) => o.isPrimary);
@@ -114,7 +120,7 @@ export default function ContactDetail({
     <>
       <BackLink href="/contacts">Contacts</BackLink>
 
-      <div className="mt-4 flex items-start justify-between">
+      <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between sm:gap-6">
         <DetailHeader
           icon={UserIcon}
           title={nameField.value}
@@ -122,7 +128,7 @@ export default function ContactDetail({
           isSaving={nameField.isSaving || updateMutation.isPending}
           createdAt={contact.createdAt}
         />
-        <div className="flex gap-3">
+        <div className="flex shrink-0 items-center gap-3">
           <Button onClick={handleEdit}>
             <PencilIcon className="h-4 w-4" />
             Edit

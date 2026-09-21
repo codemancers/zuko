@@ -1,6 +1,6 @@
 export function SettingsCardSkeleton() {
   return (
-    <div className="animate-pulse rounded-2xl border border-zinc-200/70 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-zinc-900">
+    <div className="animate-pulse rounded-2xl bg-white p-6 shadow-border dark:bg-zinc-900">
       <div className="flex items-start justify-between">
         <div className="flex items-start gap-4">
           <div className="h-12 w-12 rounded-xl bg-zinc-200 dark:bg-zinc-700"></div>

@@ -50,6 +50,7 @@ import {
   FunnelIcon,
   MegaphoneIcon,
 } from '@heroicons/react/20/solid';
+import { LoadingState } from '@/components/shared';
 import { usePathname, useRouter } from 'next/navigation';
 import { authClient } from '@/lib/auth-client';
 import { apiClient } from '@/lib/api-client';
@@ -191,10 +192,8 @@ export function ApplicationLayout({
   // Show loading state while checking session
   if (loading) {
     return (
-      <div className="flex h-screen items-center justify-center">
-        <div className="text-sm text-zinc-600 dark:text-zinc-400">
-          Loading...
-        </div>
+      <div className="flex h-svh items-center justify-center">
+        <LoadingState />
       </div>
     );
   }

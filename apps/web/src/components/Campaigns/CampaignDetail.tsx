@@ -17,7 +17,7 @@ import {
   getCampaignsByIcpProfile,
 } from '@/server/query-options';
 import { apolloSequencesApi } from '@/lib/api/apollo';
-import { BackLink, LoadingState } from '@/components/shared';
+import { BackLink, EmptyState, LoadingState } from '@/components/shared';
 import { toast } from 'sonner';
 import dayjs from 'dayjs';
 import { formatRate } from './campaign-shared';
@@ -38,11 +38,13 @@ const TABS: { id: Tab; label: string }[] = [
 
 function StatCard({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-xl border border-zinc-700/60 bg-zinc-900 p-4">
-      <p className="text-xs font-semibold uppercase tracking-widest text-zinc-500">
+    <div className="rounded-xl bg-white p-4 shadow-border dark:bg-zinc-900">
+      <p className="text-xs font-semibold tracking-widest text-zinc-500 uppercase dark:text-zinc-400">
         {label}
       </p>
-      <p className="mt-2 text-2xl font-semibold text-zinc-100">{value}</p>
+      <p className="mt-2 text-2xl font-semibold text-zinc-950 dark:text-zinc-100">
+        {value}
+      </p>
     </div>
   );
 }
@@ -110,9 +112,10 @@ export default function CampaignDetail({ zukoId }: CampaignDetailProps) {
   if (isLoading) return <LoadingState message="Loading campaign…" />;
   if (!campaign)
     return (
-      <p className="py-8 text-center text-sm text-zinc-500">
-        Campaign not found.
-      </p>
+      <EmptyState
+        title="Campaign not found"
+        description="It may have been deleted, or you may not have access to it."
+      />
     );
 
   const hasSequence = !!campaign.externalId;
@@ -183,8 +186,8 @@ export default function CampaignDetail({ zukoId }: CampaignDetailProps) {
             {activeTab === 'analytics' && (
               <div>
                 {!hasSequence ? (
-                  <div className="rounded-xl border border-zinc-700/60 bg-zinc-900 p-8 text-center">
-                    <Text className="text-sm text-zinc-400">
+                  <div className="rounded-xl bg-white p-8 text-center shadow-border dark:bg-zinc-900">
+                    <Text className="text-sm">
                       Analytics will be available once the campaign sequence is
                       saved and activated.
                     </Text>

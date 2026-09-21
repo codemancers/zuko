@@ -29,6 +29,7 @@ import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import {
   BackLink,
   DetailHeader,
+  EmptyState,
   EntityProperties,
   LoadingState,
 } from '@/components/shared';
@@ -126,7 +127,12 @@ const TaskDetail = ({ taskId, currentUserId }: TaskDetailProps) => {
   }
 
   if (!task) {
-    return <LoadingState message="Task not found." />;
+    return (
+      <EmptyState
+        title="Task not found"
+        description="It may have been deleted, or you may not have access to it."
+      />
+    );
   }
 
   const statusCfg = statusConfig[task.status] ?? {
@@ -143,7 +149,7 @@ const TaskDetail = ({ taskId, currentUserId }: TaskDetailProps) => {
     <>
       <BackLink href="/tasks">Tasks</BackLink>
 
-      <div className="mt-4 flex items-start justify-between">
+      <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between sm:gap-6">
         <DetailHeader
           icon={ClipboardDocumentCheckIcon}
           title={titleField.value}

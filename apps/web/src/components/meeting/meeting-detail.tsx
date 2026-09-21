@@ -31,7 +31,7 @@ import {
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getMeeting } from '@/server/query-options';
 import { meetingsApi } from '@/lib/api/meetings';
-import { LoadingState, BackLink } from '@/components/shared';
+import { BackLink, EmptyState, LoadingState } from '@/components/shared';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -370,7 +370,7 @@ const MeetingDetail = ({ meetingId, meetingOverride }: MeetingDetailProps) => {
                     <Image
                       src={m.user.profilePicture}
                       alt={m.user?.fullName || 'User'}
-                      className="h-8 w-8 rounded-full"
+                      className="size-8 rounded-full outline outline-black/10 -outline-offset-1 dark:outline-white/10"
                       width={32}
                       height={32}
                     />
@@ -620,7 +620,12 @@ const MeetingDetail = ({ meetingId, meetingOverride }: MeetingDetailProps) => {
 
       {isLoading && <LoadingState message="Loading meeting..." />}
 
-      {!isLoading && !meeting && <LoadingState message="Meeting not found" />}
+      {!isLoading && !meeting && (
+        <EmptyState
+          title="Meeting not found"
+          description="It may have been deleted, or you may not have access to it."
+        />
+      )}
 
       {meeting && (
         <>

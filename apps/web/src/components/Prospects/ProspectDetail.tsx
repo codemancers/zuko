@@ -5,7 +5,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
 import { toast } from 'sonner';
 import { Badge, Button, Heading, Select, Text } from '@zuko/ui-kit';
-import { BackLink, LoadingState } from '@/components/shared';
+import { BackLink, EmptyState, LoadingState } from '@/components/shared';
 import {
   getAllZukoCampaigns,
   getProspect,
@@ -165,9 +165,10 @@ export default function ProspectDetail({ prospectId }: ProspectDetailProps) {
   if (isLoading) return <LoadingState message="Loading prospect…" />;
   if (!prospect)
     return (
-      <p className="py-8 text-center text-sm text-zinc-500">
-        Prospect not found.
-      </p>
+      <EmptyState
+        title="Prospect not found"
+        description="It may have been deleted, or you may not have access to it."
+      />
     );
 
   const openMemberships = prospect.memberships.filter((m) =>

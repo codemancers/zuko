@@ -205,7 +205,7 @@ export default function ActivityTimeline({
         {!hideTimeline && (
           <button
             onClick={() => setIsHistoryOpen(!isHistoryOpen)}
-            className="flex items-center gap-1.5 py-1 text-zinc-400 hover:text-zinc-950 dark:hover:text-white transition-all group"
+            className="group flex items-center gap-1.5 py-1 text-zinc-400 transition-[color] duration-150 ease-out hover:text-zinc-950 dark:hover:text-white"
           >
             <span className="text-xs font-bold uppercase tracking-widest">
               {isHistoryOpen ? 'Hide History' : 'Show History'}
@@ -259,7 +259,7 @@ export default function ActivityTimeline({
                         alt={activity.actor.name}
                         width={32}
                         height={32}
-                        className="relative rounded-full border-2 border-white dark:border-zinc-950 bg-zinc-100 dark:bg-zinc-800"
+                        className="relative rounded-full border-2 border-white bg-zinc-100 outline outline-black/10 -outline-offset-1 dark:border-zinc-950 dark:bg-zinc-800 dark:outline-white/10"
                         data-testid="activity-avatar"
                       />
                     ) : (

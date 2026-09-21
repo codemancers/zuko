@@ -175,7 +175,7 @@ export const UserInvitations = () => {
   if (!isLoading && rows.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center">
-        <div className="rounded-2xl border border-zinc-200 p-4 dark:border-white/10">
+        <div className="rounded-2xl p-4 shadow-border">
           <EnvelopeOpenIcon className="size-8 text-zinc-400" />
         </div>
         <div className="mt-6 text-base font-semibold text-zinc-950 dark:text-white">
