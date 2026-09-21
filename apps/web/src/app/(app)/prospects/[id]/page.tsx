@@ -39,7 +39,7 @@ const ProspectPage = async ({ params }: ProspectPageProps) => {
   });
   const currentUserId = session?.data?.user?.id
     ? parseInt(session.data.user.id, 10)
-    : undefined;
+    : null;
 
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>

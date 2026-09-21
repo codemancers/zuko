@@ -68,7 +68,7 @@ const CHANNELS: { channel: ContactChannel; label: string }[] = [
 
 interface ProspectDetailProps {
   prospectId: number;
-  currentUserId?: number;
+  currentUserId: number | null;
 }
 
 export default function ProspectDetail({
@@ -445,7 +445,7 @@ export default function ProspectDetail({
       <ActivityTimeline
         entityType="prospect"
         entityId={prospectId}
-        currentUserId={currentUserId}
+        currentUserId={currentUserId ?? undefined}
       />
     </div>
   );

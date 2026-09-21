@@ -36,7 +36,7 @@ const LeadPage = async ({ params }: LeadPageProps) => {
   });
   const currentUserId = session?.data?.user?.id
     ? parseInt(session.data.user.id, 10)
-    : undefined;
+    : null;
 
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>

@@ -1,6 +1,8 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { Test } from '@nestjs/testing';
-import { EventEmitterModule } from '@nestjs/event-emitter';
+import { EventEmitter2, EventEmitterModule } from '@nestjs/event-emitter';
+import { PROSPECT_EVENTS } from '../events/prospect-events';
+import { LEAD_EVENTS } from '../events/lead-events';
 import type { Campaign, Organization, User } from '@prisma/client';
 import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
@@ -10,6 +12,7 @@ import { LeadsRepository } from '../repositories/leads.repository';
 
 describe('ProspectsService', () => {
   let service: ProspectsService;
+  let emitter: EventEmitter2;
   let prisma: PrismaClient;
   let org: Organization;
   let user: User;
@@ -56,6 +59,7 @@ describe('ProspectsService', () => {
     }).compile();
 
     service = module.get(ProspectsService);
+    emitter = module.get(EventEmitter2);
 
     org = await prisma.organization.upsert({
       where: { id: ORG_ID },
@@ -1411,6 +1415,125 @@ describe('ProspectsService', () => {
 
       expect(asMap['enrolled']).toBe(1);
       expect(asMap['new']).toBe(1);
+    });
+  });
+
+  /**
+   * The timeline is written from these events, so what is emitted is what a
+   * person will read. A lifecycle action that emitted both its own event and a
+   * generic status change printed the same fact twice.
+   */
+  describe('timeline events', () => {
+    /** Collect every prospect/lead event raised while `run` executes. */
+    async function captureEvents(run: () => Promise<unknown>) {
+      const seen: { event: string; payload: Record<string, unknown> }[] = [];
+      const names = [
+        ...Object.values(PROSPECT_EVENTS),
+        ...Object.values(LEAD_EVENTS),
+      ];
+      const listener = (payload: Record<string, unknown>, event: string) =>
+        seen.push({ event, payload });
+      const handlers = names.map((name) => {
+        const handler = (payload: Record<string, unknown>) =>
+          listener(payload, name);
+        emitter.on(name, handler);
+        return { name, handler };
+      });
+
+      try {
+        await run();
+      } finally {
+        handlers.forEach(({ name, handler }) => emitter.off(name, handler));
+      }
+
+      return seen;
+    }
+
+    it('Records a creation once', async () => {
+      const seen = await captureEvents(() => newProspect());
+
+      expect(seen.map((e) => e.event)).toEqual([PROSPECT_EVENTS.CREATED]);
+    });
+
+    it('Records a status change a rep made by hand', async () => {
+      const prospect = await newProspect();
+
+      const seen = await captureEvents(() =>
+        service.setStatus(prospect.id, ORG_ID, 'engaged'),
+      );
+
+      expect(seen).toHaveLength(1);
+      expect(seen[0].event).toBe(PROSPECT_EVENTS.STATUS_CHANGED);
+      expect(seen[0].payload).toMatchObject({ from: 'new', to: 'engaged' });
+    });
+
+    it('Names the campaign on an enrolment, and does not repeat the status move', async () => {
+      const prospect = await newProspect();
+
+      const seen = await captureEvents(() =>
+        service.enrol(prospect.id, ORG_ID, campaign.id),
+      );
+
+      expect(seen.map((e) => e.event)).toEqual([PROSPECT_EVENTS.ENROLLED]);
+      expect(seen[0].payload).toMatchObject({
+        campaignId: campaign.id,
+        campaignName: 'Q3 Outbound',
+        channel: 'email',
+      });
+    });
+
+    it('Records a promotion as one prospect entry and one lead entry', async () => {
+      const prospect = await newProspect();
+      await service.setStatus(prospect.id, ORG_ID, 'engaged');
+
+      const seen = await captureEvents(() =>
+        service.promote(prospect.id, ORG_ID),
+      );
+
+      expect(seen.map((e) => e.event)).toEqual([
+        PROSPECT_EVENTS.PROMOTED,
+        LEAD_EVENTS.CREATED,
+      ]);
+      expect(seen[1].payload).toMatchObject({ prospectId: prospect.id });
+    });
+
+    it('Records a suppression once', async () => {
+      const prospect = await newProspect();
+
+      const seen = await captureEvents(() =>
+        service.suppress(prospect.id, ORG_ID),
+      );
+
+      expect(seen.map((e) => e.event)).toEqual([PROSPECT_EVENTS.SUPPRESSED]);
+    });
+
+    it('Records a consent change, and the suppression it forces, without duplicating either', async () => {
+      const prospect = await newProspect();
+
+      const seen = await captureEvents(() =>
+        service.setConsent(prospect.id, ORG_ID, 'email', 'revoked'),
+      );
+
+      expect(seen.map((e) => e.event)).toEqual([
+        PROSPECT_EVENTS.CONSENT_CHANGED,
+        PROSPECT_EVENTS.SUPPRESSED,
+      ]);
+      expect(seen[0].payload).toMatchObject({
+        channel: 'email',
+        from: 'unknown',
+        to: 'revoked',
+      });
+    });
+
+    it('Stays quiet when a status is set to what it already is', async () => {
+      const prospect = await newProspect();
+      await service.setStatus(prospect.id, ORG_ID, 'engaged');
+
+      const seen = await captureEvents(() =>
+        service.setStatus(prospect.id, ORG_ID, 'engaged'),
+      );
+
+      expect(seen).toEqual([]);
     });
   });
 

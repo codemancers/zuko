@@ -61,6 +61,16 @@ export interface SetStatusOptions {
   actor?: ProspectActor;
 }
 
+interface ChangeStatusOptions {
+  /** Fields written in the same update as the status. */
+  fields?: UpdateProspectInput;
+  /**
+   * The caller records its own, more specific entry for this move, so the
+   * generic status entry is left off the timeline.
+   */
+  covered?: boolean;
+}
+
 /**
  * Who is driving a change, and through what. Recorded on every event so the
  * history answers "who did this" as well as "what happened".
@@ -111,17 +121,25 @@ export class ProspectsService {
     from: string,
     to: string,
     actor?: ProspectActor,
-    extra: UpdateProspectInput = {},
+    options: ChangeStatusOptions = {},
   ) {
-    const updated = await this.prospects.update(id, { ...extra, status: to });
-
-    await this.eventEmitter.emitAsync(PROSPECT_EVENTS.STATUS_CHANGED, {
-      prospectId: id,
-      from,
-      to,
-      actorId: actor?.userId,
-      source: this.activitySource(actor),
+    const updated = await this.prospects.update(id, {
+      ...options.fields,
+      status: to,
     });
+
+    // A promotion or a suppression already says what happened, and says it
+    // better; adding "moved prospect from engaged to promoted" underneath it
+    // is the same fact twice.
+    if (!options.covered) {
+      await this.eventEmitter.emitAsync(PROSPECT_EVENTS.STATUS_CHANGED, {
+        prospectId: id,
+        from,
+        to,
+        actorId: actor?.userId,
+        source: this.activitySource(actor),
+      });
+    }
 
     return updated;
   }
@@ -335,12 +353,17 @@ export class ProspectsService {
     // forced enrol would rewrite any status to `enrolled`, so a background job
     // could quietly undo a promotion.
     if (status !== 'enrolled' && canTransitionProspect(status, 'enrolled')) {
-      await this.changeStatus(id, status, 'enrolled', options.actor);
+      await this.changeStatus(id, status, 'enrolled', options.actor, {
+        covered: true,
+      });
     }
 
     await this.eventEmitter.emitAsync(PROSPECT_EVENTS.ENROLLED, {
       prospectId: id,
       campaignId,
+      ...(membership.campaign?.name
+        ? { campaignName: membership.campaign.name }
+        : {}),
       channel: membership.channel,
       actorId: options.actor?.userId,
       source: this.activitySource(options.actor),
@@ -721,7 +744,8 @@ export class ProspectsService {
     await this.closeOpenMemberships(id, 'interested');
 
     const promoted = await this.changeStatus(id, status, 'promoted', actor, {
-      leadId: lead.id,
+      fields: { leadId: lead.id },
+      covered: true,
     });
 
     await this.eventEmitter.emitAsync(PROSPECT_EVENTS.PROMOTED, {
@@ -755,7 +779,7 @@ export class ProspectsService {
       prospect.status,
       'engaged',
       actor,
-      { leadId: null },
+      { fields: { leadId: null }, covered: true },
     );
 
     await this.eventEmitter.emitAsync(PROSPECT_EVENTS.DEMOTED, {
@@ -842,7 +866,9 @@ export class ProspectsService {
 
     if (from === 'suppressed') return prospect;
 
-    const suppressed = await this.changeStatus(id, from, 'suppressed', actor);
+    const suppressed = await this.changeStatus(id, from, 'suppressed', actor, {
+      covered: true,
+    });
 
     await this.eventEmitter.emitAsync(PROSPECT_EVENTS.SUPPRESSED, {
       prospectId: id,

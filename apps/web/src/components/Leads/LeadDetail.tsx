@@ -71,7 +71,7 @@ export default function LeadDetail({
   currentUserId,
 }: {
   leadId: number;
-  currentUserId?: number;
+  currentUserId: number | null;
 }) {
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -297,7 +297,7 @@ export default function LeadDetail({
       <ActivityTimeline
         entityType="lead"
         entityId={leadId}
-        currentUserId={currentUserId}
+        currentUserId={currentUserId ?? undefined}
       />
     </div>
   );
