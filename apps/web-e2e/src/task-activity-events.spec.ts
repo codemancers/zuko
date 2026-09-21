@@ -41,7 +41,7 @@ test.describe('Task Activity Timeline - System Events', () => {
         title: `Activity Event Task ${Date.now()}`,
       });
       await taskDetailPage.goto(taskId);
-      await taskDetailPage.showHistory();
+      await taskDetailPage.scrollToActivity();
 
       await expect(
         page
@@ -66,7 +66,7 @@ test.describe('Task Activity Timeline - System Events', () => {
       });
       await taskDetailPage.goto(taskId);
       await taskDetailPage.updateProperty('Status', 'In Progress', taskId);
-      await taskDetailPage.showHistory();
+      await taskDetailPage.scrollToActivity();
 
       await taskDetailPage.expectActivityEntry(
         /moved task from To Do to In Progress/i,
@@ -89,7 +89,7 @@ test.describe('Task Activity Timeline - System Events', () => {
       await taskDetailPage.goto(taskId);
 
       await taskDetailPage.updateTaskTitle(updatedTitle, taskId);
-      await taskDetailPage.showHistory();
+      await taskDetailPage.scrollToActivity();
 
       await taskDetailPage.expectActivityEntry(/updated title from/i);
     });

@@ -55,12 +55,4 @@ export class LeadDetailPage extends BasePage {
   async isPostButtonDisabled(): Promise<boolean> {
     return this.postCommentButton.isDisabled();
   }
-
-  async waitForActivityItem(timeout = 10000) {
-    await this.page
-      .locator('[data-testid="activity-item"]')
-      .or(this.page.getByText('No activity yet'))
-      .first()
-      .waitFor({ state: 'visible', timeout });
-  }
 }

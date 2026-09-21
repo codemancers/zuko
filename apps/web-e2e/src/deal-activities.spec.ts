@@ -51,7 +51,7 @@ test.describe('Deal Activity Timeline - Authenticated', () => {
     await page
       .getByRole('heading', { name: 'Activity', exact: true })
       .scrollIntoViewIfNeeded();
-    await dealDetailPage.showHistory();
+    await dealDetailPage.scrollToActivity();
 
     // Wait for activity section to stabilize before capturing baseline count
     await page
@@ -81,7 +81,7 @@ test.describe('Deal Activity Timeline - Authenticated', () => {
     await page
       .getByRole('heading', { name: 'Activity', exact: true })
       .scrollIntoViewIfNeeded();
-    await dealDetailPage.showHistory();
+    await dealDetailPage.scrollToActivity();
 
     const commentText = `Test comment created at ${new Date().toISOString()}`;
     await dealDetailPage.createComment(commentText);
@@ -114,7 +114,7 @@ test.describe('Deal Activity Timeline - Authenticated', () => {
     await page
       .getByRole('heading', { name: 'Activity', exact: true })
       .scrollIntoViewIfNeeded();
-    await dealDetailPage.showHistory();
+    await dealDetailPage.scrollToActivity();
 
     const originalComment = 'Original comment ' + Date.now();
     const editedComment = 'Edited comment ' + Date.now();
@@ -144,7 +144,7 @@ test.describe('Deal Activity Timeline - Authenticated', () => {
     await page
       .getByRole('heading', { name: 'Activity', exact: true })
       .scrollIntoViewIfNeeded();
-    await dealDetailPage.showHistory();
+    await dealDetailPage.scrollToActivity();
 
     const originalComment = 'Original comment for cancel test ' + Date.now();
 

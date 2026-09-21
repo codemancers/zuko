@@ -1,4 +1,4 @@
-import { test, expect } from './fixtures';
+import { test } from './fixtures';
 import { createFreshCompany, createFreshContact } from './fixtures/helpers';
 
 /**
@@ -23,8 +23,7 @@ test.describe('Company Activity Timeline - System Events', () => {
     }) => {
       // company created in beforeAll, verify if activity is present
       await companyDetailPage.goto(companyId);
-      await companyDetailPage.openActivityHistory();
-      await expect(companyDetailPage.hideHistoryButton).toBeVisible();
+      await companyDetailPage.scrollToActivity();
       await companyDetailPage.expectActivityEntry(/created this company/i);
     });
   });
@@ -38,8 +37,7 @@ test.describe('Company Activity Timeline - System Events', () => {
       const newSummary = `Updated summary ${Date.now()}`;
       await companyDetailPage.updateSummary(newSummary, companyId);
 
-      await companyDetailPage.openActivityHistory();
-      await expect(companyDetailPage.hideHistoryButton).toBeVisible();
+      await companyDetailPage.scrollToActivity();
       await companyDetailPage.expectActivityEntry(/set summary/i);
     });
   });
@@ -70,8 +68,7 @@ test.describe('Company Activity Timeline - System Events', () => {
         return;
       }
 
-      await companyDetailPage.openActivityHistory();
-      await expect(companyDetailPage.hideHistoryButton).toBeVisible();
+      await companyDetailPage.scrollToActivity();
 
       // The activity text is "linked contact <name>"
       const baseName = contactName.split('(')[0].trim();
@@ -109,8 +106,7 @@ test.describe('Company Activity Timeline - System Events', () => {
       const contactName = (await contactLink.textContent()) ?? '';
       await companyDetailPage.removeContact(contactName);
 
-      await companyDetailPage.openActivityHistory();
-      await expect(companyDetailPage.hideHistoryButton).toBeVisible();
+      await companyDetailPage.scrollToActivity();
       await companyDetailPage.expectActivityEntry(
         new RegExp(`unlinked contact ${contactName}`, 'i'),
       );
@@ -131,8 +127,7 @@ test.describe('Contact Activity Timeline - System Events', () => {
     }) => {
       // contact created in beforeAll, verify if activity is present
       await contactDetailPage.goto(contactId);
-      await contactDetailPage.openActivityHistory();
-      await expect(contactDetailPage.hideHistoryButton).toBeVisible();
+      await contactDetailPage.scrollToActivity();
       await contactDetailPage.expectActivityEntry(/created this contact/i);
     });
   });
@@ -148,8 +143,7 @@ test.describe('Contact Activity Timeline - System Events', () => {
       // Inital edit notes
       const newNotes = `Note ${Date.now()}`;
       await contactDetailPage.updateNotes(newNotes, contactId);
-      await contactDetailPage.openActivityHistory();
-      await expect(contactDetailPage.hideHistoryButton).toBeVisible();
+      await contactDetailPage.scrollToActivity();
       await contactDetailPage.expectActivityEntry(/set notes/i);
 
       // Update notes again

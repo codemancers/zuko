@@ -110,7 +110,7 @@ test.describe('Prospect Activity Timeline - Authenticated', () => {
     const comment = `Left them a voicemail ${Date.now()}`;
     await prospectDetailPage.createComment(comment);
 
-    await prospectDetailPage.openActivityHistory();
+    await prospectDetailPage.scrollToActivity();
     await prospectDetailPage.expectActivityEntry(comment);
   });
 
@@ -121,7 +121,7 @@ test.describe('Prospect Activity Timeline - Authenticated', () => {
     const prospect = await createProspect(request, 'E2E System Event Prospect');
 
     await prospectDetailPage.goto(prospect.id);
-    await prospectDetailPage.openActivityHistory();
+    await prospectDetailPage.scrollToActivity();
 
     await prospectDetailPage.expectActivityEntry(/added this prospect/i);
   });
@@ -139,7 +139,7 @@ test.describe('Prospect Activity Timeline - Authenticated', () => {
       .first()
       .click();
 
-    await prospectDetailPage.openActivityHistory();
+    await prospectDetailPage.scrollToActivity();
     await prospectDetailPage.expectActivityEntry(/suppressed this prospect/i);
   });
 });
@@ -154,7 +154,7 @@ test.describe('Lead Activity Timeline - Authenticated', () => {
     await leadDetailPage.goto(lead.id);
 
     await expect(leadDetailPage.activitySection).toBeVisible();
-    await leadDetailPage.openActivityHistory();
+    await leadDetailPage.scrollToActivity();
     await leadDetailPage.expectActivityEntry(/created this lead/i);
   });
 
@@ -165,7 +165,7 @@ test.describe('Lead Activity Timeline - Authenticated', () => {
     const comment = `Asked for a second call ${Date.now()}`;
     await leadDetailPage.createComment(comment);
 
-    await leadDetailPage.openActivityHistory();
+    await leadDetailPage.scrollToActivity();
     await leadDetailPage.expectActivityEntry(comment);
   });
 });

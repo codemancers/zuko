@@ -421,7 +421,7 @@ test.describe('Hierarchical Tasks', () => {
     expect(page.url()).toContain(`/tasks/${parentId}`);
 
     // verfy activity added
-    tasksPage.showHistory();
+    await tasksPage.scrollToActivity();
     const lastActivity = page.getByText(
       new RegExp(`added subtask "${subtaskTitle}"`),
     );

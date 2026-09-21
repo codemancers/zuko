@@ -12,7 +12,6 @@ export class DealDetailPage extends BasePage {
   readonly commentInput: Locator;
   readonly postCommentButton: Locator;
   readonly summaryField: Locator;
-  readonly hideHistoryButton: Locator;
 
   constructor(page: Page) {
     super(page);
@@ -35,9 +34,6 @@ export class DealDetailPage extends BasePage {
     this.summaryField = page
       .locator('#deal-summary-editor .ce-paragraph[contenteditable="true"]')
       .first();
-    this.hideHistoryButton = page.getByRole('button', {
-      name: /Hide History/i,
-    });
   }
 
   override async goto(dealId: number | string) {
@@ -104,16 +100,6 @@ export class DealDetailPage extends BasePage {
 
   async getDealStage(): Promise<string> {
     return (await this.dealStage.textContent()) || '';
-  }
-
-  /**
-   * Scroll to the Activity section & open the history accordion.
-   */
-  override async openActivityHistory() {
-    await this.page
-      .getByRole('heading', { name: 'Activity', exact: true })
-      .scrollIntoViewIfNeeded();
-    await this.showHistory();
   }
 
   async isActivitySectionVisible(): Promise<boolean> {

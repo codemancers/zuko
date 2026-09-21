@@ -39,21 +39,6 @@ export class BasePage {
   }
 
   /**
-   * Show history in the activity timeline if it exists and is hidden
-   */
-  async showHistory() {
-    const showBtn = this.page.getByRole('button', { name: /SHOW HISTORY/i });
-    if (await showBtn.isVisible()) {
-      await showBtn.click();
-      await this.page
-        .locator('[data-testid="activity-item"]')
-        .or(this.page.getByText('No activity yet'))
-        .first()
-        .waitFor({ state: 'visible', timeout: 5000 });
-    }
-  }
-
-  /**
    * Update the page title (h1) via inline editing.
    * Uses keyboard simulation (select-all + type) so React's synthetic events
    * fire correctly on the contentEditable element, triggering the autosave hook.
@@ -243,13 +228,23 @@ export class BasePage {
   // ── Activity Timeline Helpers ─────────────────────────────────────────────
 
   /**
-   * Scroll to the Activity section & open the history accordion.
+   * Scroll to the Activity section and wait for the timeline to render. The
+   * history has no accordion — it is on show as soon as the query settles.
    */
-  async openActivityHistory() {
+  async scrollToActivity() {
     await this.page
       .getByRole('heading', { name: 'Activity', exact: true })
       .scrollIntoViewIfNeeded();
-    await this.showHistory();
+    await this.waitForActivityItem();
+  }
+
+  /** Wait for the timeline to settle, on either an entry or its empty state. */
+  async waitForActivityItem(timeout = 10000) {
+    await this.page
+      .locator('[data-testid="activity-item"]')
+      .or(this.page.getByText('No activity yet'))
+      .first()
+      .waitFor({ state: 'visible', timeout });
   }
 
   /**

@@ -8,11 +8,7 @@ import clsx from 'clsx';
 
 const ACTIVITY_SOURCES = { AI: 'ai' } as const;
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import {
-  PencilIcon,
-  ChevronDownIcon,
-  ChevronRightIcon,
-} from '@heroicons/react/24/outline';
+import { PencilIcon } from '@heroicons/react/24/outline';
 import { Button, Divider, Subheading } from '@zuko/ui-kit';
 import { toast } from 'sonner';
 import { getTimeline } from '@/server/query-options';
@@ -147,7 +143,6 @@ interface ActivityTimelineProps {
   entityId: number;
   currentUserId?: number; // TODO: Get from auth context
   limit?: number;
-  hideTimeline?: boolean;
 }
 
 export default function ActivityTimeline({
@@ -155,13 +150,11 @@ export default function ActivityTimeline({
   entityId,
   currentUserId,
   limit = 50,
-  hideTimeline = false,
 }: ActivityTimelineProps) {
   const queryClient = useQueryClient();
   const [editingActivityId, setEditingActivityId] = useState<number | null>(
     null,
   );
-  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const clearNewCommentRef = useRef<{ clear: () => void } | null>(null);
 
   const { data: activities, isLoading } = useQuery(
@@ -226,158 +219,132 @@ export default function ActivityTimeline({
 
   return (
     <div className="mt-12 space-y-6">
-      {/* Header with Toggle */}
-      <div className="flex items-center justify-between">
-        <Subheading>Activity</Subheading>
-        {!hideTimeline && (
-          <button
-            onClick={() => setIsHistoryOpen(!isHistoryOpen)}
-            className="group flex items-center gap-1.5 py-1 text-zinc-400 transition-[color] duration-150 ease-out hover:text-zinc-950 dark:hover:text-white"
-          >
-            <span className="text-xs font-bold uppercase tracking-widest">
-              {isHistoryOpen ? 'Hide History' : 'Show History'}
-            </span>
-            {isHistoryOpen ? (
-              <ChevronDownIcon className="h-4 w-4" />
-            ) : (
-              <ChevronRightIcon className="h-4 w-4" />
-            )}
-          </button>
+      <Subheading>Activity</Subheading>
+
+      {/* The history is the point of the section, so it is always on show. */}
+      <div className="space-y-0">
+        {isLoading ? (
+          <div className="flex items-center justify-center py-8">
+            <div className="text-sm text-zinc-600 dark:text-zinc-400">
+              Loading timeline...
+            </div>
+          </div>
+        ) : !activities || activities.length === 0 ? (
+          <div className="text-center py-8 text-sm text-zinc-600 dark:text-zinc-400">
+            No activity yet
+          </div>
+        ) : (
+          activities.map((activity, index) => (
+            <div
+              key={activity.id}
+              className={clsx(
+                'flex gap-3',
+                index < activities.length - 1 && 'pb-6',
+              )}
+              data-testid="activity-item"
+            >
+              {/* Avatar with connecting line */}
+              <div className="flex-shrink-0 relative">
+                {/* Vertical connecting line */}
+                {index < activities.length - 1 && (
+                  <div
+                    className="absolute left-4 top-8 bottom-0 w-[2px] -mb-6 bg-zinc-200 dark:bg-zinc-800"
+                    data-testid="activity-connecting-line"
+                  />
+                )}
+
+                {activity.actor?.image ? (
+                  <Image
+                    src={activity.actor.image}
+                    alt={activity.actor.name}
+                    width={32}
+                    height={32}
+                    className="relative rounded-full border-2 border-white bg-zinc-100 outline outline-black/10 -outline-offset-1 dark:border-zinc-950 dark:bg-zinc-800 dark:outline-white/10"
+                    data-testid="activity-avatar"
+                  />
+                ) : (
+                  <div
+                    className="relative flex h-8 w-8 items-center justify-center rounded-full bg-zinc-200 dark:bg-zinc-700 border-2 border-white dark:border-zinc-950"
+                    data-testid="activity-avatar"
+                  >
+                    <span className="text-xs font-medium text-zinc-600 dark:text-zinc-300">
+                      {activity.actor?.name?.charAt(0).toUpperCase() ||
+                        (activity.metadata?.source === ACTIVITY_SOURCES.AI
+                          ? 'Z'
+                          : 'S')}
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {/* Content */}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium text-zinc-950 dark:text-white">
+                        {activity.actor?.name ||
+                          (activity.metadata?.source === ACTIVITY_SOURCES.AI
+                            ? 'Zuko AI'
+                            : 'System')}
+                      </span>
+                      <span className="text-xs text-zinc-600 dark:text-zinc-400">
+                        {dayjs(activity.createdAt).fromNow()}
+                      </span>
+                    </div>
+
+                    {activity.activityType === 'comment' &&
+                      activity.content && (
+                        <>
+                          {editingActivityId === activity.id ? (
+                            <div className="mt-2">
+                              <CommentBox
+                                initialContent={activity.content ?? undefined}
+                                onSubmit={handleEditSubmit}
+                                isSubmitting={updateActivityMutation.isPending}
+                                submitLabel={
+                                  updateActivityMutation.isPending
+                                    ? 'Saving...'
+                                    : 'Save'
+                                }
+                                onCancel={handleCancel}
+                              />
+                            </div>
+                          ) : (
+                            <div className="mt-1">
+                              <MarkdownContent content={activity.content} />
+                            </div>
+                          )}
+                        </>
+                      )}
+
+                    {activity.activityType !== 'comment' && (
+                      <div className="mt-1 text-sm text-zinc-500 dark:text-zinc-400 italic">
+                        {renderSystemEventText(activity)}
+                      </div>
+                    )}
+                  </div>
+
+                  {activity.activityType === 'comment' &&
+                    currentUserId &&
+                    activity.actorId === currentUserId &&
+                    editingActivityId !== activity.id && (
+                      <Button
+                        plain
+                        onClick={() => handleEdit(activity.id)}
+                        disabled={updateActivityMutation.isPending}
+                        className="text-zinc-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                        title="Edit comment"
+                      >
+                        <PencilIcon className="h-4 w-4" />
+                      </Button>
+                    )}
+                </div>
+              </div>
+            </div>
+          ))
         )}
       </div>
-
-      {/* Timeline Accordion */}
-      {!hideTimeline && isHistoryOpen && (
-        <div className="animate-in fade-in duration-300">
-          <div className="space-y-0">
-            {isLoading ? (
-              <div className="flex items-center justify-center py-8">
-                <div className="text-sm text-zinc-600 dark:text-zinc-400">
-                  Loading timeline...
-                </div>
-              </div>
-            ) : !activities || activities.length === 0 ? (
-              <div className="text-center py-8 text-sm text-zinc-600 dark:text-zinc-400">
-                No activity yet
-              </div>
-            ) : (
-              activities.map((activity, index) => (
-                <div
-                  key={activity.id}
-                  className={clsx(
-                    'flex gap-3',
-                    index < activities.length - 1 && 'pb-6',
-                  )}
-                  data-testid="activity-item"
-                >
-                  {/* Avatar with connecting line */}
-                  <div className="flex-shrink-0 relative">
-                    {/* Vertical connecting line */}
-                    {index < activities.length - 1 && (
-                      <div
-                        className="absolute left-4 top-8 bottom-0 w-[2px] -mb-6 bg-zinc-200 dark:bg-zinc-800"
-                        data-testid="activity-connecting-line"
-                      />
-                    )}
-
-                    {activity.actor?.image ? (
-                      <Image
-                        src={activity.actor.image}
-                        alt={activity.actor.name}
-                        width={32}
-                        height={32}
-                        className="relative rounded-full border-2 border-white bg-zinc-100 outline outline-black/10 -outline-offset-1 dark:border-zinc-950 dark:bg-zinc-800 dark:outline-white/10"
-                        data-testid="activity-avatar"
-                      />
-                    ) : (
-                      <div
-                        className="relative flex h-8 w-8 items-center justify-center rounded-full bg-zinc-200 dark:bg-zinc-700 border-2 border-white dark:border-zinc-950"
-                        data-testid="activity-avatar"
-                      >
-                        <span className="text-xs font-medium text-zinc-600 dark:text-zinc-300">
-                          {activity.actor?.name?.charAt(0).toUpperCase() ||
-                            (activity.metadata?.source === ACTIVITY_SOURCES.AI
-                              ? 'Z'
-                              : 'S')}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Content */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm font-medium text-zinc-950 dark:text-white">
-                            {activity.actor?.name ||
-                              (activity.metadata?.source === ACTIVITY_SOURCES.AI
-                                ? 'Zuko AI'
-                                : 'System')}
-                          </span>
-                          <span className="text-xs text-zinc-600 dark:text-zinc-400">
-                            {dayjs(activity.createdAt).fromNow()}
-                          </span>
-                        </div>
-
-                        {activity.activityType === 'comment' &&
-                          activity.content && (
-                            <>
-                              {editingActivityId === activity.id ? (
-                                <div className="mt-2">
-                                  <CommentBox
-                                    initialContent={
-                                      activity.content ?? undefined
-                                    }
-                                    onSubmit={handleEditSubmit}
-                                    isSubmitting={
-                                      updateActivityMutation.isPending
-                                    }
-                                    submitLabel={
-                                      updateActivityMutation.isPending
-                                        ? 'Saving...'
-                                        : 'Save'
-                                    }
-                                    onCancel={handleCancel}
-                                  />
-                                </div>
-                              ) : (
-                                <div className="mt-1">
-                                  <MarkdownContent content={activity.content} />
-                                </div>
-                              )}
-                            </>
-                          )}
-
-                        {activity.activityType !== 'comment' && (
-                          <div className="mt-1 text-sm text-zinc-500 dark:text-zinc-400 italic">
-                            {renderSystemEventText(activity)}
-                          </div>
-                        )}
-                      </div>
-
-                      {activity.activityType === 'comment' &&
-                        currentUserId &&
-                        activity.actorId === currentUserId &&
-                        editingActivityId !== activity.id && (
-                          <Button
-                            plain
-                            onClick={() => handleEdit(activity.id)}
-                            disabled={updateActivityMutation.isPending}
-                            className="text-zinc-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
-                            title="Edit comment"
-                          >
-                            <PencilIcon className="h-4 w-4" />
-                          </Button>
-                        )}
-                    </div>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-      )}
 
       {/* Comment Input Form - Always Visible */}
       {currentUserId && (

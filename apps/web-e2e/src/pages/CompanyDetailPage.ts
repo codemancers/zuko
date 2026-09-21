@@ -8,7 +8,6 @@ export class CompanyDetailPage extends BasePage {
   readonly hideButton: Locator;
   readonly addContactButton: Locator;
   readonly associatedContactsSection: Locator;
-  readonly hideHistoryButton: Locator;
 
   constructor(page: Page) {
     super(page);
@@ -26,9 +25,6 @@ export class CompanyDetailPage extends BasePage {
     this.linkedinUrlField = page.getByPlaceholder(
       /https:\/\/linkedin.com\/company\/example/i,
     );
-    this.hideHistoryButton = page.getByRole('button', {
-      name: /Hide history/i,
-    });
   }
 
   readonly companyName: Locator;

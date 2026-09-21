@@ -2,8 +2,7 @@
  * @vitest-environment jsdom
  */
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
+import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import ActivityTimeline from '@/components/Activity/ActivityTimeline';
@@ -50,24 +49,14 @@ function makeActivity(overrides: Record<string, unknown>) {
   };
 }
 
-async function renderTimeline(
-  activities: object[] = [],
-  { autoShow = true } = {},
-) {
+function renderTimeline(activities: object[] = []) {
   mockGetTimeline.mockResolvedValue({ activities });
 
-  const result = render(
+  return render(
     <QueryClientProvider client={createQueryClient()}>
       <ActivityTimeline entityType="deal" entityId={1} />
     </QueryClientProvider>,
   );
-
-  if (autoShow) {
-    const showBtn = await screen.findByText(/SHOW HISTORY/i);
-    fireEvent.click(showBtn);
-  }
-
-  return result;
 }
 
 // ── Tests ──────────────────────────────────────────────────────────────────
@@ -77,41 +66,18 @@ describe('ActivityTimeline - system event text', () => {
     vi.clearAllMocks();
   });
 
-  it('renders collapsed view by default', async () => {
-    await renderTimeline([makeActivity({ content: 'hidden test' })], {
-      autoShow: false,
-    });
-    expect(screen.queryByText('hidden test')).not.toBeInTheDocument();
-  });
+  it('shows the history straight away, with nothing to expand', async () => {
+    renderTimeline([makeActivity({ content: 'a comment nobody clicked for' })]);
 
-  it('toggles history visibility when Show/Hide History button is clicked', async () => {
-    const user = userEvent.setup();
-    const activities = [makeActivity({ id: 1, activityType: 'deal_created' })];
-    mockGetTimeline.mockResolvedValue({ activities });
-
-    render(
-      <QueryClientProvider client={createQueryClient()}>
-        <ActivityTimeline entityType="deal" entityId={1} />
-      </QueryClientProvider>,
-    );
-
-    // 1. Initial state: Collapsed
-    const showBtn = await screen.findByText(/SHOW HISTORY/i);
-    expect(screen.queryByText('created this deal')).not.toBeInTheDocument();
-
-    // 2. Expand: Click Show History
-    await user.click(showBtn);
-    expect(screen.getByText('created this deal')).toBeInTheDocument();
-    expect(screen.getByText(/HIDE HISTORY/i)).toBeInTheDocument();
-
-    // 3. Collapse: Click Hide History
-    await user.click(screen.getByText(/HIDE HISTORY/i));
-    expect(screen.queryByText('created this deal')).not.toBeInTheDocument();
-    expect(screen.getByText(/SHOW HISTORY/i)).toBeInTheDocument();
+    expect(
+      await screen.findByText('a comment nobody clicked for'),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/SHOW HISTORY/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/HIDE HISTORY/i)).not.toBeInTheDocument();
   });
 
   it('shows "No activity yet" when there are no activities', async () => {
-    await renderTimeline([]);
+    renderTimeline([]);
     expect(await screen.findByText('No activity yet')).toBeInTheDocument();
   });
 

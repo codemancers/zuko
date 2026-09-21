@@ -99,12 +99,4 @@ export class ProspectDetailPage extends BasePage {
       .isVisible()
       .catch(() => false);
   }
-
-  async waitForActivityItem(timeout = 10000) {
-    await this.page
-      .locator('[data-testid="activity-item"]')
-      .or(this.page.getByText('No activity yet'))
-      .first()
-      .waitFor({ state: 'visible', timeout });
-  }
 }

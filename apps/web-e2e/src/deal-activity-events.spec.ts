@@ -39,8 +39,7 @@ test.describe('Deal Activity Timeline - System Events', () => {
     await dealsPage.waitForDetailsPageToLoad();
 
     // Verify activity event on details page
-    await dealDetailPage.openActivityHistory();
-    await expect(dealDetailPage.hideHistoryButton).toBeVisible();
+    await dealDetailPage.scrollToActivity();
     await dealDetailPage.expectActivityEntry(/created this deal/i);
   });
 
@@ -54,7 +53,7 @@ test.describe('Deal Activity Timeline - System Events', () => {
     const defaultNewStage = 'Prospecting';
     const targetStage = 'Qualification';
 
-    await dealDetailPage.openActivityHistory();
+    await dealDetailPage.scrollToActivity();
     await dealDetailPage.updateProperty('Stage', targetStage, dealId);
     await expect(dealDetailPage.propertyRow('Stage').locator('dd')).toHaveText(
       targetStage,
@@ -105,7 +104,7 @@ test.describe('Deal Activity Timeline - System Events', () => {
       await page
         .getByRole('heading', { name: 'Activity', exact: true })
         .scrollIntoViewIfNeeded();
-      await dealDetailPage.showHistory();
+      await dealDetailPage.scrollToActivity();
 
       await expect(
         page
@@ -142,7 +141,7 @@ test.describe('Deal Activity Timeline - System Events', () => {
       await page
         .getByRole('heading', { name: 'Activity', exact: true })
         .scrollIntoViewIfNeeded();
-      await dealDetailPage.showHistory();
+      await dealDetailPage.scrollToActivity();
 
       await expect(
         page
@@ -186,7 +185,7 @@ test.describe('Deal Activity Timeline - System Events', () => {
       await page
         .getByRole('heading', { name: 'Activity', exact: true })
         .scrollIntoViewIfNeeded();
-      await dealDetailPage.showHistory();
+      await dealDetailPage.scrollToActivity();
 
       await expect(
         page
@@ -223,7 +222,7 @@ test.describe('Deal Activity Timeline - System Events', () => {
       await page
         .getByRole('heading', { name: 'Activity', exact: true })
         .scrollIntoViewIfNeeded();
-      await dealDetailPage.showHistory();
+      await dealDetailPage.scrollToActivity();
 
       await expect(
         page

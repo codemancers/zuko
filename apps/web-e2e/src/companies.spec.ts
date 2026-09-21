@@ -238,7 +238,7 @@ test.describe.serial('Company Detail - Contact Management', () => {
     page,
   }) => {
     await companyDetailPage.goto(companyId);
-    await companyDetailPage.openActivityHistory();
+    await companyDetailPage.scrollToActivity();
     const testComment = `Test comment at ${new Date().toISOString()}`;
     await companyDetailPage.postComment(testComment);
     await expect(page.getByText(testComment)).toBeVisible({ timeout: 10000 });
@@ -261,7 +261,7 @@ test.describe('Company Detail - Inline Editing with Activity Verification', () =
   test('can edit company name inline', async ({ companyDetailPage, page }) => {
     const newName = `Acme Corp ${Date.now()}`;
     await companyDetailPage.goto(companyId);
-    await companyDetailPage.openActivityHistory();
+    await companyDetailPage.scrollToActivity();
     await companyDetailPage.updateCompanyName(newName, companyId);
 
     // Verify immediate UI update
@@ -276,7 +276,7 @@ test.describe('Company Detail - Inline Editing with Activity Verification', () =
   test('can edit company summary', async ({ companyDetailPage, page }) => {
     const newSummary = `Enterprise solutions provider — updated at ${Date.now()}`;
     await companyDetailPage.goto(companyId);
-    await companyDetailPage.openActivityHistory();
+    await companyDetailPage.scrollToActivity();
     await companyDetailPage.updateSummary(newSummary, companyId);
 
     // Verify immediate UI update
@@ -291,7 +291,7 @@ test.describe('Company Detail - Inline Editing with Activity Verification', () =
   test('can set/edit company website', async ({ companyDetailPage, page }) => {
     const newWebsite = `https://acme-${Date.now()}.com`;
     await companyDetailPage.goto(companyId);
-    await companyDetailPage.openActivityHistory();
+    await companyDetailPage.scrollToActivity();
 
     // Test setting value initially
     await companyDetailPage.updateProperty('Website', newWebsite, companyId);
@@ -335,7 +335,7 @@ test.describe('Company Detail - Inline Editing with Activity Verification', () =
   test('can set/edit company linkedin', async ({ companyDetailPage, page }) => {
     const newLinkedin = `https://linkedin.com/company/acme-${Date.now()}`;
     await companyDetailPage.goto(companyId);
-    await companyDetailPage.openActivityHistory();
+    await companyDetailPage.scrollToActivity();
 
     // Test setting value initially
     await companyDetailPage.updateProperty('LinkedIn', newLinkedin, companyId);

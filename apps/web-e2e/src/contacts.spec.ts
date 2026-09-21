@@ -322,7 +322,7 @@ test.describe('Contact Detail - Inline Editing with Activity Verification', () =
   test('can edit contact name inline', async ({ contactDetailPage, page }) => {
     const newName = `Updated Contact Name ${Date.now()}`;
     await contactDetailPage.goto(contactId);
-    await contactDetailPage.openActivityHistory();
+    await contactDetailPage.scrollToActivity();
     await contactDetailPage.updateContactName(newName, contactId);
 
     // Verify immediate UI update
@@ -337,7 +337,7 @@ test.describe('Contact Detail - Inline Editing with Activity Verification', () =
   test('can edit contact notes', async ({ contactDetailPage, page }) => {
     const newNotes = `Updated Contact Notes — updated at ${Date.now()}`;
     await contactDetailPage.goto(contactId);
-    await contactDetailPage.openActivityHistory();
+    await contactDetailPage.scrollToActivity();
     await contactDetailPage.updateNotes(newNotes, contactId);
 
     // Verify immediate UI update
@@ -352,7 +352,7 @@ test.describe('Contact Detail - Inline Editing with Activity Verification', () =
   test('can set/edit contact email', async ({ contactDetailPage, page }) => {
     const newEmail = `test-${Date.now()}@example.com`;
     await contactDetailPage.goto(contactId);
-    await contactDetailPage.openActivityHistory();
+    await contactDetailPage.scrollToActivity();
 
     // Test setting value initially
     await contactDetailPage.updateProperty('Email', newEmail, contactId);
@@ -391,7 +391,7 @@ test.describe('Contact Detail - Inline Editing with Activity Verification', () =
   test('can set/edit contact phone', async ({ contactDetailPage, page }) => {
     const newPhone = `+1424555${Math.floor(Math.random() * 9000 + 1000)}`;
     await contactDetailPage.goto(contactId);
-    await contactDetailPage.openActivityHistory();
+    await contactDetailPage.scrollToActivity();
 
     // Test setting value initially
     await contactDetailPage.updateProperty('Phone', newPhone, contactId);
@@ -423,7 +423,7 @@ test.describe('Contact Detail - Inline Editing with Activity Verification', () =
   }) => {
     const newLinkedin = `jhon-${Date.now()}`;
     await contactDetailPage.goto(contactId);
-    await contactDetailPage.openActivityHistory();
+    await contactDetailPage.scrollToActivity();
 
     // Test setting value initially
     await contactDetailPage.updateProperty('LinkedIn', newLinkedin, contactId);

@@ -46,7 +46,7 @@ test.describe('Task Activity Timeline - Comments', () => {
     page,
   }) => {
     await taskDetailPage.goto(taskId);
-    await taskDetailPage.showHistory();
+    await taskDetailPage.scrollToActivity();
 
     // Wait for activity section to stabilize before capturing baseline count
     await page
@@ -71,7 +71,7 @@ test.describe('Task Activity Timeline - Comments', () => {
     taskDetailPage,
   }) => {
     await taskDetailPage.goto(taskId);
-    await taskDetailPage.showHistory();
+    await taskDetailPage.scrollToActivity();
 
     const commentText = `Test comment ${new Date().toISOString()}`;
     await taskDetailPage.createComment(commentText);
@@ -104,7 +104,7 @@ test.describe('Task Activity Timeline - Comments', () => {
     await page
       .getByRole('heading', { name: 'Activity', exact: true })
       .scrollIntoViewIfNeeded();
-    await taskDetailPage.showHistory();
+    await taskDetailPage.scrollToActivity();
 
     const originalComment = 'Original comment ' + Date.now();
     const editedComment = 'Edited comment ' + Date.now();
@@ -134,7 +134,7 @@ test.describe('Task Activity Timeline - Comments', () => {
     await page
       .getByRole('heading', { name: 'Activity', exact: true })
       .scrollIntoViewIfNeeded();
-    await taskDetailPage.showHistory();
+    await taskDetailPage.scrollToActivity();
 
     const originalComment = 'Cancel edit test ' + Date.now();
     await taskDetailPage.createComment(originalComment);

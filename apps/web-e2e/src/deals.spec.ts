@@ -223,7 +223,7 @@ test.describe('Deal Detail - Inline Editing', () => {
         resp.request().method() === 'PATCH',
     );
 
-    await dealDetailPage.openActivityHistory();
+    await dealDetailPage.scrollToActivity();
     await dealDetailPage.updateProperty('Stage', newStage, dealId);
     await expect(dealDetailPage.propertyRow('Stage').locator('dd')).toHaveText(
       newStage,

@@ -40,7 +40,7 @@ test.describe('Contact Activity Timeline - Authenticated', () => {
     page,
   }) => {
     await contactDetailPage.goto(contactId);
-    await contactDetailPage.openActivityHistory();
+    await contactDetailPage.scrollToActivity();
     await expect(
       page
         .locator('[data-testid="activity-item"]')
@@ -63,7 +63,7 @@ test.describe('Contact Activity Timeline - Authenticated', () => {
     page,
   }) => {
     await contactDetailPage.goto(contactId);
-    await contactDetailPage.openActivityHistory();
+    await contactDetailPage.scrollToActivity();
 
     // Wait for activity section to stabilize before capturing baseline count
     await page
@@ -88,7 +88,7 @@ test.describe('Contact Activity Timeline - Authenticated', () => {
     contactDetailPage,
   }) => {
     await contactDetailPage.goto(contactId);
-    await contactDetailPage.openActivityHistory();
+    await contactDetailPage.scrollToActivity();
 
     const commentText = `Test comment created at ${new Date().toISOString()}`;
     await contactDetailPage.createComment(commentText);
@@ -122,7 +122,7 @@ test.describe('Contact Activity Timeline - Authenticated', () => {
     await page
       .getByRole('heading', { name: 'Activity', exact: true })
       .scrollIntoViewIfNeeded();
-    await contactDetailPage.showHistory();
+    await contactDetailPage.scrollToActivity();
 
     const originalComment = 'Original comment ' + Date.now();
     const editedComment = 'Edited comment ' + Date.now();
@@ -155,7 +155,7 @@ test.describe('Contact Activity Timeline - Authenticated', () => {
     page,
   }) => {
     await contactDetailPage.goto(contactId);
-    await contactDetailPage.openActivityHistory();
+    await contactDetailPage.scrollToActivity();
 
     const originalComment = 'Original comment for cancel test ' + Date.now();
 

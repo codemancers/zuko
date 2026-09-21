@@ -14,7 +14,6 @@ export class ContactDetailPage extends BasePage {
   readonly connectingLines: Locator;
   readonly contactName: Locator;
   readonly notesField: Locator;
-  readonly hideHistoryButton: Locator;
 
   constructor(page: Page) {
     super(page);
@@ -33,9 +32,6 @@ export class ContactDetailPage extends BasePage {
     this.notesField = page
       .locator('#contact-notes-editor .ce-paragraph[contenteditable="true"]')
       .first();
-    this.hideHistoryButton = page.getByRole('button', {
-      name: /Hide history/i,
-    });
   }
 
   /**
