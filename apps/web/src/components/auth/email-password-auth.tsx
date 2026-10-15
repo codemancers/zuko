@@ -170,8 +170,7 @@ export function EmailPasswordAuth({
           >
             <Image
               src="/icons/google.svg"
-              alt=""
-              aria-hidden="true"
+              alt="Google"
               width={20}
               height={20}
             />
