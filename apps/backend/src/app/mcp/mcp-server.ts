@@ -1,5 +1,5 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { Prisma, type TaskStatus } from '@prisma/client';
+import { Prisma, type TaskStatus, type TaskPriority } from '@prisma/client';
 import type { PrismaClient } from '@zuko/models';
 import type {
   DealsService,
@@ -199,13 +199,17 @@ export function buildMcpServer(
           .enum(['TODO', 'IN_PROGRESS', 'DONE', 'CANCELLED'])
           .optional()
           .describe('Filter by task status'),
+        priority: z
+          .enum(['LOW', 'MEDIUM', 'HIGH', 'URGENT'])
+          .optional()
+          .describe('Filter by task priority'),
         organizationId: z
           .number()
           .optional()
           .describe('Restrict results to a specific organization'),
       },
     },
-    async ({ status, organizationId }) => {
+    async ({ status, priority, organizationId }) => {
       if (!authCtx.scopes.includes('tasks:read')) {
         return missingScope('tasks:read');
       }
@@ -216,6 +220,7 @@ export function buildMcpServer(
         where: {
           organizationId: organizationId ? organizationId : { in: orgIds },
           ...(status !== undefined ? { status } : {}),
+          ...(priority !== undefined ? { priority } : {}),
         },
         select: {
           id: true,
@@ -223,6 +228,7 @@ export function buildMcpServer(
           title: true,
           description: true,
           status: true,
+          priority: true,
           completedAt: true,
           assignee: true,
           createdAt: true,
@@ -322,13 +328,25 @@ export function buildMcpServer(
           .optional()
           .default('TODO')
           .describe('Initial status of the task'),
+        priority: z
+          .enum(['LOW', 'MEDIUM', 'HIGH', 'URGENT'])
+          .optional()
+          .default('MEDIUM')
+          .describe('Initial priority of the task'),
         assignee: z
           .string()
           .optional()
           .describe('Optional assignee identifier'),
       },
     },
-    async ({ organizationId, title, description, status, assignee }) => {
+    async ({
+      organizationId,
+      title,
+      description,
+      status,
+      priority,
+      assignee,
+    }) => {
       if (!authCtx.scopes.includes('tasks:write')) {
         return missingScope('tasks:write');
       }
@@ -358,6 +376,7 @@ export function buildMcpServer(
           title,
           description: description || null,
           status: status || 'TODO',
+          priority: priority || 'MEDIUM',
           assignee: assignee || null,
         },
         select: {
@@ -366,6 +385,7 @@ export function buildMcpServer(
           title: true,
           description: true,
           status: true,
+          priority: true,
           assignee: true,
           createdAt: true,
         },
@@ -390,6 +410,10 @@ export function buildMcpServer(
           .enum(['TODO', 'IN_PROGRESS', 'DONE', 'CANCELLED'])
           .optional()
           .describe('New status for the task'),
+        priority: z
+          .enum(['LOW', 'MEDIUM', 'HIGH', 'URGENT'])
+          .optional()
+          .describe('New priority for the task'),
         assignee: z.string().optional().describe('New assignee identifier'),
         completedAt: z
           .string()
@@ -397,7 +421,15 @@ export function buildMcpServer(
           .describe('Completion timestamp (ISO 8601 format)'),
       },
     },
-    async ({ taskId, title, description, status, assignee, completedAt }) => {
+    async ({
+      taskId,
+      title,
+      description,
+      status,
+      priority,
+      assignee,
+      completedAt,
+    }) => {
       if (!authCtx.scopes.includes('tasks:write')) {
         return missingScope('tasks:write');
       }
@@ -427,6 +459,7 @@ export function buildMcpServer(
         title?: string;
         description?: Prisma.InputJsonValue | Prisma.NullableJsonNullValueInput;
         status?: TaskStatus;
+        priority?: TaskPriority;
         assignee?: string;
         completedAt?: Date;
       } = {};
@@ -437,6 +470,8 @@ export function buildMcpServer(
             ? Prisma.JsonNull
             : (description as Prisma.InputJsonValue);
       if (status !== undefined) updateData.status = status as TaskStatus;
+      if (priority !== undefined)
+        updateData.priority = priority as TaskPriority;
       if (assignee !== undefined) updateData.assignee = assignee;
       if (completedAt !== undefined) {
         updateData.completedAt = new Date(completedAt);
@@ -451,6 +486,7 @@ export function buildMcpServer(
           title: true,
           description: true,
           status: true,
+          priority: true,
           assignee: true,
           completedAt: true,
           updatedAt: true,

@@ -1,16 +1,17 @@
 import { Injectable } from '@nestjs/common';
-import { TaskStatus } from '@prisma/client';
+import { TaskStatus, TaskPriority } from '@prisma/client';
 import type { PrismaService } from '../modules/prisma.types';
 import type { PaginationOptions } from './types';
 import type { EditorData } from '../types/sales-api';
 
-export { TaskStatus };
+export { TaskStatus, TaskPriority };
 
 export interface CreateTaskInput {
   organizationId: number;
   title: string;
   description?: EditorData;
   status?: TaskStatus;
+  priority?: TaskPriority;
   completedAt?: Date;
   parentId?: number;
   assignee?: string;
@@ -21,6 +22,7 @@ export interface UpdateTaskInput {
   title?: string;
   description?: EditorData;
   status?: TaskStatus;
+  priority?: TaskPriority;
   completedAt?: Date | null;
   parentId?: number | null;
   assignee?: string | null;
@@ -74,9 +76,17 @@ export class TaskRepository {
       parentId?: number | null;
       search?: string;
       status?: TaskStatus;
+      priority?: TaskPriority;
     } = {},
   ) {
-    const { page = 1, limit = 50, parentId, search, status } = options;
+    const {
+      page = 1,
+      limit = 50,
+      parentId,
+      search,
+      status,
+      priority,
+    } = options;
     const skip = (page - 1) * limit;
 
     const parentFilter =
@@ -92,12 +102,14 @@ export class TaskRepository {
       : {};
 
     const statusFilter = status ? { status } : {};
+    const priorityFilter = priority ? { priority } : {};
 
     const where = {
       organizationId,
       ...parentFilter,
       ...searchFilter,
       ...statusFilter,
+      ...priorityFilter,
     };
 
     const [tasks, total] = await Promise.all([

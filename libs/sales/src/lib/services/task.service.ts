@@ -5,6 +5,7 @@ import type {
   TaskRepository,
   CreateTaskInput,
   UpdateTaskInput,
+  TaskPriority,
 } from '../repositories/task.repository';
 import { TaskStatus } from '../repositories/task.repository';
 import type {
@@ -50,6 +51,8 @@ export class TaskService {
     query: PaginationOptions & {
       parentId?: number | null;
       search?: string;
+      status?: TaskStatus;
+      priority?: TaskPriority;
     } = {},
   ) {
     return this.taskRepository.findAll(organizationId, query);
@@ -81,7 +84,12 @@ export class TaskService {
       } satisfies TaskStatusChangedEvent);
     }
 
-    const trackedFields = ['title', 'description', 'assignee'] as const;
+    const trackedFields = [
+      'title',
+      'description',
+      'assignee',
+      'priority',
+    ] as const;
     for (const field of trackedFields) {
       const newVal = dto[field];
       const oldVal = current[field];

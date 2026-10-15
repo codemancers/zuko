@@ -1,5 +1,5 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import type { TaskStatus, EditorData } from '@zuko/sales';
+import type { TaskStatus, TaskPriority, EditorData } from '@zuko/sales';
 
 export class UpdateTaskDto {
   @ApiPropertyOptional({ example: 'Follow up with client' })
@@ -16,6 +16,12 @@ export class UpdateTaskDto {
     example: 'todo',
   })
   status?: TaskStatus;
+
+  @ApiPropertyOptional({
+    enum: ['low', 'medium', 'high', 'urgent'],
+    example: 'medium',
+  })
+  priority?: TaskPriority;
 
   @ApiPropertyOptional({ type: String, format: 'date-time', nullable: true })
   completedAt?: Date | null;

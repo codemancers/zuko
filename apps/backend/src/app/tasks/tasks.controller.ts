@@ -23,7 +23,7 @@ import {
   ApiPropertyOptional,
 } from '@nestjs/swagger';
 import { AuthGuard } from '@thallesp/nestjs-better-auth';
-import { TaskService } from '@zuko/sales';
+import { TaskService, TaskPriority } from '@zuko/sales';
 import type { RequestWithUser } from '@zuko/core';
 import { OrganizationGuard } from '../../common/auth/organization.guard';
 import { OrgId } from '../../common/auth/org-id.decorator';
@@ -45,6 +45,9 @@ export class TaskListQueryDto {
 
   @ApiPropertyOptional({ type: String, example: 'report' })
   search?: string;
+
+  @ApiPropertyOptional({ enum: TaskPriority })
+  priority?: TaskPriority;
 }
 
 @ApiTags('Tasks')
@@ -85,6 +88,7 @@ export class TasksController {
     description: 'Use "null" for root-level tasks',
   })
   @ApiQuery({ name: 'search', required: false, type: String })
+  @ApiQuery({ name: 'priority', required: false, enum: TaskPriority })
   @ApiResponse({ status: 200, description: 'Paginated task list' })
   @ApiResponse({ status: 401, description: 'Not authenticated' })
   async list(
@@ -105,6 +109,7 @@ export class TasksController {
       limit,
       parentId,
       search: query.search,
+      priority: query.priority,
     });
   }
 

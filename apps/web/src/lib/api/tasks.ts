@@ -3,6 +3,7 @@ import type { TableViewResponse } from '@/types/table-metadata';
 import type { OutputData } from '@editorjs/editorjs';
 
 export type TaskStatus = 'TODO' | 'IN_PROGRESS' | 'DONE' | 'CANCELLED';
+export type TaskPriority = 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
 
 export interface TaskOwner {
   id: number;
@@ -23,6 +24,7 @@ export interface Task {
   title: string;
   description?: OutputData | null;
   status: TaskStatus;
+  priority: TaskPriority;
   completedAt?: string | null;
   parentId?: number | null;
   assignee?: string | null;
@@ -46,6 +48,7 @@ export interface CreateTaskDto {
   title: string;
   description?: OutputData;
   status?: TaskStatus;
+  priority?: TaskPriority;
   completedAt?: string;
   parentId?: number;
   assignee?: string;
@@ -55,6 +58,7 @@ export interface UpdateTaskDto {
   title?: string;
   description?: OutputData | null;
   status?: TaskStatus;
+  priority?: TaskPriority;
   completedAt?: string | null;
   parentId?: number | null;
   assignee?: string | null;
@@ -65,6 +69,7 @@ export interface TaskFilters {
   limit?: number;
   parentId?: number | null;
   search?: string;
+  priority?: TaskPriority;
 }
 
 export const tasksApi = {
@@ -82,6 +87,7 @@ export const tasksApi = {
         );
       }
       if (filters.search) params.append('search', filters.search);
+      if (filters.priority) params.append('priority', filters.priority);
     }
     const qs = params.toString();
     return apiClient.get<TasksListResponse>(`/tasks${qs ? `?${qs}` : ''}`);

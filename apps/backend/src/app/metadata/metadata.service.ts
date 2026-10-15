@@ -1,5 +1,10 @@
 import { Injectable } from '@nestjs/common';
-import { DEAL_STAGES, DEAL_PRIORITIES, TASK_STATUSES } from '@zuko/sales';
+import {
+  DEAL_STAGES,
+  DEAL_PRIORITIES,
+  TASK_STATUSES,
+  TASK_PRIORITIES,
+} from '@zuko/sales';
 
 export interface Currency {
   code: string;
@@ -19,6 +24,11 @@ export interface DealStage {
 }
 
 export interface TaskStatus {
+  value: string;
+  label: string;
+}
+
+export interface TaskPriority {
   value: string;
   label: string;
 }
@@ -85,5 +95,9 @@ export class MetadataService {
 
   getTaskStatuses(): TaskStatus[] {
     return TASK_STATUSES.map((s) => ({ value: s.value, label: s.label }));
+  }
+
+  getTaskPriorities(): TaskPriority[] {
+    return TASK_PRIORITIES.map((p) => ({ value: p.value, label: p.label }));
   }
 }

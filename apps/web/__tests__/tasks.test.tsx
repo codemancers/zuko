@@ -158,6 +158,7 @@ const mockTask: Task = {
     time: 123,
   },
   status: 'TODO',
+  priority: 'MEDIUM',
   completedAt: null,
   parentId: null,
   assignee: 'john@example.com',

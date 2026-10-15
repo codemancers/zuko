@@ -20,7 +20,12 @@ import {
   Button,
 } from '@zuko/ui-kit';
 import { FormActions } from '@/components/shared';
-import { tasksApi, type Task, type TaskStatus } from '@/lib/api/tasks';
+import {
+  tasksApi,
+  type Task,
+  type TaskStatus,
+  type TaskPriority,
+} from '@/lib/api/tasks';
 import { toast } from 'sonner';
 import { getTasks, getMembers } from '@/server/query-options';
 import Editor, { ensureOutputData } from '@/components/Common/Editor/Editor';
@@ -31,6 +36,7 @@ const taskFormSchema = z.object({
   title: z.string().min(1, 'Title is required'),
   description: z.any().optional(),
   status: z.enum(['TODO', 'IN_PROGRESS', 'DONE', 'CANCELLED']),
+  priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'URGENT']),
   assignee: z.string().optional(),
   parentId: z.string(),
 });
@@ -50,6 +56,13 @@ const STATUS_OPTIONS: { value: TaskStatus; label: string }[] = [
   { value: 'IN_PROGRESS', label: 'In Progress' },
   { value: 'DONE', label: 'Done' },
   { value: 'CANCELLED', label: 'Cancelled' },
+];
+
+const PRIORITY_OPTIONS: { value: TaskPriority; label: string }[] = [
+  { value: 'LOW', label: 'Low' },
+  { value: 'MEDIUM', label: 'Medium' },
+  { value: 'HIGH', label: 'High' },
+  { value: 'URGENT', label: 'Urgent' },
 ];
 
 type MemberOption = { value: string; label: string };
@@ -87,6 +100,7 @@ const TaskForm = ({
       title: task?.title ?? '',
       description: task?.description ?? '',
       status: task?.status ?? 'TODO',
+      priority: task?.priority ?? 'MEDIUM',
       assignee: task?.assignee ?? '',
       parentId: String(task?.parentId ?? defaultParentId ?? ''),
     },
@@ -102,6 +116,7 @@ const TaskForm = ({
           title: data.title,
           description: data.description || undefined,
           status: data.status,
+          priority: data.priority,
           assignee: data.assignee || undefined,
           parentId: parentIdNum,
         });
@@ -111,6 +126,7 @@ const TaskForm = ({
           title: data.title,
           description: data.description || null,
           status: data.status,
+          priority: data.priority,
           assignee: data.assignee || null,
           parentId: parentIdNum ?? null,
         });
@@ -229,6 +245,25 @@ const TaskForm = ({
             {form.formState.errors.status && (
               <ErrorMessage>
                 {form.formState.errors.status.message}
+              </ErrorMessage>
+            )}
+          </Field>
+
+          <Field>
+            <Label>Priority</Label>
+            <Select
+              {...form.register('priority')}
+              disabled={mutation.isPending}
+            >
+              {PRIORITY_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </Select>
+            {form.formState.errors.priority && (
+              <ErrorMessage>
+                {form.formState.errors.priority.message}
               </ErrorMessage>
             )}
           </Field>
