@@ -48,7 +48,7 @@ export interface Property {
     validation?: 'linkedin'; //special validations
     href?: string;
     currency?: string;
-    badgeColor?: 'zinc' | 'blue' | 'green' | 'red' | 'yellow';
+    badgeColor?: 'zinc' | 'blue' | 'green' | 'red' | 'yellow' | 'amber';
     dateFormat?: string;
     min?: number;
     max?: number;

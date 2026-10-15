@@ -79,6 +79,12 @@ vi.mock('@/lib/api/metadata', () => ({
       { value: 'in_progress', label: 'In Progress' },
       { value: 'done', label: 'Done' },
     ]),
+    getTaskPriorities: vi.fn().mockResolvedValue([
+      { value: 'LOW', label: 'Low' },
+      { value: 'MEDIUM', label: 'Medium' },
+      { value: 'HIGH', label: 'High' },
+      { value: 'URGENT', label: 'Urgent' },
+    ]),
   },
 }));
 

@@ -325,14 +325,24 @@ enum TaskStatus {
   @@schema("public")
 }
 
+enum TaskPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+
+  @@schema("public")
+}
+
 model Task {
-  id             Int        @id @default(autoincrement())
-  organizationId Int        @map("organization_id")
+  id             Int          @id @default(autoincrement())
+  organizationId Int          @map("organization_id")
   title          String
-  description    Json?      @map("description")
-  status         TaskStatus @default(TODO)
-  completedAt    DateTime?  @map("completed_at")
-  parentId       Int?       @map("parent_id")
+  description    Json?        @map("description")
+  status         TaskStatus   @default(TODO)
+  priority       TaskPriority @default(MEDIUM)
+  completedAt    DateTime?    @map("completed_at")
+  parentId       Int?         @map("parent_id")
   assignee       String?
 
   parent   Task?  @relation("TaskSubtasks", fields: [parentId], references: [id])

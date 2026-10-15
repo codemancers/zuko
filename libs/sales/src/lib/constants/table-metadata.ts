@@ -1,6 +1,6 @@
 import type { ColumnMetadata } from '../types/table-metadata';
 import { DEAL_STAGES } from './deals';
-import { TASK_STATUSES } from './tasks';
+import { TASK_STATUSES, TASK_PRIORITIES } from './tasks';
 
 export const COMPANY_TABLE_METADATA: ColumnMetadata[] = [
   {
@@ -310,6 +310,29 @@ export const TASK_TABLE_METADATA: ColumnMetadata[] = [
         IN_PROGRESS: 'blue',
         DONE: 'green',
         CANCELLED: 'red',
+      },
+    },
+  },
+  {
+    id: 'priority',
+    header: 'Priority',
+    fieldType: 'select',
+    dataType: 'text',
+    sortable: true,
+    filterable: true,
+    searchable: false,
+    editable: true,
+    isVisible: true,
+    default: true,
+    config: {
+      render: 'badge',
+      format: 'stage',
+      options: [...TASK_PRIORITIES],
+      colorMap: {
+        LOW: 'zinc',
+        MEDIUM: 'blue',
+        HIGH: 'amber',
+        URGENT: 'red',
       },
     },
   },

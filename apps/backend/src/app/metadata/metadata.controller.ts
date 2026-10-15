@@ -34,4 +34,11 @@ export class MetadataController {
   getTaskStatuses() {
     return this.metadataService.getTaskStatuses();
   }
+
+  @Get('task/priorities')
+  @ApiOperation({ summary: 'List task priority levels' })
+  @ApiResponse({ status: 200, description: 'Array of task priority values' })
+  getTaskPriorities() {
+    return this.metadataService.getTaskPriorities();
+  }
 }

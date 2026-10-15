@@ -324,10 +324,12 @@ test.describe('Hierarchical Tasks', () => {
     // the subsequent Edit click lands on the parent instead of the subtask.
     await page.goto(`/tasks/${parentId}`);
     await page.waitForLoadState('networkidle');
-    await expect(page.getByText('Subtask to Promote')).toBeVisible({
+    await expect(
+      page.getByText('Subtask to Promote', { exact: true }),
+    ).toBeVisible({
       timeout: 10000,
     });
-    await page.getByText('Subtask to Promote').first().click();
+    await page.getByText('Subtask to Promote', { exact: true }).click();
     // Wait until URL changes away from the parent task page
     await page.waitForURL(
       (url) =>

@@ -22,6 +22,11 @@ export interface TaskStatusList {
   label: string;
 }
 
+export interface TaskPriorityList {
+  value: string;
+  label: string;
+}
+
 export const metadataApi = {
   getCurrencies: async (): Promise<Currency[]> => {
     return await apiClient.get<Currency[]>('/metadata/currencies');
@@ -34,5 +39,8 @@ export const metadataApi = {
   },
   getTaskStatuses: async (): Promise<TaskStatusList[]> => {
     return await apiClient.get<TaskStatusList[]>('/metadata/task/status');
+  },
+  getTaskPriorities: async (): Promise<TaskPriorityList[]> => {
+    return await apiClient.get<TaskPriorityList[]>('/metadata/task/priorities');
   },
 };

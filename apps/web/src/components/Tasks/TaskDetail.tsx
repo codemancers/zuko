@@ -22,7 +22,7 @@ import {
   XMarkIcon,
 } from '@heroicons/react/24/outline';
 import TaskForm from './TaskForm';
-import type { TaskStatus, UpdateTaskDto } from '@/lib/api/tasks';
+import type { TaskPriority, TaskStatus, UpdateTaskDto } from '@/lib/api/tasks';
 import { useState } from 'react';
 import { useAutosaveField } from '@/hooks/useAutosaveField';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
@@ -48,6 +48,16 @@ const statusConfig: Record<
   CANCELLED: { label: 'Cancelled', color: 'red' },
 };
 
+const priorityConfig: Record<
+  TaskPriority,
+  { label: string; color: 'zinc' | 'blue' | 'amber' | 'red' }
+> = {
+  LOW: { label: 'Low', color: 'zinc' },
+  MEDIUM: { label: 'Medium', color: 'blue' },
+  HIGH: { label: 'High', color: 'amber' },
+  URGENT: { label: 'Urgent', color: 'red' },
+};
+
 interface TaskDetailProps {
   taskId: number;
   currentUserId?: number | null;
@@ -60,6 +70,10 @@ const TaskDetail = ({ taskId, currentUserId }: TaskDetailProps) => {
   const { data: taskStatuses = [] } = useQuery({
     queryKey: ['taskStatuses'],
     queryFn: metadataApi.getTaskStatuses,
+  });
+  const { data: taskPriorities = [] } = useQuery({
+    queryKey: ['taskPriorities'],
+    queryFn: metadataApi.getTaskPriorities,
   });
   const { data: tasksData } = useQuery(getTasks());
   const allTasks = tasksData?.tasks ?? [];
@@ -137,6 +151,10 @@ const TaskDetail = ({ taskId, currentUserId }: TaskDetailProps) => {
 
   const statusCfg = statusConfig[task.status] ?? {
     label: task.status,
+    color: 'zinc' as const,
+  };
+  const priorityCfg = priorityConfig[task.priority] ?? {
+    label: task.priority,
     color: 'zinc' as const,
   };
 
@@ -218,6 +236,21 @@ const TaskDetail = ({ taskId, currentUserId }: TaskDetailProps) => {
             },
             onSave: (val: string) =>
               updateMutation.mutateAsync({ status: val as any }),
+          },
+          {
+            label: 'Priority',
+            value: priorityCfg.label,
+            renderType: 'badge',
+            fieldType: 'combobox',
+            options: {
+              badgeColor: priorityCfg.color,
+              comboboxOptions: taskPriorities.map((p) => ({
+                value: p.value,
+                label: p.label,
+              })),
+            },
+            onSave: (val: string) =>
+              updateMutation.mutateAsync({ priority: val as any }),
           },
           {
             label: 'Completed',

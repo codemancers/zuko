@@ -279,6 +279,7 @@ const mockTask = {
   title: 'Fix bug',
   description: { blocks: [], version: '2.30.0', time: 123 },
   status: 'TODO' as const,
+  priority: 'MEDIUM' as const,
   assignee: null,
   parentId: null,
   completedAt: null,
