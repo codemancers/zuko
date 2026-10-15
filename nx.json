@@ -117,5 +117,6 @@
         "style": "tailwind"
       }
     }
-  }
+  },
+  "analytics": false
 }
