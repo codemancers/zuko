@@ -25,6 +25,7 @@ export interface Task {
   description?: OutputData | null;
   status: TaskStatus;
   priority: TaskPriority;
+  isSales: boolean;
   completedAt?: string | null;
   parentId?: number | null;
   assignee?: string | null;
@@ -49,6 +50,7 @@ export interface CreateTaskDto {
   description?: OutputData;
   status?: TaskStatus;
   priority?: TaskPriority;
+  isSales?: boolean;
   completedAt?: string;
   parentId?: number;
   assignee?: string;
@@ -59,6 +61,7 @@ export interface UpdateTaskDto {
   description?: OutputData | null;
   status?: TaskStatus;
   priority?: TaskPriority;
+  isSales?: boolean;
   completedAt?: string | null;
   parentId?: number | null;
   assignee?: string | null;

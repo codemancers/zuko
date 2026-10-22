@@ -1,4 +1,5 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
+import { IsBoolean } from 'class-validator';
 import type { TaskStatus, TaskPriority, EditorData } from '@zuko/sales';
 
 export class UpdateTaskDto {
@@ -22,6 +23,10 @@ export class UpdateTaskDto {
     example: 'medium',
   })
   priority?: TaskPriority;
+
+  @ApiPropertyOptional({ type: Boolean })
+  @IsBoolean()
+  isSales?: boolean;
 
   @ApiPropertyOptional({ type: String, format: 'date-time', nullable: true })
   completedAt?: Date | null;
