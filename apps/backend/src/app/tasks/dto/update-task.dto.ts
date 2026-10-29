@@ -1,5 +1,5 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsBoolean } from 'class-validator';
+import { IsBoolean, ValidateIf } from 'class-validator';
 import type { TaskStatus, TaskPriority, EditorData } from '@zuko/sales';
 
 export class UpdateTaskDto {
@@ -25,6 +25,8 @@ export class UpdateTaskDto {
   priority?: TaskPriority;
 
   @ApiPropertyOptional({ type: Boolean })
+  // Omission is allowed; null and other nonbooleans must still be rejected.
+  @ValidateIf((_object, value) => value !== undefined)
   @IsBoolean()
   isSales?: boolean;
 
