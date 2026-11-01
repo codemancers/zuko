@@ -173,15 +173,24 @@ export class TableService {
       this.prisma.task.count({ where }),
       this.prisma.task.findMany({
         where,
-        include: { owners: { include: { user: true } } },
+        include: {
+          owners: { include: { user: true } },
+          assigneeUser: { select: { name: true } },
+        },
         orderBy: { createdAt: 'desc' },
         skip: (page - 1) * limit,
         take: limit,
       }),
     ]);
 
+    // Show the related user's current name; fall back to the legacy string.
+    const rows = tasks.map(({ assigneeUser, ...task }) => ({
+      ...task,
+      assignee: assigneeUser?.name ?? task.assignee,
+    }));
+
     const { metadata, data } = this.buildMergedTable(
-      tasks as unknown as Record<string, unknown>[],
+      rows as unknown as Record<string, unknown>[],
       TASK_TABLE_METADATA,
       [],
     );
@@ -536,6 +545,9 @@ export class TableService {
             where: { id: rowId, organizationId },
             data: {
               [columnId]: castFieldValue(value, col.fieldType as ColumnType),
+              // The assignee cell writes a legacy name; drop the stable ID
+              // rather than leave it contradicting the new name.
+              ...(columnId === 'assignee' ? { assigneeUserId: null } : {}),
             },
           });
           break;

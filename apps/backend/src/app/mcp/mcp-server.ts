@@ -461,6 +461,7 @@ export function buildMcpServer(
         status?: TaskStatus;
         priority?: TaskPriority;
         assignee?: string;
+        assigneeUserId?: null;
         completedAt?: Date;
       } = {};
       if (title !== undefined) updateData.title = title;
@@ -472,7 +473,11 @@ export function buildMcpServer(
       if (status !== undefined) updateData.status = status as TaskStatus;
       if (priority !== undefined)
         updateData.priority = priority as TaskPriority;
-      if (assignee !== undefined) updateData.assignee = assignee;
+      if (assignee !== undefined) {
+        // A rewritten legacy name no longer identifies the stable assignee.
+        updateData.assignee = assignee;
+        updateData.assigneeUserId = null;
+      }
       if (completedAt !== undefined) {
         updateData.completedAt = new Date(completedAt);
       }

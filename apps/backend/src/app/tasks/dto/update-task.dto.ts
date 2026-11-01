@@ -1,5 +1,5 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsBoolean, ValidateIf } from 'class-validator';
+import { IsBoolean, IsInt, IsPositive, Max, ValidateIf } from 'class-validator';
 import type { TaskStatus, TaskPriority, EditorData } from '@zuko/sales';
 
 export class UpdateTaskDto {
@@ -40,6 +40,25 @@ export class UpdateTaskDto {
   })
   parentId?: number | null;
 
-  @ApiPropertyOptional({ type: String, nullable: true })
+  @ApiPropertyOptional({
+    type: String,
+    nullable: true,
+    description:
+      'Legacy display name. Writing it alone clears assigneeUserId; ignored when assigneeUserId is sent.',
+  })
   assignee?: string | null;
+
+  @ApiPropertyOptional({
+    type: Number,
+    nullable: true,
+    description:
+      'User ID of an organization member. null clears the assignee; omit to keep it.',
+  })
+  // Omission and explicit null are allowed; anything else must be a positive integer.
+  @ValidateIf((_object, value) => value !== undefined && value !== null)
+  @IsInt()
+  @IsPositive()
+  // Postgres INTEGER bound; larger values would fail in Prisma with a 500.
+  @Max(2_147_483_647)
+  assigneeUserId?: number | null;
 }

@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, type Mock } from 'vitest';
+import { BadRequestException } from '@nestjs/common';
 import { TaskRepository, TaskStatus } from './task.repository';
 import type { PrismaService } from '../modules/prisma.types';
 
@@ -35,11 +36,15 @@ describe('TaskRepository', () => {
     taskOwner: {
       create: vi.fn(),
     },
+    member: {
+      findFirst: vi.fn(),
+    },
     $transaction: vi.fn(
       async (fn: (tx: typeof mockPrisma) => Promise<unknown>) =>
         fn({
           task: mockPrisma.task,
           taskOwner: mockPrisma.taskOwner,
+          member: mockPrisma.member,
         } as never),
     ),
   };
@@ -157,6 +162,135 @@ describe('TaskRepository', () => {
         }),
       );
       expect(result).toEqual(updated);
+    });
+  });
+
+  describe('assignee', () => {
+    const memberRow = { user: { id: 42, name: 'Server Name' } };
+
+    it('create resolves the stable assignee name in the same transaction and keeps the creator owner link', async () => {
+      (mockPrisma.member.findFirst as Mock).mockResolvedValue(memberRow);
+      (mockPrisma.task.create as Mock).mockResolvedValue({
+        ...mockTask,
+        id: 9,
+      });
+      (mockPrisma.task.findUniqueOrThrow as Mock).mockResolvedValue(mockTask);
+
+      await repo.create({
+        organizationId: ORG_ID,
+        title: 'Assigned',
+        assignee: 'Caller Supplied Name',
+        assigneeUserId: 42,
+        createdByUserId: 7,
+      });
+
+      expect(mockPrisma.$transaction).toHaveBeenCalledTimes(1);
+      expect(mockPrisma.member.findFirst).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { organizationId: ORG_ID, userId: 42 },
+        }),
+      );
+      expect(mockPrisma.task.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: {
+            title: 'Assigned',
+            organizationId: ORG_ID,
+            assigneeUserId: 42,
+            assignee: 'Server Name',
+          },
+        }),
+      );
+      expect(mockPrisma.taskOwner.create).toHaveBeenCalledWith({
+        data: { taskId: 9, userId: 7, isPrimary: true },
+      });
+    });
+
+    it('create rejects an assignee outside the organization without writing', async () => {
+      (mockPrisma.member.findFirst as Mock).mockResolvedValue(null);
+
+      await expect(
+        repo.create({ organizationId: ORG_ID, title: 'x', assigneeUserId: 99 }),
+      ).rejects.toBeInstanceOf(BadRequestException);
+      expect(mockPrisma.task.create).not.toHaveBeenCalled();
+      expect(mockPrisma.taskOwner.create).not.toHaveBeenCalled();
+    });
+
+    it('update writes stable ID and server-resolved name atomically', async () => {
+      (mockPrisma.member.findFirst as Mock).mockResolvedValue(memberRow);
+      (mockPrisma.task.update as Mock).mockResolvedValue(mockTask);
+
+      await repo.update(1, ORG_ID, {
+        assigneeUserId: 42,
+        assignee: 'Spoofed',
+      });
+
+      expect(mockPrisma.$transaction).toHaveBeenCalledTimes(1);
+      expect(mockPrisma.task.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: 1, organizationId: ORG_ID },
+          data: { assigneeUserId: 42, assignee: 'Server Name' },
+        }),
+      );
+    });
+
+    it('update rejects a foreign-org assignee without writing', async () => {
+      (mockPrisma.member.findFirst as Mock).mockResolvedValue(null);
+
+      await expect(
+        repo.update(1, ORG_ID, { assigneeUserId: 99 }),
+      ).rejects.toBeInstanceOf(BadRequestException);
+      expect(mockPrisma.task.update).not.toHaveBeenCalled();
+    });
+
+    it('update with explicit null clears stable ID and legacy name', async () => {
+      (mockPrisma.task.update as Mock).mockResolvedValue(mockTask);
+
+      await repo.update(1, ORG_ID, { assigneeUserId: null });
+
+      expect(mockPrisma.member.findFirst).not.toHaveBeenCalled();
+      expect(mockPrisma.task.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: { assigneeUserId: null, assignee: null },
+        }),
+      );
+    });
+
+    it('legacy assignee-only update clears the stable ID instead of inferring one', async () => {
+      (mockPrisma.task.update as Mock).mockResolvedValue(mockTask);
+
+      await repo.update(1, ORG_ID, { assignee: 'Unique Member Name' });
+
+      expect(mockPrisma.member.findFirst).not.toHaveBeenCalled();
+      expect(mockPrisma.task.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: { assignee: 'Unique Member Name', assigneeUserId: null },
+        }),
+      );
+    });
+
+    it('omitting both assignment fields leaves them untouched', async () => {
+      (mockPrisma.task.update as Mock).mockResolvedValue(mockTask);
+
+      await repo.update(1, ORG_ID, { title: 'Only title' });
+
+      const data = (mockPrisma.task.update as Mock).mock.calls[0][0].data;
+      expect(data).toEqual({ title: 'Only title' });
+    });
+
+    it('includes the related assignee user for display', async () => {
+      (mockPrisma.task.findFirst as Mock).mockResolvedValue(mockTask);
+
+      await repo.findById(1, ORG_ID);
+
+      expect(mockPrisma.task.findFirst).toHaveBeenCalledWith(
+        expect.objectContaining({
+          include: expect.objectContaining({
+            assigneeUser: {
+              select: { id: true, name: true, email: true },
+            },
+          }),
+        }),
+      );
     });
   });
 

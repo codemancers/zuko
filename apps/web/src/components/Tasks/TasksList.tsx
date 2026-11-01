@@ -20,6 +20,7 @@ import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
 import { useSheetState } from '@/hooks/use-sheet-state';
 import TaskForm from './TaskForm';
+import { LEGACY_ASSIGNEE_NOTE, UNASSIGNED, assigneeOptions } from './assignee';
 import { tasksApi } from '@/lib/api/tasks';
 import { useCellUpdate } from '@/hooks/use-cell-update';
 import {
@@ -36,6 +37,9 @@ import { toast } from 'sonner';
 import { useSearchParam } from '@/hooks/use-search-param';
 
 type TaskRow = BaseRow & { status?: string };
+
+// Cell value for an unlinked legacy name; matches no member option.
+const LEGACY_CELL_VALUE = 'legacy';
 
 const TasksList = () => {
   const router = useRouter();
@@ -89,9 +93,46 @@ const TasksList = () => {
     enabled: !!orgId,
   });
 
+  const { mutate: assignTask } = useMutation({
+    mutationFn: ({
+      id,
+      assigneeUserId,
+    }: {
+      id: number;
+      assigneeUserId: number | null;
+    }) => tasksApi.updateTask(id, { assigneeUserId }),
+    onSuccess: () => {
+      toast.success('Assignee updated');
+      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+    },
+    onError: (err: Error) => {
+      toast.error(err.message || 'Failed to update assignee');
+    },
+  });
+
   const rawMetadata = data?.pages[0]?.metadata ?? [];
-  const tasks = data?.pages.flatMap((p) => p.data) ?? [];
   const totalCount = data?.pages[0]?.pagination?.total;
+
+  // The assignee cell is keyed by user ID, never by name. Unlinked legacy
+  // names are labelled and get a value no member option can match.
+  const tasks = useMemo(
+    () =>
+      (data?.pages.flatMap((p) => p.data) ?? []).map((row) => {
+        const name = (row.assignee as string | null | undefined) ?? '';
+        const assigneeUserId = row.assigneeUserId as number | null | undefined;
+        const assignee =
+          assigneeUserId != null
+            ? { value: String(assigneeUserId), display: name }
+            : name
+              ? {
+                  value: LEGACY_CELL_VALUE,
+                  display: `${name} (${LEGACY_ASSIGNEE_NOTE})`,
+                }
+              : { value: UNASSIGNED, display: '' };
+        return { ...row, assignee };
+      }),
+    [data],
+  );
 
   const metadata = useMemo(
     () =>
@@ -102,13 +143,12 @@ const TasksList = () => {
             fieldType: 'relation' as const,
             config: {
               ...col.config,
-              options: [
-                { value: '', label: 'Unassigned' },
-                ...members.map((m) => ({
-                  value: m.user.name,
-                  label: m.user.name,
-                })),
-              ],
+              options: assigneeOptions(members).map((o) => ({
+                value: o.value,
+                label: o.description
+                  ? `${o.label} (${o.description})`
+                  : o.label,
+              })),
             },
           };
         }
@@ -178,7 +218,12 @@ const TasksList = () => {
         totalCount={totalCount}
         entityName="tasks"
         onCellUpdate={(rowId, columnId, value) =>
-          updateCell({ rowId, columnId, value })
+          columnId === 'assignee'
+            ? assignTask({
+                id: Number(rowId),
+                assigneeUserId: value ? Number(value) : null,
+              })
+            : updateCell({ rowId, columnId, value })
         }
         onFetchNextPage={fetchNextPage}
         isFetchingNextPage={isFetchingNextPage}

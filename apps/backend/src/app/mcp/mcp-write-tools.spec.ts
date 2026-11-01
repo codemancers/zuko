@@ -248,6 +248,31 @@ describe('update_task tool', () => {
     expect(db.task.update).toHaveBeenCalledTimes(1);
     expect(db.task.update.mock.calls[0][0].data.status).toBe('IN_PROGRESS');
   });
+
+  it('clears the stable assignee ID when the legacy assignee is rewritten', async () => {
+    const db = fakeDb();
+    const client = await connect(db, ['tasks:write']);
+    await client.callTool({
+      name: 'update_task',
+      arguments: { taskId: 5, assignee: 'Free Text' },
+    });
+    expect(db.task.update.mock.calls[0][0].data).toMatchObject({
+      assignee: 'Free Text',
+      assigneeUserId: null,
+    });
+  });
+
+  it('leaves assignment untouched when assignee is omitted', async () => {
+    const db = fakeDb();
+    const client = await connect(db, ['tasks:write']);
+    await client.callTool({
+      name: 'update_task',
+      arguments: { taskId: 5, title: 'Renamed' },
+    });
+    const data = db.task.update.mock.calls[0][0].data;
+    expect(data).not.toHaveProperty('assignee');
+    expect(data).not.toHaveProperty('assigneeUserId');
+  });
 });
 
 function dealDb(over: Record<string, unknown> = {}) {

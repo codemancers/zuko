@@ -4,6 +4,7 @@ import type { EventEmitter2 } from '@nestjs/event-emitter';
 import { TaskService } from './task.service';
 import type { TaskRepository } from '../repositories/task.repository';
 import { TaskStatus } from '../repositories/task.repository';
+import { TASK_EVENTS } from '../events/task-events';
 
 const ORG_ID = 1;
 
@@ -182,6 +183,58 @@ describe('TaskService', () => {
       await service.updateTask(ORG_ID, 1, { status: TaskStatus.DONE });
 
       expect(mockRepo.updateSubtasksCompletedAt).not.toHaveBeenCalled();
+    });
+
+    it('records assignee changes made by stable user ID using server-resolved names', async () => {
+      (mockRepo.findById as Mock).mockResolvedValue({
+        ...mockTask,
+        assignee: 'Old Legacy',
+        assigneeUserId: null,
+        assigneeUser: null,
+      } as never);
+      (mockRepo.update as Mock).mockResolvedValue({
+        ...mockTask,
+        assignee: 'Resolved Name',
+        assigneeUserId: 42,
+        assigneeUser: { id: 42, name: 'Resolved Name', email: 'r@x.com' },
+      } as never);
+
+      await service.updateTask(ORG_ID, 1, { assigneeUserId: 42 }, 7);
+
+      expect(mockRepo.update).toHaveBeenCalledWith(1, ORG_ID, {
+        assigneeUserId: 42,
+      });
+      expect(mockEventEmitter.emitAsync).toHaveBeenCalledWith(
+        TASK_EVENTS.FIELD_UPDATED,
+        {
+          taskId: 1,
+          actorId: 7,
+          field: 'assignee',
+          from: 'Old Legacy',
+          to: 'Resolved Name',
+        },
+      );
+    });
+
+    it('does not record an assignee change when assignment is omitted', async () => {
+      const current = {
+        ...mockTask,
+        assignee: 'Someone',
+        assigneeUserId: 42,
+        assigneeUser: { id: 42, name: 'Someone', email: 's@x.com' },
+      };
+      (mockRepo.findById as Mock).mockResolvedValue(current as never);
+      (mockRepo.update as Mock).mockResolvedValue({
+        ...current,
+        title: 'New',
+      } as never);
+
+      await service.updateTask(ORG_ID, 1, { title: 'New' }, 7);
+
+      const fields = (mockEventEmitter.emitAsync as Mock).mock.calls.map(
+        (c) => c[1].field,
+      );
+      expect(fields).not.toContain('assignee');
     });
 
     it('should not cascade when task has no subtasks', async () => {

@@ -22,6 +22,7 @@ import {
   XMarkIcon,
 } from '@heroicons/react/24/outline';
 import TaskForm from './TaskForm';
+import { assigneeDisplayName, assigneeOptions } from './assignee';
 import type { TaskPriority, TaskStatus, UpdateTaskDto } from '@/lib/api/tasks';
 import { useState } from 'react';
 import { useAutosaveField } from '@/hooks/useAutosaveField';
@@ -85,10 +86,7 @@ const TaskDetail = ({ taskId, currentUserId }: TaskDetailProps) => {
     enabled: !!orgId,
   });
 
-  const memberOptions = [
-    { value: '', label: 'Unassigned' },
-    ...members.map((m) => ({ value: m.user.name, label: m.user.name })),
-  ];
+  const memberOptions = assigneeOptions(members, task);
   const parentTaskOptions = allTasks
     .filter((t) => t.id !== taskId)
     .map((t) => ({ value: String(t.id), label: t.title }));
@@ -212,15 +210,22 @@ const TaskDetail = ({ taskId, currentUserId }: TaskDetailProps) => {
         properties={[
           {
             label: 'Assignee',
-            value: task.assignee,
-            renderType: 'user',
+            value: assigneeDisplayName(task),
+            // Unlinked legacy names render as plain text, not as a user.
+            renderType: task.assigneeUserId != null ? 'user' : 'text',
             fieldType: 'combobox',
             placeholder: 'Select assignee...',
             options: {
               comboboxOptions: memberOptions,
+              comboboxValue:
+                task.assigneeUserId != null
+                  ? String(task.assigneeUserId)
+                  : undefined,
             },
             onSave: (val: string) =>
-              updateMutation.mutateAsync({ assignee: val || null }),
+              updateMutation.mutateAsync({
+                assigneeUserId: val ? Number(val) : null,
+              }),
           },
           {
             label: 'Status',
