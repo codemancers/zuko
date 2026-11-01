@@ -12,6 +12,7 @@ export interface CreateTaskInput {
   description?: EditorData;
   status?: TaskStatus;
   priority?: TaskPriority;
+  isSales?: boolean;
   completedAt?: Date;
   parentId?: number;
   assignee?: string;
@@ -23,6 +24,7 @@ export interface UpdateTaskInput {
   description?: EditorData;
   status?: TaskStatus;
   priority?: TaskPriority;
+  isSales?: boolean;
   completedAt?: Date | null;
   parentId?: number | null;
   assignee?: string | null;

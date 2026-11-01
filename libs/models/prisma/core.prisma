@@ -341,6 +341,7 @@ model Task {
   description    Json?        @map("description")
   status         TaskStatus   @default(TODO)
   priority       TaskPriority @default(MEDIUM)
+  isSales        Boolean      @default(false) @map("is_sales")
   completedAt    DateTime?    @map("completed_at")
   parentId       Int?         @map("parent_id")
   assignee       String?
@@ -408,5 +409,3 @@ model Sandbox {
   @@map("sandbox")
   @@schema("public")
 }
-
-
