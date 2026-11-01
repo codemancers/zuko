@@ -159,6 +159,7 @@ const mockTask: Task = {
   },
   status: 'TODO',
   priority: 'MEDIUM',
+  isSales: false,
   completedAt: null,
   parentId: null,
   assignee: 'john@example.com',
@@ -176,6 +177,83 @@ describe('TaskForm', () => {
       tasks: [],
       pagination: { page: 1, limit: 50, total: 0, totalPages: 0 },
     });
+  });
+
+  it.each([false, true])('creates a task with isSales=%s', async (isSales) => {
+    const user = userEvent.setup();
+    mockCreateTask.mockResolvedValue({ ...mockTask, isSales });
+    render(<TaskForm mode="create" />, { wrapper });
+    const checkbox = screen.getByRole('checkbox', { name: 'Sales task' });
+    expect(checkbox).not.toBeChecked();
+    if (isSales) await user.click(checkbox);
+    await user.type(screen.getByLabelText(/title \*/i), 'Sales test');
+    await user.click(screen.getByRole('button', { name: /create task/i }));
+    await waitFor(() =>
+      expect(mockCreateTask).toHaveBeenCalledWith(
+        expect.objectContaining({ title: 'Sales test', isSales }),
+      ),
+    );
+  });
+
+  it('allows a caller to default new sales tasks on', () => {
+    render(<TaskForm mode="create" defaultIsSales />, { wrapper });
+    expect(screen.getByRole('checkbox', { name: 'Sales task' })).toBeChecked();
+  });
+
+  it.each([true, false, undefined])(
+    'edit uses persisted %s, not creation default',
+    (isSales) => {
+      render(
+        <TaskForm
+          mode="edit"
+          task={{ ...mockTask, isSales } as Task}
+          defaultIsSales
+        />,
+        { wrapper },
+      );
+      expect(
+        screen.getByRole('checkbox', { name: 'Sales task' }),
+      ).toHaveAttribute('aria-checked', String(isSales ?? false));
+    },
+  );
+
+  it('edits a sales task to false and retains its other fields', async () => {
+    const user = userEvent.setup();
+    mockUpdateTask.mockResolvedValue({ ...mockTask, isSales: false });
+    render(<TaskForm mode="edit" task={{ ...mockTask, isSales: true }} />, {
+      wrapper,
+    });
+    await user.click(screen.getByRole('checkbox', { name: 'Sales task' }));
+    fireEvent.submit(
+      screen.getByRole('checkbox', { name: 'Sales task' }).closest('form')!,
+    );
+    await waitFor(() =>
+      expect(mockUpdateTask).toHaveBeenCalledWith(
+        mockTask.id,
+        expect.objectContaining({
+          isSales: false,
+          title: mockTask.title,
+          priority: mockTask.priority,
+        }),
+      ),
+    );
+  });
+
+  it('retains the selection on validation and save errors', async () => {
+    const user = userEvent.setup();
+    mockCreateTask.mockRejectedValue(new Error('Network error'));
+    render(<TaskForm mode="create" />, { wrapper });
+    const checkbox = screen.getByRole('checkbox', { name: 'Sales task' });
+    await user.click(checkbox);
+    await user.click(screen.getByRole('button', { name: /create task/i }));
+    expect(mockCreateTask).not.toHaveBeenCalled();
+    expect(checkbox).toBeChecked();
+    await user.type(screen.getByLabelText(/title \*/i), 'Keep selection');
+    await user.click(screen.getByRole('button', { name: /create task/i }));
+    await waitFor(() =>
+      expect(screen.getByRole('alert')).toHaveTextContent('Network error'),
+    );
+    expect(checkbox).toBeChecked();
   });
 
   it('renders form with all required fields', () => {

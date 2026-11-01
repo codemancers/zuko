@@ -6,6 +6,8 @@ import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import {
+  Checkbox,
+  CheckboxField,
   Field,
   FieldGroup,
   Fieldset,
@@ -39,6 +41,7 @@ const taskFormSchema = z.object({
   priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'URGENT']),
   assignee: z.string().optional(),
   parentId: z.string(),
+  isSales: z.boolean(),
 });
 
 type TaskFormValues = z.infer<typeof taskFormSchema>;
@@ -47,6 +50,7 @@ interface TaskFormProps {
   mode: 'create' | 'edit';
   task?: Task;
   defaultParentId?: number;
+  defaultIsSales?: boolean;
   onSuccess?: () => void;
   onCancel?: () => void;
 }
@@ -71,6 +75,7 @@ const TaskForm = ({
   mode,
   task,
   defaultParentId,
+  defaultIsSales = false,
   onSuccess,
   onCancel,
 }: TaskFormProps) => {
@@ -101,6 +106,7 @@ const TaskForm = ({
       description: task?.description ?? '',
       status: task?.status ?? 'TODO',
       priority: task?.priority ?? 'MEDIUM',
+      isSales: mode === 'edit' ? (task?.isSales ?? false) : defaultIsSales,
       assignee: task?.assignee ?? '',
       parentId: String(task?.parentId ?? defaultParentId ?? ''),
     },
@@ -117,6 +123,7 @@ const TaskForm = ({
           description: data.description || undefined,
           status: data.status,
           priority: data.priority,
+          isSales: data.isSales,
           assignee: data.assignee || undefined,
           parentId: parentIdNum,
         });
@@ -127,6 +134,7 @@ const TaskForm = ({
           description: data.description || null,
           status: data.status,
           priority: data.priority,
+          isSales: data.isSales,
           assignee: data.assignee || null,
           parentId: parentIdNum ?? null,
         });
@@ -211,6 +219,23 @@ const TaskForm = ({
               <ErrorMessage>{form.formState.errors.title.message}</ErrorMessage>
             )}
           </Field>
+
+          <CheckboxField>
+            <Controller
+              control={form.control}
+              name="isSales"
+              render={({ field }) => (
+                <Checkbox
+                  name={field.name}
+                  checked={field.value}
+                  onChange={field.onChange}
+                  onBlur={field.onBlur}
+                  disabled={mutation.isPending}
+                />
+              )}
+            />
+            <Label>Sales task</Label>
+          </CheckboxField>
 
           <Field>
             <Label>Description</Label>
