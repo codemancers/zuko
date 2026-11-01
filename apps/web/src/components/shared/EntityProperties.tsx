@@ -54,7 +54,9 @@ export interface Property {
     max?: number;
     currencyOptions?: { code: string; symbol: string; name: string }[];
     selectOptions?: { value: any; label: string }[];
-    comboboxOptions?: { value: any; label: string }[];
+    comboboxOptions?: { value: any; label: string; description?: string }[];
+    // Current option value when the displayed label may be ambiguous.
+    comboboxValue?: string;
   };
 }
 
@@ -150,7 +152,7 @@ export function EntityProperties({
       const match = property.options?.comboboxOptions?.find(
         (o) => o.label === rawValue,
       );
-      setEditValue(match?.value ?? rawValue);
+      setEditValue(property.options?.comboboxValue ?? match?.value ?? rawValue);
     } else {
       const editVal =
         property.fieldType === 'number' && typeof rawValue === 'string'
@@ -453,7 +455,9 @@ export function EntityProperties({
               }}
               displayValue={(opt) => opt?.label ?? ''}
               filter={(opt, query) =>
-                (opt?.label ?? '').toLowerCase().includes(query.toLowerCase())
+                `${opt?.label ?? ''} ${opt?.description ?? ''}`
+                  .toLowerCase()
+                  .includes(query.toLowerCase())
               }
               placeholder={property.placeholder ?? 'Select...'}
               variant="plain"
@@ -464,6 +468,11 @@ export function EntityProperties({
               {(option) => (
                 <ComboboxOption key={option.value} value={option}>
                   <ComboboxLabel>{option.label}</ComboboxLabel>
+                  {option.description && (
+                    <ComboboxDescription>
+                      {option.description}
+                    </ComboboxDescription>
+                  )}
                 </ComboboxOption>
               )}
             </Combobox>

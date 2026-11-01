@@ -34,7 +34,8 @@ model User {
   createdCampaigns       Campaign[]                 @relation("CreatedCampaigns")
   teammembers            TeamMember[]
   taskOwners             TaskOwner[]
-  meetings               Meeting[]
+  assignedTasks          Task[]                     @relation("TaskAssignee")
+  meetings             Meeting[]
   agentHosts             AgentHost[]
   agents                 Agent[]
   approvalRequests       ApprovalRequest[]
@@ -344,11 +345,15 @@ model Task {
   isSales        Boolean      @default(false) @map("is_sales")
   completedAt    DateTime?    @map("completed_at")
   parentId       Int?         @map("parent_id")
+  // Legacy display name; kept in sync with assigneeUser.name on stable writes.
   assignee       String?
+  // Stable assignee identity. Distinct from owners (creator/ownership links).
+  assigneeUserId Int?         @map("assignee_user_id")
 
-  parent   Task?  @relation("TaskSubtasks", fields: [parentId], references: [id])
-  subtasks Task[] @relation("TaskSubtasks")
-  owners   TaskOwner[]
+  parent       Task?       @relation("TaskSubtasks", fields: [parentId], references: [id])
+  subtasks     Task[]      @relation("TaskSubtasks")
+  owners       TaskOwner[]
+  assigneeUser User?       @relation("TaskAssignee", fields: [assigneeUserId], references: [id], onDelete: SetNull)
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -356,6 +361,7 @@ model Task {
   @@index([organizationId])
   @@index([parentId])
   @@index([status])
+  @@index([assigneeUserId])
   @@map("task")
   @@schema("public")
 }

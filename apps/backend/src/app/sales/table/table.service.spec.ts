@@ -982,6 +982,53 @@ describe('TableService', () => {
       ).rejects.toThrow('Column not found');
     });
 
+    it('clears the stable task assignee when the legacy assignee cell is rewritten', async () => {
+      await prisma.member.create({
+        data: {
+          organizationId: testOrg.id,
+          userId: testUser.id,
+          createdAt: new Date(),
+        },
+      });
+      const task = await prisma.task.create({
+        data: {
+          organizationId: testOrg.id,
+          title: 'Table assignee',
+          assignee: testUser.name,
+          assigneeUserId: testUser.id,
+        },
+      });
+
+      await service.updateCell('tasks', task.id, testOrg.id, testUser.id, {
+        columnId: 'assignee',
+        value: 'Free Text',
+      });
+
+      const dbTask = await prisma.task.findUnique({ where: { id: task.id } });
+      expect(dbTask?.assignee).toBe('Free Text');
+      expect(dbTask?.assigneeUserId).toBeNull();
+      await prisma.task.delete({ where: { id: task.id } });
+    });
+
+    it('lists tasks with the current related assignee name', async () => {
+      const task = await prisma.task.create({
+        data: {
+          organizationId: testOrg.id,
+          title: 'Table rename',
+          assignee: 'Stale Name',
+          assigneeUserId: testUser.id,
+        },
+      });
+
+      const result = await service.getTasksTable(testOrg.id);
+      const row = result.data.find(
+        (r) => (r as { id: number }).id === task.id,
+      ) as { assignee?: string; assigneeUserId?: number | null };
+      expect(row.assignee).toBe(testUser.name);
+      expect(row.assigneeUserId).toBe(testUser.id);
+      await prisma.task.delete({ where: { id: task.id } });
+    });
+
     it('throws error for unsupported entity', async () => {
       await expect(
         service.updateCell('unsupported', 1, testOrg.id, testUser.id, {

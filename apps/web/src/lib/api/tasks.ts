@@ -28,7 +28,10 @@ export interface Task {
   isSales: boolean;
   completedAt?: string | null;
   parentId?: number | null;
+  /** Legacy display name; unresolved when assigneeUserId is null. */
   assignee?: string | null;
+  assigneeUserId?: number | null;
+  assigneeUser?: TaskOwner['user'] | null;
   owners: TaskOwner[];
   subtasks: Task[];
   createdAt: string;
@@ -53,7 +56,7 @@ export interface CreateTaskDto {
   isSales?: boolean;
   completedAt?: string;
   parentId?: number;
-  assignee?: string;
+  assigneeUserId?: number | null;
 }
 
 export interface UpdateTaskDto {
@@ -64,7 +67,7 @@ export interface UpdateTaskDto {
   isSales?: boolean;
   completedAt?: string | null;
   parentId?: number | null;
-  assignee?: string | null;
+  assigneeUserId?: number | null;
 }
 
 export interface TaskFilters {

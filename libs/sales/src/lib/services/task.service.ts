@@ -84,6 +84,15 @@ export class TaskService {
       } satisfies TaskStatusChangedEvent);
     }
 
+    // Assignment may be written by stable ID, so its change is derived from
+    // the persisted display names rather than the caller-supplied string.
+    const assigneeName = (task: typeof current) =>
+      task.assigneeUser?.name ?? task.assignee ?? null;
+    const assignmentChanged =
+      (dto.assignee !== undefined || dto.assigneeUserId !== undefined) &&
+      (assigneeName(current) !== assigneeName(updated) ||
+        current.assigneeUserId !== updated.assigneeUserId);
+
     const trackedFields = [
       'title',
       'description',
@@ -91,9 +100,13 @@ export class TaskService {
       'priority',
     ] as const;
     for (const field of trackedFields) {
-      const newVal = dto[field];
-      const oldVal = current[field];
-      if (newVal !== undefined && newVal !== oldVal) {
+      const isAssignee = field === 'assignee';
+      const newVal = isAssignee ? assigneeName(updated) : dto[field];
+      const oldVal = isAssignee ? assigneeName(current) : current[field];
+      const changed = isAssignee
+        ? assignmentChanged
+        : newVal !== undefined && newVal !== oldVal;
+      if (changed) {
         await this.eventEmitter.emitAsync(TASK_EVENTS.FIELD_UPDATED, {
           taskId: id,
           actorId,

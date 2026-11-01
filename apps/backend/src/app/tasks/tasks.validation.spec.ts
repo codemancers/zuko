@@ -8,7 +8,11 @@ import {
   vi,
 } from 'vitest';
 import { Test } from '@nestjs/testing';
-import { ValidationPipe, type INestApplication } from '@nestjs/common';
+import {
+  BadRequestException,
+  ValidationPipe,
+  type INestApplication,
+} from '@nestjs/common';
 import { AuthGuard } from '@thallesp/nestjs-better-auth';
 import { TaskService } from '@zuko/sales';
 import { OrganizationGuard } from '../../common/auth/organization.guard';
@@ -107,6 +111,63 @@ describe('Task isSales HTTP validation', () => {
         expect(body.title).toBe('Title-only change');
         expect(body).not.toHaveProperty('isSales');
         expect(mock).toHaveBeenCalledOnce();
+      });
+
+      it.each(
+        ['5', 0, -3, 1.5, true, {}, [], 'abc'].map((value) => ({ value })),
+      )(
+        'rejects non-positive-integer assigneeUserId $value before calling service',
+        async ({ value: assigneeUserId }) => {
+          const response = await invoke({ title: 'x', assigneeUserId });
+          expect(response.status).toBe(400);
+          expect(JSON.stringify((await response.json()).message)).toContain(
+            'assigneeUserId',
+          );
+          expect(mock).not.toHaveBeenCalled();
+        },
+      );
+
+      it.each(
+        [2_147_483_648, Number.MAX_SAFE_INTEGER, 1e20].map((value) => ({
+          value,
+        })),
+      )(
+        'rejects assigneeUserId $value beyond the Int column range with 400',
+        async ({ value: assigneeUserId }) => {
+          const response = await invoke({ title: 'x', assigneeUserId });
+          expect(response.status).toBe(400);
+          expect(JSON.stringify((await response.json()).message)).toContain(
+            'assigneeUserId',
+          );
+          expect(mock).not.toHaveBeenCalled();
+        },
+      );
+
+      it.each([12, 2_147_483_647, null])(
+        'passes assigneeUserId %j through unchanged',
+        async (assigneeUserId) => {
+          const response = await invoke({ title: 'x', assigneeUserId });
+          expect(response.status).toBe(method === 'POST' ? 201 : 200);
+          const dto = mock.mock.calls[0][method === 'POST' ? 1 : 2];
+          expect(dto.assigneeUserId).toBe(assigneeUserId);
+        },
+      );
+
+      it('leaves omitted assignment fields undefined so they are preserved', async () => {
+        await invoke({ title: 'x' });
+        const dto = mock.mock.calls[0][method === 'POST' ? 1 : 2];
+        expect(dto.assigneeUserId).toBeUndefined();
+        expect(dto.assignee).toBeUndefined();
+      });
+
+      it('returns 400 when the service rejects a foreign-org assignee', async () => {
+        mock.mockRejectedValueOnce(
+          new BadRequestException(
+            'Assignee user 99 is not a member of this organization',
+          ),
+        );
+        const response = await invoke({ title: 'x', assigneeUserId: 99 });
+        expect(response.status).toBe(400);
       });
     });
   }

@@ -26,12 +26,28 @@ vi.mock('@/lib/auth-client', () => ({
         Promise.resolve({
           data: {
             members: [
-              { user: { name: 'john@example.com' } },
-              { user: { name: 'jane@example.com' } },
-              { user: { name: 'alice@example.com' } },
-              { user: { name: 'bob@example.com' } },
-              { user: { name: 'carol@example.com' } },
-              { user: { name: 'dave@example.com' } },
+              ...['john', 'jane', 'alice', 'bob', 'carol', 'dave'].map(
+                (n, i) => ({
+                  id: 500 + i,
+                  userId: 101 + i,
+                  user: {
+                    id: 101 + i,
+                    name: `${n}@example.com`,
+                    email: `${n}@example.com`,
+                  },
+                }),
+              ),
+              // Member.id deliberately differs from userId; names collide.
+              {
+                id: 901,
+                userId: 7,
+                user: { id: 7, name: 'Sam Lee', email: 'sam.a@example.com' },
+              },
+              {
+                id: 902,
+                userId: 8,
+                user: { id: 8, name: 'Sam Lee', email: 'sam.b@example.com' },
+              },
             ],
           },
         }),
@@ -120,7 +136,9 @@ vi.mock('@zuko/ui-kit', async () => {
         <option value="">{placeholder}</option>
         {options.map((o: any) => (
           <option key={o.value ?? o.code ?? o} value={o.value ?? o.code ?? o}>
-            {o.label ?? o.code ?? String(o)}
+            {o.description
+              ? `${o.label} ${o.description}`
+              : (o.label ?? o.code ?? String(o))}
           </option>
         ))}
       </select>
@@ -314,6 +332,92 @@ describe('TaskForm', () => {
     });
   });
 
+  describe('assignee', () => {
+    const assigneeSelect = () =>
+      screen.getByRole('combobox', { name: /select assignee/i });
+
+    it('lists duplicate-name members by name and email and creates with the member userId', async () => {
+      const user = userEvent.setup();
+      mockCreateTask.mockResolvedValue(mockTask);
+      render(<TaskForm mode="create" />, { wrapper });
+
+      await screen.findByRole('option', { name: 'Sam Lee sam.b@example.com' });
+      expect(
+        screen.getByRole('option', { name: 'Sam Lee sam.a@example.com' }),
+      ).toBeInTheDocument();
+
+      await user.type(screen.getByLabelText(/title \*/i), 'Assigned');
+      await user.selectOptions(assigneeSelect(), '8');
+      await user.click(screen.getByRole('button', { name: /create task/i }));
+
+      await waitFor(() => expect(mockCreateTask).toHaveBeenCalled());
+      const payload = mockCreateTask.mock.calls[0][0];
+      expect(payload.assigneeUserId).toBe(8);
+      expect(payload).not.toHaveProperty('assignee');
+    });
+
+    it('preselects a stable assignee by userId and clears it explicitly', async () => {
+      const user = userEvent.setup();
+      mockUpdateTask.mockResolvedValue(mockTask);
+      render(
+        <TaskForm
+          mode="edit"
+          task={{
+            ...mockTask,
+            assignee: 'Stale Name',
+            assigneeUserId: 8,
+            assigneeUser: {
+              id: 8,
+              name: 'Sam Lee',
+              email: 'sam.b@example.com',
+            },
+          }}
+        />,
+        { wrapper },
+      );
+
+      await screen.findByRole('option', { name: 'Sam Lee sam.b@example.com' });
+      expect(assigneeSelect()).toHaveValue('8');
+
+      await user.selectOptions(assigneeSelect(), 'Unassigned');
+      fireEvent.submit(assigneeSelect().closest('form')!);
+
+      await waitFor(() => expect(mockUpdateTask).toHaveBeenCalled());
+      const payload = mockUpdateTask.mock.calls[0][1];
+      expect(payload.assigneeUserId).toBeNull();
+      expect(payload).not.toHaveProperty('assignee');
+    });
+
+    it('shows an unresolved legacy name explicitly and preserves it on unrelated edits', async () => {
+      const user = userEvent.setup();
+      mockUpdateTask.mockResolvedValue(mockTask);
+      render(
+        <TaskForm
+          mode="edit"
+          task={{ ...mockTask, assignee: 'Sam Lee', assigneeUserId: null }}
+        />,
+        { wrapper },
+      );
+
+      await screen.findByRole('option', { name: 'Sam Lee sam.a@example.com' });
+      const selected = assigneeSelect() as HTMLSelectElement;
+      expect(selected.selectedOptions[0]).toHaveTextContent(
+        /Sam Lee.*legacy name, not linked/i,
+      );
+
+      const title = screen.getByLabelText(/title \*/i);
+      await user.clear(title);
+      await user.type(title, 'Retitled');
+      fireEvent.submit(title.closest('form')!);
+
+      await waitFor(() => expect(mockUpdateTask).toHaveBeenCalled());
+      const payload = mockUpdateTask.mock.calls[0][1];
+      expect(payload.title).toBe('Retitled');
+      expect(payload).not.toHaveProperty('assignee');
+      expect(payload).not.toHaveProperty('assigneeUserId');
+    });
+  });
+
   it('displays error message on submission failure', async () => {
     const user = userEvent.setup();
     mockCreateTask.mockRejectedValue(new Error('Network error'));
@@ -440,9 +544,10 @@ describe('TasksList', () => {
     }
   });
 
-  it('opens select editor when clicking assignee cell and commits on selection', async () => {
+  it('opens select editor when clicking assignee cell and commits the member userId', async () => {
     const user = userEvent.setup();
-    mockUpdateCell.mockResolvedValue({});
+    const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
+    mockUpdateTask.mockResolvedValue({});
     mockGetTasks.mockResolvedValue({
       ...mockTableViewResponse,
       data: [
@@ -451,6 +556,7 @@ describe('TasksList', () => {
           title: 'Test Task',
           status: 'TODO',
           assignee: 'alice@example.com',
+          assigneeUserId: 103,
         },
       ],
       pagination: { page: 1, limit: 1, total: 1, totalPages: 1 },
@@ -464,19 +570,117 @@ describe('TasksList', () => {
 
     await user.click(screen.getByText('alice@example.com'));
 
-    const select = await screen.findByDisplayValue('alice@example.com');
-    expect(select).toBeInTheDocument();
+    const select = await screen.findByDisplayValue(
+      'alice@example.com (alice@example.com)',
+    );
+    expect(select).toHaveValue('103');
 
-    await user.selectOptions(select, 'bob@example.com');
+    await user.selectOptions(select, '104');
 
     await waitFor(() => {
-      expect(mockUpdateCell).toHaveBeenCalledWith(
-        'tasks',
-        1,
-        'assignee',
-        'bob@example.com',
+      expect(mockUpdateTask).toHaveBeenCalledWith(1, { assigneeUserId: 104 });
+      expect(invalidateSpy).toHaveBeenCalledWith(
+        expect.objectContaining({ queryKey: ['tasks'] }),
       );
     });
+    expect(mockUpdateCell).not.toHaveBeenCalled();
+  });
+
+  it('distinguishes duplicate-name members by email and assigns by userId', async () => {
+    const user = userEvent.setup();
+    mockUpdateTask.mockResolvedValue({});
+    mockGetTasks.mockResolvedValue({
+      ...mockTableViewResponse,
+      data: [
+        {
+          id: 3,
+          title: 'Dup Task',
+          status: 'TODO',
+          assignee: 'Sam Lee',
+          assigneeUserId: 7,
+        },
+      ],
+      pagination: { page: 1, limit: 1, total: 1, totalPages: 1 },
+    });
+
+    render(<TasksList />, { wrapper });
+
+    await user.click(await screen.findByText('Sam Lee'));
+    const select = await screen.findByDisplayValue(
+      'Sam Lee (sam.a@example.com)',
+    );
+    expect(
+      screen.getByRole('option', { name: 'Sam Lee (sam.b@example.com)' }),
+    ).toBeInTheDocument();
+
+    await user.selectOptions(select, '8');
+
+    await waitFor(() =>
+      expect(mockUpdateTask).toHaveBeenCalledWith(3, { assigneeUserId: 8 }),
+    );
+    expect(mockUpdateCell).not.toHaveBeenCalled();
+  });
+
+  it('clears a table assignee with an explicit null', async () => {
+    const user = userEvent.setup();
+    mockUpdateTask.mockResolvedValue({});
+    mockGetTasks.mockResolvedValue({
+      ...mockTableViewResponse,
+      data: [
+        {
+          id: 4,
+          title: 'Clear Task',
+          status: 'TODO',
+          assignee: 'Sam Lee',
+          assigneeUserId: 8,
+        },
+      ],
+      pagination: { page: 1, limit: 1, total: 1, totalPages: 1 },
+    });
+
+    render(<TasksList />, { wrapper });
+
+    await user.click(await screen.findByText('Sam Lee'));
+    const select = await screen.findByDisplayValue(
+      'Sam Lee (sam.b@example.com)',
+    );
+    await user.selectOptions(select, 'Unassigned');
+
+    await waitFor(() =>
+      expect(mockUpdateTask).toHaveBeenCalledWith(4, { assigneeUserId: null }),
+    );
+    expect(mockUpdateCell).not.toHaveBeenCalled();
+  });
+
+  it('shows an unresolved legacy table assignee explicitly without matching it to a member', async () => {
+    const user = userEvent.setup();
+    mockGetTasks.mockResolvedValue({
+      ...mockTableViewResponse,
+      data: [
+        {
+          id: 5,
+          title: 'Legacy Task',
+          status: 'TODO',
+          assignee: 'alice@example.com',
+          assigneeUserId: null,
+        },
+      ],
+      pagination: { page: 1, limit: 1, total: 1, totalPages: 1 },
+    });
+
+    render(<TasksList />, { wrapper });
+
+    const cell = await screen.findByText(
+      'alice@example.com (legacy name, not linked)',
+    );
+    await user.click(cell);
+    const select = (await screen.findByRole('combobox')) as HTMLSelectElement;
+    // A matching member name must not be preselected.
+    expect(select.value).not.toBe('103');
+    await user.keyboard('{Escape}');
+
+    expect(mockUpdateTask).not.toHaveBeenCalled();
+    expect(mockUpdateCell).not.toHaveBeenCalled();
   });
 
   it('clicking assignee cell stops row navigation', async () => {
@@ -489,6 +693,7 @@ describe('TasksList', () => {
           title: 'Test Task',
           status: 'TODO',
           assignee: 'alice@example.com',
+          assigneeUserId: 103,
         },
       ],
       pagination: { page: 1, limit: 1, total: 1, totalPages: 1 },
@@ -537,7 +742,7 @@ describe('TasksList', () => {
 
   it('commits inline edit when selecting a new assignee value', async () => {
     const user = userEvent.setup();
-    mockUpdateCell.mockResolvedValue({});
+    mockUpdateTask.mockResolvedValue({});
     mockGetTasks.mockResolvedValue({
       ...mockTableViewResponse,
       data: [
@@ -546,6 +751,7 @@ describe('TasksList', () => {
           title: 'Another Task',
           status: 'TODO',
           assignee: 'carol@example.com',
+          assigneeUserId: 105,
         },
       ],
       pagination: { page: 1, limit: 1, total: 1, totalPages: 1 },
@@ -559,20 +765,17 @@ describe('TasksList', () => {
 
     await user.click(screen.getByText('carol@example.com'));
 
-    const select = await screen.findByDisplayValue('carol@example.com');
-    await user.selectOptions(select, 'dave@example.com');
+    const select = await screen.findByDisplayValue(
+      'carol@example.com (carol@example.com)',
+    );
+    await user.selectOptions(select, '106');
 
     await waitFor(() => {
-      expect(mockUpdateCell).toHaveBeenCalledWith(
-        'tasks',
-        2,
-        'assignee',
-        'dave@example.com',
-      );
+      expect(mockUpdateTask).toHaveBeenCalledWith(2, { assigneeUserId: 106 });
     });
   });
 
-  it('cancels inline edit on Escape key without calling updateCell', async () => {
+  it('cancels inline edit on Escape key without saving', async () => {
     const user = userEvent.setup();
     mockGetTasks.mockResolvedValue({
       ...mockTableViewResponse,
@@ -582,6 +785,7 @@ describe('TasksList', () => {
           title: 'Test Task',
           status: 'TODO',
           assignee: 'alice@example.com',
+          assigneeUserId: 103,
         },
       ],
       pagination: { page: 1, limit: 1, total: 1, totalPages: 1 },
@@ -594,13 +798,14 @@ describe('TasksList', () => {
     });
 
     await user.click(screen.getByText('alice@example.com'));
-    await screen.findByDisplayValue('alice@example.com');
+    await screen.findByDisplayValue('alice@example.com (alice@example.com)');
     await user.keyboard('{Escape}');
 
     await waitFor(() => {
       expect(screen.getByText('alice@example.com')).toBeInTheDocument();
     });
     expect(mockUpdateCell).not.toHaveBeenCalled();
+    expect(mockUpdateTask).not.toHaveBeenCalled();
   });
 
   it('opens new task sheet when "New Task" button is clicked', async () => {
@@ -736,12 +941,13 @@ describe('TaskDetail', () => {
       });
     });
 
-    it('edits assignee via combobox', async () => {
+    it('edits assignee via combobox using the member userId', async () => {
       const user = userEvent.setup();
       const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
       mockUpdateTask.mockResolvedValue({
         ...mockTask,
-        assignee: 'jane@example.com',
+        assignee: 'Sam Lee',
+        assigneeUserId: 8,
       });
 
       render(<TaskDetail taskId={1} />, { wrapper });
@@ -753,17 +959,77 @@ describe('TaskDetail', () => {
       await user.click(screen.getAllByTitle('Edit')[0]);
 
       const select = await screen.findByRole('combobox');
-      await user.selectOptions(select, 'jane@example.com');
+      await screen.findByRole('option', { name: 'Sam Lee sam.b@example.com' });
+      expect(
+        screen.getByRole('option', { name: 'Sam Lee sam.a@example.com' }),
+      ).toBeInTheDocument();
+      await user.selectOptions(select, '8');
 
       await waitFor(() => {
-        expect(mockUpdateTask).toHaveBeenCalledWith(
-          1,
-          expect.objectContaining({ assignee: 'jane@example.com' }),
-        );
+        expect(mockUpdateTask).toHaveBeenCalledWith(1, { assigneeUserId: 8 });
         expect(invalidateSpy).toHaveBeenCalledWith(
           expect.objectContaining({ queryKey: ['timeline', 'task', 1] }),
         );
       });
+    });
+
+    it('clears a stable assignee inline with an explicit null', async () => {
+      const user = userEvent.setup();
+      mockGetTask.mockResolvedValue({
+        ...mockTask,
+        assignee: 'Sam Lee',
+        assigneeUserId: 8,
+        assigneeUser: { id: 8, name: 'Sam Lee', email: 'sam.b@example.com' },
+      });
+      mockUpdateTask.mockResolvedValue(mockTask);
+
+      render(<TaskDetail taskId={1} />, { wrapper });
+      await screen.findByText('Sam Lee');
+
+      await user.click(screen.getAllByTitle('Edit')[0]);
+      const select = await screen.findByRole('combobox');
+      await screen.findByRole('option', { name: 'Sam Lee sam.b@example.com' });
+      expect(select).toHaveValue('8');
+      await user.selectOptions(select, 'Unassigned');
+
+      await waitFor(() =>
+        expect(mockUpdateTask).toHaveBeenCalledWith(1, {
+          assigneeUserId: null,
+        }),
+      );
+    });
+
+    it('displays the current related user name instead of a stale legacy name', async () => {
+      mockGetTask.mockResolvedValue({
+        ...mockTask,
+        assignee: 'Stale Name',
+        assigneeUserId: 8,
+        assigneeUser: {
+          id: 8,
+          name: 'Renamed Sam',
+          email: 'sam.b@example.com',
+        },
+      });
+
+      render(<TaskDetail taskId={1} />, { wrapper });
+
+      expect(await screen.findByText('Renamed Sam')).toBeInTheDocument();
+      expect(screen.queryByText(/Stale Name/)).not.toBeInTheDocument();
+    });
+
+    it('labels an unresolved legacy assignee explicitly', async () => {
+      mockGetTask.mockResolvedValue({
+        ...mockTask,
+        assignee: 'Ghost Person',
+        assigneeUserId: null,
+        assigneeUser: null,
+      });
+
+      render(<TaskDetail taskId={1} />, { wrapper });
+
+      expect(
+        await screen.findByText(/Ghost Person \(legacy name, not linked\)/),
+      ).toBeInTheDocument();
     });
 
     it('edits status via combobox', async () => {

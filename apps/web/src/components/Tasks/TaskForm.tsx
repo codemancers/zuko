@@ -18,6 +18,7 @@ import {
   Combobox,
   ComboboxOption,
   ComboboxLabel,
+  ComboboxDescription,
   SheetFooter,
   Button,
 } from '@zuko/ui-kit';
@@ -33,6 +34,12 @@ import { getTasks, getMembers } from '@/server/query-options';
 import Editor, { ensureOutputData } from '@/components/Common/Editor/Editor';
 import { authClient } from '@/lib/auth-client';
 import clsx from 'clsx';
+import {
+  type AssigneeOption,
+  UNASSIGNED,
+  assigneeOptions,
+  unresolvedLegacyAssignee,
+} from './assignee';
 
 const taskFormSchema = z.object({
   title: z.string().min(1, 'Title is required'),
@@ -69,7 +76,8 @@ const PRIORITY_OPTIONS: { value: TaskPriority; label: string }[] = [
   { value: 'URGENT', label: 'Urgent' },
 ];
 
-type MemberOption = { value: string; label: string };
+// Form value standing for an unresolved legacy name kept as-is.
+const LEGACY_VALUE = 'legacy';
 
 const TaskForm = ({
   mode,
@@ -89,10 +97,21 @@ const TaskForm = ({
     enabled: !!orgId,
   });
 
-  const memberOptions: MemberOption[] = [
-    { value: '', label: 'Unassigned' },
-    ...members.map((m) => ({ value: m.user.name, label: m.user.name })),
-  ];
+  const legacyAssignee = unresolvedLegacyAssignee(task);
+  const memberOptions = assigneeOptions(members, task);
+  if (legacyAssignee) {
+    memberOptions.splice(1, 0, {
+      value: LEGACY_VALUE,
+      label: legacyAssignee,
+      description: 'Legacy name, not linked to a member',
+    });
+  }
+  const initialAssignee =
+    task?.assigneeUserId != null
+      ? String(task.assigneeUserId)
+      : legacyAssignee
+        ? LEGACY_VALUE
+        : UNASSIGNED;
 
   const { data: tasksData } = useQuery(getTasks());
   const topLevelTasks = (tasksData?.tasks ?? []).filter(
@@ -107,7 +126,7 @@ const TaskForm = ({
       status: task?.status ?? 'TODO',
       priority: task?.priority ?? 'MEDIUM',
       isSales: mode === 'edit' ? (task?.isSales ?? false) : defaultIsSales,
-      assignee: task?.assignee ?? '',
+      assignee: initialAssignee,
       parentId: String(task?.parentId ?? defaultParentId ?? ''),
     },
   });
@@ -124,18 +143,24 @@ const TaskForm = ({
           status: data.status,
           priority: data.priority,
           isSales: data.isSales,
-          assignee: data.assignee || undefined,
+          assigneeUserId: data.assignee ? Number(data.assignee) : undefined,
           parentId: parentIdNum,
         });
       } else {
         if (!task) throw new Error('Task required in edit mode');
+        // Only send assignment when it changed, so an unresolved legacy
+        // name survives edits to other fields.
+        const assignment =
+          data.assignee === initialAssignee
+            ? {}
+            : { assigneeUserId: data.assignee ? Number(data.assignee) : null };
         return tasksApi.updateTask(task.id, {
           title: data.title,
           description: data.description || null,
           status: data.status,
           priority: data.priority,
           isSales: data.isSales,
-          assignee: data.assignee || null,
+          ...assignment,
           parentId: parentIdNum ?? null,
         });
       }
@@ -299,13 +324,17 @@ const TaskForm = ({
               control={form.control}
               name="assignee"
               render={({ field }) => (
-                <Combobox<MemberOption>
+                <Combobox<AssigneeOption>
                   options={memberOptions}
                   value={
                     memberOptions.find((o) => o.value === field.value) ??
                     undefined
                   }
-                  displayValue={(opt) => opt?.label ?? ''}
+                  displayValue={(opt) =>
+                    opt?.description
+                      ? `${opt.label} (${opt.description})`
+                      : (opt?.label ?? '')
+                  }
                   onChange={(opt) => field.onChange(opt?.value ?? '')}
                   placeholder="Select assignee..."
                   disabled={mutation.isPending}
@@ -313,6 +342,11 @@ const TaskForm = ({
                   {(option) => (
                     <ComboboxOption key={option.value || 'none'} value={option}>
                       <ComboboxLabel>{option.label}</ComboboxLabel>
+                      {option.description && (
+                        <ComboboxDescription>
+                          {option.description}
+                        </ComboboxDescription>
+                      )}
                     </ComboboxOption>
                   )}
                 </Combobox>
