@@ -160,6 +160,75 @@ describe('Task isSales HTTP validation', () => {
         expect(dto.assignee).toBeUndefined();
       });
 
+      describe.each(['contactId', 'prospectId'] as const)(
+        'person reference %s',
+        (field) => {
+          const dtoOf = () => mock.mock.calls[0][method === 'POST' ? 1 : 2];
+
+          it.each(
+            [
+              '5',
+              0,
+              -3,
+              1.5,
+              true,
+              false,
+              {},
+              [],
+              { connect: { id: 5 } },
+              2_147_483_648,
+              1e20,
+            ].map((value) => ({ value })),
+          )('rejects $value before calling service', async ({ value }) => {
+            const response = await invoke({ title: 'x', [field]: value });
+            expect(response.status).toBe(400);
+            expect(JSON.stringify((await response.json()).message)).toContain(
+              field,
+            );
+            expect(mock).not.toHaveBeenCalled();
+          });
+
+          it.each([12, 2_147_483_647, null])(
+            'passes %j through unchanged',
+            async (value) => {
+              const response = await invoke({ title: 'x', [field]: value });
+              expect(response.status).toBe(method === 'POST' ? 201 : 200);
+              expect(dtoOf()[field]).toBe(value);
+            },
+          );
+        },
+      );
+
+      it('leaves omitted person references undefined so they are preserved', async () => {
+        await invoke({ title: 'x' });
+        const dto = mock.mock.calls[0][method === 'POST' ? 1 : 2];
+        expect(dto.contactId).toBeUndefined();
+        expect(dto.prospectId).toBeUndefined();
+      });
+
+      it('rejects both contactId and prospectId in one request', async () => {
+        const response = await invoke({
+          title: 'x',
+          contactId: 3,
+          prospectId: 4,
+        });
+        expect(response.status).toBe(400);
+        expect(JSON.stringify((await response.json()).message)).toContain(
+          'contactId and prospectId',
+        );
+        expect(mock).not.toHaveBeenCalled();
+      });
+
+      it.each([
+        { contactId: 3, prospectId: null },
+        { contactId: null, prospectId: 4 },
+        { contactId: null, prospectId: null },
+      ])('accepts one reference with the other null: %j', async (refs) => {
+        const response = await invoke({ title: 'x', ...refs });
+        expect(response.status).toBe(method === 'POST' ? 201 : 200);
+        expect(mock).toHaveBeenCalledOnce();
+      });
+
       it('returns 400 when the service rejects a foreign-org assignee', async () => {
         mock.mockRejectedValueOnce(
           new BadRequestException(

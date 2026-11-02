@@ -29,6 +29,7 @@ model Contact {
   deals          DealContact[]
   leads          Lead[]       @relation("ContactLeads")
   prospects      Prospect[]   @relation("ContactProspects")
+  tasks          Task[]       @relation("ContactTasks")
 
   @@index([organizationId])
   @@index([isHidden])
@@ -405,6 +406,7 @@ model Prospect {
   lead         Lead?                @relation("ProspectLead", fields: [leadId], references: [id], onDelete: SetNull)
   memberships  CampaignMembership[] @relation("ProspectMemberships")
   events       CampaignEvent[]      @relation("ProspectEvents")
+  tasks        Task[]               @relation("ProspectTasks")
 
   // Identity resolution keys — one human, one prospect, per organization.
   @@unique([organizationId, email])

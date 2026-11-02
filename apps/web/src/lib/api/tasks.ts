@@ -18,6 +18,11 @@ export interface TaskOwner {
   };
 }
 
+export interface TaskPersonSummary {
+  id: number;
+  name: string;
+}
+
 export interface Task {
   id: number;
   organizationId: number;
@@ -32,6 +37,11 @@ export interface Task {
   assignee?: string | null;
   assigneeUserId?: number | null;
   assigneeUser?: TaskOwner['user'] | null;
+  /** Optional person reference; at most one of contactId/prospectId is set. */
+  contactId?: number | null;
+  prospectId?: number | null;
+  contact?: TaskPersonSummary | null;
+  prospect?: TaskPersonSummary | null;
   owners: TaskOwner[];
   subtasks: Task[];
   createdAt: string;
@@ -57,6 +67,9 @@ export interface CreateTaskDto {
   completedAt?: string;
   parentId?: number;
   assigneeUserId?: number | null;
+  /** Send at most one of contactId/prospectId. */
+  contactId?: number | null;
+  prospectId?: number | null;
 }
 
 export interface UpdateTaskDto {
@@ -68,6 +81,9 @@ export interface UpdateTaskDto {
   completedAt?: string | null;
   parentId?: number | null;
   assigneeUserId?: number | null;
+  /** Setting one clears the other; null clears it; omit to keep it. */
+  contactId?: number | null;
+  prospectId?: number | null;
 }
 
 export interface TaskFilters {
