@@ -349,11 +349,17 @@ model Task {
   assignee       String?
   // Stable assignee identity. Distinct from owners (creator/ownership links).
   assigneeUserId Int?         @map("assignee_user_id")
+  // Optional person the task is about: a contact or a prospect, never both
+  // (enforced by the task_single_person_reference check constraint).
+  contactId      Int?         @map("contact_id")
+  prospectId     Int?         @map("prospect_id")
 
   parent       Task?       @relation("TaskSubtasks", fields: [parentId], references: [id])
   subtasks     Task[]      @relation("TaskSubtasks")
   owners       TaskOwner[]
   assigneeUser User?       @relation("TaskAssignee", fields: [assigneeUserId], references: [id], onDelete: SetNull)
+  contact      Contact?    @relation("ContactTasks", fields: [contactId], references: [id], onDelete: SetNull)
+  prospect     Prospect?   @relation("ProspectTasks", fields: [prospectId], references: [id], onDelete: SetNull)
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -362,6 +368,8 @@ model Task {
   @@index([parentId])
   @@index([status])
   @@index([assigneeUserId])
+  @@index([contactId])
+  @@index([prospectId])
   @@map("task")
   @@schema("public")
 }

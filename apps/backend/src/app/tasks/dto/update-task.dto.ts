@@ -1,6 +1,14 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsBoolean, IsInt, IsPositive, Max, ValidateIf } from 'class-validator';
+import {
+  IsBoolean,
+  IsInt,
+  IsPositive,
+  Max,
+  Validate,
+  ValidateIf,
+} from 'class-validator';
 import type { TaskStatus, TaskPriority, EditorData } from '@zuko/sales';
+import { SinglePersonReference } from './single-person-reference.validator';
 
 export class UpdateTaskDto {
   @ApiPropertyOptional({ example: 'Follow up with client' })
@@ -61,4 +69,29 @@ export class UpdateTaskDto {
   // Postgres INTEGER bound; larger values would fail in Prisma with a 500.
   @Max(2_147_483_647)
   assigneeUserId?: number | null;
+
+  @ApiPropertyOptional({
+    type: Number,
+    nullable: true,
+    description:
+      'Sales contact this task is about. Setting it clears prospectId; null clears it; omit to keep it.',
+  })
+  @ValidateIf((_object, value) => value !== undefined && value !== null)
+  @IsInt()
+  @IsPositive()
+  @Max(2_147_483_647)
+  @Validate(SinglePersonReference)
+  contactId?: number | null;
+
+  @ApiPropertyOptional({
+    type: Number,
+    nullable: true,
+    description:
+      'Sales prospect this task is about. Setting it clears contactId; null clears it; omit to keep it.',
+  })
+  @ValidateIf((_object, value) => value !== undefined && value !== null)
+  @IsInt()
+  @IsPositive()
+  @Max(2_147_483_647)
+  prospectId?: number | null;
 }

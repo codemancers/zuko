@@ -39,12 +39,20 @@ describe('TaskRepository', () => {
     member: {
       findFirst: vi.fn(),
     },
+    contact: {
+      findFirst: vi.fn(),
+    },
+    prospect: {
+      findFirst: vi.fn(),
+    },
     $transaction: vi.fn(
       async (fn: (tx: typeof mockPrisma) => Promise<unknown>) =>
         fn({
           task: mockPrisma.task,
           taskOwner: mockPrisma.taskOwner,
           member: mockPrisma.member,
+          contact: mockPrisma.contact,
+          prospect: mockPrisma.prospect,
         } as never),
     ),
   };
@@ -291,6 +299,182 @@ describe('TaskRepository', () => {
           }),
         }),
       );
+    });
+  });
+
+  describe('person reference', () => {
+    const dataOf = (mock: Mock) => mock.mock.calls[0][0].data;
+
+    it('create links an org-scoped contact in the same transaction', async () => {
+      (mockPrisma.contact.findFirst as Mock).mockResolvedValue({ id: 5 });
+      (mockPrisma.task.create as Mock).mockResolvedValue(mockTask);
+
+      await repo.create({ organizationId: ORG_ID, title: 'x', contactId: 5 });
+
+      expect(mockPrisma.$transaction).toHaveBeenCalledTimes(1);
+      expect(mockPrisma.contact.findFirst).toHaveBeenCalledWith(
+        expect.objectContaining({ where: { id: 5, organizationId: ORG_ID } }),
+      );
+      expect(dataOf(mockPrisma.task.create as Mock)).toEqual({
+        title: 'x',
+        organizationId: ORG_ID,
+        contactId: 5,
+        prospectId: null,
+      });
+    });
+
+    it('create links an org-scoped prospect without touching contacts', async () => {
+      (mockPrisma.prospect.findFirst as Mock).mockResolvedValue({ id: 8 });
+      (mockPrisma.task.create as Mock).mockResolvedValue(mockTask);
+
+      await repo.create({ organizationId: ORG_ID, title: 'x', prospectId: 8 });
+
+      expect(mockPrisma.prospect.findFirst).toHaveBeenCalledWith(
+        expect.objectContaining({ where: { id: 8, organizationId: ORG_ID } }),
+      );
+      expect(mockPrisma.contact.findFirst).not.toHaveBeenCalled();
+      expect(dataOf(mockPrisma.task.create as Mock)).toEqual({
+        title: 'x',
+        organizationId: ORG_ID,
+        prospectId: 8,
+        contactId: null,
+      });
+    });
+
+    it('create without references writes no reference columns', async () => {
+      (mockPrisma.task.create as Mock).mockResolvedValue(mockTask);
+
+      await repo.create({ organizationId: ORG_ID, title: 'x' });
+
+      expect(mockPrisma.contact.findFirst).not.toHaveBeenCalled();
+      expect(mockPrisma.prospect.findFirst).not.toHaveBeenCalled();
+      expect(dataOf(mockPrisma.task.create as Mock)).toEqual({
+        title: 'x',
+        organizationId: ORG_ID,
+      });
+    });
+
+    it.each([
+      ['contact', { contactId: 99 }],
+      ['prospect', { prospectId: 99 }],
+    ] as const)(
+      'rejects a %s outside the organization without writing',
+      async (model, refs) => {
+        (mockPrisma[model].findFirst as Mock).mockResolvedValue(null);
+
+        await expect(
+          repo.create({ organizationId: ORG_ID, title: 'x', ...refs }),
+        ).rejects.toBeInstanceOf(BadRequestException);
+        await expect(
+          repo.update(1, ORG_ID, { title: 'x', ...refs }),
+        ).rejects.toBeInstanceOf(BadRequestException);
+        expect(mockPrisma.task.create).not.toHaveBeenCalled();
+        expect(mockPrisma.task.update).not.toHaveBeenCalled();
+        expect(mockPrisma.taskOwner.create).not.toHaveBeenCalled();
+      },
+    );
+
+    it('rejects both references at once without lookups or writes', async () => {
+      await expect(
+        repo.create({
+          organizationId: ORG_ID,
+          title: 'x',
+          contactId: 5,
+          prospectId: 8,
+        }),
+      ).rejects.toBeInstanceOf(BadRequestException);
+      await expect(
+        repo.update(1, ORG_ID, { contactId: 5, prospectId: 8 }),
+      ).rejects.toBeInstanceOf(BadRequestException);
+      expect(mockPrisma.contact.findFirst).not.toHaveBeenCalled();
+      expect(mockPrisma.prospect.findFirst).not.toHaveBeenCalled();
+      expect(mockPrisma.task.create).not.toHaveBeenCalled();
+      expect(mockPrisma.task.update).not.toHaveBeenCalled();
+    });
+
+    it('update setting a contact clears any prior prospect', async () => {
+      (mockPrisma.contact.findFirst as Mock).mockResolvedValue({ id: 5 });
+      (mockPrisma.task.update as Mock).mockResolvedValue(mockTask);
+
+      await repo.update(1, ORG_ID, { contactId: 5 });
+
+      expect(dataOf(mockPrisma.task.update as Mock)).toEqual({
+        contactId: 5,
+        prospectId: null,
+      });
+    });
+
+    it('update setting a prospect clears any prior contact', async () => {
+      (mockPrisma.prospect.findFirst as Mock).mockResolvedValue({ id: 8 });
+      (mockPrisma.task.update as Mock).mockResolvedValue(mockTask);
+
+      await repo.update(1, ORG_ID, { prospectId: 8, contactId: null });
+
+      expect(dataOf(mockPrisma.task.update as Mock)).toEqual({
+        prospectId: 8,
+        contactId: null,
+      });
+    });
+
+    it.each([
+      [{ contactId: null }, { contactId: null }],
+      [{ prospectId: null }, { prospectId: null }],
+      [
+        { contactId: null, prospectId: null },
+        { contactId: null, prospectId: null },
+      ],
+    ])('update %j clears only what was sent', async (input, expected) => {
+      (mockPrisma.task.update as Mock).mockResolvedValue(mockTask);
+
+      await repo.update(1, ORG_ID, input);
+
+      expect(mockPrisma.contact.findFirst).not.toHaveBeenCalled();
+      expect(mockPrisma.prospect.findFirst).not.toHaveBeenCalled();
+      expect(dataOf(mockPrisma.task.update as Mock)).toEqual(expected);
+    });
+
+    it('includes only id and name of the linked person', async () => {
+      (mockPrisma.task.findFirst as Mock).mockResolvedValue(mockTask);
+
+      await repo.findById(1, ORG_ID);
+
+      expect(mockPrisma.task.findFirst).toHaveBeenCalledWith(
+        expect.objectContaining({
+          include: expect.objectContaining({
+            contact: { select: { id: true, name: true } },
+            prospect: { select: { id: true, name: true } },
+          }),
+        }),
+      );
+    });
+
+    it('ignores caller-supplied relation operations and org changes', async () => {
+      (mockPrisma.task.create as Mock).mockResolvedValue(mockTask);
+      (mockPrisma.task.update as Mock).mockResolvedValue(mockTask);
+      const injected = {
+        contact: { connect: { id: 99 } },
+        prospect: { create: { name: 'Injected', organizationId: 2 } },
+        owners: { create: [{ userId: 99 }] },
+        organization: { connect: { id: 2 } },
+        assigneeUser: { connect: { id: 99 } },
+      };
+
+      await repo.create({
+        organizationId: ORG_ID,
+        title: 'x',
+        ...injected,
+      } as never);
+      await repo.update(1, ORG_ID, {
+        title: 'y',
+        organizationId: 2,
+        ...injected,
+      } as never);
+
+      expect(dataOf(mockPrisma.task.create as Mock)).toEqual({
+        title: 'x',
+        organizationId: ORG_ID,
+      });
+      expect(dataOf(mockPrisma.task.update as Mock)).toEqual({ title: 'y' });
     });
   });
 
