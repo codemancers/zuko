@@ -15,6 +15,7 @@ import {
   DEAL_STAGE_VALUES,
   ENGAGEMENT_STATE_VALUES,
   PROSPECT_STATUS_VALUES,
+  serializeTaskDueDates,
 } from '@zuko/sales';
 import { z } from 'zod';
 import type { IcpService } from '../icp/icp.service';
@@ -302,7 +303,8 @@ export function buildMcpServer(
         };
       }
 
-      return json(task);
+      // dueDate is a calendar day; don't let JSON turn it into an instant.
+      return json(serializeTaskDueDates(task));
     },
   );
 

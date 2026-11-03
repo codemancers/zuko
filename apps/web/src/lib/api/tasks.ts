@@ -32,6 +32,8 @@ export interface Task {
   priority: TaskPriority;
   isSales: boolean;
   completedAt?: string | null;
+  /** Calendar day as YYYY-MM-DD, not an instant; null when undated. */
+  dueDate?: string | null;
   parentId?: number | null;
   /** Legacy display name; unresolved when assigneeUserId is null. */
   assignee?: string | null;
@@ -65,6 +67,8 @@ export interface CreateTaskDto {
   priority?: TaskPriority;
   isSales?: boolean;
   completedAt?: string;
+  /** YYYY-MM-DD; omit or null for no due date. */
+  dueDate?: string | null;
   parentId?: number;
   assigneeUserId?: number | null;
   /** Send at most one of contactId/prospectId. */
@@ -79,6 +83,8 @@ export interface UpdateTaskDto {
   priority?: TaskPriority;
   isSales?: boolean;
   completedAt?: string | null;
+  /** YYYY-MM-DD; null clears it; omit to keep it. */
+  dueDate?: string | null;
   parentId?: number | null;
   assigneeUserId?: number | null;
   /** Setting one clears the other; null clears it; omit to keep it. */

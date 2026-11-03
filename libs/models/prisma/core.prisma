@@ -344,6 +344,9 @@ model Task {
   priority       TaskPriority @default(MEDIUM)
   isSales        Boolean      @default(false) @map("is_sales")
   completedAt    DateTime?    @map("completed_at")
+  // Calendar day, not an instant. Prisma reads it as UTC midnight; the API
+  // exchanges it as a YYYY-MM-DD string (see utils/due-date.ts in sales).
+  dueDate        DateTime?    @map("due_date") @db.Date
   parentId       Int?         @map("parent_id")
   // Legacy display name; kept in sync with assigneeUser.name on stable writes.
   assignee       String?
@@ -370,6 +373,7 @@ model Task {
   @@index([assigneeUserId])
   @@index([contactId])
   @@index([prospectId])
+  @@index([dueDate])
   @@map("task")
   @@schema("public")
 }
