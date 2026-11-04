@@ -25,6 +25,7 @@ import { LeadsModule } from './leads/leads.module';
 import { ProspectsModule } from './prospects/prospects.module';
 import { PagesModule } from './pages/pages.module';
 import { EveModule } from '../eve/eve.module';
+import { SalesOverviewModule } from './sales-overview/sales-overview.module';
 
 const authModule = AuthModule.forRoot({ auth, disableGlobalAuthGuard: true });
 
@@ -44,6 +45,7 @@ const authModule = AuthModule.forRoot({ auth, disableGlobalAuthGuard: true });
     authModule,
     AgentsWrapperModule,
     SalesModule,
+    SalesOverviewModule,
     TasksModule,
     ActivitiesModule,
     ChatsModule,

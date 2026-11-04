@@ -51,6 +51,7 @@ import {
   MegaphoneIcon,
 } from '@heroicons/react/20/solid';
 import { LoadingState } from '@/components/shared';
+import { SalesOverviewNavItem } from '@/components/SalesOverview/SalesOverviewNavItem';
 import { usePathname, useRouter } from 'next/navigation';
 import { authClient } from '@/lib/auth-client';
 import { apiClient } from '@/lib/api-client';
@@ -283,6 +284,10 @@ export function ApplicationLayout({
 
           <SidebarBody collapsed={isSidebarCollapsed}>
             <SidebarSection collapsed={isSidebarCollapsed}>
+              <SalesOverviewNavItem
+                collapsed={isSidebarCollapsed}
+                current={pathname.startsWith('/sales-overview')}
+              />
               {navigation.map((item, index) =>
                 'divider' in item ? (
                   <SidebarDivider key={`divider-${index}`} />
