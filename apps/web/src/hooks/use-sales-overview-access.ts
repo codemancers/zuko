@@ -8,7 +8,7 @@ export function useSalesOverviewAccess() {
   const session = authClient.useSession();
   const organization = authClient.useActiveOrganization();
   const loading = session.isPending || organization.isPending;
-  const activeId = session.data?.session.activeOrganizationId;
+  const activeId = session.data?.session?.activeOrganizationId;
   const userId = session.data?.user.id;
   const currentOrganization = Boolean(
     activeId &&
