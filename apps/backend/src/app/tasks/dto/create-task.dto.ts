@@ -9,6 +9,7 @@ import {
 } from 'class-validator';
 import type { TaskStatus, TaskPriority, EditorData } from '@zuko/sales';
 import { SinglePersonReference } from './single-person-reference.validator';
+import { DueDateString } from './due-date.validator';
 
 export class CreateTaskDto {
   @ApiProperty({ example: 'Follow up with client' })
@@ -40,6 +41,18 @@ export class CreateTaskDto {
 
   @ApiPropertyOptional({ type: String, format: 'date-time', nullable: true })
   completedAt?: Date;
+
+  @ApiPropertyOptional({
+    type: String,
+    format: 'date',
+    nullable: true,
+    example: '2026-11-03',
+    description:
+      'Calendar day (YYYY-MM-DD). Omit or send null for no due date.',
+  })
+  @ValidateIf((_object, value) => value !== undefined && value !== null)
+  @Validate(DueDateString)
+  dueDate?: string | null;
 
   @ApiPropertyOptional({
     type: Number,

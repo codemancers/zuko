@@ -14,6 +14,7 @@ import {
   COLUMN_TYPES,
   mergeCustomFieldValue,
   castFieldValue,
+  serializeTaskDueDates,
   type ColumnMetadata,
   type FlattenedContact,
   type FlattenedCompany,
@@ -185,7 +186,7 @@ export class TableService {
 
     // Show the related user's current name; fall back to the legacy string.
     const rows = tasks.map(({ assigneeUser, ...task }) => ({
-      ...task,
+      ...serializeTaskDueDates(task),
       assignee: assigneeUser?.name ?? task.assignee,
     }));
 
@@ -541,7 +542,7 @@ export class TableService {
         case 'tasks': {
           const col = TASK_TABLE_METADATA.find((m) => m.id === columnId);
           if (!col) throw new BadRequestException('Column not found');
-          result = await this.prisma.task.update({
+          const task = await this.prisma.task.update({
             where: { id: rowId, organizationId },
             data: {
               [columnId]: castFieldValue(value, col.fieldType as ColumnType),
@@ -550,6 +551,7 @@ export class TableService {
               ...(columnId === 'assignee' ? { assigneeUserId: null } : {}),
             },
           });
+          result = serializeTaskDueDates(task);
           break;
         }
 

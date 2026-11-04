@@ -21,3 +21,4 @@ export * from './lib/listeners/lead-activity.listener';
 export * from './lib/mappers/column-metadata.mapper';
 export * from './lib/utils/custom-fields';
 export * from './lib/utils/json-equal';
+export * from './lib/utils/due-date';

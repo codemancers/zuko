@@ -152,6 +152,29 @@ describe('get_task tool', () => {
     expect(task.id).toBe(5);
   });
 
+  it.each([
+    [new Date('2026-11-03T00:00:00.000Z'), '2026-11-03'],
+    [null, null],
+  ])('returns dueDate %j as a date-only value', async (dueDate, expected) => {
+    const findFirst = vi.fn(async () => ({
+      id: 5,
+      organizationId: 1,
+      title: 'Existing',
+      dueDate,
+      owners: [],
+      subtasks: [],
+      parent: null,
+    }));
+    const client = await connect(fakeDb({ task: { findFirst } }), [
+      'tasks:read',
+    ]);
+    const res = await client.callTool({
+      name: 'get_task',
+      arguments: { taskId: 5 },
+    });
+    expect(parse(res).dueDate).toBe(expected);
+  });
+
   it('returns error when task not found', async () => {
     const db = fakeDb({ task: { findFirst: vi.fn(async () => null) } });
     const client = await connect(db, ['tasks:read']);

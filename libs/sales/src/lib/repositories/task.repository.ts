@@ -4,6 +4,7 @@ import type { Prisma } from '@prisma/client';
 import type { PrismaService } from '../modules/prisma.types';
 import type { PaginationOptions } from './types';
 import type { EditorData } from '../types/sales-api';
+import { serializeTaskDueDates, toDueDateColumn } from '../utils/due-date';
 
 export { TaskStatus, TaskPriority };
 
@@ -15,6 +16,8 @@ export interface CreateTaskInput {
   priority?: TaskPriority;
   isSales?: boolean;
   completedAt?: Date;
+  /** Calendar day as YYYY-MM-DD; omitted or null leaves the task undated. */
+  dueDate?: string | null;
   parentId?: number;
   /** Legacy display name. Ignored when assigneeUserId is provided. */
   assignee?: string;
@@ -32,6 +35,8 @@ export interface UpdateTaskInput {
   priority?: TaskPriority;
   isSales?: boolean;
   completedAt?: Date | null;
+  /** Calendar day as YYYY-MM-DD; null clears it; omit to keep it. */
+  dueDate?: string | null;
   parentId?: number | null;
   /** Legacy display name. Ignored when assigneeUserId is provided. */
   assignee?: string | null;
@@ -68,6 +73,13 @@ function pickWritableFields(input: object): WritableFields {
       (writableFields as readonly string[]).includes(key),
     ),
   ) as WritableFields;
+}
+
+// Validated here, not only in HTTP DTOs, so every caller maps a calendar day
+// to the DATE column the same way. Throws before any write.
+function dueDateData(input: { dueDate?: unknown }): { dueDate?: Date | null } {
+  const dueDate = toDueDateColumn(input.dueDate);
+  return dueDate === undefined ? {} : { dueDate };
 }
 
 const userSummary = { select: { id: true, name: true, email: true } } as const;
@@ -168,9 +180,9 @@ export class TaskRepository {
       contactId,
       prospectId,
     } = input;
-    const data = pickWritableFields(input);
+    const data = { ...pickWritableFields(input), ...dueDateData(input) };
 
-    return this.prisma.$transaction(async (tx) => {
+    const created = await this.prisma.$transaction(async (tx) => {
       const personReference = await this.resolvePersonReference(
         tx,
         organizationId,
@@ -204,13 +216,15 @@ export class TaskRepository {
 
       return task;
     });
+    return serializeTaskDueDates(created);
   }
 
   async findById(id: number, organizationId: number) {
-    return this.prisma.task.findFirst({
+    const task = await this.prisma.task.findFirst({
       where: { id, organizationId },
       include: taskInclude,
     });
+    return task && serializeTaskDueDates(task);
   }
 
   async findAll(
@@ -272,7 +286,7 @@ export class TaskRepository {
     ]);
 
     return {
-      tasks,
+      tasks: tasks.map(serializeTaskDueDates),
       pagination: {
         page,
         limit,
@@ -284,9 +298,9 @@ export class TaskRepository {
 
   async update(id: number, organizationId: number, input: UpdateTaskInput) {
     const { assignee, assigneeUserId, contactId, prospectId } = input;
-    const data = pickWritableFields(input);
+    const data = { ...pickWritableFields(input), ...dueDateData(input) };
 
-    return this.prisma.$transaction(async (tx) => {
+    const task = await this.prisma.$transaction(async (tx) => {
       const personReference = await this.resolvePersonReference(
         tx,
         organizationId,
@@ -302,6 +316,7 @@ export class TaskRepository {
         include: taskInclude,
       });
     });
+    return serializeTaskDueDates(task);
   }
 
   async delete(id: number, organizationId: number) {
