@@ -86,9 +86,12 @@ const Editor = ({
           onReady?.(editor);
         },
         onChange: async () => {
-          if (onChange) {
+          // EditorJS may deliver a queued event after teardown removes save().
+          if (onChange && isMounted.current && ejInstance.current === editor) {
             const content = await editor.save();
-            onChange(content);
+            if (isMounted.current && ejInstance.current === editor) {
+              onChange(content);
+            }
           }
         },
         minHeight: 0,

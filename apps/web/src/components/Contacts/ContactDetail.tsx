@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { SalesTaskCreateButton } from '@/components/Tasks/SalesTaskCreateButton';
 import { useAutosaveField } from '@/hooks/useAutosaveField';
 import {
   UserIcon,
@@ -129,6 +130,9 @@ export default function ContactDetail({
           createdAt={contact.createdAt}
         />
         <div className="flex shrink-0 items-center gap-3">
+          <SalesTaskCreateButton
+            person={{ type: 'contact', id: contact.id, name: contact.name }}
+          />
           <Button onClick={handleEdit}>
             <PencilIcon className="h-4 w-4" />
             Edit
