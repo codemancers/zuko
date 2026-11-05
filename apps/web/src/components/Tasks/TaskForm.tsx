@@ -1,6 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
+import { useRef } from 'react';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -34,6 +35,7 @@ import { getTasks, getMembers } from '@/server/query-options';
 import Editor, { ensureOutputData } from '@/components/Common/Editor/Editor';
 import { authClient } from '@/lib/auth-client';
 import clsx from 'clsx';
+import { TaskPersonField, type TaskPerson } from './TaskPersonField';
 import {
   type AssigneeOption,
   UNASSIGNED,
@@ -49,6 +51,14 @@ const taskFormSchema = z.object({
   assignee: z.string().optional(),
   parentId: z.string(),
   isSales: z.boolean(),
+  dueDate: z.string(),
+  person: z
+    .object({
+      type: z.enum(['contact', 'prospect']),
+      id: z.number(),
+      name: z.string(),
+    })
+    .nullable(),
 });
 
 type TaskFormValues = z.infer<typeof taskFormSchema>;
@@ -58,8 +68,12 @@ interface TaskFormProps {
   task?: Task;
   defaultParentId?: number;
   defaultIsSales?: boolean;
+  defaultDueDate?: string;
+  defaultAssigneeUserId?: number;
+  defaultPerson?: TaskPerson;
   onSuccess?: () => void;
   onCancel?: () => void;
+  onSavingChange?: (saving: boolean) => void;
 }
 
 const STATUS_OPTIONS: { value: TaskStatus; label: string }[] = [
@@ -84,10 +98,15 @@ const TaskForm = ({
   task,
   defaultParentId,
   defaultIsSales = false,
+  defaultDueDate = '',
+  defaultAssigneeUserId,
+  defaultPerson,
   onSuccess,
   onCancel,
+  onSavingChange,
 }: TaskFormProps) => {
   const router = useRouter();
+  const submitting = useRef(false);
   const queryClient = useQueryClient();
 
   const activeOrg = authClient.useActiveOrganization();
@@ -111,7 +130,9 @@ const TaskForm = ({
       ? String(task.assigneeUserId)
       : legacyAssignee
         ? LEGACY_VALUE
-        : UNASSIGNED;
+        : mode === 'create' && defaultAssigneeUserId != null
+          ? String(defaultAssigneeUserId)
+          : UNASSIGNED;
 
   const { data: tasksData } = useQuery(getTasks());
   const topLevelTasks = (tasksData?.tasks ?? []).filter(
@@ -126,6 +147,23 @@ const TaskForm = ({
       status: task?.status ?? 'TODO',
       priority: task?.priority ?? 'MEDIUM',
       isSales: mode === 'edit' ? (task?.isSales ?? false) : defaultIsSales,
+      dueDate: mode === 'edit' ? (task?.dueDate ?? '') : defaultDueDate,
+      person:
+        mode === 'create'
+          ? (defaultPerson ?? null)
+          : task?.contactId
+            ? {
+                type: 'contact',
+                id: task.contactId,
+                name: task.contact?.name ?? `Contact #${task.contactId}`,
+              }
+            : task?.prospectId
+              ? {
+                  type: 'prospect',
+                  id: task.prospectId,
+                  name: task.prospect?.name ?? `Prospect #${task.prospectId}`,
+                }
+              : null,
       assignee: initialAssignee,
       parentId: String(task?.parentId ?? defaultParentId ?? ''),
     },
@@ -143,6 +181,9 @@ const TaskForm = ({
           status: data.status,
           priority: data.priority,
           isSales: data.isSales,
+          dueDate: data.dueDate || null,
+          contactId: data.person?.type === 'contact' ? data.person.id : null,
+          prospectId: data.person?.type === 'prospect' ? data.person.id : null,
           assigneeUserId: data.assignee ? Number(data.assignee) : undefined,
           parentId: parentIdNum,
         });
@@ -154,12 +195,24 @@ const TaskForm = ({
           data.assignee === initialAssignee
             ? {}
             : { assigneeUserId: data.assignee ? Number(data.assignee) : null };
+        const contactId =
+          data.person?.type === 'contact' ? data.person.id : null;
+        const prospectId =
+          data.person?.type === 'prospect' ? data.person.id : null;
+        // Preserve existing references (including hidden people) on unrelated edits.
+        const person =
+          contactId === (task.contactId ?? null) &&
+          prospectId === (task.prospectId ?? null)
+            ? {}
+            : { contactId, prospectId };
         return tasksApi.updateTask(task.id, {
           title: data.title,
           description: data.description || null,
           status: data.status,
           priority: data.priority,
           isSales: data.isSales,
+          dueDate: data.dueDate || null,
+          ...person,
           ...assignment,
           parentId: parentIdNum ?? null,
         });
@@ -204,8 +257,18 @@ const TaskForm = ({
     },
   });
 
-  const onSubmit = (data: TaskFormValues) => {
-    mutation.mutate(data);
+  const onSubmit = async (data: TaskFormValues) => {
+    if (submitting.current) return;
+    submitting.current = true;
+    onSavingChange?.(true);
+    try {
+      await mutation.mutateAsync(data);
+    } catch {
+      // onError displays the failure without resetting the form.
+    } finally {
+      submitting.current = false;
+      onSavingChange?.(false);
+    }
   };
 
   const handleCancel = () => {
@@ -221,6 +284,59 @@ const TaskForm = ({
   };
 
   const isSheet = !!onSuccess;
+  const advancedFields = (
+    <>
+      <Field>
+        <Label>Status</Label>
+        <Select {...form.register('status')} disabled={mutation.isPending}>
+          {STATUS_OPTIONS.map((opt) => (
+            <option key={opt.value} value={opt.value}>
+              {opt.label}
+            </option>
+          ))}
+        </Select>
+        {form.formState.errors.status && (
+          <ErrorMessage>{form.formState.errors.status.message}</ErrorMessage>
+        )}
+      </Field>
+
+      <Field>
+        <Label>Priority</Label>
+        <Select {...form.register('priority')} disabled={mutation.isPending}>
+          {PRIORITY_OPTIONS.map((opt) => (
+            <option key={opt.value} value={opt.value}>
+              {opt.label}
+            </option>
+          ))}
+        </Select>
+        {form.formState.errors.priority && (
+          <ErrorMessage>{form.formState.errors.priority.message}</ErrorMessage>
+        )}
+      </Field>
+
+      <Field>
+        <Label>Parent Task</Label>
+        <Controller
+          control={form.control}
+          name="parentId"
+          render={({ field }) => (
+            <Select
+              {...field}
+              value={field.value}
+              disabled={mutation.isPending}
+            >
+              <option value="">No parent (top-level)</option>
+              {topLevelTasks.map((t) => (
+                <option key={t.id} value={String(t.id)}>
+                  {t.title}
+                </option>
+              ))}
+            </Select>
+          )}
+        />
+      </Field>
+    </>
+  );
 
   return (
     <form
@@ -245,77 +361,13 @@ const TaskForm = ({
             )}
           </Field>
 
-          <CheckboxField>
-            <Controller
-              control={form.control}
-              name="isSales"
-              render={({ field }) => (
-                <Checkbox
-                  name={field.name}
-                  checked={field.value}
-                  onChange={field.onChange}
-                  onBlur={field.onBlur}
-                  disabled={mutation.isPending}
-                />
-              )}
-            />
-            <Label>Sales task</Label>
-          </CheckboxField>
-
           <Field>
-            <Label>Description</Label>
-            <Controller
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <div
-                  data-slot="control"
-                  className="rounded-lg border border-zinc-200 dark:border-zinc-800 p-3 min-h-20 max-h-32 overflow-y-auto bg-white dark:bg-zinc-900 shadow-sm transition-[box-shadow,border-color] duration-150 ease-out focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-500"
-                >
-                  <Editor
-                    holder="task-description-editor"
-                    data={ensureOutputData(field.value)}
-                    onChange={(val) => field.onChange(val)}
-                    placeholder="Optional description"
-                  />
-                </div>
-              )}
-            />
-          </Field>
-
-          <Field>
-            <Label>Status</Label>
-            <Select {...form.register('status')} disabled={mutation.isPending}>
-              {STATUS_OPTIONS.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </Select>
-            {form.formState.errors.status && (
-              <ErrorMessage>
-                {form.formState.errors.status.message}
-              </ErrorMessage>
-            )}
-          </Field>
-
-          <Field>
-            <Label>Priority</Label>
-            <Select
-              {...form.register('priority')}
+            <Label>Due date</Label>
+            <Input
+              type="date"
+              {...form.register('dueDate')}
               disabled={mutation.isPending}
-            >
-              {PRIORITY_OPTIONS.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </Select>
-            {form.formState.errors.priority && (
-              <ErrorMessage>
-                {form.formState.errors.priority.message}
-              </ErrorMessage>
-            )}
+            />
           </Field>
 
           <Field>
@@ -354,27 +406,67 @@ const TaskForm = ({
             />
           </Field>
 
-          <Field>
-            <Label>Parent Task</Label>
+          <CheckboxField>
             <Controller
               control={form.control}
-              name="parentId"
+              name="isSales"
               render={({ field }) => (
-                <Select
-                  {...field}
-                  value={field.value}
+                <Checkbox
+                  name={field.name}
+                  checked={field.value}
+                  onChange={field.onChange}
+                  onBlur={field.onBlur}
                   disabled={mutation.isPending}
+                />
+              )}
+            />
+            <Label>Sales task</Label>
+          </CheckboxField>
+
+          <Controller
+            control={form.control}
+            name="person"
+            render={({ field }) => (
+              <TaskPersonField
+                value={field.value}
+                onChange={field.onChange}
+                organizationId={orgId}
+                disabled={mutation.isPending}
+              />
+            )}
+          />
+
+          <Field>
+            <Label>Description</Label>
+            <Controller
+              control={form.control}
+              name="description"
+              render={({ field }) => (
+                <div
+                  data-slot="control"
+                  className="rounded-lg border border-zinc-200 dark:border-zinc-800 p-3 min-h-20 max-h-32 overflow-y-auto bg-white dark:bg-zinc-900 shadow-sm transition-[box-shadow,border-color] duration-150 ease-out focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-500"
                 >
-                  <option value="">No parent (top-level)</option>
-                  {topLevelTasks.map((t) => (
-                    <option key={t.id} value={String(t.id)}>
-                      {t.title}
-                    </option>
-                  ))}
-                </Select>
+                  <Editor
+                    holder="task-description-editor"
+                    data={ensureOutputData(field.value)}
+                    onChange={(val) => field.onChange(val)}
+                    placeholder="Optional description"
+                  />
+                </div>
               )}
             />
           </Field>
+
+          {mode === 'create' && defaultIsSales ? (
+            <details>
+              <summary className="cursor-pointer text-sm text-zinc-700 dark:text-zinc-300">
+                More options
+              </summary>
+              <FieldGroup className="mt-4">{advancedFields}</FieldGroup>
+            </details>
+          ) : (
+            advancedFields
+          )}
 
           {form.formState.errors.root && (
             <ErrorMessage>{form.formState.errors.root.message}</ErrorMessage>

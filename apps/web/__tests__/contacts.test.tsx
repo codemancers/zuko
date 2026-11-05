@@ -58,6 +58,7 @@ vi.mock('@/lib/api/deals', () => ({
 
 vi.mock('@/lib/auth-client', () => ({
   authClient: {
+    useActiveOrganization: vi.fn(() => ({ data: { id: '1' } })),
     useSession: vi.fn(() => ({ data: { user: { id: '1' } } })),
   },
 }));

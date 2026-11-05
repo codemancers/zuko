@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { SalesTaskCreateButton } from '@/components/Tasks/SalesTaskCreateButton';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
 import { toast } from 'sonner';
@@ -219,6 +220,9 @@ export default function ProspectDetail({
         </div>
 
         <div className="flex shrink-0 items-center gap-2">
+          <SalesTaskCreateButton
+            person={{ type: 'prospect', id: prospect.id, name: prospect.name }}
+          />
           {prospect.status === 'engaged' && (
             <Button
               color="dark"

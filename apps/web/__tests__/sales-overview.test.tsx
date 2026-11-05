@@ -11,6 +11,9 @@ const state = vi.hoisted(() => ({
   org: '7',
   get: vi.fn(),
 }));
+vi.mock('@/components/Tasks/SalesTaskCreateButton', () => ({
+  SalesTaskCreateButton: () => <button>Add task</button>,
+}));
 vi.mock('@/hooks/use-sales-overview-access', () => ({
   useSalesOverviewAccess: () => ({
     allowed: state.allowed,
@@ -55,7 +58,7 @@ describe('Sales Overview shell', () => {
       'Activity count',
       'Latest update',
     ]);
-    expect(screen.getByRole('button', { name: 'Add task' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Add task' })).toBeEnabled();
     expect(
       screen.getByRole('combobox', { name: 'Recent work period' }),
     ).toHaveValue('yesterday');

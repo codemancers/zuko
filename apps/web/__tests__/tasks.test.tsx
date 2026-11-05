@@ -7,6 +7,7 @@ import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import TaskForm from '@/components/Tasks/TaskForm';
+import { SalesTaskCreateButton } from '@/components/Tasks/SalesTaskCreateButton';
 import TasksList from '@/components/Tasks/TasksList';
 import TaskDetail from '@/components/Tasks/TaskDetail';
 import type { Task } from '@/lib/api/tasks';
@@ -56,6 +57,16 @@ vi.mock('@/lib/auth-client', () => ({
   },
 }));
 
+const mockSearchContacts = vi.fn();
+const mockSearchProspects = vi.fn();
+vi.mock('@/lib/api/contacts', () => ({
+  contactsApi: {
+    getContacts: (...args: unknown[]) => mockSearchContacts(...args),
+  },
+}));
+vi.mock('@/lib/api/prospects', () => ({
+  prospectsApi: { list: (...args: unknown[]) => mockSearchProspects(...args) },
+}));
 const mockCreateTask = vi.fn();
 const mockUpdateTask = vi.fn();
 const mockGetTasks = vi.fn();
@@ -188,6 +199,241 @@ const mockTask: Task = {
 };
 
 describe('TaskForm', () => {
+  it('searches existing people and switches a contact link to a prospect without keeping both', async () => {
+    const user = userEvent.setup();
+    mockSearchContacts.mockResolvedValue({
+      contacts: [{ id: 25, name: 'Alex' }],
+    });
+    mockSearchProspects.mockResolvedValue({ data: [{ id: 45, name: 'Alex' }] });
+    mockUpdateTask.mockResolvedValue(mockTask);
+    render(
+      <TaskForm
+        mode="edit"
+        task={{ ...mockTask, contactId: 25, contact: { id: 25, name: 'Alex' } }}
+      />,
+      { wrapper },
+    );
+    await user.type(screen.getByLabelText('Search existing people'), 'Alex');
+    await screen.findByRole('option', { name: 'Alex — prospect #45' });
+    await user.selectOptions(
+      screen.getByLabelText('Related contact or prospect'),
+      'prospect:45',
+    );
+    await user.click(screen.getByRole('button', { name: /save changes/i }));
+    await waitFor(() =>
+      expect(mockUpdateTask).toHaveBeenCalledWith(
+        1,
+        expect.objectContaining({ contactId: null, prospectId: 45 }),
+      ),
+    );
+    expect(mockSearchContacts).toHaveBeenLastCalledWith({
+      search: 'Alex',
+      limit: 25,
+    });
+    expect(mockSearchProspects).toHaveBeenLastCalledWith({
+      search: 'Alex',
+      perPage: 25,
+    });
+  });
+  it('does not revalidate an unchanged linked person on an unrelated edit', async () => {
+    const user = userEvent.setup();
+    mockUpdateTask.mockResolvedValue(mockTask);
+    render(
+      <TaskForm
+        mode="edit"
+        task={{ ...mockTask, contactId: 25, contact: { id: 25, name: 'Alex' } }}
+      />,
+      { wrapper },
+    );
+    await user.click(screen.getByRole('button', { name: /save changes/i }));
+    await waitFor(() => expect(mockUpdateTask).toHaveBeenCalled());
+    const payload = mockUpdateTask.mock.calls[0][1];
+    expect(payload).not.toHaveProperty('contactId');
+    expect(payload).not.toHaveProperty('prospectId');
+  });
+  it('blocks duplicate submits while saving and retains input after failure', async () => {
+    let reject!: (error: Error) => void;
+    mockCreateTask.mockImplementation(
+      () =>
+        new Promise((_, no) => {
+          reject = no;
+        }),
+    );
+    render(<TaskForm mode="create" defaultDueDate="2026-12-01" />, { wrapper });
+    fireEvent.change(screen.getByLabelText(/title \*/i), {
+      target: { value: 'Keep this input' },
+    });
+    const form = screen
+      .getByRole('button', { name: /create task/i })
+      .closest('form')!;
+    fireEvent.submit(form);
+    fireEvent.submit(form);
+    await waitFor(() => expect(mockCreateTask).toHaveBeenCalledTimes(1));
+    expect(screen.getByRole('button', { name: /creating/i })).toBeDisabled();
+    reject(new Error('Test save failed'));
+    await screen.findByText('Test save failed');
+    expect(screen.getByLabelText(/title \*/i)).toHaveValue('Keep this input');
+    expect(screen.getByLabelText('Due date')).toHaveValue('2026-12-01');
+  });
+  it('opens the shared sales task Sheet with today, current user and optional person; Cancel saves nothing', async () => {
+    const user = userEvent.setup();
+    render(
+      <SalesTaskCreateButton
+        person={{ type: 'prospect', id: 45, name: 'Maya' }}
+      />,
+      { wrapper },
+    );
+    await user.click(screen.getByRole('button', { name: 'Add task' }));
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+    expect(
+      screen.getByText('More options').closest('details'),
+    ).not.toHaveAttribute('open');
+    const labels = Array.from(
+      screen.getByRole('dialog').querySelectorAll('label'),
+    ).map((label) => label.textContent);
+    expect(labels.indexOf('Assignee')).toBeLessThan(
+      labels.indexOf('Related contact or prospect'),
+    );
+    expect(labels.indexOf('Related contact or prospect')).toBeLessThan(
+      labels.indexOf('Description'),
+    );
+    expect(screen.getByRole('checkbox', { name: 'Sales task' })).toBeChecked();
+    const today = new Date();
+    const date = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+    expect(screen.getByLabelText('Due date')).toHaveValue(date);
+    expect(screen.getByLabelText('Related contact or prospect')).toHaveValue(
+      'prospect:45',
+    );
+    await user.type(screen.getByLabelText(/title \*/i), 'Do not save');
+    await user.click(screen.getByRole('button', { name: 'Cancel' }));
+    await waitFor(() =>
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument(),
+    );
+    expect(mockCreateTask).not.toHaveBeenCalled();
+    await user.click(screen.getByRole('button', { name: 'Add task' }));
+    expect(screen.getByLabelText(/title \*/i)).toHaveValue('');
+    mockCreateTask.mockResolvedValue(mockTask);
+    await user.type(screen.getByLabelText(/title \*/i), 'Save exactly once');
+    await user.click(screen.getByRole('button', { name: /create task/i }));
+    await waitFor(() =>
+      expect(mockCreateTask).toHaveBeenCalledExactlyOnceWith(
+        expect.objectContaining({
+          assigneeUserId: 1,
+          dueDate: date,
+          isSales: true,
+          prospectId: 45,
+        }),
+      ),
+    );
+  });
+  it('creates with editable scheduling and person defaults, but never applies them to edits', async () => {
+    const user = userEvent.setup();
+    mockCreateTask.mockResolvedValue(mockTask);
+    const defaults = {
+      defaultDueDate: '2026-11-04',
+      defaultAssigneeUserId: 7,
+      defaultIsSales: true,
+      defaultPerson: { type: 'contact' as const, id: 25, name: 'Alex' },
+    };
+    const view = render(<TaskForm mode="create" {...defaults} />, { wrapper });
+    expect(screen.getByLabelText('Due date')).toHaveValue('2026-11-04');
+    await waitFor(() =>
+      expect(screen.getByLabelText('Select assignee...')).toHaveValue('7'),
+    );
+    expect(screen.getByLabelText('Related contact or prospect')).toHaveValue(
+      'contact:25',
+    );
+    await user.type(screen.getByLabelText(/title \*/i), 'Follow up');
+    await user.click(screen.getByRole('button', { name: /create task/i }));
+    await waitFor(() =>
+      expect(mockCreateTask).toHaveBeenCalledWith(
+        expect.objectContaining({
+          dueDate: '2026-11-04',
+          assigneeUserId: 7,
+          contactId: 25,
+          prospectId: null,
+          isSales: true,
+        }),
+      ),
+    );
+    view.unmount();
+    render(
+      <TaskForm
+        mode="edit"
+        task={{
+          ...mockTask,
+          assignee: null,
+          assigneeUserId: null,
+          dueDate: null,
+          contactId: null,
+        }}
+        {...defaults}
+      />,
+      { wrapper },
+    );
+    expect(screen.getByLabelText('Due date')).toHaveValue('');
+    expect(screen.getByLabelText('Related contact or prospect')).toHaveValue(
+      '',
+    );
+    expect(
+      screen.getByRole('checkbox', { name: 'Sales task' }),
+    ).not.toBeChecked();
+  });
+  it('allows clearing an existing person without overwriting other values', async () => {
+    const user = userEvent.setup();
+    mockUpdateTask.mockResolvedValue(mockTask);
+    render(
+      <TaskForm
+        mode="edit"
+        task={{
+          ...mockTask,
+          prospectId: 45,
+          prospect: { id: 45, name: 'Maya' },
+        }}
+      />,
+      { wrapper },
+    );
+    await user.selectOptions(
+      screen.getByLabelText('Related contact or prospect'),
+      '',
+    );
+    await user.click(screen.getByRole('button', { name: /save changes/i }));
+    await waitFor(() =>
+      expect(mockUpdateTask).toHaveBeenCalledWith(
+        1,
+        expect.objectContaining({ contactId: null, prospectId: null }),
+      ),
+    );
+  });
+  it('saves a date-only due date and clears it explicitly on edit', async () => {
+    const user = userEvent.setup();
+    mockUpdateTask.mockResolvedValue(mockTask);
+    render(
+      <TaskForm mode="edit" task={{ ...mockTask, dueDate: '2026-11-15' }} />,
+      { wrapper },
+    );
+    expect(screen.getByLabelText('Due date')).toHaveValue('2026-11-15');
+    fireEvent.change(screen.getByLabelText('Due date'), {
+      target: { value: '2026-12-01' },
+    });
+    await user.click(screen.getByRole('button', { name: /save changes/i }));
+    await waitFor(() =>
+      expect(mockUpdateTask).toHaveBeenLastCalledWith(
+        1,
+        expect.objectContaining({ dueDate: '2026-12-01' }),
+      ),
+    );
+    fireEvent.change(screen.getByLabelText('Due date'), {
+      target: { value: '' },
+    });
+    await user.click(screen.getByRole('button', { name: /save changes/i }));
+    await waitFor(() =>
+      expect(mockUpdateTask).toHaveBeenLastCalledWith(
+        1,
+        expect.objectContaining({ dueDate: null }),
+      ),
+    );
+  });
   beforeEach(() => {
     queryClient = createQueryClient();
     vi.clearAllMocks();
