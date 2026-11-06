@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import type { ExecutionContext } from '@nestjs/common';
+import { ForbiddenException, type ExecutionContext } from '@nestjs/common';
 import type { PrismaService } from '../../prisma/prisma.service';
 import { SalesOverviewGuard } from './sales-overview.guard';
 
@@ -33,7 +33,7 @@ describe('SalesOverviewGuard', () => {
     async (role) => {
       await expect(
         setup(role).guard.canActivate(context(request())),
-      ).rejects.toThrow('Sales Overview');
+      ).rejects.toBeInstanceOf(ForbiddenException);
     },
   );
   it('denies missing authentication even with an attached organization', async () => {
@@ -47,9 +47,9 @@ describe('SalesOverviewGuard', () => {
     const { guard, member } = setup('admin');
     const req = request();
     await expect(guard.canActivate(context(req))).resolves.toBe(true);
-    member.findFirst.mockResolvedValueOnce({ role: 'member' });
+    member.findFirst.mockResolvedValue({ role: 'member' });
     await expect(guard.canActivate(context(req))).rejects.toThrow();
-    member.findFirst.mockResolvedValueOnce(null);
+    member.findFirst.mockResolvedValue(null);
     await expect(guard.canActivate(context(req))).rejects.toThrow();
   });
   it('re-resolves the active org rather than trusting an old attached organization', async () => {
@@ -57,7 +57,7 @@ describe('SalesOverviewGuard', () => {
     const req = request();
     await guard.canActivate(context(req));
     req.session.session.activeOrganizationId = '8';
-    member.findFirst.mockResolvedValueOnce({ role: 'member' });
+    member.findFirst.mockResolvedValue({ role: 'member' });
     await expect(guard.canActivate(context(req))).rejects.toThrow();
     expect(member.findFirst).toHaveBeenLastCalledWith({
       where: { organizationId: 8, userId: 1 },
@@ -66,7 +66,7 @@ describe('SalesOverviewGuard', () => {
   });
   it('never falls back to another organization after a forbidden header selection', async () => {
     const { guard, member } = setup('owner');
-    member.findFirst.mockResolvedValueOnce(null);
+    member.findFirst.mockResolvedValue(null);
     await expect(
       guard.canActivate(
         context({ ...request(), headers: { 'x-organization-id': '8' } }),
