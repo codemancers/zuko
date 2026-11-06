@@ -14,6 +14,12 @@ describe('Sales Overview access endpoint', () => {
     })
       .overrideProvider(PrismaService)
       .useValue({
+        task: {
+          findMany: async () => [
+            { id: 12, dueDate: new Date('2026-11-05T00:00:00Z') },
+          ],
+          count: async () => 1,
+        },
         member: {
           findFirst: async ({
             where,
@@ -72,6 +78,50 @@ describe('Sales Overview access endpoint', () => {
   );
   it('rejects unauthenticated access', async () => {
     expect((await fetch(`${url}/sales-overview/access`)).status).toBe(403);
+  });
+  it('returns the date-only paginated task query with no-store', async () => {
+    const result = await fetch(
+      `${url}/sales-overview/needs-attention?date=2026-11-05&page=2&limit=1`,
+      {
+        headers: { 'x-test-user': '2' },
+      },
+    );
+    expect(result.status).toBe(200);
+    expect(result.headers.get('cache-control')).toContain('no-store');
+    expect(await result.json()).toEqual({
+      tasks: [{ id: 12, dueDate: '2026-11-05' }],
+      pagination: { page: 2, limit: 1, total: 1, totalPages: 1 },
+    });
+  });
+  it.each([
+    '',
+    'date=2026-02-30',
+    'date=2026-11-05&limit=101',
+    'date=2026-11-05&page=0',
+    'date=2026-11-05&page=1.5',
+    'date=2026-11-05&limit=hello',
+  ])('rejects invalid query %s with 400', async (query) => {
+    expect(
+      (
+        await fetch(`${url}/sales-overview/needs-attention?${query}`, {
+          headers: { 'x-test-user': '1' },
+        })
+      ).status,
+    ).toBe(400);
+  });
+  it.each([
+    {},
+    { 'x-test-user': '3' },
+    { 'x-test-user': '4' },
+    { 'x-test-user': '1', 'x-organization-id': '8' },
+  ])('denies unauthorized task queries %j', async (headers) => {
+    expect(
+      (
+        await fetch(`${url}/sales-overview/needs-attention?date=2026-11-05`, {
+          headers: headers as Record<string, string>,
+        })
+      ).status,
+    ).toBe(403);
   });
   it('rejects foreign organization', async () => {
     expect(

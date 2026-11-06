@@ -296,6 +296,68 @@ export class TaskRepository {
     };
   }
 
+  /** Dashboard-only read. `date` is the viewer's local YYYY-MM-DD, not an instant.
+   * Membership is evaluated in the query (no cached owner list or name matching).
+   * A relation existence filter avoids multiplying tasks by owner/member rows.
+   */
+  async findNeedsAttention(
+    organizationId: number,
+    { date, page = 1, limit = 50 }: PaginationOptions & { date: string },
+  ) {
+    const cutoff = toDueDateColumn(date);
+    if (!cutoff) {
+      throw new BadRequestException('date is required as YYYY-MM-DD');
+    }
+    if (
+      !Number.isSafeInteger(page) ||
+      page < 1 ||
+      page > 1_000_000 ||
+      !Number.isSafeInteger(limit) ||
+      limit < 1 ||
+      limit > 100
+    ) {
+      throw new BadRequestException('page must be 1..1000000 and limit 1..100');
+    }
+    const where: Prisma.TaskWhereInput = {
+      organizationId,
+      isSales: true,
+      status: { in: [TaskStatus.TODO, TaskStatus.IN_PROGRESS] },
+      dueDate: { not: null, lte: cutoff },
+      assigneeUser: {
+        is: {
+          members: {
+            some: { organizationId, role: { in: ['owner', 'admin'] } },
+          },
+        },
+      },
+    };
+    const [tasks, total] = await Promise.all([
+      this.prisma.task.findMany({
+        where,
+        skip: (page - 1) * limit,
+        take: limit,
+        orderBy: [{ dueDate: 'asc' }, { id: 'asc' }],
+        select: {
+          id: true,
+          title: true,
+          status: true,
+          priority: true,
+          dueDate: true,
+          parentId: true,
+          assigneeUserId: true,
+          assigneeUser: { select: { id: true, name: true } },
+          contactId: true,
+          prospectId: true,
+        },
+      }),
+      this.prisma.task.count({ where }),
+    ]);
+    return {
+      tasks: tasks.map(serializeTaskDueDates),
+      pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
+    };
+  }
+
   async update(id: number, organizationId: number, input: UpdateTaskInput) {
     const { assignee, assigneeUserId, contactId, prospectId } = input;
     const data = { ...pickWritableFields(input), ...dueDateData(input) };
