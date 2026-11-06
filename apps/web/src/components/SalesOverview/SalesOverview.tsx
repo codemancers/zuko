@@ -1,5 +1,6 @@
 'use client';
 
+import { NeedsAttentionTasks } from './NeedsAttentionTasks';
 import { useSalesOverviewAccess } from '@/hooks/use-sales-overview-access';
 import { authClient } from '@/lib/auth-client';
 import { SalesTaskCreateButton } from '@/components/Tasks/SalesTaskCreateButton';
@@ -44,9 +45,8 @@ export function SalesOverview({ organizationId }: { organizationId: number }) {
         id="sales-overview-preview-note"
         className="text-sm text-zinc-500 dark:text-zinc-400"
       >
-        Task and activity lists are not connected yet. New tasks are saved in
-        Tasks; Recent work date selection will be enabled in its follow-on
-        ticket.
+        Recent work and activity lists are not connected yet. Due and overdue
+        sales tasks are shown below.
       </p>
       {/* Approved v12 geometry: attention left, recent work right; activities below. */}
       <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]">
@@ -58,7 +58,10 @@ export function SalesOverview({ organizationId }: { organizationId: number }) {
           <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
             Today’s tasks, overdue work, and updates awaiting your attention.
           </p>
-          <EmptyState title="Sales follow-ups will appear here" />
+          <NeedsAttentionTasks
+            key={organizationId}
+            organizationId={organizationId}
+          />
         </section>
         <section aria-labelledby="recent-work-title" className={panelClass}>
           <div className="flex flex-wrap items-center justify-between gap-3">

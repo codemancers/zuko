@@ -11,6 +11,10 @@ const state = vi.hoisted(() => ({
   org: '7',
   get: vi.fn(),
 }));
+// Live rows are exercised with a real QueryClient in needs-attention.test.tsx.
+vi.mock('@/components/SalesOverview/NeedsAttentionTasks', () => ({
+  NeedsAttentionTasks: () => null,
+}));
 vi.mock('@/components/Tasks/SalesTaskCreateButton', () => ({
   SalesTaskCreateButton: () => <button>Add task</button>,
 }));
