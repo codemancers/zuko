@@ -1,10 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import { Test } from '@nestjs/testing';
-import type { ExecutionContext, INestApplication } from '@nestjs/common';
+import {
+  ForbiddenException,
+  type ExecutionContext,
+  type INestApplication,
+} from '@nestjs/common';
 import { AuthGuard } from '@thallesp/nestjs-better-auth';
 import { PrismaClient, type Prisma } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaService } from '../../prisma/prisma.service';
+import { getActiveOrganizationId } from '../../common/auth/get-organization-id';
 import { SalesOverviewModule } from './sales-overview.module';
 
 // Opt-in only: ZUKO_PREVIEW_DB_TESTS=1, with the local preview DATABASE_URL.
@@ -230,9 +235,36 @@ describe.skipIf(process.env.ZUKO_PREVIEW_DB_TESTS !== '1')(
             expect(
               (await rows()).tasks.map((t: { id: number }) => t.id),
             ).toEqual([today.id, subtask.id]);
+            // Ordinary task routes must also reject a stale session after
+            // real membership deletion, without imposing dashboard role rules.
+            const taskSession = (userId: number) =>
+              ({
+                headers: {},
+                user: { id: String(userId) },
+                session: {
+                  user: { id: String(userId) },
+                  session: { activeOrganizationId: String(org.id) },
+                },
+              }) as Parameters<typeof getActiveOrganizationId>[0];
+            const taskPrisma = tx as unknown as PrismaService;
+            expect(
+              await getActiveOrganizationId(
+                taskSession(users[1].id),
+                taskPrisma,
+              ),
+            ).toBe(org.id);
+            expect(
+              await getActiveOrganizationId(
+                taskSession(users[2].id),
+                taskPrisma,
+              ),
+            ).toBe(org.id);
             await tx.member.deleteMany({
               where: { organizationId: org.id, userId: users[2].id },
             });
+            await expect(
+              getActiveOrganizationId(taskSession(users[2].id), taskPrisma),
+            ).rejects.toBeInstanceOf(ForbiddenException);
             expect(
               (await rows()).tasks.map((t: { id: number }) => t.id),
             ).toEqual([subtask.id]);

@@ -1,8 +1,14 @@
 import type { Request } from 'express';
 import { ForbiddenException, Logger } from '@nestjs/common';
-import { PrismaService } from '../../prisma/prisma.service';
+import type { PrismaService } from '../../prisma/prisma.service';
 
 const log = new Logger('GetOrganizationId');
+
+function positiveId(value: unknown): number | null {
+  if (typeof value !== 'string' || !/^\d+$/.test(value.trim())) return null;
+  const id = Number(value);
+  return Number.isSafeInteger(id) && id > 0 ? id : null;
+}
 
 /** Header the frontend can send with the current active organization ID (e.g. from session) */
 export const ORGANIZATION_ID_HEADER = 'x-organization-id';
@@ -21,7 +27,7 @@ interface RequestWithAuthSession extends Request {
 
 /**
  * Returns the active organization ID from the request.
- * Uses the session and user attached by AuthGuard (better-auth). Prefers X-Organization-Id header when present and user is a member; otherwise session.session.activeOrganizationId (with single-org fallback).
+ * Uses the session and user attached by AuthGuard (better-auth). Uses an explicit X-Organization-Id header or session.session.activeOrganizationId (with single-org fallback). Every resolved organization requires current membership; an explicit unauthorized selection never falls back.
  * @throws ForbiddenException if no session or no active organization (use error.response.code === NO_ACTIVE_ORGANIZATION_CODE to detect)
  */
 export async function getActiveOrganizationId(
@@ -36,8 +42,8 @@ export async function getActiveOrganizationId(
     });
   }
 
-  const userId = parseInt(req.user?.id ?? req.session.user?.id ?? '', 10);
-  if (Number.isNaN(userId)) {
+  const userId = positiveId(req.user?.id ?? req.session.user?.id);
+  if (userId === null) {
     log.warn('No user id in session; returning 403');
     throw new ForbiddenException({
       message: 'No session: select an organization to continue',
@@ -46,15 +52,21 @@ export async function getActiveOrganizationId(
   }
 
   const headerOrgId = req.headers[ORGANIZATION_ID_HEADER];
-  const headerId =
-    typeof headerOrgId === 'string' ? parseInt(headerOrgId.trim(), 10) : NaN;
-  if (Number.isNaN(headerId) === false && headerId > 0) {
+  if (headerOrgId !== undefined) {
+    const headerId = positiveId(headerOrgId);
+    if (headerId === null) {
+      throw new ForbiddenException({
+        message: 'Invalid organization selection',
+        code: NO_ACTIVE_ORGANIZATION_CODE,
+      });
+    }
     const member = await prisma.member.findFirst({
       where: { organizationId: headerId, userId },
     });
-    if (member) {
-      return headerId;
+    if (!member) {
+      throw new ForbiddenException('Not a member of this organization');
     }
+    return headerId;
   }
 
   let activeOrgId: string | null =
@@ -78,8 +90,8 @@ export async function getActiveOrganizationId(
     });
   }
 
-  const organizationId = parseInt(activeOrgId, 10);
-  if (Number.isNaN(organizationId)) {
+  const organizationId = positiveId(activeOrgId);
+  if (organizationId === null) {
     log.warn(`Invalid activeOrganizationId: ${activeOrgId}`);
     throw new ForbiddenException({
       message: 'Invalid active organization',
@@ -87,5 +99,11 @@ export async function getActiveOrganizationId(
     });
   }
 
+  const member = await prisma.member.findFirst({
+    where: { organizationId, userId },
+  });
+  if (!member) {
+    throw new ForbiddenException('Not a member of this organization');
+  }
   return organizationId;
 }
