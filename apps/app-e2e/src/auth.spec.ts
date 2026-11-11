@@ -18,6 +18,25 @@ async function createUser(request: APIRequestContext, email: string) {
 }
 
 test.describe('authentication', () => {
+  test('serves the Zuko icon as both an SVG and an ICO favicon', async ({ page, request }) => {
+    await page.goto('/login');
+    const links = await page.locator('link[rel~="icon"]').all();
+    const hrefs = await Promise.all(links.map((link) => link.getAttribute('href')));
+    const svg = hrefs.find((href) => href?.includes('/icon.svg'));
+    const ico = hrefs.find((href) => href?.includes('/favicon.ico'));
+    expect(svg).toBeTruthy();
+    expect(ico).toBeTruthy();
+
+    for (const [href, type] of [
+      [svg, 'image/svg+xml'],
+      [ico, 'image/x-icon'],
+    ] as const) {
+      const response = await request.get(new URL(href ?? '', page.url()).toString());
+      expect(response.ok()).toBe(true);
+      expect(response.headers()['content-type']).toContain(type);
+    }
+  });
+
   test('the root redirects to the dashboard', async ({ page }) => {
     await page.goto('/');
     await expect(page).toHaveURL(/\/dashboard$/);
