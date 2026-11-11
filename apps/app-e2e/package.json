@@ -1,0 +1,10 @@
+{
+  "name": "@zuko/app-e2e",
+  "version": "0.0.1",
+  "private": true,
+  "nx": {
+    "implicitDependencies": [
+      "@zuko/app"
+    ]
+  }
+}

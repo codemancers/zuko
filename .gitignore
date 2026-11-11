@@ -53,3 +53,5 @@ out
 .env
 .env.local
 apps/backend/src/generated
+
+test-output
