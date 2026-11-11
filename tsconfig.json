@@ -11,6 +11,9 @@
     },
     {
       "path": "./apps/app"
+    },
+    {
+      "path": "./apps/app-e2e"
     }
   ]
 }
