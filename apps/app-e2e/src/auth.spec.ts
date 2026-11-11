@@ -30,7 +30,7 @@ test.describe('authentication', () => {
     await page.goto('/signup');
     await page.getByLabel('Name').fill('E2E User');
     await page.getByLabel('Email').fill(email);
-    await page.getByLabel('Password').fill(password);
+    await page.getByLabel('Password', { exact: true }).fill(password);
     await page.getByRole('button', { name: 'Sign up' }).click();
 
     await expect(page).toHaveURL(/\/dashboard$/);
@@ -40,7 +40,8 @@ test.describe('authentication', () => {
     await page.reload();
     await expect(page.getByText(email)).toBeVisible();
 
-    await page.getByRole('button', { name: 'Sign out' }).click();
+    await page.getByRole('button', { name: 'Open user menu' }).click();
+    await page.getByRole('menuitem', { name: 'Sign out' }).click();
     await expect(page).toHaveURL(/\/login$/);
 
     await page.goto('/dashboard');
@@ -53,7 +54,7 @@ test.describe('authentication', () => {
 
     await page.goto('/login');
     await page.getByLabel('Email').fill(email);
-    await page.getByLabel('Password').fill(password);
+    await page.getByLabel('Password', { exact: true }).fill(password);
     await page.getByRole('button', { name: 'Log in' }).click();
 
     await expect(page).toHaveURL(/\/dashboard$/);
@@ -66,10 +67,10 @@ test.describe('authentication', () => {
 
     await page.goto('/login');
     await page.getByLabel('Email').fill(email);
-    await page.getByLabel('Password').fill('not-the-password');
+    await page.getByLabel('Password', { exact: true }).fill('not-the-password');
     await page.getByRole('button', { name: 'Log in' }).click();
 
-    await expect(page.locator('main p[role="alert"]')).toHaveText('Invalid email or password');
+    await expect(page.locator('main [role="alert"]')).toHaveText('Invalid email or password');
     await expect(page.getByLabel('Email')).toHaveValue(email);
     await expect(page).toHaveURL(/\/login$/);
   });
@@ -84,10 +85,10 @@ test.describe('authentication', () => {
     await page.goto('/signup');
     await page.getByLabel('Name').fill('Someone Else');
     await page.getByLabel('Email').fill(email);
-    await page.getByLabel('Password').fill(password);
+    await page.getByLabel('Password', { exact: true }).fill(password);
     await page.getByRole('button', { name: 'Sign up' }).click();
 
-    await expect(page.locator('main p[role="alert"]')).toContainText('already exists');
+    await expect(page.locator('main [role="alert"]')).toContainText('already exists');
     await expect(page.getByLabel('Name')).toHaveValue('Someone Else');
     await expect(page).toHaveURL(/\/signup$/);
   });
