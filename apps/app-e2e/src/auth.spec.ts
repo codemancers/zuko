@@ -18,6 +18,11 @@ async function createUser(request: APIRequestContext, email: string) {
 }
 
 test.describe('authentication', () => {
+  test('the root redirects to the dashboard', async ({ page }) => {
+    await page.goto('/');
+    await expect(page).toHaveURL(/\/dashboard$/);
+  });
+
   test('a signed-out visitor sees "Not signed in" on the dashboard', async ({ page }) => {
     await page.goto('/dashboard');
     await expect(page.getByRole('heading', { name: 'Not signed in' })).toBeVisible();
