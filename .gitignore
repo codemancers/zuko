@@ -49,3 +49,7 @@ vitest.config.*.timestamp*
 # Next.js
 .next
 out
+# env and generated
+.env
+.env.local
+apps/backend/src/generated
