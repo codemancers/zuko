@@ -42,8 +42,8 @@ export default defineConfig({
       url: `${BACKEND_URL}/api`,
       reuseExistingServer: true,
       // Nx starts the server in its own process group, which Playwright's default
-      // SIGKILL cannot reach; SIGTERM lets Nx shut its child down.
-      gracefulShutdown: { signal: 'SIGTERM', timeout: 10_000 },
+      // SIGKILL cannot reach. SIGINT (like Ctrl-C) lets Nx stop its child cleanly; SIGTERM works too but prints Nx "tasks stopped" warnings.
+      gracefulShutdown: { signal: 'SIGINT', timeout: 10_000 },
       timeout: 120_000,
       cwd: workspaceRoot,
       env: {
@@ -58,7 +58,7 @@ export default defineConfig({
       command: isCI ? 'pnpm exec nx run @zuko/app:start' : 'pnpm exec nx run @zuko/app:dev',
       url: getReadyUrl(APP_URL),
       reuseExistingServer: true,
-      gracefulShutdown: { signal: 'SIGTERM', timeout: 10_000 },
+      gracefulShutdown: { signal: 'SIGINT', timeout: 10_000 },
       timeout: 120_000,
       cwd: workspaceRoot,
       env: { PORT: new URL(APP_URL).port, NEXT_PUBLIC_BACKEND_URL: BACKEND_URL },
