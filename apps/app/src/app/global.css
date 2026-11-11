@@ -3,7 +3,7 @@
 @import 'tw-animate-css';
 @import 'shadcn/tailwind.css';
 
-/* Dark mode is class-based (`.dark`), not driven by the OS setting. */
+/* Dark mode is class-based: next-themes toggles `.dark` on <html> (OS setting by default). */
 @custom-variant dark (&:where(.dark, .dark *));
 
 /* Leftover Nx welcome-page styles. They are unlayered by default, which would beat

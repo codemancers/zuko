@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { BellRing, Clock } from 'lucide-react';
 import { Brand } from '@/components/brand';
+import { ThemeToggle } from '@/components/theme-toggle';
 import { UserMenu } from '@/components/dashboard/user-menu';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -16,7 +17,10 @@ function Shell({ children, menu }: { children: React.ReactNode; menu: React.Reac
       <header className="border-b bg-background">
         <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4">
           <Brand />
-          {menu}
+          <div className="flex items-center gap-1">
+            <ThemeToggle />
+            {menu}
+          </div>
         </div>
       </header>
       <main className="mx-auto max-w-5xl space-y-6 px-4 py-8">{children}</main>
