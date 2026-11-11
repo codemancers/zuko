@@ -45,3 +45,7 @@ Thumbs.db
 .claude/settings.local.json
 vitest.config.*.timestamp*
 .vitest
+
+# Next.js
+.next
+out
