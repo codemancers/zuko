@@ -37,13 +37,14 @@ export function AuthForm({ mode }: { mode: Mode }) {
   );
 
   return (
-    <main style={{ maxWidth: 360, margin: '4rem auto', padding: '0 1rem' }}>
-      <h1>{isSignup ? 'Create an account' : 'Log in'}</h1>
-      <form action={formAction} style={{ display: 'grid', gap: '0.75rem' }}>
+    <main className="mx-auto mt-16 max-w-sm px-4">
+      <h1 className="mb-4 text-2xl font-semibold">{isSignup ? 'Create an account' : 'Log in'}</h1>
+      <form action={formAction} className="grid gap-3">
         {isSignup && (
-          <label htmlFor="name">
+          <label className="grid gap-1 text-sm font-medium" htmlFor="name">
             Name
             <input
+              className="rounded border border-gray-300 px-3 py-2 text-base font-normal"
               id="name"
               name="name"
               type="text"
@@ -53,9 +54,10 @@ export function AuthForm({ mode }: { mode: Mode }) {
             />
           </label>
         )}
-        <label htmlFor="email">
+        <label className="grid gap-1 text-sm font-medium" htmlFor="email">
           Email
           <input
+            className="rounded border border-gray-300 px-3 py-2 text-base font-normal"
             id="email"
             name="email"
             type="email"
@@ -64,9 +66,10 @@ export function AuthForm({ mode }: { mode: Mode }) {
             required
           />
         </label>
-        <label htmlFor="password">
+        <label className="grid gap-1 text-sm font-medium" htmlFor="password">
           Password
           <input
+            className="rounded border border-gray-300 px-3 py-2 text-base font-normal"
             id="password"
             name="password"
             type="password"
@@ -75,19 +78,33 @@ export function AuthForm({ mode }: { mode: Mode }) {
             required
           />
         </label>
-        {state.error && <p role="alert">{state.error}</p>}
-        <button type="submit" disabled={pending}>
+        {state.error && (
+          <p role="alert" className="text-sm text-red-600">
+            {state.error}
+          </p>
+        )}
+        <button
+          type="submit"
+          disabled={pending}
+          className="cursor-pointer rounded bg-black px-3 py-2 text-white disabled:opacity-50"
+        >
           {pending ? 'Please wait…' : isSignup ? 'Sign up' : 'Log in'}
         </button>
       </form>
-      <p>
+      <p className="mt-4 text-sm">
         {isSignup ? (
           <>
-            Already have an account? <Link href="/login">Log in</Link>
+            Already have an account?{' '}
+            <Link className="underline" href="/login">
+              Log in
+            </Link>
           </>
         ) : (
           <>
-            No account yet? <Link href="/signup">Sign up</Link>
+            No account yet?{' '}
+            <Link className="underline" href="/signup">
+              Sign up
+            </Link>
           </>
         )}
       </p>
