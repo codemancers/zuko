@@ -18,6 +18,30 @@ async function createUser(request: APIRequestContext, email: string) {
 }
 
 test.describe('authentication', () => {
+  test('serves the Zuko icon as both an SVG and an ICO favicon', async ({ page, request }) => {
+    await page.goto('/login');
+    const links = await page.locator('link[rel~="icon"]').all();
+    const hrefs = await Promise.all(links.map((link) => link.getAttribute('href')));
+    const svg = hrefs.find((href) => href?.includes('/icon.svg'));
+    const ico = hrefs.find((href) => href?.includes('/favicon.ico'));
+    expect(svg).toBeTruthy();
+    expect(ico).toBeTruthy();
+
+    for (const [href, type] of [
+      [svg, 'image/svg+xml'],
+      [ico, 'image/x-icon'],
+    ] as const) {
+      const response = await request.get(new URL(href ?? '', page.url()).toString());
+      expect(response.ok()).toBe(true);
+      expect(response.headers()['content-type']).toContain(type);
+    }
+  });
+
+  test('the root redirects to the dashboard', async ({ page }) => {
+    await page.goto('/');
+    await expect(page).toHaveURL(/\/dashboard$/);
+  });
+
   test('a signed-out visitor sees "Not signed in" on the dashboard', async ({ page }) => {
     await page.goto('/dashboard');
     await expect(page.getByRole('heading', { name: 'Not signed in' })).toBeVisible();
@@ -30,7 +54,7 @@ test.describe('authentication', () => {
     await page.goto('/signup');
     await page.getByLabel('Name').fill('E2E User');
     await page.getByLabel('Email').fill(email);
-    await page.getByLabel('Password').fill(password);
+    await page.getByLabel('Password', { exact: true }).fill(password);
     await page.getByRole('button', { name: 'Sign up' }).click();
 
     await expect(page).toHaveURL(/\/dashboard$/);
@@ -40,7 +64,8 @@ test.describe('authentication', () => {
     await page.reload();
     await expect(page.getByText(email)).toBeVisible();
 
-    await page.getByRole('button', { name: 'Sign out' }).click();
+    await page.getByRole('button', { name: 'Open user menu' }).click();
+    await page.getByRole('menuitem', { name: 'Sign out' }).click();
     await expect(page).toHaveURL(/\/login$/);
 
     await page.goto('/dashboard');
@@ -53,7 +78,7 @@ test.describe('authentication', () => {
 
     await page.goto('/login');
     await page.getByLabel('Email').fill(email);
-    await page.getByLabel('Password').fill(password);
+    await page.getByLabel('Password', { exact: true }).fill(password);
     await page.getByRole('button', { name: 'Log in' }).click();
 
     await expect(page).toHaveURL(/\/dashboard$/);
@@ -66,10 +91,10 @@ test.describe('authentication', () => {
 
     await page.goto('/login');
     await page.getByLabel('Email').fill(email);
-    await page.getByLabel('Password').fill('not-the-password');
+    await page.getByLabel('Password', { exact: true }).fill('not-the-password');
     await page.getByRole('button', { name: 'Log in' }).click();
 
-    await expect(page.locator('main p[role="alert"]')).toHaveText('Invalid email or password');
+    await expect(page.locator('main [role="alert"]')).toHaveText('Invalid email or password');
     await expect(page.getByLabel('Email')).toHaveValue(email);
     await expect(page).toHaveURL(/\/login$/);
   });
@@ -84,10 +109,10 @@ test.describe('authentication', () => {
     await page.goto('/signup');
     await page.getByLabel('Name').fill('Someone Else');
     await page.getByLabel('Email').fill(email);
-    await page.getByLabel('Password').fill(password);
+    await page.getByLabel('Password', { exact: true }).fill(password);
     await page.getByRole('button', { name: 'Sign up' }).click();
 
-    await expect(page.locator('main p[role="alert"]')).toContainText('already exists');
+    await expect(page.locator('main [role="alert"]')).toContainText('already exists');
     await expect(page.getByLabel('Name')).toHaveValue('Someone Else');
     await expect(page).toHaveURL(/\/signup$/);
   });
