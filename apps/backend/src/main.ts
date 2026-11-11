@@ -5,10 +5,21 @@
 
 import { Logger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
+import { toNodeHandler } from 'better-auth/node';
 import { AppModule } from './app/app.module';
+import { AuthService } from './libs/better-auth/auth.service';
+import { AUTH_BASE_PATH } from './libs/better-auth/constants';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  // better-auth parses its own request bodies, so the global body parser must
+  // be disabled and re-enabled after the auth handler is mounted.
+  const app = await NestFactory.create(AppModule, { bodyParser: false });
+  app
+    .getHttpAdapter()
+    .getInstance()
+    .all(`${AUTH_BASE_PATH}/*splat`, toNodeHandler(app.get(AuthService).auth));
+  app.useBodyParser('json');
+  app.useBodyParser('urlencoded', { extended: true });
   const globalPrefix = 'api';
   app.setGlobalPrefix(globalPrefix);
   const port = process.env.PORT || 3000;
