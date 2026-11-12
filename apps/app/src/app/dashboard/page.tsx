@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { BellRing, Clock } from 'lucide-react';
 import { Brand } from '@/components/brand';
 import { ThemeToggle } from '@/components/theme-toggle';
+import { Sidebar } from '@/components/dashboard/sidebar';
 import { UserMenu } from '@/components/dashboard/user-menu';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -13,17 +14,20 @@ import { useSession } from '@/lib/auth-client';
 
 function Shell({ children, menu }: { children: React.ReactNode; menu: React.ReactNode }) {
   return (
-    <div className="min-h-svh bg-muted/40">
-      <header className="border-b bg-background">
-        <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4">
-          <Brand />
-          <div className="flex items-center gap-1">
+    <div className="flex min-h-svh bg-muted/40">
+      <Sidebar />
+      <div className="flex min-w-0 flex-1 flex-col">
+        <header className="flex h-14 items-center justify-between border-b bg-background px-4">
+          <div className="md:hidden">
+            <Brand />
+          </div>
+          <div className="ml-auto flex items-center gap-1">
             <ThemeToggle />
             {menu}
           </div>
-        </div>
-      </header>
-      <main className="mx-auto max-w-5xl space-y-6 px-4 py-8">{children}</main>
+        </header>
+        <main className="mx-auto w-full max-w-5xl space-y-6 px-4 py-8">{children}</main>
+      </div>
     </div>
   );
 }
