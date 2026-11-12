@@ -13,11 +13,15 @@ function ZukoMark({ className }: { className?: string }) {
   );
 }
 
-export function Brand() {
+export function Brand({ iconOnly = false }: { iconOnly?: boolean }) {
   return (
-    <Link href="/" className="flex items-center gap-2 font-heading text-lg font-semibold">
+    <Link
+      href="/"
+      aria-label="Zuko"
+      className="flex items-center gap-2 font-heading text-lg font-semibold"
+    >
       <ZukoMark className="size-8" />
-      Zuko
+      {!iconOnly && 'Zuko'}
     </Link>
   );
 }

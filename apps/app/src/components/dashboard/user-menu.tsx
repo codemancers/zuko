@@ -1,8 +1,9 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { LogOut } from 'lucide-react';
+import { LogOut, Settings } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -47,6 +48,13 @@ export function UserMenu({
           <span className="truncate text-xs text-muted-foreground">{email}</span>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
+        <DropdownMenuItem disabled>
+          <Settings aria-hidden />
+          Settings
+          <Badge variant="secondary" className="ml-auto h-4 px-1.5 text-[10px]">
+            Soon
+          </Badge>
+        </DropdownMenuItem>
         <DropdownMenuItem
           onSelect={async () => {
             await signOut();
