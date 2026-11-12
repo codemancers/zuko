@@ -75,6 +75,8 @@ describe('AcceptInvitation', () => {
     render(<AcceptInvitation invitationId="gone" />);
 
     expect((await screen.findByRole('alert')).textContent).toContain('Invitation not found');
+    expect(screen.getByText('This invitation cannot be opened.')).toBeTruthy();
+    expect(screen.queryByText('Checking your invitation…')).toBeNull();
     expect((screen.getByRole('button', { name: 'Accept' }) as HTMLButtonElement).disabled).toBe(
       true,
     );

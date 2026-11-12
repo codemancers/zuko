@@ -22,10 +22,12 @@ export function AcceptInvitation({ invitationId }: { invitationId: string }) {
 
   useEffect(() => {
     if (!session) return;
-    authClient.organization.getInvitation({ query: { id: invitationId } }).then(({ data, error: err }) => {
-      if (data) setInvitation(data);
-      else setError(err?.message ?? 'This invitation is not valid.');
-    });
+    authClient.organization
+      .getInvitation({ query: { id: invitationId } })
+      .then(({ data, error: err }) => {
+        if (data) setInvitation(data);
+        else setError(err?.message ?? 'This invitation is not valid.');
+      });
   }, [session, invitationId]);
 
   if (isPending) return <Skeleton className="h-48 w-full" />;
@@ -73,7 +75,9 @@ export function AcceptInvitation({ invitationId }: { invitationId: string }) {
         <CardDescription>
           {invitation
             ? `${invitation.inviterEmail} invited you as ${invitation.role}.`
-            : 'Checking your invitation…'}
+            : error
+              ? 'This invitation cannot be opened.'
+              : 'Checking your invitation…'}
         </CardDescription>
       </CardHeader>
       {error && (
