@@ -80,7 +80,7 @@ export function OrgSwitcher({ collapsed }: { collapsed: boolean }) {
           </DropdownMenuItem>
           {active && (
             <DropdownMenuItem asChild>
-              <Link href="/org/settings">
+              <Link href="/org/settings/details">
                 <Settings aria-hidden />
                 Organization settings
               </Link>

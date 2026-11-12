@@ -33,7 +33,7 @@ export function Shell({
           className={cn(
             'w-full',
             fill
-              ? 'flex min-h-0 flex-1 flex-col'
+              ? 'flex min-h-0 flex-1 flex-col bg-background'
               : 'mx-auto max-w-5xl space-y-6 px-4 py-8',
           )}
         >

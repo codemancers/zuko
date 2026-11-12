@@ -6,6 +6,17 @@
 /* Dark mode is class-based: next-themes toggles `.dark` on <html> (OS setting by default). */
 @custom-variant dark (&:where(.dark, .dark *));
 
+/* Make the sheet follow the app's theme (its own defaults are a slightly different grey).
+   `inline` keeps var(--background) resolving per theme rather than once at :root. */
+@theme inline {
+  --color-sheet-bg: var(--background);
+  --color-sheet-bg-dark: var(--background);
+  --color-sheet-fg: var(--foreground);
+  --color-sheet-fg-dark: var(--foreground);
+  --color-sheet-muted: var(--muted-foreground);
+  --color-sheet-muted-dark: var(--muted-foreground);
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

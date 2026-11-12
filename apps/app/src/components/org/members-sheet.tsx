@@ -1,9 +1,10 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { createColumnHelper } from '@tanstack/react-table';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { createColumnHelper, type SortingState } from '@tanstack/react-table';
 import { Link2, Trash2, X } from 'lucide-react';
-import { useSheet, useSheetCellEditing } from '@codemancers/sheets';
+import { useCellStatus, useRowChanges, useSheet, useSheetCellEditing } from '@codemancers/sheets';
 import {
   Sheet,
   SheetActionsCell,
@@ -32,6 +33,15 @@ const ROLES = ['member', 'admin', 'owner'];
 
 const col = createColumnHelper<Row>();
 
+// Sorting lives in the URL as ?sort=<column>&order=asc|desc, so it survives reloads and links.
+const SORTABLE = ['email', 'name', 'role'];
+
+function readSorting(params: URLSearchParams): SortingState {
+  const id = params.get('sort');
+  if (!id || !SORTABLE.includes(id)) return [];
+  return [{ id, desc: params.get('order') === 'desc' }];
+}
+
 // Refetches the active organization, which carries the member and invitation lists.
 const refresh = () => authClient.$store.notify('$activeOrgSignal');
 
@@ -39,45 +49,35 @@ function inviteLink(invitationId: string) {
   return `${window.location.origin}/accept-invitation/${invitationId}`;
 }
 
-function RoleCell({ row, orgId, editable }: { row: Row; orgId: string; editable: boolean }) {
+function RoleCell({ row, editable }: { row: Row; editable: boolean }) {
   const cell = useSheetCellEditing();
   if (!editable) {
     return (
-      <SheetTextCell>
+      <SheetTextCell className="flex items-center">
         <Badge variant="secondary" className="capitalize">
           {row.role}
         </Badge>
       </SheetTextCell>
     );
   }
-  const shown = String(cell.submittingValue ?? cell.refusedValue ?? row.role);
+  // Staged through the sheet's row buffer, which saves it and shows the saving, saved
+  // (tick) or refused state on this cell.
+  const shown = String(cell.stagedValue ?? cell.refusedValue ?? row.role);
   return (
-    <select
-      aria-label={`Role for ${row.email}`}
-      value={shown}
-      onChange={(event) =>
-        cell.submit(
-          async (role: string) => {
-            const { error } = await authClient.organization.updateMemberRole({
-              memberId: row.id,
-              role: role as 'member' | 'admin' | 'owner',
-              organizationId: orgId,
-            });
-            refresh();
-            return error ? { error: error.message ?? 'Could not change the role.' } : undefined;
-          },
-          event.target.value,
-          'Could not change the role.',
-        )
-      }
-      className="h-full w-full bg-transparent px-2 text-sm capitalize outline-none"
-    >
-      {ROLES.map((role) => (
-        <option key={role} value={role}>
-          {role}
-        </option>
-      ))}
-    </select>
+    <div className="flex h-8 items-center px-2">
+      <select
+        aria-label={`Role for ${row.email}`}
+        value={shown}
+        onChange={(event) => void cell.stage(event.target.value)}
+        className="h-5 w-fit cursor-pointer appearance-none rounded-4xl bg-secondary px-2 text-xs font-medium text-secondary-foreground capitalize transition-colors outline-none hover:bg-secondary/70 focus-visible:ring-[3px] focus-visible:ring-ring/50"
+      >
+        {ROLES.map((role) => (
+          <option key={role} value={role}>
+            {role}
+          </option>
+        ))}
+      </select>
+    </div>
   );
 }
 
@@ -90,13 +90,20 @@ export function MembersSheet({
   myUserId: string;
   myRole: string;
 }) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const sorting = useMemo(() => readSorting(new URLSearchParams(searchParams)), [searchParams]);
   const [adding, setAdding] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
 
   // Permission checks use better-auth's role helper, so custom roles later just work.
   const can = (permissions: Record<string, string[]>) =>
-    authClient.organization.checkRolePermission({ role: myRole as 'member', permissions });
+    authClient.organization.checkRolePermission({
+      role: myRole as 'member',
+      permissions,
+    });
   const canInvite = can({ invitation: ['create'] });
   const canUpdate = can({ member: ['update'] });
   const canDelete = can({ member: ['delete'] });
@@ -121,8 +128,28 @@ export function MembersSheet({
         role: i.role ?? 'member',
       }));
     const all = [...members, ...invites];
-    return adding ? [...all, { id: NEW_ROW, kind: 'new', email: '', name: '', role: 'member' }] : all;
+    return adding
+      ? [...all, { id: NEW_ROW, kind: 'new', email: '', name: '', role: 'member' }]
+      : all;
   }, [org.members, org.invitations, adding]);
+
+  const cellStatus = useCellStatus();
+  const rowChanges = useRowChanges({
+    cellStatus,
+    onSubmitRow: async (memberId, changes) => {
+      const { error } = await authClient.organization.updateMemberRole({
+        memberId,
+        role: changes.role as 'member' | 'admin' | 'owner',
+        organizationId: org.id,
+      });
+      refresh();
+      if (error) {
+        const message = error.message ?? 'Could not change the role.';
+        return { error: message, fieldErrors: { role: [message] } };
+      }
+      return undefined;
+    },
+  });
 
   const columns = useMemo(() => {
     // Admins can't touch owners, and nobody edits their own membership here.
@@ -136,34 +163,6 @@ export function MembersSheet({
     }
 
     return [
-      col.accessor('email', {
-        header: 'Email',
-        size: 320,
-        cell: ({ row }) =>
-          row.original.kind === 'new' ? (
-            <SheetEditableTextCell
-              value=""
-              placeholder="Email to invite"
-              autoFocus
-              onCommit={async (email) => {
-                const { data, error } = await authClient.organization.inviteMember({
-                  email: email.trim(),
-                  role: 'member',
-                  organizationId: org.id,
-                });
-                if (error) return { error: error.message ?? 'Could not create the invite.' };
-                setAdding(false);
-                refresh();
-                // The link is the only way to deliver an invite, so copy it right away.
-                if (data) navigator.clipboard?.writeText(inviteLink(data.id)).catch(() => undefined);
-                return undefined;
-              }}
-              onCancel={() => setAdding(false)}
-            />
-          ) : (
-            <SheetTextCell>{row.original.email}</SheetTextCell>
-          ),
-      }),
       col.accessor('name', {
         header: 'Name',
         size: 240,
@@ -180,13 +179,44 @@ export function MembersSheet({
           );
         },
       }),
+      col.accessor('email', {
+        header: 'Email',
+        size: 320,
+        cell: ({ row }) =>
+          row.original.kind === 'new' ? (
+            <SheetEditableTextCell
+              value=""
+              placeholder="Email to invite"
+              autoFocus
+              onCommit={async (email) => {
+                const { data, error } = await authClient.organization.inviteMember({
+                  email: email.trim(),
+                  role: 'member',
+                  organizationId: org.id,
+                });
+                if (error)
+                  return {
+                    error: error.message ?? 'Could not create the invite.',
+                  };
+                setAdding(false);
+                refresh();
+                // The link is the only way to deliver an invite, so copy it right away.
+                if (data)
+                  navigator.clipboard?.writeText(inviteLink(data.id)).catch(() => undefined);
+                return undefined;
+              }}
+              onCancel={() => setAdding(false)}
+            />
+          ) : (
+            <SheetTextCell>{row.original.email}</SheetTextCell>
+          ),
+      }),
       col.accessor('role', {
         header: 'Role',
         size: 160,
         cell: ({ row }) => (
           <RoleCell
             row={row.original}
-            orgId={org.id}
             editable={row.original.kind === 'member' && canUpdate && manageable(row.original)}
           />
         ),
@@ -201,10 +231,11 @@ export function MembersSheet({
           if (r.kind === 'new') return null;
           if (r.kind === 'invite') {
             return (
-              <SheetActionsCell>
+              <SheetActionsCell className="py-1!">
                 <Button
                   variant="ghost"
                   size="icon"
+                  className="size-6"
                   aria-label={`Copy invite link for ${r.email}`}
                   title={copied === r.id ? 'Copied' : 'Copy invite link'}
                   onClick={() => {
@@ -219,9 +250,16 @@ export function MembersSheet({
                   <Button
                     variant="ghost"
                     size="icon"
+                    className="size-6"
                     aria-label={`Cancel invite for ${r.email}`}
                     title="Cancel invite"
-                    onClick={() => run(() => authClient.organization.cancelInvitation({ invitationId: r.id }))}
+                    onClick={() =>
+                      run(() =>
+                        authClient.organization.cancelInvitation({
+                          invitationId: r.id,
+                        }),
+                      )
+                    }
                   >
                     <X aria-hidden />
                   </Button>
@@ -231,16 +269,20 @@ export function MembersSheet({
           }
           if (!canDelete || !manageable(r)) return null;
           return (
-            <SheetActionsCell>
+            <SheetActionsCell className="py-1!">
               <Button
                 variant="ghost"
                 size="icon"
+                className="size-6"
                 aria-label={`Remove ${r.name}`}
                 title="Remove member"
                 onClick={() => {
                   if (!window.confirm(`Remove ${r.name} from ${org.name}?`)) return;
                   void run(() =>
-                    authClient.organization.removeMember({ memberIdOrEmail: r.id, organizationId: org.id }),
+                    authClient.organization.removeMember({
+                      memberIdOrEmail: r.id,
+                      organizationId: org.id,
+                    }),
                   );
                 }}
               >
@@ -257,7 +299,23 @@ export function MembersSheet({
     columns,
     data: rows,
     getRowId: (row) => row.id,
-    state: { rowPinning: adding ? newRowPinned : noPinnedRows },
+    cellStatus,
+    rowChanges,
+    state: { rowPinning: adding ? newRowPinned : noPinnedRows, sorting },
+    onSortingChange: (updater) => {
+      const next = typeof updater === 'function' ? updater(sorting) : updater;
+      const params = new URLSearchParams(searchParams);
+      params.delete('sort');
+      params.delete('order');
+      if (next[0]) {
+        params.set('sort', next[0].id);
+        params.set('order', next[0].desc ? 'desc' : 'asc');
+      }
+      const query = params.toString();
+      router.replace(query ? `${pathname}?${query}` : pathname, {
+        scroll: false,
+      });
+    },
   });
 
   return (
