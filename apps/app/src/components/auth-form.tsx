@@ -57,7 +57,9 @@ export function AuthForm({ mode }: { mode: Mode }) {
       if (error) {
         return { error: error.message ?? 'Something went wrong', name, email };
       }
-      router.push('/dashboard');
+      const next = new URLSearchParams(window.location.search).get('next');
+      // Only follow same-site paths, so a crafted link can't redirect off-site.
+      router.push(next?.startsWith('/') && !next.startsWith('//') ? next : '/dashboard');
       return { error: null, name, email };
     },
     initialState,
