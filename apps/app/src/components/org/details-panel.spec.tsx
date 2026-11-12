@@ -1,5 +1,8 @@
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
-import { EditableField, SAVE_DEBOUNCE_MS } from './details-panel';
+import { auth, makeOrg, resetAuth } from '@/test/auth-mock';
+import { DetailsPanel, EditableField, SAVE_DEBOUNCE_MS } from './details-panel';
+
+vi.mock('@/lib/auth-client', async () => (await import('@/test/auth-mock')).authClientModule);
 
 type Save = (next: string) => Promise<string | null>;
 
@@ -125,5 +128,84 @@ describe('EditableField', () => {
   it('is read-only without edit permission', () => {
     const { input } = setup({ canEdit: false });
     expect(input.readOnly).toBe(true);
+  });
+});
+
+describe('DetailsPanel', () => {
+  type Org = Parameters<typeof DetailsPanel>[0]['org'];
+  const renderPanel = (canEdit: boolean) =>
+    render(<DetailsPanel org={makeOrg() as unknown as Org} role="owner" canEdit={canEdit} />);
+
+  beforeEach(() => {
+    resetAuth();
+    vi.useFakeTimers();
+  });
+  afterEach(() => {
+    cleanup();
+    vi.useRealTimers();
+  });
+
+  it('shows all the organization data', () => {
+    renderPanel(true);
+
+    expect((screen.getByLabelText('Name') as HTMLInputElement).value).toBe('Acme');
+    expect((screen.getByLabelText('Slug') as HTMLInputElement).value).toBe('acme');
+    expect(screen.getByText('Created')).toBeTruthy();
+    expect(screen.getByText('12 November 2026')).toBeTruthy();
+    expect(screen.getByText('owner')).toBeTruthy();
+  });
+
+  it('counts members, and only pending invitations', () => {
+    renderPanel(true);
+    const value = (label: string) => screen.getByText(label).closest('div')?.textContent;
+
+    expect(value('Members')).toBe('Members2');
+    expect(value('Pending invites')).toBe('Pending invites1'); // the cancelled one is excluded
+  });
+
+  it('saves a renamed organization through better-auth', async () => {
+    renderPanel(true);
+    const name = screen.getByLabelText('Name');
+    fireEvent.focus(name);
+    fireEvent.change(name, { target: { value: 'Acme Corp' } });
+
+    await act(() => vi.advanceTimersByTimeAsync(SAVE_DEBOUNCE_MS + 50));
+
+    expect(auth.update).toHaveBeenCalledWith({
+      organizationId: 'org_1',
+      data: { name: 'Acme Corp' },
+    });
+  });
+
+  it('saves the slug on its own, without touching the name', async () => {
+    renderPanel(true);
+    const slug = screen.getByLabelText('Slug');
+    fireEvent.focus(slug);
+    fireEvent.change(slug, { target: { value: 'acme-corp' } });
+
+    await act(() => vi.advanceTimersByTimeAsync(SAVE_DEBOUNCE_MS + 50));
+
+    expect(auth.update).toHaveBeenCalledWith({
+      organizationId: 'org_1',
+      data: { slug: 'acme-corp' },
+    });
+  });
+
+  it('reports a refused save on the field', async () => {
+    auth.update.mockResolvedValue({ data: null, error: { message: 'Slug already taken' } });
+    renderPanel(true);
+    const slug = screen.getByLabelText('Slug');
+    fireEvent.focus(slug);
+    fireEvent.change(slug, { target: { value: 'taken' } });
+
+    await act(() => vi.advanceTimersByTimeAsync(SAVE_DEBOUNCE_MS + 50));
+
+    expect(screen.getByRole('alert').textContent).toBe('Slug already taken');
+  });
+
+  it('is read-only for people who cannot edit', () => {
+    renderPanel(false);
+    expect((screen.getByLabelText('Name') as HTMLInputElement).readOnly).toBe(true);
+    expect((screen.getByLabelText('Slug') as HTMLInputElement).readOnly).toBe(true);
   });
 });
