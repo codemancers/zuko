@@ -10,14 +10,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader } from '@/co
 import { Field, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { authClient, signOut, useSession } from '@/lib/auth-client';
-
-function slugify(name: string) {
-  return name
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '');
-}
+import { slugify } from '@/lib/slug';
 
 export function CreateOrgForm() {
   const router = useRouter();

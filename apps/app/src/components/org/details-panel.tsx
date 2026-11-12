@@ -25,13 +25,13 @@ function ReadOnlyField({ label, children }: { label: string; children: React.Rea
   );
 }
 
-const SAVE_DEBOUNCE_MS = 700;
+export const SAVE_DEBOUNCE_MS = 700;
 
 /**
  * Notion-style: always an input, styled to read as plain text. It saves once typing pauses
  * (or on blur / Enter); Escape reverts. A tick appears beside the label once saved.
  */
-function EditableField({
+export function EditableField({
   label,
   value,
   canEdit,

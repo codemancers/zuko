@@ -3,6 +3,7 @@ import { organization } from 'better-auth/plugins';
 import { prismaAdapter } from '@better-auth/prisma-adapter';
 import type { PrismaClient } from '../../generated/prisma/client';
 import { AUTH_BASE_PATH, BACKEND_URL } from './constants';
+import { activeOrganizationOnSessionCreate } from './session-hooks';
 
 export function createAuth(prisma: PrismaClient) {
   const { GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, FRONTEND_URL } = process.env;
@@ -18,14 +19,7 @@ export function createAuth(prisma: PrismaClient) {
       session: {
         create: {
           // Start every session in the user's first organization, if they have one.
-          before: async (session) => {
-            const membership = await prisma.member.findFirst({
-              where: { userId: session.userId },
-              orderBy: { createdAt: 'asc' },
-              select: { organizationId: true },
-            });
-            return { data: { ...session, activeOrganizationId: membership?.organizationId ?? null } };
-          },
+          before: activeOrganizationOnSessionCreate(prisma),
         },
       },
     },

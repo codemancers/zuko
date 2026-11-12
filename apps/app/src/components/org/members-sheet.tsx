@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { createColumnHelper, type SortingState } from '@tanstack/react-table';
+import { createColumnHelper } from '@tanstack/react-table';
 import { Link2, Trash2, X } from 'lucide-react';
 import { useCellStatus, useRowChanges, useSheet, useSheetCellEditing } from '@codemancers/sheets';
 import {
@@ -14,6 +14,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { authClient } from '@/lib/auth-client';
+import { readSorting } from './sorting';
 
 type Org = NonNullable<ReturnType<typeof authClient.useActiveOrganization>['data']>;
 
@@ -32,15 +33,6 @@ const noPinnedRows = { top: [], bottom: [] };
 const ROLES = ['member', 'admin', 'owner'];
 
 const col = createColumnHelper<Row>();
-
-// Sorting lives in the URL as ?sort=<column>&order=asc|desc, so it survives reloads and links.
-const SORTABLE = ['email', 'name', 'role'];
-
-function readSorting(params: URLSearchParams): SortingState {
-  const id = params.get('sort');
-  if (!id || !SORTABLE.includes(id)) return [];
-  return [{ id, desc: params.get('order') === 'desc' }];
-}
 
 // Refetches the active organization, which carries the member and invitation lists.
 const refresh = () => authClient.$store.notify('$activeOrgSignal');
