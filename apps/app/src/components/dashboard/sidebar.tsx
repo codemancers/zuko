@@ -19,6 +19,7 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { Brand } from '@/components/brand';
+import { OrgSwitcher } from '@/components/dashboard/org-switcher';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -167,6 +168,9 @@ export function Sidebar() {
             </Button>
           </>
         )}
+      </div>
+      <div className="border-b border-sidebar-border p-3">
+        <OrgSwitcher collapsed={collapsed} />
       </div>
       <nav aria-label="Main" className="flex-1 space-y-5 overflow-y-auto p-3">
         {sections.map((section, i) => (

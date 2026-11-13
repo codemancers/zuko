@@ -10,6 +10,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader } from '@/co
 import { Field, FieldDescription, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { signIn, signUp } from '@/lib/auth-client';
+import { safeNextPath } from '@/lib/safe-next';
 
 type Mode = 'login' | 'signup';
 
@@ -57,7 +58,8 @@ export function AuthForm({ mode }: { mode: Mode }) {
       if (error) {
         return { error: error.message ?? 'Something went wrong', name, email };
       }
-      router.push('/dashboard');
+      const next = new URLSearchParams(window.location.search).get('next');
+      router.push(safeNextPath(next));
       return { error: null, name, email };
     },
     initialState,

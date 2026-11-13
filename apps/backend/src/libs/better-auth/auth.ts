@@ -1,7 +1,9 @@
 import { betterAuth } from 'better-auth';
+import { organization } from 'better-auth/plugins';
 import { prismaAdapter } from '@better-auth/prisma-adapter';
 import type { PrismaClient } from '../../generated/prisma/client';
 import { AUTH_BASE_PATH, BACKEND_URL } from './constants';
+import { activeOrganizationOnSessionCreate } from './session-hooks';
 
 export function createAuth(prisma: PrismaClient) {
   const { GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, FRONTEND_URL } = process.env;
@@ -12,6 +14,15 @@ export function createAuth(prisma: PrismaClient) {
     database: prismaAdapter(prisma, { provider: 'postgresql' }),
     trustedOrigins: FRONTEND_URL ? [FRONTEND_URL] : [],
     emailAndPassword: { enabled: true },
+    plugins: [organization()],
+    databaseHooks: {
+      session: {
+        create: {
+          // Start every session in the user's first organization, if they have one.
+          before: activeOrganizationOnSessionCreate(prisma),
+        },
+      },
+    },
     socialProviders:
       GOOGLE_CLIENT_ID && GOOGLE_CLIENT_SECRET
         ? { google: { clientId: GOOGLE_CLIENT_ID, clientSecret: GOOGLE_CLIENT_SECRET } }

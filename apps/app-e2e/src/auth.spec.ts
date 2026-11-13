@@ -15,6 +15,16 @@ async function createUser(request: APIRequestContext, email: string) {
     data: { email, password, name: 'E2E User' },
   });
   expect(response.ok()).toBe(true);
+
+  // Signed-in users without an organization are sent to create one, so give them one
+  // up front; these tests are about logging in, not onboarding.
+  const org = await request.post(`${BACKEND_URL}/auth/organization/create`, {
+    headers: { origin: APP_URL },
+    data: { name: 'E2E Org', slug: `e2e-${Date.now()}-${Math.random().toString(36).slice(2, 8)}` },
+  });
+  expect(org.ok()).toBe(true);
+  // The API request context now holds a session; drop it so the page starts signed out.
+  await request.post(`${BACKEND_URL}/auth/sign-out`, { headers: { origin: APP_URL }, data: {} });
 }
 
 test.describe('authentication', () => {
@@ -56,6 +66,11 @@ test.describe('authentication', () => {
     await page.getByLabel('Email').fill(email);
     await page.getByLabel('Password', { exact: true }).fill(password);
     await page.getByRole('button', { name: 'Sign up' }).click();
+
+    // A new account has no organization yet, so onboarding comes first.
+    await expect(page).toHaveURL(/\/organizations\/new$/);
+    await page.getByLabel('Organization name').fill('E2E Org');
+    await page.getByRole('button', { name: 'Create organization' }).click();
 
     await expect(page).toHaveURL(/\/dashboard$/);
     await expect(page.getByText(email)).toBeVisible();
