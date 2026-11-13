@@ -1,9 +1,9 @@
 -- AlterTable
-ALTER TABLE "session" ADD COLUMN     "activeOrganizationId" TEXT;
+ALTER TABLE "session" ADD COLUMN     "activeOrganizationId" BIGINT;
 
 -- CreateTable
 CREATE TABLE "organization" (
-    "id" TEXT NOT NULL,
+    "id" BIGSERIAL NOT NULL,
     "name" TEXT NOT NULL,
     "slug" TEXT NOT NULL,
     "logo" TEXT,
@@ -15,9 +15,9 @@ CREATE TABLE "organization" (
 
 -- CreateTable
 CREATE TABLE "member" (
-    "id" TEXT NOT NULL,
-    "organizationId" TEXT NOT NULL,
-    "userId" TEXT NOT NULL,
+    "id" BIGSERIAL NOT NULL,
+    "organizationId" BIGINT NOT NULL,
+    "userId" BIGINT NOT NULL,
     "role" TEXT NOT NULL DEFAULT 'member',
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
@@ -26,14 +26,14 @@ CREATE TABLE "member" (
 
 -- CreateTable
 CREATE TABLE "invitation" (
-    "id" TEXT NOT NULL,
-    "organizationId" TEXT NOT NULL,
+    "id" BIGSERIAL NOT NULL,
+    "organizationId" BIGINT NOT NULL,
     "email" TEXT NOT NULL,
     "role" TEXT,
     "status" TEXT NOT NULL DEFAULT 'pending',
     "expiresAt" TIMESTAMP(3) NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "inviterId" TEXT NOT NULL,
+    "inviterId" BIGINT NOT NULL,
 
     CONSTRAINT "invitation_pkey" PRIMARY KEY ("id")
 );

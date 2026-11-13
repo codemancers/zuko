@@ -8,7 +8,7 @@ datasource db {
 }
 
 model User {
-  id            String    @id
+  id            BigInt    @id @default(autoincrement())
   name          String
   email         String    @unique
   emailVerified Boolean   @default(false)
@@ -24,26 +24,26 @@ model User {
 }
 
 model Session {
-  id        String   @id
+  id        BigInt   @id @default(autoincrement())
   expiresAt DateTime
   token     String   @unique
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   ipAddress String?
   userAgent String?
-  userId    String
+  userId    BigInt
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  activeOrganizationId String?
+  activeOrganizationId BigInt?
 
   @@index([userId])
   @@map("session")
 }
 
 model Account {
-  id                    String    @id
+  id                    BigInt    @id @default(autoincrement())
   accountId             String
   providerId            String
-  userId                String
+  userId                BigInt
   user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   accessToken           String?
   refreshToken          String?
@@ -60,7 +60,7 @@ model Account {
 }
 
 model Verification {
-  id         String   @id
+  id         BigInt   @id @default(autoincrement())
   identifier String
   value      String
   expiresAt  DateTime
@@ -72,7 +72,7 @@ model Verification {
 }
 
 model Organization {
-  id          String       @id
+  id          BigInt       @id @default(autoincrement())
   name        String
   slug        String       @unique
   logo        String?
@@ -85,10 +85,10 @@ model Organization {
 }
 
 model Member {
-  id             String       @id
-  organizationId String
+  id             BigInt       @id @default(autoincrement())
+  organizationId BigInt
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  userId         String
+  userId         BigInt
   user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   role           String       @default("member")
   createdAt      DateTime     @default(now())
@@ -99,15 +99,15 @@ model Member {
 }
 
 model Invitation {
-  id             String       @id
-  organizationId String
+  id             BigInt       @id @default(autoincrement())
+  organizationId BigInt
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   email          String
   role           String?
   status         String       @default("pending")
   expiresAt      DateTime
   createdAt      DateTime     @default(now())
-  inviterId      String
+  inviterId      BigInt
   inviter        User         @relation(fields: [inviterId], references: [id], onDelete: Cascade)
 
   @@index([organizationId])

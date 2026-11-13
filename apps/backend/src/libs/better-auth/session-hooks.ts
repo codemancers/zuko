@@ -5,12 +5,17 @@ import type { PrismaClient } from '../../generated/prisma/client';
  * earliest membership, or with no active organization if they have none.
  */
 export function activeOrganizationOnSessionCreate(prisma: PrismaClient) {
-  return async <T extends { userId: string }>(session: T) => {
+  return async <T extends { userId: string | number | bigint }>(session: T) => {
     const membership = await prisma.member.findFirst({
-      where: { userId: session.userId },
+      where: { userId: BigInt(session.userId) },
       orderBy: { createdAt: 'asc' },
       select: { organizationId: true },
     });
-    return { data: { ...session, activeOrganizationId: membership?.organizationId ?? null } };
+    return {
+      data: {
+        ...session,
+        activeOrganizationId: membership ? Number(membership.organizationId) : null,
+      },
+    };
   };
 }
