@@ -72,10 +72,12 @@ export class OrganizationAccessGuard implements CanActivate {
     if (!permissions) throw new ForbiddenException('Organisation access policy is required');
 
     const organizationId = request.params.organizationId;
+    const activeOrganizationId = session.session.activeOrganizationId;
     if (
       typeof organizationId !== 'string' ||
-      !organizationId ||
-      organizationId !== session.session.activeOrganizationId
+      !/^[1-9]\d*$/.test(organizationId) ||
+      (typeof activeOrganizationId === 'number' && !Number.isSafeInteger(activeOrganizationId)) ||
+      organizationId !== String(activeOrganizationId)
     ) {
       throw new ForbiddenException('Select the requested organisation first');
     }
@@ -92,7 +94,7 @@ export class OrganizationAccessGuard implements CanActivate {
 
     // Read current membership on every request; never authorize from cached role claims.
     const member = await this.prisma.member.findFirst({
-      where: { userId: session.user.id, organizationId },
+      where: { userId: BigInt(session.user.id), organizationId: BigInt(organizationId) },
       select: { role: true },
     });
     if (!member) throw new ForbiddenException('Organisation membership is required');
@@ -110,7 +112,7 @@ export class OrganizationAccessGuard implements CanActivate {
 
     request.organization = Object.freeze({
       organizationId,
-      userId: session.user.id,
+      userId: String(session.user.id),
       role: member.role,
     });
     return true;

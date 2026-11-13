@@ -18,6 +18,9 @@ Requires a valid Better Auth session cookie and an active organisation matching
 `:organizationId`. The current database membership must still exist.
 
 Returns exactly `{ organizationId, userId, role }`. No session/token is returned.
+IDs remain strings at the API boundary. Database queries convert them to `BigInt`
+to match the integer-ID schema merged in PR #12. Numeric active-session IDs must
+be safe integers; ambiguous/rounded IDs fail closed.
 Missing, revoked, forged or expired sessions receive 401. Missing membership,
 unselected/conflicting organisations, unsupported roles, missing route policy,
 or insufficient permissions receive 403. There is no fallback to a first or
@@ -62,20 +65,20 @@ erDiagram
   user ||--o{ member : belongs
   organization ||--o{ member : contains
   user {
-    string id PK
+    bigint id PK
   }
   session {
-    string id PK
-    string userId FK
-    string activeOrganizationId "selection; not proof of membership"
+    bigint id PK
+    bigint userId FK
+    bigint activeOrganizationId "selection; not proof of membership"
   }
   organization {
-    string id PK
+    bigint id PK
   }
   member {
-    string id PK
-    string userId FK
-    string organizationId FK
+    bigint id PK
+    bigint userId FK
+    bigint organizationId FK
     string role
   }
 ```
@@ -102,7 +105,7 @@ The integration suite starts a real Nest HTTP listener, signs up/signs in throug
 Better Auth, and uses real PostgreSQL memberships and sessions. A test-only
 controller proves a tenant-scoped write persists/reloads, denied writes leave
 records untouched, and role demotion/revocation takes effect on the next request.
-It is not registered in the production module. Test fixtures use random IDs and
+It is not registered in the production module. Test fixtures use database-generated IDs and
 cleanup deletes only those fixture organisations/users.
 
 Use an **isolated test database** whose name ends in `_test`. The suite refuses to

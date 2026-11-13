@@ -23,7 +23,7 @@ class WriteProbeController {
   @RequireOrganization()
   read(@CurrentOrganization() context: OrganizationContext) {
     return this.prisma.organization.findUniqueOrThrow({
-      where: { id: context.organizationId },
+      where: { id: BigInt(context.organizationId) },
       select: { name: true },
     });
   }
@@ -32,7 +32,7 @@ class WriteProbeController {
   @RequireOrganization({ organization: ['update'] })
   write(@CurrentOrganization() context: OrganizationContext, @Body() body: { name: string }) {
     return this.prisma.organization.update({
-      where: { id: context.organizationId },
+      where: { id: BigInt(context.organizationId) },
       data: { name: body.name },
       select: { name: true },
     });
@@ -48,9 +48,9 @@ let app: INestApplication;
 let prisma: PrismaService;
 let base: string;
 let cookie: string;
-let userId: string;
-const organizationId = randomUUID();
-const otherOrganizationId = randomUUID();
+let userId: bigint;
+let organizationId: bigint;
+let otherOrganizationId: bigint;
 const email = `${randomUUID()}@example.test`;
 const password = randomBytes(24).toString('hex');
 let auth: ReturnType<typeof createAuth>;
@@ -78,24 +78,27 @@ beforeAll(async () => {
   });
   assert.equal(response.status, 200, 'Fixture signup failed');
   const signup = (await response.json()) as { user: { id: string } };
-  userId = signup.user.id;
+  userId = BigInt(signup.user.id);
   cookie = response.headers
     .getSetCookie()
     .map((value) => value.split(';')[0])
     .join('; ');
-  await prisma.organization.create({
-    data: { id: organizationId, name: 'Access test', slug: organizationId, createdAt: new Date() },
-  });
-  await prisma.organization.create({
-    data: {
-      id: otherOrganizationId,
-      name: 'Other tenant',
-      slug: otherOrganizationId,
-      createdAt: new Date(),
-    },
-  });
+  organizationId = (
+    await prisma.organization.create({
+      data: { name: 'Access test', slug: randomUUID(), createdAt: new Date() },
+    })
+  ).id;
+  otherOrganizationId = (
+    await prisma.organization.create({
+      data: {
+        name: 'Other tenant',
+        slug: randomUUID(),
+        createdAt: new Date(),
+      },
+    })
+  ).id;
   await prisma.member.create({
-    data: { id: randomUUID(), organizationId, userId, role: 'member', createdAt: new Date() },
+    data: { organizationId, userId, role: 'member', createdAt: new Date() },
   });
   await prisma.session.updateMany({
     where: { userId },
@@ -108,7 +111,7 @@ beforeEach(async () => {
     where: { userId, organizationId: { in: [organizationId, otherOrganizationId] } },
   });
   await prisma.member.create({
-    data: { id: randomUUID(), organizationId, userId, role: 'member', createdAt: new Date() },
+    data: { organizationId, userId, role: 'member', createdAt: new Date() },
   });
   await prisma.session.deleteMany({ where: { userId } });
   const response = await auth.api.signInEmail({ body: { email, password }, asResponse: true });
@@ -142,7 +145,11 @@ it('returns only the current, verified organisation membership', async () => {
     headers: { cookie },
   });
   expect(response.status).toBe(200);
-  expect(await response.json()).toEqual({ organizationId, userId, role: 'member' });
+  expect(await response.json()).toEqual({
+    organizationId: String(organizationId),
+    userId: String(userId),
+    role: 'member',
+  });
 });
 
 function access(id = organizationId, headers: Record<string, string> = { cookie }) {
@@ -157,7 +164,9 @@ function write(
   return fetch(`${base}/api/organizations/${id}/probe`, {
     method: 'PATCH',
     headers: { ...headers, 'content-type': 'application/json' },
-    body: JSON.stringify(body),
+    body: JSON.stringify(body, (_key, value) =>
+      typeof value === 'bigint' ? String(value) : value,
+    ),
   });
 }
 
@@ -280,7 +289,8 @@ it('rejects conflicting body, query and header organisation selectors', async ()
       .status,
   ).toBe(403);
   expect(
-    (await access(organizationId, { cookie, 'x-organization-id': otherOrganizationId })).status,
+    (await access(organizationId, { cookie, 'x-organization-id': String(otherOrganizationId) }))
+      .status,
   ).toBe(403);
   expect(
     (
@@ -305,7 +315,6 @@ it('fails closed when a future API forgets to declare its policy', async () => {
 it('revalidates membership on a legitimate organisation switch', async () => {
   await prisma.member.create({
     data: {
-      id: randomUUID(),
       organizationId: otherOrganizationId,
       userId,
       role: 'member',
@@ -315,7 +324,7 @@ it('revalidates membership on a legitimate organisation switch', async () => {
   const response = await fetch(`${base}/auth/organization/set-active`, {
     method: 'POST',
     headers: { cookie, 'content-type': 'application/json' },
-    body: JSON.stringify({ organizationId: otherOrganizationId }),
+    body: JSON.stringify({ organizationId: String(otherOrganizationId) }),
   });
   expect(response.status).toBe(200);
   expect((await access(otherOrganizationId)).status).toBe(200);
