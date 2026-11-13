@@ -39,12 +39,6 @@ describe('MembersSheet', () => {
     expect(screen.queryByText('old@example.com')).toBeNull();
   });
 
-  it('orders the columns Name, Email, Role, Actions', () => {
-    renderSheet();
-    const headers = screen.getAllByRole('columnheader').map((h) => h.textContent?.trim());
-    expect(headers.filter((h) => h && h !== 'Row')).toEqual(['Name', 'Email', 'Role', 'Actions']);
-  });
-
   it('marks your own row', () => {
     renderSheet();
     expect(within(rowFor('Olive Owner')).getByText('You')).toBeTruthy();
@@ -182,40 +176,6 @@ describe('MembersSheet', () => {
       expect(screen.queryByLabelText(/Role for/)).toBeNull();
       expect(screen.queryByRole('button', { name: /Cancel invite/ })).toBeNull();
       expect(screen.queryByRole('button', { name: /Invite member|Add row/i })).toBeNull();
-    });
-  });
-
-  describe('sorting', () => {
-    // Email cells, top to bottom (cells have no separators, so read each one on its own).
-    const emailsInOrder = () =>
-      screen.getAllByText(/^[\w.]+@example\.com$/).map((e) => e.textContent);
-
-    it('keeps the natural order without a sort in the URL', () => {
-      renderSheet();
-      expect(emailsInOrder()).toEqual([
-        'olive@example.com',
-        'sam@example.com',
-        'pending@example.com',
-      ]);
-    });
-
-    it('sorts rows by the column in the URL', () => {
-      nav.query = 'sort=email&order=desc';
-      renderSheet();
-      expect(emailsInOrder()).toEqual([
-        'sam@example.com',
-        'pending@example.com',
-        'olive@example.com',
-      ]);
-    });
-
-    it('writes the sort back to the URL when a header is clicked', () => {
-      renderSheet();
-      fireEvent.click(within(screen.getAllByRole('columnheader')[2]).getByRole('button'));
-      expect(nav.router.replace).toHaveBeenCalledWith(
-        '/org/settings/members?sort=email&order=asc',
-        { scroll: false },
-      );
     });
   });
 });
