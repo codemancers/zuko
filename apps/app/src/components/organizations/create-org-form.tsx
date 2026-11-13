@@ -15,7 +15,7 @@ import { slugify } from '@/lib/slug';
 export function CreateOrgForm() {
   const router = useRouter();
   const { data: session, isPending: sessionPending } = useSession();
-  const { data: orgs } = authClient.useListOrganizations();
+  const { data: orgs, refetch: refetchOrgs } = authClient.useListOrganizations();
   const [name, setName] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
@@ -43,6 +43,9 @@ export function CreateOrgForm() {
     if (check.error) slug = `${base}-${Math.random().toString(36).slice(2, 6)}`;
     const { data, error: err } = await authClient.organization.create({ name: trimmed, slug });
     if (data) {
+      // The org list is cached as empty from before this create. Refresh it first, or
+      // OrgGate on /dashboard sees the stale [] and bounces the user back to this form.
+      await refetchOrgs?.();
       router.push('/dashboard'); // create() also makes the new org active.
       return;
     }

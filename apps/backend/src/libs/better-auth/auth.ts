@@ -14,6 +14,7 @@ export function createAuth(prisma: PrismaClient) {
     database: prismaAdapter(prisma, { provider: 'postgresql' }),
     trustedOrigins: FRONTEND_URL ? [FRONTEND_URL] : [],
     emailAndPassword: { enabled: true },
+    advanced: { database: { generateId: 'serial' } },
     plugins: [organization()],
     databaseHooks: {
       session: {

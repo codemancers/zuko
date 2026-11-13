@@ -31,6 +31,23 @@ describe('CreateOrgForm', () => {
     expect(auth.create).toHaveBeenCalledWith({ name: 'Acme Inc', slug: 'acme-inc' });
   });
 
+  it('refreshes the organization list before leaving, so the dashboard never sees the stale empty list', async () => {
+    let finishRefetch!: () => void;
+    const refetch = vi.fn(() => new Promise<void>((resolve) => (finishRefetch = resolve)));
+    const orgsWithRefetch = { data: [], isPending: false, refetch };
+    auth.orgs = orgsWithRefetch;
+    submit('Acme');
+
+    await waitFor(() => expect(refetch).toHaveBeenCalled());
+    expect(auth.create.mock.invocationCallOrder[0]).toBeLessThan(
+      refetch.mock.invocationCallOrder[0],
+    );
+    expect(router.push).not.toHaveBeenCalled();
+
+    finishRefetch();
+    await waitFor(() => expect(router.push).toHaveBeenCalledWith('/dashboard'));
+  });
+
   it('adds a suffix when the slug is taken', async () => {
     auth.checkSlug.mockResolvedValue({ data: null, error: { message: 'slug taken' } });
     submit('Acme');

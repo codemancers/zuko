@@ -1,6 +1,6 @@
 -- CreateTable
 CREATE TABLE "user" (
-    "id" TEXT NOT NULL,
+    "id" BIGSERIAL NOT NULL,
     "name" TEXT NOT NULL,
     "email" TEXT NOT NULL,
     "emailVerified" BOOLEAN NOT NULL DEFAULT false,
@@ -13,24 +13,24 @@ CREATE TABLE "user" (
 
 -- CreateTable
 CREATE TABLE "session" (
-    "id" TEXT NOT NULL,
+    "id" BIGSERIAL NOT NULL,
     "expiresAt" TIMESTAMP(3) NOT NULL,
     "token" TEXT NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
     "ipAddress" TEXT,
     "userAgent" TEXT,
-    "userId" TEXT NOT NULL,
+    "userId" BIGINT NOT NULL,
 
     CONSTRAINT "session_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
 CREATE TABLE "account" (
-    "id" TEXT NOT NULL,
+    "id" BIGSERIAL NOT NULL,
     "accountId" TEXT NOT NULL,
     "providerId" TEXT NOT NULL,
-    "userId" TEXT NOT NULL,
+    "userId" BIGINT NOT NULL,
     "accessToken" TEXT,
     "refreshToken" TEXT,
     "idToken" TEXT,
@@ -46,7 +46,7 @@ CREATE TABLE "account" (
 
 -- CreateTable
 CREATE TABLE "verification" (
-    "id" TEXT NOT NULL,
+    "id" BIGSERIAL NOT NULL,
     "identifier" TEXT NOT NULL,
     "value" TEXT NOT NULL,
     "expiresAt" TIMESTAMP(3) NOT NULL,
