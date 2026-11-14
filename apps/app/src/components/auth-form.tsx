@@ -135,6 +135,14 @@ export function AuthForm({ mode }: { mode: Mode }) {
               {pending && <Loader2 className="animate-spin" data-icon="inline-start" aria-hidden />}
               {text.submit}
             </Button>
+            {!isSignup && (
+              <Link
+                href="/forgot-password"
+                className="text-center text-sm underline-offset-4 hover:underline"
+              >
+                Forgot your password?
+              </Link>
+            )}
           </FieldGroup>
         </CardContent>
       </form>
