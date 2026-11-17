@@ -8,12 +8,23 @@ import { CrmError } from '../crm/errors';
 import { RecordsQueryService } from '../crm/records-query.service';
 import { RecordsService } from '../crm/records.service';
 import { SchemaService } from '../crm/schema.service';
-import { MCP_RESOURCE, MCP_SCOPES, ORG_CLAIM } from '../libs/better-auth/constants';
+import { BACKEND_URL, MCP_PATH, MCP_RESOURCE, MCP_SCOPES, ORG_CLAIM } from '../libs/better-auth/constants';
+import { PrismaService } from '../prisma/prisma.service';
 import { sendFetchResponse, toFetchRequest, type HttpRequest, type HttpResponse } from './http';
 import { buildMcpServer } from './mcp-tools';
 
 const problem = (status: number, code: string, message: string) =>
   new Response(JSON.stringify({ code, message }), { status, headers: { 'content-type': 'application/json' } });
+
+/** A token that is still signed and unexpired, but whose connection the user has disconnected. */
+const disconnected = () =>
+  new Response(JSON.stringify({ code: 'CONNECTION_REVOKED', message: 'This connection was disconnected; connect again' }), {
+    status: 401,
+    headers: {
+      'content-type': 'application/json',
+      'www-authenticate': `Bearer error="invalid_token", error_description="connection disconnected", resource_metadata="${BACKEND_URL}/.well-known/oauth-protected-resource${MCP_PATH}"`,
+    },
+  });
 
 /**
  * The MCP endpoint. It is not behind the web-session guard: access is by OAuth access
@@ -27,6 +38,7 @@ export class McpController {
   constructor(
     private readonly auth: AuthService,
     private readonly contexts: CrmContextService,
+    private readonly prisma: PrismaService,
     schema: SchemaService,
     records: RecordsService,
     queries: RecordsQueryService,
@@ -52,6 +64,16 @@ export class McpController {
         const organizationId = claims[ORG_CLAIM];
         if (typeof claims.sub !== 'string' || typeof organizationId !== 'string') {
           return problem(403, 'NO_ORGANIZATION', 'This connection is not bound to an organization; reconnect it');
+        }
+
+        // Access tokens are valid until they expire, so disconnecting is enforced here: the
+        // approval the token was issued under must still exist.
+        const approved = await this.prisma.oauthConsent.findFirst({
+          where: { userId: BigInt(claims.sub), clientId: String(claims.azp ?? ''), referenceId: organizationId },
+          select: { id: true },
+        });
+        if (!approved) {
+          return disconnected();
         }
 
         let ctx: RequestContext;

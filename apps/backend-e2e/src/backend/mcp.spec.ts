@@ -266,6 +266,87 @@ describe('organization binding', () => {
   });
 });
 
+describe('connected applications', () => {
+  let connA: Connection;
+  let connB: Connection;
+  let idA = '';
+  let idB = '';
+  const mine = async (user: User) =>
+    (status(await user.get(`${API}/connections`), 200).results as { id: string; client: { id: string; name: string }; organization: { id: string; name: string }; scopes: string[]; connected_at: string }[]).filter(
+      (c) => c.client.name?.startsWith(`e2e-${run}-conn`),
+    );
+  const callMcp = (token: string) =>
+    axios.post(MCP_URL, { jsonrpc: '2.0', id: 1, method: 'tools/list' }, {
+      headers: { accept: 'application/json, text/event-stream', authorization: `Bearer ${token}` },
+      validateStatus: () => true,
+    });
+
+  it('lists what a user has approved: the app, the organization and the access', async () => {
+    connA = await connect(alice, clientName('conn-a'), 'openid offline_access mcp:read');
+    connB = await connect(alice, clientName('conn-b'), 'openid offline_access mcp:read mcp:write');
+
+    const list = await mine(alice);
+    expect(list.map((c) => c.client.name).sort()).toEqual([clientName('conn-a'), clientName('conn-b')]);
+    const a = list.find((c) => c.client.id === connA.clientId)!;
+    const b = list.find((c) => c.client.id === connB.clientId)!;
+    idA = a.id;
+    idB = b.id;
+    expect(a.organization).toEqual({ id: acmeId, name: 'Acme' });
+    expect(a.scopes).toContain('mcp:read');
+    expect(a.scopes).not.toContain('mcp:write');
+    expect(b.scopes).toEqual(expect.arrayContaining(['mcp:read', 'mcp:write']));
+    expect(Date.parse(a.connected_at)).not.toBeNaN();
+  });
+
+  it('shows each user only their own connections', async () => {
+    expect(await mine(owner)).toEqual([]);
+    expect((await owner.del(`${API}/connections/${idA}`)).status).toBe(404); // not theirs to remove
+    expect((await mine(alice)).length).toBe(2);
+  });
+
+  it('needs a login', async () => {
+    expect((await new User('nobody', 'nobody@example.com').get(`${API}/connections`)).status).toBe(401);
+  });
+
+  it('cuts off a disconnected app at once, and only that app', async () => {
+    expect((await callMcp(connA.accessToken)).status).toBe(200);
+    expect((await callMcp(connB.accessToken)).status).toBe(200);
+
+    expect(status(await alice.del(`${API}/connections/${idA}`), 200)).toEqual({ id: idA, deleted: true });
+
+    // The token is still signed and unexpired, but the approval behind it is gone.
+    const cut = await callMcp(connA.accessToken);
+    expect(cut.status).toBe(401);
+    expect(cut.headers['www-authenticate']).toContain('invalid_token');
+    expect(cut.data.code).toBe('CONNECTION_REVOKED');
+
+    // It cannot get a new token either.
+    const refresh = await alice.form('/auth/oauth2/token', { grant_type: 'refresh_token', refresh_token: connA.refreshToken, client_id: connA.clientId, resource: MCP_URL });
+    expect(refresh.status).toBeGreaterThanOrEqual(400);
+
+    // The other connection is untouched.
+    expect((await callMcp(connB.accessToken)).status).toBe(200);
+    expect((await mine(alice)).map((c) => c.id)).toEqual([idB]);
+    expect((await alice.del(`${API}/connections/${idA}`)).status).toBe(404); // already gone
+  });
+
+  it('asks for approval again when a disconnected app reconnects', async () => {
+    const reconnect = await alice.get(
+      `/auth/oauth2/authorize?${new URLSearchParams({
+        response_type: 'code',
+        client_id: connA.clientId,
+        redirect_uri: 'http://localhost:9999/callback',
+        scope: 'mcp:read',
+        state: 's',
+        code_challenge: 'E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM',
+        code_challenge_method: 'S256',
+        resource: MCP_URL,
+      })}`,
+    );
+    expect(new URL(reconnect.data.url).pathname).toBe('/consent');
+  });
+});
+
 describe('losing access', () => {
   it('stops working for someone removed from the organization', async () => {
     const conn = await connect(alice, clientName('removed'), 'mcp:read');
