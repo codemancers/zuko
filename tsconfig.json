@@ -20,6 +20,9 @@
     },
     {
       "path": "./libs/better-auth-audit"
+    },
+    {
+      "path": "./libs/access-control"
     }
   ]
 }
