@@ -8,31 +8,32 @@ datasource db {
 }
 
 model User {
-  id            BigInt    @id @default(autoincrement())
+  id            BigInt         @id @default(autoincrement())
   name          String
-  email         String    @unique
-  emailVerified Boolean   @default(false)
+  email         String         @unique
+  emailVerified Boolean        @default(false)
   image         String?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
   sessions      Session[]
   accounts      Account[]
   members       Member[]
   invitations   Invitation[]
+  ownedRecords  ObjectRecord[]
 
   @@map("user")
 }
 
 model Session {
-  id        BigInt   @id @default(autoincrement())
-  expiresAt DateTime
-  token     String   @unique
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  ipAddress String?
-  userAgent String?
-  userId    BigInt
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                   BigInt   @id @default(autoincrement())
+  expiresAt            DateTime
+  token                String   @unique
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+  ipAddress            String?
+  userAgent            String?
+  userId               BigInt
+  user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   activeOrganizationId BigInt?
 
   @@index([userId])
@@ -80,6 +81,7 @@ model Organization {
   metadata    String?
   members     Member[]
   invitations Invitation[]
+  objectTypes ObjectType[]
 
   @@map("organization")
 }
@@ -113,4 +115,121 @@ model Invitation {
   @@index([organizationId])
   @@index([email])
   @@map("invitation")
+}
+
+// ---------------------------------------------------------------------------
+// CRM data model. Every table carries "organizationId" and is protected by
+// row-level security (see the core_data_model migration). Cross-table foreign
+// keys are composite on (organizationId, id) so a reference can never cross
+// tenants.
+// ---------------------------------------------------------------------------
+
+// A kind of record an organization stores: contact, deal, or a custom object.
+model ObjectType {
+  id             BigInt       @id @default(autoincrement())
+  organizationId BigInt
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  slug           String
+  label          String
+  pluralLabel    String
+  kind           String // STANDARD | CUSTOM
+  version        Int          @default(1)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  fields       FieldDefinition[]
+  records      ObjectRecord[]
+  sourceAssocs AssociationDefinition[] @relation("AssociationSource")
+  targetAssocs AssociationDefinition[] @relation("AssociationTarget")
+
+  @@unique([organizationId, slug])
+  @@unique([organizationId, id])
+  @@map("object_type")
+}
+
+// A field on an object type. Values live in ObjectRecord.properties under `name`.
+model FieldDefinition {
+  id             BigInt     @id @default(autoincrement())
+  organizationId BigInt
+  objectTypeId   BigInt
+  objectType     ObjectType @relation(fields: [organizationId, objectTypeId], references: [organizationId, id], onDelete: Cascade)
+  name           String // snake_case key inside properties
+  label          String
+  type           String // TEXT, EMAIL, NUMBER, TIMESTAMP, ...
+  required       Boolean    @default(false)
+  isUnique       Boolean    @default(false)
+  filterable     Boolean    @default(false)
+  readOnly       Boolean    @default(false)
+  sensitive      Boolean    @default(false) // redact in audit history
+  maxLength      Int?
+  config         Json       @default("{}")
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+
+  @@unique([objectTypeId, name])
+  @@index([organizationId, objectTypeId])
+  @@map("field_definition")
+}
+
+// One row per contact/deal/etc. Field values are stored in `properties`.
+model ObjectRecord {
+  id             BigInt     @id @default(autoincrement())
+  organizationId BigInt
+  objectTypeId   BigInt
+  objectType     ObjectType @relation(fields: [organizationId, objectTypeId], references: [organizationId, id], onDelete: Restrict)
+  properties     Json       @default("{}")
+  ownerId        BigInt?
+  owner          User?      @relation(fields: [ownerId], references: [id], onDelete: SetNull)
+  createdBy      BigInt?
+  updatedBy      BigInt?
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+  deletedAt      DateTime?
+
+  asSource Association[] @relation("AssociationSource")
+  asTarget Association[] @relation("AssociationTarget")
+
+  @@unique([organizationId, id])
+  @@index([organizationId, objectTypeId, createdAt(sort: Desc)])
+  @@index([organizationId, objectTypeId, ownerId])
+  @@index([properties(ops: JsonbPathOps)], type: Gin)
+  @@map("record")
+}
+
+// A kind of link between two object types (e.g. contact <-> company).
+model AssociationDefinition {
+  id                 BigInt     @id @default(autoincrement())
+  organizationId     BigInt
+  name               String
+  label              String
+  sourceObjectTypeId BigInt
+  sourceObjectType   ObjectType @relation("AssociationSource", fields: [organizationId, sourceObjectTypeId], references: [organizationId, id], onDelete: Cascade)
+  targetObjectTypeId BigInt
+  targetObjectType   ObjectType @relation("AssociationTarget", fields: [organizationId, targetObjectTypeId], references: [organizationId, id], onDelete: Cascade)
+  cardinality        String // ONE_TO_ONE | ONE_TO_MANY | MANY_TO_ONE | MANY_TO_MANY
+  isDefault          Boolean    @default(false)
+  isLookup           Boolean    @default(false)
+  isActive           Boolean    @default(true)
+
+  associations Association[]
+
+  @@unique([organizationId, name])
+  @@unique([organizationId, id])
+  @@map("association_definition")
+}
+
+// A link between two records, of a given definition.
+model Association {
+  organizationId BigInt
+  definitionId   BigInt
+  definition     AssociationDefinition @relation(fields: [organizationId, definitionId], references: [organizationId, id], onDelete: Cascade)
+  sourceId       BigInt
+  source         ObjectRecord          @relation("AssociationSource", fields: [organizationId, sourceId], references: [organizationId, id], onDelete: Cascade)
+  targetId       BigInt
+  target         ObjectRecord          @relation("AssociationTarget", fields: [organizationId, targetId], references: [organizationId, id], onDelete: Cascade)
+  createdAt      DateTime              @default(now())
+
+  @@id([organizationId, definitionId, sourceId, targetId])
+  @@index([organizationId, definitionId, targetId, sourceId])
+  @@map("association")
 }
