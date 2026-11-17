@@ -297,6 +297,9 @@ importers:
       '@zuko/access-control':
         specifier: workspace:*
         version: link:../../libs/access-control
+      '@zuko/better-auth-audit':
+        specifier: workspace:*
+        version: link:../../libs/better-auth-audit
       '@zuko/better-auth-hierarchy':
         specifier: workspace:*
         version: link:../../libs/better-auth-hierarchy
