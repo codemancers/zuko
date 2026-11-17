@@ -3,11 +3,12 @@ import * as z from 'zod';
 import type { RecordShare } from '../generated/prisma/client';
 import type { RequestContext } from './context';
 import { notFound, parse, validationFailed } from './errors';
+import { idField } from './ids';
 import { assertCan } from './permissions';
 import { RecordsService, toId } from './records.service';
 import { SchemaService } from './schema.service';
 
-const id = z.union([z.string().regex(/^[1-9]\d{0,18}$/, 'must be a numeric id'), z.number().int().positive()]).transform(BigInt);
+const id = idField;
 
 const shareBody = z
   .object({ user_id: id.optional(), team_id: id.optional(), access: z.enum(['READ', 'WRITE']) })

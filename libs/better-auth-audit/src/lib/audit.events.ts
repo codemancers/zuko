@@ -143,15 +143,18 @@ export const EVENT_SPECS: Readonly<Record<string, EventSpec>> = {
   },
 };
 
-/** Only whole, positive, numeric ids fit the numeric id columns. */
+/** The largest value a bigint column holds (2^63 - 1). */
+const MAX_ID = 9223372036854775807n;
+
+/** Only whole, positive, numeric ids that fit a bigint column can be stored in the numeric id columns. */
 export function numericId(value: unknown): string | null {
   if (typeof value === 'number' && Number.isSafeInteger(value) && value > 0) {
     return String(value);
   }
-  if (typeof value === 'bigint' && value > 0n) {
+  if (typeof value === 'bigint' && value > 0n && value <= MAX_ID) {
     return value.toString();
   }
-  if (typeof value === 'string' && /^[1-9]\d{0,18}$/.test(value)) {
+  if (typeof value === 'string' && /^[1-9]\d{0,18}$/.test(value) && BigInt(value) <= MAX_ID) {
     return value;
   }
   return null;

@@ -4,13 +4,14 @@ import { Prisma, type ObjectRecord } from '../generated/prisma/client';
 import { PrismaService, type TenantTransaction } from '../prisma/prisma.service';
 import type { RequestContext } from './context';
 import { forbidden, notFound, parse, validationFailed, type FieldError } from './errors';
+import { idField, parseId } from './ids';
 import { validateProperties } from './field-types';
 import { assertCan, resolveScopes, visibilitySql, type Mode, type Scope } from './permissions';
 import { SchemaService, type ObjectWithFields } from './schema.service';
 
 type Props = Record<string, unknown>;
 
-const id = z.union([z.string().regex(/^[1-9]\d{0,18}$/, 'must be a numeric id'), z.number().int().positive()]).transform(BigInt);
+const id = idField;
 
 const createBody = z.object({
   properties: z.record(z.string(), z.unknown()).default({}),
@@ -27,10 +28,11 @@ const updateBody = z
   .refine((body) => Object.keys(body).length > 0, 'Nothing to update');
 
 export const toId = (raw: string, what = 'record'): bigint => {
-  if (!/^[1-9]\d{0,18}$/.test(raw)) {
+  const id = parseId(raw);
+  if (id === undefined) {
     throw notFound(`No such ${what}`);
   }
-  return BigInt(raw);
+  return id;
 };
 
 /** Only the values of the object's current fields: a removed field's values stay stored, unseen. */

@@ -1,4 +1,5 @@
 import type { FieldError } from './errors';
+import { parseId } from './ids';
 
 /**
  * LINK fields point at records of another object and are stored as associations, not in the
@@ -21,7 +22,6 @@ export interface FieldDef {
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-const USER_ID = /^[1-9]\d{0,18}$/;
 
 /** Whether a LINK or USER field holds several values. */
 export const holdsMany = (field: Pick<FieldDef, 'config'>): boolean => (field.config as { many?: unknown } | null)?.many === true;
@@ -66,7 +66,7 @@ function checkValue(field: FieldDef, value: unknown): { value: unknown } | { err
     case 'LINK':
       return fail('INVALID_FIELD', `Field '${field.name}' is a link; set it through the associations API`);
     case 'USER': {
-      const ok = (v: unknown): v is string => typeof v === 'string' && USER_ID.test(v);
+      const ok = (v: unknown): v is string => typeof v === 'string' && parseId(v) !== undefined;
       if (holdsMany(field)) {
         return Array.isArray(value) && value.length > 0 && value.every(ok)
           ? { value: [...new Set(value as string[])] }

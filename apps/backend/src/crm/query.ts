@@ -1,5 +1,6 @@
 import { Prisma } from '../generated/prisma/client';
 import { validationFailed, type FieldError } from './errors';
+import { parseId } from './ids';
 import type { FieldDef } from './field-types';
 
 export const OPERATORS = [
@@ -110,10 +111,7 @@ function coerce(kind: Kind, value: unknown): unknown {
       return time && !Number.isNaN(time.getTime()) ? time.toISOString() : undefined;
     }
     case 'id':
-      if (typeof value === 'number' && Number.isSafeInteger(value) && value > 0) {
-        return BigInt(value);
-      }
-      return typeof value === 'string' && /^[1-9]\d{0,18}$/.test(value) ? BigInt(value) : undefined;
+      return parseId(value);
   }
 }
 

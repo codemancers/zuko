@@ -2,6 +2,7 @@ import { betterAuth } from 'better-auth';
 import { memoryAdapter } from 'better-auth/adapters/memory';
 import { organization } from 'better-auth/plugins';
 import { describe, expect, it, vi } from 'vitest';
+import { numericId } from './audit.events.js';
 import { audit, AUDIT_PLUGIN_ID, EVENT_SPECS, type AuditEventInput, type AuditOptions } from '../index.js';
 
 const PASSWORD = 'correct-horse-battery-1';
@@ -211,5 +212,14 @@ describe('OAuth consent events', () => {
 
   it('copes with a consent that has no signed request', () => {
     expect(details({ accept: true })).toEqual({ client_id: null, scopes: [] });
+  });
+
+  it('only takes ids that fit a bigint column', () => {
+    expect(numericId('9223372036854775807')).toBe('9223372036854775807');
+    expect(numericId('9223372036854775808')).toBeNull(); // 2^63: one too many
+    expect(numericId(9223372036854775808n)).toBeNull();
+    expect(numericId('7')).toBe('7');
+    expect(numericId(7)).toBe('7');
+    for (const bad of ['0', '07', '-1', '', ' 1', '1.5', 1.5, 0, -3, null, undefined, {}]) expect(numericId(bad)).toBeNull();
   });
 });
