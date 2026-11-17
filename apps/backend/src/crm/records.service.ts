@@ -168,7 +168,7 @@ export class RecordsService {
     }
   }
 
-  private logChange(tx: TenantTransaction, ctx: RequestContext, object: ObjectWithFields, recordId: bigint, action: 'CREATE' | 'UPDATE' | 'DELETE', changes: Record<string, Change>) {
+  logChange(tx: TenantTransaction, ctx: RequestContext, object: ObjectWithFields, recordId: bigint, action: 'CREATE' | 'UPDATE' | 'DELETE', changes: Record<string, Change>) {
     return tx.recordChange.create({
       data: {
         organizationId: ctx.organizationId,
