@@ -27,6 +27,9 @@ export const auth: {
   rejectInvitation: Mock;
   notify: Mock;
   signOut: Mock;
+  fetch: Mock;
+  signInEmail: Mock;
+  signUpEmail: Mock;
 } = {
   session: { data: null, isPending: false },
   orgs: { data: undefined, isPending: false },
@@ -45,6 +48,9 @@ export const auth: {
   rejectInvitation: vi.fn(),
   notify: vi.fn(),
   signOut: vi.fn(),
+  fetch: vi.fn<(...args: unknown[]) => unknown>(),
+  signInEmail: vi.fn<(...args: unknown[]) => unknown>(),
+  signUpEmail: vi.fn<(...args: unknown[]) => unknown>(),
 };
 
 const OK = { data: {}, error: null };
@@ -75,6 +81,8 @@ export function resetAuth() {
     'acceptInvitation',
     'rejectInvitation',
     'signOut',
+    'signInEmail',
+    'signUpEmail',
   ] as const) {
     auth[key].mockResolvedValue(OK);
   }
@@ -86,6 +94,7 @@ const authClient = {
   useActiveOrganization: () => auth.activeOrg,
   useActiveMember: () => auth.activeMember,
   $store: { notify: (...args: unknown[]) => auth.notify(...args) },
+  $fetch: (...a: unknown[]) => auth.fetch(...a),
   organization: {
     create: (...a: unknown[]) => auth.create(...a),
     checkSlug: (...a: unknown[]) => auth.checkSlug(...a),
@@ -106,8 +115,8 @@ export const authClientModule = {
   authClient,
   useSession: () => auth.session,
   signOut: (...a: unknown[]) => auth.signOut(...a),
-  signIn: {},
-  signUp: {},
+  signIn: { email: (...a: unknown[]) => auth.signInEmail(...a) },
+  signUp: { email: (...a: unknown[]) => auth.signUpEmail(...a) },
 };
 
 /** The org shape better-auth returns from get-full-organization, trimmed to what the UI reads. */
