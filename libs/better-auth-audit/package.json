@@ -22,6 +22,6 @@
     "name": "better-auth-audit"
   },
   "peerDependencies": {
-    "better-auth": "^1.7.20"
+    "better-auth": "^1.7.25"
   }
 }

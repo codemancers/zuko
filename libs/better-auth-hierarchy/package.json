@@ -23,6 +23,6 @@
     "name": "better-auth-hierarchy"
   },
   "peerDependencies": {
-    "better-auth": "^1.7.20"
+    "better-auth": "^1.7.25"
   }
 }
