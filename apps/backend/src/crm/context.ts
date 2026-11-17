@@ -12,6 +12,8 @@ export interface RequestContext {
   roles: string[];
   teamIds: bigint[];
   requestId: string;
+  /** How the request arrived; recorded as the actor type in history. */
+  actorType: 'USER' | 'MCP';
 }
 
 interface CrmRequest {
@@ -21,25 +23,21 @@ interface CrmRequest {
 }
 
 /**
- * Builds the RequestContext for routes behind better-auth's global guard: the
- * session's active organization, the user's membership and roles there, and their
- * teams. Rejects requests with no active organization or no membership.
+ * Resolves a user's standing in an organization: their membership and roles there, and
+ * their teams. Used for web requests and for MCP requests, which differ only in how the
+ * user and organization were established (session vs. access token).
  */
 @Injectable()
-export class CrmContextGuard implements CanActivate {
+export class CrmContextService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async canActivate(execution: ExecutionContext): Promise<boolean> {
-    const request = execution.switchToHttp().getRequest<CrmRequest>();
-    const session = request.session;
-    const activeOrganizationId = (session?.session as { activeOrganizationId?: unknown } | undefined)
-      ?.activeOrganizationId;
-    if (!session || activeOrganizationId == null || activeOrganizationId === '') {
-      throw badRequest('NO_ACTIVE_ORGANIZATION', 'No active organization; select one first');
-    }
-
-    const userId = BigInt(session.user.id as string | number);
-    const organizationId = BigInt(activeOrganizationId as string | number);
+  async build(input: {
+    userId: bigint;
+    organizationId: bigint;
+    actorType: RequestContext['actorType'];
+    requestId?: string | undefined;
+  }): Promise<RequestContext> {
+    const { userId, organizationId } = input;
     const member = await this.prisma.member.findUnique({
       where: { organizationId_userId: { organizationId, userId } },
       select: { role: true },
@@ -51,9 +49,7 @@ export class CrmContextGuard implements CanActivate {
       where: { userId, team: { organizationId } },
       select: { teamId: true },
     });
-
-    const header = request.headers['x-request-id'];
-    request.crm = {
+    return {
       userId,
       organizationId,
       roles: member.role
@@ -61,8 +57,37 @@ export class CrmContextGuard implements CanActivate {
         .map((role) => role.trim())
         .filter(Boolean),
       teamIds: teams.map((team) => team.teamId),
-      requestId: (Array.isArray(header) ? header[0] : header) || randomUUID(),
+      requestId: input.requestId || randomUUID(),
+      actorType: input.actorType,
     };
+  }
+}
+
+/**
+ * Builds the RequestContext for routes behind better-auth's global guard: the
+ * session's active organization and the user's membership there. Rejects requests with
+ * no active organization or no membership.
+ */
+@Injectable()
+export class CrmContextGuard implements CanActivate {
+  constructor(private readonly contexts: CrmContextService) {}
+
+  async canActivate(execution: ExecutionContext): Promise<boolean> {
+    const request = execution.switchToHttp().getRequest<CrmRequest>();
+    const session = request.session;
+    const activeOrganizationId = (session?.session as { activeOrganizationId?: unknown } | undefined)
+      ?.activeOrganizationId;
+    if (!session || activeOrganizationId == null || activeOrganizationId === '') {
+      throw badRequest('NO_ACTIVE_ORGANIZATION', 'No active organization; select one first');
+    }
+
+    const header = request.headers['x-request-id'];
+    request.crm = await this.contexts.build({
+      userId: BigInt(session.user.id as string | number),
+      organizationId: BigInt(activeOrganizationId as string | number),
+      actorType: 'USER',
+      requestId: Array.isArray(header) ? header[0] : header,
+    });
     return true;
   }
 }

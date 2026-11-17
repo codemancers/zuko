@@ -176,7 +176,7 @@ export class RecordsService {
         objectTypeId: object.id,
         action,
         changes: changes as unknown as Prisma.InputJsonObject,
-        actorType: 'USER',
+        actorType: ctx.actorType,
         actorId: ctx.userId,
         requestId: ctx.requestId,
       },

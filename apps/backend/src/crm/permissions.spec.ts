@@ -8,6 +8,7 @@ const ctx = (roles: string[]): RequestContext => ({
   roles,
   teamIds: [3n, 4n],
   requestId: 'r',
+  actorType: 'USER',
 });
 
 describe('can', () => {
