@@ -85,6 +85,10 @@ export const audit = (options: AuditOptions = {}) => {
 
               const body = (ctx.body ?? {}) as Bag;
               const result = (failed || typeof returned !== 'object' || returned === null ? {} : returned) as Bag;
+              const eventName = failed ? spec.failedEvent : typeof spec.event === 'function' ? spec.event(body, result) : spec.event;
+              if (!eventName) {
+                return;
+              }
               const session =
                 ctx.context.newSession ?? ctx.context.session ?? (await getSessionFromCtx(ctx).catch(() => null));
               const userId = failed ? null : (session?.user.id ?? null);
@@ -108,10 +112,10 @@ export const audit = (options: AuditOptions = {}) => {
                 organizationId: failed ? null : numericId(organization),
                 actorType: userId === null ? 'ANONYMOUS' : 'USER',
                 actorId: userId === null ? null : numericId(userId),
-                event: failed ? (spec.failedEvent as string) : spec.event,
+                event: eventName,
                 targetType: spec.targetType ?? null,
                 targetId: numericId(spec.target?.(body, result)),
-                metadata: pick(body, spec.metadata),
+                metadata: typeof spec.metadata === 'function' ? spec.metadata(body, result) : pick(body, spec.metadata),
                 ...client(ctx.headers),
               };
               await write(input, { adapter: ctx.context.adapter });

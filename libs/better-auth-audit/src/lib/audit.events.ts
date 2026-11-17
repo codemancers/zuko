@@ -23,19 +23,34 @@ export interface AuditEventInput {
 type Bag = Record<string, unknown>;
 
 export interface EventSpec {
-  event: string;
+  /** The event name; a function can choose it from the request, and return null to record nothing. */
+  event: string | ((body: Bag, result: Bag) => string | null);
   /** Recorded (as an anonymous event) when the request fails. Most events are only recorded on success. */
   failedEvent?: string;
   targetType?: string;
   /** Where the target id comes from. */
   target?: (body: Bag, result: Bag) => unknown;
-  /** Request fields worth keeping. */
-  metadata?: readonly string[];
+  /** Request fields worth keeping, or a function that builds the details (it must never copy secrets). */
+  metadata?: readonly string[] | ((body: Bag, result: Bag) => Record<string, unknown>);
   /** Where the organization id comes from, when it is not the body's or the session's. */
   organization?: (body: Bag, result: Bag) => unknown;
 }
 
 const fromBody = (key: string) => (body: Bag) => body[key];
+
+/**
+ * An OAuth consent carries the authorization request as a signed query string. Only the
+ * client and the scopes are worth keeping; the rest (PKCE challenge, signature, state) is
+ * request plumbing.
+ */
+function consentDetails(body: Bag): Record<string, unknown> {
+  const query = typeof body['oauth_query'] === 'string' ? new URLSearchParams(body['oauth_query']) : null;
+  const scope = query?.get('scope');
+  return {
+    client_id: query?.get('client_id') ?? null,
+    scopes: scope ? scope.split(' ').filter(Boolean) : [],
+  };
+}
 const fromResult = (key: string) => (_body: Bag, result: Bag) => result[key];
 
 export const EVENT_SPECS: Readonly<Record<string, EventSpec>> = {
@@ -111,6 +126,13 @@ export const EVENT_SPECS: Readonly<Record<string, EventSpec>> = {
     targetType: 'team',
     target: fromBody('teamId'),
     metadata: ['userId'],
+  },
+
+  // An application (e.g. an MCP client) being approved or turned down by the signed-in user.
+  // Disconnecting is not here: it is not a better-auth endpoint, so the app records it itself.
+  '/oauth2/consent': {
+    event: (body) => (body['accept'] === false ? 'mcp.connection_denied' : 'mcp.connected'),
+    metadata: consentDetails,
   },
 
   '/hierarchy/set-manager': {

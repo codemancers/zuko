@@ -2,7 +2,7 @@ import { betterAuth } from 'better-auth';
 import { memoryAdapter } from 'better-auth/adapters/memory';
 import { organization } from 'better-auth/plugins';
 import { describe, expect, it, vi } from 'vitest';
-import { audit, AUDIT_PLUGIN_ID, type AuditEventInput, type AuditOptions } from '../index.js';
+import { audit, AUDIT_PLUGIN_ID, EVENT_SPECS, type AuditEventInput, type AuditOptions } from '../index.js';
 
 const PASSWORD = 'correct-horse-battery-1';
 
@@ -188,5 +188,28 @@ describe('audit plugin', () => {
     const user = await signUp(auth, 'hana');
     expect(user.id).toBeDefined();
     expect(write).toHaveBeenCalled();
+  });
+});
+
+describe('OAuth consent events', () => {
+  const spec = EVENT_SPECS['/oauth2/consent'];
+  const query = 'response_type=code&client_id=client_1&scope=openid+mcp%3Aread+mcp%3Awrite&state=s&code_challenge=c&sig=abc';
+  const name = (body: Record<string, unknown>) => (typeof spec.event === 'function' ? spec.event(body, {}) : spec.event);
+  const details = (body: Record<string, unknown>) => (typeof spec.metadata === 'function' ? spec.metadata(body, {}) : {});
+
+  it('tells an approval from a refusal', () => {
+    expect(name({ accept: true, oauth_query: query })).toBe('mcp.connected');
+    expect(name({ accept: false, oauth_query: query })).toBe('mcp.connection_denied');
+  });
+
+  it('keeps the client and the scopes, not the request plumbing', () => {
+    const kept = details({ accept: true, oauth_query: query });
+    expect(kept).toEqual({ client_id: 'client_1', scopes: ['openid', 'mcp:read', 'mcp:write'] });
+    expect(JSON.stringify(kept)).not.toContain('abc'); // the signature
+    expect(JSON.stringify(kept)).not.toContain('code_challenge');
+  });
+
+  it('copes with a consent that has no signed request', () => {
+    expect(details({ accept: true })).toEqual({ client_id: null, scopes: [] });
   });
 });
