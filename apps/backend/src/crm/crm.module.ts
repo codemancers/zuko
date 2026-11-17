@@ -4,11 +4,12 @@ import { CrmContextGuard } from './context';
 import { CrmExceptionFilter } from './errors';
 import { ObjectsController } from './objects.controller';
 import { RecordsController } from './records.controller';
+import { RecordsQueryService } from './records-query.service';
 import { RecordsService } from './records.service';
 import { SchemaService } from './schema.service';
 
 @Module({
   controllers: [ObjectsController, RecordsController],
-  providers: [SchemaService, RecordsService, CrmContextGuard, { provide: APP_FILTER, useClass: CrmExceptionFilter }],
+  providers: [SchemaService, RecordsService, RecordsQueryService, CrmContextGuard, { provide: APP_FILTER, useClass: CrmExceptionFilter }],
 })
 export class CrmModule {}
