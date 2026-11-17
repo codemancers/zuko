@@ -17,6 +17,9 @@ const CHECK = /check constraint/i;
 describe.skipIf(!url)('audit tables', () => {
   const prisma = url ? new PrismaClient({ adapter: new PrismaPg({ connectionString: url }) }) : (undefined as never);
   const suffix = Math.random().toString(36).slice(2, 8);
+  // Organization-less audit rows (sign-ups, failed sign-ins) also exist in a real database, so
+  // the rows this test makes carry a marker and it only ever counts or removes those.
+  const marker = `audit-spec-${suffix}`;
   let orgA: bigint;
   let orgB: bigint;
 
@@ -45,7 +48,7 @@ describe.skipIf(!url)('audit tables', () => {
     prisma.$transaction(async (tx) => {
       await tx.$executeRaw`SELECT set_config('app.audit_purge', 'on', true)`;
       await tx.recordChange.deleteMany({ where: { organizationId: org } });
-      await tx.auditEvent.deleteMany({ where: { OR: [{ organizationId: org }, { organizationId: null }] } });
+      await tx.auditEvent.deleteMany({ where: { OR: [{ organizationId: org }, { event: { startsWith: marker } }] } });
     });
 
   beforeAll(async () => {
@@ -82,15 +85,15 @@ describe.skipIf(!url)('audit tables', () => {
 
     it('cannot be updated or deleted by the app role', async () => {
       await expect(
-        runInTenant(prisma, { organizationId: orgA }, (tx) => tx.recordChange.updateMany({ data: { action: 'DELETE' } })),
+        runInTenant(prisma, { organizationId: orgA }, (tx) => tx.recordChange.updateMany({ where: { organizationId: orgA }, data: { action: 'DELETE' } })),
       ).rejects.toThrow(DENIED);
       await expect(
-        runInTenant(prisma, { organizationId: orgA }, (tx) => tx.recordChange.deleteMany()),
+        runInTenant(prisma, { organizationId: orgA }, (tx) => tx.recordChange.deleteMany({ where: { organizationId: orgA } })),
       ).rejects.toThrow(DENIED);
     });
 
     it('cannot be updated or deleted by the login role either', async () => {
-      await expect(prisma.recordChange.updateMany({ data: { action: 'DELETE' } })).rejects.toThrow(APPEND_ONLY);
+      await expect(prisma.recordChange.updateMany({ where: { organizationId: orgA }, data: { action: 'DELETE' } })).rejects.toThrow(APPEND_ONLY);
       await expect(prisma.recordChange.deleteMany({ where: { organizationId: orgA } })).rejects.toThrow(APPEND_ONLY);
     });
 
@@ -123,19 +126,20 @@ describe.skipIf(!url)('audit tables', () => {
 
     it('accepts org-less events but never shows them to a tenant', async () => {
       await prisma.auditEvent.create({
-        data: event(null, { actorType: 'ANONYMOUS', event: 'sign_in.failed' }),
+        data: event(null, { actorType: 'ANONYMOUS', event: `${marker}.sign_in_failed` }),
       });
       // Inside a tenant context use createMany: create() adds RETURNING, which must also
       // pass the read policy, and an org-less row never does.
-      await runInTenant(prisma, { organizationId: orgA }, (tx) => tx.auditEvent.createMany({ data: [event(null)] }));
+      await runInTenant(prisma, { organizationId: orgA }, (tx) =>
+        tx.auditEvent.createMany({ data: [event(null, { event: `${marker}.written_in_a_tenant` })] }),
+      );
       await expect(
-        runInTenant(prisma, { organizationId: orgA }, (tx) => tx.auditEvent.create({ data: event(null) })),
+        runInTenant(prisma, { organizationId: orgA }, (tx) => tx.auditEvent.create({ data: event(null, { event: `${marker}.refused` }) })),
       ).rejects.toThrow(RLS);
 
-      expect(
-        await runInTenant(prisma, { organizationId: orgA }, (tx) => tx.auditEvent.count({ where: { organizationId: null } })),
-      ).toBe(0);
-      expect(await prisma.auditEvent.count({ where: { organizationId: null } })).toBe(2);
+      const mine = { organizationId: null, event: { startsWith: marker } };
+      expect(await runInTenant(prisma, { organizationId: orgA }, (tx) => tx.auditEvent.count({ where: mine }))).toBe(0);
+      expect(await prisma.auditEvent.count({ where: mine })).toBe(2);
     });
 
     it('cannot be written for another tenant', async () => {
@@ -150,9 +154,9 @@ describe.skipIf(!url)('audit tables', () => {
 
     it('is append-only for both roles', async () => {
       await expect(
-        runInTenant(prisma, { organizationId: orgA }, (tx) => tx.auditEvent.updateMany({ data: { event: 'x' } })),
+        runInTenant(prisma, { organizationId: orgA }, (tx) => tx.auditEvent.updateMany({ where: { organizationId: orgA }, data: { event: 'x' } })),
       ).rejects.toThrow(DENIED);
-      await expect(prisma.auditEvent.updateMany({ data: { event: 'x' } })).rejects.toThrow(APPEND_ONLY);
+      await expect(prisma.auditEvent.updateMany({ where: { organizationId: orgA }, data: { event: 'x' } })).rejects.toThrow(APPEND_ONLY);
       await expect(prisma.auditEvent.deleteMany({ where: { organizationId: orgA } })).rejects.toThrow(APPEND_ONLY);
     });
   });
