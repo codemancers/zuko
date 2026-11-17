@@ -33,10 +33,16 @@ export const toId = (raw: string, what = 'record'): bigint => {
   return BigInt(raw);
 };
 
-export const recordDto = (object: string, r: ObjectRecord) => ({
+/** Only the values of the object's current fields: a removed field's values stay stored, unseen. */
+const liveProperties = (object: ObjectWithFields, properties: unknown) => {
+  const live = new Set(object.fields.map((f) => f.name));
+  return Object.fromEntries(Object.entries((properties ?? {}) as Props).filter(([key]) => live.has(key)));
+};
+
+export const recordDto = (object: ObjectWithFields, r: ObjectRecord) => ({
   id: String(r.id),
-  object,
-  properties: r.properties,
+  object: object.slug,
+  properties: liveProperties(object, r.properties),
   owner_id: r.ownerId === null ? null : String(r.ownerId),
   team_id: r.teamId === null ? null : String(r.teamId),
   created_by: r.createdBy === null ? null : String(r.createdBy),
@@ -48,7 +54,8 @@ type Change = { old: unknown; new: unknown };
 
 /** old -> new for every key whose value differs; sensitive fields are never copied into history. */
 function diff(object: ObjectWithFields, before: Props, after: Props): Record<string, Change> {
-  const sensitive = new Set(object.fields.filter((f) => f.sensitive).map((f) => f.name));
+  // A removed field's values stay stored, and the history is append-only, so what was sensitive stays so.
+  const sensitive = new Set([...object.fields, ...object.removedFields].filter((f) => f.sensitive).map((f) => f.name));
   const changes: Record<string, Change> = {};
   for (const key of new Set([...Object.keys(before), ...Object.keys(after)])) {
     const a = before[key] ?? null;
@@ -215,7 +222,7 @@ export class RecordsService {
         ...(ownerId === null ? {} : { owner_id: { old: null, new: String(ownerId) } }),
         ...(teamId === null ? {} : { team_id: { old: null, new: String(teamId) } }),
       });
-      return recordDto(object.slug, created);
+      return recordDto(object, created);
     });
   }
 
@@ -224,7 +231,7 @@ export class RecordsService {
     const recordId = toId(rawId, objectName);
     return this.tenant(ctx, async (tx) => {
       const object = await this.schema.loadObject(tx, ctx, objectName);
-      return recordDto(object.slug, await this.loadFor(tx, ctx, object, recordId, 'read'));
+      return recordDto(object, await this.loadFor(tx, ctx, object, recordId, 'read'));
     });
   }
 
@@ -262,14 +269,14 @@ export class RecordsService {
         ...(teamId === row.teamId ? {} : { team_id: { old: row.teamId === null ? null : String(row.teamId), new: teamId === null ? null : String(teamId) } }),
       };
       if (Object.keys(changes).length === 0) {
-        return recordDto(object.slug, row);
+        return recordDto(object, row);
       }
       const updated = await tx.objectRecord.update({
         where: { id: recordId },
         data: { properties: after as Prisma.InputJsonObject, ownerId, teamId, updatedBy: ctx.userId },
       });
       await this.logChange(tx, ctx, object, recordId, 'UPDATE', changes);
-      return recordDto(object.slug, updated);
+      return recordDto(object, updated);
     });
   }
 

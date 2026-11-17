@@ -104,7 +104,7 @@ export class RecordsQueryService {
       return {
         results: ids.flatMap((id) => {
           const row = byId.get(id);
-          return row ? [recordDto(object.slug, row)] : [];
+          return row ? [recordDto(object, row)] : [];
         }),
         metadata: {
           page,

@@ -1,5 +1,6 @@
-import { Body, Controller, Get, HttpCode, Param, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post, UseGuards } from '@nestjs/common';
 import { Crm, CrmContextGuard, type RequestContext } from './context';
+import { can } from './permissions';
 import { SchemaService } from './schema.service';
 
 @Controller('v1')
@@ -15,6 +16,8 @@ export class ObjectsController {
       organization_id: String(ctx.organizationId),
       roles: ctx.roles,
       team_ids: ctx.teamIds.map(String),
+      // Lets a client offer schema changes only to those who can make them.
+      can_manage_objects: can(ctx, { object: ['manage'] }),
     };
   }
 
@@ -43,5 +46,15 @@ export class ObjectsController {
   @Post('objects/:object/fields')
   addField(@Crm() ctx: RequestContext, @Param('object') object: string, @Body() body: unknown) {
     return this.schema.addField(ctx, object, body);
+  }
+
+  @Patch('objects/:object/fields/:field')
+  updateField(@Crm() ctx: RequestContext, @Param('object') object: string, @Param('field') field: string, @Body() body: unknown) {
+    return this.schema.updateField(ctx, object, field, body);
+  }
+
+  @Delete('objects/:object/fields/:field')
+  removeField(@Crm() ctx: RequestContext, @Param('object') object: string, @Param('field') field: string) {
+    return this.schema.removeField(ctx, object, field);
   }
 }

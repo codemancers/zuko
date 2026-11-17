@@ -96,6 +96,7 @@ describe('setup', () => {
       const me = expectStatus(await { owner, admin, alice, bob, carol, dave }[name as 'owner'].get(`${API}/me`), 200);
       expect(me.organization_id).toBe(orgId);
       expect(me.roles).toEqual([role]);
+      expect(me.can_manage_objects).toBe(role !== 'member'); // owners and admins manage the schema
     }
     expect(expectStatus(await carol.get(`${API}/me`), 200).team_ids).toEqual([salesId]);
     expect(expectStatus(await alice.get(`${API}/me`), 200).team_ids).toEqual([]);
