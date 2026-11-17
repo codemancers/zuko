@@ -17,6 +17,9 @@
     },
     {
       "path": "./libs/better-auth-hierarchy"
+    },
+    {
+      "path": "./libs/better-auth-audit"
     }
   ]
 }
