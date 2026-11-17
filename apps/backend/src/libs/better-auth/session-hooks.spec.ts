@@ -2,7 +2,7 @@ import type { PrismaClient } from '../../generated/prisma/client';
 import { activeOrganizationOnSessionCreate } from './session-hooks';
 
 function setup(membership: { organizationId: bigint } | null) {
-  const findFirst = vi.fn().mockResolvedValue(membership);
+  const findFirst = vi.fn<() => Promise<{ organizationId: bigint } | null>>().mockResolvedValue(membership);
   const prisma = { member: { findFirst } } as unknown as PrismaClient;
   return { findFirst, hook: activeOrganizationOnSessionCreate(prisma) };
 }
