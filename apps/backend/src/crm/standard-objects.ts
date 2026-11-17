@@ -23,8 +23,8 @@ export interface StandardObject {
  * The objects every CRM organization starts with. They are ordinary object types (kind
  * STANDARD): admins can add fields to them like any other.
  *
- * Contacts and deals name their company as text for now; linking records to each other
- * (associations) has tables but no API yet.
+ * Records link to each other through associations (see STANDARD_ASSOCIATIONS), not through
+ * text fields that name each other.
  */
 export const STANDARD_OBJECTS: readonly StandardObject[] = [
   {
@@ -37,7 +37,6 @@ export const STANDARD_OBJECTS: readonly StandardObject[] = [
       { name: 'email', label: 'Email', type: 'EMAIL', unique: true, filterable: true },
       { name: 'phone', label: 'Phone', type: 'TEXT', maxLength: 50 },
       { name: 'job_title', label: 'Job title', type: 'TEXT', filterable: true, maxLength: 100 },
-      { name: 'company_name', label: 'Company', type: 'TEXT', filterable: true, maxLength: 200 },
       {
         name: 'lifecycle_stage',
         label: 'Lifecycle stage',
@@ -75,8 +74,25 @@ export const STANDARD_OBJECTS: readonly StandardObject[] = [
         options: ['new', 'qualified', 'proposal', 'negotiation', 'won', 'lost'],
       },
       { name: 'expected_close_date', label: 'Expected close', type: 'TIMESTAMP', filterable: true },
-      { name: 'company_name', label: 'Company', type: 'TEXT', filterable: true, maxLength: 200 },
-      { name: 'contact_name', label: 'Contact', type: 'TEXT', maxLength: 200 },
     ],
   },
+];
+
+/**
+ * The links between the standard objects. Each is a link field on `source` (so it is a column
+ * there, and can be edited or removed like any field) and shows on `target` under `reverseLabel`.
+ * Many on each side, as any link can be.
+ */
+export const STANDARD_ASSOCIATIONS: readonly {
+  name: string;
+  label: string;
+  source: string;
+  target: string;
+  field: string;
+  fieldLabel: string;
+  reverseLabel: string;
+}[] = [
+  { name: 'contact_company', label: 'Contact and company', source: 'contact', target: 'company', field: 'companies', fieldLabel: 'Companies', reverseLabel: 'Contacts' },
+  { name: 'contact_deal', label: 'Contact and deal', source: 'contact', target: 'deal', field: 'deals', fieldLabel: 'Deals', reverseLabel: 'Contacts' },
+  { name: 'deal_company', label: 'Deal and company', source: 'deal', target: 'company', field: 'companies', fieldLabel: 'Companies', reverseLabel: 'Deals' },
 ];

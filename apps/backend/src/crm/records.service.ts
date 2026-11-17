@@ -140,6 +140,21 @@ export class RecordsService {
     }
   }
 
+  /** A user field must name members of this organization. */
+  private async assertMembers(tx: TenantTransaction, ctx: RequestContext, object: ObjectWithFields, values: Props) {
+    const errors: FieldError[] = [];
+    for (const field of object.fields.filter((f) => f.type === 'USER' && values[f.name] !== undefined)) {
+      const ids = [...new Set([values[field.name]].flat().map((id) => BigInt(String(id))))];
+      const found = await tx.member.count({ where: { organizationId: ctx.organizationId, userId: { in: ids } } });
+      if (found !== ids.length) {
+        errors.push({ field: field.name, code: 'INVALID_FIELD', message: `Field '${field.name}' must name members of this organization` });
+      }
+    }
+    if (errors.length > 0) {
+      throw validationFailed(errors);
+    }
+  }
+
   /** Who a record may be given to: the write scope decides how far beyond yourself you can reach. */
   private async assertAssignable(
     tx: TenantTransaction,
@@ -201,6 +216,7 @@ export class RecordsService {
         throw validationFailed(errors);
       }
       await this.assertUnique(tx, ctx, object, set, null);
+      await this.assertMembers(tx, ctx, object, set);
 
       const ownerId = input.owner_id === undefined ? ctx.userId : input.owner_id;
       const teamId = input.team_id ?? null;
@@ -250,6 +266,7 @@ export class RecordsService {
         throw validationFailed(errors);
       }
       await this.assertUnique(tx, ctx, object, set, recordId);
+      await this.assertMembers(tx, ctx, object, set);
 
       const before = row.properties as Props;
       const after: Props = { ...before, ...set };

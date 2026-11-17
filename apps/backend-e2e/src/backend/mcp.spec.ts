@@ -12,10 +12,11 @@ import { BASE, MCP_URL, connect, deny, openSession, registerClient, type Connect
  */
 const run = Date.now().toString(36);
 const suffix = `-${run}@mcp.test`;
-const slugs = [`mcp-acme-${run}`, `mcp-beta-${run}`];
+const slugs = [`mcp-acme-${run}`, `mcp-beta-${run}`, `mcp-link-${run}`];
 const mk = (name: string) => new User(name, `${name}${suffix}`);
 const owner = mk('owner');
 const alice = mk('alice');
+const linker = mk('linker'); // alone in an organization with the standard objects
 
 const API = '/api/v1';
 let acmeId = '';
@@ -30,7 +31,7 @@ function status(reply: { status: number; data?: unknown }, expected: number) {
 }
 
 beforeAll(async () => {
-  for (const user of [owner, alice]) {
+  for (const user of [owner, alice, linker]) {
     status(await user.signUp(), 200);
   }
   await verifyEmails(suffix);
@@ -39,6 +40,9 @@ beforeAll(async () => {
   const invite = status(await owner.post('/auth/organization/invite-member', { email: alice.email, role: 'member', organizationId: acmeId }), 200);
   status(await alice.post('/auth/organization/accept-invitation', { invitationId: invite.id }), 200);
   status(await alice.signIn(), 200);
+
+  status(await linker.post('/auth/organization/create', { name: 'Link Co', slug: slugs[2] }), 200);
+  status(await linker.post(`${API}/setup/standard-objects`), 200);
 
   status(await owner.post(`${API}/objects`, { slug: 'deal', label: 'Deal' }), 201);
   for (const field of [
@@ -146,7 +150,7 @@ describe('tools', () => {
     const tools = await mcp.tools();
     expect(tools.map((t) => t.name).sort()).toEqual([
       'create_record', 'delete_record', 'describe_object_type', 'filter_records', 'get_record', 'get_record_history',
-      'list_members', 'list_object_types', 'list_records', 'list_teams', 'update_record',
+      'link_record', 'list_linked_records', 'list_members', 'list_object_types', 'list_records', 'list_teams', 'unlink_record', 'update_record',
     ]);
     const byName = Object.fromEntries(tools.map((t) => [t.name, t.annotations ?? {}]));
     expect(byName['list_records']).toMatchObject({ readOnlyHint: true });
@@ -206,6 +210,61 @@ describe('tools', () => {
 
     const history = (await mcp.call('get_record_history', { object: 'deal', id: made })).data.results;
     expect(history.map((h: { action: string; actor_type: string }) => `${h.action}:${h.actor_type}`)).toEqual(['UPDATE:USER', 'UPDATE:MCP', 'CREATE:MCP']);
+  });
+});
+
+describe('linking records', () => {
+  let mcp: Awaited<ReturnType<typeof openSession>>;
+  let contact = '';
+  let company = '';
+
+  beforeAll(async () => {
+    mcp = await openSession((await connect(linker, clientName('linker'), 'mcp:read mcp:write')).accessToken);
+    contact = (await mcp.call('create_record', { object: 'contact', properties: { first_name: 'Ada', last_name: 'Lovelace' } })).data.id;
+    company = (await mcp.call('create_record', { object: 'company', properties: { name: 'Analytical Engines' } })).data.id;
+  });
+  afterAll(async () => {
+    await mcp.close();
+  });
+
+  it('says which kinds of record can be linked', async () => {
+    const described = (await mcp.call('describe_object_type', { object: 'contact' })).data;
+    expect(described.associations.map((a: { name: string }) => a.name)).toEqual(['contact_company', 'contact_deal']);
+  });
+
+  it('links two records, shows the link from both sides, and unlinks them', async () => {
+    const linked = await mcp.call('link_record', { object: 'contact', id: contact, link: 'contact_company', record_id: company });
+    expect(linked.isError).toBe(false);
+    expect(linked.data.results).toEqual([{ id: company, label: 'Analytical Engines' }]);
+
+    const fromContact = (await mcp.call('list_linked_records', { object: 'contact', id: contact, link: 'contact_company' })).data;
+    expect(fromContact.results.map((r: { id: string; label: string }) => [r.id, r.label])).toEqual([[company, 'Analytical Engines']]);
+    const fromCompany = (await mcp.call('list_linked_records', { object: 'company', id: company, link: 'contact_company' })).data;
+    expect(fromCompany.results.map((r: { label: string }) => r.label)).toEqual(['Ada Lovelace']);
+
+    const withLinks = (await mcp.call('list_records', { object: 'contact', include_links: true })).data.results[0];
+    expect(withLinks.associations.contact_company).toEqual([{ id: company, label: 'Analytical Engines' }]);
+    const found = (await mcp.call('filter_records', { object: 'contact', include_links: true, filter_groups: [{ filters: [{ field_path: 'first_name', operator: 'EQUALS', value: 'Ada' }] }] })).data;
+    expect(found.results[0].associations.contact_company).toHaveLength(1);
+
+    expect((await mcp.call('unlink_record', { object: 'contact', id: contact, link: 'contact_company', record_id: company })).data.results).toEqual([]);
+    expect((await mcp.call('list_linked_records', { object: 'contact', id: contact, link: 'contact_company' })).data.results).toEqual([]);
+  });
+
+  it('reports what went wrong in a way the model can act on', async () => {
+    expect((await mcp.call('link_record', { object: 'contact', id: contact, link: 'deal_company', record_id: contact })).data.code).toBe('NOT_FOUND');
+    expect((await mcp.call('link_record', { object: 'contact', id: contact, link: 'contact_company', record_id: '999999999' })).data.code).toBe('NOT_FOUND');
+    expect((await mcp.call('unlink_record', { object: 'contact', id: contact, link: 'contact_company', record_id: company })).data.code).toBe('NOT_FOUND'); // not linked
+  });
+
+  it('needs the write scope to change links, but not to read them', async () => {
+    const readOnly = await openSession((await connect(linker, clientName('linker-read'), 'mcp:read')).accessToken);
+    expect((await readOnly.call('list_linked_records', { object: 'contact', id: contact, link: 'contact_company' })).isError).toBe(false);
+    for (const tool of ['link_record', 'unlink_record'] as const) {
+      const denied = await readOnly.call(tool, { object: 'contact', id: contact, link: 'contact_company', record_id: company });
+      expect({ tool, code: denied.data.code }).toEqual({ tool, code: 'INSUFFICIENT_SCOPE' });
+    }
+    await readOnly.close();
   });
 });
 

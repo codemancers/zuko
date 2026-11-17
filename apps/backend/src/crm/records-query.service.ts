@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import * as z from 'zod';
 import { Prisma } from '../generated/prisma/client';
 import type { RequestContext } from './context';
+import { AssociationsService } from './associations.service';
 import { parse } from './errors';
 import { assertCan, resolveScopes, visibilitySql } from './permissions';
 import { OPERATORS, filterSql, orderSql, type FilterGroup } from './query';
@@ -41,6 +42,8 @@ const filterBody = z.object({
     .default([]),
   pagination: pagination.partial().optional(),
   sort: sort.optional(),
+  // `associations` adds who each record is linked to, in the same response.
+  include: z.array(z.literal('associations')).default([]),
 });
 
 /** "created_at,desc" as used in ?sort= on the list endpoint. */
@@ -57,16 +60,18 @@ export class RecordsQueryService {
   constructor(
     private readonly records: RecordsService,
     private readonly schema: SchemaService,
+    private readonly associations: AssociationsService,
   ) {}
 
   list(ctx: RequestContext, objectName: string, query: Record<string, string | undefined>) {
     const page = parse(pagination.partial(), { page: query['page'], page_size: query['page_size'] });
-    return this.search(ctx, objectName, [], page, parseSortParam(query['sort']));
+    const include = (query['include'] ?? '').split(',').includes('associations');
+    return this.search(ctx, objectName, [], page, parseSortParam(query['sort']), include);
   }
 
   filter(ctx: RequestContext, objectName: string, body: unknown) {
     const input = parse(filterBody, body);
-    return this.search(ctx, objectName, input.filter_groups as FilterGroup[], input.pagination ?? {}, input.sort);
+    return this.search(ctx, objectName, input.filter_groups as FilterGroup[], input.pagination ?? {}, input.sort, input.include.includes('associations'));
   }
 
   private async search(
@@ -75,6 +80,7 @@ export class RecordsQueryService {
     groups: FilterGroup[],
     paging: { page?: number; page_size?: number },
     sorting: { field: string; direction: 'ASC' | 'DESC' } | undefined,
+    withAssociations = false,
   ) {
     assertCan(ctx, { record: ['read'] }, 'view records');
     const page = paging.page ?? 1;
@@ -99,12 +105,13 @@ export class RecordsQueryService {
 
       const rows = await tx.objectRecord.findMany({ where: { id: { in: ids } } });
       const byId = new Map(rows.map((row) => [row.id, row]));
+      const linked = withAssociations ? await this.associations.summaries(tx, ctx, object, ids) : undefined;
       const totalElements = Number(total);
       const totalPages = Math.ceil(totalElements / pageSize);
       return {
         results: ids.flatMap((id) => {
           const row = byId.get(id);
-          return row ? [recordDto(object, row)] : [];
+          return row ? [{ ...recordDto(object, row), ...(linked ? { associations: linked.get(id) ?? {} } : {}) }] : [];
         }),
         metadata: {
           page,

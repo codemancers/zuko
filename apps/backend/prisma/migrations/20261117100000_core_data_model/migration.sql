@@ -63,7 +63,8 @@ CREATE TABLE "association_definition" (
     "label" TEXT NOT NULL,
     "sourceObjectTypeId" BIGINT NOT NULL,
     "targetObjectTypeId" BIGINT NOT NULL,
-    "cardinality" TEXT NOT NULL,
+    "many" BOOLEAN NOT NULL DEFAULT true,
+    "reverseLabel" TEXT,
     "isDefault" BOOLEAN NOT NULL DEFAULT false,
     "isLookup" BOOLEAN NOT NULL DEFAULT false,
     "isActive" BOOLEAN NOT NULL DEFAULT true,
@@ -147,8 +148,6 @@ ALTER TABLE "object_type" ADD CONSTRAINT "object_type_kind_check"
   CHECK ("kind" IN ('STANDARD', 'CUSTOM'));
 ALTER TABLE "field_definition" ADD CONSTRAINT "field_definition_name_check"
   CHECK ("name" ~ '^[a-z][a-z0-9_]*$');
-ALTER TABLE "association_definition" ADD CONSTRAINT "association_definition_cardinality_check"
-  CHECK ("cardinality" IN ('ONE_TO_ONE', 'ONE_TO_MANY', 'MANY_TO_ONE', 'MANY_TO_MANY'));
 
 -- Listing live records is the hot path; soft-deleted rows are excluded.
 CREATE INDEX "object_record_live_idx" ON "object_record"("organizationId", "objectTypeId", "createdAt" DESC)

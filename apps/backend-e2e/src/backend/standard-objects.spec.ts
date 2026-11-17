@@ -62,16 +62,24 @@ describe('setting up', () => {
     expect(result.results.map((o: { plural_label: string }) => o.plural_label)).toEqual(['Contacts', 'Companies', 'Deals']);
   });
 
+  it('says which kinds of record each can be linked to', async () => {
+    const linkable = async (name: string) => (ok(await owner.get(`${API}/objects/${name}`)).associations as { name: string; label: string; side: string }[]).map((a) => [a.name, a.label, a.side]);
+    expect(await linkable('contact')).toEqual([['contact_company', 'Companies', 'forward'], ['contact_deal', 'Deals', 'forward']]);
+    expect(await linkable('company')).toEqual([['contact_company', 'Contacts', 'reverse'], ['deal_company', 'Deals', 'reverse']]);
+    expect(await linkable('deal')).toEqual([['contact_deal', 'Contacts', 'reverse'], ['deal_company', 'Companies', 'forward']]);
+  });
+
   it('gives each object its fields, flags and enum options', async () => {
     const contact = ok(await owner.get(`${API}/objects/contact`));
     const byName = Object.fromEntries(contact.fields.map((f: { name: string }) => [f.name, f]));
-    expect(Object.keys(byName)).toEqual(['first_name', 'last_name', 'email', 'phone', 'job_title', 'company_name', 'lifecycle_stage']);
+    expect(Object.keys(byName)).toEqual(['first_name', 'last_name', 'email', 'phone', 'job_title', 'lifecycle_stage', 'companies', 'deals']);
+    expect(byName.companies).toMatchObject({ type: 'LINK', config: { link: 'contact_company', target: 'company', many: true } });
     expect(byName.first_name).toMatchObject({ type: 'TEXT', required: true, filterable: true, max_length: 100 });
     expect(byName.email).toMatchObject({ type: 'EMAIL', unique: true, filterable: true });
     expect(byName.lifecycle_stage.config.options).toEqual(['subscriber', 'lead', 'qualified', 'customer', 'churned']);
 
     const deal = ok(await owner.get(`${API}/objects/deal`));
-    expect(deal.fields.map((f: { name: string }) => f.name)).toEqual(['name', 'amount', 'stage', 'expected_close_date', 'company_name', 'contact_name']);
+    expect(deal.fields.map((f: { name: string }) => f.name)).toEqual(['name', 'amount', 'stage', 'expected_close_date', 'companies']);
     expect(deal.fields.find((f: { name: string }) => f.name === 'expected_close_date').type).toBe('TIMESTAMP');
     expect(ok(await owner.get(`${API}/objects/company`)).fields.find((f: { name: string }) => f.name === 'domain').unique).toBe(true);
   });

@@ -104,22 +104,8 @@ describe.skipIf(!url)('core data model', () => {
     ).rejects.toThrow(CHECK);
   });
 
-  it('rejects unknown object kinds and cardinalities', async () => {
+  it('rejects unknown object kinds', async () => {
     await expect(createObjectType(orgA, 'weird', 'OTHER')).rejects.toThrow(CHECK);
-    await expect(
-      as(orgA, (tx) =>
-        tx.associationDefinition.create({
-          data: {
-            organizationId: orgA,
-            name: 'bad',
-            label: 'Bad',
-            sourceObjectTypeId: contactA,
-            targetObjectTypeId: contactA,
-            cardinality: 'SOME_TO_SOME',
-          },
-        }),
-      ),
-    ).rejects.toThrow(CHECK);
   });
 
   it('links records only within a tenant', async () => {
@@ -131,7 +117,7 @@ describe.skipIf(!url)('core data model', () => {
           label: 'Related',
           sourceObjectTypeId: contactA,
           targetObjectTypeId: contactA,
-          cardinality: 'MANY_TO_MANY',
+          many: true,
         },
       }),
     );

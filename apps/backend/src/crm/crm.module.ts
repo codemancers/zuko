@@ -1,5 +1,7 @@
 import { Module } from '@nestjs/common';
 import { APP_FILTER } from '@nestjs/core';
+import { AssociationsController } from './associations.controller';
+import { AssociationsService } from './associations.service';
 import { AccessController } from './access.controller';
 import { AccessService } from './access.service';
 import { CrmContextGuard, CrmContextService } from './context';
@@ -14,8 +16,8 @@ import { SchemaService } from './schema.service';
 import { SharesService } from './shares.service';
 
 @Module({
-  exports: [SchemaService, RecordsService, RecordsQueryService, DirectoryService, CrmContextService],
-  controllers: [ObjectsController, RecordsController, AccessController, DirectoryController],
-  providers: [SchemaService, RecordsService, RecordsQueryService, AccessService, SharesService, DirectoryService, CrmContextGuard, CrmContextService, { provide: APP_FILTER, useClass: CrmExceptionFilter }],
+  exports: [SchemaService, RecordsService, AssociationsService, RecordsQueryService, DirectoryService, CrmContextService],
+  controllers: [ObjectsController, RecordsController, AssociationsController, AccessController, DirectoryController],
+  providers: [SchemaService, RecordsService, AssociationsService, RecordsQueryService, AccessService, SharesService, DirectoryService, CrmContextGuard, CrmContextService, { provide: APP_FILTER, useClass: CrmExceptionFilter }],
 })
 export class CrmModule {}

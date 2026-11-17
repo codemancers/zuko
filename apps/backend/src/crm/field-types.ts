@@ -1,6 +1,10 @@
 import type { FieldError } from './errors';
 
-export const FIELD_TYPES = ['TEXT', 'EMAIL', 'NUMBER', 'BOOLEAN', 'TIMESTAMP', 'ENUM'] as const;
+/**
+ * LINK fields point at records of another object and are stored as associations, not in the
+ * record's properties; USER fields hold the id of an organization member (or a list of them).
+ */
+export const FIELD_TYPES = ['TEXT', 'EMAIL', 'NUMBER', 'BOOLEAN', 'TIMESTAMP', 'ENUM', 'LINK', 'USER'] as const;
 export type FieldType = (typeof FIELD_TYPES)[number];
 
 export interface FieldDef {
@@ -16,6 +20,11 @@ export interface FieldDef {
 }
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+const USER_ID = /^[1-9]\d{0,18}$/;
+
+/** Whether a LINK or USER field holds several values. */
+export const holdsMany = (field: Pick<FieldDef, 'config'>): boolean => (field.config as { many?: unknown } | null)?.many === true;
 
 export const enumOptions = (field: Pick<FieldDef, 'config'>): string[] => {
   const options = (field.config as { options?: unknown } | null)?.options;
@@ -54,6 +63,17 @@ function checkValue(field: FieldDef, value: unknown): { value: unknown } | { err
       return typeof value === 'string' && enumOptions(field).includes(value)
         ? { value }
         : fail('INVALID_FIELD', `Field '${field.name}' must be one of: ${enumOptions(field).join(', ')}`);
+    case 'LINK':
+      return fail('INVALID_FIELD', `Field '${field.name}' is a link; set it through the associations API`);
+    case 'USER': {
+      const ok = (v: unknown): v is string => typeof v === 'string' && USER_ID.test(v);
+      if (holdsMany(field)) {
+        return Array.isArray(value) && value.length > 0 && value.every(ok)
+          ? { value: [...new Set(value as string[])] }
+          : fail('INVALID_FIELD', `Field '${field.name}' must be a list of member ids`);
+      }
+      return ok(value) ? { value } : fail('INVALID_FIELD', `Field '${field.name}' must be a member id`);
+    }
     default:
       return fail('INVALID_FIELD', `Field '${field.name}' has an unsupported type`);
   }

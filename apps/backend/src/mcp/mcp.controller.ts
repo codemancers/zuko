@@ -11,6 +11,7 @@ import { SchemaService } from '../crm/schema.service';
 import { BACKEND_URL, MCP_PATH, MCP_RESOURCE, MCP_SCOPES, ORG_CLAIM } from '../libs/better-auth/constants';
 import { PrismaService } from '../prisma/prisma.service';
 import { sendFetchResponse, toFetchRequest, type HttpRequest, type HttpResponse } from './http';
+import { AssociationsService } from '../crm/associations.service';
 import { buildMcpServer } from './mcp-tools';
 
 const problem = (status: number, code: string, message: string) =>
@@ -43,6 +44,7 @@ export class McpController {
     records: RecordsService,
     queries: RecordsQueryService,
     directory: DirectoryService,
+    associations: AssociationsService,
   ) {
     // One server per request, built for the caller handed over in authInfo. Both the
     // 2026-07-28 protocol and the earlier stateless one are served, so existing clients work.
@@ -51,7 +53,7 @@ export class McpController {
       if (!ctx) {
         throw new Error('MCP request reached the server without a caller');
       }
-      return buildMcpServer({ schema, records, queries, directory }, ctx, new Set(authInfo?.scopes ?? []));
+      return buildMcpServer({ schema, records, queries, directory, associations }, ctx, new Set(authInfo?.scopes ?? []));
     });
   }
 

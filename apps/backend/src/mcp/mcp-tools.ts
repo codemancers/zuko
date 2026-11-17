@@ -1,6 +1,7 @@
 import { McpServer } from '@modelcontextprotocol/server';
 import * as z from 'zod';
 import type { RequestContext } from '../crm/context';
+import type { AssociationsService } from '../crm/associations.service';
 import type { DirectoryService } from '../crm/directory.service';
 import { CrmError } from '../crm/errors';
 import { OPERATORS } from '../crm/query';
@@ -14,16 +15,20 @@ export interface McpDeps {
   records: RecordsService;
   queries: RecordsQueryService;
   directory: DirectoryService;
+  associations: AssociationsService;
 }
 
 const INSTRUCTIONS = `This server gives access to one organization's CRM data on behalf of the signed-in user.
 You can only see and change what that user may. Start with list_object_types and
 describe_object_type to learn the objects and their fields before reading or writing records.
 Object type names are singular (for example "deal"). Ids are strings. Field names are snake_case
-and values must match the field type. Deleting a record cannot be undone through this server.`;
+and values must match the field type. Records link to each other through named links (a contact's companies, a deal's primary contact;
+describe_object_type lists them, and a link holds one or many): use list_linked_records,
+link_record and unlink_record, or include_links when listing. Deleting a record cannot be undone through this server.`;
 
 const object = z.string().describe('Singular object type name, e.g. "deal". See list_object_types.');
 const recordId = z.string().describe('Record id (a string of digits).');
+const link = z.string().describe('The link\'s name, from the "associations" in describe_object_type, e.g. "contact_company" or "deal_primary_contact".');
 const sortParam = z.string().optional().describe('"field,asc" or "field,desc"; created_at, updated_at or a filterable field.');
 const assignee = z.string().nullable().optional().describe('Member user id from list_members; null leaves it unassigned.');
 
@@ -120,15 +125,17 @@ export function buildMcpServer(deps: McpDeps, ctx: RequestContext, granted: Read
         page: z.number().int().min(1).optional(),
         page_size: z.number().int().min(1).max(100).optional(),
         sort: sortParam,
+        include_links: z.boolean().optional().describe('Also return who each record is linked to, by kind.'),
       }),
       annotations: readOnly,
     },
-    ({ object, page, page_size, sort }) =>
+    ({ object, page, page_size, sort, include_links }) =>
       read(() =>
         deps.queries.list(ctx, object, {
           page: page === undefined ? undefined : String(page),
           page_size: page_size === undefined ? undefined : String(page_size),
           sort,
+          include: include_links ? 'associations' : undefined,
         }),
       ),
   );
@@ -143,10 +150,11 @@ export function buildMcpServer(deps: McpDeps, ctx: RequestContext, granted: Read
         filter_groups: filterGroups,
         pagination: z.object({ page: z.number().int().min(1).optional(), page_size: z.number().int().min(1).max(100).optional() }).optional(),
         sort: z.object({ field: z.string(), direction: z.enum(['ASC', 'DESC', 'asc', 'desc']) }).optional(),
+        include_links: z.boolean().optional().describe('Also return who each record is linked to, by kind.'),
       }),
       annotations: readOnly,
     },
-    ({ object, ...body }) => read(() => deps.queries.filter(ctx, object, body)),
+    ({ object, include_links, ...body }) => read(() => deps.queries.filter(ctx, object, { ...body, include: include_links ? ['associations'] : [] })),
   );
 
   server.registerTool(
@@ -164,6 +172,51 @@ export function buildMcpServer(deps: McpDeps, ctx: RequestContext, granted: Read
       annotations: readOnly,
     },
     ({ object, id }) => read(() => deps.records.history(ctx, object, id)),
+  );
+
+  server.registerTool(
+    'list_linked_records',
+    {
+      title: 'List linked records',
+      description: 'The records a record is linked to through one of its links (the companies of a contact, a deal’s primary contact), as far as the user may see them.',
+      inputSchema: z.object({
+        object,
+        id: recordId,
+        link,
+        page: z.number().int().min(1).optional(),
+        page_size: z.number().int().min(1).max(100).optional(),
+      }),
+      annotations: readOnly,
+    },
+    ({ object, id, link, page, page_size }) =>
+      read(() =>
+        deps.associations.list(ctx, object, id, link, {
+          page: page === undefined ? undefined : String(page),
+          page_size: page_size === undefined ? undefined : String(page_size),
+        }),
+      ),
+  );
+
+  server.registerTool(
+    'link_record',
+    {
+      title: 'Link two records',
+      description: 'Link a record to another through one of its links. Many-to-many, the same from either side; where the record holds only one for that link, this replaces it. Linking twice changes nothing.',
+      inputSchema: z.object({ object, id: recordId, link, record_id: recordId.describe('Id of the record to link it to.') }),
+      annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: false },
+    },
+    ({ object, id, link, record_id }) => write(() => deps.associations.link(ctx, object, id, link, { record_id })),
+  );
+
+  server.registerTool(
+    'unlink_record',
+    {
+      title: 'Unlink two records',
+      description: 'Remove the link between two records. Neither record is deleted.',
+      inputSchema: z.object({ object, id: recordId, link, record_id: recordId.describe('Id of the record to unlink from it.') }),
+      annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: false, openWorldHint: false },
+    },
+    ({ object, id, link, record_id }) => write(() => deps.associations.unlink(ctx, object, id, link, record_id)),
   );
 
   server.registerTool(

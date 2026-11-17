@@ -128,6 +128,36 @@ describe('removing a field', () => {
   });
 });
 
+describe('what a link or user field may be set to', () => {
+  it('never lets a link be required or searched, which would stop records being created', async () => {
+    ok(await owner.post(FIELDS, { name: 'employer', label: 'Employer', type: 'LINK', config: { target: 'company', many: false } }), 201);
+
+    for (const [body, field] of [[{ required: true }, 'required'], [{ filterable: true }, 'filterable']] as const) {
+      const reply = await owner.patch(`${FIELDS}/employer`, body);
+      expect(reply.status).toBe(400);
+      expect(reply.data.errors[0]).toMatchObject({ field, code: 'INVALID_FIELD' });
+    }
+    expect(ok(await owner.get(`${API}/objects/contact`)).fields.find((f: { name: string }) => f.name === 'employer')).toMatchObject({ required: false, filterable: false });
+    ok(await owner.post(RECORDS, { properties: { first_name: 'Still works' } }), 201); // creating is not blocked
+    ok(await owner.patch(`${FIELDS}/employer`, { label: 'Company' })); // the label can still change
+  });
+
+  it('lets one member be searched but not several', async () => {
+    ok(await owner.post(FIELDS, { name: 'owner_user', label: 'Owner user', type: 'USER' }), 201);
+    ok(await owner.post(FIELDS, { name: 'reviewers', label: 'Reviewers', type: 'USER', config: { many: true } }), 201);
+
+    expect(ok(await owner.patch(`${FIELDS}/owner_user`, { filterable: true })).filterable).toBe(true);
+    const refused = await owner.patch(`${FIELDS}/reviewers`, { filterable: true });
+    expect(refused.status).toBe(400);
+    expect(refused.data.errors[0]).toMatchObject({ field: 'filterable', code: 'INVALID_FIELD' });
+
+    // Turning one into several turns searching off, and it cannot be turned back on.
+    expect(ok(await owner.patch(`${FIELDS}/owner_user`, { config: { many: true } })).filterable).toBe(false);
+    expect((await owner.patch(`${FIELDS}/owner_user`, { filterable: true })).status).toBe(400);
+    expect(ok(await owner.patch(`${FIELDS}/owner_user`, { config: { many: false }, filterable: true })).filterable).toBe(true); // both at once, back to one
+  });
+});
+
 describe('history of a record whose sensitive field was removed', () => {
   it('still keeps the field\'s value out of the history when the record is deleted', async () => {
     ok(await owner.post(FIELDS, { name: 'secret_note', label: 'Secret note', type: 'TEXT', sensitive: true }), 201);

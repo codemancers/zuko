@@ -26,6 +26,11 @@ export class ObjectsController {
     return this.schema.list(ctx);
   }
 
+  @Get('associations')
+  listAssociations(@Crm() ctx: RequestContext) {
+    return this.schema.listAssociations(ctx);
+  }
+
   @Post('objects')
   create(@Crm() ctx: RequestContext, @Body() body: unknown) {
     return this.schema.createObject(ctx, body);

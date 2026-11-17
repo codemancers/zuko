@@ -223,7 +223,7 @@ model ObjectRecord {
   @@map("object_record")
 }
 
-// A kind of link between two object types (e.g. contact <-> company).
+// A kind of link between two object types (e.g. contact <-> company). Always many-to-many.
 model AssociationDefinition {
   id                 BigInt     @id @default(autoincrement())
   organizationId     BigInt
@@ -233,7 +233,10 @@ model AssociationDefinition {
   sourceObjectType   ObjectType @relation("AssociationSource", fields: [organizationId, sourceObjectTypeId], references: [organizationId, id], onDelete: Cascade)
   targetObjectTypeId BigInt
   targetObjectType   ObjectType @relation("AssociationTarget", fields: [organizationId, targetObjectTypeId], references: [organizationId, id], onDelete: Cascade)
-  cardinality        String // ONE_TO_ONE | ONE_TO_MANY | MANY_TO_ONE | MANY_TO_MANY
+  // Whether a source record may be linked to many target records, or only one. The target side is always many.
+  many               Boolean    @default(true)
+  // What the target object calls these links, e.g. "Deals (Primary contact)"; defaults from the source's field.
+  reverseLabel       String?
   isDefault          Boolean    @default(false)
   isLookup           Boolean    @default(false)
   isActive           Boolean    @default(true)
