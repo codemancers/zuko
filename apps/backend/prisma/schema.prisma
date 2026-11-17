@@ -20,6 +20,7 @@ model User {
   members       Member[]
   invitations   Invitation[]
   ownedRecords  ObjectRecord[]
+  teamMembers   TeamMember[]
 
   @@map("user")
 }
@@ -35,6 +36,7 @@ model Session {
   userId               BigInt
   user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   activeOrganizationId BigInt?
+  activeTeamId         BigInt?
 
   @@index([userId])
   @@map("session")
@@ -82,6 +84,7 @@ model Organization {
   members     Member[]
   invitations Invitation[]
   objectTypes ObjectType[]
+  teams       Team[]
 
   @@map("organization")
 }
@@ -111,6 +114,8 @@ model Invitation {
   createdAt      DateTime     @default(now())
   inviterId      BigInt
   inviter        User         @relation(fields: [inviterId], references: [id], onDelete: Cascade)
+  // better-auth stores one or more team ids here as a comma-separated string.
+  teamId         String?
 
   @@index([organizationId])
   @@index([email])
@@ -180,6 +185,9 @@ model ObjectRecord {
   properties     Json       @default("{}")
   ownerId        BigInt?
   owner          User?      @relation(fields: [ownerId], references: [id], onDelete: SetNull)
+  // Team the record belongs to. Same-organization is enforced by a trigger.
+  teamId         BigInt?
+  team           Team?      @relation(fields: [teamId], references: [id], onDelete: SetNull)
   createdBy      BigInt?
   updatedBy      BigInt?
   createdAt      DateTime   @default(now())
@@ -192,6 +200,7 @@ model ObjectRecord {
   @@unique([organizationId, id])
   @@index([organizationId, objectTypeId, createdAt(sort: Desc)])
   @@index([organizationId, objectTypeId, ownerId])
+  @@index([organizationId, teamId])
   @@index([properties(ops: JsonbPathOps)], type: Gin)
   @@map("record")
 }
@@ -232,4 +241,39 @@ model Association {
   @@id([organizationId, definitionId, sourceId, targetId])
   @@index([organizationId, definitionId, targetId, sourceId])
   @@map("association")
+}
+
+// ---------------------------------------------------------------------------
+// Teams (better-auth organization plugin, `teams.enabled`). Managed by
+// better-auth through the plain client, so these tables are not under RLS.
+// ---------------------------------------------------------------------------
+
+model Team {
+  id             BigInt       @id @default(autoincrement())
+  name           String
+  memberCount    Int          @default(0)
+  organizationId BigInt
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime?    @updatedAt
+
+  members TeamMember[]
+  records ObjectRecord[]
+
+  @@index([organizationId])
+  @@map("team")
+}
+
+model TeamMember {
+  id            BigInt    @id @default(autoincrement())
+  teamId        BigInt
+  team          Team      @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  userId        BigInt
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  membershipKey String?   @unique
+  createdAt     DateTime? @default(now())
+
+  @@index([teamId])
+  @@index([userId])
+  @@map("team_member")
 }

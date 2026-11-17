@@ -5,7 +5,7 @@ import { organizationClient } from 'better-auth/client/plugins';
 export const authClient = createAuthClient({
   baseURL: process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3000',
   basePath: '/auth',
-  plugins: [organizationClient()],
+  plugins: [organizationClient({ teams: { enabled: true } })],
 });
 
 export const { signIn, signUp, signOut, useSession } = authClient;
