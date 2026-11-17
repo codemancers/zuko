@@ -277,3 +277,50 @@ model TeamMember {
   @@index([userId])
   @@map("team_member")
 }
+
+// ---------------------------------------------------------------------------
+// Audit. Append-only (enforced by triggers and revoked privileges, see the audit
+// migration). Deliberately no foreign keys: history must outlive the rows it
+// describes, including a hard-deleted record or organization.
+// ---------------------------------------------------------------------------
+
+// What changed on a record, written by the service layer in the same transaction
+// as the change itself.
+model RecordChange {
+  id             BigInt   @id @default(autoincrement())
+  organizationId BigInt
+  recordId       BigInt
+  objectTypeId   BigInt
+  action         String // CREATE | UPDATE | DELETE
+  changes        Json // {"stage": {"old": "open", "new": "closed_won"}}
+  actorType      String // USER | API_KEY | SYSTEM | IMPORT | MCP
+  actorId        BigInt?
+  requestId      String?
+  createdAt      DateTime @default(now())
+
+  @@index([organizationId, recordId, createdAt])
+  @@index([organizationId, objectTypeId, createdAt])
+  @@map("record_change")
+}
+
+// Auth and organization events (sign-in, invitations, role and team changes...),
+// written by the better-auth audit plugin. organizationId is null for events that
+// belong to no organization, such as a failed sign-in.
+model AuditEvent {
+  id             BigInt   @id @default(autoincrement())
+  organizationId BigInt?
+  actorType      String // USER | API_KEY | SYSTEM | IMPORT | MCP | ANONYMOUS
+  actorId        BigInt?
+  event          String // 'member.invited', 'api_key.created', ...
+  targetType     String?
+  targetId       BigInt?
+  metadata       Json?
+  ip             String?
+  userAgent      String?
+  requestId      String?
+  createdAt      DateTime @default(now())
+
+  @@index([organizationId, createdAt(sort: Desc)])
+  @@index([organizationId, event, createdAt(sort: Desc)])
+  @@map("audit_event")
+}
