@@ -1,7 +1,9 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { notFound } from '../crm/errors';
 import { toId } from '../crm/records.service';
+import { writeAuditEvent } from '../libs/better-auth/audit-sink';
 import { PrismaService } from '../prisma/prisma.service';
+import type { requestInfo } from './http';
 
 /**
  * The applications (MCP clients) a user has approved. One approval, a "consent", exists
@@ -9,6 +11,8 @@ import { PrismaService } from '../prisma/prisma.service';
  */
 @Injectable()
 export class ConnectionsService {
+  private readonly logger = new Logger(ConnectionsService.name);
+
   constructor(private readonly prisma: PrismaService) {}
 
   async list(userId: bigint) {
@@ -44,9 +48,12 @@ export class ConnectionsService {
    * signed JWTs that stay valid until they expire, so the MCP endpoint also checks that
    * the approval still exists on every request; that is what makes this immediate.
    */
-  async disconnect(userId: bigint, rawId: string) {
+  async disconnect(userId: bigint, rawId: string, request: ReturnType<typeof requestInfo>) {
     const consentId = toId(rawId, 'connection');
-    const consent = await this.prisma.oauthConsent.findFirst({ where: { id: consentId, userId } });
+    const consent = await this.prisma.oauthConsent.findFirst({
+      where: { id: consentId, userId },
+      include: { oauthclient: { select: { name: true } } },
+    });
     if (!consent) {
       throw notFound('No such connection');
     }
@@ -56,6 +63,23 @@ export class ConnectionsService {
       this.prisma.oauthRefreshToken.deleteMany({ where: issuedUnder }),
       this.prisma.oauthConsent.delete({ where: { id: consentId } }),
     ]);
+
+    // Recorded after the fact and best effort, like the audit plugin's own events: the
+    // disconnect has already happened and must not fail because the log could not be written.
+    try {
+      await writeAuditEvent(this.prisma, {
+        organizationId: consent.referenceId && /^[1-9]\d*$/.test(consent.referenceId) ? consent.referenceId : null,
+        actorType: 'USER',
+        actorId: String(userId),
+        event: 'mcp.disconnected',
+        targetType: 'connection',
+        targetId: String(consentId),
+        metadata: { client_id: consent.clientId, client_name: consent.oauthclient.name ?? null, scopes: consent.scopes },
+        ...request,
+      });
+    } catch (error) {
+      this.logger.error('Failed to write audit event', error instanceof Error ? error.stack : String(error));
+    }
     return { id: String(consentId), deleted: true };
   }
 }

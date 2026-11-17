@@ -1,6 +1,7 @@
-import { Controller, Delete, Get, Param } from '@nestjs/common';
+import { Controller, Delete, Get, Param, Req } from '@nestjs/common';
 import { Session, type UserSession } from '@thallesp/nestjs-better-auth';
 import { ConnectionsService } from './connections.service';
+import { requestInfo, type HttpRequest } from './http';
 
 /** The signed-in user's own connected applications, across all their organizations. */
 @Controller('v1/connections')
@@ -13,7 +14,7 @@ export class ConnectionsController {
   }
 
   @Delete(':id')
-  disconnect(@Session() session: UserSession, @Param('id') id: string) {
-    return this.connections.disconnect(BigInt(session.user.id as string | number), id);
+  disconnect(@Session() session: UserSession, @Param('id') id: string, @Req() req: HttpRequest) {
+    return this.connections.disconnect(BigInt(session.user.id as string | number), id, requestInfo(req));
   }
 }

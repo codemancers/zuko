@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { User, cleanup, verifyEmails } from '../support/crm-client';
-import { BASE, MCP_URL, connect, openSession, registerClient, type Connection } from '../support/mcp-client';
+import { User, cleanup, verifyEmails, withDb } from '../support/crm-client';
+import { BASE, MCP_URL, connect, deny, openSession, registerClient, type Connection } from '../support/mcp-client';
 
 /**
  * MCP end to end: an MCP client discovers the server, registers, is authorized by a user,
@@ -344,6 +344,61 @@ describe('connected applications', () => {
       })}`,
     );
     expect(new URL(reconnect.data.url).pathname).toBe('/consent');
+  });
+});
+
+describe('audit of connections', () => {
+  const events = (clientId: string) =>
+    withDb(async (db) =>
+      (
+        await db.query(
+          `SELECT event, "actorType", "actorId"::text AS actor, "organizationId"::text AS org, "targetType", "targetId"::text AS target, metadata
+             FROM audit_event WHERE metadata->>'client_id' = $1 ORDER BY id`,
+          [clientId],
+        )
+      ).rows as { event: string; actorType: string; actor: string; org: string; targetType: string | null; target: string | null; metadata: Record<string, any> }[], // eslint-disable-line @typescript-eslint/no-explicit-any
+    );
+  const approved = 'openid offline_access mcp:read mcp:write';
+  let conn: Connection;
+  let connectionId = '';
+
+  it('records who approved which application, for which organization, with what access', async () => {
+    conn = await connect(alice, clientName('audit-a'), approved);
+
+    const rows = await events(conn.clientId);
+    expect(rows.map((r) => r.event)).toEqual(['mcp.connected']);
+    expect(rows[0]).toMatchObject({ actorType: 'USER', actor: alice.id, org: acmeId });
+    expect(rows[0].metadata).toEqual({ client_id: conn.clientId, scopes: approved.split(' ') });
+    expect(JSON.stringify(rows[0].metadata)).not.toMatch(/sig|code_challenge|state/); // request plumbing stays out
+  });
+
+  it('records a refusal, and nothing is connected', async () => {
+    const clientId = await deny(alice, clientName('audit-denied'), 'mcp:read mcp:delete');
+
+    const rows = await events(clientId);
+    expect(rows.map((r) => r.event)).toEqual(['mcp.connection_denied']);
+    expect(rows[0]).toMatchObject({ actor: alice.id, org: acmeId });
+    expect(rows[0].metadata.scopes).toEqual(['mcp:read', 'mcp:delete']);
+    const listed = status(await alice.get(`${API}/connections`), 200).results as { client: { id: string } }[];
+    expect(listed.some((c) => c.client.id === clientId)).toBe(false);
+  });
+
+  it('records a disconnect with the app that was cut off', async () => {
+    const listed = status(await alice.get(`${API}/connections`), 200).results as { id: string; client: { id: string } }[];
+    connectionId = listed.find((c) => c.client.id === conn.clientId)!.id;
+    status(await alice.del(`${API}/connections/${connectionId}`), 200);
+
+    const rows = await events(conn.clientId);
+    expect(rows.map((r) => r.event)).toEqual(['mcp.connected', 'mcp.disconnected']);
+    expect(rows[1]).toMatchObject({ actorType: 'USER', actor: alice.id, org: acmeId, targetType: 'connection', target: connectionId });
+    expect(rows[1].metadata).toEqual({ client_id: conn.clientId, client_name: clientName('audit-a'), scopes: approved.split(' ') });
+  });
+
+  it('records nothing for a disconnect that did not happen', async () => {
+    expect((await alice.del(`${API}/connections/${connectionId}`)).status).toBe(404); // already gone
+    expect((await owner.del(`${API}/connections/${connectionId}`)).status).toBe(404); // not theirs
+
+    expect((await events(conn.clientId)).map((r) => r.event)).toEqual(['mcp.connected', 'mcp.disconnected']);
   });
 });
 

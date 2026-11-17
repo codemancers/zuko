@@ -115,3 +115,26 @@ export async function openSession(accessToken: string) {
     close: () => client.close(),
   };
 }
+
+/** The user turns an application down on the consent page. Returns the client's id. */
+export async function deny(user: User, name: string, scope: string): Promise<string> {
+  const registered = await registerClient(name, scope);
+  const clientId: string = registered.data.client_id;
+  const authorize = await user.get(
+    `/auth/oauth2/authorize?${new URLSearchParams({
+      response_type: 'code',
+      client_id: clientId,
+      redirect_uri: REDIRECT_URI,
+      scope,
+      state: 'state-1',
+      code_challenge: createHash('sha256').update(randomBytes(32).toString('base64url')).digest('base64url'),
+      code_challenge_method: 'S256',
+      resource: MCP_URL,
+    })}`,
+  );
+  const consent = await user.post('/auth/oauth2/consent', { accept: false, oauth_query: new URL(authorize.data.url).search.slice(1) });
+  if (!new URL(consent.data.url).searchParams.get('error')) {
+    throw new Error(`expected a refusal, got ${JSON.stringify(consent.data)}`);
+  }
+  return clientId;
+}
