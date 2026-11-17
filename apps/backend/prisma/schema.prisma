@@ -25,6 +25,7 @@ model User {
   managedLines   MemberReporting[] @relation("ReportingManager")
   ancestorOf     MemberHierarchy[] @relation("HierarchyAncestor")
   descendantOf   MemberHierarchy[] @relation("HierarchyDescendant")
+  recordShares   RecordShare[]
 
   @@map("user")
 }
@@ -79,11 +80,11 @@ model Verification {
 }
 
 model Organization {
-  id             BigInt            @id @default(autoincrement())
+  id             BigInt             @id @default(autoincrement())
   name           String
-  slug           String            @unique
+  slug           String             @unique
   logo           String?
-  createdAt      DateTime          @default(now())
+  createdAt      DateTime           @default(now())
   metadata       String?
   members        Member[]
   invitations    Invitation[]
@@ -91,6 +92,7 @@ model Organization {
   teams          Team[]
   reportingLines MemberReporting[]
   hierarchy      MemberHierarchy[]
+  roleAccess     RoleObjectAccess[]
 
   @@map("organization")
 }
@@ -152,6 +154,7 @@ model ObjectType {
   records      ObjectRecord[]
   sourceAssocs AssociationDefinition[] @relation("AssociationSource")
   targetAssocs AssociationDefinition[] @relation("AssociationTarget")
+  roleAccess   RoleObjectAccess[]
 
   @@unique([organizationId, slug])
   @@unique([organizationId, id])
@@ -202,6 +205,7 @@ model ObjectRecord {
 
   asSource Association[] @relation("AssociationSource")
   asTarget Association[] @relation("AssociationTarget")
+  shares   RecordShare[]
 
   @@unique([organizationId, id])
   @@index([organizationId, objectTypeId, createdAt(sort: Desc)])
@@ -265,6 +269,7 @@ model Team {
 
   members TeamMember[]
   records ObjectRecord[]
+  shares  RecordShare[]
 
   @@index([organizationId])
   @@map("team")
@@ -366,4 +371,48 @@ model MemberHierarchy {
   @@unique([organizationId, ancestorId, descendantId])
   @@index([organizationId, descendantId])
   @@map("member_hierarchy")
+}
+
+// ---------------------------------------------------------------------------
+// Record access. Roles say what a user may do (see libs/access-control); these say
+// which records an action may touch. Both tables are under RLS.
+// ---------------------------------------------------------------------------
+
+// Overrides of the default scope for a role, for one object type or (when
+// objectTypeId is null) for all of them. Without a row, the service's built-in
+// defaults apply.
+model RoleObjectAccess {
+  id             BigInt       @id @default(autoincrement())
+  organizationId BigInt
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  role           String // organization role name, e.g. member
+  objectTypeId   BigInt? // null = every object type
+  objectType     ObjectType?  @relation(fields: [objectTypeId], references: [id], onDelete: Cascade)
+  readScope      String // OWN | OWN_AND_REPORTS | TEAM | ALL
+  writeScope     String // OWN | OWN_AND_REPORTS | TEAM | ALL
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@unique([organizationId, role, objectTypeId])
+  @@map("role_object_access")
+}
+
+// Explicit access to one record for a user or a team, on top of the role scope.
+model RecordShare {
+  id             BigInt       @id @default(autoincrement())
+  organizationId BigInt
+  recordId       BigInt
+  record         ObjectRecord @relation(fields: [organizationId, recordId], references: [organizationId, id], onDelete: Cascade)
+  userId         BigInt? // exactly one of userId / teamId
+  user           User?        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  teamId         BigInt?
+  team           Team?        @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  access         String // READ | WRITE
+  createdBy      BigInt?
+  createdAt      DateTime     @default(now())
+
+  @@index([organizationId, recordId])
+  @@index([organizationId, userId])
+  @@index([organizationId, teamId])
+  @@map("record_share")
 }
