@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, Param, Post, UseGuards } from '@nestjs/common';
 import { Crm, CrmContextGuard, type RequestContext } from './context';
 import { SchemaService } from './schema.service';
 
@@ -26,6 +26,13 @@ export class ObjectsController {
   @Post('objects')
   create(@Crm() ctx: RequestContext, @Body() body: unknown) {
     return this.schema.createObject(ctx, body);
+  }
+
+  /** Create contact, company and deal if the organization does not have them. Safe to repeat. */
+  @Post('setup/standard-objects')
+  @HttpCode(200)
+  setupStandardObjects(@Crm() ctx: RequestContext) {
+    return this.schema.setupStandardObjects(ctx);
   }
 
   @Get('objects/:object')

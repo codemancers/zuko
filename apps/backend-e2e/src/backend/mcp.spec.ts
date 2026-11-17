@@ -51,7 +51,7 @@ beforeAll(async () => {
 }, 120_000);
 
 afterAll(async () => {
-  await cleanup(suffix, slugs);
+  await cleanup(suffix, slugs, `e2e-${run}-`);
 }, 60_000);
 
 describe('discovery', () => {

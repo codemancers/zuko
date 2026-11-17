@@ -6,6 +6,7 @@ import type { RequestContext } from './context';
 import { conflict, notFound, parse, validationFailed } from './errors';
 import { FIELD_TYPES } from './field-types';
 import { assertCan } from './permissions';
+import { STANDARD_OBJECTS } from './standard-objects';
 
 export type ObjectWithFields = ObjectType & { fields: FieldDefinition[] };
 
@@ -104,6 +105,60 @@ export class SchemaService {
       }),
     );
     return objectDto(created, []);
+  }
+
+  /**
+   * Create the standard objects (contact, company, deal) the organization does not have yet.
+   * Safe to repeat: an object that exists is left exactly as it is, so nothing anyone has
+   * customized is overwritten.
+   */
+  async setupStandardObjects(ctx: RequestContext) {
+    assertCan(ctx, { object: ['manage'] }, 'set up the standard objects');
+    return this.tenant(ctx, async (tx) => {
+      // Two requests setting up the same organization at once (two tabs, a double render)
+      // would both find nothing and both try to create. Take turns instead: the second one
+      // then sees what the first one made and creates nothing.
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`standard-objects:${ctx.organizationId}`}))`;
+      const created: string[] = [];
+      for (const definition of STANDARD_OBJECTS) {
+        const existing = await tx.objectType.findFirst({
+          where: { organizationId: ctx.organizationId, slug: definition.slug },
+          select: { id: true },
+        });
+        if (existing) {
+          continue;
+        }
+        const object = await tx.objectType.create({
+          data: {
+            organizationId: ctx.organizationId,
+            slug: definition.slug,
+            label: definition.label,
+            pluralLabel: definition.pluralLabel,
+            kind: 'STANDARD',
+          },
+        });
+        await tx.fieldDefinition.createMany({
+          data: definition.fields.map((field) => ({
+            organizationId: ctx.organizationId,
+            objectTypeId: object.id,
+            name: field.name,
+            label: field.label,
+            type: field.type,
+            required: field.required ?? false,
+            isUnique: field.unique ?? false,
+            filterable: field.filterable ?? false,
+            maxLength: field.maxLength ?? null,
+            config: field.options ? { options: field.options } : {},
+          })),
+        });
+        created.push(definition.slug);
+      }
+      const objects = await tx.objectType.findMany({
+        where: { organizationId: ctx.organizationId },
+        orderBy: { id: 'asc' },
+      });
+      return { created, results: objects.map((o) => objectDto(o)) };
+    });
   }
 
   async addField(ctx: RequestContext, name: string, body: unknown) {

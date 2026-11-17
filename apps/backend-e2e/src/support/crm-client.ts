@@ -76,7 +76,7 @@ export async function withDb<T>(fn: (db: Client) => Promise<T>): Promise<T> {
 }
 
 /** Remove everything a run created. Audit rows are append-only, so deletes need the purge flag. */
-export async function cleanup(emailSuffix: string, orgSlugs: string[]) {
+export async function cleanup(emailSuffix: string, orgSlugs: string[], oauthClientPrefix?: string) {
   await withDb(async (db) => {
     await db.query('BEGIN');
     await db.query("SELECT set_config('app.audit_purge', 'on', true)");
@@ -93,8 +93,12 @@ export async function cleanup(emailSuffix: string, orgSlugs: string[]) {
     await db.query('COMMIT');
     await db.query('DELETE FROM object_record WHERE "organizationId" IN (SELECT id FROM organization WHERE slug = ANY($1))', [orgSlugs]);
     await db.query('DELETE FROM organization WHERE slug = ANY($1)', [orgSlugs]);
-    // OAuth clients registered by the MCP tests (their tokens and consents go with them)
-    await db.query("DELETE FROM oauth_client WHERE name LIKE 'e2e-%'");
+    // OAuth clients registered by one run's MCP tests (their tokens and consents go with
+    // them). Scoped to the run: spec files run in parallel, and another file's cleanup must
+    // never delete clients that are still in use.
+    if (oauthClientPrefix) {
+      await db.query('DELETE FROM oauth_client WHERE name LIKE $1', [`${oauthClientPrefix}%`]);
+    }
     await db.query('DELETE FROM "user" WHERE email LIKE $1', [`%${emailSuffix}`]);
   });
 }
