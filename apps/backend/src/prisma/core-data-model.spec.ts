@@ -165,7 +165,7 @@ describe.skipIf(!url)('core data model', () => {
   it('keeps RLS forced on every tenant table', async () => {
     const rows = await prisma.$queryRaw<{ relname: string; relrowsecurity: boolean; relforcerowsecurity: boolean }[]>`
       SELECT relname, relrowsecurity, relforcerowsecurity FROM pg_class
-      WHERE relname IN ('object_type','field_definition','record','association_definition','association')`;
+      WHERE relname IN ('object_type','field_definition','object_record','association_definition','association')`;
     expect(rows).toHaveLength(5);
     expect(rows.every((r) => r.relrowsecurity && r.relforcerowsecurity)).toBe(true);
   });

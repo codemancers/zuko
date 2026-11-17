@@ -39,7 +39,7 @@ CREATE TABLE "field_definition" (
 );
 
 -- CreateTable
-CREATE TABLE "record" (
+CREATE TABLE "object_record" (
     "id" BIGSERIAL NOT NULL,
     "organizationId" BIGINT NOT NULL,
     "objectTypeId" BIGINT NOT NULL,
@@ -51,7 +51,7 @@ CREATE TABLE "record" (
     "updatedAt" TIMESTAMP(3) NOT NULL,
     "deletedAt" TIMESTAMP(3),
 
-    CONSTRAINT "record_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "object_record_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -94,16 +94,16 @@ CREATE INDEX "field_definition_organizationId_objectTypeId_idx" ON "field_defini
 CREATE UNIQUE INDEX "field_definition_objectTypeId_name_key" ON "field_definition"("objectTypeId", "name");
 
 -- CreateIndex
-CREATE INDEX "record_organizationId_objectTypeId_createdAt_idx" ON "record"("organizationId", "objectTypeId", "createdAt" DESC);
+CREATE INDEX "object_record_organizationId_objectTypeId_createdAt_idx" ON "object_record"("organizationId", "objectTypeId", "createdAt" DESC);
 
 -- CreateIndex
-CREATE INDEX "record_organizationId_objectTypeId_ownerId_idx" ON "record"("organizationId", "objectTypeId", "ownerId");
+CREATE INDEX "object_record_organizationId_objectTypeId_ownerId_idx" ON "object_record"("organizationId", "objectTypeId", "ownerId");
 
 -- CreateIndex
-CREATE INDEX "record_properties_idx" ON "record" USING GIN ("properties" jsonb_path_ops);
+CREATE INDEX "object_record_properties_idx" ON "object_record" USING GIN ("properties" jsonb_path_ops);
 
 -- CreateIndex
-CREATE UNIQUE INDEX "record_organizationId_id_key" ON "record"("organizationId", "id");
+CREATE UNIQUE INDEX "object_record_organizationId_id_key" ON "object_record"("organizationId", "id");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "association_definition_organizationId_name_key" ON "association_definition"("organizationId", "name");
@@ -121,10 +121,10 @@ ALTER TABLE "object_type" ADD CONSTRAINT "object_type_organizationId_fkey" FOREI
 ALTER TABLE "field_definition" ADD CONSTRAINT "field_definition_organizationId_objectTypeId_fkey" FOREIGN KEY ("organizationId", "objectTypeId") REFERENCES "object_type"("organizationId", "id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "record" ADD CONSTRAINT "record_organizationId_objectTypeId_fkey" FOREIGN KEY ("organizationId", "objectTypeId") REFERENCES "object_type"("organizationId", "id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "object_record" ADD CONSTRAINT "object_record_organizationId_objectTypeId_fkey" FOREIGN KEY ("organizationId", "objectTypeId") REFERENCES "object_type"("organizationId", "id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "record" ADD CONSTRAINT "record_ownerId_fkey" FOREIGN KEY ("ownerId") REFERENCES "user"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "object_record" ADD CONSTRAINT "object_record_ownerId_fkey" FOREIGN KEY ("ownerId") REFERENCES "user"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "association_definition" ADD CONSTRAINT "association_definition_organizationId_sourceObjectTypeId_fkey" FOREIGN KEY ("organizationId", "sourceObjectTypeId") REFERENCES "object_type"("organizationId", "id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -136,10 +136,10 @@ ALTER TABLE "association_definition" ADD CONSTRAINT "association_definition_orga
 ALTER TABLE "association" ADD CONSTRAINT "association_organizationId_definitionId_fkey" FOREIGN KEY ("organizationId", "definitionId") REFERENCES "association_definition"("organizationId", "id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "association" ADD CONSTRAINT "association_organizationId_sourceId_fkey" FOREIGN KEY ("organizationId", "sourceId") REFERENCES "record"("organizationId", "id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "association" ADD CONSTRAINT "association_organizationId_sourceId_fkey" FOREIGN KEY ("organizationId", "sourceId") REFERENCES "object_record"("organizationId", "id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "association" ADD CONSTRAINT "association_organizationId_targetId_fkey" FOREIGN KEY ("organizationId", "targetId") REFERENCES "record"("organizationId", "id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "association" ADD CONSTRAINT "association_organizationId_targetId_fkey" FOREIGN KEY ("organizationId", "targetId") REFERENCES "object_record"("organizationId", "id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- Constraints Prisma cannot express
 ALTER TABLE "object_type" ADD CONSTRAINT "object_type_kind_check"
@@ -150,12 +150,12 @@ ALTER TABLE "association_definition" ADD CONSTRAINT "association_definition_card
   CHECK ("cardinality" IN ('ONE_TO_ONE', 'ONE_TO_MANY', 'MANY_TO_ONE', 'MANY_TO_MANY'));
 
 -- Listing live records is the hot path; soft-deleted rows are excluded.
-CREATE INDEX "record_live_idx" ON "record"("organizationId", "objectTypeId", "createdAt" DESC)
+CREATE INDEX "object_record_live_idx" ON "object_record"("organizationId", "objectTypeId", "createdAt" DESC)
   WHERE "deletedAt" IS NULL;
 
 -- Tenant isolation (see the tenancy_foundation migration)
 CALL enable_tenant_rls('"object_type"');
 CALL enable_tenant_rls('"field_definition"');
-CALL enable_tenant_rls('"record"');
+CALL enable_tenant_rls('"object_record"');
 CALL enable_tenant_rls('"association_definition"');
 CALL enable_tenant_rls('"association"');

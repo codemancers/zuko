@@ -202,7 +202,7 @@ model ObjectRecord {
   @@index([organizationId, objectTypeId, ownerId])
   @@index([organizationId, teamId])
   @@index([properties(ops: JsonbPathOps)], type: Gin)
-  @@map("record")
+  @@map("object_record")
 }
 
 // A kind of link between two object types (e.g. contact <-> company).
