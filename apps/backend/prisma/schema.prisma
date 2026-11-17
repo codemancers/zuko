@@ -8,19 +8,23 @@ datasource db {
 }
 
 model User {
-  id            BigInt         @id @default(autoincrement())
-  name          String
-  email         String         @unique
-  emailVerified Boolean        @default(false)
-  image         String?
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-  sessions      Session[]
-  accounts      Account[]
-  members       Member[]
-  invitations   Invitation[]
-  ownedRecords  ObjectRecord[]
-  teamMembers   TeamMember[]
+  id             BigInt            @id @default(autoincrement())
+  name           String
+  email          String            @unique
+  emailVerified  Boolean           @default(false)
+  image          String?
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  sessions       Session[]
+  accounts       Account[]
+  members        Member[]
+  invitations    Invitation[]
+  ownedRecords   ObjectRecord[]
+  teamMembers    TeamMember[]
+  reportingLines MemberReporting[] @relation("ReportingUser")
+  managedLines   MemberReporting[] @relation("ReportingManager")
+  ancestorOf     MemberHierarchy[] @relation("HierarchyAncestor")
+  descendantOf   MemberHierarchy[] @relation("HierarchyDescendant")
 
   @@map("user")
 }
@@ -75,16 +79,18 @@ model Verification {
 }
 
 model Organization {
-  id          BigInt       @id @default(autoincrement())
-  name        String
-  slug        String       @unique
-  logo        String?
-  createdAt   DateTime     @default(now())
-  metadata    String?
-  members     Member[]
-  invitations Invitation[]
-  objectTypes ObjectType[]
-  teams       Team[]
+  id             BigInt            @id @default(autoincrement())
+  name           String
+  slug           String            @unique
+  logo           String?
+  createdAt      DateTime          @default(now())
+  metadata       String?
+  members        Member[]
+  invitations    Invitation[]
+  objectTypes    ObjectType[]
+  teams          Team[]
+  reportingLines MemberReporting[]
+  hierarchy      MemberHierarchy[]
 
   @@map("organization")
 }
@@ -323,4 +329,41 @@ model AuditEvent {
   @@index([organizationId, createdAt(sort: Desc)])
   @@index([organizationId, event, createdAt(sort: Desc)])
   @@map("audit_event")
+}
+
+// ---------------------------------------------------------------------------
+// Reporting lines (better-auth hierarchy plugin, libs/better-auth-hierarchy).
+// Managed by better-auth through the plain client, so like member and team these
+// tables are not under RLS; readers must filter by organizationId.
+// ---------------------------------------------------------------------------
+
+// Who reports to whom. managerId is null for someone at the top of the chart.
+model MemberReporting {
+  id             BigInt       @id @default(autoincrement())
+  organizationId BigInt
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  userId         BigInt
+  user           User         @relation("ReportingUser", fields: [userId], references: [id], onDelete: Cascade)
+  managerId      BigInt?
+  manager        User?        @relation("ReportingManager", fields: [managerId], references: [id], onDelete: SetNull)
+
+  @@unique([organizationId, userId])
+  @@index([managerId])
+  @@map("member_reporting")
+}
+
+// Every (ancestor, descendant) pair at any depth, rebuilt from MemberReporting.
+model MemberHierarchy {
+  id             BigInt       @id @default(autoincrement())
+  organizationId BigInt
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  ancestorId     BigInt
+  ancestor       User         @relation("HierarchyAncestor", fields: [ancestorId], references: [id], onDelete: Cascade)
+  descendantId   BigInt
+  descendant     User         @relation("HierarchyDescendant", fields: [descendantId], references: [id], onDelete: Cascade)
+  depth          Int // 1 = direct report
+
+  @@unique([organizationId, ancestorId, descendantId])
+  @@index([organizationId, descendantId])
+  @@map("member_hierarchy")
 }

@@ -28,6 +28,9 @@
   ],
   "references": [
     {
+      "path": "../../libs/better-auth-hierarchy/tsconfig.lib.json"
+    },
+    {
       "path": "../../libs/access-control/tsconfig.lib.json"
     }
   ]
