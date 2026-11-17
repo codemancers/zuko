@@ -8,15 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { authClient, useSession } from '@/lib/auth-client';
-
-/** What each scope an MCP client can ask for means, in plain words. */
-const SCOPE_LABELS: Record<string, string> = {
-  'mcp:read': 'View records and how your data is set up',
-  'mcp:write': 'Create and change records',
-  'mcp:delete': 'Delete records',
-  offline_access: 'Stay connected without asking you again',
-  openid: 'Know who you are',
-};
+import { SCOPE_LABELS } from '@/lib/oauth-scopes';
 
 // The shape /oauth2/public-client returns: OIDC client metadata, so snake_case.
 type PublicClient = { client_id: string; client_name?: string };
