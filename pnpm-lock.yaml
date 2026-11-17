@@ -83,6 +83,9 @@ importers:
       tw-animate-css:
         specifier: ^1.4.0
         version: 1.4.0
+      zod:
+        specifier: ^4.5.4
+        version: 4.6.7
     devDependencies:
       '@nestjs/schematics':
         specifier: ^11.0.0
@@ -351,6 +354,9 @@ importers:
       tslib:
         specifier: ^2.3.0
         version: 2.9.1
+      zod:
+        specifier: ^4.5.4
+        version: 4.6.7
 
 packages:
 
