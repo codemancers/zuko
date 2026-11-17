@@ -38,6 +38,15 @@ export class User {
     return { status: res.status, data: res.data };
   }
 
+  /** An application/x-www-form-urlencoded POST, as the OAuth token endpoint expects. */
+  async form(url: string, data: Record<string, string>): Promise<Reply> {
+    const res = await axios.post(url, new URLSearchParams(data).toString(), {
+      headers: { Origin: ORIGIN, 'content-type': 'application/x-www-form-urlencoded', ...(this.cookie ? { Cookie: this.cookie } : {}) },
+      validateStatus: () => true,
+    });
+    return { status: res.status, data: res.data };
+  }
+
   get = (url: string) => this.call('GET', url);
   post = (url: string, data?: unknown) => this.call('POST', url, data);
   patch = (url: string, data?: unknown) => this.call('PATCH', url, data);
@@ -84,6 +93,8 @@ export async function cleanup(emailSuffix: string, orgSlugs: string[]) {
     await db.query('COMMIT');
     await db.query('DELETE FROM object_record WHERE "organizationId" IN (SELECT id FROM organization WHERE slug = ANY($1))', [orgSlugs]);
     await db.query('DELETE FROM organization WHERE slug = ANY($1)', [orgSlugs]);
+    // OAuth clients registered by the MCP tests (their tokens and consents go with them)
+    await db.query("DELETE FROM oauth_client WHERE name LIKE 'e2e-%'");
     await db.query('DELETE FROM "user" WHERE email LIKE $1', [`%${emailSuffix}`]);
   });
 }
