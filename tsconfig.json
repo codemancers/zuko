@@ -14,6 +14,9 @@
     },
     {
       "path": "./apps/app-e2e"
+    },
+    {
+      "path": "./libs/better-auth-hierarchy"
     }
   ]
 }
