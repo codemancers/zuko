@@ -11,7 +11,7 @@ CREATE TABLE "object_type" (
     "pluralLabel" TEXT NOT NULL,
     "kind" TEXT NOT NULL,
     "version" INTEGER NOT NULL DEFAULT 1,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT timezone('utc'::text, now()),
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "object_type_pkey" PRIMARY KEY ("id")
@@ -32,7 +32,7 @@ CREATE TABLE "field_definition" (
     "sensitive" BOOLEAN NOT NULL DEFAULT false,
     "maxLength" INTEGER,
     "config" JSONB NOT NULL DEFAULT '{}',
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT timezone('utc'::text, now()),
     "updatedAt" TIMESTAMP(3) NOT NULL,
     "deletedAt" TIMESTAMP(3),
 
@@ -48,7 +48,7 @@ CREATE TABLE "object_record" (
     "ownerId" BIGINT,
     "createdBy" BIGINT,
     "updatedBy" BIGINT,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT timezone('utc'::text, now()),
     "updatedAt" TIMESTAMP(3) NOT NULL,
     "deletedAt" TIMESTAMP(3),
 
@@ -78,7 +78,7 @@ CREATE TABLE "association" (
     "definitionId" BIGINT NOT NULL,
     "sourceId" BIGINT NOT NULL,
     "targetId" BIGINT NOT NULL,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT timezone('utc'::text, now()),
 
     CONSTRAINT "association_pkey" PRIMARY KEY ("organizationId","definitionId","sourceId","targetId")
 );

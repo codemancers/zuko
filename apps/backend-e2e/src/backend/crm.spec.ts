@@ -392,6 +392,20 @@ describe('listing and filtering', () => {
     expect(expectStatus(await filter(admin, [isFilterRow]), 200).metadata.total_elements).toBe(4);
   });
 
+  it('filters on when a record was created and changed, as UTC instants', async () => {
+    const inMinutes = (n: number) => new Date(Date.now() + n * 60_000).toISOString();
+    const created = [
+      { field_path: 'created_at', operator: 'GREATER_THAN', value: inMinutes(-10) },
+      { field_path: 'created_at', operator: 'LESS_THAN', value: inMinutes(10) },
+    ];
+    // Just made, so created within the last ten minutes and not before that or after now: a
+    // timezone offset of even an hour would put these out.
+    expect(names(expectStatus(await filter(owner, [isFilterRow, ...created]), 200)).sort()).toEqual(['Filter A', 'Filter B', 'Filter C', 'Filter D']);
+    expect(names(expectStatus(await filter(owner, [isFilterRow, { field_path: 'created_at', operator: 'LESS_THAN', value: inMinutes(-10) }]), 200))).toEqual([]);
+    expect(names(expectStatus(await filter(owner, [isFilterRow, { field_path: 'updated_at', operator: 'GREATER_THAN', value: inMinutes(10) }]), 200))).toEqual([]);
+    expect(names(expectStatus(await filter(owner, [isFilterRow, { field_path: 'updated_at', operator: 'BETWEEN', values: [inMinutes(-10), inMinutes(10)] }]), 200))).toHaveLength(4);
+  });
+
   it('only filters or sorts on filterable fields', async () => {
     expect(errorCodes(await filter(owner, [{ field_path: 'email', operator: 'EQUALS', value: 'x' }]))).toEqual(['email:INVALID_FIELD']);
     expect(errorCodes(await owner.get(`${REC}?sort=email,asc`))).toEqual(['email:INVALID_SORT_FIELD']);

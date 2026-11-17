@@ -6,7 +6,7 @@ CREATE TABLE "role_object_access" (
     "objectTypeId" BIGINT,
     "readScope" TEXT NOT NULL,
     "writeScope" TEXT NOT NULL,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT timezone('utc'::text, now()),
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "role_object_access_pkey" PRIMARY KEY ("id")
@@ -21,7 +21,7 @@ CREATE TABLE "record_share" (
     "teamId" BIGINT,
     "access" TEXT NOT NULL,
     "createdBy" BIGINT,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT timezone('utc'::text, now()),
 
     CONSTRAINT "record_share_pkey" PRIMARY KEY ("id")
 );

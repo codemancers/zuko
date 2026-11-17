@@ -12,7 +12,8 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
     if (!connectionString) {
       throw new Error('DATABASE_URL is not set');
     }
-    super({ adapter: new PrismaPg({ connectionString }) });
+    // Sessions are UTC whatever the server or role is set to, so nothing depends on a local timezone.
+    super({ adapter: new PrismaPg({ connectionString, options: '-c timezone=UTC' }) });
   }
 
   async onModuleInit() {

@@ -65,3 +65,28 @@ BEGIN
   END IF;
 END
 $$;
+
+-- Datetimes are UTC.
+--
+-- Every datetime column is `timestamp without time zone` and holds UTC. A default of
+-- CURRENT_TIMESTAMP in such a column stores the session's *local* time, so a raw insert, a
+-- trigger, or a psql session in another zone would write times that are hours off. The tables
+-- created after this migration say `timezone('utc', now())` themselves; this fixes the ones
+-- that exist already (the better-auth and organization tables), and makes the database's own
+-- timezone UTC.
+DO $$
+DECLARE
+  col record;
+BEGIN
+  FOR col IN
+    SELECT table_name, column_name
+    FROM information_schema.columns
+    WHERE table_schema = 'public'
+      AND data_type = 'timestamp without time zone'
+      AND column_default LIKE 'CURRENT_TIMESTAMP%'
+  LOOP
+    EXECUTE format('ALTER TABLE %I ALTER COLUMN %I SET DEFAULT timezone(''utc''::text, now())', col.table_name, col.column_name);
+  END LOOP;
+
+  EXECUTE format('ALTER DATABASE %I SET timezone TO ''UTC''', current_database());
+END $$;

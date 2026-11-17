@@ -1,3 +1,7 @@
+// Datetimes: every DateTime column is `timestamp(3) without time zone` and holds UTC. Defaults that
+// read the clock say so (`timezone('utc', now())`) rather than relying on the session's timezone;
+// never use `@db.Timestamptz`. A database spec (utc-timestamps.spec.ts) enforces this.
+
 generator client {
   provider = "prisma-client"
   output   = "../src/generated/prisma"
@@ -13,7 +17,7 @@ model User {
   email              String              @unique
   emailVerified      Boolean             @default(false)
   image              String?
-  createdAt          DateTime            @default(now())
+  createdAt          DateTime            @default(dbgenerated("timezone('utc'::text, now())"))
   updatedAt          DateTime            @updatedAt
   sessions           Session[]
   accounts           Account[]
@@ -38,7 +42,7 @@ model Session {
   id                   BigInt              @id @default(autoincrement())
   expiresAt            DateTime
   token                String              @unique
-  createdAt            DateTime            @default(now())
+  createdAt            DateTime            @default(dbgenerated("timezone('utc'::text, now())"))
   updatedAt            DateTime            @updatedAt
   ipAddress            String?
   userAgent            String?
@@ -66,7 +70,7 @@ model Account {
   refreshTokenExpiresAt DateTime?
   scope                 String?
   password              String?
-  createdAt             DateTime  @default(now())
+  createdAt             DateTime  @default(dbgenerated("timezone('utc'::text, now())"))
   updatedAt             DateTime  @updatedAt
 
   @@index([userId])
@@ -78,7 +82,7 @@ model Verification {
   identifier String
   value      String
   expiresAt  DateTime
-  createdAt  DateTime @default(now())
+  createdAt  DateTime @default(dbgenerated("timezone('utc'::text, now())"))
   updatedAt  DateTime @updatedAt
 
   @@index([identifier])
@@ -90,7 +94,7 @@ model Organization {
   name           String
   slug           String             @unique
   logo           String?
-  createdAt      DateTime           @default(now())
+  createdAt      DateTime           @default(dbgenerated("timezone('utc'::text, now())"))
   metadata       String?
   members        Member[]
   invitations    Invitation[]
@@ -110,7 +114,7 @@ model Member {
   userId         BigInt
   user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   role           String       @default("member")
-  createdAt      DateTime     @default(now())
+  createdAt      DateTime     @default(dbgenerated("timezone('utc'::text, now())"))
 
   @@unique([organizationId, userId])
   @@index([userId])
@@ -125,7 +129,7 @@ model Invitation {
   role           String?
   status         String       @default("pending")
   expiresAt      DateTime
-  createdAt      DateTime     @default(now())
+  createdAt      DateTime     @default(dbgenerated("timezone('utc'::text, now())"))
   inviterId      BigInt
   inviter        User         @relation(fields: [inviterId], references: [id], onDelete: Cascade)
   // better-auth stores one or more team ids here as a comma-separated string.
@@ -153,7 +157,7 @@ model ObjectType {
   pluralLabel    String
   kind           String // STANDARD | CUSTOM
   version        Int          @default(1)
-  createdAt      DateTime     @default(now())
+  createdAt      DateTime     @default(dbgenerated("timezone('utc'::text, now())"))
   updatedAt      DateTime     @updatedAt
 
   fields       FieldDefinition[]
@@ -183,7 +187,7 @@ model FieldDefinition {
   sensitive      Boolean    @default(false) // redact in audit history
   maxLength      Int?
   config         Json       @default("{}")
-  createdAt      DateTime   @default(now())
+  createdAt      DateTime   @default(dbgenerated("timezone('utc'::text, now())"))
   updatedAt      DateTime   @updatedAt
   // Set when the field is removed. The values stay in the records' properties.
   deletedAt      DateTime?
@@ -207,7 +211,7 @@ model ObjectRecord {
   team           Team?      @relation(fields: [teamId], references: [id], onDelete: SetNull)
   createdBy      BigInt?
   updatedBy      BigInt?
-  createdAt      DateTime   @default(now())
+  createdAt      DateTime   @default(dbgenerated("timezone('utc'::text, now())"))
   updatedAt      DateTime   @updatedAt
   deletedAt      DateTime?
 
@@ -257,7 +261,7 @@ model Association {
   source         ObjectRecord          @relation("AssociationSource", fields: [organizationId, sourceId], references: [organizationId, id], onDelete: Cascade)
   targetId       BigInt
   target         ObjectRecord          @relation("AssociationTarget", fields: [organizationId, targetId], references: [organizationId, id], onDelete: Cascade)
-  createdAt      DateTime              @default(now())
+  createdAt      DateTime              @default(dbgenerated("timezone('utc'::text, now())"))
 
   @@id([organizationId, definitionId, sourceId, targetId])
   @@index([organizationId, definitionId, targetId, sourceId])
@@ -275,7 +279,7 @@ model Team {
   memberCount    Int          @default(0)
   organizationId BigInt
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  createdAt      DateTime     @default(now())
+  createdAt      DateTime     @default(dbgenerated("timezone('utc'::text, now())"))
   updatedAt      DateTime?    @updatedAt
 
   members TeamMember[]
@@ -293,7 +297,7 @@ model TeamMember {
   userId        BigInt
   user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   membershipKey String?   @unique
-  createdAt     DateTime? @default(now())
+  createdAt     DateTime? @default(dbgenerated("timezone('utc'::text, now())"))
 
   @@index([teamId])
   @@index([userId])
@@ -318,7 +322,7 @@ model RecordChange {
   actorType      String // USER | API_KEY | SYSTEM | IMPORT | MCP
   actorId        BigInt?
   requestId      String?
-  createdAt      DateTime @default(now())
+  createdAt      DateTime @default(dbgenerated("timezone('utc'::text, now())"))
 
   @@index([organizationId, recordId, createdAt])
   @@index([organizationId, objectTypeId, createdAt])
@@ -340,7 +344,7 @@ model AuditEvent {
   ip             String?
   userAgent      String?
   requestId      String?
-  createdAt      DateTime @default(now())
+  createdAt      DateTime @default(dbgenerated("timezone('utc'::text, now())"))
 
   @@index([organizationId, createdAt(sort: Desc)])
   @@index([organizationId, event, createdAt(sort: Desc)])
@@ -401,7 +405,7 @@ model RoleObjectAccess {
   objectType     ObjectType?  @relation(fields: [objectTypeId], references: [id], onDelete: Cascade)
   readScope      String // OWN | OWN_AND_REPORTS | TEAM | ALL
   writeScope     String // OWN | OWN_AND_REPORTS | TEAM | ALL
-  createdAt      DateTime     @default(now())
+  createdAt      DateTime     @default(dbgenerated("timezone('utc'::text, now())"))
   updatedAt      DateTime     @updatedAt
 
   @@unique([organizationId, role, objectTypeId])
@@ -420,7 +424,7 @@ model RecordShare {
   team           Team?        @relation(fields: [teamId], references: [id], onDelete: Cascade)
   access         String // READ | WRITE
   createdBy      BigInt?
-  createdAt      DateTime     @default(now())
+  createdAt      DateTime     @default(dbgenerated("timezone('utc'::text, now())"))
 
   @@index([organizationId, recordId])
   @@index([organizationId, userId])

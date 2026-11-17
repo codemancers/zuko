@@ -9,7 +9,7 @@ CREATE TABLE "record_change" (
     "actorType" TEXT NOT NULL,
     "actorId" BIGINT,
     "requestId" TEXT,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT timezone('utc'::text, now()),
 
     CONSTRAINT "record_change_pkey" PRIMARY KEY ("id")
 );
@@ -27,7 +27,7 @@ CREATE TABLE "audit_event" (
     "ip" TEXT,
     "userAgent" TEXT,
     "requestId" TEXT,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT timezone('utc'::text, now()),
 
     CONSTRAINT "audit_event_pkey" PRIMARY KEY ("id")
 );

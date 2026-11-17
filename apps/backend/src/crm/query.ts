@@ -45,8 +45,11 @@ const SYSTEM_COLUMNS: Record<string, Column> = {
   id: { expr: Prisma.raw('r."id"'), kind: 'id', pg: 'bigint' },
   owner_id: { expr: Prisma.raw('r."ownerId"'), kind: 'id', pg: 'bigint' },
   team_id: { expr: Prisma.raw('r."teamId"'), kind: 'id', pg: 'bigint' },
-  created_at: { expr: Prisma.raw('r."createdAt"'), kind: 'timestamp', pg: 'timestamptz' },
-  updated_at: { expr: Prisma.raw('r."updatedAt"'), kind: 'timestamp', pg: 'timestamptz' },
+  // These columns are `timestamp` holding UTC, and the request values are UTC ISO strings, so the
+  // values are cast to plain `timestamp` (a trailing Z is ignored) and compared as such. Casting to
+  // timestamptz instead would convert the column using the session's timezone.
+  created_at: { expr: Prisma.raw('r."createdAt"'), kind: 'timestamp', pg: 'timestamp' },
+  updated_at: { expr: Prisma.raw('r."updatedAt"'), kind: 'timestamp', pg: 'timestamp' },
 };
 
 const KIND_BY_TYPE: Record<string, Kind> = {

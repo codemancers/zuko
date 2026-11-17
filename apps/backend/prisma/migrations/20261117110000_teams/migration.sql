@@ -13,7 +13,7 @@ CREATE TABLE "team" (
     "name" TEXT NOT NULL,
     "memberCount" INTEGER NOT NULL DEFAULT 0,
     "organizationId" BIGINT NOT NULL,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT timezone('utc'::text, now()),
     "updatedAt" TIMESTAMP(3),
 
     CONSTRAINT "team_pkey" PRIMARY KEY ("id")
@@ -25,7 +25,7 @@ CREATE TABLE "team_member" (
     "teamId" BIGINT NOT NULL,
     "userId" BIGINT NOT NULL,
     "membershipKey" TEXT,
-    "createdAt" TIMESTAMP(3) DEFAULT CURRENT_TIMESTAMP,
+    "createdAt" TIMESTAMP(3) DEFAULT timezone('utc'::text, now()),
 
     CONSTRAINT "team_member_pkey" PRIMARY KEY ("id")
 );
