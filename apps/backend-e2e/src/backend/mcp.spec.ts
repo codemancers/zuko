@@ -404,6 +404,37 @@ describe('connected applications', () => {
     );
     expect(new URL(reconnect.data.url).pathname).toBe('/consent');
   });
+
+  it('never revives an old write token after the same client is approved read-only', async () => {
+    const old = await connect(alice, clientName('conn-generation'), 'offline_access mcp:read mcp:write');
+    const connection = (await mine(alice)).find((c) => c.client.id === old.clientId)!;
+    status(await alice.del(`${API}/connections/${connection.id}`), 200);
+    expect((await callMcp(old.accessToken)).status).toBe(401);
+
+    const current = await connect(alice, '', 'offline_access mcp:read', old.clientId);
+    expect((await callMcp(old.accessToken)).status).toBe(401);
+    expect((await callMcp(current.accessToken)).status).toBe(200);
+
+    const refreshed = status(await alice.form('/auth/oauth2/token', {
+      grant_type: 'refresh_token', refresh_token: current.refreshToken, client_id: current.clientId, resource: MCP_URL,
+    }), 200);
+    expect((await callMcp(refreshed.access_token)).status).toBe(200);
+    const session = await openSession(refreshed.access_token);
+    try {
+      expect(await session.call('create_record', { object: 'contact', properties: { first_name: 'Refused' } }))
+        .toMatchObject({ isError: true, data: { code: 'INSUFFICIENT_SCOPE' } });
+    } finally {
+      await session.close();
+    }
+  });
+
+  it('honors a reduction in the current consent scopes', async () => {
+    const old = await connect(alice, clientName('conn-reduce'), 'mcp:read mcp:write');
+    const connection = (await mine(alice)).find((c) => c.client.id === old.clientId)!;
+    status(await alice.post('/auth/oauth2/update-consent', { id: connection.id, update: { scopes: ['mcp:read'] } }), 200);
+    expect((await callMcp(old.accessToken)).status).toBe(401);
+  });
+
 });
 
 describe('audit of connections', () => {

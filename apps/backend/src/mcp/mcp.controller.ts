@@ -5,10 +5,11 @@ import { AllowAnonymous, AuthService } from '@thallesp/nestjs-better-auth';
 import { CrmContextService, type RequestContext } from '../crm/context';
 import { DirectoryService } from '../crm/directory.service';
 import { CrmError } from '../crm/errors';
+import { parseId } from '../crm/ids';
 import { RecordsQueryService } from '../crm/records-query.service';
 import { RecordsService } from '../crm/records.service';
 import { SchemaService } from '../crm/schema.service';
-import { BACKEND_URL, MCP_PATH, MCP_RESOURCE, MCP_SCOPES, ORG_CLAIM } from '../libs/better-auth/constants';
+import { BACKEND_URL, CONSENT_CLAIM, MCP_PATH, MCP_RESOURCE, MCP_SCOPES, ORG_CLAIM } from '../libs/better-auth/constants';
 import { PrismaService } from '../prisma/prisma.service';
 import { sendFetchResponse, toFetchRequest, type HttpRequest, type HttpResponse } from './http';
 import { AssociationsService } from '../crm/associations.service';
@@ -70,11 +71,14 @@ export class McpController {
 
         // Access tokens are valid until they expire, so disconnecting is enforced here: the
         // approval the token was issued under must still exist.
+        const consentId = parseId(claims[CONSENT_CLAIM]);
+        if (consentId === undefined) return disconnected();
+        const scopes = String(claims.scope ?? '').split(' ').filter(Boolean);
         const approved = await this.prisma.oauthConsent.findFirst({
-          where: { userId: BigInt(claims.sub), clientId: String(claims.azp ?? ''), referenceId: organizationId },
-          select: { id: true },
+          where: { id: consentId, userId: BigInt(claims.sub), clientId: String(claims.azp ?? ''), referenceId: organizationId },
+          select: { scopes: true },
         });
-        if (!approved) {
+        if (!approved || !scopes.every((scope) => approved.scopes.includes(scope))) {
           return disconnected();
         }
 
@@ -98,9 +102,7 @@ export class McpController {
           authInfo: {
             token: '',
             clientId: String(claims.azp ?? ''),
-            scopes: String(claims.scope ?? '')
-              .split(' ')
-              .filter(Boolean),
+            scopes,
             ...(typeof claims.exp === 'number' ? { expiresAt: claims.exp } : {}),
             extra: { ctx },
           },

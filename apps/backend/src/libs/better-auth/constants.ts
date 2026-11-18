@@ -23,3 +23,6 @@ export const MCP_SCOPES = {
 
 /** Access-token claim carrying the organization the user chose when they connected. */
 export const ORG_CLAIM = 'urn:zuko:org_id';
+
+/** Approval generation: a replacement consent must never reactivate an older token. */
+export const CONSENT_CLAIM = 'urn:zuko:consent_id';

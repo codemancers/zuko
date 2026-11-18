@@ -3,7 +3,7 @@ import { fetchClientMetadataResource } from '@better-auth/cimd/node';
 import { mcp } from '@better-auth/mcp';
 import { APIError } from 'better-auth/api';
 import { jwt } from 'better-auth/plugins';
-import { FRONTEND_ORIGIN, MCP_RESOURCE, MCP_SCOPES, ORG_CLAIM } from './constants';
+import { CONSENT_CLAIM, FRONTEND_ORIGIN, MCP_RESOURCE, MCP_SCOPES, ORG_CLAIM } from './constants';
 
 const IDENTITY_SCOPES = ['openid', 'offline_access'];
 const GRANTABLE_SCOPES = [MCP_SCOPES.read, MCP_SCOPES.write, MCP_SCOPES.delete];
@@ -55,5 +55,24 @@ export const mcpPlugin = () =>
         return String(organizationId);
       },
     },
-    customAccessTokenClaims: ({ referenceId }) => (referenceId ? { [ORG_CLAIM]: referenceId } : {}),
+    extensions: [{
+      claims: {
+        accessToken: async ({ ctx, user, client, referenceId, scopes }) => {
+          const consent = user && referenceId
+            ? await ctx.context.adapter.findOne<{ id: string; scopes: string[] }>({
+                model: 'oauthConsent',
+                where: [
+                  { field: 'userId', value: user.id },
+                  { field: 'clientId', value: client.clientId },
+                  { field: 'referenceId', value: referenceId },
+                ],
+              })
+            : null;
+          if (!consent || !scopes.every((scope) => consent.scopes.includes(scope))) {
+            throw new APIError('BAD_REQUEST', { error: 'invalid_grant', message: 'Approve this connection again' });
+          }
+          return { [ORG_CLAIM]: referenceId, [CONSENT_CLAIM]: String(consent.id) };
+        },
+      },
+    }],
   });

@@ -42,12 +42,15 @@ export async function registerClient(name: string, scope: string, overrides: Rec
  * (the frontend consent page does exactly this call), and exchange the code for tokens.
  * The user's session decides who the connection is for and which organization it binds to.
  */
-export async function connect(user: User, name: string, scope: string): Promise<Connection> {
-  const registered = await registerClient(name, scope);
-  if (registered.status !== 201) {
-    throw new Error(`registration failed: ${JSON.stringify(registered.data)}`);
+export async function connect(user: User, name: string, scope: string, existingClientId?: string): Promise<Connection> {
+  let clientId = existingClientId;
+  if (!clientId) {
+    const registered = await registerClient(name, scope);
+    if (registered.status !== 201) {
+      throw new Error(`registration failed: ${JSON.stringify(registered.data)}`);
+    }
+    clientId = registered.data.client_id as string;
   }
-  const clientId: string = registered.data.client_id;
 
   const verifier = randomBytes(32).toString('base64url');
   const authorize = await user.get(
