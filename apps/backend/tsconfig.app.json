@@ -25,5 +25,16 @@
     "src/**/*.spec.js",
     "src/**/*.test.jsx",
     "src/**/*.spec.jsx"
+  ],
+  "references": [
+    {
+      "path": "../../libs/better-auth-hierarchy/tsconfig.lib.json"
+    },
+    {
+      "path": "../../libs/better-auth-audit/tsconfig.lib.json"
+    },
+    {
+      "path": "../../libs/access-control/tsconfig.lib.json"
+    }
   ]
 }

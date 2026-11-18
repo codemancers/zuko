@@ -3,9 +3,10 @@
   "version": "0.0.1",
   "private": true,
   "dependencies": {
+    "@better-auth/oauth-provider": "^1.7.25",
     "@codemancers/sheets": "^0.2.0",
     "@tanstack/react-table": "^8.21.3",
-    "better-auth": "^1.7.20",
+    "better-auth": "^1.7.25",
     "class-variance-authority": "^0.7.1",
     "cn": "^0.5.2",
     "lucide-react": "^1.72.0",

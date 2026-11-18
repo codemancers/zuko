@@ -1,3 +1,7 @@
+// Datetimes: every DateTime column is `timestamp(3) without time zone` and holds UTC. Defaults that
+// read the clock say so (`timezone('utc', now())`) rather than relying on the session's timezone;
+// never use `@db.Timestamptz`. A database spec (utc-timestamps.spec.ts) enforces this.
+
 generator client {
   provider = "prisma-client"
   output   = "../src/generated/prisma"
@@ -8,32 +12,46 @@ datasource db {
 }
 
 model User {
-  id            BigInt    @id @default(autoincrement())
-  name          String
-  email         String    @unique
-  emailVerified Boolean   @default(false)
-  image         String?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  sessions      Session[]
-  accounts      Account[]
-  members       Member[]
-  invitations   Invitation[]
+  id                 BigInt              @id @default(autoincrement())
+  name               String
+  email              String              @unique
+  emailVerified      Boolean             @default(false)
+  image              String?
+  createdAt          DateTime            @default(dbgenerated("timezone('utc'::text, now())"))
+  updatedAt          DateTime            @updatedAt
+  sessions           Session[]
+  accounts           Account[]
+  members            Member[]
+  invitations        Invitation[]
+  ownedRecords       ObjectRecord[]
+  teamMembers        TeamMember[]
+  reportingLines     MemberReporting[]   @relation("ReportingUser")
+  managedLines       MemberReporting[]   @relation("ReportingManager")
+  ancestorOf         MemberHierarchy[]   @relation("HierarchyAncestor")
+  descendantOf       MemberHierarchy[]   @relation("HierarchyDescendant")
+  recordShares       RecordShare[]
+  oauthclients       OauthClient[]
+  oauthrefreshtokens OauthRefreshToken[]
+  oauthaccesstokens  OauthAccessToken[]
+  oauthconsents      OauthConsent[]
 
   @@map("user")
 }
 
 model Session {
-  id        BigInt   @id @default(autoincrement())
-  expiresAt DateTime
-  token     String   @unique
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  ipAddress String?
-  userAgent String?
-  userId    BigInt
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                   BigInt              @id @default(autoincrement())
+  expiresAt            DateTime
+  token                String              @unique
+  createdAt            DateTime            @default(dbgenerated("timezone('utc'::text, now())"))
+  updatedAt            DateTime            @updatedAt
+  ipAddress            String?
+  userAgent            String?
+  userId               BigInt
+  user                 User                @relation(fields: [userId], references: [id], onDelete: Cascade)
   activeOrganizationId BigInt?
+  activeTeamId         BigInt?
+  oauthrefreshtokens   OauthRefreshToken[]
+  oauthaccesstokens    OauthAccessToken[]
 
   @@index([userId])
   @@map("session")
@@ -52,7 +70,7 @@ model Account {
   refreshTokenExpiresAt DateTime?
   scope                 String?
   password              String?
-  createdAt             DateTime  @default(now())
+  createdAt             DateTime  @default(dbgenerated("timezone('utc'::text, now())"))
   updatedAt             DateTime  @updatedAt
 
   @@index([userId])
@@ -64,7 +82,7 @@ model Verification {
   identifier String
   value      String
   expiresAt  DateTime
-  createdAt  DateTime @default(now())
+  createdAt  DateTime @default(dbgenerated("timezone('utc'::text, now())"))
   updatedAt  DateTime @updatedAt
 
   @@index([identifier])
@@ -72,14 +90,19 @@ model Verification {
 }
 
 model Organization {
-  id          BigInt       @id @default(autoincrement())
-  name        String
-  slug        String       @unique
-  logo        String?
-  createdAt   DateTime     @default(now())
-  metadata    String?
-  members     Member[]
-  invitations Invitation[]
+  id             BigInt             @id @default(autoincrement())
+  name           String
+  slug           String             @unique
+  logo           String?
+  createdAt      DateTime           @default(dbgenerated("timezone('utc'::text, now())"))
+  metadata       String?
+  members        Member[]
+  invitations    Invitation[]
+  objectTypes    ObjectType[]
+  teams          Team[]
+  reportingLines MemberReporting[]
+  hierarchy      MemberHierarchy[]
+  roleAccess     RoleObjectAccess[]
 
   @@map("organization")
 }
@@ -91,7 +114,7 @@ model Member {
   userId         BigInt
   user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   role           String       @default("member")
-  createdAt      DateTime     @default(now())
+  createdAt      DateTime     @default(dbgenerated("timezone('utc'::text, now())"))
 
   @@unique([organizationId, userId])
   @@index([userId])
@@ -106,11 +129,495 @@ model Invitation {
   role           String?
   status         String       @default("pending")
   expiresAt      DateTime
-  createdAt      DateTime     @default(now())
+  createdAt      DateTime     @default(dbgenerated("timezone('utc'::text, now())"))
   inviterId      BigInt
   inviter        User         @relation(fields: [inviterId], references: [id], onDelete: Cascade)
+  // better-auth stores one or more team ids here as a comma-separated string.
+  teamId         String?
 
   @@index([organizationId])
   @@index([email])
   @@map("invitation")
+}
+
+// ---------------------------------------------------------------------------
+// CRM data model. Every table carries "organizationId" and is protected by
+// row-level security (see the core_data_model migration). Cross-table foreign
+// keys are composite on (organizationId, id) so a reference can never cross
+// tenants.
+// ---------------------------------------------------------------------------
+
+// A kind of record an organization stores: contact, deal, or a custom object.
+model ObjectType {
+  id             BigInt       @id @default(autoincrement())
+  organizationId BigInt
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  slug           String
+  label          String
+  pluralLabel    String
+  kind           String // STANDARD | CUSTOM
+  version        Int          @default(1)
+  createdAt      DateTime     @default(dbgenerated("timezone('utc'::text, now())"))
+  updatedAt      DateTime     @updatedAt
+
+  fields       FieldDefinition[]
+  records      ObjectRecord[]
+  sourceAssocs AssociationDefinition[] @relation("AssociationSource")
+  targetAssocs AssociationDefinition[] @relation("AssociationTarget")
+  roleAccess   RoleObjectAccess[]
+
+  @@unique([organizationId, slug])
+  @@unique([organizationId, id])
+  @@map("object_type")
+}
+
+// A field on an object type. Values live in ObjectRecord.properties under `name`.
+model FieldDefinition {
+  id             BigInt     @id @default(autoincrement())
+  organizationId BigInt
+  objectTypeId   BigInt
+  objectType     ObjectType @relation(fields: [organizationId, objectTypeId], references: [organizationId, id], onDelete: Cascade)
+  name           String // snake_case key inside properties
+  label          String
+  type           String // TEXT, EMAIL, NUMBER, TIMESTAMP, ...
+  required       Boolean    @default(false)
+  isUnique       Boolean    @default(false)
+  filterable     Boolean    @default(false)
+  readOnly       Boolean    @default(false)
+  sensitive      Boolean    @default(false) // redact in audit history
+  maxLength      Int?
+  config         Json       @default("{}")
+  createdAt      DateTime   @default(dbgenerated("timezone('utc'::text, now())"))
+  updatedAt      DateTime   @updatedAt
+  // Set when the field is removed. The values stay in the records' properties.
+  deletedAt      DateTime?
+
+  @@unique([objectTypeId, name])
+  @@index([organizationId, objectTypeId])
+  @@map("field_definition")
+}
+
+// One row per contact/deal/etc. Field values are stored in `properties`.
+model ObjectRecord {
+  id             BigInt     @id @default(autoincrement())
+  organizationId BigInt
+  objectTypeId   BigInt
+  objectType     ObjectType @relation(fields: [organizationId, objectTypeId], references: [organizationId, id], onDelete: Restrict)
+  properties     Json       @default("{}")
+  ownerId        BigInt?
+  owner          User?      @relation(fields: [ownerId], references: [id], onDelete: SetNull)
+  // Team the record belongs to. Same-organization is enforced by a trigger.
+  teamId         BigInt?
+  team           Team?      @relation(fields: [teamId], references: [id], onDelete: SetNull)
+  createdBy      BigInt?
+  updatedBy      BigInt?
+  createdAt      DateTime   @default(dbgenerated("timezone('utc'::text, now())"))
+  updatedAt      DateTime   @updatedAt
+  deletedAt      DateTime?
+
+  asSource Association[] @relation("AssociationSource")
+  asTarget Association[] @relation("AssociationTarget")
+  shares   RecordShare[]
+
+  @@unique([organizationId, id])
+  @@index([organizationId, objectTypeId, createdAt(sort: Desc)])
+  @@index([organizationId, objectTypeId, ownerId])
+  @@index([organizationId, teamId])
+  @@index([properties(ops: JsonbPathOps)], type: Gin)
+  @@map("object_record")
+}
+
+// A kind of link between two object types (e.g. contact <-> company). Always many-to-many.
+model AssociationDefinition {
+  id                 BigInt     @id @default(autoincrement())
+  organizationId     BigInt
+  name               String
+  label              String
+  sourceObjectTypeId BigInt
+  sourceObjectType   ObjectType @relation("AssociationSource", fields: [organizationId, sourceObjectTypeId], references: [organizationId, id], onDelete: Cascade)
+  targetObjectTypeId BigInt
+  targetObjectType   ObjectType @relation("AssociationTarget", fields: [organizationId, targetObjectTypeId], references: [organizationId, id], onDelete: Cascade)
+  // Whether a source record may be linked to many target records, or only one. The target side is always many.
+  many               Boolean    @default(true)
+  // What the target object calls these links, e.g. "Deals (Primary contact)"; defaults from the source's field.
+  reverseLabel       String?
+  isDefault          Boolean    @default(false)
+  isLookup           Boolean    @default(false)
+  isActive           Boolean    @default(true)
+
+  associations Association[]
+
+  @@unique([organizationId, name])
+  @@unique([organizationId, id])
+  @@map("association_definition")
+}
+
+// A link between two records, of a given definition.
+model Association {
+  organizationId BigInt
+  definitionId   BigInt
+  definition     AssociationDefinition @relation(fields: [organizationId, definitionId], references: [organizationId, id], onDelete: Cascade)
+  sourceId       BigInt
+  source         ObjectRecord          @relation("AssociationSource", fields: [organizationId, sourceId], references: [organizationId, id], onDelete: Cascade)
+  targetId       BigInt
+  target         ObjectRecord          @relation("AssociationTarget", fields: [organizationId, targetId], references: [organizationId, id], onDelete: Cascade)
+  createdAt      DateTime              @default(dbgenerated("timezone('utc'::text, now())"))
+
+  @@id([organizationId, definitionId, sourceId, targetId])
+  @@index([organizationId, definitionId, targetId, sourceId])
+  @@map("association")
+}
+
+// ---------------------------------------------------------------------------
+// Teams (better-auth organization plugin, `teams.enabled`). Managed by
+// better-auth through the plain client, so these tables are not under RLS.
+// ---------------------------------------------------------------------------
+
+model Team {
+  id             BigInt       @id @default(autoincrement())
+  name           String
+  memberCount    Int          @default(0)
+  organizationId BigInt
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdAt      DateTime     @default(dbgenerated("timezone('utc'::text, now())"))
+  updatedAt      DateTime?    @updatedAt
+
+  members TeamMember[]
+  records ObjectRecord[]
+  shares  RecordShare[]
+
+  @@index([organizationId])
+  @@map("team")
+}
+
+model TeamMember {
+  id            BigInt    @id @default(autoincrement())
+  teamId        BigInt
+  team          Team      @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  userId        BigInt
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  membershipKey String?   @unique
+  createdAt     DateTime? @default(dbgenerated("timezone('utc'::text, now())"))
+
+  @@index([teamId])
+  @@index([userId])
+  @@map("team_member")
+}
+
+// ---------------------------------------------------------------------------
+// Audit. Append-only (enforced by triggers and revoked privileges, see the audit
+// migration). Deliberately no foreign keys: history must outlive the rows it
+// describes, including a hard-deleted record or organization.
+// ---------------------------------------------------------------------------
+
+// What changed on a record, written by the service layer in the same transaction
+// as the change itself.
+model RecordChange {
+  id             BigInt   @id @default(autoincrement())
+  organizationId BigInt
+  recordId       BigInt
+  objectTypeId   BigInt
+  action         String // CREATE | UPDATE | DELETE
+  changes        Json // {"stage": {"old": "open", "new": "closed_won"}}
+  actorType      String // USER | API_KEY | SYSTEM | IMPORT | MCP
+  actorId        BigInt?
+  requestId      String?
+  createdAt      DateTime @default(dbgenerated("timezone('utc'::text, now())"))
+
+  @@index([organizationId, recordId, createdAt])
+  @@index([organizationId, objectTypeId, createdAt])
+  @@map("record_change")
+}
+
+// Auth and organization events (sign-in, invitations, role and team changes...),
+// written by the better-auth audit plugin. organizationId is null for events that
+// belong to no organization, such as a failed sign-in.
+model AuditEvent {
+  id             BigInt   @id @default(autoincrement())
+  organizationId BigInt?
+  actorType      String // USER | API_KEY | SYSTEM | IMPORT | MCP | ANONYMOUS
+  actorId        BigInt?
+  event          String // 'member.invited', 'api_key.created', ...
+  targetType     String?
+  targetId       BigInt?
+  metadata       Json?
+  ip             String?
+  userAgent      String?
+  requestId      String?
+  createdAt      DateTime @default(dbgenerated("timezone('utc'::text, now())"))
+
+  @@index([organizationId, createdAt(sort: Desc)])
+  @@index([organizationId, event, createdAt(sort: Desc)])
+  @@map("audit_event")
+}
+
+// ---------------------------------------------------------------------------
+// Reporting lines (better-auth hierarchy plugin, libs/better-auth-hierarchy).
+// Managed by better-auth through the plain client, so like member and team these
+// tables are not under RLS; readers must filter by organizationId.
+// ---------------------------------------------------------------------------
+
+// Who reports to whom. managerId is null for someone at the top of the chart.
+model MemberReporting {
+  id             BigInt       @id @default(autoincrement())
+  organizationId BigInt
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  userId         BigInt
+  user           User         @relation("ReportingUser", fields: [userId], references: [id], onDelete: Cascade)
+  managerId      BigInt?
+  manager        User?        @relation("ReportingManager", fields: [managerId], references: [id], onDelete: SetNull)
+
+  @@unique([organizationId, userId])
+  @@index([managerId])
+  @@map("member_reporting")
+}
+
+// Every (ancestor, descendant) pair at any depth, rebuilt from MemberReporting.
+model MemberHierarchy {
+  id             BigInt       @id @default(autoincrement())
+  organizationId BigInt
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  ancestorId     BigInt
+  ancestor       User         @relation("HierarchyAncestor", fields: [ancestorId], references: [id], onDelete: Cascade)
+  descendantId   BigInt
+  descendant     User         @relation("HierarchyDescendant", fields: [descendantId], references: [id], onDelete: Cascade)
+  depth          Int // 1 = direct report
+
+  @@unique([organizationId, ancestorId, descendantId])
+  @@index([organizationId, descendantId])
+  @@map("member_hierarchy")
+}
+
+// ---------------------------------------------------------------------------
+// Record access. Roles say what a user may do (see libs/access-control); these say
+// which records an action may touch. Both tables are under RLS.
+// ---------------------------------------------------------------------------
+
+// Overrides of the default scope for a role, for one object type or (when
+// objectTypeId is null) for all of them. Without a row, the service's built-in
+// defaults apply.
+model RoleObjectAccess {
+  id             BigInt       @id @default(autoincrement())
+  organizationId BigInt
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  role           String // organization role name, e.g. member
+  objectTypeId   BigInt? // null = every object type
+  objectType     ObjectType?  @relation(fields: [objectTypeId], references: [id], onDelete: Cascade)
+  readScope      String // OWN | OWN_AND_REPORTS | TEAM | ALL
+  writeScope     String // OWN | OWN_AND_REPORTS | TEAM | ALL
+  createdAt      DateTime     @default(dbgenerated("timezone('utc'::text, now())"))
+  updatedAt      DateTime     @updatedAt
+
+  @@unique([organizationId, role, objectTypeId])
+  @@map("role_object_access")
+}
+
+// Explicit access to one record for a user or a team, on top of the role scope.
+model RecordShare {
+  id             BigInt       @id @default(autoincrement())
+  organizationId BigInt
+  recordId       BigInt
+  record         ObjectRecord @relation(fields: [organizationId, recordId], references: [organizationId, id], onDelete: Cascade)
+  userId         BigInt? // exactly one of userId / teamId
+  user           User?        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  teamId         BigInt?
+  team           Team?        @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  access         String // READ | WRITE
+  createdBy      BigInt?
+  createdAt      DateTime     @default(dbgenerated("timezone('utc'::text, now())"))
+
+  @@index([organizationId, recordId])
+  @@index([organizationId, userId])
+  @@index([organizationId, teamId])
+  @@map("record_share")
+}
+
+// ---------------------------------------------------------------------------
+// MCP authorization server (better-auth jwt + mcp plugins, apps/backend
+// libs/better-auth/mcp-plugins.ts): signing keys, registered OAuth clients,
+// consents and tokens. Generated by `auth generate`, then adapted to bigint ids.
+// ---------------------------------------------------------------------------
+
+model Jwks {
+  id         BigInt    @id @default(autoincrement())
+  publicKey  String
+  privateKey String
+  createdAt  DateTime
+  expiresAt  DateTime?
+  alg        String?
+  crv        String?
+
+  @@map("jwks")
+}
+
+model OauthClient {
+  id                               BigInt                @id @default(autoincrement())
+  clientId                         String
+  clientSecret                     String?
+  clientDiscoveryId                String?
+  disabled                         Boolean?              @default(false)
+  skipConsent                      Boolean?
+  enableEndSession                 Boolean?
+  subjectType                      String?
+  scopes                           String[]
+  clientCredentialsScopes          String[]              @default([])
+  userId                           BigInt?
+  user                             User?                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt                        DateTime?
+  updatedAt                        DateTime?
+  name                             String?
+  uri                              String?
+  icon                             String?
+  contacts                         String[]
+  tos                              String?
+  policy                           String?
+  softwareId                       String?
+  softwareVersion                  String?
+  softwareStatement                String?
+  redirectUris                     String[]
+  postLogoutRedirectUris           String[]
+  backchannelLogoutUri             String?
+  backchannelLogoutSessionRequired Boolean?
+  tokenEndpointAuthMethod          String?
+  applicationType                  String?
+  jwks                             String?
+  jwksUri                          String?
+  grantTypes                       String[]
+  responseTypes                    String[]
+  requirePKCE                      Boolean?
+  dpopBoundAccessTokens            Boolean?              @default(false)
+  referenceId                      String?
+  metadata                         Json?
+  oauthclientresources             OauthClientResource[]
+  oauthrefreshtokens               OauthRefreshToken[]
+  oauthaccesstokens                OauthAccessToken[]
+  oauthconsents                    OauthConsent[]
+
+  @@unique([clientId])
+  @@index([userId])
+  @@map("oauth_client")
+}
+
+model OauthClientAssertion {
+  id        BigInt   @id @default(autoincrement())
+  expiresAt DateTime
+
+  @@map("oauth_client_assertion")
+}
+
+model OauthResource {
+  id                            BigInt                @id @default(autoincrement())
+  identifier                    String
+  name                          String
+  accessTokenTtl                Int?
+  refreshTokenTtl               Int?
+  signingAlgorithm              String?
+  signingKeyId                  String?
+  allowedScopes                 String[]
+  customClaims                  Json?
+  dpopBoundAccessTokensRequired Boolean?              @default(false)
+  disabled                      Boolean?              @default(false)
+  createdAt                     DateTime?
+  updatedAt                     DateTime?
+  policyVersion                 Int?                  @default(1)
+  metadata                      Json?
+  oauthclientresources          OauthClientResource[]
+
+  @@unique([identifier])
+  @@map("oauth_resource")
+}
+
+model OauthClientResource {
+  id            BigInt        @id @default(autoincrement())
+  clientId      String
+  oauthclient   OauthClient   @relation(fields: [clientId], references: [clientId], onDelete: Cascade)
+  resourceId    String
+  oauthresource OauthResource @relation(fields: [resourceId], references: [identifier], onDelete: Cascade)
+  metadata      Json?
+  createdAt     DateTime?
+
+  @@unique([clientId, resourceId], map: "oauthClientResource_clientId_resourceId_uidx")
+  @@index([clientId])
+  @@index([resourceId])
+  @@map("oauth_client_resource")
+}
+
+model OauthRefreshToken {
+  id                      BigInt             @id @default(autoincrement())
+  token                   String
+  clientId                String
+  oauthclient             OauthClient        @relation(fields: [clientId], references: [clientId], onDelete: Cascade)
+  sessionId               BigInt?
+  session                 Session?           @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+  userId                  BigInt
+  user                    User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  referenceId             String?
+  authorizationCodeId     String?
+  resources               String[]
+  requestedUserInfoClaims String[]
+  expiresAt               DateTime
+  createdAt               DateTime
+  revoked                 DateTime?
+  rotatedAt               DateTime?
+  rotationReplayResponse  String?
+  rotationReplayExpiresAt DateTime?
+  authTime                DateTime?
+  confirmation            Json?
+  scopes                  String[]
+  oauthaccesstokens       OauthAccessToken[]
+
+  @@unique([token])
+  @@index([clientId])
+  @@index([sessionId])
+  @@index([userId])
+  @@index([authorizationCodeId])
+  @@map("oauth_refresh_token")
+}
+
+model OauthAccessToken {
+  id                      BigInt             @id @default(autoincrement())
+  token                   String
+  clientId                String
+  oauthclient             OauthClient        @relation(fields: [clientId], references: [clientId], onDelete: Cascade)
+  sessionId               BigInt?
+  session                 Session?           @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+  userId                  BigInt?
+  user                    User?              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  referenceId             String?
+  authorizationCodeId     String?
+  resources               String[]
+  requestedUserInfoClaims String[]
+  refreshId               BigInt?
+  oauthrefreshtoken       OauthRefreshToken? @relation(fields: [refreshId], references: [id], onDelete: Cascade)
+  expiresAt               DateTime
+  createdAt               DateTime
+  revoked                 DateTime?
+  confirmation            Json?
+  scopes                  String[]
+
+  @@unique([token])
+  @@index([clientId])
+  @@index([sessionId])
+  @@index([userId])
+  @@index([authorizationCodeId])
+  @@index([refreshId])
+  @@map("oauth_access_token")
+}
+
+model OauthConsent {
+  id                      BigInt      @id @default(autoincrement())
+  clientId                String
+  oauthclient             OauthClient @relation(fields: [clientId], references: [clientId], onDelete: Cascade)
+  userId                  BigInt?
+  user                    User?       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  referenceId             String?
+  resources               String[]
+  requestedUserInfoClaims String[]
+  scopes                  String[]
+  createdAt               DateTime
+  updatedAt               DateTime
+
+  @@index([clientId])
+  @@index([userId])
+  @@map("oauth_consent")
 }

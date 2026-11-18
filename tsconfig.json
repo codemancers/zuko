@@ -14,6 +14,15 @@
     },
     {
       "path": "./apps/app-e2e"
+    },
+    {
+      "path": "./libs/better-auth-hierarchy"
+    },
+    {
+      "path": "./libs/better-auth-audit"
+    },
+    {
+      "path": "./libs/access-control"
     }
   ]
 }

@@ -3,7 +3,7 @@
  * This is only a minimal backend to get started.
  */
 
-import { Logger } from '@nestjs/common';
+import { Logger, RequestMethod } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app/app.module';
 
@@ -11,7 +11,16 @@ async function bootstrap() {
   // The better-auth module parses its own bodies and re-adds Nest's parsers for other routes.
   const app = await NestFactory.create(AppModule, { bodyParser: false });
   const globalPrefix = 'api';
-  app.setGlobalPrefix(globalPrefix);
+  // The browser app lives on another origin and sends its session cookie. These are the
+  // same origins better-auth trusts (see libs/better-auth/auth.ts).
+  const { FRONTEND_URL } = process.env;
+  app.enableCors({
+    origin: FRONTEND_URL ? [FRONTEND_URL] : false,
+    credentials: true,
+    methods: ['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE'],
+  });
+  // OAuth/MCP discovery documents are fetched from the origin root, not under /api.
+  app.setGlobalPrefix(globalPrefix, { exclude: [{ path: '.well-known/*path', method: RequestMethod.GET }] });
   const port = process.env.PORT || 3000;
   await app.listen(port);
   // Set when Nx waits for this server to be ready

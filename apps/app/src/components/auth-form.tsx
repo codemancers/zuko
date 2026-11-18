@@ -51,12 +51,20 @@ export function AuthForm({ mode }: { mode: Mode }) {
       const email = String(formData.get('email'));
       const password = String(formData.get('password'));
 
-      const { error } = isSignup
+      const { data, error } = isSignup
         ? await signUp.email({ email, password, name })
         : await signIn.email({ email, password });
 
       if (error) {
         return { error: error.message ?? 'Something went wrong', name, email };
+      }
+
+      // An application (e.g. an MCP client) sent the person here: the signed request is in
+      // the URL, and the server answers a successful sign-in with where that flow resumes.
+      const resume = (data as { url?: string } | null)?.url;
+      if (resume && new URLSearchParams(window.location.search).has('sig')) {
+        window.location.assign(resume);
+        return { error: null, name, email };
       }
       const next = new URLSearchParams(window.location.search).get('next');
       router.push(safeNextPath(next));

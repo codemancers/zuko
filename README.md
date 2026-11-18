@@ -1,5 +1,25 @@
 # Zuko
 
+A multi-tenant CRM backend and web app: runtime-defined objects and fields, links between records
+that hold one record or many, role and team based record access, a full audit trail, and an MCP
+server so AI clients can work with the same data under the user's own permissions.
+
+- **How it works, the API, permissions and the MCP server:** [docs/data-model.md](docs/data-model.md)
+
+## Getting started
+
+```sh
+cp .env.example .env            # set DATABASE_URL, BETTER_AUTH_SECRET, BACKEND_URL, FRONTEND_URL
+createdb zuko && pnpm install
+(cd apps/backend && npx prisma migrate deploy)
+npx nx serve @zuko/backend      # http://localhost:3000
+npx nx dev @zuko/app            # http://localhost:4200
+```
+
+See [docs/data-model.md](docs/data-model.md#running-it) for the tests, including the database one.
+
+---
+
 <a alt="Nx logo" href="https://nx.dev" target="_blank" rel="noreferrer"><img src="https://raw.githubusercontent.com/nrwl/nx/master/images/nx-logo.png" width="45"></a>
 
 ✨ Your new, shiny [Nx workspace](https://nx.dev) is ready ✨.
