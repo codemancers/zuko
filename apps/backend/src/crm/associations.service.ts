@@ -167,11 +167,23 @@ export class AssociationsService {
       // one need only be readable. Either way the same people can make the same change.
       await this.records.loadFor(tx, ctx, object, recordId, forward ? 'write' : 'read');
       const { mine, other: theirs } = columns(forward);
-      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`associations:${ctx.organizationId}:${def.id}:${recordId}`}))`;
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`associations:${ctx.organizationId}:${def.id}`}))`;
 
-      const current = await this.visibleLinks(tx, ctx, def, forward, other, recordId);
+      let current = await this.visibleLinks(tx, ctx, def, forward, other, recordId);
       // The end that holds the link field holds one record, or many as its field says; the other end always holds many.
       const onlyOne = forward && !def.many;
+      if (onlyOne) {
+        const stored = await tx.$queryRaw<{ id: bigint; deletedAt: Date | null }[]>(Prisma.sql`
+          SELECT r."id", r."deletedAt" FROM association a
+          JOIN object_record r ON r."organizationId" = a."organizationId" AND r."id" = a."targetId"
+          WHERE a."organizationId" = ${ctx.organizationId} AND a."definitionId" = ${def.id} AND a."sourceId" = ${recordId}`);
+        // A hidden live target must stay untouched; otherwise a new link would make this field hold two.
+        if (stored.some((row) => row.deletedAt === null && !current.includes(row.id))) {
+          throw forbidden('This link cannot be changed with your current access');
+        }
+        // Deleted targets no longer occupy the field, and their old associations can be replaced.
+        current = stored.map((row) => row.id);
+      }
       const desired = [...new Set(wanted(current, onlyOne))];
       if (onlyOne && desired.length > 1) {
         throw validationFailed([{ field: 'record_ids', code: 'INVALID_FIELD', message: `A ${objectName} can be linked to only one here; send at most one id` }]);

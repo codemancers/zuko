@@ -106,4 +106,43 @@ describe('changing a link from the record that holds it', () => {
     expect(await alice.post(link('deal', aliceDeal), { record_id: aliceContact })).toMatchObject({ status: 200 }); // hers
     expect((await alice.post(link('deal', aliceDeal), { record_id: (await create(owner, 'contact', { first_name: 'Unseen' })) })).status).toBe(404); // not visible
   });
+
+  it('refuses to replace a single link whose existing live target is hidden', async () => {
+    const deal = await create(alice, 'deal', { name: 'Hidden primary contact' });
+    const hidden = await create(owner, 'contact', { first_name: 'Private contact' });
+    ok(await owner.post(link('deal', deal), { record_id: hidden }));
+
+    expect((await alice.post(link('deal', deal), { record_id: aliceContact })).status).toBe(403);
+    expect((await alice.put(link('deal', deal), { record_ids: [aliceContact] })).status).toBe(403);
+    expect(await linked('deal', deal)).toEqual([hidden]);
+    // An administrator can still replace it, and the original association is removed.
+    ok(await owner.post(link('deal', deal), { record_id: aliceContact }));
+    expect(await linked('deal', deal)).toEqual([aliceContact]);
+  });
+
+  it('can replace the association to a deleted target', async () => {
+    const deal = await create(alice, 'deal', { name: 'Deleted primary contact' });
+    const deleted = await create(owner, 'contact', { first_name: 'Former contact' });
+    ok(await owner.post(link('deal', deal), { record_id: deleted }));
+    ok(await owner.del(rec('contact', deleted)));
+    ok(await alice.post(link('deal', deal), { record_id: aliceContact }));
+    expect(await linked('deal', deal)).toEqual([aliceContact]);
+  });
+
+  it('serializes replacements from opposite ends of a single-value link', async () => {
+    const deal = await create(owner, 'deal', { name: 'Concurrent links' });
+    const a = await create(owner, 'contact', { first_name: 'A' });
+    const b = await create(owner, 'contact', { first_name: 'B' });
+    for (let round = 0; round < 6; round++) {
+      const replies = await Promise.all([
+        owner.post(link('deal', deal), { record_id: a }),
+        owner.post(link('contact', b), { record_id: deal }),
+      ]);
+      expect(replies.map((reply) => reply.status)).toEqual([200, 200]);
+      const targets = await linked('deal', deal);
+      expect(targets).toHaveLength(1);
+      expect([a, b]).toContain(targets[0]);
+    }
+  });
+
 });
