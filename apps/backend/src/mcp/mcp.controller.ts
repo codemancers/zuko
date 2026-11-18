@@ -9,24 +9,40 @@ import { parseId } from '../crm/ids';
 import { RecordsQueryService } from '../crm/records-query.service';
 import { RecordsService } from '../crm/records.service';
 import { SchemaService } from '../crm/schema.service';
-import { BACKEND_URL, CONSENT_CLAIM, MCP_PATH, MCP_RESOURCE, MCP_SCOPES, ORG_CLAIM } from '../libs/better-auth/constants';
+import {
+  BACKEND_URL,
+  CONSENT_CLAIM,
+  MCP_PATH,
+  MCP_RESOURCE,
+  MCP_SCOPES,
+  ORG_CLAIM,
+} from '../libs/better-auth/constants';
 import { PrismaService } from '../prisma/prisma.service';
 import { sendFetchResponse, toFetchRequest, type HttpRequest, type HttpResponse } from './http';
 import { AssociationsService } from '../crm/associations.service';
 import { buildMcpServer } from './mcp-tools';
 
 const problem = (status: number, code: string, message: string) =>
-  new Response(JSON.stringify({ code, message }), { status, headers: { 'content-type': 'application/json' } });
+  new Response(JSON.stringify({ code, message }), {
+    status,
+    headers: { 'content-type': 'application/json' },
+  });
 
 /** A token that is still signed and unexpired, but whose connection the user has disconnected. */
 const disconnected = () =>
-  new Response(JSON.stringify({ code: 'CONNECTION_REVOKED', message: 'This connection was disconnected; connect again' }), {
-    status: 401,
-    headers: {
-      'content-type': 'application/json',
-      'www-authenticate': `Bearer error="invalid_token", error_description="connection disconnected", resource_metadata="${BACKEND_URL}/.well-known/oauth-protected-resource${MCP_PATH}"`,
+  new Response(
+    JSON.stringify({
+      code: 'CONNECTION_REVOKED',
+      message: 'This connection was disconnected; connect again',
+    }),
+    {
+      status: 401,
+      headers: {
+        'content-type': 'application/json',
+        'www-authenticate': `Bearer error="invalid_token", error_description="connection disconnected", resource_metadata="${BACKEND_URL}/.well-known/oauth-protected-resource${MCP_PATH}"`,
+      },
     },
-  });
+  );
 
 /**
  * The MCP endpoint. It is not behind the web-session guard: access is by OAuth access
@@ -54,7 +70,11 @@ export class McpController {
       if (!ctx) {
         throw new Error('MCP request reached the server without a caller');
       }
-      return buildMcpServer({ schema, records, queries, directory, associations }, ctx, new Set(authInfo?.scopes ?? []));
+      return buildMcpServer(
+        { schema, records, queries, directory, associations },
+        ctx,
+        new Set(authInfo?.scopes ?? []),
+      );
     });
   }
 
@@ -66,16 +86,27 @@ export class McpController {
       async (request, claims) => {
         const organizationId = claims[ORG_CLAIM];
         if (typeof claims.sub !== 'string' || typeof organizationId !== 'string') {
-          return problem(403, 'NO_ORGANIZATION', 'This connection is not bound to an organization; reconnect it');
+          return problem(
+            403,
+            'NO_ORGANIZATION',
+            'This connection is not bound to an organization; reconnect it',
+          );
         }
 
         // Access tokens are valid until they expire, so disconnecting is enforced here: the
         // approval the token was issued under must still exist.
         const consentId = parseId(claims[CONSENT_CLAIM]);
         if (consentId === undefined) return disconnected();
-        const scopes = String(claims.scope ?? '').split(' ').filter(Boolean);
+        const scopes = String(claims.scope ?? '')
+          .split(' ')
+          .filter(Boolean);
         const approved = await this.prisma.oauthConsent.findFirst({
-          where: { id: consentId, userId: BigInt(claims.sub), clientId: String(claims.azp ?? ''), referenceId: organizationId },
+          where: {
+            id: consentId,
+            userId: BigInt(claims.sub),
+            clientId: String(claims.azp ?? ''),
+            referenceId: organizationId,
+          },
           select: { scopes: true },
         });
         if (!approved || !scopes.every((scope) => approved.scopes.includes(scope))) {

@@ -47,7 +47,10 @@ async function loadState(adapter: HierarchyAdapter, organizationId: string): Pro
 /** Replace the organization's ancestor/descendant rows from its reporting lines. */
 async function rebuildClosure(adapter: HierarchyAdapter, organizationId: string, state: OrgState) {
   const rows = computeClosure(new Set(state.members.keys()), state.reporting);
-  await adapter.deleteMany({ model: 'memberHierarchy', where: [{ field: 'organizationId', value: organizationId }] });
+  await adapter.deleteMany({
+    model: 'memberHierarchy',
+    where: [{ field: 'organizationId', value: organizationId }],
+  });
   for (const row of rows) {
     await adapter.create({
       model: 'memberHierarchy',
@@ -66,7 +69,10 @@ async function rebuildClosure(adapter: HierarchyAdapter, organizationId: string,
 function activeOrganization(session: { session: object }): string {
   const id = (session.session as { activeOrganizationId?: unknown }).activeOrganizationId;
   if (id == null || id === '') {
-    throw new APIError('BAD_REQUEST', { message: 'No active organization', code: 'NO_ACTIVE_ORGANIZATION' });
+    throw new APIError('BAD_REQUEST', {
+      message: 'No active organization',
+      code: 'NO_ACTIVE_ORGANIZATION',
+    });
   }
   return String(id);
 }
@@ -148,10 +154,16 @@ export const hierarchy = (options: HierarchyOptions = {}) => {
             update: { managerId },
           });
         } else {
-          await adapter.create({ model: 'memberReporting', data: { organizationId, userId, managerId } });
+          await adapter.create({
+            model: 'memberReporting',
+            data: { organizationId, userId, managerId },
+          });
         }
 
-        const reporting = [...state.reporting.filter((r) => r.userId !== userId), { userId, managerId }];
+        const reporting = [
+          ...state.reporting.filter((r) => r.userId !== userId),
+          { userId, managerId },
+        ];
         await rebuildClosure(adapter, organizationId, { ...state, reporting });
       };
       if (options.transaction) {

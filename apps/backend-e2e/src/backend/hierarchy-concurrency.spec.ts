@@ -11,7 +11,8 @@ const workers = Array.from({ length: 4 }, (_, i) => new User(`Worker ${i}`, `wor
 const records = new Map<string, string>();
 const API = '/api/v1';
 const rec = (id: string) => `${API}/objects/contact/records/${id}`;
-const set = (user: User, manager: User) => owner.post('/auth/hierarchy/set-manager', { userId: user.id, managerId: manager.id });
+const set = (user: User, manager: User) =>
+  owner.post('/auth/hierarchy/set-manager', { userId: user.id, managerId: manager.id });
 function ok(reply: Reply, status = 200) {
   if (reply.status !== status) throw new Error(`Expected ${status}: ${JSON.stringify(reply)}`);
   return reply.data;
@@ -21,15 +22,32 @@ beforeAll(async () => {
   const users = [owner, previous, next, ...workers];
   for (const user of users) ok(await user.signUp());
   await verifyEmails(suffix);
-  const org = ok(await owner.post('/auth/organization/create', { name: 'Hierarchy race', slug: slugs[0] })).id;
+  const org = ok(
+    await owner.post('/auth/organization/create', { name: 'Hierarchy race', slug: slugs[0] }),
+  ).id;
   for (const user of users.slice(1)) {
-    const invitation = ok(await owner.post('/auth/organization/invite-member', { email: user.email, role: 'member', organizationId: org }));
+    const invitation = ok(
+      await owner.post('/auth/organization/invite-member', {
+        email: user.email,
+        role: 'member',
+        organizationId: org,
+      }),
+    );
     ok(await user.post('/auth/organization/accept-invitation', { invitationId: invitation.id }));
     ok(await user.signIn());
   }
   ok(await owner.post(`${API}/setup/standard-objects`));
   for (const worker of workers) {
-    records.set(worker.id, ok(await owner.post(`${API}/objects/contact/records`, { properties: { first_name: worker.name }, owner_id: worker.id }), 201).id);
+    records.set(
+      worker.id,
+      ok(
+        await owner.post(`${API}/objects/contact/records`, {
+          properties: { first_name: worker.name },
+          owner_id: worker.id,
+        }),
+        201,
+      ).id,
+    );
   }
 }, 120_000);
 

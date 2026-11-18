@@ -55,24 +55,30 @@ export const mcpPlugin = () =>
         return String(organizationId);
       },
     },
-    extensions: [{
-      claims: {
-        accessToken: async ({ ctx, user, client, referenceId, scopes }) => {
-          const consent = user && referenceId
-            ? await ctx.context.adapter.findOne<{ id: string; scopes: string[] }>({
-                model: 'oauthConsent',
-                where: [
-                  { field: 'userId', value: user.id },
-                  { field: 'clientId', value: client.clientId },
-                  { field: 'referenceId', value: referenceId },
-                ],
-              })
-            : null;
-          if (!consent || !scopes.every((scope) => consent.scopes.includes(scope))) {
-            throw new APIError('BAD_REQUEST', { error: 'invalid_grant', message: 'Approve this connection again' });
-          }
-          return { [ORG_CLAIM]: referenceId, [CONSENT_CLAIM]: String(consent.id) };
+    extensions: [
+      {
+        claims: {
+          accessToken: async ({ ctx, user, client, referenceId, scopes }) => {
+            const consent =
+              user && referenceId
+                ? await ctx.context.adapter.findOne<{ id: string; scopes: string[] }>({
+                    model: 'oauthConsent',
+                    where: [
+                      { field: 'userId', value: user.id },
+                      { field: 'clientId', value: client.clientId },
+                      { field: 'referenceId', value: referenceId },
+                    ],
+                  })
+                : null;
+            if (!consent || !scopes.every((scope) => consent.scopes.includes(scope))) {
+              throw new APIError('BAD_REQUEST', {
+                error: 'invalid_grant',
+                message: 'Approve this connection again',
+              });
+            }
+            return { [ORG_CLAIM]: referenceId, [CONSENT_CLAIM]: String(consent.id) };
+          },
         },
       },
-    }],
+    ],
   });

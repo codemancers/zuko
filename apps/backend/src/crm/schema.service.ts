@@ -1,6 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import * as z from 'zod';
-import type { AssociationDefinition, FieldDefinition, ObjectType } from '../generated/prisma/client';
+import type {
+  AssociationDefinition,
+  FieldDefinition,
+  ObjectType,
+} from '../generated/prisma/client';
 import type { Prisma } from '../generated/prisma/client';
 import { PrismaService, type TenantTransaction } from '../prisma/prisma.service';
 import type { RequestContext } from './context';
@@ -14,11 +18,17 @@ import { STANDARD_ASSOCIATIONS, STANDARD_OBJECTS } from './standard-objects';
  * the object any more, but their values stay stored, so what is known about them (that a field was
  * sensitive, say) still matters.
  */
-export type ObjectWithFields = ObjectType & { fields: FieldDefinition[]; removedFields: FieldDefinition[] };
+export type ObjectWithFields = ObjectType & {
+  fields: FieldDefinition[];
+  removedFields: FieldDefinition[];
+};
 
 const slug = z
   .string()
-  .regex(/^[a-z][a-z0-9_]{0,62}$/, 'must be lowercase letters, digits and underscores, starting with a letter');
+  .regex(
+    /^[a-z][a-z0-9_]{0,62}$/,
+    'must be lowercase letters, digits and underscores, starting with a letter',
+  );
 
 const createObjectBody = z.object({
   slug,
@@ -53,12 +63,18 @@ const updateFieldBody = z
     label: z.string().min(1).max(100),
     required: z.boolean(),
     filterable: z.boolean(),
-    config: z.object({ options: z.array(z.string().min(1)).min(1), many: z.boolean() }).partial().strict(),
+    config: z
+      .object({ options: z.array(z.string().min(1)).min(1), many: z.boolean() })
+      .partial()
+      .strict(),
   })
   .partial()
   .strict();
 
-const associationDefinitionDto = (d: AssociationDefinition & { sourceObjectType: ObjectType; targetObjectType: ObjectType }, fieldLabel: string) => ({
+const associationDefinitionDto = (
+  d: AssociationDefinition & { sourceObjectType: ObjectType; targetObjectType: ObjectType },
+  fieldLabel: string,
+) => ({
   id: String(d.id),
   name: d.name,
   label: fieldLabel,
@@ -97,7 +113,11 @@ export interface AssociationDto {
   field: string | null;
 }
 
-export const objectDto = (o: ObjectType, fields?: FieldDefinition[], associations?: AssociationDto[]) => ({
+export const objectDto = (
+  o: ObjectType,
+  fields?: FieldDefinition[],
+  associations?: AssociationDto[],
+) => ({
   id: String(o.id),
   name: o.slug,
   label: o.label,
@@ -117,29 +137,44 @@ export class SchemaService {
   }
 
   /** Load an object type with its fields, or 404. Object types are singular in URLs. */
-  async loadObject(tx: TenantTransaction, ctx: RequestContext, name: string): Promise<ObjectWithFields> {
+  async loadObject(
+    tx: TenantTransaction,
+    ctx: RequestContext,
+    name: string,
+  ): Promise<ObjectWithFields> {
     const object = await tx.objectType.findFirst({
       where: { organizationId: ctx.organizationId, slug: name },
       include: { fields: { orderBy: { id: 'asc' } } },
     });
     if (!object) {
-      throw notFound(`Object type '${name}' does not exist (use the singular name, e.g. 'contact')`);
+      throw notFound(
+        `Object type '${name}' does not exist (use the singular name, e.g. 'contact')`,
+      );
     }
     const { fields, ...rest } = object;
-    return { ...rest, fields: fields.filter((f) => f.deletedAt === null), removedFields: fields.filter((f) => f.deletedAt !== null) };
+    return {
+      ...rest,
+      fields: fields.filter((f) => f.deletedAt === null),
+      removedFields: fields.filter((f) => f.deletedAt !== null),
+    };
   }
 
   async list(ctx: RequestContext) {
     assertCan(ctx, { record: ['read'] }, 'view object types');
     return this.tenant(ctx, async (tx) => {
-      const objects = await tx.objectType.findMany({ where: { organizationId: ctx.organizationId }, orderBy: { id: 'asc' } });
+      const objects = await tx.objectType.findMany({
+        where: { organizationId: ctx.organizationId },
+        orderBy: { id: 'asc' },
+      });
       const counts = await tx.fieldDefinition.groupBy({
         by: ['objectTypeId'],
         where: { organizationId: ctx.organizationId, deletedAt: null },
         _count: { _all: true },
       });
       const fieldCount = new Map(counts.map((c) => [c.objectTypeId, c._count._all]));
-      return { results: objects.map((o) => ({ ...objectDto(o), field_count: fieldCount.get(o.id) ?? 0 })) };
+      return {
+        results: objects.map((o) => ({ ...objectDto(o), field_count: fieldCount.get(o.id) ?? 0 })),
+      };
     });
   }
 
@@ -155,7 +190,12 @@ export class SchemaService {
       const results = [];
       for (const d of defs) {
         const field = await tx.fieldDefinition.findFirst({
-          where: { organizationId: ctx.organizationId, objectTypeId: d.sourceObjectTypeId, deletedAt: null, config: { path: ['link'], equals: d.name } },
+          where: {
+            organizationId: ctx.organizationId,
+            objectTypeId: d.sourceObjectTypeId,
+            deletedAt: null,
+            config: { path: ['link'], equals: d.name },
+          },
         });
         if (field) results.push(associationDefinitionDto(d, field.label));
       }
@@ -182,13 +222,20 @@ export class SchemaService {
       for (const d of defs) {
         const forward = d.sourceObjectTypeId === object.id;
         const sourceField = await tx.fieldDefinition.findFirst({
-          where: { organizationId: ctx.organizationId, objectTypeId: d.sourceObjectTypeId, deletedAt: null, config: { path: ['link'], equals: d.name } },
+          where: {
+            organizationId: ctx.organizationId,
+            objectTypeId: d.sourceObjectTypeId,
+            deletedAt: null,
+            config: { path: ['link'], equals: d.name },
+          },
         });
         if (!sourceField) continue;
         const other = forward ? d.targetObjectType : d.sourceObjectType;
         associations.push({
           name: d.name,
-          label: forward ? sourceField.label : (d.reverseLabel ?? `${d.sourceObjectType.pluralLabel} (${sourceField.label})`),
+          label: forward
+            ? sourceField.label
+            : (d.reverseLabel ?? `${d.sourceObjectType.pluralLabel} (${sourceField.label})`),
           singular_label: other.label,
           target: other.slug,
           many: forward ? d.many : true,
@@ -265,7 +312,12 @@ export class SchemaService {
       }
       // The links between them, for whichever pairs now exist.
       const bySlug = new Map(
-        (await tx.objectType.findMany({ where: { organizationId: ctx.organizationId }, select: { id: true, slug: true } })).map((o) => [o.slug, o.id]),
+        (
+          await tx.objectType.findMany({
+            where: { organizationId: ctx.organizationId },
+            select: { id: true, slug: true },
+          })
+        ).map((o) => [o.slug, o.id]),
       );
       for (const pair of STANDARD_ASSOCIATIONS) {
         const source = bySlug.get(pair.source);
@@ -316,14 +368,32 @@ export class SchemaService {
     assertCan(ctx, { object: ['manage'] }, 'change object fields');
     const input = parse(createFieldBody, body);
     if (input.type === 'ENUM' && !input.config?.options) {
-      throw validationFailed([{ field: 'config.options', code: 'INVALID_FIELD', message: 'ENUM fields need config.options' }]);
+      throw validationFailed([
+        {
+          field: 'config.options',
+          code: 'INVALID_FIELD',
+          message: 'ENUM fields need config.options',
+        },
+      ]);
     }
     if (input.type === 'LINK') {
       if (!input.config?.target) {
-        throw validationFailed([{ field: 'config.target', code: 'INVALID_FIELD', message: 'LINK fields need config.target, the object they point at' }]);
+        throw validationFailed([
+          {
+            field: 'config.target',
+            code: 'INVALID_FIELD',
+            message: 'LINK fields need config.target, the object they point at',
+          },
+        ]);
       }
       if (input.required || input.unique) {
-        throw validationFailed([{ field: 'required', code: 'INVALID_FIELD', message: 'A link cannot be required or unique' }]);
+        throw validationFailed([
+          {
+            field: 'required',
+            code: 'INVALID_FIELD',
+            message: 'A link cannot be required or unique',
+          },
+        ]);
       }
     }
 
@@ -335,10 +405,17 @@ export class SchemaService {
       // A field that was removed keeps its key, and the values stored under it. Adding it
       // again brings them back, as long as the type still fits them.
       const removed = await tx.fieldDefinition.findFirst({
-        where: { organizationId: ctx.organizationId, objectTypeId: object.id, name: input.name, deletedAt: { not: null } },
+        where: {
+          organizationId: ctx.organizationId,
+          objectTypeId: object.id,
+          name: input.name,
+          deletedAt: { not: null },
+        },
       });
       if (removed && removed.type !== input.type) {
-        throw conflict(`Field '${input.name}' was removed as ${removed.type}; add it again as ${removed.type}, or use another key`);
+        throw conflict(
+          `Field '${input.name}' was removed as ${removed.type}; add it again as ${removed.type}, or use another key`,
+        );
       }
       if (input.required) {
         const existing = await tx.objectRecord.count({
@@ -353,24 +430,51 @@ export class SchemaService {
       if (input.type === 'LINK') {
         const target = await this.loadObject(tx, ctx, input.config!.target!);
         if (target.id === object.id) {
-          throw validationFailed([{ field: 'config.target', code: 'INVALID_FIELD', message: 'A link must point at a different object' }]);
+          throw validationFailed([
+            {
+              field: 'config.target',
+              code: 'INVALID_FIELD',
+              message: 'A link must point at a different object',
+            },
+          ]);
         }
         const originalLink = (removed?.config as { link?: string } | null)?.link;
         const link = originalLink ?? `${object.slug}_${input.name}`.slice(0, 120);
         const many = input.config?.many ?? true;
-        const previous = removed ? await tx.associationDefinition.findFirst({ where: { organizationId: ctx.organizationId, name: link } }) : null;
+        const previous = removed
+          ? await tx.associationDefinition.findFirst({
+              where: { organizationId: ctx.organizationId, name: link },
+            })
+          : null;
         if (previous) {
           // Adding a removed link back: it must point at what it did, so its old links mean the same.
           if (previous.targetObjectTypeId !== target.id) {
-            throw conflict(`Field '${input.name}' was removed as a link to another object; add it again with that target, or use another key`);
+            throw conflict(
+              `Field '${input.name}' was removed as a link to another object; add it again with that target, or use another key`,
+            );
           }
-          await tx.associationDefinition.update({ where: { id: previous.id }, data: { isActive: true, many, label: input.label } });
+          await tx.associationDefinition.update({
+            where: { id: previous.id },
+            data: { isActive: true, many, label: input.label },
+          });
         } else {
-          if (await tx.associationDefinition.findFirst({ where: { organizationId: ctx.organizationId, name: link }, select: { id: true } })) {
+          if (
+            await tx.associationDefinition.findFirst({
+              where: { organizationId: ctx.organizationId, name: link },
+              select: { id: true },
+            })
+          ) {
             throw conflict(`A link named '${link}' already exists`);
           }
           await tx.associationDefinition.create({
-            data: { organizationId: ctx.organizationId, name: link, label: input.label, sourceObjectTypeId: object.id, targetObjectTypeId: target.id, many },
+            data: {
+              organizationId: ctx.organizationId,
+              name: link,
+              label: input.label,
+              sourceObjectTypeId: object.id,
+              targetObjectTypeId: target.id,
+              many,
+            },
           });
         }
         config = { link, target: target.slug, many };
@@ -391,9 +495,18 @@ export class SchemaService {
         config: config as Prisma.InputJsonObject,
       };
       const field = removed
-        ? await tx.fieldDefinition.update({ where: { id: removed.id }, data: { ...data, deletedAt: null } })
+        ? await tx.fieldDefinition.update({
+            where: { id: removed.id },
+            data: { ...data, deletedAt: null },
+          })
         : await tx.fieldDefinition.create({
-            data: { organizationId: ctx.organizationId, objectTypeId: object.id, name: input.name, type: input.type, ...data },
+            data: {
+              organizationId: ctx.organizationId,
+              objectTypeId: object.id,
+              name: input.name,
+              type: input.type,
+              ...data,
+            },
           });
       await tx.objectType.update({ where: { id: object.id }, data: { version: { increment: 1 } } });
       return fieldDto(field);
@@ -428,13 +541,29 @@ export class SchemaService {
           },
         ]);
       }
-      if (field.type === 'USER' && input.filterable === true && (input.config?.many ?? current.many === true)) {
-        throw validationFailed([{ field: 'filterable', code: 'INVALID_FIELD', message: `'${fieldName}' holds several members, and such a field cannot be searched` }]);
+      if (
+        field.type === 'USER' &&
+        input.filterable === true &&
+        (input.config?.many ?? current.many === true)
+      ) {
+        throw validationFailed([
+          {
+            field: 'filterable',
+            code: 'INVALID_FIELD',
+            message: `'${fieldName}' holds several members, and such a field cannot be searched`,
+          },
+        ]);
       }
 
       if (input.config?.options) {
         if (field.type !== 'ENUM') {
-          throw validationFailed([{ field: 'config.options', code: 'INVALID_FIELD', message: `Only a choice field has options, and '${fieldName}' is ${field.type}` }]);
+          throw validationFailed([
+            {
+              field: 'config.options',
+              code: 'INVALID_FIELD',
+              message: `Only a choice field has options, and '${fieldName}' is ${field.type}`,
+            },
+          ]);
         }
         const kept = new Set(input.config.options);
         const used = await tx.$queryRaw<{ value: string }[]>`
@@ -443,14 +572,22 @@ export class SchemaService {
             AND "properties"->>${fieldName} IS NOT NULL`;
         const stranded = used.map((row) => row.value).filter((value) => !kept.has(value));
         if (stranded.length > 0) {
-          throw conflict(`Records still use ${stranded.map((v) => `'${v}'`).join(', ')}; change them before removing the choice`);
+          throw conflict(
+            `Records still use ${stranded.map((v) => `'${v}'`).join(', ')}; change them before removing the choice`,
+          );
         }
         config = { ...current, options: input.config.options };
       }
 
       if (input.config?.many !== undefined) {
         if (field.type !== 'LINK' && field.type !== 'USER') {
-          throw validationFailed([{ field: 'config.many', code: 'INVALID_FIELD', message: `Only a link or user field holds one or many, and '${fieldName}' is ${field.type}` }]);
+          throw validationFailed([
+            {
+              field: 'config.many',
+              code: 'INVALID_FIELD',
+              message: `Only a link or user field holds one or many, and '${fieldName}' is ${field.type}`,
+            },
+          ]);
         }
         const many = input.config.many;
         if ((current.many === true) !== many) {
@@ -464,10 +601,15 @@ export class SchemaService {
                   GROUP BY "sourceId" HAVING count(*) > 1) crowded`;
               const n = Number(crowded[0]?.n ?? 0);
               if (n > 0) {
-                throw conflict(`${n} records are linked to more than one; keep one on each before allowing only one`);
+                throw conflict(
+                  `${n} records are linked to more than one; keep one on each before allowing only one`,
+                );
               }
             }
-            await tx.associationDefinition.updateMany({ where: { organizationId: ctx.organizationId, name: current.link ?? '' }, data: { many } });
+            await tx.associationDefinition.updateMany({
+              where: { organizationId: ctx.organizationId, name: current.link ?? '' },
+              data: { many },
+            });
           } else if (many) {
             // One member becomes a list of one.
             await tx.$executeRaw`
@@ -481,7 +623,9 @@ export class SchemaService {
                 AND jsonb_typeof("properties"->${fieldName}) = 'array' AND jsonb_array_length("properties"->${fieldName}) > 1`;
             const n = Number(crowded[0]?.n ?? 0);
             if (n > 0) {
-              throw conflict(`${n} records have several members here; keep one on each before allowing only one`);
+              throw conflict(
+                `${n} records have several members here; keep one on each before allowing only one`,
+              );
             }
             await tx.$executeRaw`
               UPDATE object_record SET "properties" = CASE WHEN jsonb_array_length("properties"->${fieldName}) = 0
@@ -498,7 +642,9 @@ export class SchemaService {
           WHERE "organizationId" = ${ctx.organizationId} AND "objectTypeId" = ${object.id} AND "deletedAt" IS NULL
             AND ("properties"->>${fieldName} IS NULL OR "properties"->>${fieldName} = '')`;
         if (Number(missing[0]?.n ?? 0) > 0) {
-          throw conflict(`${missing[0].n} records have no ${field.label}; fill it in before making it required`);
+          throw conflict(
+            `${missing[0].n} records have no ${field.label}; fill it in before making it required`,
+          );
         }
       }
 
@@ -529,7 +675,10 @@ export class SchemaService {
       if (field.type === 'LINK') {
         // The links stay stored, hidden, and come back with the field.
         await tx.associationDefinition.updateMany({
-          where: { organizationId: ctx.organizationId, name: (field.config as { link?: string } | null)?.link ?? '' },
+          where: {
+            organizationId: ctx.organizationId,
+            name: (field.config as { link?: string } | null)?.link ?? '',
+          },
           data: { isActive: false },
         });
       }
