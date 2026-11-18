@@ -355,7 +355,8 @@ export class SchemaService {
         if (target.id === object.id) {
           throw validationFailed([{ field: 'config.target', code: 'INVALID_FIELD', message: 'A link must point at a different object' }]);
         }
-        const link = `${object.slug}_${input.name}`.slice(0, 120);
+        const originalLink = (removed?.config as { link?: string } | null)?.link;
+        const link = originalLink ?? `${object.slug}_${input.name}`.slice(0, 120);
         const many = input.config?.many ?? true;
         const previous = removed ? await tx.associationDefinition.findFirst({ where: { organizationId: ctx.organizationId, name: link } }) : null;
         if (previous) {

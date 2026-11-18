@@ -380,3 +380,30 @@ describe('user fields', () => {
     expect(ok(await owner.get(rec('deal', deal))).properties.account_manager).toBe(alice.id); // back to one
   });
 });
+
+
+describe('restoring standard link fields', () => {
+  it.each([
+    ['contact', 'companies', 'company', 'contact_company'],
+    ['contact', 'deals', 'deal', 'contact_deal'],
+    ['deal', 'companies', 'company', 'deal_company'],
+  ])('restores %s.%s with its original definition and relationships', async (source, field, target, name) => {
+    const record = await create(owner, source, source === 'contact' ? { first_name: 'Restore' } : { name: 'Restore' });
+    const other = await create(owner, target, { name: 'Retained link' });
+    ok(await owner.post(links(source, record, name), { record_id: other }));
+    const definitions = () => owner.get(`${API}/associations`).then((reply) => ok(reply).results as { id: string; name: string }[]);
+    const original = (await definitions()).find((definition) => definition.name === name)!;
+    const fields = `${API}/objects/${source}/fields`;
+    ok(await owner.del(`${fields}/${field}`));
+    expect((await owner.get(links(source, record, name))).status).toBe(404);
+
+    // Reusing the key for another target must still be rejected, including for standard links.
+    const wrongTarget = ['contact', 'company', 'deal'].find((object) => object !== source && object !== target)!;
+    expect((await owner.post(fields, { name: field, label: 'Restored', type: 'LINK', config: { target: wrongTarget } })).status).toBe(409);
+    const restored = ok(await owner.post(fields, { name: field, label: 'Restored', type: 'LINK', config: { target, many: true } }), 201);
+    expect(restored.config.link).toBe(name);
+    expect((await definitions()).find((definition) => definition.name === name)?.id).toBe(original.id);
+    expect(ids(ok(await owner.get(links(source, record, name))))).toEqual([other]);
+    expect(ids(ok(await owner.get(links(target, other, name))))).toContain(record);
+  });
+});
