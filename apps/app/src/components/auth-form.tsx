@@ -74,9 +74,9 @@ export function AuthForm({ mode }: { mode: Mode }) {
   );
 
   return (
-    <Card>
+    <Card className="shadow-xl shadow-foreground/5">
       <CardHeader className="text-center">
-        <h1 className="font-heading text-xl font-medium">{text.title}</h1>
+        <h1 className="font-heading text-2xl font-semibold tracking-tight">{text.title}</h1>
         <CardDescription>{text.description}</CardDescription>
       </CardHeader>
       <form action={formAction}>
@@ -96,6 +96,7 @@ export function AuthForm({ mode }: { mode: Mode }) {
                   name="name"
                   autoComplete="name"
                   defaultValue={state.name}
+                  className="h-10"
                   placeholder="Ada Lovelace"
                   required
                 />
@@ -109,6 +110,7 @@ export function AuthForm({ mode }: { mode: Mode }) {
                 type="email"
                 autoComplete="email"
                 defaultValue={state.email}
+                className="h-10"
                 placeholder="you@company.com"
                 required
               />
@@ -121,14 +123,14 @@ export function AuthForm({ mode }: { mode: Mode }) {
                   name="password"
                   type={showPassword ? 'text' : 'password'}
                   autoComplete={isSignup ? 'new-password' : 'current-password'}
-                  className="pr-9"
+                  className="h-10 pr-10"
                   minLength={8}
                   required
                 />
                 <Button
                   type="button"
                   variant="ghost"
-                  size="icon-xs"
+                  size="icon-sm"
                   className="absolute top-1/2 right-1 -translate-y-1/2 text-muted-foreground"
                   aria-label={showPassword ? 'Hide password' : 'Show password'}
                   aria-pressed={showPassword}
@@ -139,7 +141,7 @@ export function AuthForm({ mode }: { mode: Mode }) {
               </div>
               {isSignup && <FieldDescription>Use at least 8 characters.</FieldDescription>}
             </Field>
-            <Button type="submit" size="lg" className="w-full" disabled={pending}>
+            <Button type="submit" size="lg" className="h-10 w-full" disabled={pending}>
               {pending && <Loader2 className="animate-spin" data-icon="inline-start" aria-hidden />}
               {text.submit}
             </Button>

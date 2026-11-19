@@ -1,8 +1,12 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, screen, waitFor } from '@testing-library/react';
+import { render } from '@/test/render';
 import { auth, resetAuth } from '@/test/auth-mock';
 import { AcceptInvitation } from './accept-invitation';
 
-const router = vi.hoisted(() => ({ push: vi.fn(), replace: vi.fn() }));
+const router = vi.hoisted(() => ({
+  push: vi.fn<(path: string) => void>(),
+  replace: vi.fn<(path: string) => void>(),
+}));
 vi.mock('next/navigation', () => ({ useRouter: () => router }));
 vi.mock('@/lib/auth-client', async () => (await import('@/test/auth-mock')).authClientModule);
 

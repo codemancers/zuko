@@ -1,8 +1,9 @@
 'use client';
 
 import Link from 'next/link';
+import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader } from '@/components/ui/card';
@@ -16,19 +17,23 @@ type Invitation = NonNullable<
 export function AcceptInvitation({ invitationId }: { invitationId: string }) {
   const router = useRouter();
   const { data: session, isPending } = useSession();
-  const [invitation, setInvitation] = useState<Invitation | null>(null);
-  const [error, setError] = useState<string | null>(null);
+
+  const [mutationError, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
-  useEffect(() => {
-    if (!session) return;
-    authClient.organization
-      .getInvitation({ query: { id: invitationId } })
-      .then(({ data, error: err }) => {
-        if (data) setInvitation(data);
-        else setError(err?.message ?? 'This invitation is not valid.');
+  const invitationQuery = useQuery({
+    queryKey: ['invitation', invitationId],
+    enabled: !!session,
+    queryFn: async (): Promise<Invitation> => {
+      const { data, error } = await authClient.organization.getInvitation({
+        query: { id: invitationId },
       });
-  }, [session, invitationId]);
+      if (!data || error) throw new Error(error?.message ?? 'This invitation is not valid.');
+      return data;
+    },
+  });
+  const invitation = invitationQuery.data;
+  const error = mutationError ?? invitationQuery.error?.message;
 
   if (isPending) return <Skeleton className="h-48 w-full" />;
 

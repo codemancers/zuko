@@ -76,7 +76,6 @@ export function CreateOrgForm() {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Acme Inc"
-                autoFocus
                 required
               />
             </Field>

@@ -1,7 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useState, useSyncExternalStore } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { useState, useSyncExternalStore } from 'react';
 import { AlertCircle, Check } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
@@ -32,8 +33,7 @@ const serverSearch = () => null;
 export function Consent({ navigate = defaultNavigate }: { navigate?: (url: string) => void }) {
   const { data: session, isPending } = useSession();
   const { data: organization } = authClient.useActiveOrganization();
-  const [client, setClient] = useState<PublicClient | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [mutationError, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
   const search = useSyncExternalStore(subscribeNever, readSearch, serverSearch);
@@ -43,15 +43,19 @@ export function Consent({ navigate = defaultNavigate }: { navigate?: (url: strin
   const scopes = (params.get('scope') ?? '').split(' ').filter(Boolean);
   const valid = Boolean(clientId && params.get('sig') && scopes.length > 0);
 
-  useEffect(() => {
-    if (!session || !valid || !clientId) return;
-    authClient
-      .$fetch<PublicClient>('/oauth2/public-client', { query: { client_id: clientId } })
-      .then(({ data, error: err }) => {
-        if (data) setClient(data);
-        else setError(err?.message ?? 'This application is not recognised.');
+  const clientQuery = useQuery({
+    queryKey: ['oauth-client', clientId],
+    enabled: !!session && valid && !!clientId,
+    queryFn: async () => {
+      const { data, error } = await authClient.$fetch<PublicClient>('/oauth2/public-client', {
+        query: { client_id: clientId! },
       });
-  }, [session, valid, clientId]);
+      if (!data || error) throw new Error(error?.message ?? 'This application is not recognised.');
+      return data;
+    },
+  });
+  const client = clientQuery.data;
+  const error = mutationError ?? clientQuery.error?.message;
 
   if (isPending || search === null) return <Skeleton className="h-64 w-full" />;
 
@@ -60,7 +64,9 @@ export function Consent({ navigate = defaultNavigate }: { navigate?: (url: strin
       <Card>
         <CardHeader>
           <h1 className="font-heading text-xl font-medium">This link is not valid</h1>
-          <CardDescription>Start the connection again from the app you are connecting.</CardDescription>
+          <CardDescription>
+            Start the connection again from the app you are connecting.
+          </CardDescription>
         </CardHeader>
       </Card>
     );
@@ -104,9 +110,7 @@ export function Consent({ navigate = defaultNavigate }: { navigate?: (url: strin
     <Card>
       <CardHeader className="text-center">
         <h1 className="font-heading text-xl font-medium">Connect {name}</h1>
-        <CardDescription>
-          {name} wants to access Zuko on your behalf.
-        </CardDescription>
+        <CardDescription>{name} wants to access Zuko on your behalf.</CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
         {error && (

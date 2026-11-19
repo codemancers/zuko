@@ -1,4 +1,5 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, screen, waitFor } from '@testing-library/react';
+import { render } from '@/test/render';
 import { Connections, type Connection } from './connections';
 
 const api = vi.hoisted(() => vi.fn<(path: string, init?: RequestInit) => Promise<unknown>>());
@@ -36,12 +37,17 @@ describe('Connections', () => {
     render(<Connections />);
 
     expect(await screen.findByText('Claude')).toBeTruthy();
-    expect(screen.getByText(/Works in Acme/)).toBeTruthy();
+    expect(screen.getByText('Acme')).toBeTruthy();
+    expect(screen.getByRole('table')).toBeTruthy();
+    expect(screen.getByRole('columnheader', { name: /Application/ })).toBeTruthy();
     expect(screen.getByText('View records and how your data is set up')).toBeTruthy();
     expect(screen.getByText('Create and change records')).toBeTruthy();
     expect(screen.queryByText('Know who you are')).toBeNull();
     expect(screen.queryByText('Stay connected without asking you again')).toBeNull();
-    expect(api).toHaveBeenCalledWith('/api/v1/connections');
+    expect(api).toHaveBeenCalledWith(
+      '/api/v1/connections',
+      expect.objectContaining({ signal: expect.any(AbortSignal) }),
+    );
   });
 
   it('copes with an app that has no name and an organization the person has left', async () => {
@@ -49,7 +55,7 @@ describe('Connections', () => {
     render(<Connections />);
 
     expect(await screen.findByText('Unnamed application')).toBeTruthy();
-    expect(screen.getByText(/an organization you no longer have/)).toBeTruthy();
+    expect(screen.getByText(/An organization you no longer have/)).toBeTruthy();
   });
 
   it('tells a new person how to connect an app when there are none', async () => {

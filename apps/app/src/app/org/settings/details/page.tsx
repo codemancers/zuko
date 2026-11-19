@@ -15,9 +15,9 @@ export default function OrgDetailsPage() {
     });
 
   return (
-    <div className="p-6">
+    <div className="min-h-0 overflow-auto p-4 sm:p-6">
       {/* Keyed so switching orgs resets any edit in progress. */}
-      <DetailsPanel key={org.id} org={org} role={role} canEdit={canEdit} />
+      <DetailsPanel key={org.id} org={org} memberRole={role} canEdit={canEdit} />
     </div>
   );
 }
