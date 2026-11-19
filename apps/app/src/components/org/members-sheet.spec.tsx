@@ -1,9 +1,10 @@
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { fireEvent, screen, waitFor, within } from '@testing-library/react';
+import { render } from '@/test/render';
 import { auth, makeOrg, resetAuth } from '@/test/auth-mock';
 import { MembersSheet } from './members-sheet';
 
 const nav = vi.hoisted(() => ({
-  router: { push: vi.fn(), replace: vi.fn() },
+  router: { push: vi.fn<(path: string) => void>(), replace: vi.fn<(path: string) => void>() },
   query: '',
 }));
 vi.mock('next/navigation', () => ({
@@ -103,7 +104,7 @@ describe('MembersSheet', () => {
     });
 
     it('can copy and cancel a pending invite', async () => {
-      const writeText = vi.fn().mockResolvedValue(undefined);
+      const writeText = vi.fn<(text: string) => Promise<void>>().mockResolvedValue(undefined);
       Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true });
       renderSheet();
 
@@ -121,7 +122,7 @@ describe('MembersSheet', () => {
     });
 
     it('invites by email and copies the new link', async () => {
-      const writeText = vi.fn().mockResolvedValue(undefined);
+      const writeText = vi.fn<(text: string) => Promise<void>>().mockResolvedValue(undefined);
       Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true });
       auth.inviteMember.mockResolvedValue({ data: { id: 'inv_new' }, error: null });
       renderSheet();
