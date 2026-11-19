@@ -4,8 +4,8 @@ const { PHASE_DEVELOPMENT_SERVER } = require('next/constants');
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Next.js options go here
-  // See: https://nextjs.org/docs/app/api-reference/config/next-config-js
+  // Keep the development overlay from covering account controls in the sidebar.
+  devIndicators: false,
 };
 
 const pageExtensions = ['js', 'jsx', 'ts', 'tsx'];
