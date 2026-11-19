@@ -5,7 +5,15 @@ import { useSheetCellEditing } from '@codemancers/sheets';
 export type Option = { value: string; label: string };
 
 /** A pick-one cell edited in place. The sheet saves it and shows saving, saved or refused on the cell. */
-export function PickCell({ label, value, options }: { label: string; value: string; options: Option[] }) {
+export function PickCell({
+  label,
+  value,
+  options,
+}: {
+  label: string;
+  value: string;
+  options: Option[];
+}) {
   const cell = useSheetCellEditing();
   const shown = String(cell.stagedValue ?? cell.refusedValue ?? value);
   return (
@@ -26,4 +34,3 @@ export function PickCell({ label, value, options }: { label: string; value: stri
     </div>
   );
 }
-
