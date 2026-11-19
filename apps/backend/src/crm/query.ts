@@ -72,7 +72,11 @@ const PG_BY_KIND: Record<Kind, string> = {
  * The SQL column for a field path: a system column, or a property whose field is
  * marked filterable. The property name is bound as a parameter, never spliced in.
  */
-export function resolveColumn(path: string, fields: readonly FieldDef[], usage: 'filter' | 'sort'): Column | FieldError {
+export function resolveColumn(
+  path: string,
+  fields: readonly FieldDef[],
+  usage: 'filter' | 'sort',
+): Column | FieldError {
   const system = SYSTEM_COLUMNS[path];
   if (system) {
     return system;
@@ -147,7 +151,9 @@ function compile(filter: Filter, fields: readonly FieldDef[], errors: FieldError
       if (v === undefined) {
         return bad(`'${op}' needs a ${kind} value`);
       }
-      return op === 'EQUALS' ? Prisma.sql`${expr} = ${v}::${cast}` : Prisma.sql`${expr} IS DISTINCT FROM ${v}::${cast}`;
+      return op === 'EQUALS'
+        ? Prisma.sql`${expr} = ${v}::${cast}`
+        : Prisma.sql`${expr} IS DISTINCT FROM ${v}::${cast}`;
     }
     case 'GREATER_THAN':
     case 'LESS_THAN':
@@ -160,24 +166,47 @@ function compile(filter: Filter, fields: readonly FieldDef[], errors: FieldError
       if (v === undefined) {
         return bad(`'${op}' needs a ${kind} value`);
       }
-      const symbol = { GREATER_THAN: '>', LESS_THAN: '<', GREATER_THAN_OR_EQUAL_TO: '>=', LESS_THAN_OR_EQUAL_TO: '<=' }[op];
+      const symbol = {
+        GREATER_THAN: '>',
+        LESS_THAN: '<',
+        GREATER_THAN_OR_EQUAL_TO: '>=',
+        LESS_THAN_OR_EQUAL_TO: '<=',
+      }[op];
       return Prisma.sql`${expr} ${Prisma.raw(symbol)} ${v}::${cast}`;
     }
     case 'BETWEEN': {
       const [low, high] = many();
-      if (kind === 'text' || kind === 'boolean' || (filter.values ?? []).length !== 2 || low === undefined || high === undefined) {
+      if (
+        kind === 'text' ||
+        kind === 'boolean' ||
+        (filter.values ?? []).length !== 2 ||
+        low === undefined ||
+        high === undefined
+      ) {
         return bad("'BETWEEN' needs exactly two numeric, date or id values");
       }
       return Prisma.sql`${expr} BETWEEN ${low}::${cast} AND ${high}::${cast}`;
     }
     case 'IN':
     case 'NOT_IN': {
-      const list = many();
-      if (list.length === 0 || list.length > 1000 || list.some((v) => v === undefined)) {
+      const supplied = filter.values ?? [];
+      const includesNull = supplied.includes(null);
+      const list = supplied.filter((value) => value !== null).map((value) => coerce(kind, value));
+      if (
+        supplied.length === 0 ||
+        supplied.length > 1000 ||
+        list.some((value) => value === undefined)
+      ) {
         return bad(`'${op}' needs between 1 and 1000 ${kind} values`);
       }
-      return op === 'IN'
-        ? Prisma.sql`${expr} = ANY(${list}::${cast}[])`
+      if (list.length === 0)
+        return op === 'IN' ? Prisma.sql`${expr} IS NULL` : Prisma.sql`${expr} IS NOT NULL`;
+      if (op === 'IN')
+        return includesNull
+          ? Prisma.sql`(${expr} IS NULL OR ${expr} = ANY(${list}::${cast}[]))`
+          : Prisma.sql`${expr} = ANY(${list}::${cast}[])`;
+      return includesNull
+        ? Prisma.sql`(${expr} IS NOT NULL AND ${expr} <> ALL(${list}::${cast}[]))`
         : Prisma.sql`(${expr} IS NULL OR ${expr} <> ALL(${list}::${cast}[]))`;
     }
     case 'CONTAINS':
@@ -188,7 +217,8 @@ function compile(filter: Filter, fields: readonly FieldDef[], errors: FieldError
         return bad(`'${op}' only applies to text values`);
       }
       const escaped = likeEscape(v);
-      const pattern = op === 'CONTAINS' ? `%${escaped}%` : op === 'STARTS_WITH' ? `${escaped}%` : `%${escaped}`;
+      const pattern =
+        op === 'CONTAINS' ? `%${escaped}%` : op === 'STARTS_WITH' ? `${escaped}%` : `%${escaped}`;
       return Prisma.sql`${expr} ILIKE ${pattern} ESCAPE '\\'`;
     }
     default:
@@ -212,7 +242,10 @@ export function filterSql(groups: readonly FilterGroup[], fields: readonly Field
 }
 
 /** ORDER BY clause: a system column or filterable field, with id as the tie-breaker. */
-export function orderSql(sort: { field: string; direction: 'ASC' | 'DESC' } | undefined, fields: readonly FieldDef[]): Prisma.Sql {
+export function orderSql(
+  sort: { field: string; direction: 'ASC' | 'DESC' } | undefined,
+  fields: readonly FieldDef[],
+): Prisma.Sql {
   const field = sort?.field ?? 'created_at';
   const direction = Prisma.raw((sort?.direction ?? 'DESC') === 'ASC' ? 'ASC' : 'DESC');
   const column = resolveColumn(field, fields, 'sort');

@@ -363,6 +363,42 @@ describe('listing and filtering', () => {
   const names = (data: { results: { properties: { name: string } }[] }) => data.results.map((r) => r.properties.name);
   const isFilterRow = { field_path: 'name', operator: 'STARTS_WITH', value: 'Filter ' };
 
+  it('returns facet counts over matching visible records and rejects unavailable fields', async () => {
+    const body = { field: 'stage', filter_groups: [{ filters: [isFilterRow] }] };
+    expect(expectStatus(await owner.post(`${REC}/facets`, body), 200)).toEqual({
+      results: [
+        { value: 'won', count: 2 },
+        { value: 'lost', count: 1 },
+        { value: 'open', count: 1 },
+      ],
+      truncated: false,
+    });
+    expect(expectStatus(await bob.post(`${REC}/facets`, body), 200).results).toEqual([]);
+    expect(expectStatus(await eve.post(`${REC}/facets`, body), 404).code).toBe('NOT_FOUND');
+    for (const field of ['secret', 'email', 'missing'])
+      expect((await owner.post(`${REC}/facets`, { ...body, field })).status).toBe(400);
+  });
+
+  it('supports blanks together with typed values in checklist filters', async () => {
+    const blank = expectStatus(await createDeal(owner, { name: 'Blank checklist' }), 201);
+    try {
+      const selected = expectStatus(
+        await filter(owner, [{ field_path: 'amount', operator: 'IN', values: [null, 20] }]),
+        200,
+      );
+      expect(selected.results.some((record: { id: string }) => record.id === blank.id)).toBe(true);
+      expect(names(selected)).toContain('Filter B');
+      const excluded = expectStatus(
+        await filter(owner, [{ field_path: 'amount', operator: 'NOT_IN', values: [null, 20] }]),
+        200,
+      );
+      expect(excluded.results.some((record: { id: string }) => record.id === blank.id)).toBe(false);
+      expect(names(excluded)).not.toContain('Filter B');
+    } finally {
+      expectStatus(await owner.del(`${REC}/${blank.id}`), 200);
+    }
+  });
+
   it('filters with every comparison and combines groups', async () => {
     expect(names(expectStatus(await filter(owner, [isFilterRow, { field_path: 'amount', operator: 'GREATER_THAN_OR_EQUAL_TO', value: 20 }], { sort: { field: 'amount', direction: 'ASC' } }), 200))).toEqual(['Filter B', 'Filter C', 'Filter D']);
     expect(names(expectStatus(await filter(owner, [isFilterRow, { field_path: 'stage', operator: 'IN', values: ['won', 'lost'] }], { sort: { field: 'amount', direction: 'DESC' } }), 200))).toEqual(['Filter D', 'Filter C', 'Filter B']);
