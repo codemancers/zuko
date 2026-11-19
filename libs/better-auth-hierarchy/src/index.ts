@@ -1,1 +1,1 @@
-export { hierarchy, HIERARCHY_PLUGIN_ID } from './lib/hierarchy.plugin.js';
+export { hierarchy, HIERARCHY_PLUGIN_ID, type HierarchyOptions } from './lib/hierarchy.plugin.js';

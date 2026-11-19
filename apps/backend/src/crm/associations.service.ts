@@ -33,10 +33,17 @@ export interface Linked {
  */
 export function recordLabel(object: ObjectWithFields, id: bigint, properties: unknown): string {
   const props = (properties ?? {}) as Properties;
-  const text = (name: string) => (typeof props[name] === 'string' ? (props[name] as string).trim() : '');
-  const names = object.fields.some((f) => f.name === 'first_name') ? [text('first_name'), text('last_name')].filter(Boolean).join(' ') : '';
+  const text = (name: string) =>
+    typeof props[name] === 'string' ? (props[name] as string).trim() : '';
+  const names = object.fields.some((f) => f.name === 'first_name')
+    ? [text('first_name'), text('last_name')].filter(Boolean).join(' ')
+    : '';
   const first = object.fields[0] ? props[object.fields[0].name] : undefined;
-  return names || (first === undefined || first === null || first === '' ? '' : String(first)) || `${object.label} ${id}`;
+  return (
+    names ||
+    (first === undefined || first === null || first === '' ? '' : String(first)) ||
+    `${object.label} ${id}`
+  );
 }
 
 /** Which column of `association` holds this record's side, and which the other's. */
@@ -56,7 +63,12 @@ export class AssociationsService {
    * The link by name, seen from one object. The object must be one end of it: the one holding the
    * link field (forward) or the one it points at (reverse).
    */
-  private async resolve(tx: TenantTransaction, ctx: RequestContext, objectName: string, linkName: string) {
+  private async resolve(
+    tx: TenantTransaction,
+    ctx: RequestContext,
+    objectName: string,
+    linkName: string,
+  ) {
     const object = await this.schema.loadObject(tx, ctx, objectName);
     const def = await tx.associationDefinition.findFirst({
       where: {
@@ -70,13 +82,22 @@ export class AssociationsService {
       throw notFound(`'${objectName}' records have no link '${linkName}'`);
     }
     const forward = def.sourceObjectTypeId === object.id;
-    const otherType = await tx.objectType.findUniqueOrThrow({ where: { id: forward ? def.targetObjectTypeId : def.sourceObjectTypeId } });
+    const otherType = await tx.objectType.findUniqueOrThrow({
+      where: { id: forward ? def.targetObjectTypeId : def.sourceObjectTypeId },
+    });
     const other = await this.schema.loadObject(tx, ctx, otherType.slug);
     return { object, other, def, forward };
   }
 
   /** The live records linked to this one that the caller may read, oldest link first. */
-  private async visibleLinks(tx: TenantTransaction, ctx: RequestContext, def: AssociationDefinition, forward: boolean, other: ObjectWithFields, recordId: bigint) {
+  private async visibleLinks(
+    tx: TenantTransaction,
+    ctx: RequestContext,
+    def: AssociationDefinition,
+    forward: boolean,
+    other: ObjectWithFields,
+    recordId: bigint,
+  ) {
     const { mine, other: theirs } = columns(forward);
     const scopes = await resolveScopes(tx, ctx, other.id, 'read');
     const rows = await tx.$queryRaw<{ id: bigint }[]>(Prisma.sql`
@@ -88,7 +109,13 @@ export class AssociationsService {
     return rows.map((row) => row.id);
   }
 
-  async list(ctx: RequestContext, objectName: string, rawId: string, linkName: string, query: Record<string, string | undefined>) {
+  async list(
+    ctx: RequestContext,
+    objectName: string,
+    rawId: string,
+    linkName: string,
+    query: Record<string, string | undefined>,
+  ) {
     assertCan(ctx, { record: ['read'] }, 'view records');
     const recordId = toId(rawId, objectName);
     const page = parse(paging, { page: query['page'], page_size: query['page_size'] });
@@ -105,7 +132,9 @@ export class AssociationsService {
       return {
         results: pageIds.flatMap((id) => {
           const row = byId.get(id);
-          return row ? [{ ...recordDto(other, row), label: recordLabel(other, id, row.properties) }] : [];
+          return row
+            ? [{ ...recordDto(other, row), label: recordLabel(other, id, row.properties) }]
+            : [];
         }),
         metadata: {
           page: page.page,
@@ -120,33 +149,49 @@ export class AssociationsService {
   }
 
   /** Make the set of linked records exactly this one. Links to records the caller cannot see are left alone. */
-  async replace(ctx: RequestContext, objectName: string, rawId: string, linkName: string, body: unknown) {
+  async replace(
+    ctx: RequestContext,
+    objectName: string,
+    rawId: string,
+    linkName: string,
+    body: unknown,
+  ) {
     const input = parse(replaceBody, body);
-    return this.change(ctx, objectName, rawId, linkName, () => input.record_ids.map((id) => toId(id, 'record')));
+    return this.change(ctx, objectName, rawId, linkName, () =>
+      input.record_ids.map((id) => toId(id, 'record')),
+    );
   }
 
   /** Link one more record, or, where this end holds only one, link it instead of the one it has. Linking twice changes nothing. */
-  async link(ctx: RequestContext, objectName: string, rawId: string, linkName: string, body: unknown) {
+  async link(
+    ctx: RequestContext,
+    objectName: string,
+    rawId: string,
+    linkName: string,
+    body: unknown,
+  ) {
     const input = parse(linkBody, body);
     const added = toId(input.record_id, 'record');
-    return this.change(ctx, objectName, rawId, linkName, (current, only) => (only ? [added] : [...current, added]));
+    return this.change(ctx, objectName, rawId, linkName, (current, only) =>
+      only ? [added] : [...current, added],
+    );
   }
 
   /** Remove one link. */
-  async unlink(ctx: RequestContext, objectName: string, rawId: string, linkName: string, rawTargetId: string) {
+  async unlink(
+    ctx: RequestContext,
+    objectName: string,
+    rawId: string,
+    linkName: string,
+    rawTargetId: string,
+  ) {
     const removed = toId(rawTargetId, 'record');
-    return this.change(
-      ctx,
-      objectName,
-      rawId,
-      linkName,
-      (current) => {
-        if (!current.includes(removed)) {
-          throw notFound(`That ${objectName} is not linked to that record`);
-        }
-        return current.filter((id) => id !== removed);
-      },
-    );
+    return this.change(ctx, objectName, rawId, linkName, (current) => {
+      if (!current.includes(removed)) {
+        throw notFound(`That ${objectName} is not linked to that record`);
+      }
+      return current.filter((id) => id !== removed);
+    });
   }
 
   private async change(
@@ -167,14 +212,32 @@ export class AssociationsService {
       // one need only be readable. Either way the same people can make the same change.
       await this.records.loadFor(tx, ctx, object, recordId, forward ? 'write' : 'read');
       const { mine, other: theirs } = columns(forward);
-      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`associations:${ctx.organizationId}:${def.id}:${recordId}`}))`;
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`associations:${ctx.organizationId}:${def.id}`}))`;
 
-      const current = await this.visibleLinks(tx, ctx, def, forward, other, recordId);
+      let current = await this.visibleLinks(tx, ctx, def, forward, other, recordId);
       // The end that holds the link field holds one record, or many as its field says; the other end always holds many.
       const onlyOne = forward && !def.many;
+      if (onlyOne) {
+        const stored = await tx.$queryRaw<{ id: bigint; deletedAt: Date | null }[]>(Prisma.sql`
+          SELECT r."id", r."deletedAt" FROM association a
+          JOIN object_record r ON r."organizationId" = a."organizationId" AND r."id" = a."targetId"
+          WHERE a."organizationId" = ${ctx.organizationId} AND a."definitionId" = ${def.id} AND a."sourceId" = ${recordId}`);
+        // A hidden live target must stay untouched; otherwise a new link would make this field hold two.
+        if (stored.some((row) => row.deletedAt === null && !current.includes(row.id))) {
+          throw forbidden('This link cannot be changed with your current access');
+        }
+        // Deleted targets no longer occupy the field, and their old associations can be replaced.
+        current = stored.map((row) => row.id);
+      }
       const desired = [...new Set(wanted(current, onlyOne))];
       if (onlyOne && desired.length > 1) {
-        throw validationFailed([{ field: 'record_ids', code: 'INVALID_FIELD', message: `A ${objectName} can be linked to only one here; send at most one id` }]);
+        throw validationFailed([
+          {
+            field: 'record_ids',
+            code: 'INVALID_FIELD',
+            message: `A ${objectName} can be linked to only one here; send at most one id`,
+          },
+        ]);
       }
 
       const scopes = await resolveScopes(tx, ctx, other.id, 'read');
@@ -201,7 +264,9 @@ export class AssociationsService {
             WHERE r."organizationId" = ${ctx.organizationId} AND r."objectTypeId" = ${other.id} AND r."deletedAt" IS NULL
               AND r."id" = ANY(${touched}::bigint[]) AND ${visibilitySql(ctx, writeScopes, 'write')}`);
           if (writable.length !== touched.length) {
-            throw forbidden(`You are not allowed to change those ${other.slug} records, so their link cannot be changed from here`);
+            throw forbidden(
+              `You are not allowed to change those ${other.slug} records, so their link cannot be changed from here`,
+            );
           }
         }
       }
@@ -228,12 +293,20 @@ export class AssociationsService {
 
       if (added.length > 0 || removed.length > 0 || displaced.length > 0) {
         const asText = (ids: bigint[]) => ids.map(String);
-        const entry = (recordIdOf: bigint, objectTypeId: bigint, key: string, before: unknown, after: unknown) => ({
+        const entry = (
+          recordIdOf: bigint,
+          objectTypeId: bigint,
+          key: string,
+          before: unknown,
+          after: unknown,
+        ) => ({
           organizationId: ctx.organizationId,
           recordId: recordIdOf,
           objectTypeId,
           action: 'UPDATE',
-          changes: { [`associations.${key}`]: { old: before, new: after } } as Prisma.InputJsonObject,
+          changes: {
+            [`associations.${key}`]: { old: before, new: after },
+          } as Prisma.InputJsonObject,
           actorType: ctx.actorType,
           actorId: ctx.userId,
           requestId: ctx.requestId,
@@ -245,7 +318,10 @@ export class AssociationsService {
             ...added.map((id) => entry(id, other.id, linkName, null, String(recordId))),
             ...removed.map((id) => entry(id, other.id, linkName, String(recordId), null)),
             // What was moved: its old holder lost it, and it now has the new one in its place.
-            ...displaced.flatMap((d) => [entry(d.targetId, object.id, linkName, String(d.sourceId), null), entry(d.sourceId, other.id, linkName, String(d.targetId), String(recordId))]),
+            ...displaced.flatMap((d) => [
+              entry(d.targetId, object.id, linkName, String(d.sourceId), null),
+              entry(d.sourceId, other.id, linkName, String(d.targetId), String(recordId)),
+            ]),
           ],
         });
       }
@@ -253,7 +329,11 @@ export class AssociationsService {
     });
   }
 
-  private async labels(tx: TenantTransaction, other: ObjectWithFields, ids: bigint[]): Promise<Linked[]> {
+  private async labels(
+    tx: TenantTransaction,
+    other: ObjectWithFields,
+    ids: bigint[],
+  ): Promise<Linked[]> {
     const rows = await tx.objectRecord.findMany({ where: { id: { in: ids } } });
     const byId = new Map(rows.map((row) => [row.id, row]));
     return ids.flatMap((id) => {
@@ -266,7 +346,12 @@ export class AssociationsService {
    * For a page of records, who each is linked to, by kind: `{ company: [{ id, label }], deal: [...] }`.
    * Only records the caller may read, and not deleted ones. One query per kind, however many records.
    */
-  async summaries(tx: TenantTransaction, ctx: RequestContext, object: ObjectWithFields, ids: bigint[]) {
+  async summaries(
+    tx: TenantTransaction,
+    ctx: RequestContext,
+    object: ObjectWithFields,
+    ids: bigint[],
+  ) {
     const defs = await tx.associationDefinition.findMany({
       where: {
         organizationId: ctx.organizationId,
@@ -278,7 +363,9 @@ export class AssociationsService {
     const result = new Map<bigint, Record<string, Linked[]>>(ids.map((id) => [id, {}]));
     for (const def of defs) {
       const forward = def.sourceObjectTypeId === object.id;
-      const otherType = await tx.objectType.findUnique({ where: { id: forward ? def.targetObjectTypeId : def.sourceObjectTypeId } });
+      const otherType = await tx.objectType.findUnique({
+        where: { id: forward ? def.targetObjectTypeId : def.sourceObjectTypeId },
+      });
       if (!otherType) {
         continue;
       }
@@ -291,7 +378,9 @@ export class AssociationsService {
       }
       const { mine, other: theirs } = columns(forward);
       const scopes = await resolveScopes(tx, ctx, other.id, 'read');
-      const rows = await tx.$queryRaw<{ recordId: bigint; id: bigint; properties: unknown }[]>(Prisma.sql`
+      const rows = await tx.$queryRaw<
+        { recordId: bigint; id: bigint; properties: unknown }[]
+      >(Prisma.sql`
         SELECT a.${mine} AS "recordId", r."id" AS id, r."properties" AS properties FROM association a
         JOIN object_record r ON r."organizationId" = a."organizationId" AND r."id" = a.${theirs}
         WHERE a."organizationId" = ${ctx.organizationId} AND a."definitionId" = ${def.id} AND a.${mine} = ANY(${ids}::bigint[])

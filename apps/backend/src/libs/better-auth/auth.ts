@@ -7,6 +7,7 @@ import { prismaAdapter } from '@better-auth/prisma-adapter';
 import type { PrismaClient } from '../../generated/prisma/client';
 import { AUTH_BASE_PATH, BACKEND_URL } from './constants';
 import { auditSink } from './audit-sink';
+import { hierarchyTransaction } from './hierarchy-transaction';
 import { cimdPlugin, jwtPlugin, mcpPlugin } from './mcp-plugins';
 import { activeOrganizationOnSessionCreate } from './session-hooks';
 
@@ -25,7 +26,7 @@ export function createAuth(prisma: PrismaClient) {
     // audit goes last so its hooks see events from the other plugins.
     plugins: [
       organization({ ac, roles, teams: { enabled: true } }),
-      hierarchy(),
+      hierarchy({ transaction: hierarchyTransaction(prisma) }),
       jwtPlugin(),
       mcpPlugin(),
       cimdPlugin(),

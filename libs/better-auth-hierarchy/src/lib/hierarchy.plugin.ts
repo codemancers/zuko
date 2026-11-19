@@ -1,13 +1,20 @@
-import type { BetterAuthPlugin, DBAdapter } from 'better-auth';
+import type { BetterAuthOptions, BetterAuthPlugin, DBAdapter } from 'better-auth';
 import { APIError, createAuthEndpoint, sessionMiddleware } from 'better-auth/api';
 import * as z from 'zod';
 import { computeClosure, wouldCreateCycle, type Id, type ReportingRow } from './hierarchy.core.js';
 
 export const HIERARCHY_PLUGIN_ID = 'hierarchy';
 
+type HierarchyAdapter = Omit<DBAdapter, 'transaction'>;
+
 export interface HierarchyOptions {
   /** Organization roles allowed to change anyone's manager. Defaults to owner and admin. */
   manageRoles?: string[];
+  /** Database-backed deployments must serialize and transact the entire change across processes. */
+  transaction?: (
+    context: { organizationId: string; options: BetterAuthOptions },
+    work: (adapter: HierarchyAdapter) => Promise<void>,
+  ) => Promise<void>;
 }
 
 const DEFAULT_MANAGE_ROLES = ['owner', 'admin'];
@@ -19,7 +26,7 @@ interface OrgState {
   reporting: ReportingRow[];
 }
 
-async function loadState(adapter: DBAdapter, organizationId: string): Promise<OrgState> {
+async function loadState(adapter: HierarchyAdapter, organizationId: string): Promise<OrgState> {
   const memberRows = await adapter.findMany<{ userId: unknown; role: string | null }>({
     model: 'member',
     where: [{ field: 'organizationId', value: organizationId }],
@@ -38,22 +45,23 @@ async function loadState(adapter: DBAdapter, organizationId: string): Promise<Or
 }
 
 /** Replace the organization's ancestor/descendant rows from its reporting lines. */
-async function rebuildClosure(adapter: DBAdapter, organizationId: string, state: OrgState) {
+async function rebuildClosure(adapter: HierarchyAdapter, organizationId: string, state: OrgState) {
   const rows = computeClosure(new Set(state.members.keys()), state.reporting);
-  await adapter.transaction(async (tx) => {
-    await tx.deleteMany({ model: 'memberHierarchy', where: [{ field: 'organizationId', value: organizationId }] });
-    for (const row of rows) {
-      await tx.create({
-        model: 'memberHierarchy',
-        data: {
-          organizationId,
-          ancestorId: row.ancestorId,
-          descendantId: row.descendantId,
-          depth: row.depth,
-        },
-      });
-    }
+  await adapter.deleteMany({
+    model: 'memberHierarchy',
+    where: [{ field: 'organizationId', value: organizationId }],
   });
+  for (const row of rows) {
+    await adapter.create({
+      model: 'memberHierarchy',
+      data: {
+        organizationId,
+        ancestorId: row.ancestorId,
+        descendantId: row.descendantId,
+        depth: row.depth,
+      },
+    });
+  }
 }
 
 // activeOrganizationId is added to the session by the organization plugin, so it is
@@ -61,7 +69,10 @@ async function rebuildClosure(adapter: DBAdapter, organizationId: string, state:
 function activeOrganization(session: { session: object }): string {
   const id = (session.session as { activeOrganizationId?: unknown }).activeOrganizationId;
   if (id == null || id === '') {
-    throw new APIError('BAD_REQUEST', { message: 'No active organization', code: 'NO_ACTIVE_ORGANIZATION' });
+    throw new APIError('BAD_REQUEST', {
+      message: 'No active organization',
+      code: 'NO_ACTIVE_ORGANIZATION',
+    });
   }
   return String(id);
 }
@@ -84,6 +95,17 @@ function canManage(roles: string | undefined, manageRoles: string[]): boolean {
  */
 export const hierarchy = (options: HierarchyOptions = {}) => {
   const manageRoles = options.manageRoles ?? DEFAULT_MANAGE_ROLES;
+  const pending = new Map<string, Promise<void>>();
+  const serialize = async (organizationId: string, work: () => Promise<void>) => {
+    const previous = pending.get(organizationId) ?? Promise.resolve();
+    const current = previous.catch(() => undefined).then(work);
+    pending.set(organizationId, current);
+    try {
+      await current;
+    } finally {
+      if (pending.get(organizationId) === current) pending.delete(organizationId);
+    }
+  };
 
   const setManager = createAuthEndpoint(
     '/hierarchy/set-manager',
@@ -98,44 +120,58 @@ export const hierarchy = (options: HierarchyOptions = {}) => {
       const adapter = ctx.context.adapter;
       const { userId, managerId } = ctx.body;
 
-      const state = await loadState(adapter, organizationId);
-      if (!canManage(state.members.get(String(session.user.id)), manageRoles)) {
-        throw new APIError('FORBIDDEN', {
-          message: 'You are not allowed to change reporting lines',
-          code: 'NOT_ALLOWED_TO_MANAGE_HIERARCHY',
-        });
-      }
-      for (const id of managerId === null ? [userId] : [userId, managerId]) {
-        if (!state.members.has(id)) {
-          throw new APIError('BAD_REQUEST', {
-            message: 'Both people must be members of the active organization',
-            code: 'NOT_A_MEMBER',
+      const change = async (adapter: HierarchyAdapter) => {
+        const state = await loadState(adapter, organizationId);
+        if (!canManage(state.members.get(String(session.user.id)), manageRoles)) {
+          throw new APIError('FORBIDDEN', {
+            message: 'You are not allowed to change reporting lines',
+            code: 'NOT_ALLOWED_TO_MANAGE_HIERARCHY',
           });
         }
-      }
-      if (managerId !== null && wouldCreateCycle(state.reporting, userId, managerId)) {
-        throw new APIError('BAD_REQUEST', {
-          message: 'That would create a reporting loop',
-          code: 'HIERARCHY_CYCLE',
-        });
-      }
+        for (const id of managerId === null ? [userId] : [userId, managerId]) {
+          if (!state.members.has(id)) {
+            throw new APIError('BAD_REQUEST', {
+              message: 'Both people must be members of the active organization',
+              code: 'NOT_A_MEMBER',
+            });
+          }
+        }
+        if (managerId !== null && wouldCreateCycle(state.reporting, userId, managerId)) {
+          throw new APIError('BAD_REQUEST', {
+            message: 'That would create a reporting loop',
+            code: 'HIERARCHY_CYCLE',
+          });
+        }
 
-      const existing = state.reporting.some((r) => r.userId === userId);
-      if (existing) {
-        await adapter.update({
-          model: 'memberReporting',
-          where: [
-            { field: 'organizationId', value: organizationId },
-            { field: 'userId', value: userId },
-          ],
-          update: { managerId },
-        });
+        const existing = state.reporting.some((r) => r.userId === userId);
+        if (existing) {
+          await adapter.update({
+            model: 'memberReporting',
+            where: [
+              { field: 'organizationId', value: organizationId },
+              { field: 'userId', value: userId },
+            ],
+            update: { managerId },
+          });
+        } else {
+          await adapter.create({
+            model: 'memberReporting',
+            data: { organizationId, userId, managerId },
+          });
+        }
+
+        const reporting = [
+          ...state.reporting.filter((r) => r.userId !== userId),
+          { userId, managerId },
+        ];
+        await rebuildClosure(adapter, organizationId, { ...state, reporting });
+      };
+      if (options.transaction) {
+        await options.transaction({ organizationId, options: ctx.context.options }, change);
       } else {
-        await adapter.create({ model: 'memberReporting', data: { organizationId, userId, managerId } });
+        // The memory adapter has no cross-process state. SQL deployments supply the runner above.
+        await serialize(organizationId, () => adapter.transaction(change));
       }
-
-      const reporting = [...state.reporting.filter((r) => r.userId !== userId), { userId, managerId }];
-      await rebuildClosure(adapter, organizationId, { ...state, reporting });
 
       return ctx.json({ userId, managerId });
     },

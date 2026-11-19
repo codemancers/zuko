@@ -20,7 +20,11 @@ export interface Connection {
 const decode = (jwt: string) => JSON.parse(Buffer.from(jwt.split('.')[1], 'base64url').toString());
 
 /** Register a client the way a desktop MCP client does. */
-export async function registerClient(name: string, scope: string, overrides: Record<string, unknown> = {}) {
+export async function registerClient(
+  name: string,
+  scope: string,
+  overrides: Record<string, unknown> = {},
+) {
   return axios.post(
     `${BASE}/auth/oauth2/register`,
     {
@@ -42,12 +46,20 @@ export async function registerClient(name: string, scope: string, overrides: Rec
  * (the frontend consent page does exactly this call), and exchange the code for tokens.
  * The user's session decides who the connection is for and which organization it binds to.
  */
-export async function connect(user: User, name: string, scope: string): Promise<Connection> {
-  const registered = await registerClient(name, scope);
-  if (registered.status !== 201) {
-    throw new Error(`registration failed: ${JSON.stringify(registered.data)}`);
+export async function connect(
+  user: User,
+  name: string,
+  scope: string,
+  existingClientId?: string,
+): Promise<Connection> {
+  let clientId = existingClientId;
+  if (!clientId) {
+    const registered = await registerClient(name, scope);
+    if (registered.status !== 201) {
+      throw new Error(`registration failed: ${JSON.stringify(registered.data)}`);
+    }
+    clientId = registered.data.client_id as string;
   }
-  const clientId: string = registered.data.client_id;
 
   const verifier = randomBytes(32).toString('base64url');
   const authorize = await user.get(
@@ -67,7 +79,10 @@ export async function connect(user: User, name: string, scope: string): Promise<
     throw new Error(`expected the consent page, got ${authorize.data.url}`);
   }
 
-  const consent = await user.post('/auth/oauth2/consent', { accept: true, oauth_query: consentUrl.search.slice(1) });
+  const consent = await user.post('/auth/oauth2/consent', {
+    accept: true,
+    oauth_query: consentUrl.search.slice(1),
+  });
   const code = new URL(consent.data.url).searchParams.get('code');
   if (!code) {
     throw new Error(`consent did not return a code: ${JSON.stringify(consent.data)}`);
@@ -127,12 +142,17 @@ export async function deny(user: User, name: string, scope: string): Promise<str
       redirect_uri: REDIRECT_URI,
       scope,
       state: 'state-1',
-      code_challenge: createHash('sha256').update(randomBytes(32).toString('base64url')).digest('base64url'),
+      code_challenge: createHash('sha256')
+        .update(randomBytes(32).toString('base64url'))
+        .digest('base64url'),
       code_challenge_method: 'S256',
       resource: MCP_URL,
     })}`,
   );
-  const consent = await user.post('/auth/oauth2/consent', { accept: false, oauth_query: new URL(authorize.data.url).search.slice(1) });
+  const consent = await user.post('/auth/oauth2/consent', {
+    accept: false,
+    oauth_query: new URL(authorize.data.url).search.slice(1),
+  });
   if (!new URL(consent.data.url).searchParams.get('error')) {
     throw new Error(`expected a refusal, got ${JSON.stringify(consent.data)}`);
   }
