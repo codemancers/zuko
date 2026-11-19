@@ -4,12 +4,26 @@ import { useState } from 'react';
 import { AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import { Drawer, DrawerBody, DrawerContent, DrawerDescription, DrawerFooter, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
+import {
+  Drawer,
+  DrawerBody,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+} from '@/components/ui/drawer';
 import { Field, FieldDescription, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { NativeSelect } from '@/components/ui/native-select';
 import { api, ApiError } from '@/lib/api';
-import { editFromField, FIELD_TYPE_LABELS, fieldPatchBody, type FieldDef, type FieldEdit } from '@/lib/records';
+import {
+  editFromField,
+  FIELD_TYPE_LABELS,
+  fieldPatchBody,
+  type FieldDef,
+  type FieldEdit,
+} from '@/lib/records';
 
 /** The form for one existing field. The key and type are shown but cannot be changed. */
 function EditField({
@@ -29,7 +43,8 @@ function EditField({
   const [problem, setProblem] = useState<{ field?: string; message: string } | null>(null);
   const [saving, setSaving] = useState(false);
   const [confirmingRemove, setConfirmingRemove] = useState(false);
-  const change = (changes: Partial<FieldEdit>) => setEdit((current) => ({ ...current, ...changes }));
+  const change = (changes: Partial<FieldEdit>) =>
+    setEdit((current) => ({ ...current, ...changes }));
   const url = `/api/v1/objects/${object}/fields/${field.name}`;
 
   async function run(action: () => Promise<unknown>) {
@@ -40,7 +55,10 @@ function EditField({
       onChanged();
     } catch (error) {
       const first = error instanceof ApiError ? error.errors[0] : undefined;
-      setProblem({ field: first?.field, message: error instanceof Error ? error.message : 'Something went wrong' });
+      setProblem({
+        field: first?.field,
+        message: error instanceof Error ? error.message : 'Something went wrong',
+      });
     } finally {
       setSaving(false);
     }
@@ -51,14 +69,23 @@ function EditField({
     if (Object.keys(body).length === 0) return onClose();
     return run(() => api(url, { method: 'PATCH', json: body }));
   };
-  const manyProblem = problem !== null && (field.type === 'LINK' || field.type === 'USER') && problem.field !== 'label' && /more than one|several members/i.test(problem.message);
-  const optionsProblem = problem && (problem.field === 'config.options' || (field.type === 'ENUM' && /choice/i.test(problem.message)));
+  const manyProblem =
+    problem !== null &&
+    (field.type === 'LINK' || field.type === 'USER') &&
+    problem.field !== 'label' &&
+    /more than one|several members/i.test(problem.message);
+  const optionsProblem =
+    problem &&
+    (problem.field === 'config.options' ||
+      (field.type === 'ENUM' && /choice/i.test(problem.message)));
 
   return (
     <>
       <DrawerHeader>
         <DrawerTitle>Edit {field.label}</DrawerTitle>
-        <DrawerDescription>The key and type cannot be changed once a field exists.</DrawerDescription>
+        <DrawerDescription>
+          The key and type cannot be changed once a field exists.
+        </DrawerDescription>
       </DrawerHeader>
       {problem && !optionsProblem && !manyProblem && (
         <Alert variant="destructive">
@@ -77,7 +104,13 @@ function EditField({
           <FieldGroup className="gap-4">
             <Field>
               <FieldLabel htmlFor="edit-field-label">Label *</FieldLabel>
-              <Input id="edit-field-label" required maxLength={100} value={edit.label} onChange={(e) => change({ label: e.target.value })} />
+              <Input
+                id="edit-field-label"
+                required
+                maxLength={100}
+                value={edit.label}
+                onChange={(e) => change({ label: e.target.value })}
+              />
             </Field>
             <Field>
               <FieldLabel htmlFor="edit-field-name">Key</FieldLabel>
@@ -97,11 +130,19 @@ function EditField({
             {(field.type === 'LINK' || field.type === 'USER') && (
               <Field>
                 <FieldLabel htmlFor="edit-field-many">Holds</FieldLabel>
-                <NativeSelect id="edit-field-many" value={edit.many ? 'many' : 'one'} onChange={(event) => change({ many: event.target.value === 'many' })}>
+                <NativeSelect
+                  id="edit-field-many"
+                  value={edit.many ? 'many' : 'one'}
+                  onChange={(event) => change({ many: event.target.value === 'many' })}
+                >
                   <option value="one">{field.type === 'LINK' ? 'One record' : 'One member'}</option>
-                  <option value="many">{field.type === 'LINK' ? 'Many records' : 'Several members'}</option>
+                  <option value="many">
+                    {field.type === 'LINK' ? 'Many records' : 'Several members'}
+                  </option>
                 </NativeSelect>
-                <FieldDescription>Going from many to one is only possible when nobody holds more than one.</FieldDescription>
+                <FieldDescription>
+                  Going from many to one is only possible when nobody holds more than one.
+                </FieldDescription>
                 {problem && manyProblem && (
                   <p role="alert" className="text-xs text-destructive">
                     {problem.message}
@@ -121,7 +162,9 @@ function EditField({
                   onChange={(e) => change({ options: e.target.value })}
                   className="w-full rounded-lg border border-input bg-transparent px-2.5 py-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 aria-invalid:border-destructive dark:bg-input/30"
                 />
-                <FieldDescription>One per line. A choice that records still use cannot be removed.</FieldDescription>
+                <FieldDescription>
+                  One per line. A choice that records still use cannot be removed.
+                </FieldDescription>
                 {optionsProblem && (
                   <p role="alert" className="text-xs text-destructive">
                     {problem.message}
@@ -130,16 +173,28 @@ function EditField({
               </Field>
             )}
             <label className="flex items-center gap-2 text-sm font-medium">
-              <input type="checkbox" checked={edit.filterable} onChange={(e) => change({ filterable: e.target.checked })} className="size-4 accent-primary" />
+              <input
+                type="checkbox"
+                checked={edit.filterable}
+                onChange={(e) => change({ filterable: e.target.checked })}
+                className="size-4 accent-primary"
+              />
               Searchable and sortable
             </label>
             <div>
               <label className="flex items-center gap-2 text-sm font-medium">
-                <input type="checkbox" checked={edit.required} onChange={(e) => change({ required: e.target.checked })} className="size-4 accent-primary" />
+                <input
+                  type="checkbox"
+                  checked={edit.required}
+                  onChange={(e) => change({ required: e.target.checked })}
+                  className="size-4 accent-primary"
+                />
                 Required
               </label>
               {hasRecords && !field.required && (
-                <p className="mt-1 text-xs text-muted-foreground">Only possible when every record already has a value.</p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Only possible when every record already has a value.
+                </p>
               )}
             </div>
           </FieldGroup>
@@ -149,15 +204,27 @@ function EditField({
         <div className="mr-auto flex gap-2">
           {confirmingRemove ? (
             <>
-              <Button variant="destructive" disabled={saving} onClick={() => run(() => api(url, { method: 'DELETE' }))}>
+              <Button
+                variant="destructive"
+                disabled={saving}
+                onClick={() => run(() => api(url, { method: 'DELETE' }))}
+              >
                 Yes, remove
               </Button>
-              <Button variant="outline" disabled={saving} onClick={() => setConfirmingRemove(false)}>
+              <Button
+                variant="outline"
+                disabled={saving}
+                onClick={() => setConfirmingRemove(false)}
+              >
                 Keep
               </Button>
             </>
           ) : (
-            <Button variant="destructive" disabled={saving} onClick={() => setConfirmingRemove(true)}>
+            <Button
+              variant="destructive"
+              disabled={saving}
+              onClick={() => setConfirmingRemove(true)}
+            >
               Remove field
             </Button>
           )}
@@ -171,7 +238,8 @@ function EditField({
       </DrawerFooter>
       {confirmingRemove && (
         <p className="px-4 pb-4 text-xs text-muted-foreground">
-          The column goes away everywhere. The values stay stored and come back if you add a field with the same key and type.
+          The column goes away everywhere. The values stay stored and come back if you add a field
+          with the same key and type.
         </p>
       )}
     </>

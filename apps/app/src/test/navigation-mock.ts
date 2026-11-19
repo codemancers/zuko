@@ -47,9 +47,18 @@ const router = { replace: to, push: to };
 
 export const navigationModule = {
   useRouter: () => router,
-  usePathname: () => useSyncExternalStore(subscribe, () => state.pathname, () => state.pathname),
+  usePathname: () =>
+    useSyncExternalStore(
+      subscribe,
+      () => state.pathname,
+      () => state.pathname,
+    ),
   useSearchParams: () => {
-    const search = useSyncExternalStore(subscribe, () => state.search, () => state.search);
+    const search = useSyncExternalStore(
+      subscribe,
+      () => state.search,
+      () => state.search,
+    );
     return useMemo(() => new URLSearchParams(search), [search]);
   },
 };

@@ -43,7 +43,12 @@ export async function api<T>(path: string, { json, headers, ...init }: Init = {}
       code?: string;
       errors?: FieldError[];
     } | null;
-    throw new ApiError(body?.message ?? `Request failed (${response.status})`, response.status, body?.code, body?.errors);
+    throw new ApiError(
+      body?.message ?? `Request failed (${response.status})`,
+      response.status,
+      body?.code,
+      body?.errors,
+    );
   }
   return (await response.json()) as T;
 }

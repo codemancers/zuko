@@ -58,12 +58,27 @@ describe('form values', () => {
       active: true,
       closes: '2026-12-31T00:00:00.000Z',
     });
-    expect(values).toMatchObject({ first_name: 'Ada', amount: '1200.5', active: true, closes: '2026-12-31', email: '', stage: '' });
+    expect(values).toMatchObject({
+      first_name: 'Ada',
+      amount: '1200.5',
+      active: true,
+      closes: '2026-12-31',
+      email: '',
+      stage: '',
+    });
   });
 });
 
 describe('propertiesFromValues', () => {
-  const values = { first_name: ' Ada ', email: '', amount: '1200.5', active: true, closes: '2026-12-31', stage: '', secret: '' };
+  const values = {
+    first_name: ' Ada ',
+    email: '',
+    amount: '1200.5',
+    active: true,
+    closes: '2026-12-31',
+    stage: '',
+    secret: '',
+  };
 
   it('trims text, converts numbers and leaves blanks out when creating', () => {
     expect(propertiesFromValues(fields, values, 'create')).toEqual({
@@ -83,7 +98,11 @@ describe('propertiesFromValues', () => {
   });
 
   it('never sends read-only fields, and always sends a checkbox', () => {
-    const create = propertiesFromValues(fields, { ...values, source: 'import', active: false }, 'create');
+    const create = propertiesFromValues(
+      fields,
+      { ...values, source: 'import', active: false },
+      'create',
+    );
     expect('source' in create).toBe(false);
     expect(create['active']).toBe(false);
   });
@@ -91,7 +110,9 @@ describe('propertiesFromValues', () => {
 
 describe('formatValue', () => {
   it('formats each kind of value, and shows nothing for a missing one', () => {
-    expect(formatValue(fields[2], 1234.567)).toBe(new Intl.NumberFormat(undefined, { maximumFractionDigits: 2 }).format(1234.567));
+    expect(formatValue(fields[2], 1234.567)).toBe(
+      new Intl.NumberFormat(undefined, { maximumFractionDigits: 2 }).format(1234.567),
+    );
     expect(formatValue(fields[3], true)).toBe('Yes');
     expect(formatValue(fields[3], false)).toBe('No');
     expect(formatValue(fields[4], '2026-12-31T00:00:00.000Z')).toMatch(/2026/);
@@ -100,7 +121,7 @@ describe('formatValue', () => {
     expect(formatValue(fields[4], 'not a date')).toBe('not a date');
   });
 
-  it('shows a date as stored, whatever the viewer\'s time zone', () => {
+  it("shows a date as stored, whatever the viewer's time zone", () => {
     expect(formatValue(fields[4], '2026-12-31T00:00:00.000Z')).toMatch(/31/);
   });
 });
@@ -134,27 +155,54 @@ describe('keyFromLabel', () => {
 });
 
 describe('newFieldBody', () => {
-  const base = { label: ' Source ', name: 'source', type: 'TEXT' as const, required: false, unique: false, filterable: true, options: '' };
+  const base = {
+    label: ' Source ',
+    name: 'source',
+    type: 'TEXT' as const,
+    required: false,
+    unique: false,
+    filterable: true,
+    options: '',
+  };
   it('trims the label and sends no config for a plain field', () => {
-    expect(newFieldBody(base)).toEqual({ name: 'source', label: 'Source', type: 'TEXT', required: false, unique: false, filterable: true });
+    expect(newFieldBody(base)).toEqual({
+      name: 'source',
+      label: 'Source',
+      type: 'TEXT',
+      required: false,
+      unique: false,
+      filterable: true,
+    });
   });
   it('lists the choices once each, without blanks, for a choice field only', () => {
-    expect(newFieldBody({ ...base, type: 'ENUM', options: 'a\n\n b \na' }).config).toEqual({ options: ['a', 'b'] });
+    expect(newFieldBody({ ...base, type: 'ENUM', options: 'a\n\n b \na' }).config).toEqual({
+      options: ['a', 'b'],
+    });
     expect(newFieldBody({ ...base, options: 'a' })).not.toHaveProperty('config');
   });
 });
 
 describe('fieldPatchBody', () => {
-  const stage = field('stage', 'ENUM', { label: 'Stage', filterable: false, config: { options: ['a', 'b'] } });
+  const stage = field('stage', 'ENUM', {
+    label: 'Stage',
+    filterable: false,
+    config: { options: ['a', 'b'] },
+  });
   it('is empty when nothing changed', () => {
     expect(fieldPatchBody(stage, editFromField(stage))).toEqual({});
   });
   it('holds only what changed', () => {
-    expect(fieldPatchBody(stage, { ...editFromField(stage), label: ' Phase ', filterable: true })).toEqual({ label: 'Phase', filterable: true });
-    expect(fieldPatchBody(stage, { ...editFromField(stage), required: true })).toEqual({ required: true });
+    expect(
+      fieldPatchBody(stage, { ...editFromField(stage), label: ' Phase ', filterable: true }),
+    ).toEqual({ label: 'Phase', filterable: true });
+    expect(fieldPatchBody(stage, { ...editFromField(stage), required: true })).toEqual({
+      required: true,
+    });
   });
   it('sends choices once each, and only for a choice field', () => {
-    expect(fieldPatchBody(stage, { ...editFromField(stage), options: 'a\n\nb\nc\nc' })).toEqual({ config: { options: ['a', 'b', 'c'] } });
+    expect(fieldPatchBody(stage, { ...editFromField(stage), options: 'a\n\nb\nc\nc' })).toEqual({
+      config: { options: ['a', 'b', 'c'] },
+    });
     const text = field('notes', 'TEXT');
     expect(fieldPatchBody(text, { ...editFromField(text), options: 'x' })).toEqual({});
   });
@@ -162,35 +210,80 @@ describe('fieldPatchBody', () => {
 
 describe('describeHistory', () => {
   const def = {
-    fields: [field('stage', 'ENUM', { label: 'Stage' }), field('due', 'TIMESTAMP', { label: 'Due' }), field('vip', 'BOOLEAN', { label: 'VIP' })],
-    associations: [{ name: 'company', label: 'Companies', singular_label: 'Company', target: 'company', many: true, side: 'forward' as const, field: 'companies' }],
+    fields: [
+      field('stage', 'ENUM', { label: 'Stage' }),
+      field('due', 'TIMESTAMP', { label: 'Due' }),
+      field('vip', 'BOOLEAN', { label: 'VIP' }),
+    ],
+    associations: [
+      {
+        name: 'company',
+        label: 'Companies',
+        singular_label: 'Company',
+        target: 'company',
+        many: true,
+        side: 'forward' as const,
+        field: 'companies',
+      },
+    ],
   };
-  const entry = (action: 'CREATE' | 'UPDATE' | 'DELETE', changes: Record<string, { old: unknown; new: unknown }> = {}) => ({
-    id: '1', action, changes, actor_type: 'USER', actor_id: '7', created_at: '2026-11-17T00:00:00.000Z',
+  const entry = (
+    action: 'CREATE' | 'UPDATE' | 'DELETE',
+    changes: Record<string, { old: unknown; new: unknown }> = {},
+  ) => ({
+    id: '1',
+    action,
+    changes,
+    actor_type: 'USER',
+    actor_id: '7',
+    created_at: '2026-11-17T00:00:00.000Z',
   });
 
   it('says what was created or deleted', () => {
-    expect(describeHistory(def, entry('CREATE', { stage: { old: null, new: 'lead' } }))).toEqual(['Created']);
+    expect(describeHistory(def, entry('CREATE', { stage: { old: null, new: 'lead' } }))).toEqual([
+      'Created',
+    ]);
     expect(describeHistory(def, entry('DELETE'))).toEqual(['Deleted']);
   });
 
-  it('puts a field change in words, with the field\'s label', () => {
-    expect(describeHistory(def, entry('UPDATE', { stage: { old: 'lead', new: 'won' }, due: { old: null, new: '2027-01-15T00:00:00.000Z' }, vip: { old: false, new: true } }))).toEqual([
-      'Stage: lead → won',
-      'Due: empty → 2027-01-15',
-      'VIP: No → Yes',
-    ]);
+  it("puts a field change in words, with the field's label", () => {
+    expect(
+      describeHistory(
+        def,
+        entry('UPDATE', {
+          stage: { old: 'lead', new: 'won' },
+          due: { old: null, new: '2027-01-15T00:00:00.000Z' },
+          vip: { old: false, new: true },
+        }),
+      ),
+    ).toEqual(['Stage: lead → won', 'Due: empty → 2027-01-15', 'VIP: No → Yes']);
   });
 
   it('says how many records were linked and unlinked, from either end', () => {
-    expect(describeHistory(def, entry('UPDATE', { 'associations.company': { old: ['1'], new: ['1', '2', '3'] } }))).toEqual(['Companies: linked 2']);
-    expect(describeHistory(def, entry('UPDATE', { 'associations.company': { old: ['1', '2'], new: ['2'] } }))).toEqual(['Companies: unlinked 1']);
-    expect(describeHistory(def, entry('UPDATE', { 'associations.company': { old: null, new: '9' } }))).toEqual(['Companies: linked 1']);
-    expect(describeHistory(def, entry('UPDATE', { 'associations.company': { old: '9', new: null } }))).toEqual(['Companies: unlinked 1']);
+    expect(
+      describeHistory(
+        def,
+        entry('UPDATE', { 'associations.company': { old: ['1'], new: ['1', '2', '3'] } }),
+      ),
+    ).toEqual(['Companies: linked 2']);
+    expect(
+      describeHistory(
+        def,
+        entry('UPDATE', { 'associations.company': { old: ['1', '2'], new: ['2'] } }),
+      ),
+    ).toEqual(['Companies: unlinked 1']);
+    expect(
+      describeHistory(def, entry('UPDATE', { 'associations.company': { old: null, new: '9' } })),
+    ).toEqual(['Companies: linked 1']);
+    expect(
+      describeHistory(def, entry('UPDATE', { 'associations.company': { old: '9', new: null } })),
+    ).toEqual(['Companies: unlinked 1']);
   });
 
   it('falls back to the key for a field that has since been removed', () => {
-    expect(describeHistory(def, entry('UPDATE', { gone: { old: 'a', new: 'b' } }))).toEqual(['gone: a → b']);
+    expect(describeHistory(def, entry('UPDATE', { gone: { old: 'a', new: 'b' } }))).toEqual([
+      'gone: a → b',
+    ]);
   });
 });
 
@@ -212,33 +305,76 @@ describe('column filters', () => {
   it('leaves out what cannot be honoured', () => {
     expect(
       parseFilters(
-        ['nothing~EQUALS~x', 'notes~EQUALS~x', 'amount~CONTAINS~1', 'amount~GREATER_THAN~abc', 'name~CONTAINS~', 'vip~EQUALS~maybe', 'garbage', 'stage~EQUALS~won'],
+        [
+          'nothing~EQUALS~x',
+          'notes~EQUALS~x',
+          'amount~CONTAINS~1',
+          'amount~GREATER_THAN~abc',
+          'name~CONTAINS~',
+          'vip~EQUALS~maybe',
+          'garbage',
+          'stage~EQUALS~won',
+        ],
         fields,
       ),
     ).toEqual([{ field: 'stage', op: 'EQUALS', value: 'won' }]);
   });
 
   it('needs no value for emptiness', () => {
-    expect(parseFilters(['name~IS_NULL~'], fields)).toEqual([{ field: 'name', op: 'IS_NULL', value: '' }]);
+    expect(parseFilters(['name~IS_NULL~'], fields)).toEqual([
+      { field: 'name', op: 'IS_NULL', value: '' },
+    ]);
   });
 
   it('puts every filter into every search group, so both must hold', () => {
-    const body = searchBody([field('name', 'TEXT', { filterable: true }), field('city', 'TEXT', { filterable: true }), field('amount', 'NUMBER', { filterable: true })], 'ada', 1, 100, null, [
-      { field: 'amount', op: 'GREATER_THAN', value: '5' },
-    ]);
+    const body = searchBody(
+      [
+        field('name', 'TEXT', { filterable: true }),
+        field('city', 'TEXT', { filterable: true }),
+        field('amount', 'NUMBER', { filterable: true }),
+      ],
+      'ada',
+      1,
+      100,
+      null,
+      [{ field: 'amount', op: 'GREATER_THAN', value: '5' }],
+    );
     expect(body.filter_groups).toHaveLength(2); // searched in each text field
-    for (const group of body.filter_groups) expect(group.filters.at(-1)).toEqual({ field_path: 'amount', operator: 'GREATER_THAN', value: 5 });
+    for (const group of body.filter_groups)
+      expect(group.filters.at(-1)).toEqual({
+        field_path: 'amount',
+        operator: 'GREATER_THAN',
+        value: 5,
+      });
   });
 
   it('filters without a search text in a single group', () => {
-    const body = searchBody(fields, '', 1, 100, null, [{ field: 'vip', op: 'EQUALS', value: 'true' }, { field: 'name', op: 'IS_NULL', value: '' }]);
-    expect(body.filter_groups).toEqual([{ filters: [{ field_path: 'vip', operator: 'EQUALS', value: true }, { field_path: 'name', operator: 'IS_NULL' }] }]);
+    const body = searchBody(fields, '', 1, 100, null, [
+      { field: 'vip', op: 'EQUALS', value: 'true' },
+      { field: 'name', op: 'IS_NULL', value: '' },
+    ]);
+    expect(body.filter_groups).toEqual([
+      {
+        filters: [
+          { field_path: 'vip', operator: 'EQUALS', value: true },
+          { field_path: 'name', operator: 'IS_NULL' },
+        ],
+      },
+    ]);
   });
 
   it('says a filter in words', () => {
-    expect(describeFilter(fields, { field: 'stage', op: 'NOT_EQUALS', value: 'won' })).toBe('Stage is not won');
-    expect(describeFilter(fields, { field: 'amount', op: 'GREATER_THAN', value: '10' })).toBe('Amount > 10');
-    expect(describeFilter(fields, { field: 'vip', op: 'EQUALS', value: 'true' })).toBe('VIP is yes');
-    expect(describeFilter(fields, { field: 'name', op: 'IS_NULL', value: '' })).toBe('Name is empty');
+    expect(describeFilter(fields, { field: 'stage', op: 'NOT_EQUALS', value: 'won' })).toBe(
+      'Stage is not won',
+    );
+    expect(describeFilter(fields, { field: 'amount', op: 'GREATER_THAN', value: '10' })).toBe(
+      'Amount > 10',
+    );
+    expect(describeFilter(fields, { field: 'vip', op: 'EQUALS', value: 'true' })).toBe(
+      'VIP is yes',
+    );
+    expect(describeFilter(fields, { field: 'name', op: 'IS_NULL', value: '' })).toBe(
+      'Name is empty',
+    );
   });
 });
