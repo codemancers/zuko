@@ -27,7 +27,13 @@ function OrgBadge({ name }: { name: string }) {
   );
 }
 
-export function OrgSwitcher({ collapsed }: { collapsed: boolean }) {
+export function OrgSwitcher({
+  collapsed,
+  onNavigate,
+}: {
+  collapsed: boolean;
+  onNavigate?: () => void;
+}) {
   const { data: orgs } = authClient.useListOrganizations();
   const { data: active } = authClient.useActiveOrganization();
 
@@ -73,14 +79,14 @@ export function OrgSwitcher({ collapsed }: { collapsed: boolean }) {
           )}
           <DropdownMenuSeparator />
           <DropdownMenuItem asChild>
-            <Link href="/organizations/new">
+            <Link href="/organizations/new" onClick={onNavigate}>
               <Plus aria-hidden />
               Create organization
             </Link>
           </DropdownMenuItem>
           {active && (
             <DropdownMenuItem asChild>
-              <Link href="/org/settings/details">
+              <Link href="/org/settings/details" onClick={onNavigate}>
                 <Settings aria-hidden />
                 Organization settings
               </Link>

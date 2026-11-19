@@ -1,61 +1,50 @@
 'use client';
 
 import Link from 'next/link';
-import { BellRing, Clock } from 'lucide-react';
+import { ArrowUpRight, PlugZap, Settings } from 'lucide-react';
+import { getObjectIcon } from '@/components/records/object-icons';
 import { Shell } from '@/components/dashboard/shell';
-import { UserMenu } from '@/components/dashboard/user-menu';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useSession } from '@/lib/auth-client';
 
-function EmptyCard({
-  title,
-  description,
-  icon: Icon,
-}: {
-  title: string;
-  description: string;
-  icon: typeof Clock;
-}) {
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>{title}</CardTitle>
-      </CardHeader>
-      <CardContent className="flex flex-col items-center gap-2 py-6 text-center">
-        <span className="flex size-10 items-center justify-center rounded-full bg-muted text-muted-foreground">
-          <Icon className="size-5" aria-hidden />
-        </span>
-        <p className="text-sm text-muted-foreground">{description}</p>
-      </CardContent>
-    </Card>
-  );
-}
+const records = [
+  {
+    href: '/records/contact',
+    title: 'Contacts',
+    description: 'The people you work with.',
+    icon: getObjectIcon('contact'),
+  },
+  {
+    href: '/records/company',
+    title: 'Companies',
+    description: 'Organizations and their relationships.',
+    icon: getObjectIcon('company'),
+  },
+  {
+    href: '/records/deal',
+    title: 'Deals',
+    description: 'Opportunities and what comes next.',
+    icon: getObjectIcon('deal'),
+  },
+];
 
 export default function DashboardPage() {
   const { data: session, isPending } = useSession();
-
-  if (isPending) {
+  if (isPending)
     return (
-      <Shell menu={<Skeleton className="size-8 rounded-full" />}>
+      <Shell>
         <Skeleton className="h-8 w-64" />
-        <Skeleton className="h-40 w-full" />
-        <div className="grid gap-4 md:grid-cols-2">
-          <Skeleton className="h-40" />
-          <Skeleton className="h-40" />
-        </div>
+        <Skeleton className="h-52" />
       </Shell>
     );
-  }
-
-  if (!session) {
+  if (!session)
     return (
       <main className="flex min-h-svh items-center justify-center bg-muted/40 p-6">
         <Card className="w-full max-w-sm text-center">
           <CardHeader>
-            <h1 className="font-heading text-xl font-medium">Not signed in</h1>
+            <h1 className="text-2xl font-semibold tracking-tight">Not signed in</h1>
             <CardDescription>Log in to see your dashboard.</CardDescription>
           </CardHeader>
           <CardContent className="flex justify-center gap-2">
@@ -69,63 +58,78 @@ export default function DashboardPage() {
         </Card>
       </main>
     );
-  }
-
-  const { name, email, emailVerified, image, createdAt } = session.user;
-  const firstName = name.trim().split(/\s+/)[0] || name;
-
+  const firstName = session.user.name.trim().split(/\s+/)[0] || session.user.name;
   return (
-    <Shell menu={<UserMenu name={name} email={email} image={image} />}>
-      <div>
-        <h1 className="font-heading text-2xl font-semibold tracking-tight">
+    <Shell>
+      <div className="pb-2">
+        <p className="mb-2 text-xs font-medium tracking-widest text-muted-foreground uppercase">
+          Your workspace
+        </p>
+        <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
           Welcome back, {firstName}
         </h1>
-        <p className="text-sm text-muted-foreground">
-          Here is what is happening in your workspace.
+        <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+          Pick up with your records, or make this workspace your own.
         </p>
       </div>
-
       <Card>
         <CardHeader>
-          <CardTitle>Your account</CardTitle>
-          <CardDescription>The details you signed up with.</CardDescription>
+          <CardTitle>Your records</CardTitle>
+          <CardDescription>People, companies, and opportunities. Connected.</CardDescription>
         </CardHeader>
         <CardContent>
-          <dl className="grid gap-4 text-sm sm:grid-cols-3">
-            <div className="space-y-1">
-              <dt className="text-muted-foreground">Name</dt>
-              <dd className="font-medium">{name}</dd>
-            </div>
-            <div className="space-y-1">
-              <dt className="text-muted-foreground">Email</dt>
-              <dd className="flex flex-wrap items-center gap-2 font-medium">
-                {email}
-                <Badge variant={emailVerified ? 'secondary' : 'outline'}>
-                  {emailVerified ? 'Verified' : 'Unverified'}
-                </Badge>
-              </dd>
-            </div>
-            <div className="space-y-1">
-              <dt className="text-muted-foreground">Member since</dt>
-              <dd className="font-medium">
-                {new Date(createdAt).toLocaleDateString(undefined, { dateStyle: 'long' })}
-              </dd>
-            </div>
-          </dl>
+          <nav aria-label="Record workspaces" className="grid gap-3 sm:grid-cols-3">
+            {records.map(({ href, title, description, icon: Icon }) => (
+              <Link
+                key={href}
+                href={href}
+                className="group rounded-xl border bg-background/50 p-5 transition-colors hover:border-primary/50 hover:bg-primary/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+              >
+                <span className="mb-5 flex items-center justify-between">
+                  <Icon className="size-5 text-muted-foreground" aria-hidden />
+                  <ArrowUpRight
+                    className="size-4 text-muted-foreground/50 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5 motion-reduce:transform-none"
+                    aria-hidden
+                  />
+                </span>
+                <span className="block font-medium">{title}</span>
+                <span className="mt-1 block text-xs leading-relaxed text-muted-foreground">
+                  {description}
+                </span>
+              </Link>
+            ))}
+          </nav>
         </CardContent>
       </Card>
-
-      <div className="grid gap-4 md:grid-cols-2">
-        <EmptyCard
-          title="Needs attention"
-          description="Nothing needs your attention right now."
-          icon={BellRing}
-        />
-        <EmptyCard
-          title="Recent work"
-          description="Your recent activity will show up here."
-          icon={Clock}
-        />
+      <div className="grid gap-4 sm:grid-cols-2">
+        {[
+          {
+            href: '/org/settings/details',
+            title: 'Make it your workspace',
+            description: 'Manage your team, objects, and permissions.',
+            icon: Settings,
+          },
+          {
+            href: '/account/connections',
+            title: 'Connect your tools',
+            description: 'Review the apps that can work on your behalf.',
+            icon: PlugZap,
+          },
+        ].map(({ href, title, description, icon: Icon }) => (
+          <Link
+            key={href}
+            href={href}
+            className="flex items-start gap-4 rounded-xl border bg-card/50 p-5 transition-colors hover:bg-card focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+          >
+            <Icon className="mt-0.5 size-5 shrink-0 text-muted-foreground" aria-hidden />
+            <span>
+              <span className="block text-sm font-medium">{title}</span>
+              <span className="mt-1 block text-xs leading-relaxed text-muted-foreground">
+                {description}
+              </span>
+            </span>
+          </Link>
+        ))}
       </div>
     </Shell>
   );

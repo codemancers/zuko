@@ -179,6 +179,7 @@ export function MembersSheet({
             <SheetEditableTextCell
               value=""
               placeholder="Email to invite"
+              // oxlint-disable-next-line jsx-a11y/no-autofocus -- Focus the invitation row the user just added.
               autoFocus
               onCommit={async (email) => {
                 const { data, error } = await authClient.organization.inviteMember({

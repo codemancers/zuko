@@ -1,4 +1,15 @@
-import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  Param,
+  Patch,
+  Post,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import { Crm, CrmContextGuard, type RequestContext } from './context';
 import { RecordsQueryService } from './records-query.service';
 import { RecordsService } from './records.service';
@@ -12,7 +23,11 @@ export class RecordsController {
   ) {}
 
   @Get()
-  list(@Crm() ctx: RequestContext, @Param('object') object: string, @Query() query: Record<string, string | undefined>) {
+  list(
+    @Crm() ctx: RequestContext,
+    @Param('object') object: string,
+    @Query() query: Record<string, string | undefined>,
+  ) {
     return this.queries.list(ctx, object, query);
   }
 
@@ -21,6 +36,12 @@ export class RecordsController {
   @HttpCode(200)
   filter(@Crm() ctx: RequestContext, @Param('object') object: string, @Body() body: unknown) {
     return this.queries.filter(ctx, object, body);
+  }
+
+  @Post('facets')
+  @HttpCode(200)
+  facets(@Crm() ctx: RequestContext, @Param('object') object: string, @Body() body: unknown) {
+    return this.queries.facets(ctx, object, body);
   }
 
   @Post()
@@ -34,7 +55,12 @@ export class RecordsController {
   }
 
   @Patch(':id')
-  update(@Crm() ctx: RequestContext, @Param('object') object: string, @Param('id') id: string, @Body() body: unknown) {
+  update(
+    @Crm() ctx: RequestContext,
+    @Param('object') object: string,
+    @Param('id') id: string,
+    @Body() body: unknown,
+  ) {
     return this.records.update(ctx, object, id, body);
   }
 
