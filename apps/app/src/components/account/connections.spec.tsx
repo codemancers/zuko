@@ -1,4 +1,4 @@
-import { fireEvent, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, screen, waitFor } from '@testing-library/react';
 import { render } from '@/test/render';
 import { Connections, type Connection } from './connections';
 
@@ -101,6 +101,44 @@ describe('Connections', () => {
 
     expect(await screen.findByText('No such connection')).toBeTruthy();
     expect(screen.getByText('Claude')).toBeTruthy();
+
+    serve([claude]);
+    fireEvent.click(screen.getByRole('button', { name: 'Yes, disconnect' }));
+    await waitFor(() => expect(screen.queryByText('Claude')).toBeNull());
+    expect(screen.queryByText('No such connection')).toBeNull();
+  });
+
+  it('disables actions while disconnecting and keeps the row until the server succeeds', async () => {
+    let finish!: () => void;
+    api.mockImplementation(async (_path, init) => {
+      if (init?.method === 'DELETE')
+        return new Promise<void>((resolve) => {
+          finish = resolve;
+        });
+      return { results: [claude, cursor] };
+    });
+    render(<Connections />);
+    fireEvent.click((await screen.findAllByRole('button', { name: 'Disconnect' }))[0]);
+    fireEvent.click(screen.getByRole('button', { name: 'Yes, disconnect' }));
+
+    await waitFor(() =>
+      expect(
+        (screen.getByRole('button', { name: 'Disconnecting…' }) as HTMLButtonElement).disabled,
+      ).toBe(true),
+    );
+    expect((screen.getByRole('button', { name: 'Disconnect' }) as HTMLButtonElement).disabled).toBe(
+      true,
+    );
+    expect(
+      (screen.getByRole('button', { name: 'Keep connected' }) as HTMLButtonElement).disabled,
+    ).toBe(true);
+    expect(screen.getByText('Claude')).toBeTruthy();
+
+    await act(async () => finish());
+    await waitFor(() => expect(screen.queryByText('Claude')).toBeNull());
+    expect((screen.getByRole('button', { name: 'Disconnect' }) as HTMLButtonElement).disabled).toBe(
+      false,
+    );
   });
 
   it('shows an error when the list cannot be loaded', async () => {

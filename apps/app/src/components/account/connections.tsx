@@ -1,10 +1,10 @@
 'use client';
 
-import { useCallback, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useSheet } from '@codemancers/sheets';
 import { Sheet, SheetActionsCell, SheetTextCell } from '@codemancers/sheets/ui';
 import { createColumnHelper, type ColumnDef } from '@tanstack/react-table';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { AlertCircle, PlugZap } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
@@ -36,31 +36,25 @@ export function Connections() {
     queryFn: ({ signal }) => api<{ results: Connection[] }>('/api/v1/connections', { signal }),
   });
   const connections = connectionsQuery.data?.results ?? NO_CONNECTIONS;
-  const [mutationError, setError] = useState<string | null>(null);
-  const error = mutationError ?? connectionsQuery.error?.message;
   const [confirming, setConfirming] = useState<string | null>(null);
-  const [busy, setBusy] = useState<string | null>(null);
-
-  const disconnect = useCallback(
-    async (id: string) => {
-      setBusy(id);
-      setError(null);
-      try {
-        await api(`/api/v1/connections/${id}`, { method: 'DELETE' });
-        client.setQueryData<{ results: Connection[] }>(['connections'], (current) =>
-          current
-            ? { results: current.results.filter((connection) => connection.id !== id) }
-            : current,
-        );
-        setConfirming(null);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Could not disconnect this app.');
-      } finally {
-        setBusy(null);
-      }
+  const {
+    mutate: disconnect,
+    error: disconnectError,
+    isPending: disconnecting,
+    variables: disconnectId,
+  } = useMutation({
+    mutationFn: (id: string) => api(`/api/v1/connections/${id}`, { method: 'DELETE' }),
+    onSuccess: (_result, id) => {
+      client.setQueryData<{ results: Connection[] }>(['connections'], (current) =>
+        current
+          ? { results: current.results.filter((connection) => connection.id !== id) }
+          : current,
+      );
+      setConfirming(null);
     },
-    [client],
-  );
+  });
+  const error = disconnectError?.message ?? connectionsQuery.error?.message;
+  const busy = disconnecting ? disconnectId : null;
 
   const columns = useMemo<ColumnDef<Connection, unknown>[]>(
     () => [
@@ -133,7 +127,7 @@ export function Connections() {
                   size="sm"
                   disabled={busy !== null}
                   onClick={() =>
-                    asking ? void disconnect(connection.id) : setConfirming(connection.id)
+                    asking ? disconnect(connection.id) : setConfirming(connection.id)
                   }
                 >
                   {busy === connection.id
