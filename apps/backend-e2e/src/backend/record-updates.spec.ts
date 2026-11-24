@@ -20,7 +20,6 @@ beforeAll(async () => {
   ok(await owner.signUp());
   await verifyEmails(suffix);
   ok(await owner.post('/auth/organization/create', { name: 'Acme', slug: slugs[0] }));
-  ok(await owner.post(`${API}/setup/standard-objects`));
 }, 120_000);
 
 afterAll(async () => {

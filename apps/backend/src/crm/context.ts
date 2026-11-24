@@ -2,7 +2,7 @@ import { CanActivate, ExecutionContext, Injectable, createParamDecorator } from 
 import type { UserSession } from '@thallesp/nestjs-better-auth';
 import { randomUUID } from 'node:crypto';
 import { PrismaService } from '../prisma/prisma.service';
-import { badRequest, forbidden } from './errors';
+import { CrmError, badRequest, forbidden } from './errors';
 
 /** Who is making the request, in which organization, and what they belong to. */
 export interface RequestContext {
@@ -45,6 +45,12 @@ export class CrmContextService {
     if (!member) {
       throw forbidden('You are not a member of this organization');
     }
+    const setup = await this.prisma.withTenant({ organizationId }, (tx) =>
+      tx.organizationSetup.findUnique({ where: { organizationId }, select: { status: true } }),
+    );
+    if (setup?.status !== 'ready') {
+      throw new CrmError(409, 'ORGANIZATION_NOT_READY', 'Your organization is still being set up');
+    }
     const teams = await this.prisma.teamMember.findMany({
       where: { userId, team: { organizationId } },
       select: { teamId: true },
@@ -75,8 +81,9 @@ export class CrmContextGuard implements CanActivate {
   async canActivate(execution: ExecutionContext): Promise<boolean> {
     const request = execution.switchToHttp().getRequest<CrmRequest>();
     const session = request.session;
-    const activeOrganizationId = (session?.session as { activeOrganizationId?: unknown } | undefined)
-      ?.activeOrganizationId;
+    const activeOrganizationId = (
+      session?.session as { activeOrganizationId?: unknown } | undefined
+    )?.activeOrganizationId;
     if (!session || activeOrganizationId == null || activeOrganizationId === '') {
       throw badRequest('NO_ACTIVE_ORGANIZATION', 'No active organization; select one first');
     }
@@ -93,10 +100,12 @@ export class CrmContextGuard implements CanActivate {
 }
 
 /** The RequestContext built by CrmContextGuard. */
-export const Crm = createParamDecorator((_data: unknown, execution: ExecutionContext): RequestContext => {
-  const request = execution.switchToHttp().getRequest<CrmRequest>();
-  if (!request.crm) {
-    throw new Error('Crm() used on a route without CrmContextGuard');
-  }
-  return request.crm;
-});
+export const Crm = createParamDecorator(
+  (_data: unknown, execution: ExecutionContext): RequestContext => {
+    const request = execution.switchToHttp().getRequest<CrmRequest>();
+    if (!request.crm) {
+      throw new Error('Crm() used on a route without CrmContextGuard');
+    }
+    return request.crm;
+  },
+);

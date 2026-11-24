@@ -36,7 +36,6 @@ beforeAll(async () => {
     ok(await user.post('/auth/organization/accept-invitation', { invitationId: invitation.id }));
     ok(await user.signIn());
   }
-  ok(await owner.post(`${API}/setup/standard-objects`));
   for (const worker of workers) {
     records.set(
       worker.id,

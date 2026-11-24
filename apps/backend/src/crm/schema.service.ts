@@ -11,7 +11,6 @@ import type { RequestContext } from './context';
 import { conflict, notFound, parse, validationFailed } from './errors';
 import { FIELD_TYPES } from './field-types';
 import { assertCan } from './permissions';
-import { provisionStandardObjects } from './provision-standard-objects';
 
 /**
  * An object with its current fields. The fields that were removed are kept apart: they are not part of
@@ -262,23 +261,6 @@ export class SchemaService {
       }),
     );
     return objectDto(created, []);
-  }
-
-  /**
-   * Create the standard objects (contact, company, deal) the organization does not have yet.
-   * Safe to repeat: an object that exists is left exactly as it is, so nothing anyone has
-   * customized is overwritten.
-   */
-  async setupStandardObjects(ctx: RequestContext) {
-    assertCan(ctx, { object: ['manage'] }, 'set up the standard objects');
-    return this.tenant(ctx, async (tx) => {
-      const created = await provisionStandardObjects(tx, ctx.organizationId);
-      const objects = await tx.objectType.findMany({
-        where: { organizationId: ctx.organizationId },
-        orderBy: { id: 'asc' },
-      });
-      return { created, results: objects.map((o) => objectDto(o)) };
-    });
   }
 
   async addField(ctx: RequestContext, name: string, body: unknown) {

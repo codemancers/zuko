@@ -53,7 +53,6 @@ beforeAll(async () => {
   );
   ok(await alice.post('/auth/organization/accept-invitation', { invitationId: invite.id }));
   ok(await alice.signIn());
-  ok(await owner.post(`${API}/setup/standard-objects`));
   ok(
     await owner.post(`${API}/objects/deal/fields`, {
       name: 'primary_contact',

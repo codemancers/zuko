@@ -100,7 +100,6 @@ const NO_PEOPLE: { members: Option[]; teams: Option[] } = { members: [], teams: 
 const NEW_ROW_ID = 'new';
 const PIN_NEW_ROW = { top: [], bottom: [NEW_ROW_ID] };
 const PIN_NOTHING = { top: [], bottom: [] };
-const STANDARD = new Set(['contact', 'company', 'deal']);
 const col = createColumnHelper<RecordRow>();
 
 type Definition = { object: string; def?: ObjectDef; problem?: string };
@@ -212,40 +211,16 @@ const widthOf = (field: FieldDef) =>
     USER: 200,
   })[field.type] ?? 180;
 
-/**
- * The object's definition. A standard object an organization has not set up yet is set up
- * on the spot (that is idempotent), unless the person is not allowed to.
- */
+/** Read definitions provisioned by the organization's setup workflow. */
 async function loadDefinition(
   object: string,
   signal?: AbortSignal,
 ): Promise<{ def?: ObjectDef; problem?: string }> {
-  const describe = () => api<ObjectDef>(`/api/v1/objects/${object}`, { signal });
   try {
-    return { def: await describe() };
+    return { def: await api<ObjectDef>(`/api/v1/objects/${object}`, { signal }) };
   } catch (error) {
     if (signal?.aborted) throw error;
-    if (!(error instanceof ApiError) || error.status !== 404 || !STANDARD.has(object)) {
-      return { problem: messageOf(error) };
-    }
-  }
-  try {
-    await api('/api/v1/setup/standard-objects', { method: 'POST', signal });
-    return { def: await describe() };
-  } catch (error) {
-    if (signal?.aborted) throw error;
-    if (error instanceof ApiError && error.status === 403) {
-      return {
-        problem:
-          'Contacts, companies and deals have not been set up yet. Ask an owner or admin to open this page once.',
-      };
-    }
-    // Another tab or request may have set them up a moment ago; look once more before giving up.
-    try {
-      return { def: await describe() };
-    } catch {
-      return { problem: messageOf(error) };
-    }
+    return { problem: messageOf(error) };
   }
 }
 

@@ -73,6 +73,7 @@ export function Shell({
               <CommandMenuTrigger iconOnly />
             </div>
           </div>
+          <OrgGate />
           <main
             className={cn(
               'w-full',
@@ -83,7 +84,6 @@ export function Shell({
           >
             {children}
           </main>
-          <OrgGate />
         </div>
       </div>
     </CommandMenu>

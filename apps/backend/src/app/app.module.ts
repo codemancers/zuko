@@ -1,5 +1,6 @@
+import { OrganizationSetupModule } from '../organization-setup/setup.module';
+import { OrganizationSetupService } from '../organization-setup/setup.service';
 import { Module } from '@nestjs/common';
-import { WorkflowRuntimeModule } from '../workflow/workflow.module';
 import { AuthModule } from '@thallesp/nestjs-better-auth';
 import { CrmModule } from '../crm/crm.module';
 import { createAuth } from '../libs/better-auth/auth';
@@ -12,14 +13,18 @@ import { AppService } from './app.service';
 @Module({
   imports: [
     PrismaModule,
-    WorkflowRuntimeModule,
+    OrganizationSetupModule,
     CrmModule,
     McpModule,
     AuthModule.forRootAsync({
-      inject: [PrismaService],
+      imports: [OrganizationSetupModule],
+      inject: [PrismaService, OrganizationSetupService],
       // CORS is enabled in main.ts: the module's own handling hardcodes GET/POST/PUT/DELETE,
       // which leaves out PATCH (record updates).
-      useFactory: (prisma: PrismaService) => ({ auth: createAuth(prisma), disableTrustedOriginsCors: true }),
+      useFactory: (prisma: PrismaService, setup: OrganizationSetupService) => ({
+        auth: createAuth(prisma, (id) => setup.attach(id)),
+        disableTrustedOriginsCors: true,
+      }),
     }),
   ],
   controllers: [AppController],

@@ -1,19 +1,22 @@
 import type { TenantTransaction } from '../prisma/prisma.service';
 import { STANDARD_ASSOCIATIONS, STANDARD_OBJECTS } from './standard-objects';
+export class StandardObjectConflict extends Error {}
 
-/** Create missing standard definitions inside the caller's tenant transaction. */
+/** Provision missing CRM definitions without overwriting organization customizations. */
 export async function provisionStandardObjects(tx: TenantTransaction, organizationId: bigint) {
-  // Two requests setting up the same organization at once (two tabs, a double render)
-  // would both find nothing and both try to create. Take turns instead: the second one
-  // then sees what the first one made and creates nothing.
+  // Serialize duplicate workflow deliveries before checking which definitions exist.
   await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`standard-objects:${organizationId}`}))`;
   const created: string[] = [];
   for (const definition of STANDARD_OBJECTS) {
     const existing = await tx.objectType.findFirst({
       where: { organizationId, slug: definition.slug },
-      select: { id: true },
+      select: { id: true, kind: true },
     });
     if (existing) {
+      if (existing.kind !== 'STANDARD')
+        throw new StandardObjectConflict(
+          `The object key ${definition.slug} is already used by a custom object. Resolve this conflict before retrying setup.`,
+        );
       continue;
     }
     const object = await tx.objectType.create({

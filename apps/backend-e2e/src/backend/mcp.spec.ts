@@ -63,22 +63,14 @@ beforeAll(async () => {
   status(await alice.signIn(), 200);
 
   status(await linker.post('/auth/organization/create', { name: 'Link Co', slug: slugs[2] }), 200);
-  status(await linker.post(`${API}/setup/standard-objects`), 200);
 
-  status(await owner.post(`${API}/objects`, { slug: 'deal', label: 'Deal' }), 201);
-  for (const field of [
-    { name: 'name', label: 'Name', type: 'TEXT', required: true, filterable: true },
-    { name: 'amount', label: 'Amount', type: 'NUMBER', filterable: true },
-    {
-      name: 'stage',
-      label: 'Stage',
-      type: 'ENUM',
-      filterable: true,
+  // Customize the provisioned schema for the record and permission tests below.
+  status(
+    await owner.patch(`${API}/objects/deal/fields/stage`, {
       config: { options: ['open', 'won', 'lost'] },
-    },
-  ]) {
-    status(await owner.post(`${API}/objects/deal/fields`, field), 201);
-  }
+    }),
+    200,
+  );
 }, 120_000);
 
 afterAll(async () => {
@@ -224,12 +216,14 @@ describe('tools', () => {
   it('reads the schema and the directory', async () => {
     expect(
       (await mcp.call('list_object_types')).data.results.map((o: { name: string }) => o.name),
-    ).toEqual(['deal']);
+    ).toEqual(['contact', 'company', 'deal']);
     const described = (await mcp.call('describe_object_type', { object: 'deal' })).data;
     expect(described.fields.map((f: { name: string }) => f.name)).toEqual([
       'name',
       'amount',
       'stage',
+      'expected_close_date',
+      'companies',
     ]);
     const members = (await mcp.call('list_members')).data.results;
     expect(members.map((m: { email: string }) => m.email).sort()).toEqual([
@@ -542,13 +536,15 @@ describe('organization binding', () => {
     const acme = await openSession(forAcme.accessToken);
     expect(
       (await acme.call('list_object_types')).data.results.map((o: { name: string }) => o.name),
-    ).toEqual(['deal']);
+    ).toEqual(['contact', 'company', 'deal']);
     await acme.close();
 
     const forBeta = await connect(owner, clientName('bound-beta'), 'mcp:read');
     expect(forBeta.claims['urn:zuko:org_id']).toBe(betaId);
     const beta = await openSession(forBeta.accessToken);
-    expect((await beta.call('list_object_types')).data.results).toEqual([]); // Beta has no objects
+    expect(
+      (await beta.call('list_object_types')).data.results.map((o: { name: string }) => o.name),
+    ).toEqual(['contact', 'company', 'deal']);
     await beta.close();
 
     status(await owner.post('/auth/organization/set-active', { organizationId: acmeId }), 200);

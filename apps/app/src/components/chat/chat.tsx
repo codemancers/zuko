@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardDescription, CardHeader } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { authClient, useSession } from '@/lib/auth-client';
+import { useOrganizationSetup } from '@/lib/organization-setup';
 import { getEveAccessToken } from '@/lib/eve-auth';
 import { readChatHistory, saveChatHistory } from '@/lib/eve-history';
 import { cn } from '@/lib/utils';
@@ -194,142 +195,140 @@ function ChatSession({
   };
 
   return (
-    <Shell fill>
-      <div className="flex min-h-0 flex-1 flex-col">
-        <header className="flex h-14 shrink-0 items-center border-b px-4 sm:px-6">
-          <div>
-            <h1 className="text-sm font-semibold">Zuko copilot</h1>
-            <p className="text-xs text-muted-foreground">{organizationName}</p>
-          </div>
-          <Button asChild variant="ghost" size="sm" className="ml-auto">
-            <Link href="/chat/new">New chat</Link>
-          </Button>
-        </header>
-
-        <div className="min-h-0 flex-1 overflow-y-auto">
-          <div className="mx-auto flex min-h-full w-full max-w-3xl flex-col px-4 py-8 sm:px-6">
-            {agent.messages.length === 0 && agent.status !== 'resuming' ? (
-              <div className="my-auto py-16 text-center">
-                <span className="mx-auto mb-5 flex size-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-                  <Sparkles className="size-6" aria-hidden />
-                </span>
-                <h2 className="text-2xl font-semibold tracking-tight">What can I help with?</h2>
-                <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-muted-foreground">
-                  Search your CRM, summarize relationships, or make changes with your approval.
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-7">
-                {agent.messages.map((message) => (
-                  <article
-                    key={message.id}
-                    className={cn('flex gap-3', message.role === 'user' && 'flex-row-reverse')}
-                  >
-                    <span
-                      className={cn(
-                        'mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full',
-                        message.role === 'assistant' ? 'bg-primary/10 text-primary' : 'bg-muted',
-                      )}
-                    >
-                      {message.role === 'assistant' ? (
-                        <Bot className="size-4" aria-hidden />
-                      ) : (
-                        <UserRound className="size-4" aria-hidden />
-                      )}
-                    </span>
-                    <div
-                      className={cn(
-                        'min-w-0 max-w-[85%] text-sm',
-                        message.role === 'user' &&
-                          'rounded-2xl bg-primary px-4 py-2.5 text-primary-foreground',
-                      )}
-                    >
-                      {message.parts.map((part, index) => (
-                        <MessagePart
-                          key={messagePartKey(part, index)}
-                          part={part}
-                          disabled={disabled}
-                          respond={respond}
-                        />
-                      ))}
-                    </div>
-                  </article>
-                ))}
-                {(agent.status === 'busy' || agent.status === 'resuming') && (
-                  <output className="flex items-center gap-2 text-xs text-muted-foreground">
-                    <LoaderCircle className="size-3.5 animate-spin" aria-hidden />
-                    {agent.status === 'resuming'
-                      ? 'Loading conversation…'
-                      : currentActivity.kind === 'calling'
-                        ? currentActivity.names.join(', ')
-                        : currentActivity.kind === 'waiting-on-interaction'
-                          ? 'Waiting for your response'
-                          : 'Thinking…'}
-                  </output>
-                )}
-              </div>
-            )}
-            {agent.error && (
-              <div
-                role="alert"
-                className="mt-6 rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive"
-              >
-                {agent.error.message}
-              </div>
-            )}
-            <div ref={bottom} />
-          </div>
+    <div className="flex min-h-0 flex-1 flex-col">
+      <header className="flex h-14 shrink-0 items-center border-b px-4 sm:px-6">
+        <div>
+          <h1 className="text-sm font-semibold">Zuko copilot</h1>
+          <p className="text-xs text-muted-foreground">{organizationName}</p>
         </div>
+        <Button asChild variant="ghost" size="sm" className="ml-auto">
+          <Link href="/chat/new">New chat</Link>
+        </Button>
+      </header>
 
-        <div className="shrink-0 border-t bg-background p-3 sm:p-4">
-          <form
-            className="mx-auto flex max-w-3xl items-end gap-2 rounded-2xl border bg-background p-2 shadow-sm focus-within:ring-2 focus-within:ring-ring/30"
-            onSubmit={(event) => {
-              event.preventDefault();
-              const form = event.currentTarget;
-              const text = String(new FormData(form).get('message') ?? '').trim();
-              if (!text || disabled) return;
-              pendingTitle.current = text.slice(0, 72);
-              form.reset();
-              void agent.send(text);
-            }}
-          >
-            <textarea
-              name="message"
-              rows={1}
-              aria-label="Message Zuko copilot"
-              placeholder="Ask about your CRM…"
-              disabled={disabled}
-              className="max-h-40 min-h-9 min-w-0 flex-1 resize-y bg-transparent px-2 py-2 text-sm outline-none placeholder:text-muted-foreground disabled:opacity-50"
-              onKeyDown={(event) => {
-                if (event.key === 'Enter' && !event.shiftKey) {
-                  event.preventDefault();
-                  event.currentTarget.form?.requestSubmit();
-                }
-              }}
-            />
-            {turn ? (
-              <Button
-                type="button"
-                size="icon"
-                variant="outline"
-                aria-label="Stop response"
-                onClick={() => void agent.cancel()}
-              >
-                <CircleStop aria-hidden />
-              </Button>
-            ) : (
-              <Button type="submit" size="icon" aria-label="Send message" disabled={disabled}>
-                <Send aria-hidden />
-              </Button>
-            )}
-          </form>
-          <p className="mx-auto mt-2 max-w-3xl text-center text-[11px] text-muted-foreground">
-            Changes require your approval. Zuko applies your normal permissions.
-          </p>
+      <div className="min-h-0 flex-1 overflow-y-auto">
+        <div className="mx-auto flex min-h-full w-full max-w-3xl flex-col px-4 py-8 sm:px-6">
+          {agent.messages.length === 0 && agent.status !== 'resuming' ? (
+            <div className="my-auto py-16 text-center">
+              <span className="mx-auto mb-5 flex size-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                <Sparkles className="size-6" aria-hidden />
+              </span>
+              <h2 className="text-2xl font-semibold tracking-tight">What can I help with?</h2>
+              <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-muted-foreground">
+                Search your CRM, summarize relationships, or make changes with your approval.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-7">
+              {agent.messages.map((message) => (
+                <article
+                  key={message.id}
+                  className={cn('flex gap-3', message.role === 'user' && 'flex-row-reverse')}
+                >
+                  <span
+                    className={cn(
+                      'mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full',
+                      message.role === 'assistant' ? 'bg-primary/10 text-primary' : 'bg-muted',
+                    )}
+                  >
+                    {message.role === 'assistant' ? (
+                      <Bot className="size-4" aria-hidden />
+                    ) : (
+                      <UserRound className="size-4" aria-hidden />
+                    )}
+                  </span>
+                  <div
+                    className={cn(
+                      'min-w-0 max-w-[85%] text-sm',
+                      message.role === 'user' &&
+                        'rounded-2xl bg-primary px-4 py-2.5 text-primary-foreground',
+                    )}
+                  >
+                    {message.parts.map((part, index) => (
+                      <MessagePart
+                        key={messagePartKey(part, index)}
+                        part={part}
+                        disabled={disabled}
+                        respond={respond}
+                      />
+                    ))}
+                  </div>
+                </article>
+              ))}
+              {(agent.status === 'busy' || agent.status === 'resuming') && (
+                <output className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <LoaderCircle className="size-3.5 animate-spin" aria-hidden />
+                  {agent.status === 'resuming'
+                    ? 'Loading conversation…'
+                    : currentActivity.kind === 'calling'
+                      ? currentActivity.names.join(', ')
+                      : currentActivity.kind === 'waiting-on-interaction'
+                        ? 'Waiting for your response'
+                        : 'Thinking…'}
+                </output>
+              )}
+            </div>
+          )}
+          {agent.error && (
+            <div
+              role="alert"
+              className="mt-6 rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive"
+            >
+              {agent.error.message}
+            </div>
+          )}
+          <div ref={bottom} />
         </div>
       </div>
-    </Shell>
+
+      <div className="shrink-0 border-t bg-background p-3 sm:p-4">
+        <form
+          className="mx-auto flex max-w-3xl items-end gap-2 rounded-2xl border bg-background p-2 shadow-sm focus-within:ring-2 focus-within:ring-ring/30"
+          onSubmit={(event) => {
+            event.preventDefault();
+            const form = event.currentTarget;
+            const text = String(new FormData(form).get('message') ?? '').trim();
+            if (!text || disabled) return;
+            pendingTitle.current = text.slice(0, 72);
+            form.reset();
+            void agent.send(text);
+          }}
+        >
+          <textarea
+            name="message"
+            rows={1}
+            aria-label="Message Zuko copilot"
+            placeholder="Ask about your CRM…"
+            disabled={disabled}
+            className="max-h-40 min-h-9 min-w-0 flex-1 resize-y bg-transparent px-2 py-2 text-sm outline-none placeholder:text-muted-foreground disabled:opacity-50"
+            onKeyDown={(event) => {
+              if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                event.currentTarget.form?.requestSubmit();
+              }
+            }}
+          />
+          {turn ? (
+            <Button
+              type="button"
+              size="icon"
+              variant="outline"
+              aria-label="Stop response"
+              onClick={() => void agent.cancel()}
+            >
+              <CircleStop aria-hidden />
+            </Button>
+          ) : (
+            <Button type="submit" size="icon" aria-label="Send message" disabled={disabled}>
+              <Send aria-hidden />
+            </Button>
+          )}
+        </form>
+        <p className="mx-auto mt-2 max-w-3xl text-center text-[11px] text-muted-foreground">
+          Changes require your approval. Zuko applies your normal permissions.
+        </p>
+      </div>
+    </div>
   );
 }
 
@@ -337,6 +336,7 @@ export function Chat({ sessionId }: { sessionId?: string }) {
   const router = useRouter();
   const { data: session, isPending } = useSession();
   const { data: organization, isPending: organizationPending } = authClient.useActiveOrganization();
+  const setup = useOrganizationSetup();
 
   useEffect(() => {
     if (!isPending && !session) router.replace('/login');
@@ -365,13 +365,32 @@ export function Chat({ sessionId }: { sessionId?: string }) {
     );
   }
 
+  if (setup.isPending || setup.isFetching) {
+    return (
+      <Shell fill>
+        <p className="m-auto p-6 text-sm text-muted-foreground">Checking organization setup…</p>
+      </Shell>
+    );
+  }
+  if (setup.data?.status !== 'ready') {
+    return (
+      <Shell fill>
+        <p className="m-auto p-6 text-sm text-muted-foreground">
+          Chat will be available when organization setup is complete.
+        </p>
+      </Shell>
+    );
+  }
+
   const scope = `${session.user.id}:${organization.id}`;
   return (
-    <ChatSession
-      key={`${scope}:${sessionId ?? 'new'}`}
-      sessionId={sessionId}
-      scope={scope}
-      organizationName={organization.name}
-    />
+    <Shell fill>
+      <ChatSession
+        key={`${scope}:${sessionId ?? 'new'}`}
+        sessionId={sessionId}
+        scope={scope}
+        organizationName={organization.name}
+      />
+    </Shell>
   );
 }

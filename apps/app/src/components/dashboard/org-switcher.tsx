@@ -2,8 +2,9 @@
 
 import Link from 'next/link';
 import { useEffect } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
-import { Check, ChevronsUpDown, Plus, Settings } from 'lucide-react';
+import { Check, ChevronsUpDown, TriangleAlert, Plus, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -14,6 +15,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { authClient } from '@/lib/auth-client';
+import { organizationSetupKey, useOrganizationSetup } from '@/lib/organization-setup';
 import { cn } from '@/lib/utils';
 
 function OrgBadge({ name }: { name: string }) {
@@ -34,6 +36,8 @@ export function OrgSwitcher({
   collapsed: boolean;
   onNavigate?: () => void;
 }) {
+  const client = useQueryClient();
+  const { data: session } = authClient.useSession();
   const { data: orgs } = authClient.useListOrganizations();
   const { data: active } = authClient.useActiveOrganization();
 
@@ -67,7 +71,16 @@ export function OrgSwitcher({
           {orgs?.map((org) => (
             <DropdownMenuItem
               key={org.id}
-              onSelect={() => authClient.organization.setActive({ organizationId: org.id })}
+              onSelect={() => {
+                if (org.id !== active?.id) {
+                  void client.invalidateQueries({
+                    queryKey: organizationSetupKey(org.id, session?.user.id),
+                    exact: true,
+                    refetchType: 'none',
+                  });
+                }
+                void authClient.organization.setActive({ organizationId: org.id });
+              }}
             >
               <OrgBadge name={org.name} />
               <span className="flex-1 truncate">{org.name}</span>
@@ -98,16 +111,44 @@ export function OrgSwitcher({
   );
 }
 
-/** Sends a signed-in user with no organizations to the create-organization page. */
+/** Handle organization selection and report setup readiness without blocking page content. */
 export function OrgGate() {
   const router = useRouter();
   const { data: session } = authClient.useSession();
   const { data: orgs, isPending } = authClient.useListOrganizations();
+  const { data: active } = authClient.useActiveOrganization();
+  const setup = useOrganizationSetup();
   const needsOrg = !!session && !isPending && !!orgs && orgs.length === 0;
 
   useEffect(() => {
     if (needsOrg) router.replace('/organizations/new');
   }, [needsOrg, router]);
 
-  return null;
+  if (!session || !active || setup.isPending || setup.data?.status === 'ready') return null;
+  const needsAttention = setup.isError || setup.data?.status === 'failed';
+  return (
+    <aside
+      aria-live="polite"
+      className={cn(
+        'flex shrink-0 flex-wrap items-center gap-x-3 gap-y-1 border-b px-4 py-2 text-sm sm:px-6',
+        needsAttention
+          ? 'border-red-200 bg-red-50 text-red-900 dark:border-red-900 dark:bg-red-950 dark:text-red-200'
+          : 'border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-200',
+      )}
+    >
+      <p className="flex min-w-0 items-start gap-2">
+        <TriangleAlert aria-hidden className="mt-0.5 size-4 shrink-0" />
+        <span>
+          {setup.isError
+            ? `Could not check setup for ${active.name}.`
+            : setup.data?.status === 'failed'
+              ? `Setup for ${active.name} needs attention.`
+              : `${active.name} is still being set up.`}
+        </span>
+      </p>
+      <Link href="/organizations/setup" className="underline underline-offset-4">
+        View setup
+      </Link>
+    </aside>
+  );
 }

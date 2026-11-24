@@ -56,8 +56,6 @@ beforeAll(async () => {
     ok(await user.post('/auth/organization/accept-invitation', { invitationId: invite.id }));
     ok(await user.signIn());
   }
-  ok(await owner.post(`${API}/setup/standard-objects`));
-  ok(await eve.post(`${API}/setup/standard-objects`));
   ada = await create(owner, 'contact', { first_name: 'Ada', last_name: 'Lovelace' });
   grace = await create(owner, 'contact', { first_name: 'Grace', last_name: 'Hopper' });
   acme = await create(owner, 'company', { name: 'Analytical Engines' });
