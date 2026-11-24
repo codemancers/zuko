@@ -49,6 +49,7 @@ export default defineConfig({
       env: {
         DATABASE_URL: testDatabaseUrl(),
         BETTER_AUTH_SECRET: 'e2e-only-secret-not-for-real-use-0123456789',
+        EVE_AUTH_SECRET: 'e2e-only-eve-secret-not-for-real-use-0123456789',
         BACKEND_URL,
         FRONTEND_URL: APP_URL,
         PORT: new URL(BACKEND_URL).port,
@@ -61,7 +62,13 @@ export default defineConfig({
       gracefulShutdown: { signal: 'SIGINT', timeout: 10_000 },
       timeout: 120_000,
       cwd: workspaceRoot,
-      env: { PORT: new URL(APP_URL).port, NEXT_PUBLIC_BACKEND_URL: BACKEND_URL },
+      env: {
+        PORT: new URL(APP_URL).port,
+        BACKEND_URL,
+        FRONTEND_URL: APP_URL,
+        NEXT_PUBLIC_BACKEND_URL: BACKEND_URL,
+        EVE_AUTH_SECRET: 'e2e-only-eve-secret-not-for-real-use-0123456789',
+      },
     },
   ],
   projects: [

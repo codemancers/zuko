@@ -37,8 +37,8 @@ const sections: NavSection[] = [
   {
     title: 'AI',
     items: [
-      { label: 'New chat', icon: Sparkles },
-      { label: 'Your chats', icon: MessagesSquare },
+      { label: 'New chat', icon: Sparkles, href: '/chat/new' },
+      { label: 'Your chats', icon: MessagesSquare, href: '/chat/history' },
       { label: 'Skills', icon: Wand2 },
     ],
   },

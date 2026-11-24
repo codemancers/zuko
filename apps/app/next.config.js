@@ -18,8 +18,13 @@ const pageExtensions = ['js', 'jsx', 'ts', 'tsx'];
  * @param {string} phase
  * @returns {import('next').NextConfig}
  */
-module.exports = (phase) => ({
+const zukoConfig = (phase) => ({
   ...nextConfig,
   pageExtensions:
     phase === PHASE_DEVELOPMENT_SERVER ? ['dev.tsx', ...pageExtensions] : pageExtensions,
 });
+
+module.exports = async (phase, context) => {
+  const { withEve } = await import('eve/next');
+  return withEve(zukoConfig, { eveRoot: '../..' })(phase, context);
+};
