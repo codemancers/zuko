@@ -7,6 +7,7 @@ import { AccessService } from './access.service';
 import { CrmContextGuard, CrmContextService } from './context';
 import { DirectoryController } from './directory.controller';
 import { DirectoryService } from './directory.service';
+import { EveController } from './eve.controller';
 import { CrmExceptionFilter } from './errors';
 import { ObjectsController } from './objects.controller';
 import { RecordsController } from './records.controller';
@@ -16,8 +17,33 @@ import { SchemaService } from './schema.service';
 import { SharesService } from './shares.service';
 
 @Module({
-  exports: [SchemaService, RecordsService, AssociationsService, RecordsQueryService, DirectoryService, CrmContextService],
-  controllers: [ObjectsController, RecordsController, AssociationsController, AccessController, DirectoryController],
-  providers: [SchemaService, RecordsService, AssociationsService, RecordsQueryService, AccessService, SharesService, DirectoryService, CrmContextGuard, CrmContextService, { provide: APP_FILTER, useClass: CrmExceptionFilter }],
+  exports: [
+    SchemaService,
+    RecordsService,
+    AssociationsService,
+    RecordsQueryService,
+    DirectoryService,
+    CrmContextService,
+  ],
+  controllers: [
+    ObjectsController,
+    RecordsController,
+    AssociationsController,
+    AccessController,
+    DirectoryController,
+    EveController,
+  ],
+  providers: [
+    SchemaService,
+    RecordsService,
+    AssociationsService,
+    RecordsQueryService,
+    AccessService,
+    SharesService,
+    DirectoryService,
+    CrmContextGuard,
+    CrmContextService,
+    { provide: APP_FILTER, useClass: CrmExceptionFilter },
+  ],
 })
 export class CrmModule {}

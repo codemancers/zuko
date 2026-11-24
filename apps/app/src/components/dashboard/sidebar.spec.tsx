@@ -29,7 +29,7 @@ beforeEach(() => {
 });
 
 describe('Sidebar', () => {
-  it('links contacts, companies and deals, and leaves the rest as coming soon', () => {
+  it('links the copilot and records, and leaves the rest as coming soon', () => {
     render(<Sidebar />);
     const main = within(screen.getByRole('navigation', { name: 'Main' }));
 
@@ -40,7 +40,11 @@ describe('Sidebar', () => {
       '/records/company',
     );
     expect(main.getByRole('link', { name: 'Deals' }).getAttribute('href')).toBe('/records/deal');
-    expect(main.getAllByRole('link')).toHaveLength(4);
+    expect(main.getByRole('link', { name: 'New chat' }).getAttribute('href')).toBe('/chat/new');
+    expect(main.getByRole('link', { name: 'Your chats' }).getAttribute('href')).toBe(
+      '/chat/history',
+    );
+    expect(main.getAllByRole('link')).toHaveLength(6);
     expect(main.getByText('Campaigns').closest('[aria-disabled="true"]')).toBeTruthy();
     expect(main.getAllByText('Soon').length).toBeGreaterThan(5);
   });
@@ -104,7 +108,7 @@ describe('Sidebar', () => {
     await waitFor(() => expect(api).toHaveBeenCalled());
     expect(
       within(screen.getByRole('navigation', { name: 'Main' })).getAllByRole('link'),
-    ).toHaveLength(4);
+    ).toHaveLength(6);
   });
 });
 

@@ -13,6 +13,9 @@
       "path": "./apps/app"
     },
     {
+      "path": "./apps/harness"
+    },
+    {
       "path": "./apps/app-e2e"
     },
     {

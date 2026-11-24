@@ -21,6 +21,12 @@ import { PrismaService } from '../prisma/prisma.service';
 import { sendFetchResponse, toFetchRequest, type HttpRequest, type HttpResponse } from './http';
 import { AssociationsService } from '../crm/associations.service';
 import { buildMcpServer } from './mcp-tools';
+import {
+  bearerToken,
+  EVE_ORGANIZATION_CLAIM,
+  EVE_USER_CLAIM,
+  verifyEveMcpToken,
+} from '../libs/eve/tokens';
 
 const problem = (status: number, code: string, message: string) =>
   new Response(JSON.stringify({ code, message }), {
@@ -46,8 +52,8 @@ const disconnected = () =>
 
 /**
  * The MCP endpoint. It is not behind the web-session guard: access is by OAuth access
- * token only. A token carries the user (`sub`) and the organization they chose when they
- * connected; the request then runs as that user in that organization.
+ * token, or by a short-lived internal delegation from Eve. Either token carries the user
+ * and organization; the request then rebuilds Zuko's normal tenant and permission context.
  */
 @Controller('mcp')
 export class McpController {
@@ -81,6 +87,38 @@ export class McpController {
   @All()
   @AllowAnonymous()
   async handle(@Req() req: HttpRequest, @Res() res: HttpResponse) {
+    const request = toFetchRequest(req);
+    const eve = verifyEveMcpToken(bearerToken(req.headers['authorization']));
+    if (eve) {
+      let ctx: RequestContext;
+      try {
+        ctx = await this.contexts.build({
+          userId: BigInt(eve[EVE_USER_CLAIM]),
+          organizationId: BigInt(eve[EVE_ORGANIZATION_CLAIM]),
+          actorType: 'MCP',
+          requestId: request.headers.get('x-request-id') ?? undefined,
+        });
+      } catch (error) {
+        if (error instanceof CrmError) {
+          await sendFetchResponse(res, problem(403, error.code, error.message));
+          return;
+        }
+        throw error;
+      }
+      const response = await this.handler.fetch(request, {
+        parsedBody: req.method === 'POST' ? req.body : undefined,
+        authInfo: {
+          token: '',
+          clientId: 'zuko-eve',
+          scopes: eve.scope?.split(/\s+/).filter(Boolean) ?? [],
+          expiresAt: eve.exp,
+          extra: { ctx },
+        },
+      });
+      await sendFetchResponse(res, response);
+      return;
+    }
+
     const guarded = requireMcpAuth(
       this.auth.instance,
       async (request, claims) => {
@@ -142,6 +180,6 @@ export class McpController {
       { resource: MCP_RESOURCE, requiredScopes: [MCP_SCOPES.read] },
     );
 
-    await sendFetchResponse(res, await guarded(toFetchRequest(req)));
+    await sendFetchResponse(res, await guarded(request));
   }
 }
