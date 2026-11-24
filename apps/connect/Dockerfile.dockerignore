@@ -1,0 +1,16 @@
+.env
+.env.*
+**/.env
+**/.env.*
+
+node_modules
+**/node_modules
+.git
+.nx
+.next
+.output
+dist
+coverage
+test-output
+*.log
+.DS_Store
