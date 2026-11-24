@@ -1,0 +1,27 @@
+{
+  "name": "@zuko/connect",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "kosha start",
+    "migrate": "kosha migrate deploy",
+    "info": "kosha info"
+  },
+  "dependencies": {
+    "@kosha-ai/admin": "^0.6.0",
+    "@kosha-ai/cli": "^0.6.0",
+    "@kosha-ai/integration-apollo": "^0.6.0",
+    "@kosha-ai/server": "^0.6.0"
+  },
+  "nx": {
+    "targets": {
+      "docker:build": {
+        "command": "docker build -f apps/connect/Dockerfile -t zuko-connect .",
+        "options": {
+          "cwd": "{workspaceRoot}"
+        }
+      }
+    }
+  }
+}
