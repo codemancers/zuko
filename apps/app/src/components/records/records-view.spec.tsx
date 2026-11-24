@@ -511,7 +511,7 @@ describe('RecordsView', () => {
     const backend = fakeBackend([]);
     render(<RecordsView object="contact" />);
 
-    expect(await screen.findByText('No contacts yet')).toBeTruthy();
+    expect(await screen.findByRole('button', { name: 'Add a new contact' })).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Add sample data' }));
 
     expect(await screen.findByText('6 contacts')).toBeTruthy();

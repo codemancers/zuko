@@ -13,15 +13,12 @@ import {
 } from '@tanstack/react-table';
 import {
   AlertCircle,
-  Boxes,
   LoaderCircle,
   Plus,
   RefreshCw,
   SearchX,
   Settings,
-  Sparkles,
 } from 'lucide-react';
-import { OBJECT_ICONS } from '@/components/records/object-icons';
 import { AddFieldDrawer } from '@/components/records/add-field-drawer';
 import { FieldSettingsDrawer } from '@/components/records/fields-drawer';
 import {
@@ -996,7 +993,6 @@ export function RecordsView({ object, maxRows = MAX_ROWS }: { object: string; ma
 
   const loading = recordsQuery.isFetching || loaded?.query !== query;
   const sample = SAMPLE_RECORDS[def.name];
-  const ObjectIcon = OBJECT_ICONS[def.name] ?? Boxes;
   const editing = openRowId
     ? (rows.find((r) => r.id === openRowId) ?? (opened?.id === openRowId ? opened : undefined))
     : undefined;
@@ -1174,26 +1170,28 @@ export function RecordsView({ object, maxRows = MAX_ROWS }: { object: string; ma
         </Button>
       </div>
     ) : (
-      <div className="mx-auto flex max-w-md flex-col items-center gap-3 px-6 py-16 text-center">
-        <div className="mb-1 flex size-12 items-center justify-center rounded-2xl border bg-muted/40">
-          <ObjectIcon className="size-5 text-muted-foreground" aria-hidden />
-        </div>
-        <h2 className="text-base font-semibold">No {def.plural_label.toLowerCase()} yet</h2>
-        <p className="max-w-sm text-sm leading-relaxed text-muted-foreground">
-          Add your first {label}
-          {sample ? ', or load a few examples to look around' : ''}.
-        </p>
-        <div className="mt-2 flex flex-wrap justify-center gap-2">
-          <Button onClick={openCreate}>
-            <Plus aria-hidden /> Add {label}
-          </Button>
-          {sample && (
-            <Button variant="outline" disabled={seeding} onClick={addSamples}>
-              <Sparkles aria-hidden /> {seeding ? 'Adding…' : 'Add sample data'}
+      <p data-empty-records className="sticky left-4 flex h-full w-fit items-center gap-1 text-left text-sm">
+        <Button
+          variant="link"
+          className="h-auto p-0 underline underline-offset-4"
+          onClick={openCreate}
+        >
+          Add a new {label}
+        </Button>
+        {sample && (
+          <>
+            {' or '}
+            <Button
+              variant="link"
+              className="h-auto p-0 underline underline-offset-4"
+              disabled={seeding}
+              onClick={addSamples}
+            >
+              {seeding ? 'Adding…' : 'Add sample data'}
             </Button>
-          )}
-        </div>
-      </div>
+          </>
+        )}
+      </p>
     );
 
   return (
@@ -1317,7 +1315,7 @@ export function RecordsView({ object, maxRows = MAX_ROWS }: { object: string; ma
           openRowId={openRowId}
           highlightedRowId={highlightedRowId}
           className={
-            loading && loaded?.rows ? 'opacity-60 transition-opacity' : 'transition-opacity'
+            `transition-opacity [&_[role=cell]:has(>[data-empty-records])]:h-8 [&_[role=cell]:has(>[data-empty-records])]:py-0 ${loading && loaded?.rows ? 'opacity-60' : ''}`
           }
         />
       </div>
