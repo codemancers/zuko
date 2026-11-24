@@ -2,28 +2,11 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { Check } from 'lucide-react';
+import { DetailsList, DetailField, DetailLabel } from '@/components/ui/details';
 import { Badge } from '@/components/ui/badge';
 import { authClient } from '@/lib/auth-client';
 
 type Org = NonNullable<ReturnType<typeof authClient.useActiveOrganization>['data']>;
-
-function FieldLabel({ children, saved }: { children: React.ReactNode; saved?: boolean }) {
-  return (
-    <dt className="flex h-5 items-center gap-1.5 text-xs font-medium tracking-wider text-muted-foreground uppercase">
-      {children}
-      {saved && <Check className="size-3.5 text-green-500" aria-label="Saved" />}
-    </dt>
-  );
-}
-
-function ReadOnlyField({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div className="space-y-1.5">
-      <FieldLabel>{label}</FieldLabel>
-      <dd className="min-h-8 py-1 text-sm">{children}</dd>
-    </div>
-  );
-}
 
 export const SAVE_DEBOUNCE_MS = 700;
 
@@ -53,13 +36,21 @@ export function EditableField({
   const lastSaved = useRef(value); // What the server is known to hold.
   const inFlight = useRef(false);
 
-  // Follow the saved value (e.g. after a refetch) unless the user is mid-edit.
+  // Follow incoming saved values between edits; preserve a focused draft.
+  const [previousValue, setPreviousValue] = useState(value);
+  if (value !== previousValue) {
+    setPreviousValue(value);
+    if (!focused) {
+      setDraft(value);
+      setError(null);
+    }
+  }
+
   useEffect(() => {
-    if (focused) return;
-    setDraft(value);
-    draftRef.current = value;
-    lastSaved.current = value;
-    setError(null); // Leaving the field drops any refused text, so its error goes too.
+    if (!focused) {
+      draftRef.current = value;
+      lastSaved.current = value;
+    }
   }, [value, focused]);
 
   useEffect(
@@ -110,7 +101,11 @@ export function EditableField({
 
   return (
     <div className="space-y-1.5">
-      <FieldLabel saved={saved}>{label}</FieldLabel>
+      <DetailLabel
+        accessory={saved && <Check className="size-3.5 text-green-500" aria-label="Saved" />}
+      >
+        {label}
+      </DetailLabel>
       <dd>
         <input
           aria-label={label}
@@ -120,10 +115,11 @@ export function EditableField({
           onChange={(e) => change(e.target.value)}
           onFocus={() => setFocused(true)}
           onBlur={async () => {
+            const empty = !draftRef.current.trim();
             setFocused(false);
             await flush();
             // An empty value is never saved; put the last saved text back.
-            if (!draftRef.current.trim()) revert();
+            if (empty) revert();
           }}
           onKeyDown={(e) => {
             if (e.key === 'Enter') e.currentTarget.blur();
@@ -144,14 +140,22 @@ export function EditableField({
   );
 }
 
-export function DetailsPanel({ org, role, canEdit }: { org: Org; role: string; canEdit: boolean }) {
+export function DetailsPanel({
+  org,
+  memberRole,
+  canEdit,
+}: {
+  org: Org;
+  memberRole: string;
+  canEdit: boolean;
+}) {
   const save = (data: { name?: string; slug?: string }) => async (): Promise<string | null> => {
     const { error } = await authClient.organization.update({ organizationId: org.id, data });
     return error ? (error.message ?? 'Could not save.') : null;
   };
 
   return (
-    <dl className="grid gap-x-12 gap-y-6 sm:grid-cols-2 lg:grid-cols-3">
+    <DetailsList>
       <EditableField
         label="Name"
         value={org.name}
@@ -164,18 +168,18 @@ export function DetailsPanel({ org, role, canEdit }: { org: Org; role: string; c
         canEdit={canEdit}
         onSave={(slug) => save({ slug })()}
       />
-      <ReadOnlyField label="Created">
+      <DetailField label="Created">
         {new Date(org.createdAt).toLocaleDateString(undefined, { dateStyle: 'long' })}
-      </ReadOnlyField>
-      <ReadOnlyField label="Members">{org.members.length}</ReadOnlyField>
-      <ReadOnlyField label="Pending invites">
+      </DetailField>
+      <DetailField label="Members">{org.members.length}</DetailField>
+      <DetailField label="Pending invites">
         {org.invitations.filter((i) => i.status === 'pending').length}
-      </ReadOnlyField>
-      <ReadOnlyField label="Your role">
+      </DetailField>
+      <DetailField label="Your role">
         <Badge variant="secondary" className="capitalize">
-          {role}
+          {memberRole}
         </Badge>
-      </ReadOnlyField>
-    </dl>
+      </DetailField>
+    </DetailsList>
   );
 }

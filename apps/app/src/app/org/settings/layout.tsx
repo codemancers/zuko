@@ -1,9 +1,9 @@
 'use client';
 
 import Link from 'next/link';
+import { Settings } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import { Shell } from '@/components/dashboard/shell';
-import { UserMenu } from '@/components/dashboard/user-menu';
 import { OrgSettingsProvider } from '@/components/org/settings-context';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -13,6 +13,8 @@ import { cn } from '@/lib/utils';
 const tabs = [
   { href: '/org/settings/details', label: 'Details' },
   { href: '/org/settings/members', label: 'Members' },
+  { href: '/org/settings/objects', label: 'Objects' },
+  { href: '/org/settings/access', label: 'Access' },
 ];
 
 export default function OrgSettingsLayout({ children }: { children: React.ReactNode }) {
@@ -31,20 +33,23 @@ export default function OrgSettingsLayout({ children }: { children: React.ReactN
     );
   }
 
-  const menu = session ? (
-    <UserMenu name={session.user.name} email={session.user.email} image={session.user.image} />
-  ) : (
-    <Skeleton className="size-8 rounded-full" />
-  );
-
   return (
-    <Shell fill menu={menu}>
-      <div className="px-6 pt-6">
-        <h1 className="font-heading text-2xl font-semibold tracking-tight">
-          {org?.name ?? 'Organization settings'}
-        </h1>
+    <Shell fill>
+      <div className="flex shrink-0 items-center gap-3 px-4 pt-6 pb-1 sm:px-6">
+        <span className="flex size-11 shrink-0 items-center justify-center rounded-xl border bg-card shadow-xs">
+          <Settings className="size-5" aria-hidden />
+        </span>
+        <div className="min-w-0">
+          <p className="text-xs text-muted-foreground">Org settings</p>
+          <h1 className="truncate text-xl font-semibold tracking-tight sm:text-2xl">
+            {org?.name ?? 'Organization settings'}
+          </h1>
+        </div>
       </div>
-      <nav aria-label="Organization settings" className="mt-4 flex gap-6 border-b px-6">
+      <nav
+        aria-label="Organization settings"
+        className="mt-4 flex shrink-0 gap-6 overflow-x-auto border-b px-4 sm:px-6"
+      >
         {tabs.map((tab) => {
           const active = pathname === tab.href;
           return (
@@ -53,7 +58,7 @@ export default function OrgSettingsLayout({ children }: { children: React.ReactN
               href={tab.href}
               aria-current={active ? 'page' : undefined}
               className={cn(
-                '-mb-px border-b-2 pb-2.5 text-sm font-medium transition-colors',
+                '-mb-px shrink-0 border-b-2 px-0.5 pb-3 text-sm font-medium transition-colors',
                 active
                   ? 'border-primary text-foreground'
                   : 'border-transparent text-muted-foreground hover:text-foreground',

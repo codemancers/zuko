@@ -1,4 +1,5 @@
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, screen } from '@testing-library/react';
+import { render } from '@/test/render';
 import { auth, makeOrg, resetAuth } from '@/test/auth-mock';
 import { DetailsPanel, EditableField, SAVE_DEBOUNCE_MS } from './details-panel';
 
@@ -134,7 +135,7 @@ describe('EditableField', () => {
 describe('DetailsPanel', () => {
   type Org = Parameters<typeof DetailsPanel>[0]['org'];
   const renderPanel = (canEdit: boolean) =>
-    render(<DetailsPanel org={makeOrg() as unknown as Org} role="owner" canEdit={canEdit} />);
+    render(<DetailsPanel org={makeOrg() as unknown as Org} memberRole="owner" canEdit={canEdit} />);
 
   beforeEach(() => {
     resetAuth();
@@ -151,7 +152,11 @@ describe('DetailsPanel', () => {
     expect((screen.getByLabelText('Name') as HTMLInputElement).value).toBe('Acme');
     expect((screen.getByLabelText('Slug') as HTMLInputElement).value).toBe('acme');
     expect(screen.getByText('Created')).toBeTruthy();
-    expect(screen.getByText('12 November 2026')).toBeTruthy();
+    expect(
+      screen.getByText(
+        new Date(makeOrg().createdAt).toLocaleDateString(undefined, { dateStyle: 'long' }),
+      ),
+    ).toBeTruthy();
     expect(screen.getByText('owner')).toBeTruthy();
   });
 

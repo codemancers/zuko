@@ -3,9 +3,9 @@ import * as z from 'zod';
 import { Prisma } from '../generated/prisma/client';
 import type { RequestContext } from './context';
 import { AssociationsService } from './associations.service';
-import { parse } from './errors';
+import { parse, validationFailed } from './errors';
 import { assertCan, resolveScopes, visibilitySql } from './permissions';
-import { OPERATORS, filterSql, orderSql, type FilterGroup } from './query';
+import { OPERATORS, filterSql, orderSql, resolveColumn, type FilterGroup } from './query';
 import { RecordsService, recordDto } from './records.service';
 import { SchemaService } from './schema.service';
 
@@ -18,7 +18,10 @@ const pagination = z.object({
 
 const sort = z.object({
   field: z.string().min(1),
-  direction: z.string().transform((d) => d.toUpperCase()).pipe(z.enum(['ASC', 'DESC'])),
+  direction: z
+    .string()
+    .transform((d) => d.toUpperCase())
+    .pipe(z.enum(['ASC', 'DESC'])),
 });
 
 const filterBody = z.object({
@@ -64,14 +67,64 @@ export class RecordsQueryService {
   ) {}
 
   list(ctx: RequestContext, objectName: string, query: Record<string, string | undefined>) {
-    const page = parse(pagination.partial(), { page: query['page'], page_size: query['page_size'] });
+    const page = parse(pagination.partial(), {
+      page: query['page'],
+      page_size: query['page_size'],
+    });
     const include = (query['include'] ?? '').split(',').includes('associations');
     return this.search(ctx, objectName, [], page, parseSortParam(query['sort']), include);
   }
 
   filter(ctx: RequestContext, objectName: string, body: unknown) {
     const input = parse(filterBody, body);
-    return this.search(ctx, objectName, input.filter_groups as FilterGroup[], input.pagination ?? {}, input.sort, input.include.includes('associations'));
+    return this.search(
+      ctx,
+      objectName,
+      input.filter_groups as FilterGroup[],
+      input.pagination ?? {},
+      input.sort,
+      input.include.includes('associations'),
+    );
+  }
+
+  /** Distinct values/counts over the complete visible result set, for header checklists. */
+  async facets(ctx: RequestContext, objectName: string, body: unknown) {
+    const input = parse(filterBody.extend({ field: z.string().min(1) }), body);
+    assertCan(ctx, { record: ['read'] }, 'view records');
+    return this.records.tenant(ctx, async (tx) => {
+      const object = await this.schema.loadObject(tx, ctx, objectName);
+      const field = object.fields.find((candidate) => candidate.name === input.field);
+      if (!field || field.sensitive || field.type === 'LINK') {
+        throw validationFailed([
+          {
+            field: input.field,
+            code: 'INVALID_FIELD',
+            message: 'This field cannot be used for a column filter',
+          },
+        ]);
+      }
+      const column = resolveColumn(input.field, object.fields, 'filter');
+      if ('code' in column) throw validationFailed([column]);
+      const scopes = await resolveScopes(tx, ctx, object.id, 'read');
+      const values = await tx.$queryRaw<{ value: unknown; count: bigint }[]>(Prisma.sql`
+        SELECT ${column.expr} AS value, count(*) AS count FROM object_record r
+        WHERE r."organizationId" = ${ctx.organizationId} AND r."objectTypeId" = ${object.id}
+          AND r."deletedAt" IS NULL AND ${visibilitySql(ctx, scopes, 'read')}
+          AND ${filterSql(input.filter_groups as FilterGroup[], object.fields)}
+        GROUP BY 1 ORDER BY count DESC, value ASC NULLS FIRST LIMIT 1001`);
+      return {
+        results: values.slice(0, 1000).map((entry) => ({
+          value:
+            entry.value === null
+              ? null
+              : entry.value instanceof Date
+                ? entry.value.toISOString()
+                : String(entry.value),
+          count: Number(entry.count),
+        })),
+        truncated: values.length > 1000,
+      };
+    });
   }
 
   private async search(
@@ -105,13 +158,22 @@ export class RecordsQueryService {
 
       const rows = await tx.objectRecord.findMany({ where: { id: { in: ids } } });
       const byId = new Map(rows.map((row) => [row.id, row]));
-      const linked = withAssociations ? await this.associations.summaries(tx, ctx, object, ids) : undefined;
+      const linked = withAssociations
+        ? await this.associations.summaries(tx, ctx, object, ids)
+        : undefined;
       const totalElements = Number(total);
       const totalPages = Math.ceil(totalElements / pageSize);
       return {
         results: ids.flatMap((id) => {
           const row = byId.get(id);
-          return row ? [{ ...recordDto(object, row), ...(linked ? { associations: linked.get(id) ?? {} } : {}) }] : [];
+          return row
+            ? [
+                {
+                  ...recordDto(object, row),
+                  ...(linked ? { associations: linked.get(id) ?? {} } : {}),
+                },
+              ]
+            : [];
         }),
         metadata: {
           page,
