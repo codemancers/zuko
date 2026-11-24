@@ -10,6 +10,7 @@ import { AppModule } from './app/app.module';
 async function bootstrap() {
   // The better-auth module parses its own bodies and re-adds Nest's parsers for other routes.
   const app = await NestFactory.create(AppModule, { bodyParser: false });
+  app.enableShutdownHooks();
   const globalPrefix = 'api';
   // The browser app lives on another origin and sends its session cookie. These are the
   // same origins better-auth trusts (see libs/better-auth/auth.ts).

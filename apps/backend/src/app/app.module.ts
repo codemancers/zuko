@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { WorkflowRuntimeModule } from '../workflow/workflow.module';
 import { AuthModule } from '@thallesp/nestjs-better-auth';
 import { CrmModule } from '../crm/crm.module';
 import { createAuth } from '../libs/better-auth/auth';
@@ -11,6 +12,7 @@ import { AppService } from './app.service';
 @Module({
   imports: [
     PrismaModule,
+    WorkflowRuntimeModule,
     CrmModule,
     McpModule,
     AuthModule.forRootAsync({
