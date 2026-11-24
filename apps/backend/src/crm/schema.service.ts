@@ -11,7 +11,7 @@ import type { RequestContext } from './context';
 import { conflict, notFound, parse, validationFailed } from './errors';
 import { FIELD_TYPES } from './field-types';
 import { assertCan } from './permissions';
-import { STANDARD_ASSOCIATIONS, STANDARD_OBJECTS } from './standard-objects';
+import { provisionStandardObjects } from './provision-standard-objects';
 
 /**
  * An object with its current fields. The fields that were removed are kept apart: they are not part of
@@ -272,90 +272,7 @@ export class SchemaService {
   async setupStandardObjects(ctx: RequestContext) {
     assertCan(ctx, { object: ['manage'] }, 'set up the standard objects');
     return this.tenant(ctx, async (tx) => {
-      // Two requests setting up the same organization at once (two tabs, a double render)
-      // would both find nothing and both try to create. Take turns instead: the second one
-      // then sees what the first one made and creates nothing.
-      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`standard-objects:${ctx.organizationId}`}))`;
-      const created: string[] = [];
-      for (const definition of STANDARD_OBJECTS) {
-        const existing = await tx.objectType.findFirst({
-          where: { organizationId: ctx.organizationId, slug: definition.slug },
-          select: { id: true },
-        });
-        if (existing) {
-          continue;
-        }
-        const object = await tx.objectType.create({
-          data: {
-            organizationId: ctx.organizationId,
-            slug: definition.slug,
-            label: definition.label,
-            pluralLabel: definition.pluralLabel,
-            kind: 'STANDARD',
-          },
-        });
-        await tx.fieldDefinition.createMany({
-          data: definition.fields.map((field) => ({
-            organizationId: ctx.organizationId,
-            objectTypeId: object.id,
-            name: field.name,
-            label: field.label,
-            type: field.type,
-            required: field.required ?? false,
-            isUnique: field.unique ?? false,
-            filterable: field.filterable ?? false,
-            maxLength: field.maxLength ?? null,
-            config: field.options ? { options: field.options } : {},
-          })),
-        });
-        created.push(definition.slug);
-      }
-      // The links between them, for whichever pairs now exist.
-      const bySlug = new Map(
-        (
-          await tx.objectType.findMany({
-            where: { organizationId: ctx.organizationId },
-            select: { id: true, slug: true },
-          })
-        ).map((o) => [o.slug, o.id]),
-      );
-      for (const pair of STANDARD_ASSOCIATIONS) {
-        const source = bySlug.get(pair.source);
-        const target = bySlug.get(pair.target);
-        if (source === undefined || target === undefined) {
-          continue;
-        }
-        await tx.associationDefinition.upsert({
-          where: { organizationId_name: { organizationId: ctx.organizationId, name: pair.name } },
-          create: {
-            organizationId: ctx.organizationId,
-            name: pair.name,
-            label: pair.label,
-            sourceObjectTypeId: source,
-            targetObjectTypeId: target,
-            reverseLabel: pair.reverseLabel,
-            isDefault: true,
-          },
-          update: {},
-        });
-        // The link is a field on the source object, unless one by that key is there already (even a removed one).
-        const taken = await tx.fieldDefinition.findFirst({
-          where: { organizationId: ctx.organizationId, objectTypeId: source, name: pair.field },
-          select: { id: true },
-        });
-        if (!taken) {
-          await tx.fieldDefinition.create({
-            data: {
-              organizationId: ctx.organizationId,
-              objectTypeId: source,
-              name: pair.field,
-              label: pair.fieldLabel,
-              type: 'LINK',
-              config: { link: pair.name, target: pair.target, many: true },
-            },
-          });
-        }
-      }
+      const created = await provisionStandardObjects(tx, ctx.organizationId);
       const objects = await tx.objectType.findMany({
         where: { organizationId: ctx.organizationId },
         orderBy: { id: 'asc' },
