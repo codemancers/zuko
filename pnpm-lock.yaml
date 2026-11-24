@@ -391,6 +391,25 @@ importers:
 
   apps/backend-e2e: {}
 
+  apps/harness:
+    dependencies:
+      ai:
+        specifier: ^7.0.181
+        version: 7.0.181(zod@4.6.7)
+      eve:
+        specifier: 1.4.0
+        version: 1.4.0(ai@7.0.181(zod@4.6.7))(next@16.4.6(@babel/core@7.29.13)(@playwright/test@1.65.0)(@types/node@22.20.5)(babel-plugin-macros@3.1.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(sass@1.108.2))(react@19.3.1)(vite@8.3.8(@types/node@22.20.5)(jiti@2.7.0)(less@4.8.1)(sass-embedded@1.108.2)(sass@1.108.2)(terser@5.51.2)(yaml@2.9.0))
+      zod:
+        specifier: ^4.6.7
+        version: 4.6.7
+    devDependencies:
+      '@types/node':
+        specifier: ^22.0.0
+        version: 22.20.5
+      typescript:
+        specifier: ~6.0.3
+        version: 6.0.3
+
   libs/access-control:
     dependencies:
       better-auth:

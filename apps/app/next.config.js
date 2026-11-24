@@ -26,5 +26,5 @@ const zukoConfig = (phase) => ({
 
 module.exports = async (phase, context) => {
   const { withEve } = await import('eve/next');
-  return withEve(zukoConfig, { eveRoot: '../..' })(phase, context);
+  return withEve(zukoConfig, { eveRoot: '../harness' })(phase, context);
 };
