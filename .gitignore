@@ -57,3 +57,6 @@ out
 apps/backend/src/generated
 
 test-output
+
+# Workflow SDK compiler cache
+.swc/

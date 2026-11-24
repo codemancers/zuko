@@ -120,3 +120,36 @@ And join the Nx community:
 - [Follow us on X](https://twitter.com/nxdevtools) or [LinkedIn](https://www.linkedin.com/company/nrwl)
 - [Our Youtube channel](https://www.youtube.com/@nxdevtools)
 - [Our blog](https://nx.dev/blog?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
+
+
+## Workflow runtime
+
+The backend uses the official `@workflow/nest` module with `@workflow/world-postgres`.
+Before starting it, bootstrap the SDK storage with the same environment:
+
+```sh
+node --env-file-if-exists=.env node_modules/@workflow/world-postgres/bin/setup.js
+pnpm nx build @zuko/backend
+pnpm nx serve @zuko/backend
+```
+
+`WORKFLOW_POSTGRES_URL` defaults to `DATABASE_URL`. SDK-owned tables live in the
+`workflow` and `graphile_worker` schemas. Use a dedicated store per environment,
+or distinct `WORKFLOW_QUEUE_NAMESPACE` values when sharing one.
+
+Author workflows under `apps/backend/src/workflows/`; Nx discovers and bundles
+this directory automatically. Rebuild and restart the backend after changes.
+The runtime registers private in-process delivery before starting workers and
+rejects public HTTP access to the SDK execution routes. Nest owns worker startup
+and shutdown. This infrastructure does not change organization creation or CRM setup.
+
+Set `WORKFLOW_POSTGRES_JOB_LOCK_STALE_SECONDS=30` consistently across replicas and
+size `WORKFLOW_POSTGRES_WORKER_CONCURRENCY` for the database pool. Persist the SDK
+store across restarts. Runtime dependencies are packaged by `nx prune` for Docker.
+Keep SDK package versions coordinated when upgrading.
+
+Use the SDK admin UI to inspect runs, with workers disabled in the admin process:
+
+```sh
+WORKFLOW_POSTGRES_SKIP_WORKERS=1 node --env-file-if-exists=.env node_modules/workflow/bin/run.js web --backend @workflow/world-postgres --webPort 4400
+```

@@ -4,12 +4,12 @@
 #
 # Run the container with `nx docker:run @zuko/backend -p 3000:3000`.
 #
-FROM docker.io/node:lts-alpine
+FROM docker.io/node:24-alpine
 
 ENV HOST=0.0.0.0
 ENV PORT=3000
 
-RUN corepack enable
+RUN npm install --global pnpm@10.17.1
 
 
 WORKDIR /app
@@ -19,6 +19,6 @@ COPY dist .
 # You can remove this install step if you build with `--bundle` option.
 # The bundled output will include external dependencies.
 
-RUN pnpm install
+RUN pnpm install --prod --frozen-lockfile
 
 CMD [ "node", "main.js" ]
