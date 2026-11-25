@@ -43,6 +43,9 @@ writing, reviewing, or refactoring NestJS code, following this repository's inva
 Use the [Eve skill](.agents/skills/eve/SKILL.md) when working on Eve agents and
 harness configuration.
 
+[Find Skills](.agents/skills/find-skills/SKILL.md) is available for discovering
+skills when the user requests additional capabilities.
+
 Skills are managed by [skills.sh](https://skills.sh) under `.agents/skills/`,
 with Claude Code symlinks under `.claude/skills/`. `skills-lock.json` records their
 source commits and hashes. Upstream licenses are preserved as `.agents/ponytail.LICENSE`
@@ -58,7 +61,8 @@ npx skills add vercel-labs/agent-skills --skill vercel-composition-patterns -a c
 npx skills add https://github.com/vercel-labs/agent-browser --skill agent-browser -a codex claude-code -y
 npx skills add kadajett/agent-nestjs-skills --skill nestjs-best-practices -a codex claude-code -y
 npx skills add vercel/eve --skill eve -a codex claude-code -y
-npx skills update ponytail caveman vercel-react-best-practices vercel-composition-patterns agent-browser nestjs-best-practices eve -p -y
+npx skills add vercel-labs/skills --skill find-skills -a codex claude-code -y
+npx skills update ponytail caveman vercel-react-best-practices vercel-composition-patterns agent-browser nestjs-best-practices eve find-skills -p -y
 ```
 
 Review skill changes and the lockfile before committing updates.
