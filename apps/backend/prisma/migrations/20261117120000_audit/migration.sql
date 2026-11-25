@@ -48,9 +48,9 @@ CREATE INDEX "audit_event_organizationId_event_createdAt_idx" ON "audit_event"("
 ALTER TABLE "record_change" ADD CONSTRAINT "record_change_action_check"
   CHECK ("action" IN ('CREATE', 'UPDATE', 'DELETE'));
 ALTER TABLE "record_change" ADD CONSTRAINT "record_change_actorType_check"
-  CHECK ("actorType" IN ('USER', 'API_KEY', 'SYSTEM', 'IMPORT', 'MCP'));
+  CHECK ("actorType" IN ('USER', 'API_KEY', 'SYSTEM', 'IMPORT', 'MCP', 'AGENT'));
 ALTER TABLE "audit_event" ADD CONSTRAINT "audit_event_actorType_check"
-  CHECK ("actorType" IN ('USER', 'API_KEY', 'SYSTEM', 'IMPORT', 'MCP', 'ANONYMOUS'));
+  CHECK ("actorType" IN ('USER', 'API_KEY', 'SYSTEM', 'IMPORT', 'MCP', 'AGENT', 'ANONYMOUS'));
 
 -- Tenant isolation. Events with no organization (e.g. a failed sign-in) can be written
 -- but are never readable through a tenant context.

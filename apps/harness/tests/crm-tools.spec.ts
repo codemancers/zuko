@@ -124,6 +124,9 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)('CRM tool integration', () => {
       { object: 'contact', properties: { first_name: 'Ada', last_name: 'Lovelace' } },
       ctx,
     );
+    expect(
+      (await history.execute!({ object: 'contact', id: contact.id }, ctx)).results[0],
+    ).toMatchObject({ actor_type: 'AGENT' });
     const company = await create.execute!(
       { object: 'company', properties: { name: 'Analytical Engines' } },
       ctx,
@@ -166,8 +169,8 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)('CRM tool integration', () => {
     expect(found.results.map((record: { id: string }) => record.id)).toEqual([contact.id]);
     expect((await history.execute!({ object: 'contact', id: contact.id }, ctx)).results).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ action: 'CREATE', actor_type: 'MCP' }),
-        expect.objectContaining({ action: 'UPDATE', actor_type: 'MCP' }),
+        expect.objectContaining({ action: 'CREATE', actor_type: 'AGENT' }),
+        expect.objectContaining({ action: 'UPDATE', actor_type: 'AGENT' }),
       ]),
     );
     expect(

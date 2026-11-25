@@ -685,7 +685,7 @@ describe('RecordsView', () => {
         id: '2',
         action: 'UPDATE',
         changes: { 'associations.contact_company': { old: [], new: ['10'] } },
-        actor_type: 'USER',
+        actor_type: 'AGENT',
         actor_id: '7',
         created_at: '2026-11-17T09:00:00.000Z',
       },
@@ -709,7 +709,8 @@ describe('RecordsView', () => {
       expect(within(activity).getByText('Companies: linked 1')).toBeTruthy();
       expect(within(activity).getByText('Created')).toBeTruthy();
       expect(within(activity).getByText(/Sam via MCP/)).toBeTruthy(); // names come from the members
-      expect(within(activity).getAllByText(/Me ·/)).toHaveLength(2);
+      expect(within(activity).getByText(/via agent/)).toBeTruthy();
+      expect(within(activity).getAllByText(/Me ·/)).toHaveLength(1);
       const lines = within(activity)
         .getAllByRole('listitem')
         .map((li) => li.textContent ?? '');

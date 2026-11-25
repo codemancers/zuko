@@ -323,7 +323,7 @@ model RecordChange {
   objectTypeId   BigInt
   action         String // CREATE | UPDATE | DELETE
   changes        Json // {"stage": {"old": "open", "new": "closed_won"}}
-  actorType      String // USER | API_KEY | SYSTEM | IMPORT | MCP
+  actorType      String // USER | API_KEY | SYSTEM | IMPORT | MCP | AGENT
   actorId        BigInt?
   requestId      String?
   createdAt      DateTime @default(dbgenerated("timezone('utc'::text, now())"))
@@ -339,7 +339,7 @@ model RecordChange {
 model AuditEvent {
   id             BigInt   @id @default(autoincrement())
   organizationId BigInt?
-  actorType      String // USER | API_KEY | SYSTEM | IMPORT | MCP | ANONYMOUS
+  actorType      String // USER | API_KEY | SYSTEM | IMPORT | MCP | AGENT | ANONYMOUS
   actorId        BigInt?
   event          String // 'member.invited', 'api_key.created', ...
   targetType     String?

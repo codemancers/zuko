@@ -67,8 +67,12 @@ export function RecordActivity({
               >
                 <p className="text-xs text-muted-foreground">
                   {who}
-                  {entry.actor_type === 'MCP' ? ' via MCP' : ''} ·{' '}
-                  {when.format(new Date(entry.created_at))}
+                  {entry.actor_type === 'MCP'
+                    ? ' via MCP'
+                    : entry.actor_type === 'AGENT'
+                      ? ' via agent'
+                      : ''}{' '}
+                  · {when.format(new Date(entry.created_at))}
                 </p>
                 {describeHistory(def, entry, people).map((line) => (
                   <p key={line}>{line}</p>

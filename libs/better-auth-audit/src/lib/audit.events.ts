@@ -3,7 +3,7 @@
  * recorded. Metadata is an explicit whitelist: request bodies carry passwords and
  * tokens, so nothing is copied across unless it is listed here.
  */
-export type ActorType = 'USER' | 'API_KEY' | 'SYSTEM' | 'IMPORT' | 'MCP' | 'ANONYMOUS';
+export type ActorType = 'USER' | 'API_KEY' | 'SYSTEM' | 'IMPORT' | 'MCP' | 'AGENT' | 'ANONYMOUS';
 
 export interface AuditEventInput {
   /** null for events that belong to no organization. */
