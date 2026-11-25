@@ -11,7 +11,10 @@ import { hierarchyTransaction } from './hierarchy-transaction';
 import { cimdPlugin, jwtPlugin, mcpPlugin } from './mcp-plugins';
 import { activeOrganizationOnSessionCreate } from './session-hooks';
 
-export function createAuth(prisma: PrismaClient) {
+export function createAuth(
+  prisma: PrismaClient,
+  setupOrganization?: (organizationId: bigint) => Promise<void>,
+) {
   const { GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, FRONTEND_URL } = process.env;
 
   return betterAuth({
@@ -25,7 +28,29 @@ export function createAuth(prisma: PrismaClient) {
     disabledPaths: ['/token'],
     // audit goes last so its hooks see events from the other plugins.
     plugins: [
-      organization({ ac, roles, teams: { enabled: true } }),
+      organization({
+        ac,
+        roles,
+        teams: { enabled: true },
+        schema: {
+          organization: {
+            additionalFields: {
+              setupRunId: { type: 'string', required: false, input: false },
+            },
+          },
+        },
+        organizationHooks: {
+          afterCreateOrganization: async ({ organization }) => {
+            // Organization creation succeeds even if dispatch is temporarily unavailable.
+            // The background reconciler attaches missing setup runs after recovery.
+            try {
+              await setupOrganization?.(BigInt(organization.id));
+            } catch (error) {
+              console.error('Could not attach organization setup workflow', error);
+            }
+          },
+        },
+      }),
       hierarchy({ transaction: hierarchyTransaction(prisma) }),
       jwtPlugin(),
       mcpPlugin(),

@@ -21,6 +21,7 @@ export class User {
   constructor(
     readonly name: string,
     readonly email: string,
+    readonly waitForOrganizationSetup = true,
   ) {}
 
   async call(method: string, url: string, data?: unknown): Promise<Reply> {
@@ -35,13 +36,46 @@ export class User {
     if (setCookie?.length) {
       this.cookie = setCookie.map((c: string) => c.split(';')[0]).join('; ');
     }
+    if (
+      this.waitForOrganizationSetup &&
+      method === 'POST' &&
+      url === '/auth/organization/create' &&
+      res.status === 200
+    ) {
+      await this.waitForSetup(res.data.id);
+    }
     return { status: res.status, data: res.data };
+  }
+
+  /** Fixture creation waits for backend provisioning, never provisions schema itself. */
+  async waitForSetup(organizationId: string, status = 'ready') {
+    const deadline = Date.now() + 60000;
+    while (Date.now() < deadline) {
+      const setup = await withDb(
+        async (db) =>
+          (
+            await db.query(
+              'SELECT status, error, "runId", attempt FROM organization_setup WHERE "organizationId"=$1',
+              [organizationId],
+            )
+          ).rows[0],
+      );
+      if (setup?.status === status) return setup;
+      if (setup?.status === 'failed' && status !== 'failed')
+        throw new Error(`Setup failed: ${JSON.stringify(setup)}`);
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    }
+    throw new Error(`Organization ${organizationId} never reached ${status}`);
   }
 
   /** An application/x-www-form-urlencoded POST, as the OAuth token endpoint expects. */
   async form(url: string, data: Record<string, string>): Promise<Reply> {
     const res = await axios.post(url, new URLSearchParams(data).toString(), {
-      headers: { Origin: ORIGIN, 'content-type': 'application/x-www-form-urlencoded', ...(this.cookie ? { Cookie: this.cookie } : {}) },
+      headers: {
+        Origin: ORIGIN,
+        'content-type': 'application/x-www-form-urlencoded',
+        ...(this.cookie ? { Cookie: this.cookie } : {}),
+      },
       validateStatus: () => true,
     });
     return { status: res.status, data: res.data };
@@ -54,7 +88,11 @@ export class User {
   del = (url: string) => this.call('DELETE', url);
 
   async signUp() {
-    const res = await this.post('/auth/sign-up/email', { name: this.name, email: this.email, password: PASSWORD });
+    const res = await this.post('/auth/sign-up/email', {
+      name: this.name,
+      email: this.email,
+      password: PASSWORD,
+    });
     this.id = res.data?.user?.id;
     return res;
   }
@@ -91,7 +129,10 @@ export async function cleanup(emailSuffix: string, orgSlugs: string[], oauthClie
       [orgSlugs],
     );
     await db.query('COMMIT');
-    await db.query('DELETE FROM object_record WHERE "organizationId" IN (SELECT id FROM organization WHERE slug = ANY($1))', [orgSlugs]);
+    await db.query(
+      'DELETE FROM object_record WHERE "organizationId" IN (SELECT id FROM organization WHERE slug = ANY($1))',
+      [orgSlugs],
+    );
     await db.query('DELETE FROM organization WHERE slug = ANY($1)', [orgSlugs]);
     // OAuth clients registered by one run's MCP tests (their tokens and consents go with
     // them). Scoped to the run: spec files run in parallel, and another file's cleanup must
@@ -104,5 +145,7 @@ export async function cleanup(emailSuffix: string, orgSlugs: string[], oauthClie
 }
 
 export async function verifyEmails(emailSuffix: string) {
-  await withDb((db) => db.query('UPDATE "user" SET "emailVerified" = true WHERE email LIKE $1', [`%${emailSuffix}`]));
+  await withDb((db) =>
+    db.query('UPDATE "user" SET "emailVerified" = true WHERE email LIKE $1', [`%${emailSuffix}`]),
+  );
 }

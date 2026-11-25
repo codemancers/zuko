@@ -33,8 +33,6 @@ beforeAll(async () => {
   const invite = ok(await owner.post('/auth/organization/invite-member', { email: alice.email, role: 'member', organizationId: acme }));
   ok(await alice.post('/auth/organization/accept-invitation', { invitationId: invite.id }));
   ok(await alice.signIn());
-  ok(await owner.post(`${API}/setup/standard-objects`));
-  ok(await eve.post(`${API}/setup/standard-objects`));
   ok(await owner.post(FIELDS, { name: 'source', label: 'Source', type: 'ENUM', config: { options: ['web', 'referral'] } }), 201);
   ok(await owner.post(FIELDS, { name: 'notes', label: 'Notes', type: 'TEXT' }), 201);
 }, 120_000);

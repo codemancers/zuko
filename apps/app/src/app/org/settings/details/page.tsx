@@ -1,7 +1,7 @@
 'use client';
 
-import { DetailsPanel } from '@/components/org/details-panel';
-import { useOrgSettings } from '@/components/org/settings-context';
+import { DetailsPanel } from '@/components/organizations/details-panel';
+import { useOrgSettings } from '@/components/organizations/settings-context';
 import { authClient } from '@/lib/auth-client';
 
 export default function OrgDetailsPage() {

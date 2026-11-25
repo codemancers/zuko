@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { Settings } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import { Shell } from '@/components/dashboard/shell';
-import { OrgSettingsProvider } from '@/components/org/settings-context';
+import { OrgSettingsProvider } from '@/components/organizations/settings-context';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { authClient, useSession } from '@/lib/auth-client';

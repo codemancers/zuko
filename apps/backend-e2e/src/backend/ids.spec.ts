@@ -24,7 +24,6 @@ beforeAll(async () => {
   ok(await owner.signUp());
   await verifyEmails(suffix);
   ok(await owner.post('/auth/organization/create', { name: 'Acme', slug: slugs[0] }));
-  ok(await owner.post(`${API}/setup/standard-objects`));
   ok(await owner.post(`${API}/objects/contact/fields`, { name: 'manager', label: 'Manager', type: 'USER' }), 201);
   contact = ok(await owner.post(REC, { properties: { first_name: 'Ada' } }), 201).id;
 }, 120_000);

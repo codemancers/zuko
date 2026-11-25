@@ -10,6 +10,8 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 ## UI conventions
 
+- **Routes are private by default.** `src/proxy.ts` validates sessions for pages and API routes. Public pages/assets must be explicitly allowlisted there with a reason. Eve protocol routes delegate authentication to Eve's bearer-token/callback handlers; backend authorization remains mandatory.
+
 - **Lists are sheets.** Always `@codemancers/sheets`, never a table or card list. One scrolling list like Google Sheets: no pagination (fetch every page, cap and say so). Sort and search run on the server.
 - **Edit in place.** Cells save a row at a time (`useRowChanges`) and show saving/saved/refused; every kind of field has an in-place cell. The drawer keeps the full record, its links and **Delete** (deleting lives only there).
 - **Adding a record adds a row** (the first field, pinned at the bottom). Only an object with another required field gets the drawer form.

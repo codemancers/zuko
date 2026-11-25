@@ -20,6 +20,7 @@ function open(name: RegExp) {
 
 beforeEach(() => {
   resetAuth();
+  vi.stubGlobal('fetch', vi.fn(async () => Response.json({ status: 'ready', message: 'Ready' })));
   router.replace.mockReset();
   auth.orgs = { data: [acme, beta], isPending: false };
   auth.activeOrg = { data: acme, isPending: false };
@@ -107,4 +108,26 @@ describe('OrgGate', () => {
     render(<OrgGate />);
     expect(router.replace).not.toHaveBeenCalled();
   });
+});
+
+it('keeps unrelated page content available and reuses readiness across page mounts', async () => {
+  auth.session = { data: { user: { id: '7' } }, isPending: false };
+  vi.mocked(fetch).mockImplementation(async () => Response.json({ status: 'running', message: 'Preparing…' }));
+  const view = render(<><OrgGate /><p>Profile content</p></>);
+  expect(screen.getByText('Profile content')).toBeTruthy();
+  expect(await screen.findByText('Acme is still being set up.')).toBeTruthy();
+  expect(screen.getByRole('link', { name: 'View setup' }).getAttribute('href')).toBe('/organizations/setup');
+  view.rerender(<p>Other page</p>);
+  view.rerender(<><OrgGate /><p>Other page</p></>);
+  expect(screen.getByText('Other page')).toBeTruthy();
+  expect(screen.getByText('Acme is still being set up.')).toBeTruthy();
+  expect(fetch).toHaveBeenCalledTimes(1);
+});
+
+it('shows a failure banner without hiding unrelated content', async () => {
+  auth.session = { data: { user: { id: '7' } }, isPending: false };
+  vi.mocked(fetch).mockImplementation(async () => Response.json({ status: 'failed', message: 'Contact an administrator.' }));
+  render(<><OrgGate /><p>Profile content</p></>);
+  expect(await screen.findByText('Setup for Acme needs attention.')).toBeTruthy();
+  expect(screen.getByText('Profile content')).toBeTruthy();
 });

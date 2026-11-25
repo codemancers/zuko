@@ -6,6 +6,7 @@ const { PHASE_DEVELOPMENT_SERVER } = require('next/constants');
 const nextConfig = {
   // Keep the development overlay from covering account controls in the sidebar.
   devIndicators: false,
+  serverExternalPackages: ['workflow', '@workflow/world-postgres'],
 };
 
 const pageExtensions = ['js', 'jsx', 'ts', 'tsx'];

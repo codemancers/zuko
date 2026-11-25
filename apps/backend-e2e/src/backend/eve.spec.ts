@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { createHmac, randomUUID } from 'node:crypto';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { cleanup, User, verifyEmails } from '../support/crm-client';
+import { cleanup, User, verifyEmails, withDb } from '../support/crm-client';
 import { BASE, MCP_URL, openSession } from '../support/mcp-client';
 
 const run = Date.now().toString(36);
@@ -46,7 +46,6 @@ beforeAll(async () => {
   organizationId = ok(
     await user.post('/auth/organization/create', { name: 'Eve Harness', slug }),
   ).id;
-  ok(await user.post('/api/v1/objects', { slug: 'deal', label: 'Deal' }), 201);
 }, 60_000);
 
 afterAll(async () => cleanup(suffix, [slug]), 60_000);
@@ -59,7 +58,7 @@ describe('Eve harness authentication', () => {
     expect(body.expires_at).toBeGreaterThan(Date.now());
     expect(claims).toMatchObject({
       iss: `${BASE}/eve`,
-      aud: 'http://localhost:4200/eve',
+      aud: `${process.env.FRONTEND_URL || 'http://localhost:4200'}/eve`,
       sub: `user:${user.id}:organization:${organizationId}`,
       zuko_user_id: user.id,
       zuko_organization_id: organizationId,
@@ -77,6 +76,39 @@ describe('Eve harness authentication', () => {
       expect(described.data).toMatchObject({ name: 'deal', label: 'Deal' });
     } finally {
       await mcp.close();
+    }
+  });
+
+  it('blocks agent authentication and tools until organization setup is ready', async () => {
+    await withDb((db) =>
+      db.query(`UPDATE organization_setup SET status='running' WHERE "organizationId"=$1`, [
+        organizationId,
+      ]),
+    );
+    try {
+      const token = await user.post('/api/v1/eve/token');
+      expect(token.status).toBe(409);
+      expect(token.data.code).toBe('ORGANIZATION_NOT_READY');
+      const response = await axios.post(
+        MCP_URL,
+        { jsonrpc: '2.0', id: 1, method: 'tools/list' },
+        {
+          headers: {
+            accept: 'application/json, text/event-stream',
+            authorization: `Bearer ${delegationToken()}`,
+          },
+          validateStatus: () => true,
+        },
+      );
+      expect(response.status).toBe(403);
+      expect(response.data.code).toBe('ORGANIZATION_NOT_READY');
+    } finally {
+      await withDb((db) =>
+        db.query(
+          `UPDATE organization_setup SET status='ready', error=NULL WHERE "organizationId"=$1`,
+          [organizationId],
+        ),
+      );
     }
   });
 

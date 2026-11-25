@@ -1,7 +1,7 @@
 import { config } from 'dotenv';
 import { resolve } from 'node:path';
 import { PrismaService } from '../prisma/prisma.service';
-import { provisionStandardObjects } from './provision-standard-objects';
+import { provisionStandardObjects, StandardObjectConflict } from './provision-standard-objects';
 
 config({ path: resolve(__dirname, '../../../../.env'), quiet: true });
 const url = process.env.TEST_DATABASE_URL;
@@ -50,4 +50,41 @@ describe.skipIf(!url)('CRM provisioning transactions', () => {
     expect(fields[0].deletedAt).not.toBeNull();
   });
 
+  it('rolls back earlier objects if a later key conflicts, leaving custom data intact', async () => {
+    const organizationId = await organization('conflict');
+    await prisma.withTenant({ organizationId }, (tx) =>
+      tx.objectType.create({
+        data: {
+          organizationId,
+          slug: 'company',
+          label: 'Custom company',
+          pluralLabel: 'Custom companies',
+          kind: 'CUSTOM',
+        },
+      }),
+    );
+    await expect(
+      prisma.withTenant({ organizationId }, (tx) => provisionStandardObjects(tx, organizationId)),
+    ).rejects.toBeInstanceOf(StandardObjectConflict);
+    const objects = await prisma.withTenant({ organizationId }, (tx) =>
+      tx.objectType.findMany({ where: { organizationId } }),
+    );
+    expect(objects.map((object) => [object.slug, object.kind])).toEqual([['company', 'CUSTOM']]);
+  });
+
+  it('does not read or write another tenant’s setup state', async () => {
+    const a = await organization('a');
+    const b = await organization('b');
+    await prisma.withTenant({ organizationId: a }, (tx) =>
+      tx.organizationSetup.create({ data: { organizationId: a } }),
+    );
+    expect(
+      await prisma.withTenant({ organizationId: b }, (tx) => tx.organizationSetup.findMany()),
+    ).toEqual([]);
+    await expect(
+      prisma.withTenant({ organizationId: b }, (tx) =>
+        tx.organizationSetup.create({ data: { organizationId: a } }),
+      ),
+    ).rejects.toThrow(/row-level security/);
+  });
 });

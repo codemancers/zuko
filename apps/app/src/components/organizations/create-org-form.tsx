@@ -46,7 +46,7 @@ export function CreateOrgForm() {
       // The org list is cached as empty from before this create. Refresh it first, or
       // OrgGate on /dashboard sees the stale [] and bounces the user back to this form.
       await refetchOrgs?.();
-      router.push('/dashboard'); // create() also makes the new org active.
+      router.push('/organizations/setup'); // create() also makes the new org active.
       return;
     }
     setError(err?.message ?? 'Could not create the organization.');

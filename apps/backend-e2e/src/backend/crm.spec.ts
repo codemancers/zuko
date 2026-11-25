@@ -24,13 +24,13 @@ const eve = mk('eve');
 const loner = mk('loner');
 
 const API = '/api/v1';
-const REC = `${API}/objects/deal/records`;
+const REC = `${API}/objects/opportunity/records`;
 
 let orgId = '';
 let eveOrgId = '';
 let salesId = '';
-let aliceRecord = ''; // alice's deal
-let bobRecord = ''; // bob's deal
+let aliceRecord = ''; // alice's opportunity
+let bobRecord = ''; // bob's opportunity
 
 /** Assert the status with the response body in the failure message. */
 function expectStatus(reply: Reply, status: number) {
@@ -96,7 +96,7 @@ beforeAll(async () => {
     200,
   );
 
-  expectStatus(await owner.post(`${API}/objects`, { slug: 'deal', label: 'Deal' }), 201);
+  expectStatus(await owner.post(`${API}/objects`, { slug: 'opportunity', label: 'Deal' }), 201);
   const fields = [
     { name: 'name', label: 'Name', type: 'TEXT', required: true, filterable: true },
     { name: 'email', label: 'Email', type: 'EMAIL', unique: true },
@@ -111,7 +111,7 @@ beforeAll(async () => {
     { name: 'secret', label: 'Secret', type: 'TEXT', sensitive: true },
   ];
   for (const field of fields) {
-    expectStatus(await owner.post(`${API}/objects/deal/fields`, field), 201);
+    expectStatus(await owner.post(`${API}/objects/opportunity/fields`, field), 201);
   }
 }, 120_000);
 
@@ -149,27 +149,32 @@ describe('schema', () => {
       expectStatus(await alice.get(`${API}/objects`), 200).results.map(
         (o: { name: string }) => o.name,
       ),
-    ).toContain('deal');
+    ).toContain('opportunity');
     const denied = await alice.post(`${API}/objects`, { slug: 'secret_thing', label: 'Nope' });
     expect(denied.status).toBe(403);
     expect(denied.data.code).toBe('FORBIDDEN');
     expect(
-      (await alice.post(`${API}/objects/deal/fields`, { name: 'x', label: 'X', type: 'TEXT' }))
-        .status,
+      (
+        await alice.post(`${API}/objects/opportunity/fields`, {
+          name: 'x',
+          label: 'X',
+          type: 'TEXT',
+        })
+      ).status,
     ).toBe(403);
   });
 
   it('lets admins add fields, which bumps the version', async () => {
-    const before = expectStatus(await owner.get(`${API}/objects/deal`), 200).version;
+    const before = expectStatus(await owner.get(`${API}/objects/opportunity`), 200).version;
     expectStatus(
-      await admin.post(`${API}/objects/deal/fields`, {
+      await admin.post(`${API}/objects/opportunity/fields`, {
         name: 'region',
         label: 'Region',
         type: 'TEXT',
       }),
       201,
     );
-    const after = expectStatus(await owner.get(`${API}/objects/deal`), 200);
+    const after = expectStatus(await owner.get(`${API}/objects/opportunity`), 200);
     expect(after.version).toBe(before + 1);
     expect(after.fields.map((f: { name: string }) => f.name)).toEqual([
       'name',
@@ -182,7 +187,7 @@ describe('schema', () => {
   });
 
   it('rejects bad fields with details, and duplicates with a conflict', async () => {
-    const badType = await owner.post(`${API}/objects/deal/fields`, {
+    const badType = await owner.post(`${API}/objects/opportunity/fields`, {
       name: 'x',
       label: 'X',
       type: 'WAT',
@@ -192,23 +197,29 @@ describe('schema', () => {
     expect(errorCodes(badType)).toContain('type:INVALID_FIELD');
     expect(
       errorCodes(
-        await owner.post(`${API}/objects/deal/fields`, { name: 'kind', label: 'K', type: 'ENUM' }),
+        await owner.post(`${API}/objects/opportunity/fields`, {
+          name: 'kind',
+          label: 'K',
+          type: 'ENUM',
+        }),
       ),
     ).toEqual(['config.options:INVALID_FIELD']);
     expect(
       (
-        await owner.post(`${API}/objects/deal/fields`, {
+        await owner.post(`${API}/objects/opportunity/fields`, {
           name: 'region',
           label: 'Region',
           type: 'TEXT',
         })
       ).status,
     ).toBe(409);
-    expect((await owner.post(`${API}/objects`, { slug: 'deal', label: 'Deal' })).status).toBe(409);
+    expect(
+      (await owner.post(`${API}/objects`, { slug: 'opportunity', label: 'Deal' })).status,
+    ).toBe(409);
   });
 
   it('uses singular names and reports unknown ones', async () => {
-    const missing = await owner.get(`${API}/objects/deals`);
+    const missing = await owner.get(`${API}/objects/opportunitys`);
     expect(missing.status).toBe(404);
     expect(missing.data.code).toBe('NOT_FOUND');
   });
@@ -218,7 +229,7 @@ describe('records', () => {
   it('creates a record owned by its creator', async () => {
     const created = expectStatus(
       await createDeal(alice, {
-        name: 'Alice deal',
+        name: 'Alice opportunity',
         email: 'Alice@x.com',
         amount: 100,
         stage: 'open',
@@ -228,9 +239,14 @@ describe('records', () => {
     );
     aliceRecord = created.id;
     expect(created.owner_id).toBe(alice.id);
-    expect(created.properties.name).toBe('Alice deal');
+    expect(created.properties.name).toBe('Alice opportunity');
     bobRecord = expectStatus(
-      await createDeal(bob, { name: 'Bob deal', email: 'bob@x.com', amount: 250, stage: 'won' }),
+      await createDeal(bob, {
+        name: 'Bob opportunity',
+        email: 'bob@x.com',
+        amount: 250,
+        stage: 'won',
+      }),
       201,
     ).id;
   });
@@ -270,7 +286,11 @@ describe('records', () => {
       }),
       200,
     );
-    expect(updated.properties).toMatchObject({ name: 'Alice deal', amount: 150, stage: 'won' });
+    expect(updated.properties).toMatchObject({
+      name: 'Alice opportunity',
+      amount: 150,
+      stage: 'won',
+    });
     expect(updated.properties.region).toBeUndefined();
     expect(
       errorCodes(await alice.patch(`${REC}/${aliceRecord}`, { properties: { name: null } })),
@@ -412,7 +432,7 @@ describe('role scope overrides', () => {
   it('switches an object to team scope, then back', async () => {
     expectStatus(
       await owner.put(`${API}/access/roles/member`, {
-        object: 'deal',
+        object: 'opportunity',
         read_scope: 'TEAM',
         write_scope: 'TEAM',
       }),
@@ -420,7 +440,7 @@ describe('role scope overrides', () => {
     );
 
     const teamDeal = expectStatus(
-      await createDeal(dave, { name: 'Team deal' }, { team_id: salesId }),
+      await createDeal(dave, { name: 'Team opportunity' }, { team_id: salesId }),
       201,
     );
     expect(teamDeal.team_id).toBe(salesId);
@@ -436,10 +456,10 @@ describe('role scope overrides', () => {
     );
 
     expect(expectStatus(await owner.get(`${API}/access/roles`), 200).overrides).toEqual([
-      { role: 'member', object: 'deal', read_scope: 'TEAM', write_scope: 'TEAM' },
+      { role: 'member', object: 'opportunity', read_scope: 'TEAM', write_scope: 'TEAM' },
     ]);
     expect(
-      expectStatus(await owner.del(`${API}/access/roles/member?object=deal`), 200).removed,
+      expectStatus(await owner.del(`${API}/access/roles/member?object=opportunity`), 200).removed,
     ).toBe(1);
     expectStatus(await alice.get(`${REC}/${bobRecord}`), 200); // back to defaults
   });
@@ -456,7 +476,7 @@ describe('role scope overrides', () => {
 
     expectStatus(
       await owner.put(`${API}/access/roles/member`, {
-        object: 'deal',
+        object: 'opportunity',
         read_scope: 'OWN',
         write_scope: 'OWN',
       }),
@@ -464,7 +484,7 @@ describe('role scope overrides', () => {
     );
     expect((await carol.get(`${REC}/${aliceRecord}`)).status).toBe(404); // object override wins
 
-    await owner.del(`${API}/access/roles/member?object=deal`);
+    await owner.del(`${API}/access/roles/member?object=opportunity`);
     await owner.del(`${API}/access/roles/member`);
     expect(expectStatus(await owner.get(`${API}/access/roles`), 200).overrides).toEqual([]);
   });
@@ -747,14 +767,18 @@ describe('listing and filtering', () => {
 
 describe('tenant isolation', () => {
   it("keeps one organization's schema and data invisible to another", async () => {
-    expect(expectStatus(await eve.get(`${API}/objects`), 200).results).toEqual([]);
+    expect(
+      expectStatus(await eve.get(`${API}/objects`), 200).results.map(
+        (o: { name: string }) => o.name,
+      ),
+    ).toEqual(['contact', 'company', 'deal']);
     expect((await eve.get(`${REC}`)).status).toBe(404);
 
     const evesDeal = expectStatus(
-      await eve.post(`${API}/objects`, { slug: 'deal', label: 'Deal' }),
+      await eve.post(`${API}/objects`, { slug: 'opportunity', label: 'Deal' }),
       201,
     );
-    const acmeDeal = expectStatus(await owner.get(`${API}/objects/deal`), 200);
+    const acmeDeal = expectStatus(await owner.get(`${API}/objects/opportunity`), 200);
     expect(evesDeal.id).not.toBe(acmeDeal.id);
     expect(expectStatus(await eve.get(`${REC}`), 200).metadata.total_elements).toBe(0);
     expect((await eve.get(`${REC}/${aliceRecord}`)).status).toBe(404); // another org's id

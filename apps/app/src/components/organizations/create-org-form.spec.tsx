@@ -27,10 +27,10 @@ beforeEach(() => {
 });
 
 describe('CreateOrgForm', () => {
-  it('creates the organization with a slug from its name, then goes to the dashboard', async () => {
+  it('creates the organization with a slug from its name, then opens organization setup', async () => {
     submit('  Acme Inc  ');
 
-    await waitFor(() => expect(router.push).toHaveBeenCalledWith('/dashboard'));
+    await waitFor(() => expect(router.push).toHaveBeenCalledWith('/organizations/setup'));
     expect(auth.checkSlug).toHaveBeenCalledWith({ slug: 'acme-inc' });
     expect(auth.create).toHaveBeenCalledWith({ name: 'Acme Inc', slug: 'acme-inc' });
   });
@@ -51,7 +51,7 @@ describe('CreateOrgForm', () => {
     expect(router.push).not.toHaveBeenCalled();
 
     finishRefetch();
-    await waitFor(() => expect(router.push).toHaveBeenCalledWith('/dashboard'));
+    await waitFor(() => expect(router.push).toHaveBeenCalledWith('/organizations/setup'));
   });
 
   it('adds a suffix when the slug is taken', async () => {

@@ -100,7 +100,7 @@ const row = (properties: Record<string, unknown>, id = String(nextId++)): Record
 function fakeBackend(
   initial: RecordRow[],
   options: {
-    setup?: 'needed' | 'forbidden' | 'conflict' | false;
+    missingDefinition?: boolean;
     failList?: boolean;
     admin?: boolean;
     keepChoice?: string;
@@ -118,7 +118,7 @@ function fakeBackend(
 ) {
   const state = {
     records: [...initial],
-    defined: !options.setup,
+    defined: !options.missingDefinition,
     calls: [] as Call[],
     def: structuredClone(contact),
     companies: [...(options.companies ?? [])],
@@ -224,17 +224,6 @@ function fakeBackend(
     if (fieldRoute && method === 'DELETE') {
       state.def.fields = state.def.fields.filter((f) => f.name !== fieldRoute[1]);
       return { name: fieldRoute[1], deleted: true };
-    }
-    if (path === '/api/v1/setup/standard-objects') {
-      if (options.setup === 'forbidden')
-        throw new ApiError('You are not allowed to set up the standard objects', 403, 'FORBIDDEN');
-      if (options.setup === 'conflict') {
-        // Someone else's request got there first: the objects now exist, but this call is refused.
-        state.defined = true;
-        throw new ApiError('That value is already in use', 409, 'CONFLICT');
-      }
-      state.defined = true;
-      return { created: ['contact'], results: [] };
     }
     if (path === '/api/v1/objects' && method === 'GET')
       return {
@@ -468,28 +457,11 @@ describe('RecordsView', () => {
     expect(screen.getByText('1200.5')).toBeTruthy();
   });
 
-  it('sets up the standard objects the first time, then shows the list', async () => {
-    const backend = fakeBackend([ada()], { setup: 'needed' });
+  it('reports a missing definition without attempting to provision objects', async () => {
+    const backend = fakeBackend([], { missingDefinition: true });
     render(<RecordsView object="contact" />);
-
-    expect(await screen.findByRole('button', { name: 'Ada' })).toBeTruthy();
-    expect(backend.calls.map((c) => c.path)).toContain('/api/v1/setup/standard-objects');
-  });
-
-  it('carries on when another request set them up first and this one was refused', async () => {
-    fakeBackend([ada()], { setup: 'conflict' });
-    render(<RecordsView object="contact" />);
-
-    expect(await screen.findByRole('button', { name: 'Ada' })).toBeTruthy();
-    expect(screen.queryByText('That value is already in use')).toBeNull();
-  });
-
-  it('explains when someone who may not set them up arrives first', async () => {
-    fakeBackend([], { setup: 'forbidden' });
-    render(<RecordsView object="contact" />);
-
-    expect(await screen.findByText(/Ask an owner or admin to open this page once/)).toBeTruthy();
-    expect(screen.queryByRole('button', { name: 'Add contact' })).toBeNull();
+    expect(await screen.findByText('Object type contact does not exist')).toBeTruthy();
+    expect(backend.calls.every((call) => (call.init?.method ?? 'GET') === 'GET')).toBe(true);
   });
 
   it('does not set up an object that is not a standard one', async () => {

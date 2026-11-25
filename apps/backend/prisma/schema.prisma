@@ -103,6 +103,8 @@ model Organization {
   reportingLines MemberReporting[]
   hierarchy      MemberHierarchy[]
   roleAccess     RoleObjectAccess[]
+  setup          OrganizationSetup?
+  setupRunId     String?
 
   @@map("organization")
 }
@@ -620,4 +622,19 @@ model OauthConsent {
   @@index([clientId])
   @@index([userId])
   @@map("oauth_consent")
+}
+
+// Setup state doubles as a durable request to attach a Workflow SDK run.
+model OrganizationSetup {
+  id             BigInt       @id @default(autoincrement())
+  organizationId BigInt       @unique
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  status         String       @default("pending") // pending | running | ready | failed
+  attempt        Int          @default(1)
+  runId          String?
+  error          String?
+  createdAt      DateTime     @default(dbgenerated("timezone('utc'::text, now())"))
+  updatedAt      DateTime     @updatedAt
+
+  @@map("organization_setup")
 }
