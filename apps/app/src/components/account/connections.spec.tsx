@@ -3,20 +3,20 @@ import { render } from '@/test/render';
 import { Connections, type Connection } from './connections';
 
 const api = vi.hoisted(() => vi.fn<(path: string, init?: RequestInit) => Promise<unknown>>());
-vi.mock('@/lib/api', () => ({ api, MCP_URL: 'http://localhost:3000/api/mcp' }));
+vi.mock('@/lib/api', () => ({ api }));
 
 const claude: Connection = {
   id: '1',
   client: { id: 'client_1', name: 'Claude', uri: null },
   organization: { id: '10', name: 'Acme' },
-  scopes: ['openid', 'offline_access', 'mcp:read', 'mcp:write'],
+  scopes: ['openid', 'offline_access', 'records:read', 'records:write'],
   connected_at: '2026-11-03T10:00:00.000Z',
 };
 const cursor: Connection = {
   id: '2',
   client: { id: 'client_2', name: null, uri: null },
   organization: null,
-  scopes: ['mcp:read'],
+  scopes: ['records:read'],
   connected_at: '2026-11-10T10:00:00.000Z',
 };
 
@@ -34,13 +34,13 @@ beforeEach(() => {
 describe('Connections', () => {
   it('lists each app with where it works and what it can do, without the plumbing scopes', async () => {
     serve([claude]);
-    render(<Connections />);
+    render(<Connections mcpUrl="http://localhost:4200/eve/v1/mcp" />);
 
     expect(await screen.findByText('Claude')).toBeTruthy();
     expect(screen.getByText('Acme')).toBeTruthy();
     expect(screen.getByRole('table')).toBeTruthy();
     expect(screen.getByRole('columnheader', { name: /Application/ })).toBeTruthy();
-    expect(screen.getByText('View records and how your data is set up')).toBeTruthy();
+    expect(screen.getByText('View records, their relationships and change history')).toBeTruthy();
     expect(screen.getByText('Create and change records')).toBeTruthy();
     expect(screen.queryByText('Know who you are')).toBeNull();
     expect(screen.queryByText('Stay connected without asking you again')).toBeNull();
@@ -52,7 +52,7 @@ describe('Connections', () => {
 
   it('copes with an app that has no name and an organization the person has left', async () => {
     serve([cursor]);
-    render(<Connections />);
+    render(<Connections mcpUrl="http://localhost:4200/eve/v1/mcp" />);
 
     expect(await screen.findByText('Unnamed application')).toBeTruthy();
     expect(screen.getByText(/An organization you no longer have/)).toBeTruthy();
@@ -60,15 +60,15 @@ describe('Connections', () => {
 
   it('tells a new person how to connect an app when there are none', async () => {
     serve([]);
-    render(<Connections />);
+    render(<Connections mcpUrl="http://localhost:4200/eve/v1/mcp" />);
 
     expect(await screen.findByText('No connected apps')).toBeTruthy();
-    expect(screen.getByText('http://localhost:3000/api/mcp')).toBeTruthy();
+    expect(screen.getByText('http://localhost:4200/eve/v1/mcp')).toBeTruthy();
   });
 
   it('asks before disconnecting, and can be backed out of', async () => {
     serve([claude]);
-    render(<Connections />);
+    render(<Connections mcpUrl="http://localhost:4200/eve/v1/mcp" />);
     fireEvent.click(await screen.findByRole('button', { name: 'Disconnect' }));
 
     expect(screen.getByText(/will stop working right away/)).toBeTruthy();
@@ -81,7 +81,7 @@ describe('Connections', () => {
 
   it('disconnects once confirmed and drops the row', async () => {
     serve([claude, cursor]);
-    render(<Connections />);
+    render(<Connections mcpUrl="http://localhost:4200/eve/v1/mcp" />);
     fireEvent.click((await screen.findAllByRole('button', { name: 'Disconnect' }))[0]);
     fireEvent.click(screen.getByRole('button', { name: 'Yes, disconnect' }));
 
@@ -95,7 +95,7 @@ describe('Connections', () => {
       if (init?.method === 'DELETE') throw new Error('No such connection');
       return { results: [claude] };
     });
-    render(<Connections />);
+    render(<Connections mcpUrl="http://localhost:4200/eve/v1/mcp" />);
     fireEvent.click(await screen.findByRole('button', { name: 'Disconnect' }));
     fireEvent.click(screen.getByRole('button', { name: 'Yes, disconnect' }));
 
@@ -117,7 +117,7 @@ describe('Connections', () => {
         });
       return { results: [claude, cursor] };
     });
-    render(<Connections />);
+    render(<Connections mcpUrl="http://localhost:4200/eve/v1/mcp" />);
     fireEvent.click((await screen.findAllByRole('button', { name: 'Disconnect' }))[0]);
     fireEvent.click(screen.getByRole('button', { name: 'Yes, disconnect' }));
 
@@ -145,7 +145,7 @@ describe('Connections', () => {
     api.mockImplementation(async () => {
       throw new Error('Unauthorized');
     });
-    render(<Connections />);
+    render(<Connections mcpUrl="http://localhost:4200/eve/v1/mcp" />);
 
     expect(await screen.findByText('Unauthorized')).toBeTruthy();
     expect(screen.queryByText('No connected apps')).toBeNull();

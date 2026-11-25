@@ -10,7 +10,7 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { Crm, CrmContextGuard, type RequestContext } from './context';
+import { HarnessAccess, Crm, CrmContextGuard, type RequestContext } from './context';
 import { RecordsQueryService } from './records-query.service';
 import { RecordsService } from './records.service';
 
@@ -23,6 +23,7 @@ export class RecordsController {
   ) {}
 
   @Get()
+  @HarnessAccess('records:read')
   list(
     @Crm() ctx: RequestContext,
     @Param('object') object: string,
@@ -34,27 +35,32 @@ export class RecordsController {
   /** A query, not a creation: 200 rather than POST's default 201. */
   @Post('filter')
   @HttpCode(200)
+  @HarnessAccess('records:read')
   filter(@Crm() ctx: RequestContext, @Param('object') object: string, @Body() body: unknown) {
     return this.queries.filter(ctx, object, body);
   }
 
   @Post('facets')
   @HttpCode(200)
+  @HarnessAccess('records:read')
   facets(@Crm() ctx: RequestContext, @Param('object') object: string, @Body() body: unknown) {
     return this.queries.facets(ctx, object, body);
   }
 
   @Post()
+  @HarnessAccess('records:write')
   create(@Crm() ctx: RequestContext, @Param('object') object: string, @Body() body: unknown) {
     return this.records.create(ctx, object, body);
   }
 
   @Get(':id')
+  @HarnessAccess('records:read')
   get(@Crm() ctx: RequestContext, @Param('object') object: string, @Param('id') id: string) {
     return this.records.get(ctx, object, id);
   }
 
   @Patch(':id')
+  @HarnessAccess('records:write')
   update(
     @Crm() ctx: RequestContext,
     @Param('object') object: string,
@@ -65,11 +71,13 @@ export class RecordsController {
   }
 
   @Delete(':id')
+  @HarnessAccess('records:delete')
   remove(@Crm() ctx: RequestContext, @Param('object') object: string, @Param('id') id: string) {
     return this.records.remove(ctx, object, id);
   }
 
   @Get(':id/history')
+  @HarnessAccess('records:read')
   history(@Crm() ctx: RequestContext, @Param('object') object: string, @Param('id') id: string) {
     return this.records.history(ctx, object, id);
   }

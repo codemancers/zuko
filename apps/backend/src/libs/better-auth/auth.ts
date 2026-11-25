@@ -8,7 +8,7 @@ import type { PrismaClient } from '../../generated/prisma/client';
 import { AUTH_BASE_PATH, BACKEND_URL } from './constants';
 import { auditSink } from './audit-sink';
 import { hierarchyTransaction } from './hierarchy-transaction';
-import { cimdPlugin, jwtPlugin, mcpPlugin } from './mcp-plugins';
+import { cimdPlugin, jwtPlugin, oauthProviderPlugin } from './oauth-plugins';
 import { activeOrganizationOnSessionCreate } from './session-hooks';
 
 export function createAuth(
@@ -24,7 +24,7 @@ export function createAuth(
     trustedOrigins: FRONTEND_URL ? [FRONTEND_URL] : [],
     emailAndPassword: { enabled: true },
     advanced: { database: { generateId: 'serial' } },
-    // The JWT plugin signs MCP access tokens; its own token route stays off.
+    // JWT signing serves OAuth access, browser route tokens and CRM delegation; its own token route stays off.
     disabledPaths: ['/token'],
     // audit goes last so its hooks see events from the other plugins.
     plugins: [
@@ -53,7 +53,7 @@ export function createAuth(
       }),
       hierarchy({ transaction: hierarchyTransaction(prisma) }),
       jwtPlugin(),
-      mcpPlugin(),
+      oauthProviderPlugin(prisma),
       cimdPlugin(),
       audit({ write: auditSink(prisma) }),
     ],

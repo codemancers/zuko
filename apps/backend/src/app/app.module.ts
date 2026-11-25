@@ -4,7 +4,8 @@ import { Module } from '@nestjs/common';
 import { AuthModule } from '@thallesp/nestjs-better-auth';
 import { CrmModule } from '../crm/crm.module';
 import { createAuth } from '../libs/better-auth/auth';
-import { McpModule } from '../mcp/mcp.module';
+import { ConnectionsModule } from '../connections/connections.module';
+import { WellKnownController } from '../libs/better-auth/well-known.controller';
 import { PrismaModule } from '../prisma/prisma.module';
 import { PrismaService } from '../prisma/prisma.service';
 import { AppController } from './app.controller';
@@ -15,7 +16,7 @@ import { AppService } from './app.service';
     PrismaModule,
     OrganizationSetupModule,
     CrmModule,
-    McpModule,
+    ConnectionsModule,
     AuthModule.forRootAsync({
       imports: [OrganizationSetupModule],
       inject: [PrismaService, OrganizationSetupService],
@@ -27,7 +28,7 @@ import { AppService } from './app.service';
       }),
     }),
   ],
-  controllers: [AppController],
+  controllers: [AppController, WellKnownController],
   providers: [AppService],
 })
 export class AppModule {}

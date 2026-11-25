@@ -61,7 +61,7 @@ describe('AuthForm after a successful login', () => {
   });
 
   it('resumes the OAuth flow when an application sent the person here', async () => {
-    currentSearch = '?client_id=c&scope=mcp%3Aread&sig=abc';
+    currentSearch = '?client_id=c&scope=records%3Aread&sig=abc';
     auth.signInEmail.mockResolvedValue({
       data: { redirect: true, url: 'http://localhost:4200/consent?client_id=c&sig=abc' },
       error: null,

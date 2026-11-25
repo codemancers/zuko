@@ -1,5 +1,5 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
-import { Crm, CrmContextGuard, type RequestContext } from './context';
+import { HarnessAccess, Crm, CrmContextGuard, type RequestContext } from './context';
 import { can } from './permissions';
 import { SchemaService } from './schema.service';
 
@@ -10,6 +10,7 @@ export class ObjectsController {
 
   /** The resolved request context: handy for checking who the API thinks you are. */
   @Get('me')
+  @HarnessAccess('directory:read')
   me(@Crm() ctx: RequestContext) {
     return {
       user_id: String(ctx.userId),
@@ -22,11 +23,13 @@ export class ObjectsController {
   }
 
   @Get('objects')
+  @HarnessAccess('schema:read')
   list(@Crm() ctx: RequestContext) {
     return this.schema.list(ctx);
   }
 
   @Get('associations')
+  @HarnessAccess('schema:read')
   listAssociations(@Crm() ctx: RequestContext) {
     return this.schema.listAssociations(ctx);
   }
@@ -37,6 +40,7 @@ export class ObjectsController {
   }
 
   @Get('objects/:object')
+  @HarnessAccess('schema:read')
   describe(@Crm() ctx: RequestContext, @Param('object') object: string) {
     return this.schema.describe(ctx, object);
   }

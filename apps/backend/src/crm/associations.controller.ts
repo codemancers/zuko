@@ -1,6 +1,17 @@
-import { Body, Controller, Delete, Get, HttpCode, Param, Post, Put, Query, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  Param,
+  Post,
+  Put,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import { AssociationsService } from './associations.service';
-import { Crm, CrmContextGuard, type RequestContext } from './context';
+import { HarnessAccess, Crm, CrmContextGuard, type RequestContext } from './context';
 
 /** The records linked to a record, by the kind of record on the other end. Many-to-many, the same from either side. */
 @Controller('v1/objects/:object/records/:id/associations/:link')
@@ -9,6 +20,7 @@ export class AssociationsController {
   constructor(private readonly associations: AssociationsService) {}
 
   @Get()
+  @HarnessAccess('records:read')
   list(
     @Crm() ctx: RequestContext,
     @Param('object') object: string,
@@ -21,17 +33,31 @@ export class AssociationsController {
 
   /** Set the linked records to exactly `record_ids`. */
   @Put()
-  replace(@Crm() ctx: RequestContext, @Param('object') object: string, @Param('id') id: string, @Param('link') link: string, @Body() body: unknown) {
+  replace(
+    @Crm() ctx: RequestContext,
+    @Param('object') object: string,
+    @Param('id') id: string,
+    @Param('link') link: string,
+    @Body() body: unknown,
+  ) {
     return this.associations.replace(ctx, object, id, link, body);
   }
 
   @Post()
   @HttpCode(200)
-  link(@Crm() ctx: RequestContext, @Param('object') object: string, @Param('id') id: string, @Param('link') link: string, @Body() body: unknown) {
+  @HarnessAccess('records:write')
+  link(
+    @Crm() ctx: RequestContext,
+    @Param('object') object: string,
+    @Param('id') id: string,
+    @Param('link') link: string,
+    @Body() body: unknown,
+  ) {
     return this.associations.link(ctx, object, id, link, body);
   }
 
   @Delete(':targetId')
+  @HarnessAccess('records:write')
   unlink(
     @Crm() ctx: RequestContext,
     @Param('object') object: string,

@@ -10,16 +10,22 @@
     "build": "eve build",
     "dev": "eve dev",
     "start": "eve start",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
   },
   "dependencies": {
     "ai": "^7.0.181",
+    "better-auth": "^1.7.25",
     "eve": "1.4.0",
     "zod": "^4.6.7"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
-    "typescript": "~6.0.3"
+    "@types/pg": "^8.23.1",
+    "axios": "^1.21.1",
+    "pg": "^8.23.1",
+    "typescript": "~6.0.3",
+    "vitest": "^5.0.5"
   },
   "nx": {
     "targets": {
@@ -37,7 +43,13 @@
         "outputs": [
           "{projectRoot}/.output"
         ]
+      },
+      "test": {
+        "cache": false
       }
-    }
+    },
+    "implicitDependencies": [
+      "@zuko/backend"
+    ]
   }
 }

@@ -194,7 +194,7 @@ describe('audit plugin', () => {
 
 describe('OAuth consent events', () => {
   const spec = EVENT_SPECS['/oauth2/consent'];
-  const query = 'response_type=code&client_id=client_1&scope=openid+mcp%3Aread+mcp%3Awrite&state=s&code_challenge=c&sig=abc';
+  const query = 'response_type=code&client_id=client_1&scope=openid+records%3Aread+records%3Awrite&state=s&code_challenge=c&sig=abc';
   const name = (body: Record<string, unknown>) => (typeof spec.event === 'function' ? spec.event(body, {}) : spec.event);
   const details = (body: Record<string, unknown>) => (typeof spec.metadata === 'function' ? spec.metadata(body, {}) : {});
 
@@ -205,7 +205,7 @@ describe('OAuth consent events', () => {
 
   it('keeps the client and the scopes, not the request plumbing', () => {
     const kept = details({ accept: true, oauth_query: query });
-    expect(kept).toEqual({ client_id: 'client_1', scopes: ['openid', 'mcp:read', 'mcp:write'] });
+    expect(kept).toEqual({ client_id: 'client_1', scopes: ['openid', 'records:read', 'records:write'] });
     expect(JSON.stringify(kept)).not.toContain('abc'); // the signature
     expect(JSON.stringify(kept)).not.toContain('code_challenge');
   });

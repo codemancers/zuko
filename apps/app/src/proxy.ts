@@ -8,13 +8,18 @@ const publicAssets = new Set(['/favicon.ico', '/icon.svg']);
 /** New application routes require a valid session unless explicitly allowlisted here. */
 export async function proxy(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
+  // withEve proxies /eve/v1/*; route standard OAuth discovery into that namespace.
+  if (pathname === '/.well-known/oauth-protected-resource/eve/v1/mcp') {
+    return NextResponse.rewrite(new URL('/eve/v1/mcp/metadata', request.url));
+  }
   if (
     publicPages.has(pathname) ||
     publicAssets.has(pathname) ||
     /^\/accept-invitation\/[^/]+$/.test(pathname) ||
     // Eve authenticates these protocol requests with its own bearer tokens/callbacks.
     pathname.startsWith('/eve/v1/')
-  ) return NextResponse.next();
+  )
+    return NextResponse.next();
 
   let auth: Response | undefined;
   let authenticated = false;

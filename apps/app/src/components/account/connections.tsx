@@ -8,7 +8,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { AlertCircle, PlugZap } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import { api, MCP_URL } from '@/lib/api';
+import { api } from '@/lib/api';
 import { describeScopes } from '@/lib/oauth-scopes';
 
 export type Connection = {
@@ -29,7 +29,7 @@ const formatDate = (iso: string) =>
  * The applications (MCP clients) this person has approved, with a way to cut each one off.
  * Disconnecting takes effect immediately; the app has to be approved again to come back.
  */
-export function Connections() {
+export function Connections({ mcpUrl }: { mcpUrl: string }) {
   const client = useQueryClient();
   const connectionsQuery = useQuery({
     queryKey: ['connections'],
@@ -196,7 +196,7 @@ export function Connections() {
                   approve the connection when asked:
                 </p>
                 <code className="max-w-full break-all rounded-lg border bg-muted/50 px-3 py-2 text-xs">
-                  {MCP_URL}
+                  {mcpUrl}
                 </code>
               </div>
             )

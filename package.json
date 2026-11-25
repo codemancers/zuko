@@ -6,7 +6,6 @@
   "scripts": {},
   "dependencies": {
     "@better-auth/cimd": "^1.7.25",
-    "@better-auth/mcp": "^1.7.25",
     "@better-auth/oauth-provider": "^1.7.25",
     "@better-auth/prisma-adapter": "^1.7.25",
     "@codemancers/sheets": "^0.2.2",
@@ -14,7 +13,6 @@
     "@kosha-ai/cli": "^0.6.0",
     "@kosha-ai/integration-apollo": "^0.6.0",
     "@kosha-ai/server": "^0.6.0",
-    "@modelcontextprotocol/server": "^2.4.0",
     "@nestjs/common": "^11.0.0",
     "@nestjs/core": "^11.0.0",
     "@nestjs/platform-express": "^11.0.0",

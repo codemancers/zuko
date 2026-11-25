@@ -20,8 +20,10 @@ async function bootstrap() {
     credentials: true,
     methods: ['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE'],
   });
-  // OAuth/MCP discovery documents are fetched from the origin root, not under /api.
-  app.setGlobalPrefix(globalPrefix, { exclude: [{ path: '.well-known/*path', method: RequestMethod.GET }] });
+  // OAuth issuer discovery is fetched from the origin root, not under /api.
+  app.setGlobalPrefix(globalPrefix, {
+    exclude: [{ path: '.well-known/*path', method: RequestMethod.GET }],
+  });
   const port = process.env.PORT || 3000;
   await app.listen(port);
   // Set when Nx waits for this server to be ready

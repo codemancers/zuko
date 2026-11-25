@@ -6,7 +6,9 @@ import type { User } from './crm-client';
 const HOST = process.env.HOST ?? 'localhost';
 const PORT = process.env.PORT ?? '3000';
 export const BASE = `http://${HOST}:${PORT}`;
-export const MCP_URL = `${BASE}/api/mcp`;
+export const MCP_URL = `${process.env.FRONTEND_URL || 'http://localhost:4200'}/eve/v1/mcp`;
+export const MCP_METADATA_URL = new URL('/.well-known/oauth-protected-resource/eve/v1/mcp', MCP_URL)
+  .href;
 export const REDIRECT_URI = 'http://localhost:9999/callback';
 
 export interface Connection {
@@ -125,7 +127,16 @@ export async function openSession(accessToken: string) {
     call: async (name: string, args: Record<string, unknown> = {}): Promise<ToolOutput> => {
       const result = await client.callTool({ name, arguments: args });
       const text = (result.content as { type: string; text: string }[])[0]?.text ?? 'null';
-      return { isError: result.isError === true, data: JSON.parse(text) };
+      return {
+        isError: result.isError === true,
+        data:
+          result.isError &&
+          result.structuredContent &&
+          typeof result.structuredContent === 'object' &&
+          'error' in result.structuredContent
+            ? result.structuredContent
+            : JSON.parse(text),
+      };
     },
     close: () => client.close(),
   };

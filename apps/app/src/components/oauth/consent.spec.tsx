@@ -6,7 +6,7 @@ import { Consent } from './consent';
 vi.mock('@/lib/auth-client', async () => (await import('@/test/auth-mock')).authClientModule);
 
 const QUERY =
-  '?client_id=client_1&scope=openid+mcp%3Aread+mcp%3Awrite+mcp%3Adelete&sig=abc&state=s';
+  '?client_id=client_1&scope=openid+records%3Aread+records%3Awrite+records%3Adelete+schema%3Aread+directory%3Aread&sig=abc&state=s';
 const signedIn = { data: { user: { id: 'u' } }, isPending: false };
 const navigate = vi.fn<(url: string) => void>();
 
@@ -33,7 +33,9 @@ describe('Consent', () => {
 
     expect(await screen.findByRole('heading', { name: 'Connect Claude' })).toBeTruthy();
     expect(screen.getByText('Acme')).toBeTruthy();
-    expect(screen.getByText('View records and how your data is set up')).toBeTruthy();
+    expect(screen.getByText('View records, their relationships and change history')).toBeTruthy();
+    expect(screen.getByText('View object types, fields and relationship definitions')).toBeTruthy();
+    expect(screen.getByText('View organization members and teams')).toBeTruthy();
     expect(screen.getByText('Create and change records')).toBeTruthy();
     expect(screen.getByText('Delete records')).toBeTruthy();
     expect(auth.fetch).toHaveBeenCalledWith('/oauth2/public-client', {
@@ -103,7 +105,7 @@ describe('Consent', () => {
   });
 
   it('rejects a link that is not a signed authorization request', async () => {
-    open('?client_id=client_1&scope=mcp%3Aread');
+    open('?client_id=client_1&scope=records%3Aread');
 
     expect(await screen.findByRole('heading', { name: 'This link is not valid' })).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Allow' })).toBeNull();
