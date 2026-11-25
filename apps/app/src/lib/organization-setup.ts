@@ -3,7 +3,16 @@
 import { useQuery } from '@tanstack/react-query';
 import { authClient } from '@/lib/auth-client';
 
-export type SetupSnapshot = { status: 'running' | 'ready' | 'failed'; message: string };
+export type SetupProgress = {
+  status: 'running' | 'ready' | 'failed';
+  message: string;
+  step?: 'prepare' | 'crm' | 'finish';
+};
+
+export function mergeSetupProgress(current: SetupProgress | undefined, update: SetupProgress): SetupProgress {
+  return { ...update, step: update.step ?? current?.step };
+}
+
 export const organizationSetupKey = (organizationId?: string, userId?: string) =>
   ['organization-setup', organizationId, userId] as const;
 
@@ -14,7 +23,7 @@ export function useOrganizationSetup() {
   return useQuery({
     queryKey: organizationSetupKey(organization?.id, session?.user.id),
     enabled: !!organization && !!session,
-    queryFn: async ({ signal }): Promise<SetupSnapshot> => {
+    queryFn: async ({ signal }): Promise<SetupProgress> => {
       const response = await fetch(`/api/organizations/${organization!.id}/setup`, {
         headers: { Accept: 'application/json' },
         cache: 'no-store',
