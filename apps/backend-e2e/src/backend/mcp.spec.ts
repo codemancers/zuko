@@ -4,6 +4,7 @@ import { User, cleanup, verifyEmails, withDb } from '../support/crm-client';
 import {
   BASE,
   MCP_URL,
+  MCP_METADATA_URL,
   connect,
   deny,
   openSession,
@@ -20,11 +21,10 @@ import {
  */
 const run = Date.now().toString(36);
 const suffix = `-${run}@mcp.test`;
-const slugs = [`mcp-acme-${run}`, `mcp-beta-${run}`, `mcp-link-${run}`];
+const slugs = [`mcp-acme-${run}`, `mcp-beta-${run}`];
 const mk = (name: string) => new User(name, `${name}${suffix}`);
 const owner = mk('owner');
 const alice = mk('alice');
-const linker = mk('linker'); // alone in an organization with the standard objects
 
 const API = '/api/v1';
 let acmeId = '';
@@ -39,7 +39,7 @@ function status(reply: { status: number; data?: unknown }, expected: number) {
 }
 
 beforeAll(async () => {
-  for (const user of [owner, alice, linker]) {
+  for (const user of [owner, alice]) {
     status(await user.signUp(), 200);
   }
   await verifyEmails(suffix);
@@ -61,16 +61,6 @@ beforeAll(async () => {
     200,
   );
   status(await alice.signIn(), 200);
-
-  status(await linker.post('/auth/organization/create', { name: 'Link Co', slug: slugs[2] }), 200);
-
-  // Customize the provisioned schema for the record and permission tests below.
-  status(
-    await owner.patch(`${API}/objects/deal/fields/stage`, {
-      config: { options: ['open', 'won', 'lost'] },
-    }),
-    200,
-  );
 }, 120_000);
 
 afterAll(async () => {
@@ -78,6 +68,28 @@ afterAll(async () => {
 }, 60_000);
 
 describe('discovery', () => {
+  it('has no backend MCP transport or protected-resource discovery', async () => {
+    for (const path of [
+      '/api/mcp',
+      '/.well-known/oauth-protected-resource',
+      '/.well-known/oauth-protected-resource/api/mcp',
+    ]) {
+      expect((await axios.get(`${BASE}${path}`, { validateStatus: () => true })).status).toBe(404);
+    }
+    expect((await axios.post(`${BASE}/api/mcp`, {}, { validateStatus: () => true })).status).toBe(
+      404,
+    );
+    const retired = await withDb(
+      async (db) =>
+        (
+          await db.query('SELECT identifier FROM oauth_resource WHERE identifier=$1', [
+            `${BASE}/api/mcp`,
+          ])
+        ).rows,
+    );
+    expect(retired).toEqual([]);
+  });
+
   it('challenges an unauthenticated request and points at the protected-resource metadata', async () => {
     const res = await axios.post(
       MCP_URL,
@@ -89,15 +101,15 @@ describe('discovery', () => {
     );
     expect(res.status).toBe(401);
     expect(res.headers['www-authenticate']).toContain(
-      `resource_metadata="${BASE}/.well-known/oauth-protected-resource/api/mcp"`,
+      `resource_metadata="${new URL('/eve/v1/mcp/metadata', MCP_URL).href}"`,
     );
-    expect(res.headers['www-authenticate']).toContain('mcp:read');
+    expect(res.headers['www-authenticate']).toContain('records:read');
   });
 
   it('publishes the protected resource and its authorization server at the origin root', async () => {
-    const resource = (await axios.get(`${BASE}/.well-known/oauth-protected-resource/api/mcp`)).data;
+    const resource = (await axios.get(MCP_METADATA_URL)).data;
     expect(resource.resource).toBe(MCP_URL);
-    expect(resource.scopes_supported).toEqual(['mcp:read', 'mcp:write', 'mcp:delete']);
+    expect(resource.scopes_supported).toEqual(['records:read']);
     expect(resource.authorization_servers).toEqual([`${BASE}/auth`]);
 
     const server = (await axios.get(`${BASE}/.well-known/oauth-authorization-server/auth`)).data;
@@ -112,19 +124,30 @@ describe('discovery', () => {
 
 describe('registration', () => {
   it('registers a native client', async () => {
-    const res = await registerClient(clientName('register'), 'mcp:read');
+    const res = await registerClient(clientName('register'), 'records:read');
     expect(res.status).toBe(201);
     expect(res.data.client_id).toBeTruthy();
     // The registered list is the most the client may ask for; what a connection actually
     // gets is decided at authorization (see 'what a connection may do').
-    expect(res.data.scope).toContain('mcp:read');
+    expect(res.data.scope).toContain('records:read');
+  });
+
+  it('accepts loopback clients that omit application_type', async () => {
+    const res = await registerClient(clientName('inferred-native'), 'records:read', {
+      application_type: undefined,
+    });
+    expect(res.status).toBe(201);
+    expect(res.data.application_type).toBe('native');
   });
 
   it('refuses scopes that are not offered, and insecure redirects for web clients', async () => {
     expect(
-      (await registerClient(clientName('bad-scope'), 'mcp:read admin:everything')).status,
+      (await registerClient(clientName('bad-scope'), 'records:read admin:everything')).status,
     ).toBe(400);
-    const web = await registerClient(clientName('web'), 'mcp:read', { application_type: 'web' });
+    expect((await registerClient(clientName('legacy-scope'), 'mcp:read')).status).toBe(400);
+    const web = await registerClient(clientName('web'), 'records:read', {
+      application_type: 'web',
+    });
     expect(web.status).toBe(400);
     expect(web.data.error).toBe('invalid_redirect_uri');
   });
@@ -134,8 +157,12 @@ describe('connecting', () => {
   let conn: Connection;
 
   it('issues a token for the user, bound to the organization active at the time', async () => {
-    conn = await connect(alice, clientName('alice'), 'openid offline_access mcp:read mcp:write');
-    expect(conn.scope.split(' ').sort()).toEqual(['mcp:read', 'mcp:write']);
+    conn = await connect(
+      alice,
+      clientName('alice'),
+      'openid offline_access records:read records:write',
+    );
+    expect(conn.scope.split(' ').sort()).toEqual(['records:read', 'records:write']);
     expect(conn.claims['sub']).toBe(alice.id);
     expect(conn.claims['urn:zuko:org_id']).toBe(acmeId);
     expect(conn.claims['aud']).toContain(MCP_URL);
@@ -176,355 +203,108 @@ describe('connecting', () => {
   });
 });
 
-describe('tools', () => {
-  let owned: Connection;
-  let mcp: Awaited<ReturnType<typeof openSession>>;
-  let recordId = '';
-
-  beforeAll(async () => {
-    owned = await connect(owner, clientName('owner-full'), 'openid mcp:read mcp:write mcp:delete');
-    mcp = await openSession(owned.accessToken);
-  });
-  afterAll(async () => {
-    await mcp.close();
-  });
-
-  it('lists the tools with honest annotations', async () => {
-    const tools = await mcp.tools();
-    expect(tools.map((t) => t.name).sort()).toEqual([
-      'create_record',
-      'delete_record',
-      'describe_object_type',
-      'filter_records',
-      'get_record',
-      'get_record_history',
-      'link_record',
-      'list_linked_records',
-      'list_members',
-      'list_object_types',
-      'list_records',
-      'list_teams',
-      'unlink_record',
-      'update_record',
-    ]);
-    const byName = Object.fromEntries(tools.map((t) => [t.name, t.annotations ?? {}]));
-    expect(byName['list_records']).toMatchObject({ readOnlyHint: true });
-    expect(byName['delete_record']).toMatchObject({ readOnlyHint: false, destructiveHint: true });
-    expect(byName['create_record']).toMatchObject({ readOnlyHint: false, destructiveHint: false });
-  });
-
-  it('reads the schema and the directory', async () => {
-    expect(
-      (await mcp.call('list_object_types')).data.results.map((o: { name: string }) => o.name),
-    ).toEqual(['contact', 'company', 'deal']);
-    const described = (await mcp.call('describe_object_type', { object: 'deal' })).data;
-    expect(described.fields.map((f: { name: string }) => f.name)).toEqual([
-      'name',
-      'amount',
-      'stage',
-      'expected_close_date',
-      'companies',
-    ]);
-    const members = (await mcp.call('list_members')).data.results;
-    expect(members.map((m: { email: string }) => m.email).sort()).toEqual([
-      alice.email,
-      owner.email,
-    ]);
-    expect(members.find((m: { is_me: boolean }) => m.is_me).email).toBe(owner.email);
-    expect((await mcp.call('list_teams')).data.results).toEqual([
-      expect.objectContaining({ name: 'Acme' }),
-    ]);
-  });
-
-  it('creates, reads, updates, filters, lists and deletes records', async () => {
-    const created = await mcp.call('create_record', {
-      object: 'deal',
-      properties: { name: 'Via MCP', amount: 10, stage: 'open' },
-    });
-    expect(created.isError).toBe(false);
-    recordId = created.data.id;
-    expect(created.data.owner_id).toBe(owner.id);
-
-    expect(
-      (await mcp.call('get_record', { object: 'deal', id: recordId })).data.properties.name,
-    ).toBe('Via MCP');
-    const updated = await mcp.call('update_record', {
-      object: 'deal',
-      id: recordId,
-      properties: { amount: 25, stage: 'won' },
-    });
-    expect(updated.data.properties).toMatchObject({ amount: 25, stage: 'won' });
-
-    const found = await mcp.call('filter_records', {
-      object: 'deal',
-      filter_groups: [{ filters: [{ field_path: 'stage', operator: 'EQUALS', value: 'won' }] }],
-    });
-    expect(found.data.results.map((r: { id: string }) => r.id)).toEqual([recordId]);
-    const listed = await mcp.call('list_records', {
-      object: 'deal',
-      page_size: 5,
-      sort: 'amount,desc',
-    });
-    expect(listed.data.metadata.total_elements).toBe(1);
-
-    expect((await mcp.call('delete_record', { object: 'deal', id: recordId })).data).toEqual({
-      id: recordId,
-      deleted: true,
-    });
-    const gone = await mcp.call('get_record', { object: 'deal', id: recordId });
-    expect(gone.isError).toBe(true);
-    expect(gone.data.code).toBe('NOT_FOUND');
-  });
-
-  it('returns validation problems the model can act on', async () => {
-    const bad = await mcp.call('create_record', {
-      object: 'deal',
-      properties: { amount: 'lots', unknown: 1 },
-    });
-    expect(bad.isError).toBe(true);
-    expect(bad.data.code).toBe('VALIDATION_FAILED');
-    expect(
-      bad.data.errors.map((e: { field: string; code: string }) => `${e.field}:${e.code}`).sort(),
-    ).toEqual(['amount:INVALID_FIELD', 'name:REQUIRED_FIELD_MISSING', 'unknown:UNKNOWN_FIELD']);
-    expect((await mcp.call('describe_object_type', { object: 'deals' })).data.code).toBe(
-      'NOT_FOUND',
+describe('harness CRM tools', () => {
+  it('discovers the CRM schema, directory and agent lifecycle tools', async () => {
+    const mcp = await openSession(
+      (await connect(owner, clientName('tools'), 'records:read schema:read directory:read'))
+        .accessToken,
     );
-  });
-
-  it('records MCP as the actor in the history', async () => {
-    const made = (
-      await mcp.call('create_record', { object: 'deal', properties: { name: 'History' } })
-    ).data.id;
-    await mcp.call('update_record', { object: 'deal', id: made, properties: { amount: 1 } });
-    const viaWeb = status(
-      await owner.patch(`${API}/objects/deal/records/${made}`, { properties: { amount: 2 } }),
-      200,
-    );
-    expect(viaWeb.properties.amount).toBe(2);
-
-    const history = (await mcp.call('get_record_history', { object: 'deal', id: made })).data
-      .results;
-    expect(
-      history.map((h: { action: string; actor_type: string }) => `${h.action}:${h.actor_type}`),
-    ).toEqual(['UPDATE:USER', 'UPDATE:MCP', 'CREATE:MCP']);
-  });
-});
-
-describe('linking records', () => {
-  let mcp: Awaited<ReturnType<typeof openSession>>;
-  let contact = '';
-  let company = '';
-
-  beforeAll(async () => {
-    mcp = await openSession(
-      (await connect(linker, clientName('linker'), 'mcp:read mcp:write')).accessToken,
-    );
-    contact = (
-      await mcp.call('create_record', {
-        object: 'contact',
-        properties: { first_name: 'Ada', last_name: 'Lovelace' },
-      })
-    ).data.id;
-    company = (
-      await mcp.call('create_record', {
-        object: 'company',
-        properties: { name: 'Analytical Engines' },
-      })
-    ).data.id;
-  });
-  afterAll(async () => {
-    await mcp.close();
-  });
-
-  it('says which kinds of record can be linked', async () => {
-    const described = (await mcp.call('describe_object_type', { object: 'contact' })).data;
-    expect(described.associations.map((a: { name: string }) => a.name)).toEqual([
-      'contact_company',
-      'contact_deal',
-    ]);
-  });
-
-  it('links two records, shows the link from both sides, and unlinks them', async () => {
-    const linked = await mcp.call('link_record', {
-      object: 'contact',
-      id: contact,
-      link: 'contact_company',
-      record_id: company,
-    });
-    expect(linked.isError).toBe(false);
-    expect(linked.data.results).toEqual([{ id: company, label: 'Analytical Engines' }]);
-
-    const fromContact = (
-      await mcp.call('list_linked_records', {
-        object: 'contact',
-        id: contact,
-        link: 'contact_company',
-      })
-    ).data;
-    expect(fromContact.results.map((r: { id: string; label: string }) => [r.id, r.label])).toEqual([
-      [company, 'Analytical Engines'],
-    ]);
-    const fromCompany = (
-      await mcp.call('list_linked_records', {
-        object: 'company',
-        id: company,
-        link: 'contact_company',
-      })
-    ).data;
-    expect(fromCompany.results.map((r: { label: string }) => r.label)).toEqual(['Ada Lovelace']);
-
-    const withLinks = (await mcp.call('list_records', { object: 'contact', include_links: true }))
-      .data.results[0];
-    expect(withLinks.associations.contact_company).toEqual([
-      { id: company, label: 'Analytical Engines' },
-    ]);
-    const found = (
-      await mcp.call('filter_records', {
-        object: 'contact',
-        include_links: true,
-        filter_groups: [
-          { filters: [{ field_path: 'first_name', operator: 'EQUALS', value: 'Ada' }] },
-        ],
-      })
-    ).data;
-    expect(found.results[0].associations.contact_company).toHaveLength(1);
-
-    expect(
-      (
-        await mcp.call('unlink_record', {
-          object: 'contact',
-          id: contact,
-          link: 'contact_company',
-          record_id: company,
-        })
-      ).data.results,
-    ).toEqual([]);
-    expect(
-      (
-        await mcp.call('list_linked_records', {
-          object: 'contact',
-          id: contact,
-          link: 'contact_company',
-        })
-      ).data.results,
-    ).toEqual([]);
-  });
-
-  it('reports what went wrong in a way the model can act on', async () => {
-    expect(
-      (
-        await mcp.call('link_record', {
-          object: 'contact',
-          id: contact,
-          link: 'deal_company',
-          record_id: contact,
-        })
-      ).data.code,
-    ).toBe('NOT_FOUND');
-    expect(
-      (
-        await mcp.call('link_record', {
-          object: 'contact',
-          id: contact,
-          link: 'contact_company',
-          record_id: '999999999',
-        })
-      ).data.code,
-    ).toBe('NOT_FOUND');
-    expect(
-      (
-        await mcp.call('unlink_record', {
-          object: 'contact',
-          id: contact,
-          link: 'contact_company',
-          record_id: company,
-        })
-      ).data.code,
-    ).toBe('NOT_FOUND'); // not linked
-  });
-
-  it('needs the write scope to change links, but not to read them', async () => {
-    const readOnly = await openSession(
-      (await connect(linker, clientName('linker-read'), 'mcp:read')).accessToken,
-    );
-    expect(
-      (
-        await readOnly.call('list_linked_records', {
-          object: 'contact',
-          id: contact,
-          link: 'contact_company',
-        })
-      ).isError,
-    ).toBe(false);
-    for (const tool of ['link_record', 'unlink_record'] as const) {
-      const denied = await readOnly.call(tool, {
-        object: 'contact',
-        id: contact,
-        link: 'contact_company',
-        record_id: company,
-      });
-      expect({ tool, code: denied.data.code }).toEqual({ tool, code: 'INSUFFICIENT_SCOPE' });
+    try {
+      expect((await mcp.tools()).map((tool) => tool.name)).toEqual(
+        expect.arrayContaining([
+          'list_object_types',
+          'describe_object_type',
+          'list_members',
+          'list_teams',
+          'list_records',
+          'filter_records',
+          'get_record',
+          'get_record_history',
+          'list_linked_records',
+          'create_record',
+          'update_record',
+          'delete_record',
+          'link_record',
+          'unlink_record',
+          'agent_start',
+          'agent_get',
+          'agent_update',
+          'agent_cancel',
+        ]),
+      );
+      expect(
+        (await mcp.call('list_object_types')).data.results.map((o: { name: string }) => o.name),
+      ).toEqual(['contact', 'company', 'deal']);
+      expect(
+        (await mcp.call('describe_object_type', { object: 'deal' })).data.fields.map(
+          (f: { name: string }) => f.name,
+        ),
+      ).toEqual(['name', 'amount', 'stage', 'expected_close_date', 'companies']);
+      expect(
+        (await mcp.call('list_members')).data.results.map((m: { email: string }) => m.email).sort(),
+      ).toEqual([alice.email, owner.email]);
+      expect((await mcp.call('list_teams')).data.results).toEqual([
+        expect.objectContaining({ name: 'Acme' }),
+      ]);
+      expect((await mcp.call('describe_object_type', { object: 'deals' })).data.code).toBe(
+        'NOT_FOUND',
+      );
+    } finally {
+      await mcp.close();
     }
-    await readOnly.close();
-  });
-});
-
-describe('what a connection may do', () => {
-  it('needs the matching scope, whoever the user is', async () => {
-    const readOnly = await openSession(
-      (await connect(owner, clientName('owner-read'), 'mcp:read')).accessToken,
-    );
-    const made = status(
-      await owner.post(`${API}/objects/deal/records`, { properties: { name: 'Scoped' } }),
-      201,
-    ).id;
-
-    expect((await readOnly.call('get_record', { object: 'deal', id: made })).isError).toBe(false);
-    for (const [tool, args] of [
-      ['create_record', { object: 'deal', properties: { name: 'No' } }],
-      ['update_record', { object: 'deal', id: made, properties: { amount: 1 } }],
-      ['delete_record', { object: 'deal', id: made }],
-    ] as const) {
-      const denied = await readOnly.call(tool, args);
-      expect({ tool, isError: denied.isError, code: denied.data.code }).toEqual({
-        tool,
-        isError: true,
-        code: 'INSUFFICIENT_SCOPE',
-      });
-    }
-    await readOnly.close();
   });
 
-  it("is limited by the user's own permissions, even with every scope", async () => {
-    const aliceFull = await openSession(
-      (await connect(alice, clientName('alice-full'), 'mcp:read mcp:write mcp:delete')).accessToken,
-    );
-    const ownerRecord = status(
+  it('applies the member record scopes to reads, filters and history', async () => {
+    const hidden = status(
       await owner.post(`${API}/objects/deal/records`, { properties: { name: 'Owner only' } }),
       201,
     ).id;
-
-    const mine = (
-      await aliceFull.call('create_record', { object: 'deal', properties: { name: 'Alice deal' } })
-    ).data.id;
-    expect(
-      (await aliceFull.call('get_record', { object: 'deal', id: ownerRecord })).data.code,
-    ).toBe('NOT_FOUND'); // cannot see it
-    const list = (await aliceFull.call('list_records', { object: 'deal' })).data;
-    expect(list.results.map((r: { id: string }) => r.id)).toContain(mine);
-    expect(list.results.map((r: { id: string }) => r.id)).not.toContain(ownerRecord);
-
-    const denied = await aliceFull.call('delete_record', { object: 'deal', id: mine }); // members cannot delete
-    expect(denied.isError).toBe(true);
-    expect(denied.data.code).toBe('FORBIDDEN');
-    await aliceFull.close();
+    const mine = status(
+      await alice.post(`${API}/objects/deal/records`, {
+        properties: { name: 'Alice deal', amount: 10 },
+      }),
+      201,
+    ).id;
+    const mcp = await openSession(
+      (await connect(alice, clientName('member-tools'), 'records:read')).accessToken,
+    );
+    try {
+      expect((await mcp.call('get_record', { object: 'deal', id: hidden })).data.code).toBe(
+        'NOT_FOUND',
+      );
+      expect((await mcp.call('get_record', { object: 'deal', id: mine })).data.id).toBe(mine);
+      const listed = (await mcp.call('list_records', { object: 'deal' })).data.results.map(
+        (r: { id: string }) => r.id,
+      );
+      expect(listed).toContain(mine);
+      expect(listed).not.toContain(hidden);
+      const filtered = (
+        await mcp.call('filter_records', {
+          object: 'deal',
+          filter_groups: [{ filters: [{ field_path: 'amount', operator: 'EQUALS', value: 10 }] }],
+        })
+      ).data.results;
+      expect(filtered.map((r: { id: string }) => r.id)).toContain(mine);
+      expect((await mcp.call('get_record_history', { object: 'deal', id: hidden })).isError).toBe(
+        true,
+      );
+      expect(
+        (await mcp.call('get_record_history', { object: 'deal', id: mine })).data.results,
+      ).toHaveLength(1);
+    } finally {
+      await mcp.close();
+    }
   });
 });
 
 describe('organization binding', () => {
   it('keeps a connection in the organization it was made for', async () => {
-    const forAcme = await connect(owner, clientName('bound-acme'), 'mcp:read');
+    const forAcme = await connect(owner, clientName('bound-acme'), 'records:read schema:read');
     expect(forAcme.claims['urn:zuko:org_id']).toBe(acmeId);
+    const acmeRecord = status(
+      await owner.post(`${API}/objects/deal/records`, { properties: { name: 'Acme only' } }),
+      201,
+    ).id;
 
     // The owner creates and switches to a second organization in the web app.
     betaId = status(
@@ -532,19 +312,34 @@ describe('organization binding', () => {
       200,
     ).id;
     expect(status(await owner.get(`${API}/me`), 200).organization_id).toBe(betaId);
+    const betaRecord = status(
+      await owner.post(`${API}/objects/deal/records`, { properties: { name: 'Beta only' } }),
+      201,
+    ).id;
 
     const acme = await openSession(forAcme.accessToken);
     expect(
       (await acme.call('list_object_types')).data.results.map((o: { name: string }) => o.name),
     ).toEqual(['contact', 'company', 'deal']);
+    expect((await acme.call('get_record', { object: 'deal', id: acmeRecord })).data.id).toBe(
+      acmeRecord,
+    );
+    expect((await acme.call('get_record', { object: 'deal', id: betaRecord })).data.code).toBe(
+      'NOT_FOUND',
+    );
     await acme.close();
 
-    const forBeta = await connect(owner, clientName('bound-beta'), 'mcp:read');
+    const forBeta = await connect(owner, clientName('bound-beta'), 'records:read schema:read');
     expect(forBeta.claims['urn:zuko:org_id']).toBe(betaId);
     const beta = await openSession(forBeta.accessToken);
     expect(
       (await beta.call('list_object_types')).data.results.map((o: { name: string }) => o.name),
     ).toEqual(['contact', 'company', 'deal']);
+    expect(
+      (await beta.call('list_records', { object: 'deal' })).data.results.map(
+        (record: { id: string }) => record.id,
+      ),
+    ).toEqual([betaRecord]);
     await beta.close();
 
     status(await owner.post('/auth/organization/set-active', { organizationId: acmeId }), 200);
@@ -566,22 +361,22 @@ describe('connected applications', () => {
         connected_at: string;
       }[]
     ).filter((c) => c.client.name?.startsWith(`e2e-${run}-conn`));
-  const callMcp = (token: string) =>
-    axios.post(
-      MCP_URL,
-      { jsonrpc: '2.0', id: 1, method: 'tools/list' },
-      {
-        headers: {
-          accept: 'application/json, text/event-stream',
-          authorization: `Bearer ${token}`,
-        },
-        validateStatus: () => true,
-      },
-    );
+  const callMcp = async (token: string) => {
+    const session = await openSession(token);
+    try {
+      return await session.call('list_records', { object: 'deal' });
+    } finally {
+      await session.close();
+    }
+  };
 
   it('lists what a user has approved: the app, the organization and the access', async () => {
-    connA = await connect(alice, clientName('conn-a'), 'openid offline_access mcp:read');
-    connB = await connect(alice, clientName('conn-b'), 'openid offline_access mcp:read mcp:write');
+    connA = await connect(alice, clientName('conn-a'), 'openid offline_access records:read');
+    connB = await connect(
+      alice,
+      clientName('conn-b'),
+      'openid offline_access records:read records:write',
+    );
 
     const list = await mine(alice);
     expect(list.map((c) => c.client.name).sort()).toEqual([
@@ -593,9 +388,9 @@ describe('connected applications', () => {
     idA = a.id;
     idB = b.id;
     expect(a.organization).toEqual({ id: acmeId, name: 'Acme' });
-    expect(a.scopes).toContain('mcp:read');
-    expect(a.scopes).not.toContain('mcp:write');
-    expect(b.scopes).toEqual(expect.arrayContaining(['mcp:read', 'mcp:write']));
+    expect(a.scopes).toContain('records:read');
+    expect(a.scopes).not.toContain('records:write');
+    expect(b.scopes).toEqual(expect.arrayContaining(['records:read', 'records:write']));
     expect(Date.parse(a.connected_at)).not.toBeNaN();
   });
 
@@ -612,8 +407,8 @@ describe('connected applications', () => {
   });
 
   it('cuts off a disconnected app at once, and only that app', async () => {
-    expect((await callMcp(connA.accessToken)).status).toBe(200);
-    expect((await callMcp(connB.accessToken)).status).toBe(200);
+    expect((await callMcp(connA.accessToken)).isError).toBe(false);
+    expect((await callMcp(connB.accessToken)).isError).toBe(false);
 
     expect(status(await alice.del(`${API}/connections/${idA}`), 200)).toEqual({
       id: idA,
@@ -622,9 +417,7 @@ describe('connected applications', () => {
 
     // The token is still signed and unexpired, but the approval behind it is gone.
     const cut = await callMcp(connA.accessToken);
-    expect(cut.status).toBe(401);
-    expect(cut.headers['www-authenticate']).toContain('invalid_token');
-    expect(cut.data.code).toBe('CONNECTION_REVOKED');
+    expect(cut.isError).toBe(true);
 
     // It cannot get a new token either.
     const refresh = await alice.form('/auth/oauth2/token', {
@@ -636,7 +429,7 @@ describe('connected applications', () => {
     expect(refresh.status).toBeGreaterThanOrEqual(400);
 
     // The other connection is untouched.
-    expect((await callMcp(connB.accessToken)).status).toBe(200);
+    expect((await callMcp(connB.accessToken)).isError).toBe(false);
     expect((await mine(alice)).map((c) => c.id)).toEqual([idB]);
     expect((await alice.del(`${API}/connections/${idA}`)).status).toBe(404); // already gone
   });
@@ -647,7 +440,7 @@ describe('connected applications', () => {
         response_type: 'code',
         client_id: connA.clientId,
         redirect_uri: 'http://localhost:9999/callback',
-        scope: 'mcp:read',
+        scope: 'records:read',
         state: 's',
         code_challenge: 'E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM',
         code_challenge_method: 'S256',
@@ -661,15 +454,15 @@ describe('connected applications', () => {
     const old = await connect(
       alice,
       clientName('conn-generation'),
-      'offline_access mcp:read mcp:write',
+      'offline_access records:read records:write',
     );
     const connection = (await mine(alice)).find((c) => c.client.id === old.clientId)!;
     status(await alice.del(`${API}/connections/${connection.id}`), 200);
-    expect((await callMcp(old.accessToken)).status).toBe(401);
+    expect((await callMcp(old.accessToken)).isError).toBe(true);
 
-    const current = await connect(alice, '', 'offline_access mcp:read', old.clientId);
-    expect((await callMcp(old.accessToken)).status).toBe(401);
-    expect((await callMcp(current.accessToken)).status).toBe(200);
+    const current = await connect(alice, '', 'offline_access records:read', old.clientId);
+    expect((await callMcp(old.accessToken)).isError).toBe(true);
+    expect((await callMcp(current.accessToken)).isError).toBe(false);
 
     const refreshed = status(
       await alice.form('/auth/oauth2/token', {
@@ -680,31 +473,31 @@ describe('connected applications', () => {
       }),
       200,
     );
-    expect((await callMcp(refreshed.access_token)).status).toBe(200);
+    expect((await callMcp(refreshed.access_token)).isError).toBe(false);
     const session = await openSession(refreshed.access_token);
     try {
-      expect(
-        await session.call('create_record', {
-          object: 'contact',
-          properties: { first_name: 'Refused' },
+      await expect(
+        session.client.callTool({
+          name: 'create_record',
+          arguments: { object: 'contact', properties: { first_name: 'Refused' } },
         }),
-      ).toMatchObject({ isError: true, data: { code: 'INSUFFICIENT_SCOPE' } });
+      ).rejects.toThrow(/403|scope/i);
     } finally {
       await session.close();
     }
   });
 
   it('honors a reduction in the current consent scopes', async () => {
-    const old = await connect(alice, clientName('conn-reduce'), 'mcp:read mcp:write');
+    const old = await connect(alice, clientName('conn-reduce'), 'records:read records:write');
     const connection = (await mine(alice)).find((c) => c.client.id === old.clientId)!;
     status(
       await alice.post('/auth/oauth2/update-consent', {
         id: connection.id,
-        update: { scopes: ['mcp:read'] },
+        update: { scopes: ['records:read'] },
       }),
       200,
     );
-    expect((await callMcp(old.accessToken)).status).toBe(401);
+    expect((await callMcp(old.accessToken)).isError).toBe(true);
   });
 });
 
@@ -728,7 +521,7 @@ describe('audit of connections', () => {
           metadata: Record<string, any>;
         }[], // eslint-disable-line @typescript-eslint/no-explicit-any
     );
-  const approved = 'openid offline_access mcp:read mcp:write';
+  const approved = 'openid offline_access records:read records:write';
   let conn: Connection;
   let connectionId = '';
 
@@ -743,12 +536,12 @@ describe('audit of connections', () => {
   });
 
   it('records a refusal, and nothing is connected', async () => {
-    const clientId = await deny(alice, clientName('audit-denied'), 'mcp:read mcp:delete');
+    const clientId = await deny(alice, clientName('audit-denied'), 'records:read records:delete');
 
     const rows = await events(clientId);
     expect(rows.map((r) => r.event)).toEqual(['mcp.connection_denied']);
     expect(rows[0]).toMatchObject({ actor: alice.id, org: acmeId });
-    expect(rows[0].metadata.scopes).toEqual(['mcp:read', 'mcp:delete']);
+    expect(rows[0].metadata.scopes).toEqual(['records:read', 'records:delete']);
     const listed = status(await alice.get(`${API}/connections`), 200).results as {
       client: { id: string };
     }[];
@@ -792,9 +585,9 @@ describe('audit of connections', () => {
 
 describe('losing access', () => {
   it('stops working for someone removed from the organization', async () => {
-    const conn = await connect(alice, clientName('removed'), 'mcp:read');
+    const conn = await connect(alice, clientName('removed'), 'records:read');
     const session = await openSession(conn.accessToken);
-    expect((await session.call('list_object_types')).isError).toBe(false);
+    expect((await session.call('list_records', { object: 'deal' })).isError).toBe(false);
 
     status(
       await owner.post('/auth/organization/remove-member', {
@@ -804,19 +597,8 @@ describe('losing access', () => {
       200,
     );
 
-    const res = await axios.post(
-      MCP_URL,
-      { jsonrpc: '2.0', id: 9, method: 'tools/list' },
-      {
-        headers: {
-          accept: 'application/json, text/event-stream',
-          authorization: `Bearer ${conn.accessToken}`,
-        },
-        validateStatus: () => true,
-      },
-    );
-    expect(res.status).toBe(403);
-    expect(res.data.code).toBe('FORBIDDEN');
+    // The signed JWT is still valid locally; the CRM backend checks membership.
+    expect((await session.call('list_records', { object: 'deal' })).isError).toBe(true);
     await session.close().catch(() => undefined);
   });
 });

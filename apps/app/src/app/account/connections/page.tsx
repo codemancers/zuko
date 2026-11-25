@@ -1,25 +1,10 @@
-'use client';
-
-import Link from 'next/link';
+import { connection } from 'next/server';
 import { PlugZap } from 'lucide-react';
 import { Connections } from '@/components/account/connections';
 import { Shell } from '@/components/dashboard/shell';
-import { Button } from '@/components/ui/button';
-import { useSession } from '@/lib/auth-client';
 
-export default function ConnectionsPage() {
-  const { data: session, isPending } = useSession();
-
-  if (!isPending && !session) {
-    return (
-      <main className="flex min-h-svh items-center justify-center p-6">
-        <Button asChild>
-          <Link href="/login?next=/account/connections">Log in</Link>
-        </Button>
-      </main>
-    );
-  }
-
+export default async function ConnectionsPage() {
+  await connection();
   return (
     <Shell fill>
       <div className="flex shrink-0 items-center gap-3 px-4 py-5 sm:px-6">
@@ -34,7 +19,7 @@ export default function ConnectionsPage() {
           </p>
         </div>
       </div>
-      <Connections />
+      <Connections mcpUrl={`${process.env.FRONTEND_URL || 'http://localhost:4200'}/eve/v1/mcp`} />
     </Shell>
   );
 }

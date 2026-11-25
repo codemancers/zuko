@@ -31,6 +31,9 @@
     "shadcn": "^4.23.0"
   },
   "nx": {
-    "sourceRoot": "apps/app/src"
+    "sourceRoot": "apps/app/src",
+    "implicitDependencies": [
+      "harness"
+    ]
   }
 }

@@ -1,4 +1,15 @@
-import { CanActivate, ExecutionContext, Injectable, createParamDecorator } from '@nestjs/common';
+import { Reflector } from '@nestjs/core';
+import { AllowAnonymous } from '@thallesp/nestjs-better-auth';
+import { HarnessGrantsService } from '../libs/eve/harness-grants.service';
+import {
+  CanActivate,
+  ExecutionContext,
+  Injectable,
+  createParamDecorator,
+  applyDecorators,
+  SetMetadata,
+  UnauthorizedException,
+} from '@nestjs/common';
 import type { UserSession } from '@thallesp/nestjs-better-auth';
 import { randomUUID } from 'node:crypto';
 import { PrismaService } from '../prisma/prisma.service';
@@ -74,13 +85,34 @@ export class CrmContextService {
  * session's active organization and the user's membership there. Rejects requests with
  * no active organization or no membership.
  */
+export const HarnessAccess = (scope: string) =>
+  applyDecorators(AllowAnonymous(), SetMetadata('harnessScope', scope));
+
 @Injectable()
 export class CrmContextGuard implements CanActivate {
-  constructor(private readonly contexts: CrmContextService) {}
+  constructor(
+    private readonly contexts: CrmContextService,
+    private readonly grants: HarnessGrantsService,
+    private readonly reflector: Reflector,
+  ) {}
 
   async canActivate(execution: ExecutionContext): Promise<boolean> {
     const request = execution.switchToHttp().getRequest<CrmRequest>();
+    const delegatedScope = this.reflector.get<string>('harnessScope', execution.getHandler());
+    const authorization = request.headers.authorization;
+    if (delegatedScope && typeof authorization === 'string') {
+      const token = /^Bearer (.+)$/i.exec(authorization)?.[1];
+      if (!token) throw new CrmError(401, 'UNAUTHORIZED', 'A bearer delegation is required');
+      const grant = await this.grants.delegation(token, delegatedScope);
+      request.crm = await this.contexts.build({
+        userId: grant.userId,
+        organizationId: grant.organizationId,
+        actorType: 'MCP',
+      });
+      return true;
+    }
     const session = request.session;
+    if (!session) throw new UnauthorizedException();
     const activeOrganizationId = (
       session?.session as { activeOrganizationId?: unknown } | undefined
     )?.activeOrganizationId;

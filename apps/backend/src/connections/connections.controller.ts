@@ -15,6 +15,10 @@ export class ConnectionsController {
 
   @Delete(':id')
   disconnect(@Session() session: UserSession, @Param('id') id: string, @Req() req: HttpRequest) {
-    return this.connections.disconnect(BigInt(session.user.id as string | number), id, requestInfo(req));
+    return this.connections.disconnect(
+      BigInt(session.user.id as string | number),
+      id,
+      requestInfo(req),
+    );
   }
 }

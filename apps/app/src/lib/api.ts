@@ -1,8 +1,5 @@
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3000';
 
-/** Where MCP clients connect: the address a person pastes into Claude, Cursor and the like. */
-export const MCP_URL = `${BACKEND_URL}/api/mcp`;
-
 export interface FieldError {
   field: string;
   code: string;

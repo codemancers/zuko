@@ -4,14 +4,17 @@
   "private": true,
   "nx": {
     "implicitDependencies": [
-      "@zuko/backend"
+      "@zuko/backend",
+      "@zuko/app",
+      "harness"
     ],
     "targets": {
       "e2e": {
         "dependsOn": [
           "@zuko/backend:build",
           "@zuko/backend:serve"
-        ]
+        ],
+        "cache": false
       }
     }
   }

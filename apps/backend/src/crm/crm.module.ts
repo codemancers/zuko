@@ -1,3 +1,5 @@
+import { HarnessController } from './harness.controller';
+import { HarnessGrantsService } from '../libs/eve/harness-grants.service';
 import { Module } from '@nestjs/common';
 import { APP_FILTER } from '@nestjs/core';
 import { AssociationsController } from './associations.controller';
@@ -32,6 +34,7 @@ import { SharesService } from './shares.service';
     AccessController,
     DirectoryController,
     EveController,
+    HarnessController,
   ],
   providers: [
     SchemaService,
@@ -42,6 +45,7 @@ import { SharesService } from './shares.service';
     SharesService,
     DirectoryService,
     CrmContextGuard,
+    HarnessGrantsService,
     CrmContextService,
     { provide: APP_FILTER, useClass: CrmExceptionFilter },
   ],

@@ -1,14 +1,23 @@
 import { cimd } from '@better-auth/cimd';
 import { fetchClientMetadataResource } from '@better-auth/cimd/node';
-import { mcp } from '@better-auth/mcp';
+import { oauthProvider } from '@better-auth/oauth-provider';
 import { APIError } from 'better-auth/api';
 import { jwt } from 'better-auth/plugins';
-import { CONSENT_CLAIM, FRONTEND_ORIGIN, MCP_RESOURCE, MCP_SCOPES, ORG_CLAIM } from './constants';
+import type { PrismaClient } from '../../generated/prisma/client';
+import { createHarnessGrant, GRANT_CLAIM } from '../eve/harness-grants.service';
+import {
+  AGENT_SCOPE,
+  HARNESS_RESOURCE,
+  CONSENT_CLAIM,
+  FRONTEND_ORIGIN,
+  CRM_SCOPES,
+  ORG_CLAIM,
+} from './constants';
 
 const IDENTITY_SCOPES = ['openid', 'offline_access'];
-const GRANTABLE_SCOPES = [MCP_SCOPES.read, MCP_SCOPES.write, MCP_SCOPES.delete];
+const GRANTABLE_SCOPES = [...Object.values(CRM_SCOPES), AGENT_SCOPE];
 
-/** Signs the MCP access tokens. Must be registered before `mcpPlugin()`. */
+/** Signs the MCP access tokens. Must be registered before `oauthProviderPlugin()`. */
 export const jwtPlugin = () => jwt({ disableSettingJwtHeader: true });
 
 /** MCP clients that identify themselves with a Client ID Metadata Document instead of registering. */
@@ -16,28 +25,30 @@ export const cimdPlugin = () =>
   cimd({ fetchClientMetadataResource, metadataProfile: 'mcp-2026-07-28' });
 
 /**
- * Turns the backend into an OAuth 2.1 authorization server for MCP clients, and the MCP
- * endpoint into a protected resource. Sign-in and consent happen on the frontend.
+ * The backend issues OAuth tokens for the harness. The harness owns MCP transport
+ * and protected-resource discovery; sign-in and consent happen on the frontend.
  *
  * A connection is bound to one organization: the one that is active in the user's
  * session when they authorize the client. It is stored with the consent and copied into
  * the access token, so an MCP request never depends on a web session. To connect a
  * different organization, switch to it in the app and connect again.
  */
-export const mcpPlugin = () =>
-  mcp({
-    resource: MCP_RESOURCE,
+export const oauthProviderPlugin = (prisma: PrismaClient) =>
+  oauthProvider({
+    refreshTokenReuseInterval: 30,
     loginPage: `${FRONTEND_ORIGIN}/login`,
     consentPage: `${FRONTEND_ORIGIN}/consent`,
     scopes: [...IDENTITY_SCOPES, ...GRANTABLE_SCOPES],
     // Spelled out, with allowedScopes set: the Prisma adapter cannot store the null that
     // an unset scope list would otherwise become.
-    resources: [{ identifier: MCP_RESOURCE, allowedScopes: GRANTABLE_SCOPES }],
+    resources: [{ identifier: HARNESS_RESOURCE, allowedScopes: GRANTABLE_SCOPES }],
     // MCP clients (Claude, Cursor, ...) register themselves. Registered clients start
     // with read access only and cannot claim more than the scopes listed here.
     allowDynamicClientRegistration: true,
     allowUnauthenticatedClientRegistration: true,
-    clientRegistrationDefaultScopes: [MCP_SCOPES.read],
+    clientRegistrationDefaultApplicationType: 'infer',
+    clientRegistrationDefaultResources: [HARNESS_RESOURCE],
+    clientRegistrationDefaultScopes: [CRM_SCOPES.recordsRead],
     clientRegistrationAllowedScopes: [...IDENTITY_SCOPES, ...GRANTABLE_SCOPES],
     postLogin: {
       // The user already has an organization in their session, or the flow stops.
@@ -76,7 +87,20 @@ export const mcpPlugin = () =>
                 message: 'Approve this connection again',
               });
             }
-            return { [ORG_CLAIM]: referenceId, [CONSENT_CLAIM]: String(consent.id) };
+            const grant = await createHarnessGrant(
+              prisma,
+              BigInt(user!.id),
+              BigInt(referenceId!),
+              'consent',
+              BigInt(consent.id),
+              scopes.filter((scope) => GRANTABLE_SCOPES.includes(scope)),
+              new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
+            );
+            return {
+              [ORG_CLAIM]: referenceId,
+              [CONSENT_CLAIM]: String(consent.id),
+              [GRANT_CLAIM]: grant.reference,
+            };
           },
         },
       },

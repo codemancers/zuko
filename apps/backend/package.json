@@ -4,9 +4,8 @@
   "private": true,
   "dependencies": {
     "@better-auth/cimd": "^1.7.25",
-    "@better-auth/mcp": "^1.7.25",
+    "@better-auth/oauth-provider": "^1.7.25",
     "@better-auth/prisma-adapter": "^1.7.25",
-    "@modelcontextprotocol/server": "^2.4.0",
     "@nestjs/common": "^11.0.0",
     "@nestjs/core": "^11.0.0",
     "@nestjs/platform-express": "^11.0.0",

@@ -23,7 +23,11 @@ export class ConnectionsService {
     });
 
     const organizationIds = [
-      ...new Set(consents.flatMap((c) => (c.referenceId && /^[1-9]\d*$/.test(c.referenceId) ? [BigInt(c.referenceId)] : []))),
+      ...new Set(
+        consents.flatMap((c) =>
+          c.referenceId && /^[1-9]\d*$/.test(c.referenceId) ? [BigInt(c.referenceId)] : [],
+        ),
+      ),
     ];
     const organizations = await this.prisma.organization.findMany({
       where: { id: { in: organizationIds } },
@@ -34,8 +38,14 @@ export class ConnectionsService {
     return {
       results: consents.map((c) => ({
         id: String(c.id),
-        client: { id: c.clientId, name: c.oauthclient.name ?? null, uri: c.oauthclient.uri ?? null },
-        organization: c.referenceId ? { id: c.referenceId, name: nameOf.get(c.referenceId) ?? null } : null,
+        client: {
+          id: c.clientId,
+          name: c.oauthclient.name ?? null,
+          uri: c.oauthclient.uri ?? null,
+        },
+        organization: c.referenceId
+          ? { id: c.referenceId, name: nameOf.get(c.referenceId) ?? null }
+          : null,
         scopes: c.scopes,
         connected_at: c.createdAt.toISOString(),
         updated_at: c.updatedAt.toISOString(),
@@ -68,17 +78,27 @@ export class ConnectionsService {
     // disconnect has already happened and must not fail because the log could not be written.
     try {
       await writeAuditEvent(this.prisma, {
-        organizationId: consent.referenceId && /^[1-9]\d*$/.test(consent.referenceId) ? consent.referenceId : null,
+        organizationId:
+          consent.referenceId && /^[1-9]\d*$/.test(consent.referenceId)
+            ? consent.referenceId
+            : null,
         actorType: 'USER',
         actorId: String(userId),
         event: 'mcp.disconnected',
         targetType: 'connection',
         targetId: String(consentId),
-        metadata: { client_id: consent.clientId, client_name: consent.oauthclient.name ?? null, scopes: consent.scopes },
+        metadata: {
+          client_id: consent.clientId,
+          client_name: consent.oauthclient.name ?? null,
+          scopes: consent.scopes,
+        },
         ...request,
       });
     } catch (error) {
-      this.logger.error('Failed to write audit event', error instanceof Error ? error.stack : String(error));
+      this.logger.error(
+        'Failed to write audit event',
+        error instanceof Error ? error.stack : String(error),
+      );
     }
     return { id: String(consentId), deleted: true };
   }
