@@ -31,6 +31,9 @@ Installing the skill does not enable its voice or install CLI hooks.
 Use [Vercel React Best Practices](.agents/skills/vercel-react-best-practices/SKILL.md)
 when writing, reviewing, or refactoring React and Next.js code.
 
+Use [Vercel Composition Patterns](.agents/skills/vercel-composition-patterns/SKILL.md)
+when designing or reviewing React component APIs and composition.
+
 [Agent Browser](.agents/skills/agent-browser/SKILL.md) is available for browser
 automation and UI verification.
 
@@ -45,8 +48,9 @@ Install or update only these skills for Codex and Claude Code:
 npx skills add DietrichGebert/ponytail --skill ponytail -a codex claude-code -y
 npx skills add juliusbrussee/caveman --skill caveman -a codex claude-code -y
 npx skills add vercel-labs/agent-skills --skill vercel-react-best-practices -a codex claude-code -y
+npx skills add vercel-labs/agent-skills --skill vercel-composition-patterns -a codex claude-code -y
 npx skills add https://github.com/vercel-labs/agent-browser --skill agent-browser -a codex claude-code -y
-npx skills update ponytail caveman vercel-react-best-practices agent-browser -p -y
+npx skills update ponytail caveman vercel-react-best-practices vercel-composition-patterns agent-browser -p -y
 ```
 
 Review skill changes and the lockfile before committing updates.

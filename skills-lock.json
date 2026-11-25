@@ -22,6 +22,13 @@
       "skillPath": "skills/ponytail/SKILL.md",
       "computedHash": "56d72677aca02689ac89bd48734e8c19b40ab86716d1257eaf5f1238b43cda6b"
     },
+    "vercel-composition-patterns": {
+      "source": "vercel-labs/agent-skills",
+      "commit": "5a37a6329fbad3666c3207392a6a7c0110e92efb",
+      "sourceType": "github",
+      "skillPath": "skills/composition-patterns/SKILL.md",
+      "computedHash": "f711ed8b16162eaa712abbcdbbae6c926f86c57e60127735fecc3ad0dd85b3fa"
+    },
     "vercel-react-best-practices": {
       "source": "vercel-labs/agent-skills",
       "commit": "5a37a6329fbad3666c3207392a6a7c0110e92efb",
