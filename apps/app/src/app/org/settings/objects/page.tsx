@@ -1,7 +1,7 @@
 'use client';
 
 import { Suspense } from 'react';
-import { ObjectsSheet } from '@/components/org/objects-sheet';
+import { ObjectsSheet } from '@/components/organizations/objects-sheet';
 
 export default function OrgObjectsPage() {
   // useSearchParams (the open drawers) needs a Suspense boundary.

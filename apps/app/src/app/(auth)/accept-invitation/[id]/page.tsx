@@ -1,4 +1,4 @@
-import { AcceptInvitation } from '@/components/org/accept-invitation';
+import { AcceptInvitation } from '@/components/organizations/accept-invitation';
 
 export default async function AcceptInvitationPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
