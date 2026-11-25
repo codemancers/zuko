@@ -37,6 +37,10 @@ when designing or reviewing React component APIs and composition.
 [Agent Browser](.agents/skills/agent-browser/SKILL.md) is available for browser
 automation and UI verification.
 
+[Webapp Testing](.agents/skills/webapp-testing/SKILL.md) is available for testing
+local web applications with Playwright. Follow this repository's server and test
+database requirements when using it.
+
 Use [NestJS Best Practices](.agents/skills/nestjs-best-practices/SKILL.md) when
 writing, reviewing, or refactoring NestJS code, following this repository's invariants.
 
@@ -68,6 +72,7 @@ npx skills add kadajett/agent-nestjs-skills --skill nestjs-best-practices -a cod
 npx skills add vercel/eve --skill eve -a codex claude-code -y
 npx skills add vercel-labs/skills --skill find-skills -a codex claude-code -y
 npx skills add better-auth/skills --skill '*' -a codex claude-code -y
+npx skills add anthropics/skills --skill webapp-testing -a codex claude-code -y
 npx skills update -p -y
 ```
 
