@@ -18,6 +18,29 @@ npx nx dev @zuko/app            # http://localhost:4200
 
 See [docs/data-model.md](docs/data-model.md#running-it) for the tests, including the database one.
 
+## AI development tooling
+
+[Ponytail](.agents/skills/ponytail/SKILL.md) and
+[Caveman](.agents/skills/caveman/SKILL.md) are installed through
+[skills.sh](https://skills.sh) for both Codex and Claude Code. Ponytail is the
+default development workflow in **full** mode; Caveman's voice is opt-in with
+`/caveman`. See [AGENTS.md](AGENTS.md#ai-development-workflow) for installation,
+updates, and local output compression instructions.
+
+**Caveman progress (2026-11-25):** following Sikaram's incremental adoption
+approach, keep normal communication and existing model choices while evaluating
+local usage analysis and selective compression of large command outputs. Both
+skills and Claude Code links are installed. The existing standalone Caveman CLI
+4.2.0 analyzed four local Zuko Codex sessions; its findings are estimates, and
+it did not produce a setup score. No Zuko token savings have been measured yet.
+
+Before expanding use, compare total token use, elapsed time, and the effort to
+recover original output on representative builds, tests, and failure investigations.
+Verify that errors, exit codes, and diagnostic details remain available. Sikaram's
+initial small backend test log showed no reduction; its synthetic noisy-log checks
+verified compression and recovery, not project-wide savings. Keep Zuko's local
+reports under ignored `tmp/caveman/`.
+
 ---
 
 <a alt="Nx logo" href="https://nx.dev" target="_blank" rel="noreferrer"><img src="https://raw.githubusercontent.com/nrwl/nx/master/images/nx-logo.png" width="45"></a>

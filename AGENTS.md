@@ -17,3 +17,46 @@ Nx + pnpm monorepo: `apps/backend` (NestJS, Prisma 7, Postgres), `apps/app` (Nex
 ## Tests
 - DB-backed tests need their own `TEST_DATABASE_URL` (see `.env.example`), never the dev database.
 - Clean up only rows your test created (scoped by a per-run suffix): specs run in parallel on one server and database.
+
+## AI development workflow
+
+Use the [Ponytail skill](.agents/skills/ponytail/SKILL.md) in **full** mode by default
+for development work, including reviews, configuration, and tests. Read the skill
+before starting. The user can change its level or turn it off.
+
+The [Caveman skill](.agents/skills/caveman/SKILL.md) is available on request with
+`/caveman`. Keep normal communication and existing model choices by default.
+Installing the skill does not enable its voice or install CLI hooks.
+
+Both skills are managed by [skills.sh](https://skills.sh) under `.agents/skills/`,
+with Claude Code symlinks under `.claude/skills/`. `skills-lock.json` records their
+source commits and hashes. Upstream licenses are preserved as `.agents/ponytail.LICENSE`
+and `.agents/caveman.LICENSE` outside the directories replaced by the installer.
+
+Install or update only these skills for Codex and Claude Code:
+
+```sh
+npx skills add DietrichGebert/ponytail --skill ponytail -a codex claude-code -y
+npx skills add juliusbrussee/caveman --skill caveman -a codex claude-code -y
+npx skills update ponytail caveman -p -y
+```
+
+Review skill changes and the lockfile before committing updates.
+
+### Optional local output compression
+
+Follow the [Caveman progress note](README.md#ai-development-tooling): expand use
+only when measured savings preserve useful diagnostic detail. The separate
+Caveman CLI 4.2.0 can be installed outside the project with
+`npm install -g @caveman-ai/cli@4.2.0`, followed by `caveman setup --install`.
+
+- Analyze local history with `caveman learn --plain --sources codex,claude --repo zuko`.
+  Treat findings as estimates; review proposed fixes before applying them.
+- Use `caveman shrink -- <command> [args...]` selectively for noisy, finite checks.
+  Run small checks, streaming servers, and interactive commands directly.
+- Recover full output with `caveman retrieve <handle>` before diagnosing an unclear
+  failure. Preserve errors, exit codes, and diagnostic details.
+- Keep local reports under ignored `tmp/caveman/`; keep binaries and session
+  history out of Git. If Caveman is unavailable, run the original command.
+- Only report savings measured on the task. No agent hooks, proxies, or model
+  routing are required for this standalone workflow.
