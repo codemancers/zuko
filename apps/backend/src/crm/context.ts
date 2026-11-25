@@ -24,7 +24,7 @@ export interface RequestContext {
   teamIds: bigint[];
   requestId: string;
   /** How the request arrived; recorded as the actor type in history. */
-  actorType: 'USER' | 'MCP';
+  actorType: 'USER' | 'MCP' | 'AGENT';
 }
 
 interface CrmRequest {
@@ -98,8 +98,12 @@ export class CrmContextGuard implements CanActivate {
 
   async canActivate(execution: ExecutionContext): Promise<boolean> {
     const request = execution.switchToHttp().getRequest<CrmRequest>();
-    const delegatedScope = this.reflector.get<string>('harnessScope', execution.getHandler());
+    const delegatedScope = this.reflector.getAllAndOverride<string>('harnessScope', [
+      execution.getHandler(),
+      execution.getClass(),
+    ]);
     const authorization = request.headers.authorization;
+    // An explicit credential must pass; never silently fall back to a stronger cookie session.
     if (delegatedScope && typeof authorization === 'string') {
       const token = /^Bearer (.+)$/i.exec(authorization)?.[1];
       if (!token) throw new CrmError(401, 'UNAUTHORIZED', 'A bearer delegation is required');
@@ -107,7 +111,7 @@ export class CrmContextGuard implements CanActivate {
       request.crm = await this.contexts.build({
         userId: grant.userId,
         organizationId: grant.organizationId,
-        actorType: 'MCP',
+        actorType: grant.sourceType === 'session' ? 'AGENT' : 'MCP',
       });
       return true;
     }
