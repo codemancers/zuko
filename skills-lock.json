@@ -15,6 +15,13 @@
       "skillPath": "skills/caveman/SKILL.md",
       "computedHash": "b51af74aacdadbc3c2d6bb79f05db58dc521854b87f7ffabd48faf286a81ed31"
     },
+    "eve": {
+      "source": "vercel/eve",
+      "commit": "53cecd7e58f1a4e6f68059a3d4f9e86e83950a28",
+      "sourceType": "github",
+      "skillPath": "skills/eve/SKILL.md",
+      "computedHash": "9c1eaa91f1aa5a1733b90937ee5186bc14f43e88ef6524a956750e535b0e2a60"
+    },
     "nestjs-best-practices": {
       "source": "Kadajett/agent-nestjs-skills",
       "commit": "3986e0cede33958e000f959031cbee0cd83c2941",
