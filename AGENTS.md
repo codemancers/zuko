@@ -46,6 +46,11 @@ harness configuration.
 [Find Skills](.agents/skills/find-skills/SKILL.md) is available for discovering
 skills when the user requests additional capabilities.
 
+The [Better Auth skills](.agents/skills/better-auth-best-practices/SKILL.md) cover
+auth configuration, scaffolding, security, email/password, organizations, and 2FA.
+Use the relevant skill for auth work and preserve this repository's tenant scopes
+and `BACKEND_URL` invariant.
+
 Skills are managed by [skills.sh](https://skills.sh) under `.agents/skills/`,
 with Claude Code symlinks under `.claude/skills/`. `skills-lock.json` records their
 source commits and hashes. Upstream licenses are preserved as `.agents/ponytail.LICENSE`
@@ -62,7 +67,8 @@ npx skills add https://github.com/vercel-labs/agent-browser --skill agent-browse
 npx skills add kadajett/agent-nestjs-skills --skill nestjs-best-practices -a codex claude-code -y
 npx skills add vercel/eve --skill eve -a codex claude-code -y
 npx skills add vercel-labs/skills --skill find-skills -a codex claude-code -y
-npx skills update ponytail caveman vercel-react-best-practices vercel-composition-patterns agent-browser nestjs-best-practices eve find-skills -p -y
+npx skills add better-auth/skills --skill '*' -a codex claude-code -y
+npx skills update -p -y
 ```
 
 Review skill changes and the lockfile before committing updates.

@@ -26,8 +26,9 @@ See [docs/data-model.md](docs/data-model.md#running-it) for the tests, including
 [Vercel Composition Patterns](.agents/skills/vercel-composition-patterns/SKILL.md),
 [Agent Browser](.agents/skills/agent-browser/SKILL.md),
 [NestJS Best Practices](.agents/skills/nestjs-best-practices/SKILL.md),
-[Eve](.agents/skills/eve/SKILL.md), and
-[Find Skills](.agents/skills/find-skills/SKILL.md) are installed through
+[Eve](.agents/skills/eve/SKILL.md),
+[Find Skills](.agents/skills/find-skills/SKILL.md), and the six
+[Better Auth skills](.agents/skills/better-auth-best-practices/SKILL.md) are installed through
 [skills.sh](https://skills.sh) for both Codex and Claude Code. Ponytail is the
 default development workflow in **full** mode; Caveman's voice is opt-in with
 `/caveman`. See [AGENTS.md](AGENTS.md#ai-development-workflow) for installation,
