@@ -371,3 +371,76 @@ describe('independent resource scopes', () => {
     }
   });
 });
+
+describe('harness protocol hardening', () => {
+  it('rejects legacy batches and oversized bodies before agent dispatch', async () => {
+    const connection = await connect(user, `Batch scope ${run}`, 'records:read');
+    clients.push(connection.clientId);
+    for (const name of ['agent_start', 'agent_get', 'agent_update', 'agent_cancel']) {
+      const response = await axios.post(
+        MCP_URL,
+        [{ jsonrpc: '2.0', id: 1, method: 'tools/call', params: { name, arguments: {} } }],
+        {
+          headers: {
+            authorization: `Bearer ${connection.accessToken}`,
+            accept: 'application/json, text/event-stream',
+            'mcp-protocol-version': '2025-03-26',
+          },
+          validateStatus: () => true,
+        },
+      );
+      expect(response.status).toBe(403);
+      expect(response.data.code).toBe('invalid_request');
+    }
+    const response = await axios.post(MCP_URL, ' '.repeat(1024 * 1024 + 1), {
+      headers: {
+        authorization: `Bearer ${connection.accessToken}`,
+        'content-type': 'application/json',
+      },
+      validateStatus: () => true,
+    });
+    expect(response.status).toBe(403);
+    expect(response.data.code).toBe('request_too_large');
+  });
+
+  it('fails closed for tool names without an explicit OAuth scope', async () => {
+    const connection = await connect(user, `Unmapped tool ${run}`, 'records:read');
+    clients.push(connection.clientId);
+    for (const name of ['unmapped_tool', 'constructor', '__proto__']) {
+      const response = await axios.post(
+        MCP_URL,
+        {
+          jsonrpc: '2.0',
+          id: 1,
+          method: 'tools/call',
+          params: { name, arguments: {} },
+        },
+        {
+          headers: {
+            authorization: `Bearer ${connection.accessToken}`,
+            accept: 'application/json, text/event-stream',
+          },
+          validateStatus: () => true,
+        },
+      );
+      expect(response.status).toBe(403);
+      expect(response.data.code).toBe('unscoped_tool');
+    }
+  });
+
+  it('does not let a revoked but unexpired agent token start paid work', async () => {
+    const connection = await connect(user, `Revoked agent ${run}`, 'agent:invoke');
+    clients.push(connection.clientId);
+    expect(Number(connection.claims.exp) - Number(connection.claims.iat)).toBe(300);
+    ok(await user.del(`/api/v1/connections/${connection.claims['urn:zuko:consent_id']}`));
+    const session = await openSession(connection.accessToken);
+    try {
+      await expect(
+        session.client.callTool({ name: 'agent_start', arguments: { message: 'Must not start' } }),
+      ).rejects.toThrow(/403|forbidden/i);
+      expect((await session.tools()).length).toBeGreaterThan(0);
+    } finally {
+      await session.close();
+    }
+  });
+});

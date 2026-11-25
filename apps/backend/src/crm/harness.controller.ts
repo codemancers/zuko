@@ -6,6 +6,7 @@ import { CrmContextService } from './context';
 
 interface HttpRequest {
   headers: Record<string, string | string[] | undefined>;
+  socket?: { remoteAddress?: string };
 }
 
 @Controller('v1/harness')
@@ -23,7 +24,7 @@ export class HarnessController {
     @Req() req: HttpRequest,
     @Body() body: { reference?: string; organization_id?: string },
   ) {
-    this.grants.requireService(req.headers['x-zuko-harness-key']);
+    this.grants.requireService(req.headers['x-zuko-harness-key'], req.socket?.remoteAddress);
     const grant = await this.grants.resolve(body?.reference, body?.organization_id);
     await this.contexts.build({
       userId: grant.userId,

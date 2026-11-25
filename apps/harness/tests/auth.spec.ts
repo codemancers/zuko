@@ -34,7 +34,10 @@ beforeEach(() => {
     }),
   );
 });
-afterEach(() => vi.unstubAllGlobals());
+afterEach(() => {
+  vi.unstubAllGlobals();
+  vi.unstubAllEnvs();
+});
 
 describe('local harness authentication', () => {
   it.each([false, true])(
@@ -78,6 +81,14 @@ describe('local harness authentication', () => {
     expect(fetch).not.toHaveBeenCalled();
   });
 
+  it.each(['unmapped_tool', 'constructor', '__proto__'])(
+    'fails closed when %s has no declared tool scope',
+    async (name) => {
+      await expect(zukoAuth(false)(request(name))).rejects.toThrow(/no declared OAuth scope/);
+      expect(fetch).not.toHaveBeenCalled();
+    },
+  );
+
   it('rejects invalid JWTs and propagates verifier outages', async () => {
     vi.mocked(verifyBearerToken).mockRejectedValue({
       status: 'UNAUTHORIZED',
@@ -87,4 +98,54 @@ describe('local harness authentication', () => {
     vi.mocked(verifyBearerToken).mockRejectedValue(new Error('JWKS unavailable'));
     await expect(zukoAuth(false)(request())).rejects.toThrow('JWKS unavailable');
   });
+});
+
+// Authentication must reject alternate envelopes before Eve can dispatch them.
+describe('MCP envelope hardening', () => {
+  const raw = (body: string, headers = {}) =>
+    new Request('http://localhost/eve/v1/mcp', {
+      method: 'POST',
+      headers: { authorization: 'Bearer test-token', ...headers },
+      body,
+    });
+  it.each(['agent_start', 'agent_get', 'agent_update', 'agent_cancel'])(
+    'rejects a legacy batch containing %s',
+    async (name) => {
+      await expect(
+        zukoAuth(false)(
+          raw(
+            JSON.stringify([
+              { jsonrpc: '2.0', id: 1, method: 'tools/call', params: { name, arguments: {} } },
+            ]),
+          ),
+        ),
+      ).rejects.toThrow(/batches/);
+      expect(fetch).not.toHaveBeenCalled();
+    },
+  );
+  it('bounds streaming bodies even when Content-Length is absent or dishonest', async () => {
+    await expect(
+      zukoAuth(false)(raw(' '.repeat(1024 * 1024 + 1), { 'content-length': '1' })),
+    ).rejects.toThrow(/1 MiB/);
+    await expect(
+      zukoAuth(false)(raw('{}', { 'content-length': String(1024 * 1024 + 1) })),
+    ).rejects.toThrow(/1 MiB/);
+  });
+  it.each(['[]', 'null', '{bad'])('rejects malformed envelopes: %s', async (body) => {
+    await expect(zukoAuth(false)(raw(body))).rejects.toThrow();
+  });
+  it.each(['agent_start', 'agent_update'])(
+    'refuses revoked %s before model work is enqueued',
+    async (name) => {
+      vi.mocked(verifyBearerToken).mockResolvedValue({ ...claims, scope: 'agent:invoke' });
+      vi.stubEnv('EVE_AUTH_SECRET', 'test-service-key-with-more-than-32-bytes');
+      vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('{}', { status: 401 })));
+      await expect(zukoAuth(false)(request(name))).rejects.toThrow(/no longer/);
+      expect(fetch).toHaveBeenCalledWith(
+        expect.stringContaining('/harness/delegate'),
+        expect.objectContaining({ method: 'POST' }),
+      );
+      vi.unstubAllEnvs();
+    },
+  );
 });
