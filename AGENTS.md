@@ -3,18 +3,21 @@
 Nx + pnpm monorepo: `apps/backend` (NestJS, Prisma 7, Postgres), `apps/app` (Next.js), `libs/*` (access-control, better-auth hierarchy and audit plugins), e2e in `apps/backend-e2e`. UI conventions are in `apps/app/AGENTS.md`.
 
 ## Working
+
 - **One branch per effort, one commit per feature.** Don't push, open or merge a PR unless asked.
 - **Libs come from generators** (`nx g @nx/js:library`, then `nx sync`). No new lib unless asked.
 - **Migrations:** an unmerged one may be edited in place, but prefer a new additive migration when a dev DB holds data. Dump before rebuilding a database.
 - **Verify for real:** run the backend (:3000) and app (:4200), hit the real endpoints and drive the UI. Build and unit tests alone aren't enough. The backend doesn't watch: rebuild and restart it after changes, and before `nx e2e @zuko/backend-e2e` (which uses the running server).
 
 ## Invariants
+
 - **Multi-tenant:** every table has `organizationId` and row-level security; query through `withTenant`. Ids are autoincrement BigInt (strings in the API).
 - **Auth origin is `BACKEND_URL`** (issuer, audience, JWKS), not `BETTER_AUTH_URL`.
 - **Runtime dependencies go in both the root and the app `package.json`,** or production deploys break.
 - **Permissions:** capabilities come from `libs/access-control`; which records a person may touch comes from role scopes (own, own and reports, team, all). Changing what a record links to or shows follows the same scopes.
 
 ## Tests
+
 - DB-backed tests need their own `TEST_DATABASE_URL` (see `.env.example`), never the dev database.
 - Clean up only rows your test created (scoped by a per-run suffix): specs run in parallel on one server and database.
 
@@ -55,7 +58,7 @@ auth configuration, scaffolding, security, email/password, organizations, and 2F
 Use the relevant skill for auth work and preserve this repository's tenant scopes
 and `BACKEND_URL` invariant.
 
-Skills are managed by [skills.sh](https://skills.sh) under `.agents/skills/`,
+Third-party skills are managed by [skills.sh](https://skills.sh) under `.agents/skills/`,
 with Claude Code symlinks under `.claude/skills/`. `skills-lock.json` records their
 source commits and hashes. Upstream licenses are preserved as `.agents/ponytail.LICENSE`
 and `.agents/caveman.LICENSE` outside the directories replaced by the installer.
@@ -78,6 +81,11 @@ npx skills update -p -y
 
 Review skill changes and the lockfile before committing updates.
 
+Nx skills and MCP configuration are managed separately by
+`pnpm nx configure-ai-agents --agents codex claude --no-interactive`.
+Codex reads the generated `.agents/skills/`; Claude Code uses the Nx plugin
+enabled in `.claude/settings.json`. Keep the generated Nx sections below intact.
+
 ### Optional local output compression
 
 Follow the [Caveman progress note](README.md#ai-development-tooling): expand use
@@ -95,3 +103,27 @@ Caveman CLI 4.2.0 can be installed outside the project with
   history out of Git. If Caveman is unavailable, run the original command.
 - Only report savings measured on the task. No agent hooks, proxies, or model
   routing are required for this standalone workflow.
+
+<!-- nx configuration start-->
+<!-- Leave the start & end comments to automatically receive updates. -->
+
+## General Guidelines for working with Nx
+
+- For navigating/exploring the workspace, invoke the `nx-workspace` skill first - it has patterns for querying projects, targets, and dependencies
+- When running tasks (for example build, lint, test, e2e, etc.), always prefer running the task through `nx` (i.e. `nx run`, `nx run-many`, `nx affected`) instead of using the underlying tooling directly
+- Prefix nx commands with the workspace's package manager (e.g., `pnpm nx build`, `npm exec nx test`) - avoids using globally installed CLI
+- You have access to the Nx MCP server and its tools, use them to help the user
+- For Nx plugin best practices, check `node_modules/@nx/<plugin>/PLUGIN.md`. Not all plugins have this file - proceed without it if unavailable.
+- NEVER guess CLI flags - always check nx_docs or `--help` first when unsure
+
+## Scaffolding & Generators
+
+- For scaffolding tasks (creating apps, libs, project structure, setup), ALWAYS invoke the `nx-generate` skill FIRST before exploring or calling MCP tools
+
+## When to use nx_docs
+
+- USE for: advanced config options, unfamiliar flags, migration guides, plugin configuration, edge cases
+- DON'T USE for: basic generator syntax (`nx g @nx/react:app`), standard commands, things you already know
+- The `nx-generate` skill handles generator discovery internally - don't call nx_docs just to look up generator syntax
+
+<!-- nx configuration end-->

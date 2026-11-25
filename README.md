@@ -49,6 +49,15 @@ initial small backend test log showed no reduction; its synthetic noisy-log chec
 verified compression and recovery, not project-wide savings. Keep Zuko's local
 reports under ignored `tmp/caveman/`.
 
+Nx's agent integration is configured for Codex and Claude Code with
+`pnpm nx configure-ai-agents --agents codex claude --no-interactive`.
+Codex uses `.codex/config.toml` for Nx MCP and ten workspace skills under
+`.agents/skills/`. Claude Code uses the `nx@nx-claude-plugins` plugin enabled in
+`.claude/settings.json`. Generated Nx sections preserve the project instructions.
+Check with `pnpm nx configure-ai-agents --agents codex claude --check=all`.
+The initial check reported Codex as needing an update despite a generator dry run
+proposing no file changes; Claude Code passed. Restart the agents to load the setup.
+
 ---
 
 <a alt="Nx logo" href="https://nx.dev" target="_blank" rel="noreferrer"><img src="https://raw.githubusercontent.com/nrwl/nx/master/images/nx-logo.png" width="45"></a>
