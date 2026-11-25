@@ -114,3 +114,35 @@ remove old client scopes, and update the harness resource's allowed scopes.
 Preserve users, CRM data, browser sessions, and current domain-scope grants.
 This is a one-time operational cleanup; no cleanup scripts or data migrations
 are shipped with the application.
+
+## Optional local Codex subscription model
+
+AI Gateway and `AI_GATEWAY_API_KEY` remain the default model setup. For local
+model testing, set `EVE_USE_CODEX_SUBSCRIPTION=true` in the harness environment
+before building/starting it, and run `codex login` if this machine has no active
+ChatGPT login. With the flag enabled, the agent uses
+`chatgpt('gpt-6.1-sol')`; otherwise its existing gateway model is unchanged.
+Eve obtains credentials through the Codex app server without reading or copying
+login files. Changing this selection requires a rebuild/restart.
+
+This setting is host-wide, not tenant-specific. All organizations using a host
+with this option enabled share that hosting user's subscription quota. It adds
+no tenant quota accounting, billing isolation, or subscription-terms assurance.
+This optional local testing path is not a recommendation to route production
+tenants through a person's ChatGPT account. That needs a separate product,
+provider-terms, and deployment decision.
+
+The harness host needs the Codex CLI and its authenticated user environment.
+`eve deploy` does not upload a developer's local subscription credentials.
+Keep this flag unset for the existing API-key deployment path.
+
+With a rebuilt test backend/app already running against the dedicated test
+database and the harness started with this option enabled, run the opt-in test:
+
+```bash
+EVE_USE_CODEX_SUBSCRIPTION=true RUN_LIVE_MODEL_TEST=1 pnpm nx run @zuko/backend-e2e:e2e --excludeTaskDependencies --args=src/backend/model-smoke.spec.ts
+```
+
+The test spends subscription usage. It creates a randomly named schema object,
+asks the agent to list schemas without putting that name in the prompt, verifies
+the result, and removes its fixtures afterward.

@@ -1,8 +1,12 @@
 import { defineAgent } from 'eve';
+import { chatgpt } from 'eve/models/openai';
 
 export default defineAgent({
   defaultTools: false,
-  model: 'openai/gpt-5.6-terra',
+  model:
+    process.env.EVE_USE_CODEX_SUBSCRIPTION === 'true'
+      ? chatgpt('gpt-6.1-sol')
+      : 'openai/gpt-5.6-terra',
   reasoning: 'medium',
   limits: {
     sessionUsage: ({ window }) =>

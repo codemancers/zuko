@@ -38,6 +38,9 @@
           },
           {
             "env": "FRONTEND_URL"
+          },
+          {
+            "env": "EVE_USE_CODEX_SUBSCRIPTION"
           }
         ],
         "outputs": [
