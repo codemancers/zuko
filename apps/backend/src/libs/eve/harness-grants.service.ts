@@ -61,13 +61,27 @@ export class HarnessGrantsService {
     private readonly auth: AuthService<Auth>,
   ) {}
 
-  requireService(value: unknown) {
+  requireService(value: unknown, peer = 'unknown') {
+    const ip = peer.replace(/^::ffff:/, '');
+    const allowed = process.env.HARNESS_ALLOWED_IPS?.split(',')
+      .map((entry) => entry.trim().replace(/^::ffff:/, ''))
+      .filter(Boolean);
+    if (allowed?.length && !allowed.includes(ip))
+      throw new CrmError(403, 'FORBIDDEN', 'Delegation is restricted to configured harness peers');
     const expected = process.env.EVE_AUTH_SECRET?.trim();
     if (!expected || Buffer.byteLength(expected) < 32 || typeof value !== 'string')
       throw new UnauthorizedException();
-    const a = Buffer.from(value),
-      b = Buffer.from(expected);
-    if (a.length !== b.length || !timingSafeEqual(a, b)) throw new UnauthorizedException();
+    const a = Buffer.from(value);
+    const keys = [expected, process.env.EVE_AUTH_SECRET_PREVIOUS?.trim()].filter(
+      (key): key is string => !!key && Buffer.byteLength(key) >= 32,
+    );
+    if (
+      !keys.some((key) => {
+        const b = Buffer.from(key);
+        return a.length === b.length && timingSafeEqual(a, b);
+      })
+    )
+      throw new UnauthorizedException();
   }
 
   async verify(token: string, audience: string) {
@@ -162,7 +176,13 @@ export class HarnessGrantsService {
   async delegation(token: string, requiredScope: string) {
     const claims = await this.verify(token, CRM_RESOURCE);
     const grant = await this.resolve(claims[GRANT_CLAIM], claims[ORG_CLAIM]);
-    if (String(grant.userId) !== claims.sub || !grant.scopes.includes(requiredScope))
+    // This is a backend-issued CRM token, not the original MCP client access token.
+    const tokenScopes = typeof claims.scope === 'string' ? claims.scope.split(/\s+/) : [];
+    if (
+      String(grant.userId) !== claims.sub ||
+      !tokenScopes.includes(requiredScope) ||
+      !grant.scopes.includes(requiredScope)
+    )
       throw new CrmError(403, 'INSUFFICIENT_SCOPE', `This delegation requires ${requiredScope}`);
     return grant;
   }

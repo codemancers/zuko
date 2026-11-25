@@ -487,6 +487,39 @@ describe('connected applications', () => {
     }
   });
 
+  it('keeps an old broad grant invalid when a second narrower grant is issued', async () => {
+    const old = await connect(
+      alice,
+      clientName('conn-narrow'),
+      'offline_access records:read records:write',
+    );
+    const consentId = old.claims['urn:zuko:consent_id'];
+    status(
+      await alice.post('/auth/oauth2/update-consent', {
+        id: consentId,
+        update: { scopes: ['records:read'] },
+      }),
+      200,
+    );
+    const narrow = status(
+      await alice.form('/auth/oauth2/token', {
+        grant_type: 'refresh_token',
+        refresh_token: old.refreshToken,
+        client_id: old.clientId,
+        scope: 'records:read',
+        resource: MCP_URL,
+      }),
+      200,
+    );
+    const claims = JSON.parse(
+      Buffer.from(narrow.access_token.split('.')[1], 'base64url').toString(),
+    );
+    expect(claims['urn:zuko:harness_grant']).not.toBe(old.claims['urn:zuko:harness_grant']);
+    expect(claims['urn:zuko:consent_id']).toBe(consentId);
+    expect((await callMcp(old.accessToken)).isError).toBe(true);
+    expect((await callMcp(narrow.access_token)).isError).toBe(false);
+  });
+
   it('honors a reduction in the current consent scopes', async () => {
     const old = await connect(alice, clientName('conn-reduce'), 'records:read records:write');
     const connection = (await mine(alice)).find((c) => c.client.id === old.clientId)!;

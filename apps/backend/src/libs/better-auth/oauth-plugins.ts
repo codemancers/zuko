@@ -35,6 +35,7 @@ export const cimdPlugin = () =>
  */
 export const oauthProviderPlugin = (prisma: PrismaClient) =>
   oauthProvider({
+    accessTokenExpiresIn: 300,
     refreshTokenReuseInterval: 30,
     loginPage: `${FRONTEND_ORIGIN}/login`,
     consentPage: `${FRONTEND_ORIGIN}/consent`,
