@@ -28,7 +28,10 @@ The [Caveman skill](.agents/skills/caveman/SKILL.md) is available on request wit
 `/caveman`. Keep normal communication and existing model choices by default.
 Installing the skill does not enable its voice or install CLI hooks.
 
-Both skills are managed by [skills.sh](https://skills.sh) under `.agents/skills/`,
+Use [Vercel React Best Practices](.agents/skills/vercel-react-best-practices/SKILL.md)
+when writing, reviewing, or refactoring React and Next.js code.
+
+Skills are managed by [skills.sh](https://skills.sh) under `.agents/skills/`,
 with Claude Code symlinks under `.claude/skills/`. `skills-lock.json` records their
 source commits and hashes. Upstream licenses are preserved as `.agents/ponytail.LICENSE`
 and `.agents/caveman.LICENSE` outside the directories replaced by the installer.
@@ -38,7 +41,8 @@ Install or update only these skills for Codex and Claude Code:
 ```sh
 npx skills add DietrichGebert/ponytail --skill ponytail -a codex claude-code -y
 npx skills add juliusbrussee/caveman --skill caveman -a codex claude-code -y
-npx skills update ponytail caveman -p -y
+npx skills add vercel-labs/agent-skills --skill vercel-react-best-practices -a codex claude-code -y
+npx skills update ponytail caveman vercel-react-best-practices -p -y
 ```
 
 Review skill changes and the lockfile before committing updates.

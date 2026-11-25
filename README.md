@@ -20,8 +20,9 @@ See [docs/data-model.md](docs/data-model.md#running-it) for the tests, including
 
 ## AI development tooling
 
-[Ponytail](.agents/skills/ponytail/SKILL.md) and
-[Caveman](.agents/skills/caveman/SKILL.md) are installed through
+[Ponytail](.agents/skills/ponytail/SKILL.md),
+[Caveman](.agents/skills/caveman/SKILL.md), and
+[Vercel React Best Practices](.agents/skills/vercel-react-best-practices/SKILL.md) are installed through
 [skills.sh](https://skills.sh) for both Codex and Claude Code. Ponytail is the
 default development workflow in **full** mode; Caveman's voice is opt-in with
 `/caveman`. See [AGENTS.md](AGENTS.md#ai-development-workflow) for installation,
