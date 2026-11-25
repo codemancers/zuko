@@ -5,12 +5,12 @@ your own) are defined at runtime, so adding a field or a link needs no migration
 
 ## Layers
 
-| Layer | Where | What it does |
-|---|---|---|
-| Auth | `apps/backend/src/libs/better-auth`, `libs/*` | better-auth with organizations, teams, custom roles, a reporting hierarchy, an audit trail, and an OAuth server for MCP clients |
-| CRM API | `apps/backend/src/crm` | objects, fields, records, links, access settings, shares, history |
-| MCP server | `apps/backend/src/mcp` | the same operations as MCP tools, for AI clients |
-| Data | `apps/backend/prisma` | schema, migrations, row-level security |
+| Layer      | Where                                         | What it does                                                                                                                    |
+| ---------- | --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| Auth       | `apps/backend/src/libs/better-auth`, `libs/*` | better-auth with organizations, teams, custom roles, a reporting hierarchy, an audit trail, and an OAuth server for MCP clients |
+| CRM API    | `apps/backend/src/crm`                        | objects, fields, records, links, access settings, shares, history                                                               |
+| MCP server | `apps/harness/agent/channels/mcp.ts`          | CRM tools and durable agent tasks, backed by the CRM REST API                                                                   |
+| Data       | `apps/backend/prisma`                         | schema, migrations, row-level security                                                                                          |
 
 ## Multi-tenancy
 
@@ -98,35 +98,45 @@ All under `/api/v1`, authenticated by the better-auth session cookie. Errors are
 `{ code, message, errors? }` with stable codes (`VALIDATION_FAILED`, `NOT_FOUND`, `FORBIDDEN`,
 `CONFLICT`, ...).
 
-| Area | Endpoints |
-|---|---|
-| Who am I | `GET /me` (roles, teams, `can_manage_objects`) |
-| Objects | `GET /objects`, `POST /objects`, `GET /objects/:object`, `POST /setup/standard-objects` |
-| Fields | `POST /objects/:object/fields`, `PATCH` and `DELETE /objects/:object/fields/:field` |
-| Records | `GET`, `POST /objects/:object/records`, `POST .../filter`, `GET`, `PATCH`, `DELETE .../:id`, `GET .../:id/history` |
-| Links | `GET`, `PUT`, `POST`, `DELETE /objects/:object/records/:id/associations/:link[/:targetId]`; `GET /associations` |
-| Access | `GET /access/roles`, `PUT`, `DELETE /access/roles/:role`; record shares under `.../:id/shares` |
-| Directory | `GET /members`, `GET /teams` |
-| Connections | `GET /connections`, `DELETE /connections/:id` (MCP clients the user approved) |
+| Area        | Endpoints                                                                                                          |
+| ----------- | ------------------------------------------------------------------------------------------------------------------ |
+| Who am I    | `GET /me` (roles, teams, `can_manage_objects`)                                                                     |
+| Objects     | `GET /objects`, `POST /objects`, `GET /objects/:object`, `POST /setup/standard-objects`                            |
+| Fields      | `POST /objects/:object/fields`, `PATCH` and `DELETE /objects/:object/fields/:field`                                |
+| Records     | `GET`, `POST /objects/:object/records`, `POST .../filter`, `GET`, `PATCH`, `DELETE .../:id`, `GET .../:id/history` |
+| Links       | `GET`, `PUT`, `POST`, `DELETE /objects/:object/records/:id/associations/:link[/:targetId]`; `GET /associations`    |
+| Access      | `GET /access/roles`, `PUT`, `DELETE /access/roles/:role`; record shares under `.../:id/shares`                     |
+| Directory   | `GET /members`, `GET /teams`                                                                                       |
+| Connections | `GET /connections`, `DELETE /connections/:id` (MCP clients the user approved)                                      |
 
 Lists take `page`, `page_size` (max 100), `sort` and `include=associations`; filtering takes
 filter groups (OR between groups, AND within) over any filterable field.
 
 ## MCP server
 
-`/api/mcp` (MCP over HTTP). The backend is also the OAuth authorization server for MCP clients
-(better-auth `jwt`, `mcp` and CIMD plugins; discovery under `/.well-known`).
+`/eve/v1/mcp` is served by the harness through the web app. The backend is the
+OAuth issuer (`jwt`, `oauthProvider`, and CIMD plugins), and the old `/api/mcp`
+endpoint is removed. The harness verifies JWTs through the backend JWKS.
 
-- **Scopes:** `mcp:read`, `mcp:write`, `mcp:delete`. A tool needs its scope, and the user's own
-  permissions always apply on top, so a read-only connection can never write, even for an admin.
-- **Organization binding:** the user picks an organization when they connect; the token carries it
-  (`urn:zuko:org_id`) and every request runs in it.
-- **Disconnecting is immediate:** access tokens are valid until they expire, so each request also
-  checks that the approval the token was issued under still exists.
-- **Tools** mirror the REST operations: `list_object_types`, `describe_object_type`, `list_members`,
+- **Scopes:** `records:read`, `records:write`, `records:delete`, `schema:read`,
+  `directory:read`, and `agent:invoke`. Backend permissions still apply.
+- **Organization binding:** signed tokens bind the user to an organization and
+  grant reference; durable tasks retain the reference, not the bearer token.
+- **Revocation:** backend CRM calls check live consent and membership, including
+  cached delegation tokens. Agent starts and resumptions also check live access
+  before spending model budget. Unexpired JWTs can still discover tools or read
+  and cancel existing invocations. New OAuth tokens expire after five minutes.
+- **Tools:** `list_object_types`, `describe_object_type`, `list_members`,
   `list_teams`, `list_records`, `filter_records`, `get_record`, `get_record_history`,
-  `create_record`, `update_record`, `delete_record`, `list_linked_records`, `link_record`,
-  `unlink_record`. Their history entries are recorded with the actor `MCP`.
+  `create_record`, `update_record`, `delete_record`, `list_linked_records`,
+  `link_record`, `unlink_record`, plus four `agent_*` lifecycle tools.
+- **Audit:** external OAuth clients are `MCP`; browser-agent changes are `AGENT`.
+  There is no harness mutation approval gate.
+- **Protocol:** one JSON-RPC request per POST, no batches, at most 1 MiB per body.
+
+See [harness operations](../apps/harness/README.md) for service-key restrictions,
+rotation and delegation caching, and
+[MCP rollout notes](mcp-rollout.md) for legacy connection cleanup.
 
 ## Running it
 

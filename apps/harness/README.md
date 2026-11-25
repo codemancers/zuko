@@ -37,10 +37,16 @@ and send question answers with `agent_update`. Poll no faster than the returned
 Invocations belong to the user, organization and grant that started them.
 
 Disconnect in Zuko's connected-app settings to revoke subsequent CRM access,
-including access from already queued work. A still-valid JWT may continue to
-authenticate for discovery or agent lifecycle calls until it expires; it cannot
-perform CRM operations after revocation. The harness is the only MCP server;
-the backend exposes OAuth and CRM REST APIs.
+including access from queued work. New OAuth access tokens expire in five
+minutes. An unexpired JWT may still authenticate for discovery and existing
+invocation reads/cancellation after revocation.
+
+`agent_start` and `agent_update` check live access before enqueuing model work.
+Requests revoked before that check are refused. The preflight and queueing are
+not atomic: later revocation does not forcibly cancel an accepted run, but the
+backend still rejects its subsequent CRM operations.
+
+The harness is the only MCP server; the backend exposes OAuth and CRM REST APIs.
 
 ## Authentication and CRM execution
 
@@ -50,7 +56,9 @@ public harness audience. Configure both consistently in all three apps.
 
 The issuer includes an organization-bound grant reference in OAuth and browser
 route tokens. The harness verifies signatures, issuer, audience, expiry and
-per-tool scopes locally through JWKS, without calling an authorization API.
+per-tool scopes locally through JWKS. The MCP auth preflight rejects batches
+and limits the body to 1 MiB, including chunked requests, before parsing it.
+`agent_start` and `agent_update` perform a live delegation preflight before model spending.
 The backend checks current consent, membership and readiness when CRM access
 is requested. Only a backend grant reference enters durable session attributes;
 the caller's bearer token is not retained. Browser sessions obtain backend-signed route
@@ -59,20 +67,44 @@ tokens at `POST /api/v1/eve/token`.
 The harness exchanges a grant reference at `POST /api/v1/harness/delegate` for
 a 60-second token whose audience is the backend CRM API. Exchange also requires
 `EVE_AUTH_SECRET`, a service credential shared only by backend and harness
-(at least 32 bytes). The harness cannot sign tokens or choose a user or
-organization: the grant fixes those and the maximum scopes. Every CRM request
+(at least 32 bytes). It is a token-minting credential: possession of it plus a
+valid grant reference and organization ID can mint CRM tokens for that grant.
+Treat it as a privileged service credential even though it is not the JWT
+private signing key. The grant fixes the identity and maximum scopes. Delegation
+tokens are cached only in harness memory, by grant and organization, for at most
+55 seconds; 401/403 responses invalidate the cache. Every CRM request
 rechecks its live session/consent and rebuilds normal tenant/role scopes.
 Browser grants stop working on logout, session expiry or organization switch;
 OAuth grants expire 14 days after token issuance or refresh.
-Revoking consent or reducing its scopes cuts off existing delegations immediately.
+Revoking consent or reducing its scopes cuts off existing delegations immediately,
+including cache hits. The harness enforces the original MCP JWT scopes and
+denies tools without a declared scope. The backend checks its own CRM token
+and live grant scopes (normally the same set), not the original MCP JWT scopes.
+Browser-agent changes are attributed as `AGENT`; external client changes as `MCP`. Explicit bearer credentials take precedence over cookies: an invalid
+Authorization header never falls back to a more privileged browser session.
+
+Restrict `/api/v1/harness/delegate` to the harness through private networking or
+an ingress rule. Optionally set backend-only `HARNESS_ALLOWED_IPS` to a comma-
+separated list of permitted socket peer IPs. This reads the socket peer, never
+`X-Forwarded-For`; behind a proxy, restrict the proxy at ingress as well. Configure
+rate limits at ingress across replicas. There is no in-process delegation quota,
+so normal authenticated harness traffic cannot exhaust a local request bucket.
+
+For key rotation, deploy the backend with a new `EVE_AUTH_SECRET` and the old key
+in `EVE_AUTH_SECRET_PREVIOUS`, update the harness to the new key, then remove the
+previous key from the backend. Changing keys does not replace consent checks;
+already minted CRM tokens live at most 60 seconds and still undergo live checks.
 
 CRM tools call typed REST endpoints; business logic, RLS, validation and history
 remain in the backend. Schema and access-administration mutations remain
 session-only. No connection back to the public MCP endpoint is needed.
 
+For deployment and reconnect instructions, see [MCP rollout notes](../../docs/mcp-rollout.md).
+
 ## Run and verify
 
-Apply the additive Prisma migration before starting the backend. Configure
+Apply the schema before starting the backend, including the edited audit
+constraints on existing developer databases. Configure
 `EVE_AUTH_SECRET` independently from `BETTER_AUTH_SECRET`, and set
 `AI_GATEWAY_API_KEY` for model turns.
 
@@ -114,3 +146,10 @@ remove old client scopes, and update the harness resource's allowed scopes.
 Preserve users, CRM data, browser sessions, and current domain-scope grants.
 This is a one-time operational cleanup; no cleanup scripts or data migrations
 are shipped with the application.
+
+## Runtime dependency ownership
+
+The harness runtime imports `eve`, `better-auth`, `ai` and `zod`; each is declared
+in both the root and harness runtime dependencies. `axios` and `pg` are used only
+by harness integration tests and remain harness dev dependencies. Production
+CRM calls use the platform Fetch API.
