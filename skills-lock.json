@@ -22,20 +22,6 @@
       "skillPath": "security/SKILL.md",
       "computedHash": "36e9710eaa13c61c00bec00a4902fdc6ed829e6de13127238ae57494e93c1d9d"
     },
-    "caveman": {
-      "source": "JuliusBrussee/caveman",
-      "commit": "47c61be2d10a354f0c5cbe2b90959d24c06b16c6",
-      "sourceType": "github",
-      "skillPath": "skills/caveman/SKILL.md",
-      "computedHash": "b51af74aacdadbc3c2d6bb79f05db58dc521854b87f7ffabd48faf286a81ed31"
-    },
-    "create-auth": {
-      "source": "better-auth/skills",
-      "commit": "20c9e88a5c007461a703f1c213572b073196113e",
-      "sourceType": "github",
-      "skillPath": "better-auth/create-auth/SKILL.md",
-      "computedHash": "6f68253a5ab812aa8c9b70c57609aca763093a594e3b07163142e0fa7d64904a"
-    },
     "email-and-password-best-practices": {
       "source": "better-auth/skills",
       "commit": "20c9e88a5c007461a703f1c213572b073196113e",
@@ -50,12 +36,12 @@
       "skillPath": "skills/eve/SKILL.md",
       "computedHash": "9c1eaa91f1aa5a1733b90937ee5186bc14f43e88ef6524a956750e535b0e2a60"
     },
-    "find-skills": {
-      "source": "vercel-labs/skills",
-      "commit": "57217cf86ba38148a57af9e90d14a4c049558330",
+    "link-workspace-packages": {
+      "source": "nrwl/nx-ai-agents-config",
+      "commit": "15926412713a5b32fc24f21cf4c6d6532ce42a1c",
       "sourceType": "github",
-      "skillPath": "skills/find-skills/SKILL.md",
-      "computedHash": "7bc223e2aafbdbf6e50ea243ba6ef67fe432bb069ab439fea0390795dac0bf7f"
+      "skillPath": "skills/link-workspace-packages/SKILL.md",
+      "computedHash": "40a2d9d7e659a1849bd1375fff6837ed154250240c7afd5908cc6a5dfaa1e5f5"
     },
     "nestjs-best-practices": {
       "source": "Kadajett/agent-nestjs-skills",
@@ -64,26 +50,33 @@
       "skillPath": "skills/nestjs-best-practices/SKILL.md",
       "computedHash": "15dfabf74412bab8e6232cbe111b56048aac496d2f151a08995f305475d82fad"
     },
+    "nx-generate": {
+      "source": "nrwl/nx-ai-agents-config",
+      "commit": "15926412713a5b32fc24f21cf4c6d6532ce42a1c",
+      "sourceType": "github",
+      "skillPath": "skills/nx-generate/SKILL.md",
+      "computedHash": "7be569456abfdbbefd01fa3aafea7cfe1ed1bbf659ada20b9c122cdfdce22672"
+    },
+    "nx-run-tasks": {
+      "source": "nrwl/nx-ai-agents-config",
+      "commit": "15926412713a5b32fc24f21cf4c6d6532ce42a1c",
+      "sourceType": "github",
+      "skillPath": "skills/nx-run-tasks/SKILL.md",
+      "computedHash": "60b9ce79b342b2b95a56294abe89407884eb18fce0a04c9bb199564201403297"
+    },
+    "nx-workspace": {
+      "source": "nrwl/nx-ai-agents-config",
+      "commit": "15926412713a5b32fc24f21cf4c6d6532ce42a1c",
+      "sourceType": "github",
+      "skillPath": "skills/nx-workspace/SKILL.md",
+      "computedHash": "f3353821bc40fef50e72ae05cce3efcf1f187b52d515239e728a2f29c04175e3"
+    },
     "organization-best-practices": {
       "source": "better-auth/skills",
       "commit": "20c9e88a5c007461a703f1c213572b073196113e",
       "sourceType": "github",
       "skillPath": "better-auth/organization/SKILL.md",
       "computedHash": "e5b1238c3b62c789918fe397ed52787742e50944343de33f459629f29b0fe922"
-    },
-    "ponytail": {
-      "source": "DietrichGebert/ponytail",
-      "commit": "ebd8654c2c627f721eb8f9c0d1bd4090a29f9e10",
-      "sourceType": "github",
-      "skillPath": "skills/ponytail/SKILL.md",
-      "computedHash": "56d72677aca02689ac89bd48734e8c19b40ab86716d1257eaf5f1238b43cda6b"
-    },
-    "two-factor-authentication-best-practices": {
-      "source": "better-auth/skills",
-      "commit": "20c9e88a5c007461a703f1c213572b073196113e",
-      "sourceType": "github",
-      "skillPath": "better-auth/twoFactor/SKILL.md",
-      "computedHash": "89ca7fde92a69aec2cf7407d29058c5428e17d228e2578c79e0129d128524f38"
     },
     "vercel-composition-patterns": {
       "source": "vercel-labs/agent-skills",
@@ -98,13 +91,6 @@
       "sourceType": "github",
       "skillPath": "skills/react-best-practices/SKILL.md",
       "computedHash": "7991ed4fbecdac23f47c1a40c243e00a212a9e7f3604db93959b3ae11dffe299"
-    },
-    "webapp-testing": {
-      "source": "anthropics/skills",
-      "commit": "e4bb5d960d87126ff3b3a8af1a104b7db67560ba",
-      "sourceType": "github",
-      "skillPath": "skills/webapp-testing/SKILL.md",
-      "computedHash": "48cd9a742a59250edec6db89cf081ef5465f365e2133f6d6c5e29c380b754b7d"
     }
   }
 }

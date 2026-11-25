@@ -21,109 +21,21 @@ Nx + pnpm monorepo: `apps/backend` (NestJS, Prisma 7, Postgres), `apps/app` (Nex
 - DB-backed tests need their own `TEST_DATABASE_URL` (see `.env.example`), never the dev database.
 - Clean up only rows your test created (scoped by a per-run suffix): specs run in parallel on one server and database.
 
-## AI development workflow
+## Agent skills
 
-Use the [Ponytail skill](.agents/skills/ponytail/SKILL.md) in **full** mode by default
-for development work, including reviews, configuration, and tests. Read the skill
-before starting. The user can change its level or turn it off.
+Use the smallest relevant skill for the task; the curated list and update commands
+are in [README.md](README.md#ai-development-tooling). Read supporting references
+only as needed. Repository rules and existing patterns take precedence over
+examples in third-party skills.
 
-The [Caveman skill](.agents/skills/caveman/SKILL.md) is available on request with
-`/caveman`. Keep normal communication and existing model choices by default.
-Installing the skill does not enable its voice or install CLI hooks.
+- Explore projects and dependencies with `nx-workspace`; use `nx-generate` before
+  scaffolding and `nx-run-tasks` for task selection. Prefix Nx commands with `pnpm`.
+- Use `agent-browser` for interactive UI checks and the existing TypeScript
+  Playwright suite for repeatable browser tests.
+- Preserve tenant scopes, auth origins, validation, and accessibility when applying
+  React, NestJS, Better Auth, or Eve guidance.
 
-Use [Vercel React Best Practices](.agents/skills/vercel-react-best-practices/SKILL.md)
-when writing, reviewing, or refactoring React and Next.js code.
-
-Use [Vercel Composition Patterns](.agents/skills/vercel-composition-patterns/SKILL.md)
-when designing or reviewing React component APIs and composition.
-
-[Agent Browser](.agents/skills/agent-browser/SKILL.md) is available for browser
-automation and UI verification.
-
-[Webapp Testing](.agents/skills/webapp-testing/SKILL.md) is available for testing
-local web applications with Playwright. Follow this repository's server and test
-database requirements when using it.
-
-Use [NestJS Best Practices](.agents/skills/nestjs-best-practices/SKILL.md) when
-writing, reviewing, or refactoring NestJS code, following this repository's invariants.
-
-Use the [Eve skill](.agents/skills/eve/SKILL.md) when working on Eve agents and
-harness configuration.
-
-[Find Skills](.agents/skills/find-skills/SKILL.md) is available for discovering
-skills when the user requests additional capabilities.
-
-The [Better Auth skills](.agents/skills/better-auth-best-practices/SKILL.md) cover
-auth configuration, scaffolding, security, email/password, organizations, and 2FA.
-Use the relevant skill for auth work and preserve this repository's tenant scopes
-and `BACKEND_URL` invariant.
-
-Third-party skills are managed by [skills.sh](https://skills.sh) under `.agents/skills/`,
-with Claude Code symlinks under `.claude/skills/`. `skills-lock.json` records their
-source commits and hashes. Upstream licenses are preserved as `.agents/ponytail.LICENSE`
-and `.agents/caveman.LICENSE` outside the directories replaced by the installer.
-
-Install or update only these skills for Codex and Claude Code:
-
-```sh
-npx skills add DietrichGebert/ponytail --skill ponytail -a codex claude-code -y
-npx skills add juliusbrussee/caveman --skill caveman -a codex claude-code -y
-npx skills add vercel-labs/agent-skills --skill vercel-react-best-practices -a codex claude-code -y
-npx skills add vercel-labs/agent-skills --skill vercel-composition-patterns -a codex claude-code -y
-npx skills add https://github.com/vercel-labs/agent-browser --skill agent-browser -a codex claude-code -y
-npx skills add kadajett/agent-nestjs-skills --skill nestjs-best-practices -a codex claude-code -y
-npx skills add vercel/eve --skill eve -a codex claude-code -y
-npx skills add vercel-labs/skills --skill find-skills -a codex claude-code -y
-npx skills add better-auth/skills --skill '*' -a codex claude-code -y
-npx skills add anthropics/skills --skill webapp-testing -a codex claude-code -y
-npx skills update -p -y
-```
-
-Review skill changes and the lockfile before committing updates.
-
-Nx skills and MCP configuration are managed separately by
-`pnpm nx configure-ai-agents --agents codex claude --no-interactive`.
-Codex reads the generated `.agents/skills/`; Claude Code uses the Nx plugin
-enabled in `.claude/settings.json`. Keep the generated Nx sections below intact.
-
-### Optional local output compression
-
-Follow the [Caveman progress note](README.md#ai-development-tooling): expand use
-only when measured savings preserve useful diagnostic detail. The separate
-Caveman CLI 4.2.0 can be installed outside the project with
-`npm install -g @caveman-ai/cli@4.2.0`, followed by `caveman setup --install`.
-
-- Analyze local history with `caveman learn --plain --sources codex,claude --repo zuko`.
-  Treat findings as estimates; review proposed fixes before applying them.
-- Use `caveman shrink -- <command> [args...]` selectively for noisy, finite checks.
-  Run small checks, streaming servers, and interactive commands directly.
-- Recover full output with `caveman retrieve <handle>` before diagnosing an unclear
-  failure. Preserve errors, exit codes, and diagnostic details.
-- Keep local reports under ignored `tmp/caveman/`; keep binaries and session
-  history out of Git. If Caveman is unavailable, run the original command.
-- Only report savings measured on the task. No agent hooks, proxies, or model
-  routing are required for this standalone workflow.
-
-<!-- nx configuration start-->
-<!-- Leave the start & end comments to automatically receive updates. -->
-
-## General Guidelines for working with Nx
-
-- For navigating/exploring the workspace, invoke the `nx-workspace` skill first - it has patterns for querying projects, targets, and dependencies
-- When running tasks (for example build, lint, test, e2e, etc.), always prefer running the task through `nx` (i.e. `nx run`, `nx run-many`, `nx affected`) instead of using the underlying tooling directly
-- Prefix nx commands with the workspace's package manager (e.g., `pnpm nx build`, `npm exec nx test`) - avoids using globally installed CLI
-- You have access to the Nx MCP server and its tools, use them to help the user
-- For Nx plugin best practices, check `node_modules/@nx/<plugin>/PLUGIN.md`. Not all plugins have this file - proceed without it if unavailable.
-- NEVER guess CLI flags - always check nx_docs or `--help` first when unsure
-
-## Scaffolding & Generators
-
-- For scaffolding tasks (creating apps, libs, project structure, setup), ALWAYS invoke the `nx-generate` skill FIRST before exploring or calling MCP tools
-
-## When to use nx_docs
-
-- USE for: advanced config options, unfamiliar flags, migration guides, plugin configuration, edge cases
-- DON'T USE for: basic generator syntax (`nx g @nx/react:app`), standard commands, things you already know
-- The `nx-generate` skill handles generator discovery internally - don't call nx_docs just to look up generator syntax
-
-<!-- nx configuration end-->
+All project skills are managed by skills.sh under `.agents/skills/`, with Claude
+Code links in `.claude/skills/` and pinned sources in `skills-lock.json`. Nx MCP is
+configured directly for both agents. Keep installs explicit; the broad Nx plugin
+and `nx configure-ai-agents` regenerate workflows deliberately excluded here.
