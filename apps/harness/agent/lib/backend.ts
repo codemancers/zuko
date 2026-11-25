@@ -14,31 +14,74 @@ export function serviceHeaders() {
   return { 'content-type': 'application/json', 'x-zuko-harness-key': key };
 }
 
+const delegationCache = new Map<string, { token: string; until: number }>();
+const upstreamError = (status: number, service: string) => ({
+  zuko_error: {
+    code: 'UPSTREAM_ERROR',
+    message: `${service} returned an invalid response (${status})`,
+    status,
+  },
+});
+
+async function readResponse(response: Response, service: string) {
+  if (response.status === 204 && response.ok) return null;
+  try {
+    return await response.json();
+  } catch {
+    return upstreamError(response.status, service);
+  }
+}
+
 export async function crmRequest(ctx: ToolContext, method: string, path: string, body?: unknown) {
+  ctx.abortSignal.throwIfAborted();
   const caller = ctx.session.auth.current;
   if (caller?.principalType !== 'user') throw new Error('A signed-in user is required');
   const reference = caller.attributes[grantClaim];
   const organization_id = caller.attributes[orgClaim];
   if (typeof reference !== 'string' || typeof organization_id !== 'string')
     throw new Error('Reconnect to Zuko to authorize this session');
-  const delegated = await fetch(`${backendUrl}/api/v1/harness/delegate`, {
-    method: 'POST',
-    headers: serviceHeaders(),
-    body: JSON.stringify({ reference, organization_id }),
-    signal: AbortSignal.any([ctx.abortSignal, AbortSignal.timeout(10_000)]),
-  });
-  if (!delegated.ok)
-    throw new Error(
-      `Zuko delegation refused (${delegated.status}); reconnect or check your organization access`,
-    );
-  const { access_token } = (await delegated.json()) as { access_token: string };
+  const key = JSON.stringify([organization_id, reference]);
+  const cached = delegationCache.get(key);
+  let accessToken = cached && cached.until > Date.now() ? cached.token : undefined;
+  if (!accessToken) {
+    delegationCache.delete(key);
+    const delegated = await fetch(`${backendUrl}/api/v1/harness/delegate`, {
+      method: 'POST',
+      headers: serviceHeaders(),
+      body: JSON.stringify({ reference, organization_id }),
+      signal: AbortSignal.any([ctx.abortSignal, AbortSignal.timeout(10_000)]),
+    });
+    const result = await readResponse(delegated, 'Zuko delegation');
+    if (!delegated.ok)
+      return {
+        zuko_error: {
+          code: 'DELEGATION_REFUSED',
+          status: delegated.status,
+          message: `Zuko delegation refused (${delegated.status}); reconnect or check your organization access`,
+        },
+      };
+    const token = result as { access_token?: unknown; expires_at?: unknown } | null;
+    if (typeof token?.access_token !== 'string' || !token.access_token)
+      return upstreamError(delegated.status, 'Zuko delegation');
+    accessToken = token.access_token;
+    // Memory only; CRM guards recheck live access on every call, including cache hits.
+    if (typeof token.expires_at === 'number' && Number.isFinite(token.expires_at)) {
+      if (delegationCache.size >= 500) delegationCache.delete(delegationCache.keys().next().value!);
+      delegationCache.set(key, {
+        token: accessToken,
+        until: Math.min(token.expires_at - 5000, Date.now() + 55_000),
+      });
+    }
+  }
   const response = await fetch(`${backendUrl}/api/v1/${path}`, {
     method,
-    headers: { 'content-type': 'application/json', authorization: `Bearer ${access_token}` },
+    headers: { 'content-type': 'application/json', authorization: `Bearer ${accessToken}` },
     ...(body === undefined ? {} : { body: JSON.stringify(body) }),
     signal: AbortSignal.any([ctx.abortSignal, AbortSignal.timeout(30_000)]),
   });
-  const result = await response.json();
+  if (response.status === 401 || response.status === 403) delegationCache.delete(key);
+  const result = await readResponse(response, 'CRM API');
+  if (result && typeof result === 'object' && 'zuko_error' in result) return result;
   if (!response.ok) return { zuko_error: result };
   return result;
 }
