@@ -40,8 +40,8 @@ describe('Connections', () => {
     expect(screen.getByText('Acme')).toBeTruthy();
     expect(screen.getByRole('table')).toBeTruthy();
     expect(screen.getByRole('columnheader', { name: /Application/ })).toBeTruthy();
-    expect(screen.getByText('View records, their relationships and change history')).toBeTruthy();
-    expect(screen.getByText('Create and change records')).toBeTruthy();
+    expect(screen.getByText('View records, their relationships, change history and attached files')).toBeTruthy();
+    expect(screen.getByText('Create and change records, and upload and attach files')).toBeTruthy();
     expect(screen.queryByText('Know who you are')).toBeNull();
     expect(screen.queryByText('Stay connected without asking you again')).toBeNull();
     expect(api).toHaveBeenCalledWith(

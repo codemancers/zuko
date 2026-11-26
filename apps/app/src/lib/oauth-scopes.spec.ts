@@ -4,7 +4,7 @@ it('shows record, schema and directory access separately and hides identity plum
   expect(
     describeScopes(['openid', 'offline_access', 'records:read', 'schema:read', 'directory:read']),
   ).toEqual([
-    'View records, their relationships and change history',
+    'View records, their relationships, change history and attached files',
     'View object types, fields and relationship definitions',
     'View organization members and teams',
   ]);
