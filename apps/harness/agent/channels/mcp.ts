@@ -5,6 +5,8 @@ import { issuer, mcpResource } from '../lib/backend';
 
 export default mcpChannel({
   tools: true,
+  // Publish the funnel skills so external clients can read the procedures behind the tools.
+  skills: true,
   auth: oauthResource(zukoAuth(false), {
     issuer,
     resource: mcpResource,
