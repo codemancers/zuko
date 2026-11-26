@@ -771,7 +771,7 @@ describe('tenant isolation', () => {
       expectStatus(await eve.get(`${API}/objects`), 200).results.map(
         (o: { name: string }) => o.name,
       ),
-    ).toEqual(['contact', 'company', 'deal']);
+    ).toEqual(['contact', 'company', 'deal', 'prospect', 'lead']);
     expect((await eve.get(`${REC}`)).status).toBe(404);
 
     const evesDeal = expectStatus(

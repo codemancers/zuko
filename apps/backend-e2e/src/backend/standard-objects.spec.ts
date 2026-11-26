@@ -2,7 +2,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { User, cleanup, verifyEmails, type Reply } from '../support/crm-client';
 
 /**
- * The standard objects (contact, company, deal): who can set them up, that setting up twice
+ * The standard objects (contact, company, deal, prospect, lead): who can set them up, that setting up twice
  * changes nothing, and that they behave like any object once they exist.
  *   Acme: owner, alice (member)      Other org: eve
  */
@@ -50,20 +50,21 @@ afterAll(async () => {
 }, 60_000);
 
 describe('setting up', () => {
-  it('provisions contact, company and deal before the organization is ready', async () => {
+  it('provisions the standard objects before the organization is ready', async () => {
     const result = ok(await owner.get(`${API}/objects`));
-    expect(names(result)).toEqual(['contact', 'company', 'deal']);
-    expect(result.results.map((o: { object_kind: string }) => o.object_kind)).toEqual([
-      'STANDARD',
-      'STANDARD',
-      'STANDARD',
-    ]);
+    const all = ['contact', 'company', 'deal', 'prospect', 'lead'];
+    expect(names(result)).toEqual(all);
+    expect(result.results.map((o: { object_kind: string }) => o.object_kind)).toEqual(
+      all.map(() => 'STANDARD'),
+    );
     expect(result.results.map((o: { plural_label: string }) => o.plural_label)).toEqual([
       'Contacts',
       'Companies',
       'Deals',
+      'Prospects',
+      'Leads',
     ]);
-    expect(names(ok(await alice.get(`${API}/objects`)))).toEqual(['contact', 'company', 'deal']);
+    expect(names(ok(await alice.get(`${API}/objects`)))).toEqual(all);
   });
 
   it('says which kinds of record each can be linked to', async () => {
@@ -78,10 +79,22 @@ describe('setting up', () => {
     expect(await linkable('contact')).toEqual([
       ['contact_company', 'Companies', 'forward'],
       ['contact_deal', 'Deals', 'forward'],
+      ['lead_contact', 'Leads', 'reverse'],
     ]);
     expect(await linkable('company')).toEqual([
       ['contact_company', 'Contacts', 'reverse'],
       ['deal_company', 'Deals', 'reverse'],
+      ['prospect_company', 'Prospects', 'reverse'],
+      ['lead_company', 'Leads', 'reverse'],
+    ]);
+    expect(await linkable('prospect')).toEqual([
+      ['prospect_company', 'Companies', 'forward'],
+      ['prospect_lead', 'Converted to lead', 'forward'],
+    ]);
+    expect(await linkable('lead')).toEqual([
+      ['lead_company', 'Companies', 'forward'],
+      ['prospect_lead', 'Prospects', 'reverse'],
+      ['lead_contact', 'Converted to contact', 'forward'],
     ]);
     expect(await linkable('deal')).toEqual([
       ['contact_deal', 'Contacts', 'reverse'],
@@ -137,6 +150,89 @@ describe('setting up', () => {
         (f: { name: string }) => f.name === 'domain',
       ).unique,
     ).toBe(true);
+
+    const company = ok(await owner.get(`${API}/objects/company`));
+    expect(company.fields.find((f: { name: string }) => f.name === 'status').config.options).toEqual([
+      'prospect',
+      'active',
+      'customer',
+      'partner',
+      'churned',
+    ]);
+    const lead = ok(await owner.get(`${API}/objects/lead`));
+    expect(lead.fields.map((f: { name: string }) => f.name)).toEqual([
+      'first_name',
+      'last_name',
+      'email',
+      'phone',
+      'job_title',
+      'status',
+      'source',
+      'score',
+      'ai_summary',
+      'companies',
+      'converted_contact',
+    ]);
+    const prospect = ok(await owner.get(`${API}/objects/prospect`));
+    // A prospect or lead is converted at most once, so those links hold one record.
+    expect(
+      prospect.fields.find((f: { name: string }) => f.name === 'converted_lead').config,
+    ).toEqual({ link: 'prospect_lead', target: 'lead', many: false });
+    expect(
+      lead.fields.find((f: { name: string }) => f.name === 'converted_contact').config,
+    ).toEqual({ link: 'lead_contact', target: 'contact', many: false });
+    expect(prospect.fields.find((f: { name: string }) => f.name === 'email')).toMatchObject({
+      type: 'EMAIL',
+      unique: true,
+    });
+  });
+
+  it('creates, links and filters prospects and leads like any record', async () => {
+    const c = ok(
+      await owner.post(`${API}/objects/company/records`, {
+        properties: { name: `Funnel Co ${run}`, status: 'prospect' },
+      }),
+      201,
+    );
+    const rec = (object: string, id: string) => `${API}/objects/${object}/records/${id}`;
+    const p = ok(
+      await owner.post(`${API}/objects/prospect/records`, {
+        properties: { first_name: 'Pia', email: `pia${suffix}`, status: 'new' },
+      }),
+      201,
+    );
+    const l = ok(
+      await owner.post(`${API}/objects/lead/records`, {
+        properties: { first_name: 'Pia', email: `pia${suffix}`, status: 'new', score: 40 },
+      }),
+      201,
+    );
+    ok(await owner.post(`${rec('prospect', p.id)}/associations/prospect_company`, { record_id: c.id }));
+    // Where a prospect went is the same generic link as any other, and holds one record.
+    ok(await owner.post(`${rec('prospect', p.id)}/associations/prospect_lead`, { record_id: l.id }));
+    const other = ok(
+      await owner.post(`${API}/objects/lead/records`, { properties: { first_name: 'Other' } }),
+      201,
+    );
+    ok(await owner.post(`${rec('prospect', p.id)}/associations/prospect_lead`, { record_id: other.id }));
+    ok(await owner.patch(rec('prospect', p.id), { properties: { status: 'converted' } }));
+    const linked = async (link: string) =>
+      ok(await owner.get(`${rec('prospect', p.id)}/associations/${link}`)).results.map(
+        (r: { id: string }) => r.id,
+      );
+    expect(await linked('prospect_company')).toEqual([c.id]);
+    expect(await linked('prospect_lead')).toEqual([other.id]);
+    expect(ok(await owner.get(rec('prospect', p.id))).properties.status).toBe('converted');
+    ok(await owner.del(rec('lead', other.id)));
+    // Email is unique within each object, not across them.
+    const dup = await owner.post(`${API}/objects/lead/records`, {
+      properties: { first_name: 'Pip', email: `PIA${suffix}` },
+    });
+    expect(dup.status).toBe(400);
+    expect(JSON.stringify(dup.data)).toContain('DUPLICATE_VALUE');
+    ok(await owner.del(`${API}/objects/prospect/records/${p.id}`));
+    ok(await owner.del(`${API}/objects/lead/records/${l.id}`));
+    ok(await owner.del(`${API}/objects/company/records/${c.id}`));
   });
 
   it('does not expose the old lazy provisioning endpoint', async () => {
@@ -145,7 +241,7 @@ describe('setting up', () => {
 
   it('provisions independent schemas for other organizations', async () => {
     for (const user of [eve, zed]) {
-      expect(names(ok(await user.get(`${API}/objects`)))).toEqual(['contact', 'company', 'deal']);
+      expect(names(ok(await user.get(`${API}/objects`)))).toEqual(['contact', 'company', 'deal', 'prospect', 'lead']);
       expect(ok(await user.get(`${API}/objects/company`)).object_kind).toBe('STANDARD');
     }
   });

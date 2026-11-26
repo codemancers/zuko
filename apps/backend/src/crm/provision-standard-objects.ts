@@ -1,6 +1,19 @@
 import type { TenantTransaction } from '../prisma/prisma.service';
-import { STANDARD_ASSOCIATIONS, STANDARD_OBJECTS } from './standard-objects';
+import { STANDARD_ASSOCIATIONS, STANDARD_OBJECTS, type StandardField } from './standard-objects';
 export class StandardObjectConflict extends Error {}
+
+const fieldData = (organizationId: bigint, objectTypeId: bigint, field: StandardField) => ({
+  organizationId,
+  objectTypeId,
+  name: field.name,
+  label: field.label,
+  type: field.type,
+  required: field.required ?? false,
+  isUnique: field.unique ?? false,
+  filterable: field.filterable ?? false,
+  maxLength: field.maxLength ?? null,
+  config: field.options ? { options: field.options } : {},
+});
 
 /** Provision missing CRM definitions without overwriting organization customizations. */
 export async function provisionStandardObjects(tx: TenantTransaction, organizationId: bigint) {
@@ -17,6 +30,22 @@ export async function provisionStandardObjects(tx: TenantTransaction, organizati
         throw new StandardObjectConflict(
           `The object key ${definition.slug} is already used by a custom object. Resolve this conflict before retrying setup.`,
         );
+      // Fields added to the standard definition later. A field that exists under that key (even a
+      // removed or changed one) is the organization's to keep.
+      const present = new Set(
+        (
+          await tx.fieldDefinition.findMany({
+            where: { organizationId, objectTypeId: existing.id },
+            select: { name: true },
+          })
+        ).map((f) => f.name),
+      );
+      const missing = definition.fields.filter((field) => !present.has(field.name));
+      if (missing.length) {
+        await tx.fieldDefinition.createMany({
+          data: missing.map((field) => fieldData(organizationId, existing.id, field)),
+        });
+      }
       continue;
     }
     const object = await tx.objectType.create({
@@ -29,18 +58,7 @@ export async function provisionStandardObjects(tx: TenantTransaction, organizati
       },
     });
     await tx.fieldDefinition.createMany({
-      data: definition.fields.map((field) => ({
-        organizationId,
-        objectTypeId: object.id,
-        name: field.name,
-        label: field.label,
-        type: field.type,
-        required: field.required ?? false,
-        isUnique: field.unique ?? false,
-        filterable: field.filterable ?? false,
-        maxLength: field.maxLength ?? null,
-        config: field.options ? { options: field.options } : {},
-      })),
+      data: definition.fields.map((field) => fieldData(organizationId, object.id, field)),
     });
     created.push(definition.slug);
   }
@@ -68,6 +86,7 @@ export async function provisionStandardObjects(tx: TenantTransaction, organizati
         sourceObjectTypeId: source,
         targetObjectTypeId: target,
         reverseLabel: pair.reverseLabel,
+        many: pair.many ?? true,
         isDefault: true,
       },
       update: {},
@@ -85,7 +104,7 @@ export async function provisionStandardObjects(tx: TenantTransaction, organizati
           name: pair.field,
           label: pair.fieldLabel,
           type: 'LINK',
-          config: { link: pair.name, target: pair.target, many: true },
+          config: { link: pair.name, target: pair.target, many: pair.many ?? true },
         },
       });
     }

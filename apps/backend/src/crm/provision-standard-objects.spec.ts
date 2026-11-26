@@ -31,7 +31,7 @@ describe.skipIf(!url)('CRM provisioning transactions', () => {
     const provision = () =>
       prisma.withTenant({ organizationId }, (tx) => provisionStandardObjects(tx, organizationId));
     const created = (await Promise.all([provision(), provision(), provision()])).flat().sort();
-    expect(created).toEqual(['company', 'contact', 'deal']);
+    expect(created).toEqual(['company', 'contact', 'deal', 'lead', 'prospect']);
     await prisma.withTenant({ organizationId }, async (tx) => {
       const contact = await tx.objectType.findFirstOrThrow({
         where: { organizationId, slug: 'contact' },
@@ -43,11 +43,47 @@ describe.skipIf(!url)('CRM provisioning transactions', () => {
     });
     expect(await provision()).toEqual([]);
     const fields = await prisma.withTenant({ organizationId }, (tx) =>
-      tx.fieldDefinition.findMany({ where: { organizationId, name: 'email' } }),
+      tx.fieldDefinition.findMany({ where: { organizationId, name: 'email', objectType: { slug: 'contact' } } }),
     );
     expect(fields).toHaveLength(1);
     expect(fields[0].label).toBe('Work email');
     expect(fields[0].deletedAt).not.toBeNull();
+  });
+
+  it('adds fields and objects introduced later without touching what the organization changed', async () => {
+    const organizationId = await organization('upgrade');
+    const provision = () =>
+      prisma.withTenant({ organizationId }, (tx) => provisionStandardObjects(tx, organizationId));
+    await provision();
+    // Make this look like an organization set up before prospects and leads existed.
+    await prisma.withTenant({ organizationId }, async (tx) => {
+      await tx.objectType.deleteMany({ where: { organizationId, slug: { in: ['prospect', 'lead'] } } });
+      const company = await tx.objectType.findFirstOrThrow({ where: { organizationId, slug: 'company' } });
+      await tx.fieldDefinition.deleteMany({ where: { organizationId, objectTypeId: company.id, name: 'status' } });
+      await tx.fieldDefinition.update({
+        where: { objectTypeId_name: { objectTypeId: company.id, name: 'city' } },
+        data: { label: 'Headquarters' },
+      });
+    });
+    expect(await provision()).toEqual(['prospect', 'lead']);
+    expect(await provision()).toEqual([]);
+    await prisma.withTenant({ organizationId }, async (tx) => {
+      const company = await tx.objectType.findFirstOrThrow({ where: { organizationId, slug: 'company' } });
+      const fields = await tx.fieldDefinition.findMany({ where: { organizationId, objectTypeId: company.id } });
+      expect(fields.find((f) => f.name === 'status')?.config).toEqual({
+        options: ['prospect', 'active', 'customer', 'partner', 'churned'],
+      });
+      expect(fields.find((f) => f.name === 'city')?.label).toBe('Headquarters');
+      const links = await tx.associationDefinition.findMany({
+        where: { organizationId, name: { in: ['prospect_lead', 'lead_contact'] } },
+        select: { many: true },
+      });
+      expect(links).toEqual([{ many: false }, { many: false }]);
+      const lead = await tx.objectType.findFirstOrThrow({ where: { organizationId, slug: 'lead' } });
+      expect(
+        (await tx.fieldDefinition.findFirstOrThrow({ where: { objectTypeId: lead.id, name: 'converted_contact' } })).config,
+      ).toEqual({ link: 'lead_contact', target: 'contact', many: false });
+    });
   });
 
   it('rolls back earlier objects if a later key conflicts, leaving custom data intact', async () => {

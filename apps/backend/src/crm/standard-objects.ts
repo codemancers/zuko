@@ -57,6 +57,13 @@ export const STANDARD_OBJECTS: readonly StandardObject[] = [
       { name: 'employee_count', label: 'Employees', type: 'NUMBER', filterable: true },
       { name: 'city', label: 'City', type: 'TEXT', filterable: true, maxLength: 100 },
       { name: 'annual_revenue', label: 'Annual revenue', type: 'NUMBER' },
+      {
+        name: 'status',
+        label: 'Status',
+        type: 'ENUM',
+        filterable: true,
+        options: ['prospect', 'active', 'customer', 'partner', 'churned'],
+      },
     ],
   },
   {
@@ -76,6 +83,48 @@ export const STANDARD_OBJECTS: readonly StandardObject[] = [
       { name: 'expected_close_date', label: 'Expected close', type: 'TIMESTAMP', filterable: true },
     ],
   },
+  {
+    slug: 'prospect',
+    label: 'Prospect',
+    pluralLabel: 'Prospects',
+    fields: [
+      { name: 'first_name', label: 'First name', type: 'TEXT', required: true, filterable: true, maxLength: 100 },
+      { name: 'last_name', label: 'Last name', type: 'TEXT', filterable: true, maxLength: 100 },
+      { name: 'email', label: 'Email', type: 'EMAIL', unique: true, filterable: true },
+      { name: 'phone', label: 'Phone', type: 'TEXT', maxLength: 50 },
+      { name: 'job_title', label: 'Job title', type: 'TEXT', filterable: true, maxLength: 100 },
+      {
+        name: 'status',
+        label: 'Status',
+        type: 'ENUM',
+        filterable: true,
+        options: ['new', 'researching', 'contacted', 'engaged', 'disqualified', 'converted'],
+      },
+      { name: 'source', label: 'Source', type: 'TEXT', filterable: true, maxLength: 100 },
+    ],
+  },
+  {
+    slug: 'lead',
+    label: 'Lead',
+    pluralLabel: 'Leads',
+    fields: [
+      { name: 'first_name', label: 'First name', type: 'TEXT', required: true, filterable: true, maxLength: 100 },
+      { name: 'last_name', label: 'Last name', type: 'TEXT', filterable: true, maxLength: 100 },
+      { name: 'email', label: 'Email', type: 'EMAIL', unique: true, filterable: true },
+      { name: 'phone', label: 'Phone', type: 'TEXT', maxLength: 50 },
+      { name: 'job_title', label: 'Job title', type: 'TEXT', filterable: true, maxLength: 100 },
+      {
+        name: 'status',
+        label: 'Status',
+        type: 'ENUM',
+        filterable: true,
+        options: ['new', 'contacted', 'qualified', 'disqualified', 'converted'],
+      },
+      { name: 'source', label: 'Source', type: 'TEXT', filterable: true, maxLength: 100 },
+      { name: 'score', label: 'Score', type: 'NUMBER', filterable: true },
+      { name: 'ai_summary', label: 'AI summary', type: 'TEXT', maxLength: 2000 },
+    ],
+  },
 ];
 
 /**
@@ -91,8 +140,15 @@ export const STANDARD_ASSOCIATIONS: readonly {
   field: string;
   fieldLabel: string;
   reverseLabel: string;
+  /** Whether a source record links to many targets (the default) or at most one. */
+  many?: boolean;
 }[] = [
   { name: 'contact_company', label: 'Contact and company', source: 'contact', target: 'company', field: 'companies', fieldLabel: 'Companies', reverseLabel: 'Contacts' },
   { name: 'contact_deal', label: 'Contact and deal', source: 'contact', target: 'deal', field: 'deals', fieldLabel: 'Deals', reverseLabel: 'Contacts' },
   { name: 'deal_company', label: 'Deal and company', source: 'deal', target: 'company', field: 'companies', fieldLabel: 'Companies', reverseLabel: 'Deals' },
+  { name: 'prospect_company', label: 'Prospect and company', source: 'prospect', target: 'company', field: 'companies', fieldLabel: 'Companies', reverseLabel: 'Prospects' },
+  { name: 'lead_company', label: 'Lead and company', source: 'lead', target: 'company', field: 'companies', fieldLabel: 'Companies', reverseLabel: 'Leads' },
+  // Where a prospect or lead went once it moved on; filled in when it converts.
+  { name: 'prospect_lead', label: 'Prospect and lead', source: 'prospect', target: 'lead', field: 'converted_lead', fieldLabel: 'Converted to lead', reverseLabel: 'Prospects', many: false },
+  { name: 'lead_contact', label: 'Lead and contact', source: 'lead', target: 'contact', field: 'converted_contact', fieldLabel: 'Converted to contact', reverseLabel: 'Leads', many: false },
 ];
