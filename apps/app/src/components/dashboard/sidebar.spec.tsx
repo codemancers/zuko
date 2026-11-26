@@ -46,7 +46,10 @@ describe('Sidebar', () => {
     );
     expect(main.getAllByRole('link')).toHaveLength(6);
     expect(main.getByText('Campaigns').closest('[aria-disabled="true"]')).toBeTruthy();
-    expect(main.getAllByText('Soon').length).toBeGreaterThan(5);
+    expect(main.getAllByText('Soon')).toHaveLength(5);
+    // No dead links to objects an organization may not have yet.
+    expect(main.queryByRole('link', { name: 'Prospects' })).toBeNull();
+    expect(main.queryByRole('link', { name: 'Leads' })).toBeNull();
   });
 
   it('keeps Profile in the sidebar and closes mobile navigation after opening it', async () => {
@@ -74,6 +77,25 @@ describe('Sidebar', () => {
 
     expect(main.getByRole('link', { name: 'Deals' }).getAttribute('aria-current')).toBe('page');
     expect(main.getByRole('link', { name: 'Contacts' }).getAttribute('aria-current')).toBeNull();
+  });
+
+  it('lists the standard objects the organization has, prospects and leads included', async () => {
+    api.mockResolvedValue({
+      results: ['contact', 'company', 'deal', 'prospect', 'lead'].map((name) => ({
+        name,
+        plural_label: `${name[0].toUpperCase()}${name.slice(1)}s`.replace('Companys', 'Companies'),
+        object_kind: 'STANDARD',
+      })),
+    });
+    render(<Sidebar />);
+    const main = within(screen.getByRole('navigation', { name: 'Main' }));
+    expect((await main.findByRole('link', { name: 'Prospects' })).getAttribute('href')).toBe(
+      '/records/prospect',
+    );
+    expect(main.getByRole('link', { name: 'Leads' }).getAttribute('href')).toBe('/records/lead');
+    expect(main.getByRole('link', { name: 'Companies' }).getAttribute('href')).toBe(
+      '/records/company',
+    );
   });
 
   it("lists the organization's own objects under Records, and follows when one is made", async () => {

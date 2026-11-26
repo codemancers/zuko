@@ -6,7 +6,6 @@ import { objectListQuery } from '@/lib/queries';
 import { usePathname } from 'next/navigation';
 import { useEffect, useSyncExternalStore } from 'react';
 import {
-  Building2,
   Calendar,
   CheckSquare,
   Megaphone,
@@ -16,8 +15,6 @@ import {
   Radio,
   Sparkles,
   UserRound,
-  UserSearch,
-  Users,
   Wand2,
   type LucideIcon,
 } from 'lucide-react';
@@ -43,18 +40,10 @@ const sections: NavSection[] = [
     ],
   },
   {
-    title: 'Prospect',
-    items: [
-      { label: 'People', icon: UserSearch },
-      { label: 'Companies', icon: Building2 },
-    ],
-  },
-  {
     title: 'Reach',
     items: [
       { label: 'Campaigns', icon: Megaphone },
       { label: 'Channels', icon: Radio },
-      { label: 'Leads', icon: Users },
     ],
   },
   {
@@ -168,8 +157,11 @@ function writeCollapsed(value: boolean) {
   listeners.forEach((listener) => listener());
 }
 
-/** The organization's own kinds of record (the standard ones are listed already), kept up to date. */
-function useCustomObjects(): NavItem[] {
+/**
+ * The organization's kinds of record, kept up to date: the standard ones it has (null until they
+ * load, or if they cannot be read), then its own.
+ */
+function useRecordObjects(): { standard: NavItem[] | null; custom: NavItem[] } {
   const client = useQueryClient();
   const { data } = useQuery(objectListQuery);
   useEffect(() => {
@@ -179,20 +171,23 @@ function useCustomObjects(): NavItem[] {
     window.addEventListener(OBJECTS_CHANGED, changed);
     return () => window.removeEventListener(OBJECTS_CHANGED, changed);
   }, [client]);
-  return (data?.results ?? [])
-    .filter((object) => object.object_kind === 'CUSTOM')
-    .map((object) => ({
-      label: object.plural_label,
-      icon: getObjectIcon(object.name),
-      href: `/records/${object.name}`,
-    }));
+  const items = (kind: 'STANDARD' | 'CUSTOM') =>
+    (data?.results ?? [])
+      .filter((object) => object.object_kind === kind)
+      .map((object) => ({
+        label: object.plural_label,
+        icon: getObjectIcon(object.name),
+        href: `/records/${object.name}`,
+      }));
+  const standard = items('STANDARD');
+  return { standard: standard.length > 0 ? standard : null, custom: items('CUSTOM') };
 }
 
 export function Sidebar({
   mobile = false,
   onNavigate,
 }: { mobile?: boolean; onNavigate?: () => void } = {}) {
-  const custom = useCustomObjects();
+  const { standard, custom } = useRecordObjects();
   // Server render and hydration use the expanded default, then the stored preference applies.
   const preference = useSyncExternalStore(subscribe, readCollapsed, () => false);
   const collapsed = !mobile && preference;
@@ -253,7 +248,7 @@ export function Sidebar({
         {sections
           .map((section) =>
             section.title === 'Records'
-              ? { ...section, items: [...section.items, ...custom] }
+              ? { ...section, items: [...(standard ?? section.items), ...custom] }
               : section,
           )
           .map((section, i) => (
