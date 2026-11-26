@@ -48,6 +48,15 @@ backend still rejects its subsequent CRM operations.
 
 The harness is the only MCP server; the backend exposes OAuth and CRM REST APIs.
 
+## Skills
+
+The harness publishes its skills on the same endpoint (`skill://<name>/SKILL.md`), so
+an MCP client can read the procedure behind the tools. `convert-prospect` and
+`convert-lead` move a person along the funnel using only the generic record tools:
+find, create, link, and mark the source converted last, so running one again after a
+failure resumes instead of duplicating. Skills add instructions, never tools, and
+every write still goes through your scopes and role permissions.
+
 ## Authentication and CRM execution
 
 Better Auth runs in `apps/backend`; `apps/app` hosts login and consent.
