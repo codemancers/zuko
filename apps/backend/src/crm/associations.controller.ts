@@ -56,6 +56,20 @@ export class AssociationsController {
     return this.associations.link(ctx, object, id, link, body);
   }
 
+  /** Remove several links at once: `{ record_ids }`. All or none. */
+  @Post('unlink')
+  @HttpCode(200)
+  @HarnessAccess('records:write')
+  unlinkMany(
+    @Crm() ctx: RequestContext,
+    @Param('object') object: string,
+    @Param('id') id: string,
+    @Param('link') link: string,
+    @Body() body: unknown,
+  ) {
+    return this.associations.unlinkMany(ctx, object, id, link, body);
+  }
+
   @Delete(':targetId')
   @HarnessAccess('records:write')
   unlink(

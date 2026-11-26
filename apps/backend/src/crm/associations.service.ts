@@ -19,7 +19,19 @@ const paging = z.object({
   page_size: z.coerce.number().int().min(1).default(20),
 });
 const replaceBody = z.object({ record_ids: z.array(z.string()).max(MAX_LINKS_PER_CALL) });
-const linkBody = z.object({ record_id: z.string() });
+// One record, or a list. A list is added all together or not at all.
+const linkBody = z
+  .object({
+    record_id: z.string().optional(),
+    record_ids: z.array(z.string()).min(1).max(MAX_LINKS_PER_CALL).optional(),
+  })
+  .refine((body) => (body.record_id === undefined) !== (body.record_ids === undefined), {
+    message: 'Send record_id or record_ids, not both',
+  });
+const unlinkBody = z.object({ record_ids: z.array(z.string()).min(1).max(MAX_LINKS_PER_CALL) });
+/** Ids in an error message: enough to find the problem without echoing hundreds. */
+const idList = (ids: bigint[]) =>
+  ids.length > 20 ? `${ids.slice(0, 20).join(', ')} and ${ids.length - 20} more` : ids.join(', ');
 
 type Properties = Record<string, unknown>;
 export interface Linked {
@@ -172,9 +184,42 @@ export class AssociationsService {
     body: unknown,
   ) {
     const input = parse(linkBody, body);
-    const added = toId(input.record_id, 'record');
-    return this.change(ctx, objectName, rawId, linkName, (current, only) =>
-      only ? [added] : [...current, added],
+    const added = [...new Set((input.record_ids ?? [input.record_id!]).map((id) => toId(id, 'record')))];
+    return this.change(
+      ctx,
+      objectName,
+      rawId,
+      linkName,
+      (current, only) => (only ? added : [...current, ...added]),
+      input.record_ids ? added : undefined,
+    );
+  }
+
+  /** Remove several links at once. If any of them is not linked, none is removed. */
+  async unlinkMany(
+    ctx: RequestContext,
+    objectName: string,
+    rawId: string,
+    linkName: string,
+    body: unknown,
+  ) {
+    const input = parse(unlinkBody, body);
+    const removing = [...new Set(input.record_ids.map((id) => toId(id, 'record')))];
+    return this.change(
+      ctx,
+      objectName,
+      rawId,
+      linkName,
+      (current) => {
+        const linked = new Set(current);
+        const notLinked = removing.filter((id) => !linked.has(id));
+        if (notLinked.length > 0) {
+          throw notFound(`That ${objectName} is not linked to: ${idList(notLinked)}`);
+        }
+        const gone = new Set(removing);
+        return current.filter((id) => !gone.has(id));
+      },
+      removing,
     );
   }
 
@@ -201,6 +246,8 @@ export class AssociationsService {
     rawId: string,
     linkName: string,
     wanted: (current: bigint[], onlyOne: boolean) => bigint[],
+    /** Which records to return. Defaults to all that are linked afterwards; a bulk call returns the ones it was given. */
+    report?: bigint[],
   ) {
     assertCan(ctx, { record: ['update'] }, 'link records');
     const recordId = toId(rawId, objectName);
@@ -251,11 +298,13 @@ export class AssociationsService {
       const found = new Set(reachable.map((row) => row.id));
       const missing = desired.filter((id) => !found.has(id));
       if (missing.length > 0) {
-        throw notFound(`No such ${other.slug}: ${missing.join(', ')}`);
+        throw notFound(`No such ${other.slug}: ${idList(missing)}`);
       }
 
-      const added = desired.filter((id) => !current.includes(id));
-      const removed = current.filter((id) => !desired.includes(id));
+      const currentSet = new Set(current);
+      const desiredSet = new Set(desired);
+      const added = desired.filter((id) => !currentSet.has(id));
+      const removed = current.filter((id) => !desiredSet.has(id));
       if (!forward) {
         const touched = [...new Set([...added, ...removed])];
         if (touched.length > 0) {
@@ -326,7 +375,7 @@ export class AssociationsService {
           ],
         });
       }
-      return { results: await this.labels(tx, other, desired) };
+      return { results: await this.labels(tx, other, report ?? desired) };
     });
   }
 
