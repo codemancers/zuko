@@ -26,6 +26,12 @@
     },
     {
       "path": "./libs/access-control"
+    },
+    {
+      "path": "./apps/site"
+    },
+    {
+      "path": "./apps/docs"
     }
   ]
 }
