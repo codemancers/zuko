@@ -88,6 +88,8 @@ export async function crmRequest(ctx: ToolContext, method: string, path: string,
 
 export const segment = (value: string) => encodeURIComponent(value);
 export const recordsPath = (object: string) => `objects/${segment(object)}/records`;
+export const commentsPath = (object: string, id: string) =>
+  `${recordsPath(object)}/${segment(id)}/comments`;
 export const query = (values: Record<string, unknown>) => {
   const params = new URLSearchParams();
   for (const [key, value] of Object.entries(values))

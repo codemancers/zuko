@@ -6,6 +6,8 @@ import { AssociationsController } from './associations.controller';
 import { AssociationsService } from './associations.service';
 import { AccessController } from './access.controller';
 import { AccessService } from './access.service';
+import { CommentsController } from './comments.controller';
+import { CommentsService } from './comments.service';
 import { CrmContextGuard, CrmContextService } from './context';
 import { DirectoryController } from './directory.controller';
 import { DirectoryService } from './directory.service';
@@ -31,6 +33,7 @@ import { SharesService } from './shares.service';
     ObjectsController,
     RecordsController,
     AssociationsController,
+    CommentsController,
     AccessController,
     DirectoryController,
     EveController,
@@ -40,6 +43,7 @@ import { SharesService } from './shares.service';
     SchemaService,
     RecordsService,
     AssociationsService,
+    CommentsService,
     RecordsQueryService,
     AccessService,
     SharesService,

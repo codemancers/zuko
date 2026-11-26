@@ -81,6 +81,12 @@ A person who may not see a record gets a 404, not a 403, so existence is not lea
 - `record_change`: one row per create, update or delete of a record, with the old and new values,
   who did it, and how (`USER`, `MCP`, ...). Link changes are recorded as `associations.<link>` on
   both records. Sensitive fields are redacted.
+- `record_comment`: a comment on a record (markdown, up to 10,000 characters), with the members it
+  mentions and whether it was written by a person (`USER`) or on their behalf (`MCP`, `AGENT`).
+  Unlike a change it can be edited by its author and soft-deleted by the author or an owner or
+  admin. Anyone who can read a record can comment on it; mentions must name members who can read it.
+  `GET .../records/:id/activity` interleaves comments and changes into one timeline (oldest first,
+  newest page by default, `before` cursor to go back).
 - `audit_event`: authentication and organization events (sign-in, invitations, role and team
   changes, connecting and disconnecting applications).
 - Both are append-only: triggers and revoked privileges block updates and deletes. Tests that must
@@ -100,7 +106,7 @@ All under `/api/v1`, authenticated by the better-auth session cookie. Errors are
 
 | Area        | Endpoints                                                                                                          |
 | ----------- | ------------------------------------------------------------------------------------------------------------------ |
-| Who am I    | `GET /me` (roles, teams, `can_manage_objects`)                                                                     |
+| Who am I    | `GET /me` (roles, teams, `can_manage_objects`, `can_moderate_comments`)                                                                     |
 | Objects     | `GET /objects`, `POST /objects`, `GET /objects/:object`, `POST /setup/standard-objects`                            |
 | Fields      | `POST /objects/:object/fields`, `PATCH` and `DELETE /objects/:object/fields/:field`                                |
 | Records     | `GET`, `POST /objects/:object/records`, `POST .../filter`, `GET`, `PATCH`, `DELETE .../:id`, `GET .../:id/history` |

@@ -19,6 +19,8 @@ export class ObjectsController {
       team_ids: ctx.teamIds.map(String),
       // Lets a client offer schema changes only to those who can make them.
       can_manage_objects: can(ctx, { object: ['manage'] }),
+      // Lets a client offer to delete other people's comments only to those who may.
+      can_moderate_comments: can(ctx, { comment: ['moderate'] }),
     };
   }
 

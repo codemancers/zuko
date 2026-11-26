@@ -4,6 +4,8 @@ export const SCOPE_LABELS: Record<string, string> = {
   'records:read': 'View records, their relationships and change history',
   'records:write': 'Create and change records',
   'records:delete': 'Delete records',
+  'comments:read': 'View comments on records, and the timeline of changes they appear in',
+  'comments:write': 'Add, edit and delete your comments on records',
   'schema:read': 'View object types, fields and relationship definitions',
   'directory:read': 'View organization members and teams',
   offline_access: 'Stay connected without asking you again',
@@ -15,7 +17,7 @@ export const describeScopes = (scopes: string[]) =>
   scopes
     .filter(
       (scope) =>
-        ['records:', 'schema:', 'directory:'].some((prefix) => scope.startsWith(prefix)) ||
+        ['records:', 'schema:', 'directory:', 'comments:'].some((prefix) => scope.startsWith(prefix)) ||
         scope === 'agent:invoke',
     )
     .map((scope) => SCOPE_LABELS[scope] ?? scope);

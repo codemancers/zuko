@@ -96,6 +96,19 @@ const row = (properties: Record<string, unknown>, id = String(nextId++)): Record
   updated_at: '2026-11-17T00:00:00.000Z',
 });
 
+interface FakeComment {
+  type: 'comment';
+  id: string;
+  record_id: string;
+  body: string;
+  mentions: string[];
+  actor_type: string;
+  actor_id: string | null;
+  actor_name: string | null;
+  edited_at: string | null;
+  created_at: string;
+}
+
 /** An in-memory stand-in for the records API: enough behaviour to drive the view. */
 function fakeBackend(
   initial: RecordRow[],
@@ -109,11 +122,13 @@ function fakeBackend(
     refuseMany?: string;
     refuseOwner?: boolean;
     history?: unknown[];
+    comments?: FakeComment[];
     failHistory?: boolean;
     companies?: { id: string; name: string }[];
     links?: Record<string, string[]>;
     failLinking?: boolean;
     failLinkLoad?: boolean;
+    refuseComment?: string;
   } = {},
 ) {
   const state = {
@@ -123,6 +138,7 @@ function fakeBackend(
     def: structuredClone(contact),
     companies: [...(options.companies ?? [])],
     links: structuredClone(options.links ?? {}) as Record<string, string[]>,
+    comments: structuredClone(options.comments ?? []) as FakeComment[],
   };
   const paged = (rows: RecordRow[], page: number, size: number) => {
     const total_pages = Math.ceil(rows.length / size);
@@ -181,7 +197,12 @@ function fakeBackend(
         ],
       };
     if (path === '/api/v1/teams') return { results: [{ id: '3', name: 'Sales' }] };
-    if (path === '/api/v1/me') return { can_manage_objects: options.admin === true };
+    if (path === '/api/v1/me')
+      return {
+        user_id: '7',
+        can_manage_objects: options.admin === true,
+        can_moderate_comments: options.admin === true,
+      };
     if (path === '/api/v1/objects/contact/fields' && method === 'POST') {
       const added = init?.json as {
         name: string;
@@ -380,9 +401,48 @@ function fakeBackend(
       state.records.push(created);
       return created;
     }
-    if (/\/records\/\d+\/history$/.test(path)) {
+    if (/\/records\/\d+\/activity(\?.*)?$/.test(path)) {
       if (options.failHistory) throw new ApiError('boom', 500);
-      return { results: options.history ?? [] };
+      // As the API sends it: oldest first, changes and comments together.
+      const changes = [...((options.history ?? []) as { created_at: string }[])]
+        .reverse()
+        .map((entry) => ({ type: 'change', actor_name: null, ...entry }));
+      const items = [...changes, ...state.comments].sort((a, b) =>
+        a.created_at.localeCompare(b.created_at),
+      );
+      return { results: items, next_before: null };
+    }
+    const commentsRoute = path.match(/\/records\/(\d+)\/comments(?:\/(\d+))?$/);
+    if (commentsRoute) {
+      const sentComment = (init?.json ?? {}) as { body?: string; mentions?: string[] };
+      if (method === 'POST') {
+        if (options.refuseComment)
+          throw new ApiError(options.refuseComment, 400, 'VALIDATION_FAILED');
+        const made: FakeComment = {
+          type: 'comment',
+          id: String(state.comments.length + 100),
+          record_id: commentsRoute[1],
+          body: sentComment.body ?? '',
+          mentions: sentComment.mentions ?? [],
+          actor_type: 'USER',
+          actor_id: '7',
+          actor_name: 'Me',
+          edited_at: null,
+          created_at: '2026-11-20T10:00:00.000Z',
+        };
+        state.comments.push(made);
+        return made;
+      }
+      const target = state.comments.find((c) => c.id === commentsRoute[2])!;
+      if (method === 'PATCH') {
+        target.body = sentComment.body ?? target.body;
+        target.edited_at = '2026-11-20T11:00:00.000Z';
+        return target;
+      }
+      if (method === 'DELETE') {
+        state.comments = state.comments.filter((c) => c.id !== target.id);
+        return { id: target.id, deleted: true };
+      }
     }
     const one = path.match(/\/records\/(\d+)$/);
     if (one && method === 'GET') {
@@ -699,7 +759,7 @@ describe('RecordsView', () => {
       },
     ];
 
-    it('lists who changed what on a record, newest first, in its drawer', async () => {
+    it('lists who changed what on a record, oldest first, in its drawer', async () => {
       fakeBackend([ada()], { history });
       render(<RecordsView object="contact" />);
       await openRecord('Ada');
@@ -714,8 +774,156 @@ describe('RecordsView', () => {
       const lines = within(activity)
         .getAllByRole('listitem')
         .map((li) => li.textContent ?? '');
-      expect(lines[0]).toMatch(/customer/);
-      expect(lines[2]).toMatch(/Created/);
+      expect(lines[0]).toMatch(/Created/);
+      expect(lines[2]).toMatch(/customer/);
+    });
+
+    const comment = (over: Partial<FakeComment>): FakeComment => ({
+      type: 'comment',
+      id: '50',
+      record_id: '1',
+      body: 'Called today.',
+      mentions: [],
+      actor_type: 'USER',
+      actor_id: '8',
+      actor_name: 'Sam',
+      edited_at: null,
+      created_at: '2026-11-17T09:30:00.000Z',
+      ...over,
+    });
+
+    it('shows comments among the changes, in the order they happened', async () => {
+      fakeBackend([ada()], {
+        history,
+        comments: [
+          comment({ body: 'Called **today**, see https://example.com/notes.', mentions: ['7'] }),
+          comment({
+            id: '51',
+            body: 'Logged for you.',
+            actor_type: 'MCP',
+            actor_id: '7',
+            actor_name: 'Me',
+            edited_at: '2026-11-17T09:45:00.000Z',
+            created_at: '2026-11-17T09:40:00.000Z',
+          }),
+        ],
+      });
+      render(<RecordsView object="contact" />);
+      await openRecord('Ada');
+      const activity = await screen.findByRole('region', { name: 'Activity' });
+      await within(activity).findByText('Created');
+      const items = within(activity)
+        .getAllByRole('listitem')
+        .map((li) => li.textContent ?? '');
+      // created, 09:00 link change, 09:30 Sam's comment, 09:40 the agent's comment, 10:00 stage
+      expect(items[0]).toMatch(/Created/);
+      expect(items[2]).toMatch(/Called today/);
+      expect(items[3]).toMatch(/Logged for you/);
+      expect(items[4]).toMatch(/Stage: lead → customer/);
+
+      const sams = within(activity).getByRole('article', { name: 'Comment by Sam' });
+      expect(within(sams).getByText('today').tagName).toBe('STRONG'); // markdown
+      const link = within(sams).getByRole('link', { name: 'https://example.com/notes' });
+      expect(link.getAttribute('href')).toBe('https://example.com/notes');
+      expect(link.getAttribute('rel')).toContain('noopener');
+      const agents = within(activity).getByRole('article', { name: 'Comment by Me' });
+      expect(within(agents).getByText('via MCP')).toBeTruthy();
+      expect(within(agents).getByText(/· edited/)).toBeTruthy();
+    });
+
+    it('never turns a comment into markup', async () => {
+      fakeBackend([ada()], {
+        comments: [comment({ body: '<img src=x onerror=alert(1)> [x](javascript:alert(1))' })],
+      });
+      render(<RecordsView object="contact" />);
+      await openRecord('Ada');
+      const card = await screen.findByRole('article', { name: 'Comment by Sam' });
+      expect(card.querySelector('img')).toBeNull();
+      expect(card.querySelector('a')).toBeNull();
+      expect(card.textContent).toContain('<img src=x onerror=alert(1)>');
+    });
+
+    it('posts a comment, mentioning a teammate picked with @', async () => {
+      const backend = fakeBackend([ada()], { history });
+      render(<RecordsView object="contact" />);
+      await openRecord('Ada');
+      const box = (await screen.findByLabelText('Add a comment')) as HTMLTextAreaElement;
+      const post = screen.getByRole('button', { name: 'Comment' }) as HTMLButtonElement;
+      expect(post.disabled).toBe(true); // nothing to say yet
+
+      fireEvent.change(box, { target: { value: 'Ask @Sa' } });
+      const names = within(await screen.findByRole('list', { name: 'Teammates' })).getAllByRole(
+        'button',
+      );
+      expect(names.map((o) => o.textContent)).toEqual(['Sam']);
+      fireEvent.keyDown(box, { key: 'ArrowDown' }); // into the suggestions from the box
+      expect(document.activeElement).toBe(names[0]);
+      fireEvent.click(names[0]); // picks the name, does not post
+      expect(box.value).toBe('Ask @Sam ');
+      expect(backend.calls.some((c) => c.init?.method === 'POST' && /comments/.test(c.path))).toBe(
+        false,
+      );
+
+      fireEvent.change(box, { target: { value: 'Ask @Sam about pricing' } });
+      fireEvent.click(screen.getByRole('button', { name: 'Comment' }));
+      const posted = await screen.findByRole('article', { name: 'Comment by Me' });
+      expect(within(posted).getByText('@Sam').className).toMatch(/primary/);
+      const sent = backend.calls.find((c) => c.init?.method === 'POST' && /comments/.test(c.path));
+      expect(sent?.init?.json).toEqual({ body: 'Ask @Sam about pricing', mentions: ['8'] });
+      await waitFor(() => expect(box.value).toBe(''));
+    });
+
+    it('keeps what was typed and shows the reason when a comment is refused', async () => {
+      fakeBackend([ada()], { refuseComment: 'Member 8 cannot see this contact' });
+      render(<RecordsView object="contact" />);
+      await openRecord('Ada');
+      const box = (await screen.findByLabelText('Add a comment')) as HTMLTextAreaElement;
+      fireEvent.change(box, { target: { value: 'Look @Sam' } });
+      fireEvent.keyDown(box, { key: 'Enter', ctrlKey: true });
+      expect(await screen.findByText('Member 8 cannot see this contact')).toBeTruthy();
+      expect(box.value).toBe('Look @Sam');
+    });
+
+    it('lets people edit and delete their own comments, and nobody else’s', async () => {
+      const backend = fakeBackend([ada()], {
+        comments: [
+          comment({ id: '60', body: 'Mine', actor_id: '7', actor_name: 'Me' }),
+          comment({ id: '61', body: 'Sam’s', created_at: '2026-11-17T09:50:00.000Z' }),
+        ],
+      });
+      render(<RecordsView object="contact" />);
+      await openRecord('Ada');
+      const mine = await screen.findByRole('article', { name: 'Comment by Me' });
+      const sams = screen.getByRole('article', { name: 'Comment by Sam' });
+      expect(within(sams).queryByRole('button', { name: 'Edit' })).toBeNull();
+      expect(within(sams).queryByRole('button', { name: 'Delete' })).toBeNull(); // not a moderator
+
+      fireEvent.click(within(mine).getByRole('button', { name: 'Edit' }));
+      fireEvent.change(within(mine).getByLabelText('Edit comment'), {
+        target: { value: 'Mine, reworded' },
+      });
+      fireEvent.click(within(mine).getByRole('button', { name: 'Save comment' }));
+      expect(await screen.findByText('Mine, reworded')).toBeTruthy();
+      expect(backend.comments[0].body).toBe('Mine, reworded');
+
+      const again = screen.getByRole('article', { name: 'Comment by Me' });
+      fireEvent.click(within(again).getByRole('button', { name: 'Delete' }));
+      fireEvent.click(within(again).getByRole('button', { name: 'Yes, delete' }));
+      await waitFor(() =>
+        expect(screen.queryByRole('article', { name: 'Comment by Me' })).toBeNull(),
+      );
+      expect(backend.comments.map((c) => c.id)).toEqual(['61']);
+    });
+
+    it('lets a moderator delete anyone’s comment', async () => {
+      fakeBackend([ada()], { admin: true, comments: [comment({})] });
+      render(<RecordsView object="contact" />);
+      await openRecord('Ada');
+      const sams = await screen.findByRole('article', { name: 'Comment by Sam' });
+      await waitFor(() =>
+        expect(within(sams).getByRole('button', { name: 'Delete' })).toBeTruthy(),
+      );
+      expect(within(sams).queryByRole('button', { name: 'Edit' })).toBeNull();
     });
 
     it('says so when the history cannot be loaded, and still lets the record be edited', async () => {

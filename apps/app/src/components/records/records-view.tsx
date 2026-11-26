@@ -41,7 +41,7 @@ import { RecordForm } from '@/components/records/record-form';
 import { LinkCell } from '@/components/records/link-cell';
 import { PickCell, type Option } from '@/components/records/pick-cell';
 import { UsersCell } from '@/components/records/users-cell';
-import { RecordActivity } from '@/components/records/record-activity';
+import { RecordTimeline } from '@/components/records/record-timeline';
 import { RecordLinks } from '@/components/records/record-links';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
@@ -1382,11 +1382,11 @@ export function RecordsView({ object, maxRows = MAX_ROWS }: { object: string; ma
               />
             )}
             {editing && (
-              <RecordActivity
+              <RecordTimeline
                 def={def}
                 recordId={editing.id}
                 version={editing.updated_at}
-                people={Object.fromEntries(people.members.map((m) => [m.value, m.label]))}
+                members={people.members}
               />
             )}
           </DrawerBody>

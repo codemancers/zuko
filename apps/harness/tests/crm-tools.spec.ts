@@ -12,6 +12,11 @@ import filter from '../agent/tools/filter_records';
 import link from '../agent/tools/link_record';
 import unlink from '../agent/tools/unlink_record';
 import linked from '../agent/tools/list_linked_records';
+import addComment from '../agent/tools/add_comment';
+import updateComment from '../agent/tools/update_comment';
+import deleteComment from '../agent/tools/delete_comment';
+import listComments from '../agent/tools/list_comments';
+import activity from '../agent/tools/get_record_activity';
 
 const BASE = process.env.BACKEND_URL || 'http://localhost:3000';
 const run = `${Date.now().toString(36)}-${process.pid}`;
@@ -185,6 +190,94 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)('CRM tool integration', () => {
     expect((await get.execute!({ object: 'contact', id: contact.id }, ctx)).zuko_error.code).toBe(
       'NOT_FOUND',
     );
+  });
+
+  it('comments on a record and reads the timeline with the changes interleaved, attributed to the agent', async () => {
+    const contact = await create.execute!(
+      { object: 'contact', properties: { first_name: 'Grace', last_name: 'Hopper' } },
+      ctx,
+    );
+    await update.execute!(
+      { object: 'contact', id: contact.id, properties: { last_name: 'Murray Hopper' } },
+      ctx,
+    );
+    const note = await addComment.execute!(
+      {
+        object: 'contact',
+        id: contact.id,
+        body: 'Renamed after confirming her full surname on the call.',
+        mentions: [userId],
+      },
+      ctx,
+    );
+    expect(note).toMatchObject({
+      type: 'comment',
+      actor_type: 'AGENT',
+      actor_id: userId,
+      mentions: [userId],
+    });
+
+    const timeline = await activity.execute!({ object: 'contact', id: contact.id }, ctx);
+    expect(
+      timeline.results.map((item: { type: string; action?: string }) => item.action ?? item.type),
+    ).toEqual(['CREATE', 'UPDATE', 'comment']);
+    const page = await activity.execute!({ object: 'contact', id: contact.id, limit: 2 }, ctx);
+    expect(page.results).toHaveLength(2);
+    expect(typeof page.next_before).toBe('string');
+    const earlier = await activity.execute!(
+      { object: 'contact', id: contact.id, limit: 2, before: page.next_before },
+      ctx,
+    );
+    expect(earlier.results.map((item: { action?: string }) => item.action)).toEqual(['CREATE']);
+
+    const edited = await updateComment.execute!(
+      { object: 'contact', id: contact.id, comment_id: note.id, body: 'Renamed after the call.' },
+      ctx,
+    );
+    expect(edited).toMatchObject({
+      body: 'Renamed after the call.',
+      edited_at: expect.any(String),
+    });
+    expect(
+      (await listComments.execute!({ object: 'contact', id: contact.id }, ctx)).results,
+    ).toEqual([expect.objectContaining({ id: note.id, body: 'Renamed after the call.' })]);
+    expect(
+      (
+        await deleteComment.execute!(
+          { object: 'contact', id: contact.id, comment_id: note.id },
+          ctx,
+        )
+      ).deleted,
+    ).toBe(true);
+    expect(
+      (await listComments.execute!({ object: 'contact', id: contact.id }, ctx)).results,
+    ).toEqual([]);
+    expect(
+      (
+        await updateComment.execute!(
+          { object: 'contact', id: contact.id, comment_id: note.id, body: 'x' },
+          ctx,
+        )
+      ).zuko_error.code,
+    ).toBe('NOT_FOUND');
+  });
+
+  it('refuses a comment that is empty or mentions someone outside the organization', async () => {
+    const contact = await create.execute!(
+      { object: 'contact', properties: { first_name: 'Edsger' } },
+      ctx,
+    );
+    expect(
+      (await addComment.execute!({ object: 'contact', id: contact.id, body: ' ' }, ctx)).zuko_error,
+    ).toMatchObject({ code: 'VALIDATION_FAILED' });
+    expect(
+      (
+        await addComment.execute!(
+          { object: 'contact', id: contact.id, body: 'hello', mentions: ['999999999'] },
+          ctx,
+        )
+      ).zuko_error,
+    ).toMatchObject({ code: 'VALIDATION_FAILED' });
   });
 
   it('returns backend field validation errors without exposing an internal error', async () => {

@@ -11,6 +11,8 @@ export const statement = {
   ...defaultStatements,
   // Work with records of any object type.
   record: ['read', 'create', 'update', 'delete', 'export'],
+  // Comment on records the member can see; `moderate` removes anyone's comment, not only their own.
+  comment: ['create', 'moderate'],
   // Create or change object types and their fields (the schema, not the data).
   object: ['manage'],
 } as const;
@@ -24,12 +26,14 @@ const allRecordActions = ['read', 'create', 'update', 'delete', 'export'] as con
 export const owner = ac.newRole({
   ...ownerAc.statements,
   record: [...allRecordActions],
+  comment: ['create', 'moderate'],
   object: ['manage'],
 });
 
 export const admin = ac.newRole({
   ...adminAc.statements,
   record: [...allRecordActions],
+  comment: ['create', 'moderate'],
   object: ['manage'],
 });
 
@@ -37,6 +41,7 @@ export const admin = ac.newRole({
 export const member = ac.newRole({
   ...memberAc.statements,
   record: ['read', 'create', 'update'],
+  comment: ['create'],
 });
 
 export const roles = { owner, admin, member };
