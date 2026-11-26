@@ -12,7 +12,7 @@ const fieldData = (organizationId: bigint, objectTypeId: bigint, field: Standard
   isUnique: field.unique ?? false,
   filterable: field.filterable ?? false,
   maxLength: field.maxLength ?? null,
-  config: field.options ? { options: field.options } : {},
+  config: field.options ? { options: field.options } : field.type === 'FILE' ? { many: field.many ?? false } : {},
 });
 
 /** Provision missing CRM definitions without overwriting organization customizations. */

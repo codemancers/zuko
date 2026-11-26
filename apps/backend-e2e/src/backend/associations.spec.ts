@@ -267,7 +267,12 @@ describe('showing links with the records', () => {
     const row = ok(
       await owner.get(`${rec('contact')}?include=associations&page_size=100`),
     ).results.find((r: { id: string }) => r.id === lonely);
-    expect(row.associations).toEqual({ contact_company: [], contact_deal: [], lead_contact: [] });
+    expect(row.associations).toEqual({
+      contact_company: [],
+      contact_deal: [],
+      lead_contact: [],
+      contact_campaign: [],
+    });
   });
 });
 
@@ -362,13 +367,18 @@ describe('link fields', () => {
       'lead_company',
       'prospect_lead',
       'lead_contact',
+      'prospect_campaign',
+      'lead_campaign',
+      'contact_campaign',
+      'company_campaign',
+      'deal_campaign',
     ]);
     expect(results[0]).toMatchObject({ label: 'Companies', many: true });
     expect(
       ok(await owner.get(`${API}/objects`)).results.find(
         (o: { name: string }) => o.name === 'contact',
       ).field_count,
-    ).toBe(8); // six fields and two links
+    ).toBe(9); // six fields and three links
   });
 
   it('adds a link field that holds one record, and shows it on both objects', async () => {
@@ -585,6 +595,7 @@ describe('link fields', () => {
     expect((await described(eve, 'deal')).associations.map((x) => x['name'])).toEqual([
       'contact_deal',
       'deal_company',
+      'deal_campaign',
     ]);
   });
 });

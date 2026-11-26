@@ -5,8 +5,14 @@ import { STANDARD_ASSOCIATIONS, STANDARD_OBJECTS } from './standard-objects';
 const NAME = /^[a-z][a-z0-9_]{0,62}$/; // what the API accepts for object and field names
 
 describe('STANDARD_OBJECTS', () => {
-  it('are contact, company, deal, prospect and lead', () => {
-    expect(STANDARD_OBJECTS.map((o) => o.slug)).toEqual(['contact', 'company', 'deal', 'prospect', 'lead']);
+  it('are contact, company, deal, prospect, lead and campaign', () => {
+    expect(STANDARD_OBJECTS.map((o) => o.slug)).toEqual(['contact', 'company', 'deal', 'prospect', 'lead', 'campaign']);
+  });
+
+  it('links campaigns from the people and records they reach', () => {
+    const toCampaign = STANDARD_ASSOCIATIONS.filter((a) => a.target === 'campaign');
+    expect(toCampaign.map((a) => a.source).sort()).toEqual(['company', 'contact', 'deal', 'lead', 'prospect']);
+    expect(toCampaign.every((a) => a.many !== false)).toBe(true);
   });
 
   it.each(STANDARD_OBJECTS.map((o) => [o.slug, o] as const))('%s only uses names and types the API accepts', (_slug, object) => {

@@ -239,12 +239,12 @@ describe('harness CRM tools', () => {
       );
       expect(
         (await mcp.call('list_object_types')).data.results.map((o: { name: string }) => o.name),
-      ).toEqual(['contact', 'company', 'deal', 'prospect', 'lead']);
+      ).toEqual(['contact', 'company', 'deal', 'prospect', 'lead', 'campaign']);
       expect(
         (await mcp.call('describe_object_type', { object: 'deal' })).data.fields.map(
           (f: { name: string }) => f.name,
         ),
-      ).toEqual(['name', 'amount', 'stage', 'expected_close_date', 'companies']);
+      ).toEqual(['name', 'amount', 'stage', 'expected_close_date', 'companies', 'campaigns']);
       expect(
         (await mcp.call('list_members')).data.results.map((m: { email: string }) => m.email).sort(),
       ).toEqual([alice.email, owner.email]);
@@ -325,7 +325,7 @@ describe('organization binding', () => {
     const acme = await openSession(forAcme.accessToken);
     expect(
       (await acme.call('list_object_types')).data.results.map((o: { name: string }) => o.name),
-    ).toEqual(['contact', 'company', 'deal', 'prospect', 'lead']);
+    ).toEqual(['contact', 'company', 'deal', 'prospect', 'lead', 'campaign']);
     expect((await acme.call('get_record', { object: 'deal', id: acmeRecord })).data.id).toBe(
       acmeRecord,
     );
@@ -339,7 +339,7 @@ describe('organization binding', () => {
     const beta = await openSession(forBeta.accessToken);
     expect(
       (await beta.call('list_object_types')).data.results.map((o: { name: string }) => o.name),
-    ).toEqual(['contact', 'company', 'deal', 'prospect', 'lead']);
+    ).toEqual(['contact', 'company', 'deal', 'prospect', 'lead', 'campaign']);
     expect(
       (await beta.call('list_records', { object: 'deal' })).data.results.map(
         (record: { id: string }) => record.id,
