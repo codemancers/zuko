@@ -10,6 +10,7 @@ import { join } from 'node:path';
 import { start } from 'workflow/api';
 import { WORKFLOW_MODULE_OPTIONS } from '@workflow/nest';
 import { PrismaService } from '../prisma/prisma.service';
+import { provisionStandardObjects, StandardObjectConflict } from '../crm/provision-standard-objects';
 
 @Injectable()
 export class OrganizationSetupService implements OnApplicationBootstrap, BeforeApplicationShutdown {
@@ -17,6 +18,7 @@ export class OrganizationSetupService implements OnApplicationBootstrap, BeforeA
   private timer?: ReturnType<typeof setTimeout>;
   private stopped = false;
   private cycle?: Promise<void>;
+  private backfill?: Promise<void>;
   private workflow?: { workflowId: string };
 
   constructor(
@@ -35,6 +37,9 @@ export class OrganizationSetupService implements OnApplicationBootstrap, BeforeA
     if (!this.workflow)
       throw new Error('Organization setup workflow is missing; rebuild the backend');
     this.schedule(0);
+    this.backfill = this.backfillStandardObjects().catch((error: unknown) =>
+      this.logger.error('Standard object backfill failed', error),
+    );
   }
 
   private schedule(delay: number) {
@@ -52,6 +57,45 @@ export class OrganizationSetupService implements OnApplicationBootstrap, BeforeA
     this.stopped = true;
     clearTimeout(this.timer);
     await this.cycle;
+    await this.backfill;
+  }
+
+  /**
+   * Bring organizations that finished setup before a standard object or field existed up to date.
+   * Setup only runs once per organization, so without this they would never get it. Repeat-safe:
+   * it adds only what is missing and leaves anything the organization changed or removed alone.
+   */
+  private async backfillStandardObjects() {
+    let cursor = 0n;
+    let updated = 0;
+    for (;;) {
+      const organizations = await this.prisma.organization.findMany({
+        where: { id: { gt: cursor }, setupRunId: { not: null } },
+        select: { id: true },
+        orderBy: { id: 'asc' },
+        take: 100,
+      });
+      if (!organizations.length || this.stopped) break;
+      for (const { id } of organizations) {
+        try {
+          const created = await this.prisma.withTenant({ organizationId: id }, async (tx) => {
+            const setup = await tx.organizationSetup.findUnique({ where: { organizationId: id } });
+            // One still being set up provisions everything itself.
+            return setup?.status === 'ready' ? provisionStandardObjects(tx, id) : [];
+          });
+          if (created.length) {
+            updated += 1;
+            this.logger.log(`Added ${created.join(', ')} to organization ${id}`);
+          }
+        } catch (error) {
+          // A custom object already using a standard key is the organization's to resolve.
+          const log = error instanceof StandardObjectConflict ? 'warn' : 'error';
+          this.logger[log](`Standard objects not updated for organization ${id}`, error);
+        }
+      }
+      cursor = organizations[organizations.length - 1].id;
+    }
+    if (updated) this.logger.log(`Standard objects added to ${updated} organizations`);
   }
 
   /** Only auth-table IDs are discovered globally; all setup data uses tenant transactions. */
