@@ -267,7 +267,7 @@ describe('showing links with the records', () => {
     const row = ok(
       await owner.get(`${rec('contact')}?include=associations&page_size=100`),
     ).results.find((r: { id: string }) => r.id === lonely);
-    expect(row.associations).toEqual({ contact_company: [], contact_deal: [] });
+    expect(row.associations).toEqual({ contact_company: [], contact_deal: [], lead_contact: [] });
   });
 });
 
@@ -354,7 +354,15 @@ describe('link fields', () => {
       label: string;
       many: boolean;
     }[];
-    expect(results.map((d) => d.name)).toEqual(['contact_company', 'contact_deal', 'deal_company']);
+    expect(results.map((d) => d.name)).toEqual([
+      'contact_company',
+      'contact_deal',
+      'deal_company',
+      'prospect_company',
+      'lead_company',
+      'prospect_lead',
+      'lead_contact',
+    ]);
     expect(results[0]).toMatchObject({ label: 'Companies', many: true });
     expect(
       ok(await owner.get(`${API}/objects`)).results.find(

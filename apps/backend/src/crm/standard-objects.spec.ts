@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { FIELD_TYPES } from './field-types';
-import { STANDARD_OBJECTS } from './standard-objects';
+import { STANDARD_ASSOCIATIONS, STANDARD_OBJECTS } from './standard-objects';
 
 const NAME = /^[a-z][a-z0-9_]{0,62}$/; // what the API accepts for object and field names
 
 describe('STANDARD_OBJECTS', () => {
-  it('are contact, company and deal', () => {
-    expect(STANDARD_OBJECTS.map((o) => o.slug)).toEqual(['contact', 'company', 'deal']);
+  it('are contact, company, deal, prospect and lead', () => {
+    expect(STANDARD_OBJECTS.map((o) => o.slug)).toEqual(['contact', 'company', 'deal', 'prospect', 'lead']);
   });
 
   it.each(STANDARD_OBJECTS.map((o) => [o.slug, o] as const))('%s only uses names and types the API accepts', (_slug, object) => {
@@ -26,6 +26,23 @@ describe('STANDARD_OBJECTS', () => {
     const textLike = (f: { type: string }) => f.type === 'TEXT' || f.type === 'EMAIL';
     expect(fields.filter((f) => f.unique).every(textLike)).toBe(true);
     expect(fields.filter((f) => f.maxLength !== undefined).every(textLike)).toBe(true);
+  });
+
+  it('only link objects that exist, with a unique link per source field', () => {
+    const slugs = new Set(STANDARD_OBJECTS.map((o) => o.slug));
+    const keys = STANDARD_ASSOCIATIONS.map((a) => `${a.source}.${a.field}`);
+    expect(new Set(keys).size).toBe(keys.length);
+    expect(new Set(STANDARD_ASSOCIATIONS.map((a) => a.name)).size).toBe(STANDARD_ASSOCIATIONS.length);
+    for (const a of STANDARD_ASSOCIATIONS) {
+      expect(slugs.has(a.source) && slugs.has(a.target)).toBe(true);
+      const source = STANDARD_OBJECTS.find((o) => o.slug === a.source)!;
+      expect(source.fields.some((f) => f.name === a.field)).toBe(false); // the link is the field
+    }
+  });
+
+  it('leaves the conversion links single-valued', () => {
+    const single = STANDARD_ASSOCIATIONS.filter((a) => a.many === false).map((a) => a.name);
+    expect(single).toEqual(['prospect_lead', 'lead_contact']);
   });
 
   it('gives every object something to call a record by', () => {

@@ -69,6 +69,8 @@ describe('durable organization setup', () => {
       'contact',
       'company',
       'deal',
+      'prospect',
+      'lead',
     ]);
     expect((await owner.post(`${setupPath(id)}/retry`)).status).toBe(404);
     expect(
@@ -98,7 +100,7 @@ describe('durable organization setup', () => {
     expect((await owner.post('/auth/organization/set-active', { organizationId: id })).status).toBe(
       200,
     );
-    expect((await owner.get('/api/v1/objects')).data.results).toHaveLength(3);
+    expect((await owner.get('/api/v1/objects')).data.results).toHaveLength(5);
   });
 
   it('rolls back failed provisioning and keeps recovery out of the application API', async () => {
