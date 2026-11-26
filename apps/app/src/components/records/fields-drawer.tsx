@@ -71,9 +71,9 @@ function EditField({
   };
   const manyProblem =
     problem !== null &&
-    (field.type === 'LINK' || field.type === 'USER') &&
+    (field.type === 'LINK' || field.type === 'USER' || field.type === 'FILE') &&
     problem.field !== 'label' &&
-    /more than one|several members/i.test(problem.message);
+    /more than one|several members|several files/i.test(problem.message);
   const optionsProblem =
     problem &&
     (problem.field === 'config.options' ||
@@ -127,7 +127,7 @@ function EditField({
                 <Input id="edit-field-target" value={field.config.target ?? ''} disabled readOnly />
               </Field>
             )}
-            {(field.type === 'LINK' || field.type === 'USER') && (
+            {(field.type === 'LINK' || field.type === 'USER' || field.type === 'FILE') && (
               <Field>
                 <FieldLabel htmlFor="edit-field-many">Holds</FieldLabel>
                 <NativeSelect
@@ -135,9 +135,15 @@ function EditField({
                   value={edit.many ? 'many' : 'one'}
                   onChange={(event) => change({ many: event.target.value === 'many' })}
                 >
-                  <option value="one">{field.type === 'LINK' ? 'One record' : 'One member'}</option>
+                  <option value="one">
+                    {field.type === 'LINK' ? 'One record' : field.type === 'FILE' ? 'One file' : 'One member'}
+                  </option>
                   <option value="many">
-                    {field.type === 'LINK' ? 'Many records' : 'Several members'}
+                    {field.type === 'LINK'
+                      ? 'Many records'
+                      : field.type === 'FILE'
+                        ? 'Several files'
+                        : 'Several members'}
                   </option>
                 </NativeSelect>
                 <FieldDescription>
@@ -172,6 +178,7 @@ function EditField({
                 )}
               </Field>
             )}
+            {field.type !== 'FILE' && (
             <label className="flex items-center gap-2 text-sm font-medium">
               <input
                 type="checkbox"
@@ -181,6 +188,8 @@ function EditField({
               />
               Searchable and sortable
             </label>
+            )}
+            {field.type !== 'FILE' && (
             <div>
               <label className="flex items-center gap-2 text-sm font-medium">
                 <input
@@ -197,6 +206,7 @@ function EditField({
                 </p>
               )}
             </div>
+            )}
           </FieldGroup>
         </form>
       </DrawerBody>
