@@ -236,6 +236,36 @@ creation is outside the workflow. Persist the SDK store and follow SDK versionin
 guidance when deploying changed workflow definitions with unfinished runs.
 
 
+## Files
+
+Files attach to records through **file fields**, to **comments**, and to **chat** messages.
+Bytes go in as a streamed multipart upload (`POST /api/v1/files`), never inline in JSON, a
+message or a tool argument; everything after that refers to a file by id. A file is capped at
+25 MB, its type is decided from its own bytes (a plain image or PDF opens in the browser,
+anything else downloads), and its metadata lives in Postgres under tenant row-level security.
+
+The bytes live on local disk in `FILES_DIR`, an absolute path (default `storage/files`,
+gitignored). **Persist that directory across restarts and deploys**, for example with a volume;
+files outside it are lost with the container. Storage sits behind the `FileStorage` interface in
+`apps/backend/src/files`, so an S3 driver is a swap, not a rewrite. Nothing yet removes the bytes
+of deleted files or of deleted organizations.
+
+A file has no access list of its own. It is readable by its uploader and by anyone who can read a
+live record or comment it is attached to, so attaching a file shares it with that record's
+readers. Only roles that can create or change records, or comment, may upload. MCP clients use
+the same scopes as the records and comments they touch: `records:read` to list and open files,
+`records:write` to upload and attach, `comments:write` to attach to a comment.
+
+A client that cannot carry the user's token, such as Claude Code, uploads out of band. Call the
+`request_file_upload` tool for a signed link (one use, five minutes, bound to that user), then
+`curl -F 'file=@sheet.xlsx' '<link>'`; the reply holds the file's id, which `get_file`, `update_record`,
+`add_comment` and the agent (for example "open file 7") take. The link is a secret: use it at once.
+
+The agent runs its `bash`, `read_file`, `write_file` and `edit_file` tools in a Docker container per
+session with no network (`apps/harness/agent/sandbox`). **Docker must be running** to build or run the
+harness (`eve build` prepares the container image). Files a person attaches to chat are staged there for
+the agent to read, and the agent can publish a file it made with `save_file`.
+
 ## Frontend access
 
 Next.js pages and API routes require a valid Better Auth session by default through
