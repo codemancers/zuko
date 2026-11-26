@@ -12,6 +12,8 @@ export const CRM_SCOPES = {
   recordsRead: 'records:read',
   recordsWrite: 'records:write',
   recordsDelete: 'records:delete',
+  commentsRead: 'comments:read',
+  commentsWrite: 'comments:write',
   schemaRead: 'schema:read',
   directoryRead: 'directory:read',
 } as const;

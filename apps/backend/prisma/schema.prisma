@@ -32,6 +32,7 @@ model User {
   descendantOf       MemberHierarchy[]   @relation("HierarchyDescendant")
   recordShares       RecordShare[]
   oauthclients       OauthClient[]
+  recordComments     RecordComment[]
   oauthrefreshtokens OauthRefreshToken[]
   oauthaccesstokens  OauthAccessToken[]
   oauthconsents      OauthConsent[]
@@ -224,6 +225,7 @@ model ObjectRecord {
   shares   RecordShare[]
 
   @@unique([organizationId, id])
+  comments RecordComment[]
   @@index([organizationId, objectTypeId, createdAt(sort: Desc)])
   @@index([organizationId, objectTypeId, ownerId])
   @@index([organizationId, teamId])
@@ -335,6 +337,29 @@ model RecordChange {
 
 // Auth and organization events (sign-in, invitations, role and team changes...),
 // written by the better-auth audit plugin. organizationId is null for events that
+// A comment on a record. Shown beside RecordChange rows in one timeline (the activity feed),
+// but kept apart: a change is immutable history, a comment can be edited and removed by its author.
+model RecordComment {
+  id             BigInt       @id @default(autoincrement())
+  organizationId BigInt
+  recordId       BigInt
+  record         ObjectRecord @relation(fields: [organizationId, recordId], references: [organizationId, id], onDelete: Cascade)
+  objectTypeId   BigInt
+  authorId       BigInt?
+  author         User?        @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  actorType      String // USER | MCP | AGENT
+  // Markdown.
+  body           String
+  // Members mentioned with @; each can read the record (checked when written).
+  mentions       BigInt[]     @default([])
+  editedAt       DateTime?
+  createdAt      DateTime     @default(dbgenerated("timezone('utc'::text, now())"))
+  deletedAt      DateTime?
+
+  @@index([organizationId, recordId, createdAt, id])
+  @@map("record_comment")
+}
+
 // belong to no organization, such as a failed sign-in.
 model AuditEvent {
   id             BigInt   @id @default(autoincrement())
