@@ -5,8 +5,9 @@ import { PrismaService, type TenantTransaction } from '../prisma/prisma.service'
 import type { RequestContext } from './context';
 import { forbidden, notFound, parse, validationFailed, type FieldError } from './errors';
 import { idField, parseId } from './ids';
-import { validateProperties } from './field-types';
+import { holdsMany, validateProperties } from './field-types';
 import { assertCan, resolveScopes, visibilitySql, type Mode, type Scope } from './permissions';
+import { RecordFilesService, type AttachedFile, type FileValue } from './record-files.service';
 import { SchemaService, type ObjectWithFields } from './schema.service';
 
 type Props = Record<string, unknown>;
@@ -41,10 +42,11 @@ const liveProperties = (object: ObjectWithFields, properties: unknown) => {
   return Object.fromEntries(Object.entries((properties ?? {}) as Props).filter(([key]) => live.has(key)));
 };
 
-export const recordDto = (object: ObjectWithFields, r: ObjectRecord) => ({
+/** `files` are the record's FILE field values: they live in their own table, so a read adds them to the properties. */
+export const recordDto = (object: ObjectWithFields, r: ObjectRecord, files: Record<string, AttachedFile | AttachedFile[]> = {}) => ({
   id: String(r.id),
   object: object.slug,
-  properties: liveProperties(object, r.properties),
+  properties: { ...liveProperties(object, r.properties), ...files },
   owner_id: r.ownerId === null ? null : String(r.ownerId),
   team_id: r.teamId === null ? null : String(r.teamId),
   created_by: r.createdBy === null ? null : String(r.createdBy),
@@ -74,7 +76,50 @@ export class RecordsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly schema: SchemaService,
+    private readonly files: RecordFilesService,
   ) {}
+
+  /** Records as the API shows them, with their attached files filled in by one lookup. */
+  async dtos(tx: TenantTransaction, ctx: RequestContext, object: ObjectWithFields, rows: ObjectRecord[]) {
+    const files = await this.files.valuesFor(tx, ctx, object, rows.map((r) => r.id));
+    return rows.map((r) => recordDto(object, r, files.get(r.id)));
+  }
+
+  /** FILE values are kept out of `properties`: they are stored as attachments. */
+  private splitFiles(object: ObjectWithFields, set: Props, clear: string[] = []) {
+    const names = new Set(object.fields.filter((f) => f.type === 'FILE').map((f) => f.name));
+    const props: Props = {};
+    const files: Record<string, FileValue> = {};
+    for (const [name, value] of Object.entries(set)) {
+      if (names.has(name)) files[name] = value as FileValue;
+      else props[name] = value;
+    }
+    for (const name of clear) if (names.has(name)) files[name] = null;
+    return { props, files };
+  }
+
+  /** A FILE field may only name files the caller can read (their own uploads, or files on records they can read). */
+  private assertAttachable(tx: TenantTransaction, ctx: RequestContext, files: Record<string, FileValue>) {
+    return this.files.assertAttachable(tx, ctx, new Map(Object.entries(files).map(([name, v]) => [name, v === null ? [] : [v].flat()])));
+  }
+
+  /** old -> new for each FILE field whose attachments differ, as ids (never names). */
+  private fileChanges(object: ObjectWithFields, before: Record<string, FileValue>, after: Record<string, FileValue>) {
+    const sensitive = new Set(object.fields.filter((f) => f.sensitive).map((f) => f.name));
+    const changes: Record<string, Change> = {};
+    for (const name of Object.keys(after)) {
+      const a = before[name] ?? null;
+      const b = after[name] ?? null;
+      if (JSON.stringify(a) !== JSON.stringify(b)) changes[name] = sensitive.has(name) ? { old: '[redacted]', new: '[redacted]' } : { old: a, new: b };
+    }
+    return changes;
+  }
+
+  /** The values a FILE field is set to, normalized the way they read back: a single id, or a list or null for many. */
+  private normalizeFiles(object: ObjectWithFields, files: Record<string, FileValue>) {
+    const many = new Set(object.fields.filter((f) => f.type === 'FILE' && holdsMany(f)).map((f) => f.name));
+    return Object.fromEntries(Object.entries(files).map(([name, v]) => [name, v === null ? null : many.has(name) ? [v].flat() : v]));
+  }
 
   tenant<T>(ctx: RequestContext, fn: (tx: TenantTransaction) => Promise<T>) {
     return this.prisma.withTenant({ organizationId: ctx.organizationId, actorId: ctx.userId }, fn);
@@ -218,12 +263,14 @@ export class RecordsService {
 
     return this.tenant(ctx, async (tx) => {
       const object = await this.schema.loadObject(tx, ctx, objectName);
-      const { set, errors } = validateProperties(object.fields, input.properties, 'create');
+      const { set: allSet, errors } = validateProperties(object.fields, input.properties, 'create');
       if (errors.length > 0) {
         throw validationFailed(errors);
       }
+      const { props: set, files } = this.splitFiles(object, allSet);
       await this.assertUnique(tx, ctx, object, set, null);
       await this.assertMembers(tx, ctx, object, set);
+      await this.assertAttachable(tx, ctx, files);
 
       const ownerId = input.owner_id === undefined ? ctx.userId : input.owner_id;
       const teamId = input.team_id ?? null;
@@ -240,12 +287,14 @@ export class RecordsService {
           updatedBy: ctx.userId,
         },
       });
+      for (const [name, value] of Object.entries(files)) await this.files.set(tx, ctx, created.id, name, value);
       await this.logChange(tx, ctx, object, created.id, 'CREATE', {
         ...diff(object, {}, set),
+        ...this.fileChanges(object, {}, this.normalizeFiles(object, files)),
         ...(ownerId === null ? {} : { owner_id: { old: null, new: String(ownerId) } }),
         ...(teamId === null ? {} : { team_id: { old: null, new: String(teamId) } }),
       });
-      return recordDto(object, created);
+      return (await this.dtos(tx, ctx, object, [created]))[0];
     });
   }
 
@@ -254,7 +303,19 @@ export class RecordsService {
     const recordId = toId(rawId, objectName);
     return this.tenant(ctx, async (tx) => {
       const object = await this.schema.loadObject(tx, ctx, objectName);
-      return recordDto(object, await this.loadFor(tx, ctx, object, recordId, 'read'));
+      return (await this.dtos(tx, ctx, object, [await this.loadFor(tx, ctx, object, recordId, 'read')]))[0];
+    });
+  }
+
+  /** Every file attached to a record, through its file fields and its comments, newest first. */
+  async listFiles(ctx: RequestContext, objectName: string, rawId: string, query: Record<string, string | undefined>) {
+    assertCan(ctx, { record: ['read'] }, 'view records');
+    const recordId = toId(rawId, objectName);
+    const { limit } = parse(z.object({ limit: z.coerce.number().int().min(1).max(200).default(100) }), { limit: query['limit'] });
+    return this.tenant(ctx, async (tx) => {
+      const object = await this.schema.loadObject(tx, ctx, objectName);
+      await this.loadFor(tx, ctx, object, recordId, 'read');
+      return { results: await this.files.listForRecord(tx, ctx, object, recordId, limit) };
     });
   }
 
@@ -268,12 +329,16 @@ export class RecordsService {
       await this.lockRecord(tx, ctx, recordId);
       const row = await this.loadFor(tx, ctx, object, recordId, 'write');
 
-      const { set, clear, errors } = validateProperties(object.fields, input.properties ?? {}, 'update');
+      const { set: allSet, clear, errors } = validateProperties(object.fields, input.properties ?? {}, 'update');
       if (errors.length > 0) {
         throw validationFailed(errors);
       }
+      const { props: set, files } = this.splitFiles(object, allSet, clear);
       await this.assertUnique(tx, ctx, object, set, recordId);
       await this.assertMembers(tx, ctx, object, set);
+      await this.assertAttachable(tx, ctx, files);
+      const newFiles = this.normalizeFiles(object, files);
+      const fileDiff = Object.keys(files).length ? this.fileChanges(object, await this.files.valueOf(tx, ctx, object, recordId), newFiles) : {};
 
       const before = row.properties as Props;
       const after: Props = { ...before, ...set };
@@ -289,18 +354,20 @@ export class RecordsService {
 
       const changes: Record<string, Change> = {
         ...diff(object, before, after),
+        ...fileDiff,
         ...(ownerId === row.ownerId ? {} : { owner_id: { old: row.ownerId === null ? null : String(row.ownerId), new: ownerId === null ? null : String(ownerId) } }),
         ...(teamId === row.teamId ? {} : { team_id: { old: row.teamId === null ? null : String(row.teamId), new: teamId === null ? null : String(teamId) } }),
       };
       if (Object.keys(changes).length === 0) {
-        return recordDto(object, row);
+        return (await this.dtos(tx, ctx, object, [row]))[0];
       }
       const updated = await tx.objectRecord.update({
         where: { id: recordId },
         data: { properties: after as Prisma.InputJsonObject, ownerId, teamId, updatedBy: ctx.userId },
       });
+      for (const name of Object.keys(fileDiff)) await this.files.set(tx, ctx, recordId, name, newFiles[name] ?? null);
       await this.logChange(tx, ctx, object, recordId, 'UPDATE', changes);
-      return recordDto(object, updated);
+      return (await this.dtos(tx, ctx, object, [updated]))[0];
     });
   }
 

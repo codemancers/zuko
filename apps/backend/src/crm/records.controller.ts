@@ -59,6 +59,13 @@ export class RecordsController {
     return this.records.get(ctx, object, id);
   }
 
+  /** Everything attached to the record: its file fields and its comments. */
+  @Get(':id/files')
+  @HarnessAccess('records:read')
+  files(@Crm() ctx: RequestContext, @Param('object') object: string, @Param('id') id: string, @Query() query: Record<string, string | undefined>) {
+    return this.records.listFiles(ctx, object, id, query);
+  }
+
   @Patch(':id')
   @HarnessAccess('records:write')
   update(
