@@ -31,7 +31,7 @@ const send = (url: string, filename: string, bytes: Uint8Array, field = 'file') 
 };
 const issue = async (user = owner) => ok(await user.post(`${API}/files/uploads`, {}), 201) as { upload_url: string; expires_at: string; expires_in_seconds: number; max_bytes: number; method: string; field: string; single_use: boolean };
 const secretOf = (url: string) => url.split('/').at(-1)!.split('.')[2];
-const fileCount = () => withDb(async (db) => (await db.query('SELECT count(*)::int AS n FROM stored_file WHERE "organizationId" = $1', [org])).rows[0].n as number);
+const fileCount = () => withDb(async (db) => (await db.query('SELECT count(*)::int AS n FROM stored_file WHERE "organization_id" = $1', [org])).rows[0].n as number);
 
 beforeAll(async () => {
   for (const user of [owner, alice, carol]) ok(await user.signUp());
@@ -64,12 +64,12 @@ describe('asking for a link', () => {
   it('records who asked, and stores only a hash of the secret', async () => {
     const link = await issue();
     const id = link.upload_url.split('/').at(-1)!.split('.')[1];
-    const rows = await withDb(async (db) => (await db.query('SELECT "secretHash", "userId"::text AS u, "actorType" FROM upload_ticket WHERE id = $1', [id])).rows);
+    const rows = await withDb(async (db) => (await db.query('SELECT "secret_hash" AS "secretHash", "user_id"::text AS u, "actor_type" AS "actorType" FROM upload_ticket WHERE id = $1', [id])).rows);
     expect(rows[0].u).toBe(owner.id);
     expect(rows[0].actorType).toBe('USER');
     expect(rows[0].secretHash).toMatch(/^[0-9a-f]{64}$/);
     expect(rows[0].secretHash).not.toContain(secretOf(link.upload_url));
-    const audit = await withDb(async (db) => (await db.query(`SELECT "actorType", "actorId"::text AS a FROM audit_event WHERE event = 'file.upload_link.issued' AND "targetId" = $1`, [id])).rows);
+    const audit = await withDb(async (db) => (await db.query(`SELECT "actor_type" AS "actorType", "actor_id"::text AS a FROM audit_event WHERE event = 'file.upload_link.issued' AND "target_id" = $1`, [id])).rows);
     expect(audit).toEqual([{ actorType: 'USER', a: owner.id }]);
   });
 });
@@ -84,7 +84,7 @@ describe('uploading to a link', () => {
     expect(down.bytes.equals(pdf)).toBe(true);
     // it belongs to the user who asked, not to whoever held the link
     expect((await alice.get(`${API}/files/${reply.data.id}`)).status).toBe(404);
-    const audit = await withDb(async (db) => (await db.query(`SELECT "actorType", "actorId"::text AS a FROM audit_event WHERE event = 'file.uploaded' AND "targetId" = $1`, [reply.data.id])).rows);
+    const audit = await withDb(async (db) => (await db.query(`SELECT "actor_type" AS "actorType", "actor_id"::text AS a FROM audit_event WHERE event = 'file.uploaded' AND "target_id" = $1`, [reply.data.id])).rows);
     expect(audit).toEqual([{ actorType: 'USER', a: owner.id }]);
   });
 
@@ -109,7 +109,7 @@ describe('uploading to a link', () => {
   it('refuses an expired link', async () => {
     const link = await issue();
     const id = link.upload_url.split('/').at(-1)!.split('.')[1];
-    await withDb((db) => db.query(`UPDATE upload_ticket SET "expiresAt" = now() - interval '1 minute' WHERE id = $1`, [id]));
+    await withDb((db) => db.query(`UPDATE upload_ticket SET "expires_at" = now() - interval '1 minute' WHERE id = $1`, [id]));
     const reply = await send(link.upload_url, 'late.pdf', pdf);
     expect(reply.status).toBe(410);
     expect(reply.data.code).toBe('UPLOAD_LINK_EXPIRED');
@@ -161,7 +161,7 @@ describe('what the upload accepts', () => {
 
 describe('who may upload', () => {
   const setRole = (user: User, role: string) =>
-    withDb((db) => db.query('UPDATE member SET role = $1 WHERE "userId" = $2 AND "organizationId" = $3', [role, user.id, org]));
+    withDb((db) => db.query('UPDATE member SET role = $1 WHERE "user_id" = $2 AND "organization_id" = $3', [role, user.id, org]));
   afterAll(() => setRole(alice, 'member'));
 
   it('refuses a role that can neither change records nor comment, before reading any bytes', async () => {

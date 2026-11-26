@@ -29,7 +29,7 @@ describe.skipIf(!url)('tenant isolation (row-level security)', () => {
   const prisma = url ? connect(url) : (undefined as never);
 
   const insert = (tx: Pick<PrismaService, '$executeRawUnsafe'>, table: string, org: number | null) =>
-    tx.$executeRawUnsafe(`INSERT INTO ${table} ("organizationId", note) VALUES ($1, 'x')`, org);
+    tx.$executeRawUnsafe(`INSERT INTO ${table} ("organization_id", note) VALUES ($1, 'x')`, org);
   const count = async (tx: Pick<PrismaService, '$queryRawUnsafe'>, table: string) =>
     Number(((await tx.$queryRawUnsafe(`SELECT count(*) AS n FROM ${table}`)) as { n: bigint }[])[0].n);
 
@@ -38,12 +38,12 @@ describe.skipIf(!url)('tenant isolation (row-level security)', () => {
     for (const t of ['tenancy_probe', 'tenancy_probe_global']) {
       await prisma.$executeRawUnsafe(`DROP TABLE IF EXISTS ${t}`);
       await prisma.$executeRawUnsafe(
-        `CREATE TABLE ${t} (id bigserial PRIMARY KEY, "organizationId" bigint, note text)`,
+        `CREATE TABLE ${t} (id bigserial PRIMARY KEY, "organization_id" bigint, note text)`,
       );
     }
     await prisma.$executeRawUnsafe(`CALL enable_tenant_rls('tenancy_probe')`);
     await prisma.$executeRawUnsafe(
-      `CALL enable_tenant_rls('tenancy_probe_global', 'organizationId', true)`,
+      `CALL enable_tenant_rls('tenancy_probe_global', 'organization_id', true)`,
     );
     await prisma.withTenant({ organizationId: 1 }, (tx) => insert(tx, 'tenancy_probe', 1));
     await prisma.withTenant({ organizationId: 2 }, (tx) => insert(tx, 'tenancy_probe', 2));
@@ -67,8 +67,8 @@ describe.skipIf(!url)('tenant isolation (row-level security)', () => {
 
   it('cannot update or delete another tenant\'s rows', async () => {
     const [updated, deleted] = await prisma.withTenant({ organizationId: 1 }, async (tx) => [
-      await tx.$executeRawUnsafe(`UPDATE tenancy_probe SET note = 'hacked' WHERE "organizationId" = 2`),
-      await tx.$executeRawUnsafe(`DELETE FROM tenancy_probe WHERE "organizationId" = 2`),
+      await tx.$executeRawUnsafe(`UPDATE tenancy_probe SET note = 'hacked' WHERE "organization_id" = 2`),
+      await tx.$executeRawUnsafe(`DELETE FROM tenancy_probe WHERE "organization_id" = 2`),
     ]);
     expect([updated, deleted]).toEqual([0, 0]);
     expect(await prisma.withTenant({ organizationId: 2 }, (tx) => count(tx, 'tenancy_probe'))).toBe(1);

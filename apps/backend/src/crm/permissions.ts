@@ -84,21 +84,21 @@ export function visibilitySql(ctx: RequestContext, scopes: ReadonlySet<Scope>, m
     if (scope === 'ALL') {
       return Prisma.sql`TRUE`;
     }
-    parts.push(Prisma.sql`r."ownerId" = ${ctx.userId}`);
+    parts.push(Prisma.sql`r."owner_id" = ${ctx.userId}`);
     if (scope === 'OWN_AND_REPORTS') {
-      parts.push(Prisma.sql`r."ownerId" IN (
-        SELECT "descendantId" FROM member_hierarchy
-        WHERE "organizationId" = ${ctx.organizationId} AND "ancestorId" = ${ctx.userId})`);
+      parts.push(Prisma.sql`r."owner_id" IN (
+        SELECT "descendant_id" FROM member_hierarchy
+        WHERE "organization_id" = ${ctx.organizationId} AND "ancestor_id" = ${ctx.userId})`);
     }
     if (scope === 'TEAM') {
-      parts.push(Prisma.sql`r."teamId" = ANY(${ctx.teamIds}::bigint[])`);
+      parts.push(Prisma.sql`r."team_id" = ANY(${ctx.teamIds}::bigint[])`);
     }
   }
   const needsWrite = mode === 'write' ? Prisma.sql`AND s."access" = 'WRITE'` : Prisma.empty;
   parts.push(Prisma.sql`EXISTS (
     SELECT 1 FROM record_share s
-    WHERE s."organizationId" = r."organizationId" AND s."recordId" = r."id"
-      AND (s."userId" = ${ctx.userId} OR s."teamId" = ANY(${ctx.teamIds}::bigint[]))
+    WHERE s."organization_id" = r."organization_id" AND s."record_id" = r."id"
+      AND (s."user_id" = ${ctx.userId} OR s."team_id" = ANY(${ctx.teamIds}::bigint[]))
       ${needsWrite})`);
   return Prisma.sql`(${Prisma.join(parts, ' OR ')})`;
 }

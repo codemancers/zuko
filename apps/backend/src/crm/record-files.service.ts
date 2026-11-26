@@ -111,18 +111,18 @@ export class RecordFilesService {
     if (rest.length === 0 || !can(ctx, { record: ['read'] })) return readable;
 
     const links = await tx.$queryRaw<{ fileId: bigint; recordId: bigint; objectTypeId: bigint }[]>(Prisma.sql`
-      SELECT rf."fileId", rf."recordId", r."objectTypeId"
+      SELECT rf."file_id" AS "fileId", rf."record_id" AS "recordId", r."object_type_id" AS "objectTypeId"
       FROM record_file rf
-      JOIN object_record r ON r."organizationId" = rf."organizationId" AND r."id" = rf."recordId" AND r."deletedAt" IS NULL
-      JOIN field_definition fd ON fd."objectTypeId" = r."objectTypeId" AND fd."name" = rf."fieldName"
-        AND fd."type" = 'FILE' AND fd."deletedAt" IS NULL
-      WHERE rf."organizationId" = ${ctx.organizationId} AND rf."fileId" IN (${Prisma.join(rest)})
+      JOIN object_record r ON r."organization_id" = rf."organization_id" AND r."id" = rf."record_id" AND r."deleted_at" IS NULL
+      JOIN field_definition fd ON fd."object_type_id" = r."object_type_id" AND fd."name" = rf."field_name"
+        AND fd."type" = 'FILE' AND fd."deleted_at" IS NULL
+      WHERE rf."organization_id" = ${ctx.organizationId} AND rf."file_id" IN (${Prisma.join(rest)})
       UNION ALL
-      SELECT cf."fileId", c."recordId", c."objectTypeId"
+      SELECT cf."file_id" AS "fileId", c."record_id" AS "recordId", c."object_type_id" AS "objectTypeId"
       FROM comment_file cf
-      JOIN record_comment c ON c."organizationId" = cf."organizationId" AND c."id" = cf."commentId" AND c."deletedAt" IS NULL
-      JOIN object_record r ON r."organizationId" = c."organizationId" AND r."id" = c."recordId" AND r."deletedAt" IS NULL
-      WHERE cf."organizationId" = ${ctx.organizationId} AND cf."fileId" IN (${Prisma.join(rest)})`);
+      JOIN record_comment c ON c."organization_id" = cf."organization_id" AND c."id" = cf."comment_id" AND c."deleted_at" IS NULL
+      JOIN object_record r ON r."organization_id" = c."organization_id" AND r."id" = c."record_id" AND r."deleted_at" IS NULL
+      WHERE cf."organization_id" = ${ctx.organizationId} AND cf."file_id" IN (${Prisma.join(rest)})`);
     const byType = new Map<bigint, bigint[]>();
     for (const link of links) byType.set(link.objectTypeId, [...(byType.get(link.objectTypeId) ?? []), link.recordId]);
     for (const [objectTypeId, recordIds] of byType) {
@@ -131,7 +131,7 @@ export class RecordFilesService {
         (
           await tx.$queryRaw<{ id: bigint }[]>(Prisma.sql`
             SELECT r."id" FROM object_record r
-            WHERE r."organizationId" = ${ctx.organizationId} AND r."id" IN (${Prisma.join(recordIds)})
+            WHERE r."organization_id" = ${ctx.organizationId} AND r."id" IN (${Prisma.join(recordIds)})
               AND ${visibilitySql(ctx, scopes, 'read')}`)
         ).map((row) => row.id),
       );
@@ -146,15 +146,15 @@ export class RecordFilesService {
   async attachmentCount(tx: TenantTransaction, ctx: RequestContext, fileId: bigint) {
     const rows = await tx.$queryRaw<{ n: bigint }[]>(Prisma.sql`
       SELECT count(*) AS n FROM record_file rf
-      JOIN object_record r ON r."organizationId" = rf."organizationId" AND r."id" = rf."recordId" AND r."deletedAt" IS NULL
-      JOIN field_definition fd ON fd."objectTypeId" = r."objectTypeId" AND fd."name" = rf."fieldName"
-        AND fd."type" = 'FILE' AND fd."deletedAt" IS NULL
-      WHERE rf."organizationId" = ${ctx.organizationId} AND rf."fileId" = ${fileId}`);
+      JOIN object_record r ON r."organization_id" = rf."organization_id" AND r."id" = rf."record_id" AND r."deleted_at" IS NULL
+      JOIN field_definition fd ON fd."object_type_id" = r."object_type_id" AND fd."name" = rf."field_name"
+        AND fd."type" = 'FILE' AND fd."deleted_at" IS NULL
+      WHERE rf."organization_id" = ${ctx.organizationId} AND rf."file_id" = ${fileId}`);
     const onComments = await tx.$queryRaw<{ n: bigint }[]>(Prisma.sql`
       SELECT count(*) AS n FROM comment_file cf
-      JOIN record_comment c ON c."organizationId" = cf."organizationId" AND c."id" = cf."commentId" AND c."deletedAt" IS NULL
-      JOIN object_record r ON r."organizationId" = c."organizationId" AND r."id" = c."recordId" AND r."deletedAt" IS NULL
-      WHERE cf."organizationId" = ${ctx.organizationId} AND cf."fileId" = ${fileId}`);
+      JOIN record_comment c ON c."organization_id" = cf."organization_id" AND c."id" = cf."comment_id" AND c."deleted_at" IS NULL
+      JOIN object_record r ON r."organization_id" = c."organization_id" AND r."id" = c."record_id" AND r."deleted_at" IS NULL
+      WHERE cf."organization_id" = ${ctx.organizationId} AND cf."file_id" = ${fileId}`);
     return Number(rows[0]?.n ?? 0) + Number(onComments[0]?.n ?? 0);
   }
 
@@ -169,7 +169,7 @@ export class RecordFilesService {
     if (ids.length === 0) return;
     await tx.$queryRaw(Prisma.sql`
       SELECT "id" FROM stored_file
-      WHERE "organizationId" = ${ctx.organizationId} AND "id" IN (${Prisma.join(ids)})
+      WHERE "organization_id" = ${ctx.organizationId} AND "id" IN (${Prisma.join(ids)})
       ORDER BY "id" ${mode === 'delete' ? Prisma.sql`FOR UPDATE` : Prisma.sql`FOR SHARE`}`);
   }
 

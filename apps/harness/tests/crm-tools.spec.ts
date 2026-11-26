@@ -60,7 +60,7 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)('CRM tool integration', () => {
         password: 'Harness-executor-test-2026!',
       })
     ).user.id;
-    await withDb((db) => db.query('UPDATE "user" SET "emailVerified"=true WHERE id=$1', [userId]));
+    await withDb((db) => db.query('UPDATE "user" SET "email_verified"=true WHERE id=$1', [userId]));
     organizationId = (
       await post('/auth/organization/create', {
         name: 'Harness tool checks',
@@ -72,7 +72,7 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)('CRM tool integration', () => {
       const ready = await withDb(
         async (db) =>
           (
-            await db.query('SELECT status FROM organization_setup WHERE "organizationId"=$1', [
+            await db.query('SELECT status FROM organization_setup WHERE "organization_id"=$1', [
               organizationId,
             ])
           ).rows[0]?.status === 'ready',
@@ -106,14 +106,14 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)('CRM tool integration', () => {
       withDb(async (db) => {
         await db.query('BEGIN');
         await db.query("SELECT set_config('app.audit_purge','on',true)");
-        await db.query('DELETE FROM audit_event WHERE "organizationId"=$1 OR "actorId"=$2', [
+        await db.query('DELETE FROM audit_event WHERE "organization_id"=$1 OR "actor_id"=$2', [
           organizationId || '0',
           userId || '0',
         ]);
-        await db.query('DELETE FROM record_change WHERE "organizationId"=$1', [
+        await db.query('DELETE FROM record_change WHERE "organization_id"=$1', [
           organizationId || '0',
         ]);
-        await db.query('DELETE FROM object_record WHERE "organizationId"=$1', [
+        await db.query('DELETE FROM object_record WHERE "organization_id"=$1', [
           organizationId || '0',
         ]);
         await db.query('DELETE FROM organization WHERE id=$1', [organizationId || '0']);
@@ -304,7 +304,7 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)('CRM tool integration', () => {
       async (db) =>
         (
           await db.query(
-            'SELECT count(*)::int AS count FROM object_record WHERE "organizationId"=$1 AND properties->>\'first_name\'=$2',
+            'SELECT count(*)::int AS count FROM object_record WHERE "organization_id"=$1 AND properties->>\'first_name\'=$2',
             [ctx.session.auth.current!.attributes['urn:zuko:org_id'], `Cancelled ${run}`],
           )
         ).rows[0].count,

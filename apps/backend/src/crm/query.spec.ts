@@ -96,7 +96,7 @@ describe('filterSql', () => {
 describe('orderSql', () => {
   it('defaults to newest first with id as tie-breaker', () => {
     const sql = orderSql(undefined, fields).sql;
-    expect(sql).toContain('"createdAt" DESC');
+    expect(sql).toContain('"created_at" DESC');
     expect(sql).toContain('r."id" DESC');
   });
 

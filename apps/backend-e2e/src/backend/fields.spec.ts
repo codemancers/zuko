@@ -165,7 +165,7 @@ describe('history of a record whose sensitive field was removed', () => {
     ok(await owner.del(`${RECORDS}/${id}`));
 
     // The API cannot read a deleted record's history, so look at the rows themselves.
-    const rows = await withDb((db) => db.query('SELECT action, changes FROM record_change WHERE "recordId" = $1 ORDER BY id', [id]));
+    const rows = await withDb((db) => db.query('SELECT action, changes FROM record_change WHERE "record_id" = $1 ORDER BY id', [id]));
     const history = rows.rows as { action: string; changes: Record<string, { old: unknown; new: unknown }> }[];
     expect(history.map((h) => h.action)).toEqual(['CREATE', 'DELETE']);
     for (const entry of history) {

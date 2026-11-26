@@ -132,7 +132,7 @@ export class RecordsService {
    * With the lock the second waits, then reads what the first wrote.
    */
   private async lockRecord(tx: TenantTransaction, ctx: RequestContext, recordId: bigint) {
-    await tx.$queryRaw`SELECT 1 FROM object_record WHERE "id" = ${recordId} AND "organizationId" = ${ctx.organizationId} FOR UPDATE`;
+    await tx.$queryRaw`SELECT 1 FROM object_record WHERE "id" = ${recordId} AND "organization_id" = ${ctx.organizationId} FOR UPDATE`;
   }
 
   /** The live record, or 404. Does not check who may see it. */
@@ -150,7 +150,7 @@ export class RecordsService {
     const scopes = await resolveScopes(tx, ctx, object.id, mode);
     const rows = await tx.$queryRaw<{ ok: number }[]>(Prisma.sql`
       SELECT 1 AS ok FROM object_record r
-      WHERE r."id" = ${recordId} AND r."organizationId" = ${ctx.organizationId} AND r."deletedAt" IS NULL
+      WHERE r."id" = ${recordId} AND r."organization_id" = ${ctx.organizationId} AND r."deleted_at" IS NULL
         AND ${visibilitySql(ctx, scopes, mode)}`);
     return rows.length > 0;
   }
@@ -174,7 +174,7 @@ export class RecordsService {
       await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`${ctx.organizationId}:${object.id}:${field.name}`}))`;
       const taken = await tx.$queryRaw<{ id: bigint }[]>`
         SELECT "id" FROM object_record
-        WHERE "organizationId" = ${ctx.organizationId} AND "objectTypeId" = ${object.id} AND "deletedAt" IS NULL
+        WHERE "organization_id" = ${ctx.organizationId} AND "object_type_id" = ${object.id} AND "deleted_at" IS NULL
           AND lower("properties"->>${field.name}) = lower(${String(values[field.name])})
           AND (${selfId}::bigint IS NULL OR "id" <> ${selfId}::bigint)
         LIMIT 1`;

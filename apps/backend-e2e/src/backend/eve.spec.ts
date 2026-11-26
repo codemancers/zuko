@@ -50,7 +50,7 @@ beforeAll(async () => {
 
 afterAll(async () => {
   await cleanup(suffix, [slug]);
-  await withDb((db) => db.query('DELETE FROM oauth_client WHERE "clientId" = ANY($1)', [clients]));
+  await withDb((db) => db.query('DELETE FROM oauth_client WHERE "client_id" = ANY($1)', [clients]));
 }, 60_000);
 
 describe('backend-issued harness delegation', () => {
@@ -136,7 +136,7 @@ describe('backend-issued harness delegation', () => {
     const route = ok(await user.post('/api/v1/eve/token'));
     const grant = tokenGrant(route.access_token);
     await withDb((db) =>
-      db.query('UPDATE organization_setup SET status=$1 WHERE "organizationId"=$2', [
+      db.query('UPDATE organization_setup SET status=$1 WHERE "organization_id"=$2', [
         'running',
         organizationId,
       ]),
@@ -145,7 +145,7 @@ describe('backend-issued harness delegation', () => {
       expect((await post('delegate', grant)).status).toBe(409);
     } finally {
       await withDb((db) =>
-        db.query('UPDATE organization_setup SET status=$1 WHERE "organizationId"=$2', [
+        db.query('UPDATE organization_setup SET status=$1 WHERE "organization_id"=$2', [
           'ready',
           organizationId,
         ]),
@@ -155,7 +155,7 @@ describe('backend-issued harness delegation', () => {
       async (db) =>
         (
           await db.query(
-            'DELETE FROM member WHERE "userId"=$1 AND "organizationId"=$2 RETURNING *',
+            'DELETE FROM member WHERE "user_id"=$1 AND "organization_id"=$2 RETURNING *',
             [user.id, organizationId],
           )
         ).rows[0],
@@ -165,7 +165,7 @@ describe('backend-issued harness delegation', () => {
     } finally {
       await withDb((db) =>
         db.query(
-          'INSERT INTO member (id,"userId","organizationId",role,"createdAt") VALUES ($1,$2,$3,$4,$5)',
+          'INSERT INTO member (id,"user_id","organization_id",role,"created_at") VALUES ($1,$2,$3,$4,$5)',
           [member.id, user.id, organizationId, member.role, member.createdAt],
         ),
       );
@@ -180,7 +180,7 @@ describe('grant lifetime', () => {
     const delegated = await delegate(grant);
     expect((await api('objects', delegated.access_token + 'x')).status).toBe(401);
     await withDb((db) =>
-      db.query('UPDATE harness_grant SET "expiresAt"=$1 WHERE reference=$2', [
+      db.query('UPDATE harness_grant SET "expires_at"=$1 WHERE reference=$2', [
         new Date(0),
         grant.reference,
       ]),

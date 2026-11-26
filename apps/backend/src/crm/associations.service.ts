@@ -48,8 +48,8 @@ export function recordLabel(object: ObjectWithFields, id: bigint, properties: un
 
 /** Which column of `association` holds this record's side, and which the other's. */
 const columns = (forward: boolean) => ({
-  mine: Prisma.raw(forward ? '"sourceId"' : '"targetId"'),
-  other: Prisma.raw(forward ? '"targetId"' : '"sourceId"'),
+  mine: Prisma.raw(forward ? '"source_id"' : '"target_id"'),
+  other: Prisma.raw(forward ? '"target_id"' : '"source_id"'),
 });
 
 @Injectable()
@@ -102,10 +102,10 @@ export class AssociationsService {
     const scopes = await resolveScopes(tx, ctx, other.id, 'read');
     const rows = await tx.$queryRaw<{ id: bigint }[]>(Prisma.sql`
       SELECT a.${theirs} AS id FROM association a
-      JOIN object_record r ON r."organizationId" = a."organizationId" AND r."id" = a.${theirs}
-      WHERE a."organizationId" = ${ctx.organizationId} AND a."definitionId" = ${def.id} AND a.${mine} = ${recordId}
-        AND r."deletedAt" IS NULL AND ${visibilitySql(ctx, scopes, 'read')}
-      ORDER BY a."createdAt", a.${theirs}`);
+      JOIN object_record r ON r."organization_id" = a."organization_id" AND r."id" = a.${theirs}
+      WHERE a."organization_id" = ${ctx.organizationId} AND a."definition_id" = ${def.id} AND a.${mine} = ${recordId}
+        AND r."deleted_at" IS NULL AND ${visibilitySql(ctx, scopes, 'read')}
+      ORDER BY a."created_at", a.${theirs}`);
     return rows.map((row) => row.id);
   }
 
@@ -220,9 +220,9 @@ export class AssociationsService {
       const onlyOne = forward && !def.many;
       if (onlyOne) {
         const stored = await tx.$queryRaw<{ id: bigint; deletedAt: Date | null }[]>(Prisma.sql`
-          SELECT r."id", r."deletedAt" FROM association a
-          JOIN object_record r ON r."organizationId" = a."organizationId" AND r."id" = a."targetId"
-          WHERE a."organizationId" = ${ctx.organizationId} AND a."definitionId" = ${def.id} AND a."sourceId" = ${recordId}`);
+          SELECT r."id", r."deleted_at" AS "deletedAt" FROM association a
+          JOIN object_record r ON r."organization_id" = a."organization_id" AND r."id" = a."target_id"
+          WHERE a."organization_id" = ${ctx.organizationId} AND a."definition_id" = ${def.id} AND a."source_id" = ${recordId}`);
         // A hidden live target must stay untouched; otherwise a new link would make this field hold two.
         if (stored.some((row) => row.deletedAt === null && !current.includes(row.id))) {
           throw forbidden('This link cannot be changed with your current access');
@@ -245,7 +245,7 @@ export class AssociationsService {
       const reachable = desired.length
         ? await tx.$queryRaw<{ id: bigint }[]>(Prisma.sql`
             SELECT r."id" FROM object_record r
-            WHERE r."organizationId" = ${ctx.organizationId} AND r."objectTypeId" = ${other.id} AND r."deletedAt" IS NULL
+            WHERE r."organization_id" = ${ctx.organizationId} AND r."object_type_id" = ${other.id} AND r."deleted_at" IS NULL
               AND r."id" = ANY(${desired}::bigint[]) AND ${visibilitySql(ctx, scopes, 'read')}`)
         : [];
       const found = new Set(reachable.map((row) => row.id));
@@ -262,7 +262,7 @@ export class AssociationsService {
           const writeScopes = await resolveScopes(tx, ctx, other.id, 'write');
           const writable = await tx.$queryRaw<{ id: bigint }[]>(Prisma.sql`
             SELECT r."id" FROM object_record r
-            WHERE r."organizationId" = ${ctx.organizationId} AND r."objectTypeId" = ${other.id} AND r."deletedAt" IS NULL
+            WHERE r."organization_id" = ${ctx.organizationId} AND r."object_type_id" = ${other.id} AND r."deleted_at" IS NULL
               AND r."id" = ANY(${touched}::bigint[]) AND ${visibilitySql(ctx, writeScopes, 'write')}`);
           if (writable.length !== touched.length) {
             throw forbidden(
@@ -273,7 +273,7 @@ export class AssociationsService {
       }
       if (removed.length > 0) {
         await tx.$executeRaw(Prisma.sql`
-          DELETE FROM association WHERE "organizationId" = ${ctx.organizationId} AND "definitionId" = ${def.id}
+          DELETE FROM association WHERE "organization_id" = ${ctx.organizationId} AND "definition_id" = ${def.id}
             AND ${mine} = ${recordId} AND ${theirs} = ANY(${removed}::bigint[])`);
       }
       // Linking from the end that points at a one-only field takes the record away from whatever it was linked to.
@@ -281,13 +281,13 @@ export class AssociationsService {
         !forward && !def.many && added.length > 0
           ? await tx.$queryRaw<{ sourceId: bigint; targetId: bigint }[]>(Prisma.sql`
               DELETE FROM association
-              WHERE "organizationId" = ${ctx.organizationId} AND "definitionId" = ${def.id}
-                AND "sourceId" = ANY(${added}::bigint[]) AND "targetId" <> ${recordId}
-              RETURNING "sourceId", "targetId"`)
+              WHERE "organization_id" = ${ctx.organizationId} AND "definition_id" = ${def.id}
+                AND "source_id" = ANY(${added}::bigint[]) AND "target_id" <> ${recordId}
+              RETURNING "source_id" AS "sourceId", "target_id" AS "targetId"`)
           : [];
       if (added.length > 0) {
         await tx.$executeRaw(Prisma.sql`
-          INSERT INTO association ("organizationId", "definitionId", ${mine}, ${theirs})
+          INSERT INTO association ("organization_id", "definition_id", ${mine}, ${theirs})
           SELECT ${ctx.organizationId}, ${def.id}, ${recordId}, unnest(${added}::bigint[])
           ON CONFLICT DO NOTHING`);
       }
@@ -383,10 +383,10 @@ export class AssociationsService {
         { recordId: bigint; id: bigint; properties: unknown }[]
       >(Prisma.sql`
         SELECT a.${mine} AS "recordId", r."id" AS id, r."properties" AS properties FROM association a
-        JOIN object_record r ON r."organizationId" = a."organizationId" AND r."id" = a.${theirs}
-        WHERE a."organizationId" = ${ctx.organizationId} AND a."definitionId" = ${def.id} AND a.${mine} = ANY(${ids}::bigint[])
-          AND r."deletedAt" IS NULL AND ${visibilitySql(ctx, scopes, 'read')}
-        ORDER BY a."createdAt", r."id"`);
+        JOIN object_record r ON r."organization_id" = a."organization_id" AND r."id" = a.${theirs}
+        WHERE a."organization_id" = ${ctx.organizationId} AND a."definition_id" = ${def.id} AND a.${mine} = ANY(${ids}::bigint[])
+          AND r."deleted_at" IS NULL AND ${visibilitySql(ctx, scopes, 'read')}
+        ORDER BY a."created_at", r."id"`);
       for (const row of rows) {
         const list = result.get(row.recordId)![def.name];
         if (list.length < MAX_SUMMARY) {

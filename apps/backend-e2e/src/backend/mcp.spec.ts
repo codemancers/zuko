@@ -545,7 +545,7 @@ describe('audit of connections', () => {
       async (db) =>
         (
           await db.query(
-            `SELECT event, "actorType", "actorId"::text AS actor, "organizationId"::text AS org, "targetType", "targetId"::text AS target, metadata
+            `SELECT event, "actor_type" AS "actorType", "actor_id"::text AS actor, "organization_id"::text AS org, "target_type" AS "targetType", "target_id"::text AS target, metadata
              FROM audit_event WHERE metadata->>'client_id' = $1 ORDER BY id`,
             [clientId],
           )
