@@ -826,7 +826,7 @@ describe('audit', () => {
     await withDb(async (db) => {
       const rows = (
         await db.query(
-          'SELECT event, "actorId"::text AS actor, metadata::text AS metadata FROM audit_event WHERE "organizationId" = $1',
+          'SELECT event, "actor_id"::text AS actor, metadata::text AS metadata FROM audit_event WHERE "organization_id" = $1',
           [orgId],
         )
       ).rows;
@@ -855,7 +855,7 @@ describe('audit', () => {
     await withDb(async (db) => {
       const rows = (
         await db.query(
-          `SELECT "actorType", metadata::text AS metadata FROM audit_event WHERE event = 'user.sign_in_failed' AND metadata->>'email' = $1`,
+          `SELECT "actor_type" AS "actorType", metadata::text AS metadata FROM audit_event WHERE event = 'user.sign_in_failed' AND metadata->>'email' = $1`,
           [loner.email],
         )
       ).rows;
@@ -869,7 +869,7 @@ describe('audit', () => {
     await withDb(async (db) => {
       const rows = (
         await db.query(
-          'SELECT action, "actorId"::text AS actor FROM record_change WHERE "organizationId" = $1',
+          'SELECT action, "actor_id"::text AS actor FROM record_change WHERE "organization_id" = $1',
           [orgId],
         )
       ).rows;
@@ -883,10 +883,10 @@ describe('audit', () => {
   it('cannot be rewritten, even by the database login', async () => {
     await withDb(async (db) => {
       await expect(
-        db.query(`UPDATE audit_event SET event = 'tampered' WHERE "organizationId" = $1`, [orgId]),
+        db.query(`UPDATE audit_event SET event = 'tampered' WHERE "organization_id" = $1`, [orgId]),
       ).rejects.toThrow(/append-only/);
       await expect(
-        db.query('DELETE FROM record_change WHERE "organizationId" = $1', [orgId]),
+        db.query('DELETE FROM record_change WHERE "organization_id" = $1', [orgId]),
       ).rejects.toThrow(/append-only/);
     });
   });

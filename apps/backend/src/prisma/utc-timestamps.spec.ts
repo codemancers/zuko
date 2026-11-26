@@ -40,11 +40,11 @@ describe.skipIf(!url)('datetimes are UTC', () => {
     try {
       await db.query("SET LOCAL TIME ZONE 'Asia/Kolkata'"); // +05:30: a local-time default would be 19,800 seconds ahead
       const inserted = await rows<{ createdAt: Date }>(
-        `INSERT INTO verification ("identifier", "value", "expiresAt", "updatedAt")
-         VALUES ('utc-spec', 'x', timezone('utc', now()), timezone('utc', now())) RETURNING "createdAt"`,
+        `INSERT INTO verification ("identifier", "value", "expires_at", "updated_at")
+         VALUES ('utc-spec', 'x', timezone('utc', now()), timezone('utc', now())) RETURNING "created_at"`,
       );
       const [{ skew }] = await rows<{ skew: number }>(
-        `SELECT extract(epoch FROM ("createdAt" - timezone('utc', now()))) AS skew FROM verification WHERE "identifier" = 'utc-spec'`,
+        `SELECT extract(epoch FROM ("created_at" - timezone('utc', now()))) AS skew FROM verification WHERE "identifier" = 'utc-spec'`,
       );
       expect(inserted).toHaveLength(1);
       expect(Math.abs(Number(skew))).toBeLessThan(60);

@@ -26,7 +26,7 @@ const MB = 1024 * 1024;
 let org: string;
 
 const fileCount = () =>
-  withDb(async (db) => (await db.query('SELECT count(*)::int AS n FROM stored_file WHERE "organizationId" = $1', [org])).rows[0].n as number);
+  withDb(async (db) => (await db.query('SELECT count(*)::int AS n FROM stored_file WHERE "organization_id" = $1', [org])).rows[0].n as number);
 
 beforeAll(async () => {
   for (const user of [owner, alice, carol]) ok(await user.signUp());
@@ -84,7 +84,7 @@ describe('uploading and downloading', () => {
   it('records who uploaded it in the audit log', async () => {
     const file = ok(await owner.upload(API, 'audited.pdf', pdf, 'application/pdf'), 201);
     const rows = await withDb(async (db) =>
-      (await db.query(`SELECT "actorType", "actorId"::text AS actor, metadata FROM audit_event WHERE event = 'file.uploaded' AND "targetId" = $1`, [file.id])).rows,
+      (await db.query(`SELECT "actor_type" AS "actorType", "actor_id"::text AS actor, metadata FROM audit_event WHERE event = 'file.uploaded' AND "target_id" = $1`, [file.id])).rows,
     );
     expect(rows).toHaveLength(1);
     expect(rows[0]).toMatchObject({ actorType: 'USER', actor: owner.id });

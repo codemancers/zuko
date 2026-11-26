@@ -32,16 +32,16 @@ async function unattachedOrganization(slug: string, collision = false) {
         slug,
       ]);
       await db.query(
-        'INSERT INTO member ("organizationId", "userId", role) VALUES ($1,$2,\'owner\')',
+        'INSERT INTO member ("organization_id", "user_id", role) VALUES ($1,$2,\'owner\')',
         [org.id, owner.id],
       );
       if (collision) {
         await db.query(
-          "INSERT INTO object_type (\"organizationId\",slug,label,\"pluralLabel\",kind,\"updatedAt\") VALUES ($1,'company','Custom company','Custom companies','CUSTOM',timezone('utc',now()))",
+          "INSERT INTO object_type (\"organization_id\",slug,label,\"plural_label\",kind,\"updated_at\") VALUES ($1,'company','Custom company','Custom companies','CUSTOM',timezone('utc',now()))",
           [org.id],
         );
         await db.query(
-          'INSERT INTO member ("organizationId", "userId", role) VALUES ($1,$2,\'member\')',
+          'INSERT INTO member ("organization_id", "user_id", role) VALUES ($1,$2,\'member\')',
           [org.id, member.id],
         );
       }
@@ -117,11 +117,11 @@ describe('durable organization setup', () => {
     expect(denied.status).toBe(404);
     await withDb(async (db) => {
       const { rows } = await db.query(
-        'SELECT slug,kind FROM object_type WHERE "organizationId"=$1',
+        'SELECT slug,kind FROM object_type WHERE "organization_id"=$1',
         [id],
       );
       expect(rows).toEqual([{ slug: 'company', kind: 'CUSTOM' }]);
-      await db.query('DELETE FROM object_type WHERE "organizationId"=$1 AND slug=\'company\'', [
+      await db.query('DELETE FROM object_type WHERE "organization_id"=$1 AND slug=\'company\'', [
         id,
       ]);
     });

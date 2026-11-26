@@ -271,10 +271,10 @@ export class SchemaService {
   private async assertSingleFile(tx: TenantTransaction, ctx: RequestContext, objectTypeId: bigint, fieldName: string) {
     const crowded = await tx.$queryRaw<{ n: bigint }[]>`
       SELECT count(*) AS n FROM (
-        SELECT rf."recordId" FROM record_file rf
-        JOIN object_record r ON r."organizationId" = rf."organizationId" AND r."id" = rf."recordId" AND r."deletedAt" IS NULL
-        WHERE rf."organizationId" = ${ctx.organizationId} AND r."objectTypeId" = ${objectTypeId} AND rf."fieldName" = ${fieldName}
-        GROUP BY rf."recordId" HAVING count(*) > 1) crowded`;
+        SELECT rf."record_id" FROM record_file rf
+        JOIN object_record r ON r."organization_id" = rf."organization_id" AND r."id" = rf."record_id" AND r."deleted_at" IS NULL
+        WHERE rf."organization_id" = ${ctx.organizationId} AND r."object_type_id" = ${objectTypeId} AND rf."field_name" = ${fieldName}
+        GROUP BY rf."record_id" HAVING count(*) > 1) crowded`;
     const n = Number(crowded[0]?.n ?? 0);
     if (n > 0) {
       throw conflict(`${n} records have several files here; keep one on each before allowing only one`);
@@ -507,7 +507,7 @@ export class SchemaService {
         const kept = new Set(input.config.options);
         const used = await tx.$queryRaw<{ value: string }[]>`
           SELECT DISTINCT "properties"->>${fieldName} AS value FROM object_record
-          WHERE "organizationId" = ${ctx.organizationId} AND "objectTypeId" = ${object.id} AND "deletedAt" IS NULL
+          WHERE "organization_id" = ${ctx.organizationId} AND "object_type_id" = ${object.id} AND "deleted_at" IS NULL
             AND "properties"->>${fieldName} IS NOT NULL`;
         const stranded = used.map((row) => row.value).filter((value) => !kept.has(value));
         if (stranded.length > 0) {
@@ -537,10 +537,10 @@ export class SchemaService {
             if (!many) {
               const crowded = await tx.$queryRaw<{ n: bigint }[]>`
                 SELECT count(*) AS n FROM (
-                  SELECT "sourceId" FROM association
-                  WHERE "organizationId" = ${ctx.organizationId} AND "definitionId" = (
-                    SELECT "id" FROM association_definition WHERE "organizationId" = ${ctx.organizationId} AND "name" = ${current.link ?? ''})
-                  GROUP BY "sourceId" HAVING count(*) > 1) crowded`;
+                  SELECT "source_id" FROM association
+                  WHERE "organization_id" = ${ctx.organizationId} AND "definition_id" = (
+                    SELECT "id" FROM association_definition WHERE "organization_id" = ${ctx.organizationId} AND "name" = ${current.link ?? ''})
+                  GROUP BY "source_id" HAVING count(*) > 1) crowded`;
               const n = Number(crowded[0]?.n ?? 0);
               if (n > 0) {
                 throw conflict(
@@ -556,12 +556,12 @@ export class SchemaService {
             // One member becomes a list of one.
             await tx.$executeRaw`
               UPDATE object_record SET "properties" = jsonb_set("properties", ARRAY[${fieldName}], jsonb_build_array("properties"->${fieldName}))
-              WHERE "organizationId" = ${ctx.organizationId} AND "objectTypeId" = ${object.id} AND jsonb_typeof("properties"->${fieldName}) = 'string'`;
+              WHERE "organization_id" = ${ctx.organizationId} AND "object_type_id" = ${object.id} AND jsonb_typeof("properties"->${fieldName}) = 'string'`;
             filterable = false;
           } else {
             const crowded = await tx.$queryRaw<{ n: bigint }[]>`
               SELECT count(*) AS n FROM object_record
-              WHERE "organizationId" = ${ctx.organizationId} AND "objectTypeId" = ${object.id} AND "deletedAt" IS NULL
+              WHERE "organization_id" = ${ctx.organizationId} AND "object_type_id" = ${object.id} AND "deleted_at" IS NULL
                 AND jsonb_typeof("properties"->${fieldName}) = 'array' AND jsonb_array_length("properties"->${fieldName}) > 1`;
             const n = Number(crowded[0]?.n ?? 0);
             if (n > 0) {
@@ -572,7 +572,7 @@ export class SchemaService {
             await tx.$executeRaw`
               UPDATE object_record SET "properties" = CASE WHEN jsonb_array_length("properties"->${fieldName}) = 0
                 THEN "properties" - ${fieldName} ELSE jsonb_set("properties", ARRAY[${fieldName}], "properties"->${fieldName}->0) END
-              WHERE "organizationId" = ${ctx.organizationId} AND "objectTypeId" = ${object.id} AND jsonb_typeof("properties"->${fieldName}) = 'array'`;
+              WHERE "organization_id" = ${ctx.organizationId} AND "object_type_id" = ${object.id} AND jsonb_typeof("properties"->${fieldName}) = 'array'`;
           }
         }
         config = { ...(config ?? current), many };
@@ -581,15 +581,15 @@ export class SchemaService {
       if (input.required === true && !field.required && field.type === 'FILE') {
         const missing = await tx.$queryRaw<{ n: bigint }[]>`
           SELECT count(*) AS n FROM object_record r
-          WHERE r."organizationId" = ${ctx.organizationId} AND r."objectTypeId" = ${object.id} AND r."deletedAt" IS NULL
-            AND NOT EXISTS (SELECT 1 FROM record_file rf WHERE rf."recordId" = r."id" AND rf."fieldName" = ${fieldName})`;
+          WHERE r."organization_id" = ${ctx.organizationId} AND r."object_type_id" = ${object.id} AND r."deleted_at" IS NULL
+            AND NOT EXISTS (SELECT 1 FROM record_file rf WHERE rf."record_id" = r."id" AND rf."field_name" = ${fieldName})`;
         if (Number(missing[0]?.n ?? 0) > 0) {
           throw conflict(`${missing[0].n} records have no ${field.label}; attach one before making it required`);
         }
       } else if (input.required === true && !field.required) {
         const missing = await tx.$queryRaw<{ n: bigint }[]>`
           SELECT count(*) AS n FROM object_record
-          WHERE "organizationId" = ${ctx.organizationId} AND "objectTypeId" = ${object.id} AND "deletedAt" IS NULL
+          WHERE "organization_id" = ${ctx.organizationId} AND "object_type_id" = ${object.id} AND "deleted_at" IS NULL
             AND ("properties"->>${fieldName} IS NULL OR "properties"->>${fieldName} = '')`;
         if (Number(missing[0]?.n ?? 0) > 0) {
           throw conflict(

@@ -1,4 +1,4 @@
--- Tenancy foundation: row-level security keyed on the "organizationId" column.
+-- Tenancy foundation: row-level security keyed on the "organization_id" column.
 --
 -- Requests run inside a transaction that does
 --   SET LOCAL ROLE zuko_app;  SELECT set_config('app.org_id', '<id>', true);
@@ -36,13 +36,13 @@ CREATE OR REPLACE FUNCTION app_actor_id() RETURNS bigint
 AS $$ SELECT nullif(current_setting('app.actor_id', true), '')::bigint $$;
 
 -- Turn on tenant isolation for a table.
---   org_column          column holding the tenant id (default "organizationId")
+--   org_column          column holding the tenant id (default "organization_id")
 --   allow_global_insert also allow inserting rows with a NULL tenant (e.g. audit
 --                       events with no organization). Such rows are never readable
 --                       through a tenant context.
 CREATE OR REPLACE PROCEDURE enable_tenant_rls(
   tbl regclass,
-  org_column name DEFAULT 'organizationId',
+  org_column name DEFAULT 'organization_id',
   allow_global_insert boolean DEFAULT false
 )
 LANGUAGE plpgsql

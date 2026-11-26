@@ -3,13 +3,13 @@
 -- hash of the secret is stored.
 CREATE TABLE "upload_ticket" (
   "id" BIGSERIAL PRIMARY KEY,
-  "organizationId" BIGINT NOT NULL REFERENCES "organization"("id") ON DELETE CASCADE,
-  "userId" BIGINT NOT NULL REFERENCES "user"("id") ON DELETE CASCADE,
-  "secretHash" TEXT NOT NULL,
-  "actorType" TEXT NOT NULL,
-  "expiresAt" TIMESTAMP(3) NOT NULL,
-  "usedAt" TIMESTAMP(3),
-  "createdAt" TIMESTAMP(3) NOT NULL DEFAULT timezone('utc'::text, now())
+  "organization_id" BIGINT NOT NULL REFERENCES "organization"("id") ON DELETE CASCADE,
+  "user_id" BIGINT NOT NULL REFERENCES "user"("id") ON DELETE CASCADE,
+  "secret_hash" TEXT NOT NULL,
+  "actor_type" TEXT NOT NULL,
+  "expires_at" TIMESTAMP(3) NOT NULL,
+  "used_at" TIMESTAMP(3),
+  "created_at" TIMESTAMP(3) NOT NULL DEFAULT timezone('utc'::text, now())
 );
-CREATE INDEX "upload_ticket_organizationId_expiresAt_idx" ON "upload_ticket"("organizationId", "expiresAt");
+CREATE INDEX "upload_ticket_organization_id_expires_at_idx" ON "upload_ticket"("organization_id", "expires_at");
 CALL enable_tenant_rls('"upload_ticket"');

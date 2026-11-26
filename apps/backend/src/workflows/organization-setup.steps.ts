@@ -40,7 +40,7 @@ export async function markRunning(organizationId: string) {
   const { workflowRunId: runId } = getWorkflowMetadata();
   await tenant(id, async (tx) => {
     const [setup] = await tx.$queryRaw<{ runId: string | null }[]>`
-      SELECT "runId" FROM organization_setup WHERE "organizationId" = ${id} FOR UPDATE`;
+      SELECT "run_id" AS "runId" FROM organization_setup WHERE "organization_id" = ${id} FOR UPDATE`;
     if (!setup) throw new FatalError('Organization no longer exists');
     const replacing = setup.runId !== null && setup.runId !== runId;
     if (
@@ -72,7 +72,7 @@ export async function provisionCrm(organizationId: string) {
   try {
     await tenant(id, async (tx) => {
       const [setup] = await tx.$queryRaw<{ runId: string | null; status: string }[]>`
-        SELECT "runId", status FROM organization_setup WHERE "organizationId" = ${id} FOR UPDATE`;
+        SELECT "run_id" AS "runId", status FROM organization_setup WHERE "organization_id" = ${id} FOR UPDATE`;
       if (!setup || setup.runId !== workflowRunId || setup.status !== 'running') {
         throw new FatalError('This workflow no longer owns organization setup');
       }

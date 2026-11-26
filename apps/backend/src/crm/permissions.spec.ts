@@ -56,14 +56,14 @@ describe('visibilitySql', () => {
 
   it('limits OWN to the user, with shares as the only way in', () => {
     const sql = text(new Set(['OWN']), 'read');
-    expect(sql).toContain('"ownerId" =');
+    expect(sql).toContain('"owner_id" =');
     expect(sql).not.toContain('member_hierarchy');
     expect(sql).toContain('record_share');
   });
 
   it('adds reports and teams for the wider scopes', () => {
     expect(text(new Set(['OWN_AND_REPORTS']), 'read')).toContain('member_hierarchy');
-    expect(text(new Set(['TEAM']), 'read')).toContain('"teamId" = ANY');
+    expect(text(new Set(['TEAM']), 'read')).toContain('"team_id" = ANY');
   });
 
   it('only counts WRITE shares when writing', () => {

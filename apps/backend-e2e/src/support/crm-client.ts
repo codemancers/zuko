@@ -56,7 +56,7 @@ export class User {
         async (db) =>
           (
             await db.query(
-              'SELECT status, error, "runId", attempt FROM organization_setup WHERE "organizationId"=$1',
+              'SELECT status, error, "run_id" AS "runId", attempt FROM organization_setup WHERE "organization_id"=$1',
               [organizationId],
             )
           ).rows[0],
@@ -157,18 +157,18 @@ export async function cleanup(emailSuffix: string, orgSlugs: string[], oauthClie
     await db.query('BEGIN');
     await db.query("SELECT set_config('app.audit_purge', 'on', true)");
     await db.query(
-      `DELETE FROM audit_event WHERE "organizationId" IN (SELECT id FROM organization WHERE slug = ANY($1))
-         OR "actorId" IN (SELECT id FROM "user" WHERE email LIKE $2)
+      `DELETE FROM audit_event WHERE "organization_id" IN (SELECT id FROM organization WHERE slug = ANY($1))
+         OR "actor_id" IN (SELECT id FROM "user" WHERE email LIKE $2)
          OR metadata->>'email' LIKE $2`, // org-less events such as a failed sign-in
       [orgSlugs, `%${emailSuffix}`],
     );
     await db.query(
-      'DELETE FROM record_change WHERE "organizationId" IN (SELECT id FROM organization WHERE slug = ANY($1))',
+      'DELETE FROM record_change WHERE "organization_id" IN (SELECT id FROM organization WHERE slug = ANY($1))',
       [orgSlugs],
     );
     await db.query('COMMIT');
     await db.query(
-      'DELETE FROM object_record WHERE "organizationId" IN (SELECT id FROM organization WHERE slug = ANY($1))',
+      'DELETE FROM object_record WHERE "organization_id" IN (SELECT id FROM organization WHERE slug = ANY($1))',
       [orgSlugs],
     );
     await db.query('DELETE FROM organization WHERE slug = ANY($1)', [orgSlugs]);
@@ -184,6 +184,6 @@ export async function cleanup(emailSuffix: string, orgSlugs: string[], oauthClie
 
 export async function verifyEmails(emailSuffix: string) {
   await withDb((db) =>
-    db.query('UPDATE "user" SET "emailVerified" = true WHERE email LIKE $1', [`%${emailSuffix}`]),
+    db.query('UPDATE "user" SET "email_verified" = true WHERE email LIKE $1', [`%${emailSuffix}`]),
   );
 }

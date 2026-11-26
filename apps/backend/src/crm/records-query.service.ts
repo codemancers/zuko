@@ -108,8 +108,8 @@ export class RecordsQueryService {
       const scopes = await resolveScopes(tx, ctx, object.id, 'read');
       const values = await tx.$queryRaw<{ value: unknown; count: bigint }[]>(Prisma.sql`
         SELECT ${column.expr} AS value, count(*) AS count FROM object_record r
-        WHERE r."organizationId" = ${ctx.organizationId} AND r."objectTypeId" = ${object.id}
-          AND r."deletedAt" IS NULL AND ${visibilitySql(ctx, scopes, 'read')}
+        WHERE r."organization_id" = ${ctx.organizationId} AND r."object_type_id" = ${object.id}
+          AND r."deleted_at" IS NULL AND ${visibilitySql(ctx, scopes, 'read')}
           AND ${filterSql(input.filter_groups as FilterGroup[], object.fields)}
         GROUP BY 1 ORDER BY count DESC, value ASC NULLS FIRST LIMIT 1001`);
       return {
@@ -143,7 +143,7 @@ export class RecordsQueryService {
       const object = await this.schema.loadObject(tx, ctx, objectName);
       const scopes = await resolveScopes(tx, ctx, object.id, 'read');
       const where = Prisma.sql`
-        r."organizationId" = ${ctx.organizationId} AND r."objectTypeId" = ${object.id} AND r."deletedAt" IS NULL
+        r."organization_id" = ${ctx.organizationId} AND r."object_type_id" = ${object.id} AND r."deleted_at" IS NULL
         AND ${visibilitySql(ctx, scopes, 'read')} AND ${filterSql(groups, object.fields)}`;
       const order = orderSql(sorting, object.fields);
 

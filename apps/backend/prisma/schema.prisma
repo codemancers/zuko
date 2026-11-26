@@ -13,14 +13,14 @@ datasource db {
 
 model User {
   harnessGrants      HarnessGrant[]
-  storedFiles      StoredFile[]
+  storedFiles        StoredFile[]
   id                 BigInt              @id @default(autoincrement())
   name               String
   email              String              @unique
-  emailVerified      Boolean             @default(false)
+  emailVerified      Boolean             @default(false) @map("email_verified")
   image              String?
-  createdAt          DateTime            @default(dbgenerated("timezone('utc'::text, now())"))
-  updatedAt          DateTime            @updatedAt
+  createdAt          DateTime            @default(dbgenerated("timezone('utc'::text, now())")) @map("created_at")
+  updatedAt          DateTime            @updatedAt @map("updated_at")
   sessions           Session[]
   accounts           Account[]
   members            Member[]
@@ -43,16 +43,16 @@ model User {
 
 model Session {
   id                   BigInt              @id @default(autoincrement())
-  expiresAt            DateTime
+  expiresAt            DateTime            @map("expires_at")
   token                String              @unique
-  createdAt            DateTime            @default(dbgenerated("timezone('utc'::text, now())"))
-  updatedAt            DateTime            @updatedAt
-  ipAddress            String?
-  userAgent            String?
-  userId               BigInt
+  createdAt            DateTime            @default(dbgenerated("timezone('utc'::text, now())")) @map("created_at")
+  updatedAt            DateTime            @updatedAt @map("updated_at")
+  ipAddress            String?             @map("ip_address")
+  userAgent            String?             @map("user_agent")
+  userId               BigInt              @map("user_id")
   user                 User                @relation(fields: [userId], references: [id], onDelete: Cascade)
-  activeOrganizationId BigInt?
-  activeTeamId         BigInt?
+  activeOrganizationId BigInt?             @map("active_organization_id")
+  activeTeamId         BigInt?             @map("active_team_id")
   oauthrefreshtokens   OauthRefreshToken[]
   oauthaccesstokens    OauthAccessToken[]
 
@@ -62,19 +62,19 @@ model Session {
 
 model Account {
   id                    BigInt    @id @default(autoincrement())
-  accountId             String
-  providerId            String
-  userId                BigInt
+  accountId             String    @map("account_id")
+  providerId            String    @map("provider_id")
+  userId                BigInt    @map("user_id")
   user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  accessToken           String?
-  refreshToken          String?
-  idToken               String?
-  accessTokenExpiresAt  DateTime?
-  refreshTokenExpiresAt DateTime?
+  accessToken           String?   @map("access_token")
+  refreshToken          String?   @map("refresh_token")
+  idToken               String?   @map("id_token")
+  accessTokenExpiresAt  DateTime? @map("access_token_expires_at")
+  refreshTokenExpiresAt DateTime? @map("refresh_token_expires_at")
   scope                 String?
   password              String?
-  createdAt             DateTime  @default(dbgenerated("timezone('utc'::text, now())"))
-  updatedAt             DateTime  @updatedAt
+  createdAt             DateTime  @default(dbgenerated("timezone('utc'::text, now())")) @map("created_at")
+  updatedAt             DateTime  @updatedAt @map("updated_at")
 
   @@index([userId])
   @@map("account")
@@ -84,9 +84,9 @@ model Verification {
   id         BigInt   @id @default(autoincrement())
   identifier String
   value      String
-  expiresAt  DateTime
-  createdAt  DateTime @default(dbgenerated("timezone('utc'::text, now())"))
-  updatedAt  DateTime @updatedAt
+  expiresAt  DateTime @map("expires_at")
+  createdAt  DateTime @default(dbgenerated("timezone('utc'::text, now())")) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
 
   @@index([identifier])
   @@map("verification")
@@ -94,12 +94,12 @@ model Verification {
 
 model Organization {
   harnessGrants  HarnessGrant[]
-  storedFiles  StoredFile[]
+  storedFiles    StoredFile[]
   id             BigInt             @id @default(autoincrement())
   name           String
   slug           String             @unique
   logo           String?
-  createdAt      DateTime           @default(dbgenerated("timezone('utc'::text, now())"))
+  createdAt      DateTime           @default(dbgenerated("timezone('utc'::text, now())")) @map("created_at")
   metadata       String?
   members        Member[]
   invitations    Invitation[]
@@ -109,19 +109,19 @@ model Organization {
   hierarchy      MemberHierarchy[]
   roleAccess     RoleObjectAccess[]
   setup          OrganizationSetup?
-  setupRunId     String?
+  setupRunId     String?            @map("setup_run_id")
 
   @@map("organization")
 }
 
 model Member {
   id             BigInt       @id @default(autoincrement())
-  organizationId BigInt
+  organizationId BigInt       @map("organization_id")
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  userId         BigInt
+  userId         BigInt       @map("user_id")
   user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   role           String       @default("member")
-  createdAt      DateTime     @default(dbgenerated("timezone('utc'::text, now())"))
+  createdAt      DateTime     @default(dbgenerated("timezone('utc'::text, now())")) @map("created_at")
 
   @@unique([organizationId, userId])
   @@index([userId])
@@ -130,17 +130,17 @@ model Member {
 
 model Invitation {
   id             BigInt       @id @default(autoincrement())
-  organizationId BigInt
+  organizationId BigInt       @map("organization_id")
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   email          String
   role           String?
   status         String       @default("pending")
-  expiresAt      DateTime
-  createdAt      DateTime     @default(dbgenerated("timezone('utc'::text, now())"))
-  inviterId      BigInt
+  expiresAt      DateTime     @map("expires_at")
+  createdAt      DateTime     @default(dbgenerated("timezone('utc'::text, now())")) @map("created_at")
+  inviterId      BigInt       @map("inviter_id")
   inviter        User         @relation(fields: [inviterId], references: [id], onDelete: Cascade)
   // better-auth stores one or more team ids here as a comma-separated string.
-  teamId         String?
+  teamId         String?      @map("team_id")
 
   @@index([organizationId])
   @@index([email])
@@ -157,15 +157,15 @@ model Invitation {
 // A kind of record an organization stores: contact, deal, or a custom object.
 model ObjectType {
   id             BigInt       @id @default(autoincrement())
-  organizationId BigInt
+  organizationId BigInt       @map("organization_id")
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   slug           String
   label          String
-  pluralLabel    String
+  pluralLabel    String       @map("plural_label")
   kind           String // STANDARD | CUSTOM
   version        Int          @default(1)
-  createdAt      DateTime     @default(dbgenerated("timezone('utc'::text, now())"))
-  updatedAt      DateTime     @updatedAt
+  createdAt      DateTime     @default(dbgenerated("timezone('utc'::text, now())")) @map("created_at")
+  updatedAt      DateTime     @updatedAt @map("updated_at")
 
   fields       FieldDefinition[]
   records      ObjectRecord[]
@@ -181,23 +181,23 @@ model ObjectType {
 // A field on an object type. Values live in ObjectRecord.properties under `name`.
 model FieldDefinition {
   id             BigInt     @id @default(autoincrement())
-  organizationId BigInt
-  objectTypeId   BigInt
+  organizationId BigInt     @map("organization_id")
+  objectTypeId   BigInt     @map("object_type_id")
   objectType     ObjectType @relation(fields: [organizationId, objectTypeId], references: [organizationId, id], onDelete: Cascade)
   name           String // snake_case key inside properties
   label          String
   type           String // TEXT, EMAIL, NUMBER, TIMESTAMP, ...
   required       Boolean    @default(false)
-  isUnique       Boolean    @default(false)
+  isUnique       Boolean    @default(false) @map("is_unique")
   filterable     Boolean    @default(false)
-  readOnly       Boolean    @default(false)
+  readOnly       Boolean    @default(false) @map("read_only")
   sensitive      Boolean    @default(false) // redact in audit history
-  maxLength      Int?
+  maxLength      Int?       @map("max_length")
   config         Json       @default("{}")
-  createdAt      DateTime   @default(dbgenerated("timezone('utc'::text, now())"))
-  updatedAt      DateTime   @updatedAt
+  createdAt      DateTime   @default(dbgenerated("timezone('utc'::text, now())")) @map("created_at")
+  updatedAt      DateTime   @updatedAt @map("updated_at")
   // Set when the field is removed. The values stay in the records' properties.
-  deletedAt      DateTime?
+  deletedAt      DateTime?  @map("deleted_at")
 
   @@unique([objectTypeId, name])
   @@index([organizationId, objectTypeId])
@@ -207,28 +207,28 @@ model FieldDefinition {
 // One row per contact/deal/etc. Field values are stored in `properties`.
 model ObjectRecord {
   id             BigInt     @id @default(autoincrement())
-  organizationId BigInt
-  objectTypeId   BigInt
+  organizationId BigInt     @map("organization_id")
+  objectTypeId   BigInt     @map("object_type_id")
   objectType     ObjectType @relation(fields: [organizationId, objectTypeId], references: [organizationId, id], onDelete: Restrict)
   properties     Json       @default("{}")
-  ownerId        BigInt?
+  ownerId        BigInt?    @map("owner_id")
   owner          User?      @relation(fields: [ownerId], references: [id], onDelete: SetNull)
   // Team the record belongs to. Same-organization is enforced by a trigger.
-  teamId         BigInt?
+  teamId         BigInt?    @map("team_id")
   team           Team?      @relation(fields: [teamId], references: [id], onDelete: SetNull)
-  createdBy      BigInt?
-  updatedBy      BigInt?
-  createdAt      DateTime   @default(dbgenerated("timezone('utc'::text, now())"))
-  updatedAt      DateTime   @updatedAt
-  deletedAt      DateTime?
+  createdBy      BigInt?    @map("created_by")
+  updatedBy      BigInt?    @map("updated_by")
+  createdAt      DateTime   @default(dbgenerated("timezone('utc'::text, now())")) @map("created_at")
+  updatedAt      DateTime   @updatedAt @map("updated_at")
+  deletedAt      DateTime?  @map("deleted_at")
 
-  asSource Association[] @relation("AssociationSource")
-  asTarget Association[] @relation("AssociationTarget")
+  asSource Association[]   @relation("AssociationSource")
+  asTarget Association[]   @relation("AssociationTarget")
   shares   RecordShare[]
   files    RecordFile[]
+  comments RecordComment[]
 
   @@unique([organizationId, id])
-  comments RecordComment[]
   @@index([organizationId, objectTypeId, createdAt(sort: Desc)])
   @@index([organizationId, objectTypeId, ownerId])
   @@index([organizationId, teamId])
@@ -239,20 +239,20 @@ model ObjectRecord {
 // A kind of link between two object types (e.g. contact <-> company). Always many-to-many.
 model AssociationDefinition {
   id                 BigInt     @id @default(autoincrement())
-  organizationId     BigInt
+  organizationId     BigInt     @map("organization_id")
   name               String
   label              String
-  sourceObjectTypeId BigInt
+  sourceObjectTypeId BigInt     @map("source_object_type_id")
   sourceObjectType   ObjectType @relation("AssociationSource", fields: [organizationId, sourceObjectTypeId], references: [organizationId, id], onDelete: Cascade)
-  targetObjectTypeId BigInt
+  targetObjectTypeId BigInt     @map("target_object_type_id")
   targetObjectType   ObjectType @relation("AssociationTarget", fields: [organizationId, targetObjectTypeId], references: [organizationId, id], onDelete: Cascade)
   // Whether a source record may be linked to many target records, or only one. The target side is always many.
   many               Boolean    @default(true)
   // What the target object calls these links, e.g. "Deals (Primary contact)"; defaults from the source's field.
-  reverseLabel       String?
-  isDefault          Boolean    @default(false)
-  isLookup           Boolean    @default(false)
-  isActive           Boolean    @default(true)
+  reverseLabel       String?    @map("reverse_label")
+  isDefault          Boolean    @default(false) @map("is_default")
+  isLookup           Boolean    @default(false) @map("is_lookup")
+  isActive           Boolean    @default(true) @map("is_active")
 
   associations Association[]
 
@@ -263,16 +263,17 @@ model AssociationDefinition {
 
 // A link between two records, of a given definition.
 model Association {
-  organizationId BigInt
-  definitionId   BigInt
+  id             BigInt                @id @default(autoincrement())
+  organizationId BigInt                @map("organization_id")
+  definitionId   BigInt                @map("definition_id")
   definition     AssociationDefinition @relation(fields: [organizationId, definitionId], references: [organizationId, id], onDelete: Cascade)
-  sourceId       BigInt
+  sourceId       BigInt                @map("source_id")
   source         ObjectRecord          @relation("AssociationSource", fields: [organizationId, sourceId], references: [organizationId, id], onDelete: Cascade)
-  targetId       BigInt
+  targetId       BigInt                @map("target_id")
   target         ObjectRecord          @relation("AssociationTarget", fields: [organizationId, targetId], references: [organizationId, id], onDelete: Cascade)
-  createdAt      DateTime              @default(dbgenerated("timezone('utc'::text, now())"))
+  createdAt      DateTime              @default(dbgenerated("timezone('utc'::text, now())")) @map("created_at")
 
-  @@id([organizationId, definitionId, sourceId, targetId])
+  @@unique([organizationId, definitionId, sourceId, targetId])
   @@index([organizationId, definitionId, targetId, sourceId])
   @@map("association")
 }
@@ -285,11 +286,11 @@ model Association {
 model Team {
   id             BigInt       @id @default(autoincrement())
   name           String
-  memberCount    Int          @default(0)
-  organizationId BigInt
+  memberCount    Int          @default(0) @map("member_count")
+  organizationId BigInt       @map("organization_id")
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  createdAt      DateTime     @default(dbgenerated("timezone('utc'::text, now())"))
-  updatedAt      DateTime?    @updatedAt
+  createdAt      DateTime     @default(dbgenerated("timezone('utc'::text, now())")) @map("created_at")
+  updatedAt      DateTime?    @updatedAt @map("updated_at")
 
   members TeamMember[]
   records ObjectRecord[]
@@ -301,12 +302,12 @@ model Team {
 
 model TeamMember {
   id            BigInt    @id @default(autoincrement())
-  teamId        BigInt
+  teamId        BigInt    @map("team_id")
   team          Team      @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  userId        BigInt
+  userId        BigInt    @map("user_id")
   user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  membershipKey String?   @unique
-  createdAt     DateTime? @default(dbgenerated("timezone('utc'::text, now())"))
+  membershipKey String?   @unique @map("membership_key")
+  createdAt     DateTime? @default(dbgenerated("timezone('utc'::text, now())")) @map("created_at")
 
   @@index([teamId])
   @@index([userId])
@@ -323,15 +324,15 @@ model TeamMember {
 // as the change itself.
 model RecordChange {
   id             BigInt   @id @default(autoincrement())
-  organizationId BigInt
-  recordId       BigInt
-  objectTypeId   BigInt
+  organizationId BigInt   @map("organization_id")
+  recordId       BigInt   @map("record_id")
+  objectTypeId   BigInt   @map("object_type_id")
   action         String // CREATE | UPDATE | DELETE
   changes        Json // {"stage": {"old": "open", "new": "closed_won"}}
-  actorType      String // USER | API_KEY | SYSTEM | IMPORT | MCP | AGENT
-  actorId        BigInt?
-  requestId      String?
-  createdAt      DateTime @default(dbgenerated("timezone('utc'::text, now())"))
+  actorType      String   @map("actor_type") // USER | API_KEY | SYSTEM | IMPORT | MCP | AGENT
+  actorId        BigInt?  @map("actor_id")
+  requestId      String?  @map("request_id")
+  createdAt      DateTime @default(dbgenerated("timezone('utc'::text, now())")) @map("created_at")
 
   @@index([organizationId, recordId, createdAt])
   @@index([organizationId, objectTypeId, createdAt])
@@ -343,21 +344,21 @@ model RecordChange {
 // A comment on a record. Shown beside RecordChange rows in one timeline (the activity feed),
 // but kept apart: a change is immutable history, a comment can be edited and removed by its author.
 model RecordComment {
-  id             BigInt       @id @default(autoincrement())
-  organizationId BigInt
-  recordId       BigInt
-  record         ObjectRecord @relation(fields: [organizationId, recordId], references: [organizationId, id], onDelete: Cascade)
-  objectTypeId   BigInt
-  authorId       BigInt?
-  author         User?        @relation(fields: [authorId], references: [id], onDelete: SetNull)
-  actorType      String // USER | MCP | AGENT
+  id             BigInt        @id @default(autoincrement())
+  organizationId BigInt        @map("organization_id")
+  recordId       BigInt        @map("record_id")
+  record         ObjectRecord  @relation(fields: [organizationId, recordId], references: [organizationId, id], onDelete: Cascade)
+  objectTypeId   BigInt        @map("object_type_id")
+  authorId       BigInt?       @map("author_id")
+  author         User?         @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  actorType      String        @map("actor_type") // USER | MCP | AGENT
   // Markdown.
   body           String
   // Members mentioned with @; each can read the record (checked when written).
-  mentions       BigInt[]     @default([])
-  editedAt       DateTime?
-  createdAt      DateTime     @default(dbgenerated("timezone('utc'::text, now())"))
-  deletedAt      DateTime?
+  mentions       BigInt[]      @default([])
+  editedAt       DateTime?     @map("edited_at")
+  createdAt      DateTime      @default(dbgenerated("timezone('utc'::text, now())")) @map("created_at")
+  deletedAt      DateTime?     @map("deleted_at")
   files          CommentFile[]
 
   @@unique([organizationId, id])
@@ -368,17 +369,17 @@ model RecordComment {
 // belong to no organization, such as a failed sign-in.
 model AuditEvent {
   id             BigInt   @id @default(autoincrement())
-  organizationId BigInt?
-  actorType      String // USER | API_KEY | SYSTEM | IMPORT | MCP | AGENT | ANONYMOUS
-  actorId        BigInt?
+  organizationId BigInt?  @map("organization_id")
+  actorType      String   @map("actor_type") // USER | API_KEY | SYSTEM | IMPORT | MCP | AGENT | ANONYMOUS
+  actorId        BigInt?  @map("actor_id")
   event          String // 'member.invited', 'api_key.created', ...
-  targetType     String?
-  targetId       BigInt?
+  targetType     String?  @map("target_type")
+  targetId       BigInt?  @map("target_id")
   metadata       Json?
   ip             String?
-  userAgent      String?
-  requestId      String?
-  createdAt      DateTime @default(dbgenerated("timezone('utc'::text, now())"))
+  userAgent      String?  @map("user_agent")
+  requestId      String?  @map("request_id")
+  createdAt      DateTime @default(dbgenerated("timezone('utc'::text, now())")) @map("created_at")
 
   @@index([organizationId, createdAt(sort: Desc)])
   @@index([organizationId, event, createdAt(sort: Desc)])
@@ -394,11 +395,11 @@ model AuditEvent {
 // Who reports to whom. managerId is null for someone at the top of the chart.
 model MemberReporting {
   id             BigInt       @id @default(autoincrement())
-  organizationId BigInt
+  organizationId BigInt       @map("organization_id")
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  userId         BigInt
+  userId         BigInt       @map("user_id")
   user           User         @relation("ReportingUser", fields: [userId], references: [id], onDelete: Cascade)
-  managerId      BigInt?
+  managerId      BigInt?      @map("manager_id")
   manager        User?        @relation("ReportingManager", fields: [managerId], references: [id], onDelete: SetNull)
 
   @@unique([organizationId, userId])
@@ -409,11 +410,11 @@ model MemberReporting {
 // Every (ancestor, descendant) pair at any depth, rebuilt from MemberReporting.
 model MemberHierarchy {
   id             BigInt       @id @default(autoincrement())
-  organizationId BigInt
+  organizationId BigInt       @map("organization_id")
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  ancestorId     BigInt
+  ancestorId     BigInt       @map("ancestor_id")
   ancestor       User         @relation("HierarchyAncestor", fields: [ancestorId], references: [id], onDelete: Cascade)
-  descendantId   BigInt
+  descendantId   BigInt       @map("descendant_id")
   descendant     User         @relation("HierarchyDescendant", fields: [descendantId], references: [id], onDelete: Cascade)
   depth          Int // 1 = direct report
 
@@ -432,15 +433,15 @@ model MemberHierarchy {
 // defaults apply.
 model RoleObjectAccess {
   id             BigInt       @id @default(autoincrement())
-  organizationId BigInt
+  organizationId BigInt       @map("organization_id")
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   role           String // organization role name, e.g. member
-  objectTypeId   BigInt? // null = every object type
+  objectTypeId   BigInt?      @map("object_type_id") // null = every object type
   objectType     ObjectType?  @relation(fields: [objectTypeId], references: [id], onDelete: Cascade)
-  readScope      String // OWN | OWN_AND_REPORTS | TEAM | ALL
-  writeScope     String // OWN | OWN_AND_REPORTS | TEAM | ALL
-  createdAt      DateTime     @default(dbgenerated("timezone('utc'::text, now())"))
-  updatedAt      DateTime     @updatedAt
+  readScope      String       @map("read_scope") // OWN | OWN_AND_REPORTS | TEAM | ALL
+  writeScope     String       @map("write_scope") // OWN | OWN_AND_REPORTS | TEAM | ALL
+  createdAt      DateTime     @default(dbgenerated("timezone('utc'::text, now())")) @map("created_at")
+  updatedAt      DateTime     @updatedAt @map("updated_at")
 
   @@unique([organizationId, role, objectTypeId])
   @@map("role_object_access")
@@ -449,16 +450,16 @@ model RoleObjectAccess {
 // Explicit access to one record for a user or a team, on top of the role scope.
 model RecordShare {
   id             BigInt       @id @default(autoincrement())
-  organizationId BigInt
-  recordId       BigInt
+  organizationId BigInt       @map("organization_id")
+  recordId       BigInt       @map("record_id")
   record         ObjectRecord @relation(fields: [organizationId, recordId], references: [organizationId, id], onDelete: Cascade)
-  userId         BigInt? // exactly one of userId / teamId
+  userId         BigInt?      @map("user_id") // exactly one of userId / teamId
   user           User?        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  teamId         BigInt?
+  teamId         BigInt?      @map("team_id")
   team           Team?        @relation(fields: [teamId], references: [id], onDelete: Cascade)
   access         String // READ | WRITE
-  createdBy      BigInt?
-  createdAt      DateTime     @default(dbgenerated("timezone('utc'::text, now())"))
+  createdBy      BigInt?      @map("created_by")
+  createdAt      DateTime     @default(dbgenerated("timezone('utc'::text, now())")) @map("created_at")
 
   @@index([organizationId, recordId])
   @@index([organizationId, userId])
@@ -474,10 +475,10 @@ model RecordShare {
 
 model Jwks {
   id         BigInt    @id @default(autoincrement())
-  publicKey  String
-  privateKey String
-  createdAt  DateTime
-  expiresAt  DateTime?
+  publicKey  String    @map("public_key")
+  privateKey String    @map("private_key")
+  createdAt  DateTime  @map("created_at")
+  expiresAt  DateTime? @map("expires_at")
   alg        String?
   crv        String?
 
@@ -486,41 +487,41 @@ model Jwks {
 
 model OauthClient {
   id                               BigInt                @id @default(autoincrement())
-  clientId                         String
-  clientSecret                     String?
-  clientDiscoveryId                String?
+  clientId                         String                @map("client_id")
+  clientSecret                     String?               @map("client_secret")
+  clientDiscoveryId                String?               @map("client_discovery_id")
   disabled                         Boolean?              @default(false)
-  skipConsent                      Boolean?
-  enableEndSession                 Boolean?
-  subjectType                      String?
+  skipConsent                      Boolean?              @map("skip_consent")
+  enableEndSession                 Boolean?              @map("enable_end_session")
+  subjectType                      String?               @map("subject_type")
   scopes                           String[]
-  clientCredentialsScopes          String[]              @default([])
-  userId                           BigInt?
+  clientCredentialsScopes          String[]              @default([]) @map("client_credentials_scopes")
+  userId                           BigInt?               @map("user_id")
   user                             User?                 @relation(fields: [userId], references: [id], onDelete: Cascade)
-  createdAt                        DateTime?
-  updatedAt                        DateTime?
+  createdAt                        DateTime?             @map("created_at")
+  updatedAt                        DateTime?             @map("updated_at")
   name                             String?
   uri                              String?
   icon                             String?
   contacts                         String[]
   tos                              String?
   policy                           String?
-  softwareId                       String?
-  softwareVersion                  String?
-  softwareStatement                String?
-  redirectUris                     String[]
-  postLogoutRedirectUris           String[]
-  backchannelLogoutUri             String?
-  backchannelLogoutSessionRequired Boolean?
-  tokenEndpointAuthMethod          String?
-  applicationType                  String?
+  softwareId                       String?               @map("software_id")
+  softwareVersion                  String?               @map("software_version")
+  softwareStatement                String?               @map("software_statement")
+  redirectUris                     String[]              @map("redirect_uris")
+  postLogoutRedirectUris           String[]              @map("post_logout_redirect_uris")
+  backchannelLogoutUri             String?               @map("backchannel_logout_uri")
+  backchannelLogoutSessionRequired Boolean?              @map("backchannel_logout_session_required")
+  tokenEndpointAuthMethod          String?               @map("token_endpoint_auth_method")
+  applicationType                  String?               @map("application_type")
   jwks                             String?
-  jwksUri                          String?
-  grantTypes                       String[]
-  responseTypes                    String[]
-  requirePKCE                      Boolean?
-  dpopBoundAccessTokens            Boolean?              @default(false)
-  referenceId                      String?
+  jwksUri                          String?               @map("jwks_uri")
+  grantTypes                       String[]              @map("grant_types")
+  responseTypes                    String[]              @map("response_types")
+  requirePKCE                      Boolean?              @map("require_pkce")
+  dpopBoundAccessTokens            Boolean?              @default(false) @map("dpop_bound_access_tokens")
+  referenceId                      String?               @map("reference_id")
   metadata                         Json?
   oauthclientresources             OauthClientResource[]
   oauthrefreshtokens               OauthRefreshToken[]
@@ -534,7 +535,7 @@ model OauthClient {
 
 model OauthClientAssertion {
   id        BigInt   @id @default(autoincrement())
-  expiresAt DateTime
+  expiresAt DateTime @map("expires_at")
 
   @@map("oauth_client_assertion")
 }
@@ -543,17 +544,17 @@ model OauthResource {
   id                            BigInt                @id @default(autoincrement())
   identifier                    String
   name                          String
-  accessTokenTtl                Int?
-  refreshTokenTtl               Int?
-  signingAlgorithm              String?
-  signingKeyId                  String?
-  allowedScopes                 String[]
-  customClaims                  Json?
-  dpopBoundAccessTokensRequired Boolean?              @default(false)
+  accessTokenTtl                Int?                  @map("access_token_ttl")
+  refreshTokenTtl               Int?                  @map("refresh_token_ttl")
+  signingAlgorithm              String?               @map("signing_algorithm")
+  signingKeyId                  String?               @map("signing_key_id")
+  allowedScopes                 String[]              @map("allowed_scopes")
+  customClaims                  Json?                 @map("custom_claims")
+  dpopBoundAccessTokensRequired Boolean?              @default(false) @map("dpop_bound_access_tokens_required")
   disabled                      Boolean?              @default(false)
-  createdAt                     DateTime?
-  updatedAt                     DateTime?
-  policyVersion                 Int?                  @default(1)
+  createdAt                     DateTime?             @map("created_at")
+  updatedAt                     DateTime?             @map("updated_at")
+  policyVersion                 Int?                  @default(1) @map("policy_version")
   metadata                      Json?
   oauthclientresources          OauthClientResource[]
 
@@ -563,14 +564,14 @@ model OauthResource {
 
 model OauthClientResource {
   id            BigInt        @id @default(autoincrement())
-  clientId      String
+  clientId      String        @map("client_id")
   oauthclient   OauthClient   @relation(fields: [clientId], references: [clientId], onDelete: Cascade)
-  resourceId    String
+  resourceId    String        @map("resource_id")
   oauthresource OauthResource @relation(fields: [resourceId], references: [identifier], onDelete: Cascade)
   metadata      Json?
-  createdAt     DateTime?
+  createdAt     DateTime?     @map("created_at")
 
-  @@unique([clientId, resourceId], map: "oauthClientResource_clientId_resourceId_uidx")
+  @@unique([clientId, resourceId], map: "oauth_client_resource_client_id_resource_id_uidx")
   @@index([clientId])
   @@index([resourceId])
   @@map("oauth_client_resource")
@@ -579,23 +580,23 @@ model OauthClientResource {
 model OauthRefreshToken {
   id                      BigInt             @id @default(autoincrement())
   token                   String
-  clientId                String
+  clientId                String             @map("client_id")
   oauthclient             OauthClient        @relation(fields: [clientId], references: [clientId], onDelete: Cascade)
-  sessionId               BigInt?
+  sessionId               BigInt?            @map("session_id")
   session                 Session?           @relation(fields: [sessionId], references: [id], onDelete: SetNull)
-  userId                  BigInt
+  userId                  BigInt             @map("user_id")
   user                    User               @relation(fields: [userId], references: [id], onDelete: Cascade)
-  referenceId             String?
-  authorizationCodeId     String?
+  referenceId             String?            @map("reference_id")
+  authorizationCodeId     String?            @map("authorization_code_id")
   resources               String[]
-  requestedUserInfoClaims String[]
-  expiresAt               DateTime
-  createdAt               DateTime
+  requestedUserInfoClaims String[]           @map("requested_user_info_claims")
+  expiresAt               DateTime           @map("expires_at")
+  createdAt               DateTime           @map("created_at")
   revoked                 DateTime?
-  rotatedAt               DateTime?
-  rotationReplayResponse  String?
-  rotationReplayExpiresAt DateTime?
-  authTime                DateTime?
+  rotatedAt               DateTime?          @map("rotated_at")
+  rotationReplayResponse  String?            @map("rotation_replay_response")
+  rotationReplayExpiresAt DateTime?          @map("rotation_replay_expires_at")
+  authTime                DateTime?          @map("auth_time")
   confirmation            Json?
   scopes                  String[]
   oauthaccesstokens       OauthAccessToken[]
@@ -611,20 +612,20 @@ model OauthRefreshToken {
 model OauthAccessToken {
   id                      BigInt             @id @default(autoincrement())
   token                   String
-  clientId                String
+  clientId                String             @map("client_id")
   oauthclient             OauthClient        @relation(fields: [clientId], references: [clientId], onDelete: Cascade)
-  sessionId               BigInt?
+  sessionId               BigInt?            @map("session_id")
   session                 Session?           @relation(fields: [sessionId], references: [id], onDelete: SetNull)
-  userId                  BigInt?
+  userId                  BigInt?            @map("user_id")
   user                    User?              @relation(fields: [userId], references: [id], onDelete: Cascade)
-  referenceId             String?
-  authorizationCodeId     String?
+  referenceId             String?            @map("reference_id")
+  authorizationCodeId     String?            @map("authorization_code_id")
   resources               String[]
-  requestedUserInfoClaims String[]
-  refreshId               BigInt?
+  requestedUserInfoClaims String[]           @map("requested_user_info_claims")
+  refreshId               BigInt?            @map("refresh_id")
   oauthrefreshtoken       OauthRefreshToken? @relation(fields: [refreshId], references: [id], onDelete: Cascade)
-  expiresAt               DateTime
-  createdAt               DateTime
+  expiresAt               DateTime           @map("expires_at")
+  createdAt               DateTime           @map("created_at")
   revoked                 DateTime?
   confirmation            Json?
   scopes                  String[]
@@ -640,16 +641,16 @@ model OauthAccessToken {
 
 model OauthConsent {
   id                      BigInt      @id @default(autoincrement())
-  clientId                String
+  clientId                String      @map("client_id")
   oauthclient             OauthClient @relation(fields: [clientId], references: [clientId], onDelete: Cascade)
-  userId                  BigInt?
+  userId                  BigInt?     @map("user_id")
   user                    User?       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  referenceId             String?
+  referenceId             String?     @map("reference_id")
   resources               String[]
-  requestedUserInfoClaims String[]
+  requestedUserInfoClaims String[]    @map("requested_user_info_claims")
   scopes                  String[]
-  createdAt               DateTime
-  updatedAt               DateTime
+  createdAt               DateTime    @map("created_at")
+  updatedAt               DateTime    @map("updated_at")
 
   @@index([clientId])
   @@index([userId])
@@ -659,14 +660,14 @@ model OauthConsent {
 // Setup state doubles as a durable request to attach a Workflow SDK run.
 model OrganizationSetup {
   id             BigInt       @id @default(autoincrement())
-  organizationId BigInt       @unique
+  organizationId BigInt       @unique @map("organization_id")
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   status         String       @default("pending") // pending | running | ready | failed
   attempt        Int          @default(1)
-  runId          String?
+  runId          String?      @map("run_id")
   error          String?
-  createdAt      DateTime     @default(dbgenerated("timezone('utc'::text, now())"))
-  updatedAt      DateTime     @updatedAt
+  createdAt      DateTime     @default(dbgenerated("timezone('utc'::text, now())")) @map("created_at")
+  updatedAt      DateTime     @updatedAt @map("updated_at")
 
   @@map("organization_setup")
 }
@@ -676,15 +677,15 @@ model HarnessGrant {
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade, onUpdate: NoAction)
   user           User         @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
   id             BigInt       @id @default(autoincrement())
-  organizationId BigInt
-  userId         BigInt
+  organizationId BigInt       @map("organization_id")
+  userId         BigInt       @map("user_id")
   reference      String       @unique
-  sourceType     String
-  sourceId       BigInt
+  sourceType     String       @map("source_type")
+  sourceId       BigInt       @map("source_id")
   scopes         String[]
-  scopesKey      String
-  expiresAt      DateTime
-  createdAt      DateTime     @default(dbgenerated("timezone('utc'::text, now())"))
+  scopesKey      String       @map("scopes_key")
+  expiresAt      DateTime     @map("expires_at")
+  createdAt      DateTime     @default(dbgenerated("timezone('utc'::text, now())")) @map("created_at")
 
   @@unique([organizationId, sourceType, sourceId, scopesKey])
   @@map("harness_grant")
@@ -693,19 +694,19 @@ model HarnessGrant {
 // Metadata for an uploaded file; the bytes live in the storage driver under `storageKey`.
 // A file is attached to a record through a FILE field (see RecordFile).
 model StoredFile {
-  id             BigInt       @id @default(autoincrement())
-  organizationId BigInt
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  uploadedBy     BigInt?
-  uploader       User?        @relation(fields: [uploadedBy], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  id             BigInt        @id @default(autoincrement())
+  organizationId BigInt        @map("organization_id")
+  organization   Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  uploadedBy     BigInt?       @map("uploaded_by")
+  uploader       User?         @relation(fields: [uploadedBy], references: [id], onDelete: SetNull, onUpdate: NoAction)
   filename       String
-  mediaType      String
+  mediaType      String        @map("media_type")
   size           Int
   sha256         String
-  storageKey     String       @unique
-  createdAt      DateTime     @default(dbgenerated("timezone('utc'::text, now())"))
+  storageKey     String        @unique @map("storage_key")
+  createdAt      DateTime      @default(dbgenerated("timezone('utc'::text, now())")) @map("created_at")
   // Soft delete; a cleanup job removes the bytes later.
-  deletedAt      DateTime?
+  deletedAt      DateTime?     @map("deleted_at")
   attachments    RecordFile[]
   commentFiles   CommentFile[]
 
@@ -717,15 +718,15 @@ model StoredFile {
 // A file attached to a record through one of its FILE fields. A file may be attached to many records.
 model RecordFile {
   id             BigInt       @id @default(autoincrement())
-  organizationId BigInt
-  recordId       BigInt
+  organizationId BigInt       @map("organization_id")
+  recordId       BigInt       @map("record_id")
   record         ObjectRecord @relation(fields: [organizationId, recordId], references: [organizationId, id], onDelete: Cascade)
-  fieldName      String
-  fileId         BigInt
+  fieldName      String       @map("field_name")
+  fileId         BigInt       @map("file_id")
   file           StoredFile   @relation(fields: [organizationId, fileId], references: [organizationId, id], onDelete: Cascade)
   position       Int          @default(0)
-  createdBy      BigInt?
-  createdAt      DateTime     @default(dbgenerated("timezone('utc'::text, now())"))
+  createdBy      BigInt?      @map("created_by")
+  createdAt      DateTime     @default(dbgenerated("timezone('utc'::text, now())")) @map("created_at")
 
   @@unique([recordId, fieldName, fileId])
   @@index([organizationId, fileId])
@@ -736,13 +737,13 @@ model RecordFile {
 // A file attached to a comment. A file may be attached to many comments and records.
 model CommentFile {
   id             BigInt        @id @default(autoincrement())
-  organizationId BigInt
-  commentId      BigInt
+  organizationId BigInt        @map("organization_id")
+  commentId      BigInt        @map("comment_id")
   comment        RecordComment @relation(fields: [organizationId, commentId], references: [organizationId, id], onDelete: Cascade)
-  fileId         BigInt
+  fileId         BigInt        @map("file_id")
   file           StoredFile    @relation(fields: [organizationId, fileId], references: [organizationId, id], onDelete: Cascade)
   position       Int           @default(0)
-  createdAt      DateTime      @default(dbgenerated("timezone('utc'::text, now())"))
+  createdAt      DateTime      @default(dbgenerated("timezone('utc'::text, now())")) @map("created_at")
 
   @@unique([commentId, fileId])
   @@index([organizationId, fileId])
@@ -753,13 +754,13 @@ model CommentFile {
 // hash of the secret is stored.
 model UploadTicket {
   id             BigInt    @id @default(autoincrement())
-  organizationId BigInt
-  userId         BigInt
-  secretHash     String
-  actorType      String
-  expiresAt      DateTime
-  usedAt         DateTime?
-  createdAt      DateTime  @default(dbgenerated("timezone('utc'::text, now())"))
+  organizationId BigInt    @map("organization_id")
+  userId         BigInt    @map("user_id")
+  secretHash     String    @map("secret_hash")
+  actorType      String    @map("actor_type")
+  expiresAt      DateTime  @map("expires_at")
+  usedAt         DateTime? @map("used_at")
+  createdAt      DateTime  @default(dbgenerated("timezone('utc'::text, now())")) @map("created_at")
 
   @@index([organizationId, expiresAt])
   @@map("upload_ticket")
