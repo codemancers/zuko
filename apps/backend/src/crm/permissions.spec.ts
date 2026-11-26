@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { can, defaultScopesFor, visibilitySql } from './permissions';
+import { can, canUploadFiles, defaultScopesFor, visibilitySql } from './permissions';
 import type { RequestContext } from './context';
 
 const ctx = (roles: string[]): RequestContext => ({
@@ -23,6 +23,18 @@ describe('can', () => {
     expect(can(ctx(['member', 'admin']), { record: ['delete'] })).toBe(true);
     expect(can(ctx(['mystery']), { record: ['read'] })).toBe(false);
     expect(can(ctx([]), { record: ['read'] })).toBe(false);
+  });
+});
+
+describe('canUploadFiles', () => {
+  it('is for roles that can change records or comment', () => {
+    for (const role of ['owner', 'admin', 'member']) expect(canUploadFiles(ctx([role]))).toBe(true);
+  });
+
+  it('is not for unknown roles or none, which can do nothing', () => {
+    expect(canUploadFiles(ctx(['viewer']))).toBe(false);
+    expect(canUploadFiles(ctx([]))).toBe(false);
+    expect(canUploadFiles(ctx(['viewer', 'member']))).toBe(true);
   });
 });
 

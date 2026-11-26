@@ -11,6 +11,7 @@ const ORIGIN = process.env.FRONTEND_URL || 'http://localhost:4200';
 export interface Reply {
   status: number;
   data: any; // eslint-disable-line @typescript-eslint/no-explicit-any
+  headers?: Record<string, string>;
 }
 
 /** A signed-in user: remembers the session cookie and sends it with every call. */
@@ -79,6 +80,43 @@ export class User {
       validateStatus: () => true,
     });
     return { status: res.status, data: res.data };
+  }
+
+  /** A multipart upload of one file in the `file` field (or `field`), with any extra text fields. */
+  async upload(
+    url: string,
+    filename: string,
+    bytes: Uint8Array,
+    type = 'application/octet-stream',
+    field = 'file',
+    extra: Record<string, string> = {},
+  ): Promise<Reply> {
+    const form = new FormData();
+    for (const [name, value] of Object.entries(extra)) form.append(name, value);
+    form.append(field, new Blob([bytes], { type }), filename);
+    const res = await axios.post(url, form, {
+      headers: { Origin: ORIGIN, ...(this.cookie ? { Cookie: this.cookie } : {}) },
+      validateStatus: () => true,
+      maxBodyLength: Infinity,
+      maxContentLength: Infinity,
+    });
+    return { status: res.status, data: res.data };
+  }
+
+  /** A GET that returns the raw bytes and the response headers. */
+  async download(url: string): Promise<Reply & { bytes: Buffer }> {
+    const res = await axios.get(url, {
+      responseType: 'arraybuffer',
+      headers: { Origin: ORIGIN, ...(this.cookie ? { Cookie: this.cookie } : {}) },
+      validateStatus: () => true,
+      maxContentLength: Infinity,
+    });
+    const bytes = Buffer.from(res.data);
+    let data: unknown = bytes;
+    if (String(res.headers['content-type']).includes('json')) {
+      try { data = JSON.parse(bytes.toString('utf8')); } catch { /* keep the bytes */ }
+    }
+    return { status: res.status, data, bytes, headers: res.headers as Record<string, string> };
   }
 
   get = (url: string) => this.call('GET', url);

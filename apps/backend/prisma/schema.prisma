@@ -13,6 +13,7 @@ datasource db {
 
 model User {
   harnessGrants      HarnessGrant[]
+  storedFiles      StoredFile[]
   id                 BigInt              @id @default(autoincrement())
   name               String
   email              String              @unique
@@ -93,6 +94,7 @@ model Verification {
 
 model Organization {
   harnessGrants  HarnessGrant[]
+  storedFiles  StoredFile[]
   id             BigInt             @id @default(autoincrement())
   name           String
   slug           String             @unique
@@ -223,6 +225,7 @@ model ObjectRecord {
   asSource Association[] @relation("AssociationSource")
   asTarget Association[] @relation("AssociationTarget")
   shares   RecordShare[]
+  files    RecordFile[]
 
   @@unique([organizationId, id])
   comments RecordComment[]
@@ -355,7 +358,9 @@ model RecordComment {
   editedAt       DateTime?
   createdAt      DateTime     @default(dbgenerated("timezone('utc'::text, now())"))
   deletedAt      DateTime?
+  files          CommentFile[]
 
+  @@unique([organizationId, id])
   @@index([organizationId, recordId, createdAt, id])
   @@map("record_comment")
 }
@@ -683,4 +688,79 @@ model HarnessGrant {
 
   @@unique([organizationId, sourceType, sourceId, scopesKey])
   @@map("harness_grant")
+}
+
+// Metadata for an uploaded file; the bytes live in the storage driver under `storageKey`.
+// A file is attached to a record through a FILE field (see RecordFile).
+model StoredFile {
+  id             BigInt       @id @default(autoincrement())
+  organizationId BigInt
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  uploadedBy     BigInt?
+  uploader       User?        @relation(fields: [uploadedBy], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  filename       String
+  mediaType      String
+  size           Int
+  sha256         String
+  storageKey     String       @unique
+  createdAt      DateTime     @default(dbgenerated("timezone('utc'::text, now())"))
+  // Soft delete; a cleanup job removes the bytes later.
+  deletedAt      DateTime?
+  attachments    RecordFile[]
+  commentFiles   CommentFile[]
+
+  @@unique([organizationId, id])
+  @@index([organizationId, uploadedBy])
+  @@map("stored_file")
+}
+
+// A file attached to a record through one of its FILE fields. A file may be attached to many records.
+model RecordFile {
+  id             BigInt       @id @default(autoincrement())
+  organizationId BigInt
+  recordId       BigInt
+  record         ObjectRecord @relation(fields: [organizationId, recordId], references: [organizationId, id], onDelete: Cascade)
+  fieldName      String
+  fileId         BigInt
+  file           StoredFile   @relation(fields: [organizationId, fileId], references: [organizationId, id], onDelete: Cascade)
+  position       Int          @default(0)
+  createdBy      BigInt?
+  createdAt      DateTime     @default(dbgenerated("timezone('utc'::text, now())"))
+
+  @@unique([recordId, fieldName, fileId])
+  @@index([organizationId, fileId])
+  @@index([organizationId, recordId, fieldName, position])
+  @@map("record_file")
+}
+
+// A file attached to a comment. A file may be attached to many comments and records.
+model CommentFile {
+  id             BigInt        @id @default(autoincrement())
+  organizationId BigInt
+  commentId      BigInt
+  comment        RecordComment @relation(fields: [organizationId, commentId], references: [organizationId, id], onDelete: Cascade)
+  fileId         BigInt
+  file           StoredFile    @relation(fields: [organizationId, fileId], references: [organizationId, id], onDelete: Cascade)
+  position       Int           @default(0)
+  createdAt      DateTime      @default(dbgenerated("timezone('utc'::text, now())"))
+
+  @@unique([commentId, fileId])
+  @@index([organizationId, fileId])
+  @@map("comment_file")
+}
+
+// A single-use, short-lived link to upload one file, bound to the user who asked for it. Only a
+// hash of the secret is stored.
+model UploadTicket {
+  id             BigInt    @id @default(autoincrement())
+  organizationId BigInt
+  userId         BigInt
+  secretHash     String
+  actorType      String
+  expiresAt      DateTime
+  usedAt         DateTime?
+  createdAt      DateTime  @default(dbgenerated("timezone('utc'::text, now())"))
+
+  @@index([organizationId, expiresAt])
+  @@map("upload_ticket")
 }

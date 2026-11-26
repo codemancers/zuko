@@ -91,6 +91,8 @@ export class CrmExceptionFilter implements ExceptionFilter {
       this.logger.error(exception instanceof Error ? (exception.stack ?? exception.message) : String(exception));
     }
 
-    response.status(status).json({ code, message, errors, path: request.originalUrl, timestamp: new Date().toISOString() });
+    // An upload link carries its own secret in the path; never echo it back.
+    const path = request.originalUrl.replace(/(\/files\/uploads\/)[^/?#]*/, '$1[redacted]');
+    response.status(status).json({ code, message, errors, path, timestamp: new Date().toISOString() });
   }
 }
