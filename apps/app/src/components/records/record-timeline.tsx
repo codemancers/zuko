@@ -13,10 +13,13 @@ import {
   type CommentItem,
 } from '@/lib/activity';
 import { Markdown } from '@/lib/markdown-lite';
+import type { AttachedFile } from '@/lib/files';
 import { describeHistory, type ObjectDef } from '@/lib/records';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { AttachButton } from '@/components/files/attach-button';
+import { FileChip } from '@/components/files/file-chip';
 
 const when = new Intl.DateTimeFormat(undefined, {
   day: 'numeric',
@@ -69,7 +72,12 @@ export function RecordTimeline({
     queryKey: ['permissions'],
     queryFn: ({ signal }) => api<Me>('/api/v1/me', { signal }),
   });
-  const refresh = () => client.invalidateQueries({ queryKey: key });
+  // A comment's files also appear in the record's file list, so it reloads with the timeline.
+  const refresh = () =>
+    Promise.all([
+      client.invalidateQueries({ queryKey: key }),
+      client.invalidateQueries({ queryKey: ['record-files', def.name, recordId] }),
+    ]);
 
   const blocks = groupTimeline(timeline.data?.results ?? []);
   return (
@@ -183,6 +191,8 @@ function CommentCard({
   const [editing, setEditing] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [draft, setDraft] = useState(comment.body);
+  const attached = comment.files ?? [];
+  const [draftFiles, setDraftFiles] = useState<AttachedFile[]>(attached);
   const mine = me?.user_id !== undefined && me.user_id === comment.actor_id;
   const canDelete = mine || me?.can_moderate_comments === true;
   const url = `${base}/comments/${comment.id}`;
@@ -191,7 +201,12 @@ function CommentCard({
     mutationFn: () =>
       api(url, {
         method: 'PATCH',
-        json: { body: draft.trim(), mentions: mentionedIds(draft, members) },
+        json: {
+          body: draft.trim(),
+          mentions: mentionedIds(draft, members),
+          // Only when the files changed, so editing the text never touches them.
+          ...(sameFiles(draftFiles, attached) ? {} : { files: draftFiles.map((f) => f.id) }),
+        },
       }),
     onSuccess: () => {
       setEditing(false);
@@ -234,6 +249,8 @@ function CommentCard({
                   size="xs"
                   onClick={() => {
                     setDraft(comment.body);
+                    setDraftFiles(attached);
+                    save.reset();
                     setEditing(true);
                   }}
                 >
@@ -274,10 +291,18 @@ function CommentCard({
                 onChange={(e) => setDraft(e.target.value)}
                 className={textareaClass}
               />
-              <div className="flex gap-2">
+              <AttachedList
+                files={draftFiles}
+                disabled={save.isPending}
+                onChange={(files) => {
+                  setDraftFiles(files);
+                  if (save.isError) save.reset();
+                }}
+              />
+              <div className="flex items-center gap-2">
                 <Button
                   size="sm"
-                  disabled={save.isPending || draft.trim() === ''}
+                  disabled={save.isPending || (draft.trim() === '' && draftFiles.length === 0)}
                   onClick={() => save.mutate()}
                 >
                   {save.isPending && (
@@ -295,10 +320,27 @@ function CommentCard({
                 >
                   Cancel
                 </Button>
+                <AttachButton
+                  disabled={save.isPending || draftFiles.length >= MAX_FILES}
+                  onUploaded={(files) => setDraftFiles((current) => [...current, ...files].slice(0, MAX_FILES))}
+                />
               </div>
             </div>
           ) : (
-            <Markdown text={comment.body} mentions={members.map((m) => m.label)} />
+            <>
+              {comment.body !== '' && (
+                <Markdown text={comment.body} mentions={members.map((m) => m.label)} />
+              )}
+              {attached.length > 0 && (
+                <ul aria-label="Attached files" className={`flex flex-wrap gap-1.5 ${comment.body !== '' ? 'mt-2' : ''}`}>
+                  {attached.map((file) => (
+                    <li key={file.id} className="max-w-full">
+                      <FileChip file={file} />
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </>
           )}
           {problem && (
             <p role="alert" className="mt-2 text-xs text-destructive">
@@ -308,6 +350,38 @@ function CommentCard({
         </div>
       </article>
     </li>
+  );
+}
+
+/** The most files one comment holds; the server enforces the same. */
+const MAX_FILES = 10;
+
+const sameFiles = (a: AttachedFile[], b: AttachedFile[]) =>
+  a.length === b.length && a.every((file, i) => file.id === b[i]?.id);
+
+/** Files about to be attached, each with a button to take it off. */
+function AttachedList({
+  files,
+  disabled,
+  onChange,
+}: {
+  files: AttachedFile[];
+  disabled?: boolean;
+  onChange: (files: AttachedFile[]) => void;
+}) {
+  if (files.length === 0) return null;
+  return (
+    <ul aria-label="Files to attach" className="flex flex-wrap gap-1.5">
+      {files.map((file) => (
+        <li key={file.id} className="max-w-full">
+          <FileChip
+            file={file}
+            disabled={disabled}
+            onRemove={() => onChange(files.filter((other) => other.id !== file.id))}
+          />
+        </li>
+      ))}
+    </ul>
   );
 }
 
@@ -327,6 +401,7 @@ function Composer({
   const [text, setText] = useState('');
   const [caret, setCaret] = useState(0);
   const [dismissed, setDismissed] = useState(false);
+  const [files, setFiles] = useState<AttachedFile[]>([]);
   const field = useRef<HTMLTextAreaElement>(null);
   const list = useRef<HTMLUListElement>(null);
 
@@ -334,10 +409,15 @@ function Composer({
     mutationFn: () =>
       api(`${base}/comments`, {
         method: 'POST',
-        json: { body: text.trim(), mentions: mentionedIds(text, members) },
+        json: {
+          body: text.trim(),
+          mentions: mentionedIds(text, members),
+          ...(files.length > 0 ? { files: files.map((f) => f.id) } : {}),
+        },
       }),
     onSuccess: () => {
       setText('');
+      setFiles([]);
       onPosted();
     },
   });
@@ -358,7 +438,7 @@ function Composer({
     });
   };
   const submit = () => {
-    if (text.trim() !== '' && !post.isPending) post.mutate();
+    if ((text.trim() !== '' || files.length > 0) && !post.isPending) post.mutate();
   };
   const onKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
     // Posting wins over everything else: Ctrl or Cmd + Enter always sends what is written.
@@ -430,14 +510,32 @@ function Composer({
           </ul>
         )}
       </div>
+      <AttachedList
+        files={files}
+        disabled={post.isPending}
+        onChange={(next) => {
+          setFiles(next);
+          if (post.isError) post.reset();
+        }}
+      />
       {post.error && (
         <p role="alert" className="text-xs text-destructive">
           {post.error instanceof ApiError ? post.error.message : 'The comment could not be posted.'}
         </p>
       )}
       <div className="flex items-center justify-between gap-2">
-        <span className="text-xs text-muted-foreground">Markdown. Ctrl or ⌘ + Enter to post.</span>
-        <Button size="sm" disabled={text.trim() === '' || post.isPending} onClick={submit}>
+        <span className="flex flex-wrap items-center gap-2">
+          <AttachButton
+            disabled={post.isPending || files.length >= MAX_FILES}
+            onUploaded={(uploaded) => setFiles((current) => [...current, ...uploaded].slice(0, MAX_FILES))}
+          />
+          <span className="text-xs text-muted-foreground">Markdown. Ctrl or ⌘ + Enter to post.</span>
+        </span>
+        <Button
+          size="sm"
+          disabled={(text.trim() === '' && files.length === 0) || post.isPending}
+          onClick={submit}
+        >
           {post.isPending && (
             <LoaderCircle className="animate-spin motion-reduce:animate-none" aria-hidden />
           )}

@@ -24,6 +24,7 @@ const comment = (id: string, at: string): CommentItem => ({
   record_id: '1',
   body: 'hi',
   mentions: [],
+  files: [],
   actor_type: 'USER',
   actor_id: '7',
   actor_name: 'Me',
