@@ -2,7 +2,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { User, cleanup, verifyEmails, type Reply } from '../support/crm-client';
 
 /**
- * The standard objects (contact, company, deal, prospect, lead): who can set them up, that setting up twice
+ * The standard objects (contact, company, deal, prospect, lead, campaign): who can set them up, that setting up twice
  * changes nothing, and that they behave like any object once they exist.
  *   Acme: owner, alice (member)      Other org: eve
  */
@@ -52,7 +52,7 @@ afterAll(async () => {
 describe('setting up', () => {
   it('provisions the standard objects before the organization is ready', async () => {
     const result = ok(await owner.get(`${API}/objects`));
-    const all = ['contact', 'company', 'deal', 'prospect', 'lead'];
+    const all = ['contact', 'company', 'deal', 'prospect', 'lead', 'campaign'];
     expect(names(result)).toEqual(all);
     expect(result.results.map((o: { object_kind: string }) => o.object_kind)).toEqual(
       all.map(() => 'STANDARD'),
@@ -63,6 +63,7 @@ describe('setting up', () => {
       'Deals',
       'Prospects',
       'Leads',
+      'Campaigns',
     ]);
     expect(names(ok(await alice.get(`${API}/objects`)))).toEqual(all);
   });
@@ -80,25 +81,37 @@ describe('setting up', () => {
       ['contact_company', 'Companies', 'forward'],
       ['contact_deal', 'Deals', 'forward'],
       ['lead_contact', 'Leads', 'reverse'],
+      ['contact_campaign', 'Campaigns', 'forward'],
     ]);
     expect(await linkable('company')).toEqual([
       ['contact_company', 'Contacts', 'reverse'],
       ['deal_company', 'Deals', 'reverse'],
       ['prospect_company', 'Prospects', 'reverse'],
       ['lead_company', 'Leads', 'reverse'],
+      ['company_campaign', 'Campaigns', 'forward'],
     ]);
     expect(await linkable('prospect')).toEqual([
       ['prospect_company', 'Companies', 'forward'],
       ['prospect_lead', 'Converted to lead', 'forward'],
+      ['prospect_campaign', 'Campaigns', 'forward'],
     ]);
     expect(await linkable('lead')).toEqual([
       ['lead_company', 'Companies', 'forward'],
       ['prospect_lead', 'Prospects', 'reverse'],
       ['lead_contact', 'Converted to contact', 'forward'],
+      ['lead_campaign', 'Campaigns', 'forward'],
     ]);
     expect(await linkable('deal')).toEqual([
       ['contact_deal', 'Contacts', 'reverse'],
       ['deal_company', 'Companies', 'forward'],
+      ['deal_campaign', 'Campaigns', 'forward'],
+    ]);
+    expect(await linkable('campaign')).toEqual([
+      ['prospect_campaign', 'Prospects', 'reverse'],
+      ['lead_campaign', 'Leads', 'reverse'],
+      ['contact_campaign', 'Contacts', 'reverse'],
+      ['company_campaign', 'Companies', 'reverse'],
+      ['deal_campaign', 'Deals', 'reverse'],
     ]);
   });
 
@@ -114,6 +127,7 @@ describe('setting up', () => {
       'lifecycle_stage',
       'companies',
       'deals',
+      'campaigns',
     ]);
     expect(byName.companies).toMatchObject({
       type: 'LINK',
@@ -141,6 +155,7 @@ describe('setting up', () => {
       'stage',
       'expected_close_date',
       'companies',
+      'campaigns',
     ]);
     expect(deal.fields.find((f: { name: string }) => f.name === 'expected_close_date').type).toBe(
       'TIMESTAMP',
@@ -172,6 +187,7 @@ describe('setting up', () => {
       'ai_summary',
       'companies',
       'converted_contact',
+      'campaigns',
     ]);
     const prospect = ok(await owner.get(`${API}/objects/prospect`));
     // A prospect or lead is converted at most once, so those links hold one record.
@@ -181,6 +197,31 @@ describe('setting up', () => {
     expect(
       lead.fields.find((f: { name: string }) => f.name === 'converted_contact').config,
     ).toEqual({ link: 'lead_contact', target: 'contact', many: false });
+    const campaign = ok(await owner.get(`${API}/objects/campaign`));
+    expect(campaign.fields.map((f: { name: string }) => f.name)).toEqual([
+      'name',
+      'status',
+      'type',
+      'start_date',
+      'end_date',
+      'budget',
+      'spent',
+      'goal',
+      'description',
+      'assets',
+    ]);
+    expect(campaign.fields.find((f: { name: string }) => f.name === 'status').config.options).toEqual([
+      'draft',
+      'scheduled',
+      'active',
+      'paused',
+      'completed',
+      'cancelled',
+    ]);
+    expect(campaign.fields.find((f: { name: string }) => f.name === 'assets')).toMatchObject({
+      type: 'FILE',
+      config: { many: true },
+    });
     expect(prospect.fields.find((f: { name: string }) => f.name === 'email')).toMatchObject({
       type: 'EMAIL',
       unique: true,
@@ -235,13 +276,46 @@ describe('setting up', () => {
     ok(await owner.del(`${API}/objects/company/records/${c.id}`));
   });
 
+  it('links people to a campaign and lists its members from the campaign', async () => {
+    const campaign = ok(
+      await owner.post(`${API}/objects/campaign/records`, {
+        properties: { name: `Spring push ${run}`, status: 'active', type: 'email', budget: 5000 },
+      }),
+      201,
+    );
+    const prospect = ok(
+      await owner.post(`${API}/objects/prospect/records`, { properties: { first_name: 'Cam' } }),
+      201,
+    );
+    const lead = ok(
+      await owner.post(`${API}/objects/lead/records`, { properties: { first_name: 'Cam' } }),
+      201,
+    );
+    const rec = (object: string, id: string) => `${API}/objects/${object}/records/${id}`;
+    ok(await owner.post(`${rec('prospect', prospect.id)}/associations/prospect_campaign`, { record_id: campaign.id }));
+    ok(await owner.post(`${rec('lead', lead.id)}/associations/lead_campaign`, { record_id: campaign.id }));
+    const members = async (link: string) =>
+      ok(await owner.get(`${rec('campaign', campaign.id)}/associations/${link}`)).results.map(
+        (r: { id: string }) => r.id,
+      );
+    expect(await members('prospect_campaign')).toEqual([prospect.id]);
+    expect(await members('lead_campaign')).toEqual([lead.id]);
+    expect(await members('contact_campaign')).toEqual([]);
+    // A status outside the list is refused.
+    const bad = await owner.patch(rec('campaign', campaign.id), { properties: { status: 'live' } });
+    expect(bad.status).toBe(400);
+    ok(await owner.del(rec('campaign', campaign.id)));
+    ok(await owner.del(rec('prospect', prospect.id)));
+    ok(await owner.del(rec('lead', lead.id)));
+  });
+
   it('does not expose the old lazy provisioning endpoint', async () => {
     expect((await owner.post(`${API}/setup/standard-objects`)).status).toBe(404);
   });
 
   it('provisions independent schemas for other organizations', async () => {
     for (const user of [eve, zed]) {
-      expect(names(ok(await user.get(`${API}/objects`)))).toEqual(['contact', 'company', 'deal', 'prospect', 'lead']);
+      expect(names(ok(await user.get(`${API}/objects`)))).toEqual(['contact', 'company', 'deal', 'prospect', 'lead', 'campaign']);
       expect(ok(await user.get(`${API}/objects/company`)).object_kind).toBe('STANDARD');
     }
   });

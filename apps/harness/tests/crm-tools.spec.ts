@@ -192,6 +192,28 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)('CRM tool integration', () => {
     );
   });
 
+  it('links and unlinks several records in one call, all or none', async () => {
+    const company = await create.execute!({ object: 'company', properties: { name: 'Bulk Tool Co' } }, ctx);
+    const people = [];
+    for (const name of ['Bulk A', 'Bulk B', 'Bulk C'])
+      people.push(await create.execute!({ object: 'contact', properties: { first_name: name } }, ctx));
+    const link3 = { object: 'company', id: company.id, link: 'contact_company' };
+    const added = await link.execute!(
+      { ...link3, record_ids: people.map((p: { id: string }) => p.id) },
+      ctx,
+    );
+    expect(added.results.map((r: { id: string }) => r.id)).toEqual(people.map((p: { id: string }) => p.id));
+    expect((await linked.execute!(link3, ctx)).metadata.total_elements).toBe(3);
+    // One id that does not exist: nothing changes and the error names it.
+    const bad = await unlink.execute!({ ...link3, record_ids: [people[0].id, '999999999'] }, ctx);
+    expect(JSON.stringify(bad.zuko_error)).toContain('999999999');
+    expect((await linked.execute!(link3, ctx)).metadata.total_elements).toBe(3);
+    await unlink.execute!({ ...link3, record_ids: [people[0].id, people[1].id] }, ctx);
+    expect((await linked.execute!(link3, ctx)).results.map((r: { id: string }) => r.id)).toEqual([people[2].id]);
+    for (const p of people) await remove.execute!({ object: 'contact', id: p.id }, ctx);
+    await remove.execute!({ object: 'company', id: company.id }, ctx);
+  });
+
   it('comments on a record and reads the timeline with the changes interleaved, attributed to the agent', async () => {
     const contact = await create.execute!(
       { object: 'contact', properties: { first_name: 'Grace', last_name: 'Hopper' } },

@@ -31,7 +31,7 @@ describe.skipIf(!url)('CRM provisioning transactions', () => {
     const provision = () =>
       prisma.withTenant({ organizationId }, (tx) => provisionStandardObjects(tx, organizationId));
     const created = (await Promise.all([provision(), provision(), provision()])).flat().sort();
-    expect(created).toEqual(['company', 'contact', 'deal', 'lead', 'prospect']);
+    expect(created).toEqual(['campaign', 'company', 'contact', 'deal', 'lead', 'prospect']);
     await prisma.withTenant({ organizationId }, async (tx) => {
       const contact = await tx.objectType.findFirstOrThrow({
         where: { organizationId, slug: 'contact' },

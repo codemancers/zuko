@@ -10,6 +10,8 @@ export interface StandardField {
   maxLength?: number;
   /** For ENUM fields. */
   options?: string[];
+  /** For FILE fields: whether the field holds several files. */
+  many?: boolean;
 }
 
 export interface StandardObject {
@@ -125,6 +127,35 @@ export const STANDARD_OBJECTS: readonly StandardObject[] = [
       { name: 'ai_summary', label: 'AI summary', type: 'TEXT', maxLength: 2000 },
     ],
   },
+  {
+    slug: 'campaign',
+    label: 'Campaign',
+    pluralLabel: 'Campaigns',
+    fields: [
+      { name: 'name', label: 'Name', type: 'TEXT', required: true, filterable: true, maxLength: 200 },
+      {
+        name: 'status',
+        label: 'Status',
+        type: 'ENUM',
+        filterable: true,
+        options: ['draft', 'scheduled', 'active', 'paused', 'completed', 'cancelled'],
+      },
+      {
+        name: 'type',
+        label: 'Type',
+        type: 'ENUM',
+        filterable: true,
+        options: ['email', 'event', 'outbound', 'content', 'other'],
+      },
+      { name: 'start_date', label: 'Start date', type: 'TIMESTAMP', filterable: true },
+      { name: 'end_date', label: 'End date', type: 'TIMESTAMP', filterable: true },
+      { name: 'budget', label: 'Budget', type: 'NUMBER', filterable: true },
+      { name: 'spent', label: 'Spent', type: 'NUMBER' },
+      { name: 'goal', label: 'Goal', type: 'TEXT', maxLength: 500 },
+      { name: 'description', label: 'Description', type: 'TEXT', maxLength: 2000 },
+      { name: 'assets', label: 'Assets', type: 'FILE', many: true },
+    ],
+  },
 ];
 
 /**
@@ -151,4 +182,12 @@ export const STANDARD_ASSOCIATIONS: readonly {
   // Where a prospect or lead went once it moved on; filled in when it converts.
   { name: 'prospect_lead', label: 'Prospect and lead', source: 'prospect', target: 'lead', field: 'converted_lead', fieldLabel: 'Converted to lead', reverseLabel: 'Prospects', many: false },
   { name: 'lead_contact', label: 'Lead and contact', source: 'lead', target: 'contact', field: 'converted_contact', fieldLabel: 'Converted to contact', reverseLabel: 'Leads', many: false },
+  // Who a campaign reaches. The person is the source so a campaign with thousands of members
+  // has no column listing them all; the campaign shows them under `reverseLabel`.
+  { name: 'prospect_campaign', label: 'Prospect and campaign', source: 'prospect', target: 'campaign', field: 'campaigns', fieldLabel: 'Campaigns', reverseLabel: 'Prospects' },
+  { name: 'lead_campaign', label: 'Lead and campaign', source: 'lead', target: 'campaign', field: 'campaigns', fieldLabel: 'Campaigns', reverseLabel: 'Leads' },
+  { name: 'contact_campaign', label: 'Contact and campaign', source: 'contact', target: 'campaign', field: 'campaigns', fieldLabel: 'Campaigns', reverseLabel: 'Contacts' },
+  { name: 'company_campaign', label: 'Company and campaign', source: 'company', target: 'campaign', field: 'campaigns', fieldLabel: 'Campaigns', reverseLabel: 'Companies' },
+  // Deals a campaign is credited with, for attribution.
+  { name: 'deal_campaign', label: 'Deal and campaign', source: 'deal', target: 'campaign', field: 'campaigns', fieldLabel: 'Campaigns', reverseLabel: 'Deals' },
 ];

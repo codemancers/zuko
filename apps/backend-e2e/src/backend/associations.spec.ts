@@ -231,6 +231,146 @@ describe('what a person may link', () => {
   });
 });
 
+describe('linking several at once', () => {
+  const unlinkMany = (user: User, object: string, id: string, link: string, record_ids: unknown) =>
+    user.post(`${links(object, id, link)}/unlink`, { record_ids });
+  let people: string[]; // contacts
+  let firms: string[]; // companies
+
+  beforeAll(async () => {
+    people = [];
+    firms = [];
+    for (const name of ['Bulk1', 'Bulk2', 'Bulk3']) {
+      people.push(await create(owner, 'contact', { first_name: name }));
+      firms.push(await create(owner, 'company', { name: `${name} Co` }));
+    }
+  });
+
+  it('adds many to one record, keeping what is there and ignoring repeats', async () => {
+    ok(await owner.post(links('company', firms[0], 'contact_company'), { record_id: people[0] }));
+    const reply = ok(
+      await owner.post(links('company', firms[0], 'contact_company'), {
+        record_ids: [people[1], people[2], people[1], people[0]],
+      }),
+    );
+    // The answer is the records it was given, once each, not everything now linked.
+    expect(ids(reply)).toEqual([people[1], people[2], people[0]]);
+    expect(sorted(ids(ok(await owner.get(links('company', firms[0], 'contact_company')))))).toEqual(
+      sorted(people),
+    );
+    // Seen from each contact.
+    expect(ids(ok(await owner.get(links('contact', people[2], 'contact_company'))))).toEqual([
+      firms[0],
+    ]);
+    // Again: nothing changes.
+    ok(await owner.post(links('company', firms[0], 'contact_company'), { record_ids: people }));
+    expect(ok(await owner.get(links('company', firms[0], 'contact_company'))).metadata.total_elements).toBe(3);
+  });
+
+  it('adds from the record that holds the link field too', async () => {
+    ok(
+      await owner.post(links('contact', people[0], 'contact_company'), {
+        record_ids: [firms[1], firms[2]],
+      }),
+    );
+    expect(sorted(ids(ok(await owner.get(links('contact', people[0], 'contact_company')))))).toEqual(
+      sorted([firms[0], firms[1], firms[2]]),
+    );
+  });
+
+  it('applies all of them or none', async () => {
+    const before = ids(ok(await owner.get(links('company', firms[1], 'contact_company'))));
+    for (const bad of ['999999999', renewal]) {
+      const reply = await owner.post(links('company', firms[1], 'contact_company'), {
+        record_ids: [people[1], bad, people[2]],
+      });
+      expect(reply.status).toBe(404); // missing, or a deal where a contact is needed
+      expect(JSON.stringify(reply.data)).toContain(bad);
+    }
+    expect(ids(ok(await owner.get(links('company', firms[1], 'contact_company'))))).toEqual(before);
+  });
+
+  it('refuses a list that is empty, too long, malformed, or sent with record_id', async () => {
+    const url = links('company', firms[1], 'contact_company');
+    expect((await owner.post(url, { record_ids: [] })).status).toBe(400);
+    expect((await owner.post(url, { record_ids: 'x' })).status).toBe(400);
+    expect((await owner.post(url, { record_ids: ['abc'] })).status).toBe(404); // an id that cannot exist, as for one id
+    expect((await owner.post(url, { record_id: people[1], record_ids: [people[2]] })).status).toBe(400);
+    expect((await owner.post(url, {})).status).toBe(400);
+    const tooMany = Array.from({ length: 501 }, (_, i) => String(i + 1));
+    expect((await owner.post(url, { record_ids: tooMany })).status).toBe(400);
+  });
+
+  it('holds one record on a link that holds one, and refuses a list of two', async () => {
+    const lead = await create(owner, 'lead', { first_name: 'Single' });
+    const url = links('lead', lead, 'lead_contact');
+    expect((await owner.post(url, { record_ids: [people[0], people[1]] })).status).toBe(400);
+    expect(ids(ok(await owner.post(url, { record_ids: [people[0]] })))).toEqual([people[0]]);
+    expect(ids(ok(await owner.get(url)))).toEqual([people[0]]);
+  });
+
+  it('keeps to what the person may see and change, and to their own organization', async () => {
+    const mineCompany = await create(alice, 'company', { name: 'Alice Bulk Co' });
+    const mineContact = await create(alice, 'contact', { first_name: 'Alice', last_name: 'Bulk' });
+    ok(await alice.post(links('company', mineCompany, 'contact_company'), { record_ids: [mineContact] }));
+    // One of the contacts is the owner's, which she cannot see: nothing is linked.
+    expect(
+      (
+        await alice.post(links('company', mineCompany, 'contact_company'), {
+          record_ids: [mineContact, people[2]],
+        })
+      ).status,
+    ).toBe(404);
+    // Nor can she add to the owner's company.
+    expect(
+      (await alice.post(links('company', firms[2], 'contact_company'), { record_ids: [mineContact] })).status,
+    ).toBe(404);
+    expect(ids(ok(await alice.get(links('company', mineCompany, 'contact_company'))))).toEqual([mineContact]);
+    // Another organization sees none of it.
+    expect((await eve.post(links('company', firms[0], 'contact_company'), { record_ids: people })).status).toBe(404);
+    expect((await unlinkMany(eve, 'company', firms[0], 'contact_company', people)).status).toBe(404);
+  });
+
+  it('writes history for every record it touched', async () => {
+    const hist = await create(owner, 'company', { name: 'HistBulk' });
+    ok(await owner.post(links('company', hist, 'contact_company'), { record_ids: [people[0], people[1]] }));
+    for (const person of [people[0], people[1]]) {
+      const changes = (ok(await owner.get(`${rec('contact', person)}/history`)).results as {
+        changes: Record<string, { old: unknown; new: unknown }>;
+      }[]).flatMap((h) => (h.changes['associations.contact_company'] ? [h.changes['associations.contact_company']] : []));
+      expect(changes.some((c) => c.new === hist)).toBe(true); // the other end records who linked it
+    }
+  });
+
+  it('removes many at once, all or none', async () => {
+    const url = links('company', firms[0], 'contact_company');
+    // One of them is not linked: nothing is removed, and the answer says which.
+    const stranger = await create(owner, 'contact', { first_name: 'Stranger' });
+    const refused = await unlinkMany(owner, 'company', firms[0], 'contact_company', [people[0], stranger]);
+    expect(refused.status).toBe(404);
+    expect(JSON.stringify(refused.data)).toContain(stranger);
+    expect(sorted(ids(ok(await owner.get(url))))).toEqual(sorted(people));
+
+    const reply = ok(await unlinkMany(owner, 'company', firms[0], 'contact_company', [people[0], people[1]]));
+    expect(sorted(ids(reply))).toEqual(sorted([people[0], people[1]]));
+    expect(ids(ok(await owner.get(url)))).toEqual([people[2]]);
+    // The records are still there.
+    ok(await owner.get(rec('contact', people[0])));
+    expect((await unlinkMany(owner, 'company', firms[0], 'contact_company', [])).status).toBe(400);
+  });
+
+  it('leaves links the person cannot see in place when removing', async () => {
+    const mineContact = await create(alice, 'contact', { first_name: 'Alice', last_name: 'Keep' });
+    const mineCompany = await create(alice, 'company', { name: 'Alice Keep Co' });
+    ok(await alice.post(links('contact', mineContact, 'contact_company'), { record_ids: [mineCompany] }));
+    ok(await owner.post(links('contact', mineContact, 'contact_company'), { record_id: firms[2] }));
+    ok(await unlinkMany(alice, 'contact', mineContact, 'contact_company', [mineCompany]));
+    expect(ids(ok(await owner.get(links('contact', mineContact, 'contact_company'))))).toEqual([firms[2]]);
+    // She cannot name what she cannot see.
+    expect((await unlinkMany(alice, 'contact', mineContact, 'contact_company', [firms[2]])).status).toBe(404);
+  });
+});
+
 describe('showing links with the records', () => {
   it('adds who each record is linked to, by kind, to a list and to a search', async () => {
     const list = ok(
@@ -267,7 +407,12 @@ describe('showing links with the records', () => {
     const row = ok(
       await owner.get(`${rec('contact')}?include=associations&page_size=100`),
     ).results.find((r: { id: string }) => r.id === lonely);
-    expect(row.associations).toEqual({ contact_company: [], contact_deal: [], lead_contact: [] });
+    expect(row.associations).toEqual({
+      contact_company: [],
+      contact_deal: [],
+      lead_contact: [],
+      contact_campaign: [],
+    });
   });
 });
 
@@ -362,13 +507,18 @@ describe('link fields', () => {
       'lead_company',
       'prospect_lead',
       'lead_contact',
+      'prospect_campaign',
+      'lead_campaign',
+      'contact_campaign',
+      'company_campaign',
+      'deal_campaign',
     ]);
     expect(results[0]).toMatchObject({ label: 'Companies', many: true });
     expect(
       ok(await owner.get(`${API}/objects`)).results.find(
         (o: { name: string }) => o.name === 'contact',
       ).field_count,
-    ).toBe(8); // six fields and two links
+    ).toBe(9); // six fields and three links
   });
 
   it('adds a link field that holds one record, and shows it on both objects', async () => {
@@ -585,6 +735,7 @@ describe('link fields', () => {
     expect((await described(eve, 'deal')).associations.map((x) => x['name'])).toEqual([
       'contact_deal',
       'deal_company',
+      'deal_campaign',
     ]);
   });
 });

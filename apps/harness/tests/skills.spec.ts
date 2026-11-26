@@ -16,6 +16,7 @@ describe('skills', () => {
         'convert-lead',
         'convert-prospect',
         'log-interaction',
+        'manage-campaign',
         'summarize-record',
       ]),
     );
