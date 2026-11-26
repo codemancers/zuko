@@ -272,7 +272,18 @@ describe('using them', () => {
     const duplicate = await owner.post(people, {
       properties: { first_name: 'Other', email: 'ada@example.com' },
     });
-    expect(duplicate.data.errors[0]).toMatchObject({ field: 'email', code: 'DUPLICATE_VALUE' });
+    expect(duplicate.data.errors[0]).toMatchObject({
+      field: 'email',
+      code: 'DUPLICATE_VALUE',
+      existing_id: ada.id, // the record to use instead
+    });
+    // A member who may not read that record is told the value is taken, not which record holds it.
+    const unseen = await alice.post(people, {
+      properties: { first_name: 'Al', email: 'ADA@example.com' },
+    });
+    expect(unseen.status).toBe(400);
+    expect(unseen.data.errors[0]).toMatchObject({ field: 'email', code: 'DUPLICATE_VALUE' });
+    expect(unseen.data.errors[0]).not.toHaveProperty('existing_id');
     const badStage = await owner.post(people, {
       properties: { first_name: 'Bad', lifecycle_stage: 'vip' },
     });
