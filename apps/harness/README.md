@@ -56,8 +56,11 @@ The harness publishes its skills on the same endpoint (`skill://<name>/SKILL.md`
 an MCP client can read the procedure behind the tools. `convert-prospect` and
 `convert-lead` move a person along the funnel using only the generic record tools:
 find, create, link, and mark the source converted last, so running one again after a
-failure resumes instead of duplicating. Skills add instructions, never tools, and
-every write still goes through your scopes and role permissions.
+failure resumes instead of duplicating. `log-interaction` turns pasted call or meeting
+notes into one comment on the right record and changes fields only when the notes say
+so; `summarize-record` reads a record's timeline and answers where things stand without
+writing anything. Skills add instructions, never tools, and every write still goes
+through your scopes and role permissions.
 
 ## Authentication and CRM execution
 
