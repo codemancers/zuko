@@ -28,6 +28,18 @@ const records = [
     description: 'Opportunities and what comes next.',
     icon: getObjectIcon('deal'),
   },
+  {
+    href: '/records/prospect',
+    title: 'Prospects',
+    description: 'People you plan to reach.',
+    icon: getObjectIcon('prospect'),
+  },
+  {
+    href: '/records/lead',
+    title: 'Leads',
+    description: 'People who have shown interest.',
+    icon: getObjectIcon('lead'),
+  },
 ];
 
 export default function DashboardPage() {
@@ -78,7 +90,7 @@ export default function DashboardPage() {
           <CardDescription>People, companies, and opportunities. Connected.</CardDescription>
         </CardHeader>
         <CardContent>
-          <nav aria-label="Record workspaces" className="grid gap-3 sm:grid-cols-3">
+          <nav aria-label="Record workspaces" className="grid gap-3 sm:grid-cols-3 lg:grid-cols-5">
             {records.map(({ href, title, description, icon: Icon }) => (
               <Link
                 key={href}
