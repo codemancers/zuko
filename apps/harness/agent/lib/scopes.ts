@@ -19,4 +19,9 @@ export const toolScopes: Readonly<Record<string, string>> = {
   delete_record: 'records:delete',
   link_record: 'records:write',
   unlink_record: 'records:write',
+  // Files follow the record or comment they belong to, so these use the record scopes.
+  get_file: 'records:read',
+  save_file: 'records:write',
+  request_file_upload: 'records:write',
+  list_record_files: 'records:read',
 };

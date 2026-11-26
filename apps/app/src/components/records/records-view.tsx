@@ -43,6 +43,9 @@ import { PickCell, type Option } from '@/components/records/pick-cell';
 import { UsersCell } from '@/components/records/users-cell';
 import { RecordTimeline } from '@/components/records/record-timeline';
 import { RecordLinks } from '@/components/records/record-links';
+import { FileCell } from '@/components/records/file-cell';
+import { RecordFiles } from '@/components/records/record-files';
+import { filesOf } from '@/lib/files';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import {
@@ -108,7 +111,7 @@ type Loaded = { query: string; rows?: RecordRow[]; total?: number; problem?: str
 /** What a cell edits in place: every kind of field that is not read-only. */
 const inPlace = (field: FieldDef) =>
   !field.read_only &&
-  ['TEXT', 'EMAIL', 'NUMBER', 'ENUM', 'TIMESTAMP', 'BOOLEAN', 'USER'].includes(field.type);
+  ['TEXT', 'EMAIL', 'NUMBER', 'ENUM', 'TIMESTAMP', 'BOOLEAN', 'USER', 'FILE'].includes(field.type);
 
 /** The properties for an in-place edit: a blank clears the value, a number is sent as one. */
 function propertiesFromChanges(fields: FieldDef[], changes: Record<string, unknown>) {
@@ -209,6 +212,7 @@ const widthOf = (field: FieldDef) =>
     ENUM: 160,
     LINK: 240,
     USER: 200,
+    FILE: 240,
   })[field.type] ?? 180;
 
 /** Read definitions provisioned by the organization's setup workflow. */
@@ -721,6 +725,15 @@ export function RecordsView({ object, maxRows = MAX_ROWS }: { object: string; ma
               <PickCell label={field.label} value={ids[0] ?? ''} options={people.members} />
             );
           }
+          if (editable && field.type === 'FILE')
+            return (
+              <FileCell
+                label={field.label}
+                rowLabel={def ? recordLabel(def, row.original) : row.id}
+                value={filesOf(raw)}
+                many={field.config.many === true}
+              />
+            );
           if (editable && field.type === 'ENUM')
             return <ChoiceCell field={field} value={raw == null ? '' : String(raw)} />;
           if (editable && field.type === 'TIMESTAMP')
@@ -1379,6 +1392,19 @@ export function RecordsView({ object, maxRows = MAX_ROWS }: { object: string; ma
                 value={links}
                 loading={editing !== undefined && linksFor !== editing.id}
                 onChange={(name, linked) => setLinks((current) => ({ ...current, [name]: linked }))}
+              />
+            )}
+            {editing && (
+              <RecordFiles
+                object={def.name}
+                recordId={editing.id}
+                fields={def.fields}
+                properties={editing.properties}
+                version={editing.updated_at}
+                onChanged={() => {
+                  invalidateRecords();
+                  setReload((n) => n + 1);
+                }}
               />
             )}
             {editing && (

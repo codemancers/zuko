@@ -263,6 +263,24 @@ export class SchemaService {
     return objectDto(created, []);
   }
 
+  /**
+   * A file field that holds one file cannot be set up over a record that holds several: reads show only the
+   * first, so the rest would sit in the table unseen. Used when a field is changed to one file and when a
+   * removed field, whose attachments were kept, is added back.
+   */
+  private async assertSingleFile(tx: TenantTransaction, ctx: RequestContext, objectTypeId: bigint, fieldName: string) {
+    const crowded = await tx.$queryRaw<{ n: bigint }[]>`
+      SELECT count(*) AS n FROM (
+        SELECT rf."recordId" FROM record_file rf
+        JOIN object_record r ON r."organizationId" = rf."organizationId" AND r."id" = rf."recordId" AND r."deletedAt" IS NULL
+        WHERE rf."organizationId" = ${ctx.organizationId} AND r."objectTypeId" = ${objectTypeId} AND rf."fieldName" = ${fieldName}
+        GROUP BY rf."recordId" HAVING count(*) > 1) crowded`;
+    const n = Number(crowded[0]?.n ?? 0);
+    if (n > 0) {
+      throw conflict(`${n} records have several files here; keep one on each before allowing only one`);
+    }
+  }
+
   async addField(ctx: RequestContext, name: string, body: unknown) {
     assertCan(ctx, { object: ['manage'] }, 'change object fields');
     const input = parse(createFieldBody, body);
@@ -382,6 +400,23 @@ export class SchemaService {
         const many = input.config?.many ?? false;
         config = { many };
         filterable = many ? false : input.filterable; // a list of members cannot be filtered like a single value
+      } else if (input.type === 'FILE') {
+        // Attachments live in their own table, so a file field can be neither searched nor unique.
+        if (input.unique || input.filterable) {
+          throw validationFailed([
+            {
+              field: input.unique ? 'unique' : 'filterable',
+              code: 'INVALID_FIELD',
+              message: 'A file field cannot be unique or searched',
+            },
+          ]);
+        }
+        // A removed field keeps its attachments, so adding it back keeps its cardinality unless told otherwise,
+        // and cannot narrow it below what records already hold.
+        const many = input.config?.many ?? (removed?.config as { many?: boolean } | null)?.many === true;
+        if (removed && !many) await this.assertSingleFile(tx, ctx, object.id, input.name);
+        config = { many };
+        filterable = false;
       }
       const data = {
         label: input.label,
@@ -440,6 +475,11 @@ export class SchemaService {
           },
         ]);
       }
+      if (field.type === 'FILE' && input.filterable === true) {
+        throw validationFailed([
+          { field: 'filterable', code: 'INVALID_FIELD', message: `'${fieldName}' is a file field, and a file field cannot be searched` },
+        ]);
+      }
       if (
         field.type === 'USER' &&
         input.filterable === true &&
@@ -479,18 +519,21 @@ export class SchemaService {
       }
 
       if (input.config?.many !== undefined) {
-        if (field.type !== 'LINK' && field.type !== 'USER') {
+        if (field.type !== 'LINK' && field.type !== 'USER' && field.type !== 'FILE') {
           throw validationFailed([
             {
               field: 'config.many',
               code: 'INVALID_FIELD',
-              message: `Only a link or user field holds one or many, and '${fieldName}' is ${field.type}`,
+              message: `Only a link, user or file field holds one or many, and '${fieldName}' is ${field.type}`,
             },
           ]);
         }
         const many = input.config.many;
         if ((current.many === true) !== many) {
-          if (field.type === 'LINK') {
+          if (field.type === 'FILE') {
+            // Attachments are rows, so one becomes many with nothing to move. Many becomes one only if no record holds several.
+            if (!many) await this.assertSingleFile(tx, ctx, object.id, fieldName);
+          } else if (field.type === 'LINK') {
             if (!many) {
               const crowded = await tx.$queryRaw<{ n: bigint }[]>`
                 SELECT count(*) AS n FROM (
@@ -535,7 +578,15 @@ export class SchemaService {
         config = { ...(config ?? current), many };
       }
 
-      if (input.required === true && !field.required) {
+      if (input.required === true && !field.required && field.type === 'FILE') {
+        const missing = await tx.$queryRaw<{ n: bigint }[]>`
+          SELECT count(*) AS n FROM object_record r
+          WHERE r."organizationId" = ${ctx.organizationId} AND r."objectTypeId" = ${object.id} AND r."deletedAt" IS NULL
+            AND NOT EXISTS (SELECT 1 FROM record_file rf WHERE rf."recordId" = r."id" AND rf."fieldName" = ${fieldName})`;
+        if (Number(missing[0]?.n ?? 0) > 0) {
+          throw conflict(`${missing[0].n} records have no ${field.label}; attach one before making it required`);
+        }
+      } else if (input.required === true && !field.required) {
         const missing = await tx.$queryRaw<{ n: bigint }[]>`
           SELECT count(*) AS n FROM object_record
           WHERE "organizationId" = ${ctx.organizationId} AND "objectTypeId" = ${object.id} AND "deletedAt" IS NULL

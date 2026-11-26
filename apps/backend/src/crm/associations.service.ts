@@ -6,7 +6,7 @@ import type { TenantTransaction } from '../prisma/prisma.service';
 import type { RequestContext } from './context';
 import { forbidden, notFound, parse, validationFailed } from './errors';
 import { assertCan, resolveScopes, visibilitySql } from './permissions';
-import { RecordsService, recordDto, toId } from './records.service';
+import { RecordsService, toId } from './records.service';
 import { SchemaService, type ObjectWithFields } from './schema.service';
 
 const MAX_PAGE_SIZE = 100;
@@ -128,12 +128,13 @@ export class AssociationsService {
       const pageIds = ids.slice((page.page - 1) * pageSize, page.page * pageSize);
       const rows = await tx.objectRecord.findMany({ where: { id: { in: pageIds } } });
       const byId = new Map(rows.map((row) => [row.id, row]));
+      const dtos = new Map((await this.records.dtos(tx, ctx, other, rows)).map((dto) => [BigInt(dto.id), dto]));
       const totalPages = Math.ceil(ids.length / pageSize);
       return {
         results: pageIds.flatMap((id) => {
           const row = byId.get(id);
           return row
-            ? [{ ...recordDto(other, row), label: recordLabel(other, id, row.properties) }]
+            ? [{ ...dtos.get(id)!, label: recordLabel(other, id, row.properties) }]
             : [];
         }),
         metadata: {

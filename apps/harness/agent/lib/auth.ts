@@ -10,6 +10,7 @@ import {
   orgClaim,
   serviceHeaders,
 } from './backend';
+import { requestFileProblems } from './chat-request';
 import { readMcpRequest } from './mcp-request';
 
 /** Only grant references enter durable session attributes; incoming bearer tokens do not. */
@@ -44,6 +45,12 @@ export const zukoAuth =
       return null;
     const scopes =
       typeof claims.scope === 'string' ? claims.scope.split(/\s+/).filter(Boolean) : [];
+    if (browser && request.method === 'POST') {
+      // File bytes never travel in a message; refuse inline content with a reason (see chat-request.ts).
+      const problems = await requestFileProblems(request);
+      if (problems.length > 0)
+        throw new ForbiddenError({ code: 'inline_file_refused', message: problems.join('; ') });
+    }
     if (!browser && request.method === 'POST') {
       const body = await readMcpRequest(request);
       if (body?.method === 'tools/call' && typeof body.params?.name === 'string') {

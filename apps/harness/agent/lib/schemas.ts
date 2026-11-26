@@ -84,3 +84,15 @@ export const filterGroups = z
     }),
   )
   .optional();
+
+export const fileId = z
+  .string()
+  .regex(/^[1-9]\d{0,18}$/, 'A file id is a string of digits')
+  .describe(
+    'File id (a string of digits) from save_file, a record\'s file field, or a comment\'s files. Never file contents or a link.',
+  );
+export const fileIds = z
+  .array(fileId)
+  .max(10)
+  .optional()
+  .describe('Files to attach, by id. Files are uploaded first (save_file, or the person attaches them); they are never sent inline.');

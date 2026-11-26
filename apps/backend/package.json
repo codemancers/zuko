@@ -19,6 +19,7 @@
     "@zuko/better-auth-hierarchy": "workspace:*",
     "better-auth": "^1.7.25",
     "dotenv": "^18.0.10",
+    "file-type": "21.3.4",
     "pg": "^8.23.1",
     "reflect-metadata": "^0.2.0",
     "rxjs": "^7.8.0",

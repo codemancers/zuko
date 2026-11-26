@@ -75,3 +75,36 @@ describe('validateProperties', () => {
     expect(codes(validateProperties(fields, { email: null }, 'update'))).toEqual(['email:REQUIRED_FIELD_MISSING']);
   });
 });
+
+describe('FILE fields', () => {
+  const one = field({ name: 'contract', type: 'FILE' });
+  const many = field({ name: 'photos', type: 'FILE', config: { many: true } });
+  const check = (f: FieldDef, value: unknown) => validateProperties([f], { [f.name]: value }, 'create');
+
+  it('takes a file id, or the { id } a read returns', () => {
+    expect(check(one, '12').set).toEqual({ contract: '12' });
+    expect(check(one, { id: '12', filename: 'a.pdf' }).set).toEqual({ contract: '12' });
+  });
+
+  it('rejects anything that is not an id, including inline content', () => {
+    for (const bad of [12, 'abc', '0', '', ['12'], { name: 'a.pdf' }, 'data:application/pdf;base64,JVBERi0=', true]) {
+      expect(codes(check(one, bad))).toEqual(['contract:INVALID_FIELD']);
+    }
+  });
+
+  it('takes a list of ids when the field holds many, without duplicates', () => {
+    expect(check(many, ['1', { id: '2' }, '1']).set).toEqual({ photos: ['1', '2'] });
+    for (const bad of ['1', [], ['x'], [1]]) expect(codes(check(many, bad))).toEqual(['photos:INVALID_FIELD']);
+  });
+
+  it('caps how many files one field holds', () => {
+    const ids = Array.from({ length: 21 }, (_, i) => String(i + 1));
+    expect(codes(check(many, ids))).toEqual(['photos:INVALID_FIELD']);
+    expect(check(many, ids.slice(0, 20)).errors).toEqual([]);
+  });
+
+  it('clears with null unless required', () => {
+    expect(validateProperties([one], { contract: null }, 'update').clear).toEqual(['contract']);
+    expect(codes(validateProperties([{ ...one, required: true }], { contract: null }, 'update'))).toEqual(['contract:REQUIRED_FIELD_MISSING']);
+  });
+});

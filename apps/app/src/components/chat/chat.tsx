@@ -7,6 +7,9 @@ import { activeTurn, activity } from 'eve/events';
 import { useEveAgent, type EveInteractionPart, type EveMessagePart } from 'eve/react';
 import { Bot, CircleStop, LoaderCircle, Send, Sparkles, UserRound, Wrench } from 'lucide-react';
 import { Shell } from '@/components/dashboard/shell';
+import { AttachButton } from '@/components/files/attach-button';
+import { FileChip } from '@/components/files/file-chip';
+import { MAX_MESSAGE_FILES, messageContent, zukoFileId } from '@/components/chat/chat-files';
 import { Button } from '@/components/ui/button';
 import { Card, CardDescription, CardHeader } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -14,6 +17,7 @@ import { authClient, useSession } from '@/lib/auth-client';
 import { useOrganizationSetup } from '@/lib/organization-setup';
 import { getEveAccessToken } from '@/lib/eve-auth';
 import { readChatHistory, saveChatHistory } from '@/lib/eve-history';
+import type { AttachedFile } from '@/lib/files';
 import { cn } from '@/lib/utils';
 
 function InteractionCard({
@@ -111,10 +115,26 @@ function MessagePart({
 }) {
   if (part.type === 'text') return <p className="whitespace-pre-wrap leading-7">{part.text}</p>;
   if (part.type === 'reasoning') return null;
-  if (part.type === 'file')
+  if (part.type === 'file') {
+    // A file stored in Zuko shows as a link to it; anything else is only named.
+    const id = zukoFileId(part.url);
+    if (id)
+      return (
+        <div className="my-1 inline-flex max-w-full rounded-md bg-background text-foreground">
+          <FileChip
+            file={{
+              id,
+              filename: part.filename ?? 'File',
+              media_type: part.mediaType,
+              size: part.size ?? 0,
+            }}
+          />
+        </div>
+      );
     return (
       <p className="text-sm text-muted-foreground">Attachment: {part.filename ?? part.mediaType}</p>
     );
+  }
   if (part.type === 'interaction')
     return <InteractionCard interaction={part} disabled={disabled} respond={respond} />;
   return (
@@ -187,6 +207,8 @@ function ChatSession({
     bottom.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
   }, [agent.messages, agent.status]);
 
+  const [attachments, setAttachments] = useState<AttachedFile[]>([]);
+  const [sendError, setSendError] = useState<string>();
   const turn = activeTurn(agent.view);
   const currentActivity = activity(agent.view);
   const disabled = agent.status === 'resuming';
@@ -283,17 +305,56 @@ function ChatSession({
 
       <div className="shrink-0 border-t bg-background p-3 sm:p-4">
         <form
-          className="mx-auto flex max-w-3xl items-end gap-2 rounded-2xl border bg-background p-2 shadow-sm focus-within:ring-2 focus-within:ring-ring/30"
+          className="mx-auto flex max-w-3xl flex-col gap-2 rounded-2xl border bg-background p-2 shadow-sm focus-within:ring-2 focus-within:ring-ring/30"
           onSubmit={(event) => {
             event.preventDefault();
             const form = event.currentTarget;
             const text = String(new FormData(form).get('message') ?? '').trim();
-            if (!text || disabled) return;
-            pendingTitle.current = text.slice(0, 72);
+            if ((!text && attachments.length === 0) || disabled) return;
+            const files = attachments;
+            pendingTitle.current = (text || files[0]?.filename || 'Files').slice(0, 72);
+            setSendError(undefined);
             form.reset();
-            void agent.send(text);
+            setAttachments([]);
+            // Cleared at once; put back, with the reason, if the message is refused.
+            const restore = (reason: unknown) => {
+              const box = form.elements.namedItem('message');
+              if (box instanceof HTMLTextAreaElement) box.value = text;
+              setAttachments(files);
+              setSendError(reason instanceof Error ? reason.message : 'The message could not be sent');
+            };
+            agent.send(messageContent(text, files)).catch(restore);
           }}
         >
+          {attachments.length > 0 && (
+            <ul aria-label="Attached files" className="flex flex-wrap gap-1.5 px-1 pt-1">
+              {attachments.map((file) => (
+                <li key={file.id} className="min-w-0 max-w-full">
+                  <FileChip
+                    file={file}
+                    disabled={disabled}
+                    onRemove={() => setAttachments((all) => all.filter((f) => f.id !== file.id))}
+                  />
+                </li>
+              ))}
+            </ul>
+          )}
+          {sendError && (
+            <p role="alert" className="px-2 text-xs text-destructive">
+              {sendError}
+            </p>
+          )}
+          <div className="flex items-end gap-2">
+          <AttachButton
+            disabled={disabled || attachments.length >= MAX_MESSAGE_FILES}
+            onUploaded={(files) => {
+              setSendError(undefined);
+              const room = MAX_MESSAGE_FILES - attachments.length;
+              setAttachments((all) => [...all, ...files].slice(0, MAX_MESSAGE_FILES));
+              if (files.length > room)
+                setSendError(`A message can carry at most ${MAX_MESSAGE_FILES} files`);
+            }}
+          />
           <textarea
             name="message"
             rows={1}
@@ -323,6 +384,7 @@ function ChatSession({
               <Send aria-hidden />
             </Button>
           )}
+          </div>
         </form>
         <p className="mx-auto mt-2 max-w-3xl text-center text-[11px] text-muted-foreground">
           Changes require your approval. Zuko applies your normal permissions.

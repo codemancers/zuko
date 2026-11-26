@@ -6,7 +6,7 @@ import { AssociationsService } from './associations.service';
 import { parse, validationFailed } from './errors';
 import { assertCan, resolveScopes, visibilitySql } from './permissions';
 import { OPERATORS, filterSql, orderSql, resolveColumn, type FilterGroup } from './query';
-import { RecordsService, recordDto } from './records.service';
+import { RecordsService } from './records.service';
 import { SchemaService } from './schema.service';
 
 const MAX_PAGE_SIZE = 100;
@@ -163,13 +163,14 @@ export class RecordsQueryService {
         : undefined;
       const totalElements = Number(total);
       const totalPages = Math.ceil(totalElements / pageSize);
+      const dtos = new Map((await this.records.dtos(tx, ctx, object, rows)).map((dto) => [BigInt(dto.id), dto]));
       return {
         results: ids.flatMap((id) => {
           const row = byId.get(id);
           return row
             ? [
                 {
-                  ...recordDto(object, row),
+                  ...dtos.get(id)!,
                   ...(linked ? { associations: linked.get(id) ?? {} } : {}),
                 },
               ]

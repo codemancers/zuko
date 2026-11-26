@@ -18,6 +18,19 @@ export function assertCan(ctx: Pick<RequestContext, 'roles'>, permissions: Recor
   }
 }
 
+/**
+ * Whether a role may upload files. An upload only exists to be attached, so it takes the right to create or
+ * change records, or to comment; a role that can do none of those (a read-only one) cannot put files in.
+ */
+export const canUploadFiles = (ctx: Pick<RequestContext, 'roles'>): boolean =>
+  can(ctx, { record: ['create'] }) || can(ctx, { record: ['update'] }) || can(ctx, { comment: ['create'] });
+
+export function assertCanUploadFiles(ctx: Pick<RequestContext, 'roles'>) {
+  if (!canUploadFiles(ctx)) {
+    throw forbidden('You are not allowed to upload files');
+  }
+}
+
 export type Scope = 'OWN' | 'OWN_AND_REPORTS' | 'TEAM' | 'ALL';
 export type Mode = 'read' | 'write';
 export const SCOPES: readonly Scope[] = ['OWN', 'OWN_AND_REPORTS', 'TEAM', 'ALL'];

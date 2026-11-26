@@ -4,8 +4,9 @@ import { parseId } from './ids';
 /**
  * LINK fields point at records of another object and are stored as associations, not in the
  * record's properties; USER fields hold the id of an organization member (or a list of them).
+ * FILE fields name files (by id, or a list of ids) but, like LINK, are stored in their own table, never in properties.
  */
-export const FIELD_TYPES = ['TEXT', 'EMAIL', 'NUMBER', 'BOOLEAN', 'TIMESTAMP', 'ENUM', 'LINK', 'USER'] as const;
+export const FIELD_TYPES = ['TEXT', 'EMAIL', 'NUMBER', 'BOOLEAN', 'TIMESTAMP', 'ENUM', 'LINK', 'USER', 'FILE'] as const;
 export type FieldType = (typeof FIELD_TYPES)[number];
 
 export interface FieldDef {
@@ -23,7 +24,10 @@ export interface FieldDef {
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 
-/** Whether a LINK or USER field holds several values. */
+/** The most files one field may hold. */
+export const MAX_FILES_PER_FIELD = 20;
+
+/** Whether a LINK, USER or FILE field holds several values. */
 export const holdsMany = (field: Pick<FieldDef, 'config'>): boolean => (field.config as { many?: unknown } | null)?.many === true;
 
 export const enumOptions = (field: Pick<FieldDef, 'config'>): string[] => {
@@ -73,6 +77,25 @@ function checkValue(field: FieldDef, value: unknown): { value: unknown } | { err
           : fail('INVALID_FIELD', `Field '${field.name}' must be a list of member ids`);
       }
       return ok(value) ? { value } : fail('INVALID_FIELD', `Field '${field.name}' must be a member id`);
+    }
+    case 'FILE': {
+      // A file id, or the `{ id }` a read returns, so a value read back can be written back.
+      const idOf = (v: unknown): string | undefined => {
+        const raw = typeof v === 'object' && v !== null && 'id' in v ? (v as { id: unknown }).id : v;
+        return typeof raw === 'string' && parseId(raw) !== undefined ? raw : undefined;
+      };
+      if (holdsMany(field)) {
+        const ids = Array.isArray(value) ? value.map(idOf) : [];
+        if (!Array.isArray(value) || value.length === 0 || ids.some((id) => id === undefined)) {
+          return fail('INVALID_FIELD', `Field '${field.name}' must be a list of file ids`);
+        }
+        const unique = [...new Set(ids as string[])];
+        return unique.length <= MAX_FILES_PER_FIELD
+          ? { value: unique }
+          : fail('INVALID_FIELD', `Field '${field.name}' holds at most ${MAX_FILES_PER_FIELD} files`);
+      }
+      const id = idOf(value);
+      return id !== undefined ? { value: id } : fail('INVALID_FIELD', `Field '${field.name}' must be a file id`);
     }
     default:
       return fail('INVALID_FIELD', `Field '${field.name}' has an unsupported type`);

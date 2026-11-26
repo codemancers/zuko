@@ -15,6 +15,7 @@ import { EveController } from './eve.controller';
 import { CrmExceptionFilter } from './errors';
 import { ObjectsController } from './objects.controller';
 import { RecordsController } from './records.controller';
+import { RecordFilesService } from './record-files.service';
 import { RecordsQueryService } from './records-query.service';
 import { RecordsService } from './records.service';
 import { SchemaService } from './schema.service';
@@ -28,6 +29,7 @@ import { SharesService } from './shares.service';
     RecordsQueryService,
     DirectoryService,
     CrmContextService,
+    RecordFilesService,
   ],
   controllers: [
     ObjectsController,
@@ -51,6 +53,7 @@ import { SharesService } from './shares.service';
     CrmContextGuard,
     HarnessGrantsService,
     CrmContextService,
+    RecordFilesService,
     { provide: APP_FILTER, useClass: CrmExceptionFilter },
   ],
 })

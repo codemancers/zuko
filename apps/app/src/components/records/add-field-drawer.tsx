@@ -82,6 +82,7 @@ export function AddFieldDrawer({
 
   const link = field.type === 'LINK';
   const user = field.type === 'USER';
+  const file = field.type === 'FILE';
   const change = (changes: Partial<NewField>) =>
     setField((current) => ({ ...current, ...changes }));
 
@@ -229,7 +230,7 @@ export function AddFieldDrawer({
                   )}
                 </Field>
               )}
-              {(link || user) && (
+              {(link || user || file) && (
                 <Field>
                   <FieldLabel htmlFor="add-field-many">Holds</FieldLabel>
                   <NativeSelect
@@ -237,13 +238,17 @@ export function AddFieldDrawer({
                     value={field.many ? 'many' : 'one'}
                     onChange={(event) => change({ many: event.target.value === 'many' })}
                   >
-                    <option value="one">{link ? 'One record' : 'One member'}</option>
-                    <option value="many">{link ? 'Many records' : 'Several members'}</option>
+                    <option value="one">{link ? 'One record' : file ? 'One file' : 'One member'}</option>
+                    <option value="many">
+                      {link ? 'Many records' : file ? 'Several files' : 'Several members'}
+                    </option>
                   </NativeSelect>
                   <FieldDescription>
                     {link
                       ? 'One, such as a primary contact; or many, such as all the contacts. The other object always sees many.'
-                      : 'One, such as an account manager; or several, such as everyone on the deal.'}
+                      : file
+                        ? 'One, such as a signed contract; or several, such as all the photos. Up to 25 MB each.'
+                        : 'One, such as an account manager; or several, such as everyone on the deal.'}
                   </FieldDescription>
                 </Field>
               )}
@@ -263,7 +268,7 @@ export function AddFieldDrawer({
                   {error('options')}
                 </Field>
               )}
-              {!link && !(user && field.many) && (
+              {!link && !file && !(user && field.many) && (
                 <label className="flex items-center gap-2 text-sm font-medium">
                   <input
                     type="checkbox"
@@ -274,7 +279,7 @@ export function AddFieldDrawer({
                   Searchable and sortable
                 </label>
               )}
-              {!link && !user && (
+              {!link && !user && !file && (
                 <label className="flex items-center gap-2 text-sm font-medium">
                   <input
                     type="checkbox"
@@ -285,7 +290,7 @@ export function AddFieldDrawer({
                   Each value can be used once
                 </label>
               )}
-              {!link && (
+              {!link && !file && (
                 <div>
                   <label className="flex items-center gap-2 text-sm font-medium">
                     <input

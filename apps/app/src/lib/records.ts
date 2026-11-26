@@ -8,7 +8,8 @@ export type FieldType =
   | 'TIMESTAMP'
   | 'ENUM'
   | 'LINK'
-  | 'USER';
+  | 'USER'
+  | 'FILE';
 
 export interface FieldDef {
   name: string;
@@ -20,7 +21,7 @@ export interface FieldDef {
   read_only: boolean;
   sensitive: boolean;
   max_length: number | null;
-  /** `target` and `link` are for a link field; `many` for a link or user field. */
+  /** `target` and `link` are for a link field; `many` for a link, user or file field. */
   config: { options?: string[]; target?: string; many?: boolean; link?: string };
 }
 
@@ -88,9 +89,9 @@ export interface RecordsPage {
 /** What a form holds: text for every input, a boolean for a checkbox, and a list of ids for several members. */
 export type FormValues = Record<string, string | boolean | string[]>;
 
-/** Links are edited as links, not as a field of the form. */
+/** Links and files are edited as such, not as a field of the form. */
 export const editableFields = (fields: FieldDef[]) =>
-  fields.filter((f) => !f.read_only && f.type !== 'LINK');
+  fields.filter((f) => !f.read_only && f.type !== 'LINK' && f.type !== 'FILE');
 
 /** A user field's value as a list of member ids, whether it holds one or several. */
 export const memberIds = (value: unknown): string[] =>
@@ -169,6 +170,11 @@ const numberFormat = new Intl.NumberFormat(undefined, { maximumFractionDigits: 2
 export function formatValue(field: FieldDef, value: unknown): string {
   if (value === undefined || value === null || value === '') return '';
   if (field.type === 'BOOLEAN') return value === true ? 'Yes' : 'No';
+  if (field.type === 'FILE')
+    return (Array.isArray(value) ? value : [value])
+      .map((file) => (file && typeof file === 'object' ? String((file as { filename?: unknown }).filename ?? '') : ''))
+      .filter(Boolean)
+      .join(', ');
   if (field.type === 'NUMBER')
     return typeof value === 'number' ? numberFormat.format(value) : String(value);
   if (field.type === 'TIMESTAMP') {
@@ -227,6 +233,7 @@ export const FIELD_TYPE_LABELS: Record<FieldType, string> = {
   ENUM: 'Choice',
   LINK: 'Link',
   USER: 'User',
+  FILE: 'File',
 };
 
 /** A field's key from its label: lowercase letters, digits and underscores, starting with a letter. */
@@ -264,17 +271,19 @@ export function newFieldBody(field: NewField) {
     .filter((line, index, all) => line !== '' && all.indexOf(line) === index);
   const link = field.type === 'LINK';
   const user = field.type === 'USER';
+  const file = field.type === 'FILE';
   return {
     name: field.name,
     label: field.label.trim(),
     type: field.type,
-    // A link is never required, unique or searched; a list of members cannot be searched.
-    required: link ? false : field.required,
-    unique: link || user ? false : field.unique,
-    filterable: link || (user && field.many) ? false : field.filterable,
+    // A link or file is never required (a record is added before it can have either), unique or
+    // searched; a list of members cannot be searched.
+    required: link || file ? false : field.required,
+    unique: link || user || file ? false : field.unique,
+    filterable: link || file || (user && field.many) ? false : field.filterable,
     ...(field.type === 'ENUM' ? { config: { options } } : {}),
     ...(link ? { config: { target: field.target, many: field.many } } : {}),
-    ...(user ? { config: { many: field.many } } : {}),
+    ...(user || file ? { config: { many: field.many } } : {}),
   };
 }
 
@@ -320,7 +329,7 @@ export function fieldPatchBody(field: FieldDef, edit: FieldEdit) {
       body.config = { options };
   }
   if (
-    (field.type === 'LINK' || field.type === 'USER') &&
+    (field.type === 'LINK' || field.type === 'USER' || field.type === 'FILE') &&
     edit.many !== (field.config.many === true)
   )
     body.config = { many: edit.many };
@@ -376,6 +385,7 @@ const shownValue = (
         .map((id) => people[id] ?? id)
         .join(', ') || 'empty'
     );
+  if (field?.type === 'FILE') return memberIds(value).map((id) => `file ${id}`).join(', ') || 'empty';
   if (typeof value === 'boolean') return value ? 'Yes' : 'No';
   if (field?.type === 'TIMESTAMP') return String(value).slice(0, 10);
   return String(value);
@@ -483,6 +493,7 @@ export const FILTER_OPS: Record<FieldType, { op: FilterOp; label: string }[]> = 
   ],
   USER: [multi, { op: 'EQUALS', label: 'is' }, { op: 'NOT_EQUALS', label: 'is not' }, ...empties],
   LINK: [],
+  FILE: [],
 };
 
 export const needsValue = (op: FilterOp) => op !== 'IS_NULL' && op !== 'IS_NOT_NULL';

@@ -62,3 +62,6 @@ test-output
 .swc/
 
 .nx/polygraph
+
+# Uploaded files (local storage driver)
+/storage/

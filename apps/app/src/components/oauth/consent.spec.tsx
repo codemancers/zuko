@@ -33,10 +33,10 @@ describe('Consent', () => {
 
     expect(await screen.findByRole('heading', { name: 'Connect Claude' })).toBeTruthy();
     expect(screen.getByText('Acme')).toBeTruthy();
-    expect(screen.getByText('View records, their relationships and change history')).toBeTruthy();
+    expect(screen.getByText('View records, their relationships, change history and attached files')).toBeTruthy();
     expect(screen.getByText('View object types, fields and relationship definitions')).toBeTruthy();
     expect(screen.getByText('View organization members and teams')).toBeTruthy();
-    expect(screen.getByText('Create and change records')).toBeTruthy();
+    expect(screen.getByText('Create and change records, and upload and attach files')).toBeTruthy();
     expect(screen.getByText('Delete records')).toBeTruthy();
     expect(auth.fetch).toHaveBeenCalledWith('/oauth2/public-client', {
       query: { client_id: 'client_1' },

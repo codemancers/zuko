@@ -6,23 +6,31 @@ import { CrmContextService, type RequestContext } from './context';
 import { CrmError, forbidden, notFound, parse, validationFailed } from './errors';
 import { idField } from './ids';
 import { assertCan, can } from './permissions';
+import { RecordFilesService, type AttachedFile } from './record-files.service';
 import { RecordsService, toId } from './records.service';
 import { SchemaService, type ObjectWithFields } from './schema.service';
 
 export const MAX_COMMENT_LENGTH = 10_000;
 const MAX_MENTIONS = 20;
+export const MAX_COMMENT_FILES = 10;
 const DEFAULT_PAGE = 50;
 const MAX_PAGE = 100;
 
+// A comment may have no text if it carries a file; see `needsContent`.
 const body = z
   .string()
   .transform((value) => value.trim())
-  .pipe(z.string().min(1, 'A comment cannot be empty').max(MAX_COMMENT_LENGTH, `A comment is at most ${MAX_COMMENT_LENGTH} characters`));
+  .pipe(z.string().max(MAX_COMMENT_LENGTH, `A comment is at most ${MAX_COMMENT_LENGTH} characters`));
 const mentions = z.array(idField).max(MAX_MENTIONS, `At most ${MAX_MENTIONS} mentions`);
+// Files are named by id, never sent inline: upload them first (POST /files), then attach by id.
+const files = z
+  .array(idField)
+  .max(MAX_COMMENT_FILES, `At most ${MAX_COMMENT_FILES} files`)
+  .transform((ids) => [...new Set(ids.map(String))]);
 
-const createBody = z.object({ body, mentions: mentions.default([]) });
+const createBody = z.object({ body: body.default(''), mentions: mentions.default([]), files: files.default([]) });
 const updateBody = z
-  .object({ body: body.optional(), mentions: mentions.optional() })
+  .object({ body: body.optional(), mentions: mentions.optional(), files: files.optional() })
   .refine((b) => Object.keys(b).length > 0, 'Nothing to update');
 const pageQuery = z.object({
   limit: z.coerce.number().int().min(1).max(MAX_PAGE).default(DEFAULT_PAGE),
@@ -71,6 +79,13 @@ const beforeCursor = (kind: Kind, cursor: Cursor | undefined) =>
         ],
       };
 
+/** A comment needs words or a file. */
+function needsContent(text: string, fileCount: number) {
+  if (text === '' && fileCount === 0) {
+    throw validationFailed([{ field: 'body', code: 'INVALID_FIELD', message: 'A comment needs text or a file' }]);
+  }
+}
+
 const idOrNull = (id: bigint | null) => (id === null ? null : String(id));
 
 type Item =
@@ -87,6 +102,7 @@ export class CommentsService {
     private readonly records: RecordsService,
     private readonly schema: SchemaService,
     private readonly contexts: CrmContextService,
+    private readonly files: RecordFilesService,
   ) {}
 
   /**
@@ -131,13 +147,14 @@ export class CommentsService {
     return new Map(users.map((u) => [u.id, u.name]));
   }
 
-  private commentDto(row: RecordComment, names: Map<bigint, string>) {
+  private commentDto(row: RecordComment, names: Map<bigint, string>, files: AttachedFile[] = []) {
     return {
       type: 'comment' as const,
       id: String(row.id),
       record_id: String(row.recordId),
       body: row.body,
       mentions: row.mentions.map(String),
+      files,
       actor_type: row.actorType,
       actor_id: idOrNull(row.authorId),
       actor_name: row.authorId === null ? null : (names.get(row.authorId) ?? null),
@@ -199,8 +216,9 @@ export class CommentsService {
       const page = merged.slice(0, limit);
       const names = await this.actorNames(tx, page.map((i) => (i.kind === 'change' ? i.row.actorId : i.row.authorId)));
       const oldest = page[page.length - 1];
+      const attached = await this.files.commentValues(tx, ctx, page.flatMap((i) => (i.kind === 'comment' ? [i.row.id] : [])));
       return {
-        results: page.reverse().map((i) => (i.kind === 'change' ? this.changeDto(i.row, names) : this.commentDto(i.row, names))),
+        results: page.reverse().map((i) => (i.kind === 'change' ? this.changeDto(i.row, names) : this.commentDto(i.row, names, attached.get(i.row.id)))),
         next_before: hasMore && oldest ? encodeCursor({ at: oldest.at, kind: oldest.kind, id: oldest.id }) : null,
       };
     });
@@ -224,7 +242,9 @@ export class CommentsService {
     return this.records.tenant(ctx, async (tx) => {
       const object = await this.schema.loadObject(tx, ctx, objectName);
       await this.records.loadFor(tx, ctx, object, recordId, 'read');
+      needsContent(data.body, data.files.length);
       const mentioned = await this.assertMentionable(tx, ctx, object, recordId, data.mentions);
+      await this.files.assertAttachable(tx, ctx, new Map([['files', data.files]]));
       const row = await tx.recordComment.create({
         data: {
           organizationId: ctx.organizationId,
@@ -236,7 +256,8 @@ export class CommentsService {
           mentions: mentioned,
         },
       });
-      return this.commentDto(row, await this.actorNames(tx, [row.authorId]));
+      await this.files.setCommentFiles(tx, ctx, row.id, data.files);
+      return this.commentDto(row, await this.actorNames(tx, [row.authorId]), (await this.files.commentValues(tx, ctx, [row.id])).get(row.id));
     });
   }
 
@@ -265,15 +286,26 @@ export class CommentsService {
         throw forbidden('You can only edit your own comments');
       }
       const mentioned = data.mentions === undefined ? undefined : await this.assertMentionable(tx, ctx, object, recordId, data.mentions);
-      const changed = (data.body !== undefined && data.body !== row.body) || mentioned !== undefined;
+      const current = await this.files.commentValues(tx, ctx, [row.id]);
+      const currentIds = (current.get(row.id) ?? []).map((f) => f.id);
+      const nextText = data.body ?? row.body;
+      needsContent(nextText, (data.files ?? currentIds).length);
+      if (data.files !== undefined) {
+        await this.files.assertAttachable(tx, ctx, new Map([['files', data.files]]));
+      }
+      const filesChanged = data.files !== undefined && JSON.stringify(data.files) !== JSON.stringify(currentIds);
+      const changed = (data.body !== undefined && data.body !== row.body) || mentioned !== undefined || filesChanged;
       if (!changed) {
-        return this.commentDto(row, await this.actorNames(tx, [row.authorId]));
+        return this.commentDto(row, await this.actorNames(tx, [row.authorId]), current.get(row.id));
+      }
+      if (filesChanged) {
+        await this.files.setCommentFiles(tx, ctx, row.id, data.files ?? []);
       }
       const updated = await tx.recordComment.update({
         where: { id: row.id },
         data: { ...(data.body === undefined ? {} : { body: data.body }), ...(mentioned === undefined ? {} : { mentions: mentioned }), editedAt: new Date() },
       });
-      return this.commentDto(updated, await this.actorNames(tx, [updated.authorId]));
+      return this.commentDto(updated, await this.actorNames(tx, [updated.authorId]), (await this.files.commentValues(tx, ctx, [updated.id])).get(updated.id));
     });
   }
 

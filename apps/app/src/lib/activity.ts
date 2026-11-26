@@ -1,3 +1,4 @@
+import type { AttachedFile } from '@/lib/files';
 import type { HistoryEntry } from '@/lib/records';
 
 /** A comment on a record, as the API returns it. */
@@ -7,6 +8,8 @@ export interface CommentItem {
   record_id: string;
   body: string;
   mentions: string[];
+  /** Files attached to the comment, in order. */
+  files: AttachedFile[];
   actor_type: string;
   actor_id: string | null;
   actor_name: string | null;
