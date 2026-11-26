@@ -403,6 +403,20 @@ export function describeHistory(
       if (removed > 0) lines.push(`${heading}: unlinked ${removed}`);
       continue;
     }
+    if (key === 'shared_with') {
+      // Recorded as "user:<id>:<READ|WRITE>" or "team:<id>:<READ|WRITE>".
+      const share = (value: unknown) => {
+        const [kind, id, access] = String(value ?? '').split(':');
+        if (!kind || !id) return null;
+        const who = kind === 'user' ? (people[id] ?? 'someone') : 'a team';
+        return `${who} (${access === 'WRITE' ? 'can edit' : 'can view'})`;
+      };
+      const added = share(change.new);
+      const removed = share(change.old);
+      if (added) lines.push(`Shared with ${added}`);
+      else if (removed) lines.push(`Stopped sharing with ${removed}`);
+      continue;
+    }
     const field = def.fields.find((f) => f.name === key);
     lines.push(
       `${field?.label ?? key}: ${shownValue(field, change.old, people)} → ${shownValue(field, change.new, people)}`,

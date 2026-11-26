@@ -259,6 +259,24 @@ describe('describeHistory', () => {
     ).toEqual(['Stage: lead → won', 'Due: empty → 2027-01-15', 'VIP: No → Yes']);
   });
 
+  it('says who a record was shared with or no longer shared with', () => {
+    const people = { '8': 'Sam' };
+    expect(
+      describeHistory(
+        def,
+        entry('UPDATE', { shared_with: { old: null, new: 'user:8:READ' } }),
+        people,
+      ),
+    ).toEqual(['Shared with Sam (can view)']);
+    expect(
+      describeHistory(
+        def,
+        entry('UPDATE', { shared_with: { old: 'team:3:WRITE', new: null } }),
+        people,
+      ),
+    ).toEqual(['Stopped sharing with a team (can edit)']);
+  });
+
   it('says how many records were linked and unlinked, from either end', () => {
     expect(
       describeHistory(

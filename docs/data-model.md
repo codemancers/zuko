@@ -106,7 +106,7 @@ All under `/api/v1`, authenticated by the better-auth session cookie. Errors are
 
 | Area        | Endpoints                                                                                                          |
 | ----------- | ------------------------------------------------------------------------------------------------------------------ |
-| Who am I    | `GET /me` (roles, teams, `can_manage_objects`)                                                                     |
+| Who am I    | `GET /me` (roles, teams, `can_manage_objects`, `can_moderate_comments`)                                                                     |
 | Objects     | `GET /objects`, `POST /objects`, `GET /objects/:object`, `POST /setup/standard-objects`                            |
 | Fields      | `POST /objects/:object/fields`, `PATCH` and `DELETE /objects/:object/fields/:field`                                |
 | Records     | `GET`, `POST /objects/:object/records`, `POST .../filter`, `GET`, `PATCH`, `DELETE .../:id`, `GET .../:id/history` |

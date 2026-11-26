@@ -116,8 +116,9 @@ export class CommentsService {
     for (const userId of unique) {
       const them = userId === ctx.userId ? ctx : await this.contexts.build({ userId, organizationId: ctx.organizationId, actorType: 'USER' });
       if (!(await this.records.canTouch(tx, them, object, recordId, 'read'))) {
+        const who = (await this.actorNames(tx, [userId])).get(userId) ?? `Member ${userId}`;
         throw validationFailed([
-          { field: 'mentions', code: 'INVALID_FIELD', message: `Member ${userId} cannot see this ${object.slug}, so they cannot be mentioned` },
+          { field: 'mentions', code: 'INVALID_FIELD', message: `${who} cannot see this ${object.slug}, so they cannot be mentioned` },
         ]);
       }
     }
