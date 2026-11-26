@@ -20,6 +20,32 @@ export const object = z
   .string()
   .describe('Singular object type name, e.g. "deal". See list_object_types.');
 export const recordId = z.string().describe('Record id (a string of digits).');
+export const commentId = z
+  .string()
+  .describe('Comment id (a string of digits), from list_comments or get_record_activity.');
+export const commentBody = z
+  .string()
+  .min(1)
+  .max(10000)
+  .describe('The comment, in markdown, at most 10,000 characters.');
+export const mentions = z
+  .array(z.string())
+  .max(20)
+  .optional()
+  .describe(
+    'Member user ids from list_members to mention. Each must be able to see the record, or the call is refused.',
+  );
+export const pageBefore = z
+  .string()
+  .optional()
+  .describe('The next_before value of the previous page, to read the items before it.');
+export const pageLimit = z
+  .number()
+  .int()
+  .min(1)
+  .max(100)
+  .optional()
+  .describe('Items per page (default 50).');
 export const link = z
   .string()
   .describe(

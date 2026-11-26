@@ -12,15 +12,17 @@ The client discovers `${BACKEND_URL}/auth` as the OAuth issuer, registers,
 and opens Zuko's login and consent UI. Approval is bound to the selected
 organization. Request only the scopes needed:
 
-| Scope            | Access                                                     |
-| ---------------- | ---------------------------------------------------------- |
-| `records:read`   | List/search/read records, history and relationships        |
-| `records:write`  | Create/update records and change relationships             |
-| `records:delete` | Delete records                                             |
-| `schema:read`    | Discover object types, fields and relationship definitions |
-| `directory:read` | List organization members and teams                        |
-| `agent:invoke`   | Start, inspect, answer and cancel agent work               |
-| `offline_access` | Refresh OAuth access without another login                 |
+| Scope            | Access                                                             |
+| ---------------- | ------------------------------------------------------------------ |
+| `records:read`   | List/search/read records, history and relationships                |
+| `records:write`  | Create/update records and change relationships                     |
+| `records:delete` | Delete records                                                     |
+| `comments:read`  | Read comments, and the timeline that interleaves them with changes |
+| `comments:write` | Add comments, and edit or delete your own                          |
+| `schema:read`    | Discover object types, fields and relationship definitions         |
+| `directory:read` | List organization members and teams                                |
+| `agent:invoke`   | Start, inspect, answer and cancel agent work                       |
+| `offline_access` | Refresh OAuth access without another login                         |
 
 `records:read` is the default requested scope. Schema-only, directory-only and
 agent-only connections are supported; each tool challenges for its own scope.
