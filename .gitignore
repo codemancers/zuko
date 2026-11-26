@@ -60,3 +60,5 @@ test-output
 
 # Workflow SDK compiler cache
 .swc/
+
+.nx/polygraph

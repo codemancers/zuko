@@ -18,6 +18,55 @@ npx nx dev @zuko/app            # http://localhost:4200
 
 See [docs/data-model.md](docs/data-model.md#running-it) for the tests, including the database one.
 
+## AI development tooling
+
+The repository includes 13 skills for Codex and Claude Code, selected for Zuko's
+stack and recurring development work:
+
+| Area | Skills |
+| --- | --- |
+| React and Next.js | `vercel-react-best-practices`, `vercel-composition-patterns` |
+| Backend | `nestjs-best-practices` |
+| Authentication | `better-auth-best-practices`, `better-auth-security-best-practices`, `email-and-password-best-practices`, `organization-best-practices` |
+| Agent harness | `eve` |
+| Interactive UI verification | `agent-browser` |
+| Nx | `nx-workspace`, `nx-generate`, `nx-run-tasks`, `link-workspace-packages` |
+
+Skills live in `.agents/skills/`; `.claude/skills/` links to the same files.
+`skills-lock.json` pins their source commits and hashes. Select a skill by name,
+or let the agent select one for the task. Use the existing TypeScript Playwright
+suite in `apps/app-e2e` for repeatable browser tests.
+
+Install or update only the selected skills:
+
+```sh
+npx skills add vercel-labs/agent-skills --skill vercel-react-best-practices vercel-composition-patterns -a codex claude-code -y
+npx skills add kadajett/agent-nestjs-skills --skill nestjs-best-practices -a codex claude-code -y
+npx skills add better-auth/skills --skill better-auth-best-practices better-auth-security-best-practices email-and-password-best-practices organization-best-practices -a codex claude-code -y
+npx skills add vercel/eve --skill eve -a codex claude-code -y
+npx skills add vercel-labs/agent-browser --skill agent-browser -a codex claude-code -y
+npx skills add nrwl/nx-ai-agents-config --skill nx-workspace nx-generate nx-run-tasks link-workspace-packages -a codex claude-code -y
+npx skills update -p -y
+```
+
+Review upstream changes and the lockfile before committing updates. Personal style
+and discovery skills, auth scaffolding, 2FA, duplicate browser-testing guidance,
+and Nx Cloud/import/plugin-discovery workflows are excluded. Add one only when a
+project task needs it. Personal skills can be installed separately at user scope.
+
+Nx MCP is configured directly in `.codex/config.toml` and `.mcp.json`. Both launch
+`npx nx mcp` from this workspace. Claude Code uses the selected skill links without
+the broad Nx plugin. Merge any machine-local MCP servers into `.mcp.json` before
+checking out this setup. Avoid `nx configure-ai-agents` here: it restores the full
+bundle. Restart agents after changing MCP configuration; Claude Code asks you to
+approve this project MCP server on first use.
+
+**Caveman progress (2026-11-25):** the initial CLI evaluation analyzed four local
+Zuko Codex sessions and produced estimates, with no measured token savings.
+Caveman voice is excluded from the curated project skills; output compression
+remains an optional personal experiment. Keep local reports under ignored
+`tmp/caveman/`.
+
 ---
 
 <a alt="Nx logo" href="https://nx.dev" target="_blank" rel="noreferrer"><img src="https://raw.githubusercontent.com/nrwl/nx/master/images/nx-logo.png" width="45"></a>
