@@ -134,7 +134,12 @@ export class RecordsService {
           AND (${selfId}::bigint IS NULL OR "id" <> ${selfId}::bigint)
         LIMIT 1`;
       if (taken.length > 0) {
-        errors.push({ field: field.name, code: 'DUPLICATE_VALUE', message: `Field '${field.name}' must be unique; that value is already in use` });
+        const error: FieldError = { field: field.name, code: 'DUPLICATE_VALUE', message: `Field '${field.name}' must be unique; that value is already in use` };
+        // Name the record so the caller can use it instead, but only to someone who may read it.
+        if (await this.canTouch(tx, ctx, object, taken[0].id, 'read')) {
+          error.existing_id = String(taken[0].id);
+        }
+        errors.push(error);
       }
     }
     if (errors.length > 0) {

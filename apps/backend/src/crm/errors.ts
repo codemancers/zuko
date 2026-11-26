@@ -15,6 +15,8 @@ export interface FieldError {
   field: string;
   code: string;
   message: string;
+  /** On DUPLICATE_VALUE: the record that already holds the value, only when the caller may read it. */
+  existing_id?: string;
 }
 
 /** An error the API reports with a stable machine-readable code. */
