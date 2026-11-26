@@ -17,5 +17,9 @@ export const objectListQuery = queryOptions({
 
 export const permissionsQuery = queryOptions({
   queryKey: ['permissions'],
-  queryFn: ({ signal }) => api<{ can_manage_objects: boolean }>('/api/v1/me', { signal }),
+  queryFn: ({ signal }) => api<{
+      can_manage_objects: boolean;
+      can_manage_integrations?: boolean;
+      can_enrich_records?: boolean;
+    }>('/api/v1/me', { signal }),
 });

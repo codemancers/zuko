@@ -10,7 +10,9 @@ import { adminAc, defaultStatements, memberAc, ownerAc } from 'better-auth/plugi
 export const statement = {
   ...defaultStatements,
   // Work with records of any object type.
-  record: ['read', 'create', 'update', 'delete', 'export'],
+  record: ['read', 'create', 'update', 'delete', 'export', 'enrich'],
+  // Connect or disconnect third-party services (Apollo) for the organization.
+  integration: ['manage'],
   // Comment on records the member can see; `moderate` removes anyone's comment, not only their own.
   comment: ['create', 'moderate'],
   // Create or change object types and their fields (the schema, not the data).
@@ -21,13 +23,14 @@ export const statement = {
 // an object type that better-auth's organization({ ac }) option rejects.
 export const ac: AccessControl<typeof statement> = createAccessControl(statement);
 
-const allRecordActions = ['read', 'create', 'update', 'delete', 'export'] as const;
+const allRecordActions = ['read', 'create', 'update', 'delete', 'export', 'enrich'] as const;
 
 export const owner = ac.newRole({
   ...ownerAc.statements,
   record: [...allRecordActions],
   comment: ['create', 'moderate'],
   object: ['manage'],
+  integration: ['manage'],
 });
 
 export const admin = ac.newRole({
@@ -35,12 +38,13 @@ export const admin = ac.newRole({
   record: [...allRecordActions],
   comment: ['create', 'moderate'],
   object: ['manage'],
+  integration: ['manage'],
 });
 
 // Members work with records but cannot delete or export them, or change the schema.
 export const member = ac.newRole({
   ...memberAc.statements,
-  record: ['read', 'create', 'update'],
+  record: ['read', 'create', 'update', 'enrich'],
   comment: ['create'],
 });
 

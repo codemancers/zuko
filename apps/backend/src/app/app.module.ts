@@ -4,6 +4,7 @@ import { Module } from '@nestjs/common';
 import { AuthModule } from '@thallesp/nestjs-better-auth';
 import { CrmModule } from '../crm/crm.module';
 import { FilesModule } from '../files/files.module';
+import { IntegrationsModule } from '../integrations/integrations.module';
 import { createAuth } from '../libs/better-auth/auth';
 import { ConnectionsModule } from '../connections/connections.module';
 import { WellKnownController } from '../libs/better-auth/well-known.controller';
@@ -18,6 +19,7 @@ import { AppService } from './app.service';
     OrganizationSetupModule,
     CrmModule,
     FilesModule,
+    IntegrationsModule,
     ConnectionsModule,
     AuthModule.forRootAsync({
       imports: [OrganizationSetupModule],

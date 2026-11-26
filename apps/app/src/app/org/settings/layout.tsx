@@ -15,6 +15,7 @@ const tabs = [
   { href: '/org/settings/members', label: 'Members' },
   { href: '/org/settings/objects', label: 'Objects' },
   { href: '/org/settings/access', label: 'Access' },
+  { href: '/org/settings/integrations', label: 'Integrations' },
 ];
 
 export default function OrgSettingsLayout({ children }: { children: React.ReactNode }) {

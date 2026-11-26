@@ -15,6 +15,7 @@ describe('skills', () => {
       expect.arrayContaining([
         'convert-lead',
         'convert-prospect',
+        'enrich-record',
         'log-interaction',
         'manage-campaign',
         'summarize-record',
