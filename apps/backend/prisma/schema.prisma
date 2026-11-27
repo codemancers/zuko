@@ -37,6 +37,7 @@ model User {
   oauthrefreshtokens OauthRefreshToken[]
   oauthaccesstokens  OauthAccessToken[]
   oauthconsents      OauthConsent[]
+  recordEnrichments  RecordEnrichment[]
 
   @@map("user")
 }
@@ -222,11 +223,12 @@ model ObjectRecord {
   updatedAt      DateTime   @updatedAt @map("updated_at")
   deletedAt      DateTime?  @map("deleted_at")
 
-  asSource Association[]   @relation("AssociationSource")
-  asTarget Association[]   @relation("AssociationTarget")
-  shares   RecordShare[]
-  files    RecordFile[]
-  comments RecordComment[]
+  asSource    Association[]      @relation("AssociationSource")
+  asTarget    Association[]      @relation("AssociationTarget")
+  shares      RecordShare[]
+  files       RecordFile[]
+  enrichments RecordEnrichment[]
+  comments    RecordComment[]
 
   @@unique([organizationId, id])
   @@index([organizationId, objectTypeId, createdAt(sort: Desc)])
@@ -764,4 +766,24 @@ model UploadTicket {
 
   @@index([organizationId, expiresAt])
   @@map("upload_ticket")
+}
+
+// The raw response a data provider (Apollo) returned for a record. Kept apart from `properties`: it is
+// large, its shape is the provider's, and it must not feed the property index or the change history.
+model RecordEnrichment {
+  id             BigInt       @id @default(autoincrement())
+  organizationId BigInt       @map("organization_id")
+  recordId       BigInt       @map("record_id")
+  record         ObjectRecord @relation(fields: [organizationId, recordId], references: [organizationId, id], onDelete: Cascade)
+  provider       String
+  subject        String // PERSON | ORGANIZATION
+  externalId     String?      @map("external_id")
+  payload        Json
+  requestedBy    BigInt?      @map("requested_by")
+  requester      User?        @relation(fields: [requestedBy], references: [id], onDelete: SetNull)
+  fetchedAt      DateTime     @default(dbgenerated("timezone('utc'::text, now())")) @map("fetched_at")
+
+  @@unique([recordId, provider, subject])
+  @@unique([organizationId, id])
+  @@map("record_enrichment")
 }

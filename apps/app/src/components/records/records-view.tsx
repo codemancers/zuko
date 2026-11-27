@@ -45,6 +45,7 @@ import { RecordTimeline } from '@/components/records/record-timeline';
 import { RecordLinks } from '@/components/records/record-links';
 import { FileCell } from '@/components/records/file-cell';
 import { RecordFiles } from '@/components/records/record-files';
+import { ENRICHABLE_OBJECTS, RecordEnrichment } from '@/components/records/record-enrichment';
 import { filesOf } from '@/lib/files';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
@@ -1401,6 +1402,16 @@ export function RecordsView({ object, maxRows = MAX_ROWS }: { object: string; ma
                 fields={def.fields}
                 properties={editing.properties}
                 version={editing.updated_at}
+                onChanged={() => {
+                  invalidateRecords();
+                  setReload((n) => n + 1);
+                }}
+              />
+            )}
+            {editing && (ENRICHABLE_OBJECTS as readonly string[]).includes(def.name) && (
+              <RecordEnrichment
+                object={def.name}
+                recordId={editing.id}
                 onChanged={() => {
                   invalidateRecords();
                   setReload((n) => n + 1);
