@@ -26,5 +26,4 @@ export const toolScopes: Readonly<Record<string, string>> = {
   list_record_files: 'records:read',
   // Enrichment writes to the record, so it needs the write scope (and the backend checks the role may enrich).
   enrich_record: 'records:write',
-  get_record_enrichment: 'records:read',
 };
